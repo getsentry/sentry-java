@@ -650,37 +650,6 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `App start end time is set`() {
-        val sut = fixture.getSut(14)
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-
-        setAppStartTime()
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, null)
-        sut.onActivityResumed(activity)
-
-        // SystemClock.uptimeMillis() always returns 0, can't assert real values
-        assertNotNull(AppStartState.getInstance().appStartInterval)
-    }
-
-    @Test
-    fun `App start end time isnt set if not foregroundImportance`() {
-        val sut = fixture.getSut(14, importance = RunningAppProcessInfo.IMPORTANCE_BACKGROUND)
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-
-        setAppStartTime()
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, null)
-        sut.onActivityResumed(activity)
-
-        assertNull(AppStartState.getInstance().appStartInterval)
-    }
-
-    @Test
     fun `When firstActivityCreated is true, start transaction with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -697,19 +666,46 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When firstActivityCreated is true, do not use appStartTime if not foregroundImportance`() {
+    fun `When firstActivityCreated is true, do not create app start span if not foregroundImportance`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_BACKGROUND)
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
+        // usually set by SentryPerformanceProvider
         val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
+        AppStartState.getInstance().setAppStartEnd(1)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
         verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertNull(it.startTimestamp) })
+    }
+
+    @Test
+    fun `Create and finish app start span immediately in case SDK init is deferred`() {
+        val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        // usually set by SentryPerformanceProvider
+        val startDate = SentryNanotimeDate(Date(0), 0)
+        setAppStartTime(startDate)
+        AppStartState.getInstance().setColdStart(false)
+        AppStartState.getInstance().setAppStartEnd(1)
+
+        val endDate = AppStartState.getInstance().appStartEndTime!!
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        val appStartSpanCount = fixture.transaction.children.count {
+            it.spanContext.operation.startsWith("app.start.warm") &&
+                it.startDate.nanoTimestamp() == startDate.nanoTimestamp() &&
+                it.finishDate!!.nanoTimestamp() == endDate.nanoTimestamp()
+        }
+        assertEquals(1, appStartSpanCount)
     }
 
     @Test

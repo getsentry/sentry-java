@@ -71,6 +71,7 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 }
 
 public final class io/sentry/android/core/AppStartState {
+	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
 	public fun getAppStartInterval ()Ljava/lang/Long;
 	public fun getAppStartMillis ()Ljava/lang/Long;
 	public fun getAppStartTime ()Lio/sentry/SentryDate;

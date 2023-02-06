@@ -210,6 +210,14 @@ public final class ActivityLifecycleIntegration
                 getAppStartDesc(coldStart),
                 appStartTime,
                 Instrumenter.SENTRY);
+
+        // in case we already have an end time, e.g. due to deferred SDK init we can already finish
+        // the span
+        final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+        if (appStartEndTime != null) {
+          appStartSpan.finish(SpanStatus.OK, appStartEndTime);
+        }
+
         // The first activity ttidSpan should start at the same time as the app start time
         ttidSpanMap.put(
             activity,
@@ -328,26 +336,16 @@ public final class ActivityLifecycleIntegration
   @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
+    // finishes app start span
+    @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+    if (appStartSpan != null
+        && !appStartSpan.isFinished()
+        && performanceEnabled
+        && appStartEndTime != null) {
+      appStartSpan.finish(SpanStatus.OK, appStartEndTime);
+    }
+
     if (!firstActivityResumed) {
-
-      // we only finish the app start if the process is of foregroundImportance
-      if (foregroundImportance) {
-        // sets App start as finished when the very first activity calls onResume
-        AppStartState.getInstance().setAppStartEnd();
-      } else {
-        if (options != null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "App Start won't be reported because Process wasn't of foregroundImportance.");
-        }
-      }
-
-      // finishes app start span
-      if (performanceEnabled && appStartSpan != null) {
-        appStartSpan.finish();
-      }
       firstActivityResumed = true;
     }
 
