@@ -186,7 +186,7 @@ public final class io/sentry/DateUtils {
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
@@ -391,7 +391,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 }
 
 public abstract interface class io/sentry/ICollector {
-	public abstract fun collect (Ljava/lang/Iterable;)V
+	public abstract fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public abstract fun setup ()V
 }
 
@@ -571,7 +571,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
-	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Lio/sentry/PerformanceCollectionData;)Lio/sentry/ProfilingTraceData;
+	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
@@ -596,7 +596,7 @@ public final class io/sentry/IpAddressUtils {
 
 public final class io/sentry/JavaMemoryCollector : io/sentry/ICollector {
 	public fun <init> ()V
-	public fun collect (Ljava/lang/Iterable;)V
+	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
 }
 
@@ -862,12 +862,12 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
 	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
-	public fun onTransactionFinish (Lio/sentry/ITransaction;Lio/sentry/PerformanceCollectionData;)Lio/sentry/ProfilingTraceData;
+	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
@@ -891,9 +891,8 @@ public final class io/sentry/PerformanceCollectionData {
 	public fun <init> ()V
 	public fun addCpuData (Lio/sentry/CpuCollectionData;)V
 	public fun addMemoryData (Lio/sentry/MemoryCollectionData;)V
-	public fun commitData ()V
-	public fun getCpuData ()Ljava/util/List;
-	public fun getMemoryData ()Ljava/util/List;
+	public fun getCpuData ()Lio/sentry/CpuCollectionData;
+	public fun getMemoryData ()Lio/sentry/MemoryCollectionData;
 }
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1646,6 +1645,7 @@ public class io/sentry/SentryOptions {
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
 	public fun setTracingOrigins (Ljava/util/List;)V
+	public fun setTransactionPerformanceCollector (Lio/sentry/TransactionPerformanceCollector;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
@@ -2069,7 +2069,7 @@ public final class io/sentry/TransactionOptions {
 
 public abstract interface class io/sentry/TransactionPerformanceCollector {
 	public abstract fun start (Lio/sentry/ITransaction;)V
-	public abstract fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/TypeCheckHint {

@@ -12,12 +12,10 @@ public final class JavaMemoryCollector implements ICollector {
   public void setup() {}
 
   @Override
-  public void collect(@NotNull Iterable<PerformanceCollectionData> performanceCollectionData) {
+  public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
     final long now = System.currentTimeMillis();
     final long usedMemory = runtime.totalMemory() - runtime.freeMemory();
     MemoryCollectionData memoryData = new MemoryCollectionData(now, usedMemory);
-    for (PerformanceCollectionData data : performanceCollectionData) {
-      data.addMemoryData(memoryData);
-    }
+    performanceCollectionData.addMemoryData(memoryData);
   }
 }

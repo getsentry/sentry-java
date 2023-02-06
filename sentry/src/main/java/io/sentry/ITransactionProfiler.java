@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,5 +12,6 @@ public interface ITransactionProfiler {
 
   @Nullable
   ProfilingTraceData onTransactionFinish(
-      @NotNull ITransaction transaction, @Nullable PerformanceCollectionData memoryCollectionData);
+      @NotNull ITransaction transaction,
+      @Nullable List<PerformanceCollectionData> performanceCollectionData);
 }

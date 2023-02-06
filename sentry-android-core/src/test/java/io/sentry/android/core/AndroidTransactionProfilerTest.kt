@@ -376,14 +376,18 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler includes performance measurements when passed on transaction finish`() {
         val profiler = fixture.getSut(context)
-        val memoryCollectionData = PerformanceCollectionData()
-        memoryCollectionData.addMemoryData(MemoryCollectionData(1, 2, 3))
-        memoryCollectionData.addCpuData(CpuCollectionData(1, 1.4))
-        memoryCollectionData.commitData()
-        memoryCollectionData.addMemoryData(MemoryCollectionData(2, 3, 4))
-        memoryCollectionData.commitData()
+        val performanceCollectionData = ArrayList<PerformanceCollectionData>()
+        var singleData = PerformanceCollectionData()
+        singleData.addMemoryData(MemoryCollectionData(1, 2, 3))
+        singleData.addCpuData(CpuCollectionData(1, 1.4))
+        performanceCollectionData.add(singleData)
+
+        singleData = PerformanceCollectionData()
+        singleData.addMemoryData(MemoryCollectionData(2, 3, 4))
+        performanceCollectionData.add(singleData)
+
         profiler.onTransactionStart(fixture.transaction1)
-        val data = profiler.onTransactionFinish(fixture.transaction1, memoryCollectionData)
+        val data = profiler.onTransactionFinish(fixture.transaction1, performanceCollectionData)
         assertContentEquals(
             listOf(1.4),
             data!!.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!.values.map { it.value }
