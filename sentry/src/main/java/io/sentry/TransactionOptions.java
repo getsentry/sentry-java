@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,7 +8,7 @@ public final class TransactionOptions {
 
   private @Nullable CustomSamplingContext customSamplingContext = null;
   private boolean bindToScope = false;
-  private @Nullable Date startTimestamp = null;
+  private @Nullable SentryDate startTimestamp = null;
   private boolean waitForChildren = false;
   private @Nullable Long idleTimeout = null;
   private boolean trimEnd = false;
@@ -31,11 +30,11 @@ public final class TransactionOptions {
     this.bindToScope = bindToScope;
   }
 
-  public @Nullable Date getStartTimestamp() {
+  public @Nullable SentryDate getStartTimestamp() {
     return startTimestamp;
   }
 
-  public void setStartTimestamp(@Nullable Date startTimestamp) {
+  public void setStartTimestamp(@Nullable SentryDate startTimestamp) {
     this.startTimestamp = startTimestamp;
   }
 

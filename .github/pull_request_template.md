@@ -12,10 +12,14 @@
 
 ## :pencil: Checklist
 <!--- Put an `x` in the boxes that apply -->
-- [ ] I reviewed the submitted code
-- [ ] I added tests to verify the changes
-- [ ] I updated the docs if needed
-- [ ] No breaking changes
+
+- [ ] I reviewed the submitted code.
+- [ ] I added tests to verify the changes.
+- [ ] No new PII added or SDK only sends newly added PII if `sendDefaultPII` is enabled.
+- [ ] I updated the docs if needed.
+- [ ] Review from the native team if needed.
+- [ ] No breaking change or entry added to the changelog.
+- [ ] No breaking change for hybrid SDKs or communicated to hybrid SDKs.
 
 
 ## :crystal_ball: Next steps

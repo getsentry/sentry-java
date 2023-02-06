@@ -5,6 +5,7 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.clientreport.DropEverythingEventProcessor
 import io.sentry.exception.SentryEnvelopeException
+import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
@@ -15,6 +16,7 @@ import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.callMethod
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
@@ -30,7 +32,6 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -941,6 +942,37 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when event has abnormal hint, sets abnormalMechanism and changes status to abnormal`() {
+        val scope = givenScopeWithStartedSession()
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint("anr_foreground"))
+
+        fixture.getSut().updateSessionData(event, hint, scope)
+
+        scope.withSession {
+            assertEquals(Session.State.Abnormal, it!!.status)
+            assertEquals("anr_foreground", it.abnormalMechanism)
+        }
+    }
+
+    @Test
+    fun `when event has abnormal hint, increases errorCrount`() {
+        val scope = givenScopeWithStartedSession()
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint("anr_foreground"))
+
+        fixture.getSut().updateSessionData(event, hint, scope)
+
+        scope.withSession {
+            assertEquals(1, it!!.errorCount())
+        }
+    }
+
+    @Test
     fun `When event has userAgent, set it into session`() {
         val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
@@ -1135,23 +1167,6 @@ class SentryClientTest {
         val envelope = SentryEnvelope.from(options.serializer, fixture.profilingTraceData, options.maxTraceFileSize, options.sdkVersion)
         client.captureEnvelope(envelope)
         verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId))
-    }
-
-    @Test
-    fun `captureTransaction with profile calls captureEnvelope and captureTransaction`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        val client = spy(fixture.getSut())
-        client.captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
-        verify(client).captureTransaction(transaction, null, null, null)
-        verify(client).captureEnvelope(
-            check {
-                assertEquals(1, it.items.count())
-                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
-                    assertEquals(item.profileId, fixture.profilingTraceData.profileId)
-                }
-            },
-            anyOrNull()
-        )
     }
 
     @Test
@@ -1427,6 +1442,42 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
         val hint = Hint().also { it.screenshot = attachment }
+
+        sut.captureEvent(SentryEvent(), hint)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `view hierarchy is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromViewHierarchy(ViewHierarchy("android_view_system", emptyList()))
+        val hint = Hint().also { it.viewHierarchy = attachment }
+
+        sut.captureEvent(SentryEvent(), hint)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val viewHierarchy = envelope.items.last()
+                assertNotNull(viewHierarchy) {
+                    assertEquals(attachment.filename, viewHierarchy.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `view hierarchy is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromViewHierarchy(ViewHierarchy("android_view_system", emptyList()))
+        val hint = Hint().also { it.viewHierarchy = attachment }
 
         sut.captureEvent(SentryEvent(), hint)
 
@@ -1996,7 +2047,7 @@ class SentryClientTest {
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
         override fun execute(event: SentryEvent, hint: Hint): SentryEvent? {
             hint.screenshot = null
-
+            hint.viewHierarchy = null
             return event
         }
     }
@@ -2149,6 +2200,10 @@ class SentryClientTest {
             },
             anyOrNull()
         )
+    }
+
+    private class AbnormalHint(private val mechanism: String? = null) : AbnormalExit {
+        override fun mechanism(): String? = mechanism
     }
 
     internal class DiskFlushNotificationHint : DiskFlushNotification {

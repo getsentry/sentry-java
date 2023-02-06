@@ -350,8 +350,38 @@ class SentryTest {
         assertTrue { sentryOptions!!.mainThreadChecker is CustomMainThreadChecker }
     }
 
+    @Test
+    fun `overrides collector if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.collectors.any { it is JavaMemoryCollector } }
+    }
+
+    @Test
+    fun `does not override collector if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.addCollector(CustomMemoryCollector())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.collectors.any { it is CustomMemoryCollector } }
+    }
+
     private class CustomMainThreadChecker : IMainThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
+    }
+
+    private class CustomMemoryCollector : ICollector {
+        override fun setup() {}
+        override fun collect(performanceCollectionData: PerformanceCollectionData) {}
     }
 
     private class CustomModulesLoader : IModulesLoader {

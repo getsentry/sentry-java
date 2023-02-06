@@ -10,7 +10,10 @@ import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryLevel;
 import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
@@ -26,6 +29,15 @@ public final class SentryPropagator implements TextMapPropagator {
   private static final @NotNull List<String> FIELDS =
       Arrays.asList(SentryTraceHeader.SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
   private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
+  private final @NotNull IHub hub;
+
+  public SentryPropagator() {
+    this(HubAdapter.getInstance());
+  }
+
+  SentryPropagator(final @NotNull IHub hub) {
+    this.hub = hub;
+  }
 
   @Override
   public Collection<String> fields() {
@@ -37,10 +49,22 @@ public final class SentryPropagator implements TextMapPropagator {
     final @NotNull Span otelSpan = Span.fromContext(context);
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not injecting Sentry tracing information for invalid OpenTelemetry span.");
       return;
     }
     final @Nullable ISpan sentrySpan = spanStorage.get(otelSpanContext.getSpanId());
     if (sentrySpan == null || sentrySpan.isNoOp()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not injecting Sentry tracing information for span %s as no Sentry span has been found or it is a NoOp (trace %s). This might simply mean this is a request to Sentry.",
+              otelSpanContext.getSpanId(),
+              otelSpanContext.getTraceId());
       return;
     }
 
@@ -82,8 +106,18 @@ public final class SentryPropagator implements TextMapPropagator {
       Span wrappedSpan = Span.wrap(otelSpanContext);
       modifiedContext = modifiedContext.with(wrappedSpan);
 
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
+
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Unable to extract Sentry tracing information from invalid header.",
+              e);
       return context;
     }
   }

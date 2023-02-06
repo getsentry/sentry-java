@@ -2,6 +2,80 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix transaction performance collector oom ([#2505](https://github.com/getsentry/sentry-java/pull/2505))
+- Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
+- Fix `sentry-bom` containing incorrect artifacts ([#2504](https://github.com/getsentry/sentry-java/pull/2504))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.3 to v0.5.4 ([#2500](https://github.com/getsentry/sentry-java/pull/2500))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#054)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.3...0.5.4)
+
+## 6.13.0
+
+### Features
+
+- Send cpu usage percentage in profile payload ([#2469](https://github.com/getsentry/sentry-java/pull/2469))
+- Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
+- Add cpu usage collection ([#2462](https://github.com/getsentry/sentry-java/pull/2462))
+- Improve ANR implementation: ([#2475](https://github.com/getsentry/sentry-java/pull/2475))
+  - Add `abnormal_mechanism` to sessions for ANR rate calculation
+  - Always attach thread dump to ANR events
+  - Distinguish between foreground and background ANRs
+- Improve possible date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
+
+### Fixes
+
+- Fix performance collector setup called in main thread ([#2499](https://github.com/getsentry/sentry-java/pull/2499))
+- Expand guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2482](https://github.com/getsentry/sentry-java/pull/2482))
+- Prevent OOM by disabling TransactionPerformanceCollector for now ([#2498](https://github.com/getsentry/sentry-java/pull/2498))
+
+## 6.12.1
+
+### Fixes
+
+- Create timer in `TransactionPerformanceCollector` lazily ([#2478](https://github.com/getsentry/sentry-java/pull/2478))
+
+## 6.12.0
+
+### Features
+
+- Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
+- Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+- Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
+- Extend list of HTTP headers considered sensitive ([#2455](https://github.com/getsentry/sentry-java/pull/2455))
+
+### Fixes
+
+- Use a single TransactionPerfomanceCollector ([#2464](https://github.com/getsentry/sentry-java/pull/2464))
+- Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
+- Set transactionNameSource to CUSTOM when setting transaction name ([#2405](https://github.com/getsentry/sentry-java/pull/2405))
+- Guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2466](https://github.com/getsentry/sentry-java/pull/2466))
+
+## 6.11.0
+
+### Features
+
+- Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
+- Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
+- Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
+
+### Fixes
+
+- Use minSdk compatible `Objects` class ([#2436](https://github.com/getsentry/sentry-java/pull/2436))
+- Prevent R8 from warning on missing classes, as we check for their presence at runtime ([#2439](https://github.com/getsentry/sentry-java/pull/2439))
+
+### Dependencies
+
+- Bump Gradle from v7.5.1 to v7.6.0 ([#2438](https://github.com/getsentry/sentry-java/pull/2438))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v760)
+  - [diff](https://github.com/gradle/gradle/compare/v7.5.1...v7.6.0)
+
+## 6.10.0
+
 ### Features
 
 - Add time-to-full-display span to Activity transactions ([#2432](https://github.com/getsentry/sentry-java/pull/2432))

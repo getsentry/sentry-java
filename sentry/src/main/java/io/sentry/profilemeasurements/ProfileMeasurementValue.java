@@ -6,10 +6,10 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +29,10 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
   public ProfileMeasurementValue(final @NotNull Long relativeStartNs, final @NotNull Number value) {
     this.relativeStartNs = relativeStartNs.toString();
     this.value = value.doubleValue();
+  }
+
+  public double getValue() {
+    return value;
   }
 
   @Override

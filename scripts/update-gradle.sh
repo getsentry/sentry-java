@@ -3,6 +3,10 @@ set -euo pipefail
 
 cd $(dirname "$0")/../
 
+if [[ -n ${CI+x} ]]; then
+    export JAVA_HOME=$JAVA_HOME_17_X64
+fi
+
 case $1 in
 get-version)
     # `./gradlew` shows some info on the first run, breaking the parsing in the next step.

@@ -1,0 +1,17 @@
+{
+  "type": "com.example.ui.FancyButton",
+  "identifier": "button_logout",
+  "width": 100.0,
+  "height": 200.0,
+  "x": 0.0,
+  "y": 2.0,
+  "visibility": "visible",
+  "alpha": 1.0,
+  "children": [
+    {
+      "rendering_system": "compose",
+      "type": "Clickable"
+    }
+  ],
+  "extra_property": 42
+}

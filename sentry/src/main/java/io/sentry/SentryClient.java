@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
@@ -232,6 +233,11 @@ public final class SentryClient implements ISentryClient {
       attachments.add(screenshot);
     }
 
+    @Nullable final Attachment viewHierarchy = hint.getViewHierarchy();
+    if (viewHierarchy != null) {
+      attachments.add(viewHierarchy);
+    }
+
     return attachments;
   }
 
@@ -273,7 +279,11 @@ public final class SentryClient implements ISentryClient {
     if (attachments != null) {
       for (final Attachment attachment : attachments) {
         final SentryEnvelopeItem attachmentItem =
-            SentryEnvelopeItem.fromAttachment(attachment, options.getMaxAttachmentSize());
+            SentryEnvelopeItem.fromAttachment(
+                options.getSerializer(),
+                options.getLogger(),
+                attachment,
+                options.getMaxAttachmentSize());
         envelopeItems.add(attachmentItem);
       }
     }
@@ -430,7 +440,14 @@ public final class SentryClient implements ISentryClient {
                       }
                     }
 
-                    if (session.update(status, userAgent, crashedOrErrored)) {
+                    final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+                    @Nullable String abnormalMechanism = null;
+                    if (sentrySdkHint instanceof AbnormalExit) {
+                      abnormalMechanism = ((AbnormalExit) sentrySdkHint).mechanism();
+                      status = Session.State.Abnormal;
+                    }
+
+                    if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
                       // if hint is DiskFlushNotification, it means we have an uncaughtException
                       // and we can end the session.
                       if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
@@ -498,41 +515,13 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  /**
-   * @deprecated please use {{@link ISentryClient#captureTransaction(SentryTransaction,
-   *     TraceContext, Scope, Hint)}} and {{@link ISentryClient#captureEnvelope(SentryEnvelope)}}
-   *     instead.
-   */
-  @Deprecated
+  @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       final @Nullable Scope scope,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
-    if (profilingTraceData != null) {
-      SentryEnvelope envelope;
-      try {
-        envelope =
-            SentryEnvelope.from(
-                options.getSerializer(),
-                profilingTraceData,
-                options.getMaxTraceFileSize(),
-                options.getSdkVersion());
-        captureEnvelope(envelope);
-      } catch (SentryEnvelopeException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to capture profile.", e);
-      }
-    }
-    return captureTransaction(transaction, traceContext, scope, hint);
-  }
-
-  @Override
-  public @NotNull SentryId captureTransaction(
-      @NotNull SentryTransaction transaction,
-      @Nullable TraceContext traceContext,
-      final @Nullable Scope scope,
-      @Nullable Hint hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
     if (hint == null) {
@@ -588,7 +577,11 @@ public final class SentryClient implements ISentryClient {
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
-              transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
+              transaction,
+              filterForTransaction(getAttachments(hint)),
+              null,
+              traceContext,
+              profilingTraceData);
 
       hint.clear();
       if (envelope != null) {

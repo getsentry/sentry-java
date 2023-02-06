@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -255,8 +256,18 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, transactionPerformanceCollector is set`() {
+        assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
+    }
+
+    @Test
     fun `when options is initialized, transactionProfiler is noop`() {
         assert(SentryOptions().transactionProfiler == NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
+    fun `when options is initialized, collector is empty list`() {
+        assertTrue(SentryOptions().collectors.isEmpty())
     }
 
     @Test
@@ -377,7 +388,21 @@ class SentryOptionsTest {
         assertEquals("${File.separator}test${File.separator}${hash}${File.separator}profiling_traces", options.profilingTracesDirPath)
     }
 
+    @Test
     fun `when options are initialized, idleTimeout is 3000`() {
         assertEquals(3000L, SentryOptions().idleTimeout)
+    }
+
+    @Test
+    fun `when options are initialized, TransactionPerformanceCollector is a NoOp`() {
+        assertEquals(SentryOptions().transactionPerformanceCollector, NoOpTransactionPerformanceCollector.getInstance())
+    }
+
+    @Test
+    fun `when setTransactionPerformanceCollector is called, overrides default`() {
+        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val options = SentryOptions()
+        options.transactionPerformanceCollector = performanceCollector
+        assertEquals(performanceCollector, options.transactionPerformanceCollector)
     }
 }

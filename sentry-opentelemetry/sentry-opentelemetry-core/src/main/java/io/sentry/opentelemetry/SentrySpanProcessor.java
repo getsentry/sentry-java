@@ -12,13 +12,15 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import io.sentry.Baggage;
-import io.sentry.DateUtils;
 import io.sentry.DsnUtil;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.SentryDate;
+import io.sentry.SentryLevel;
+import io.sentry.SentryLongDate;
 import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
@@ -28,7 +30,6 @@ import io.sentry.TransactionOptions;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
     this(HubAdapter.getInstance());
   }
 
-  SentrySpanProcessor(@NotNull IHub hub) {
+  SentrySpanProcessor(final @NotNull IHub hub) {
     this.hub = hub;
   }
 
@@ -58,22 +59,44 @@ public final class SentrySpanProcessor implements SpanProcessor {
       return;
     }
 
+    final @NotNull TraceData traceData = getTraceData(otelSpan, parentContext);
+
     if (isSentryRequest(otelSpan)) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not forwarding OpenTelemetry span %s to Sentry as this looks like a span for a request to Sentry (trace %s).",
+              traceData.getSpanId(),
+              traceData.getTraceId());
       return;
     }
-
-    final @NotNull TraceData traceData = getTraceData(otelSpan, parentContext);
     final @Nullable ISpan sentryParentSpan =
         traceData.getParentSpanId() == null ? null : spanStorage.get(traceData.getParentSpanId());
 
     if (sentryParentSpan != null) {
-      final @NotNull Date startDate =
-          DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos());
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Creating Sentry child span for OpenTelemetry span %s (trace %s). Parent span is %s.",
+              traceData.getSpanId(),
+              traceData.getTraceId(),
+              traceData.getParentSpanId());
+      final @NotNull SentryDate startDate =
+          new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Creating Sentry transaction for OpenTelemetry span %s (trace %s).",
+              traceData.getSpanId(),
+              traceData.getTraceId());
       final @NotNull String transactionName = otelSpan.getName();
       final @NotNull TransactionNameSource transactionNameSource = TransactionNameSource.CUSTOM;
       final @Nullable String op = otelSpan.getName();
@@ -102,7 +125,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
       TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setStartTimestamp(
-          DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos()));
+          new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
 
       ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
@@ -124,23 +147,53 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @Nullable ISpan sentrySpan = spanStorage.removeAndGet(traceData.getSpanId());
 
     if (sentrySpan == null) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Unable to find Sentry span for OpenTelemetry span %s (trace %s). This may simply mean it is a Sentry request.",
+              traceData.getSpanId(),
+              traceData.getTraceId());
       return;
     }
 
     if (isSentryRequest(otelSpan)) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not forwarding OpenTelemetry span %s to Sentry as this looks like a span for a request to Sentry (trace %s).",
+              traceData.getSpanId(),
+              traceData.getTraceId());
       return;
     }
 
     if (sentrySpan instanceof ITransaction) {
-      ITransaction sentryTransaction = (ITransaction) sentrySpan;
+      final @NotNull ITransaction sentryTransaction = (ITransaction) sentrySpan;
       updateTransactionWithOtelData(sentryTransaction, otelSpan);
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Finishing Sentry transaction %s for OpenTelemetry span %s (trace %s).",
+              sentryTransaction.getEventId(),
+              traceData.getSpanId(),
+              traceData.getTraceId());
     } else {
       updateSpanWithOtelData(sentrySpan, otelSpan);
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Finishing Sentry span for OpenTelemetry span %s (trace %s). Parent span is %s.",
+              traceData.getSpanId(),
+              traceData.getTraceId(),
+              traceData.getParentSpanId());
     }
 
     final @NotNull SpanStatus sentryStatus = mapOtelStatus(otelSpan);
-    final @NotNull Date endTimestamp =
-        DateUtils.nanosToDate(otelSpan.toSpanData().getEndEpochNanos());
+    final @NotNull SentryDate endTimestamp =
+        new SentryLongDate(otelSpan.toSpanData().getEndEpochNanos());
     sentrySpan.finish(sentryStatus, endTimestamp);
   }
 
@@ -151,15 +204,32 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   private boolean ensurePrerequisites(final @NotNull ReadableSpan otelSpan) {
     if (!hasSentryBeenInitialized()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not forwarding OpenTelemetry span to Sentry as Sentry has not yet been initialized.");
       return false;
     }
 
-    if (!Instrumenter.OTEL.equals(hub.getOptions().getInstrumenter())) {
+    final @NotNull Instrumenter instrumenter = hub.getOptions().getInstrumenter();
+    if (!Instrumenter.OTEL.equals(instrumenter)) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not forwarding OpenTelemetry span to Sentry as instrumenter has been set to %s.",
+              instrumenter);
       return false;
     }
 
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not forwarding OpenTelemetry span to Sentry as the span is invalid.");
       return false;
     }
 

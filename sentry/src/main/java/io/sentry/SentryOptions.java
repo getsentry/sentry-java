@@ -385,6 +385,20 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
+  // TODO this should default to false on the next major
+  /** Whether OPTIONS requests should be traced. */
+  private boolean traceOptionsRequests = true;
+
+  /** Date provider to retrieve the current date from. */
+  @ApiStatus.Internal
+  private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+
+  private final @NotNull List<ICollector> collectors = new ArrayList<>();
+
+  /** Performance collector that collect performance stats while transactions run. */
+  private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      NoOpTransactionPerformanceCollector.getInstance();
+
   /**
    * Adds an event processor
    *
@@ -1803,7 +1817,7 @@ public class SentryOptions {
   /**
    * Sets the instrumenter used for performance instrumentation.
    *
-   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
    * any transactions automatically nor will it create transactions if you call
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
@@ -1874,6 +1888,82 @@ public class SentryOptions {
 
   public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
     this.mainThreadChecker = mainThreadChecker;
+  }
+
+  /**
+   * Gets the performance collector used to collect performance stats while transactions run.
+   *
+   * @return the performance collector.
+   */
+  @ApiStatus.Internal
+  public @NotNull TransactionPerformanceCollector getTransactionPerformanceCollector() {
+    return transactionPerformanceCollector;
+  }
+
+  /**
+   * Sets the performance collector used to collect performance stats while transactions run.
+   *
+   * @param transactionPerformanceCollector the performance collector.
+   */
+  @ApiStatus.Internal
+  public void setTransactionPerformanceCollector(
+      final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
+    this.transactionPerformanceCollector = transactionPerformanceCollector;
+  }
+
+  /**
+   * Whether OPTIONS requests should be traced.
+   *
+   * @return true if OPTIONS requests should be traced
+   */
+  public boolean isTraceOptionsRequests() {
+    return traceOptionsRequests;
+  }
+
+  /**
+   * Whether OPTIONS requests should be traced.
+   *
+   * @param traceOptionsRequests true if OPTIONS requests should be traced
+   */
+  public void setTraceOptionsRequests(boolean traceOptionsRequests) {
+    this.traceOptionsRequests = traceOptionsRequests;
+  }
+
+  /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
+  @ApiStatus.Internal
+  public @NotNull SentryDateProvider getDateProvider() {
+    return dateProvider;
+  }
+
+  /**
+   * Sets the {@link SentryDateProvider} which is used to retrieve the current date.
+   *
+   * <p>Different providers offer different precision. By default Sentry tries to offer the highest
+   * precision available for the system.
+   */
+  @ApiStatus.Internal
+  public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
+    this.dateProvider = dateProvider;
+  }
+
+  /**
+   * Adds a ICollector.
+   *
+   * @param collector the ICollector.
+   */
+  @ApiStatus.Internal
+  public void addCollector(final @NotNull ICollector collector) {
+    collectors.add(collector);
+  }
+
+  /**
+   * Returns the list of ICollectors.
+   *
+   * @return the ICollector list.
+   */
+  @ApiStatus.Internal
+  public @NotNull List<ICollector> getCollectors() {
+    return collectors;
   }
 
   /** The BeforeSend callback */
