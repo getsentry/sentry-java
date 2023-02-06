@@ -92,8 +92,8 @@ public final class AppStartState {
     if (start != null) {
       @Nullable final Long durationMillis = getAppStartInterval();
       if (durationMillis != null) {
-        long startNanos = start.nanoTimestamp();
-        long endNanos = startNanos + DateUtils.millisToNanos(durationMillis);
+        final long startNanos = start.nanoTimestamp();
+        final long endNanos = startNanos + DateUtils.millisToNanos(durationMillis);
         return new SentryLongDate(endNanos);
       }
     }

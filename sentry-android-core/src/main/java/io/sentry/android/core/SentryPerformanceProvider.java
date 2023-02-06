@@ -103,9 +103,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
     if (!firstActivityResumed) {
-      // we only finish the app start if the process is of foregroundImportance
-      firstActivityResumed = true;
       // sets App start as finished when the very first activity calls onResume
+      firstActivityResumed = true;
       AppStartState.getInstance().setAppStartEnd();
     }
     if (application != null) {
