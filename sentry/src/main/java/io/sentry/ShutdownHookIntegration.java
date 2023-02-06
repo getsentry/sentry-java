@@ -41,7 +41,16 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   @Override
   public void close() throws IOException {
     if (thread != null) {
-      runtime.removeShutdownHook(thread);
+      try {
+        runtime.removeShutdownHook(thread);
+      } catch (IllegalStateException e) {
+        @Nullable final String message = e.getMessage();
+        if (message != null && message.equals("Shutdown in progress")) {
+          // ignore
+        } else {
+          throw e;
+        }
+      }
     }
   }
 
