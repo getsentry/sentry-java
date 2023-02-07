@@ -758,6 +758,38 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When activity lifecycle happens multiple times, app-start end time should not be overwritten`() {
+        val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        // usually done by SentryPerformanceProvider
+        val startDate = SentryNanotimeDate(Date(0), 0)
+        setAppStartTime(startDate)
+        AppStartState.getInstance().setColdStart(false)
+
+        // when activity is created, started and resumed multiple times
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityStarted(activity)
+        sut.onActivityResumed(activity)
+
+        val firstAppStartEndTime = AppStartState.getInstance().appStartEndTime
+
+        Thread.sleep(1)
+        sut.onActivityPaused(activity)
+        sut.onActivityStopped(activity)
+        sut.onActivityStarted(activity)
+        sut.onActivityResumed(activity)
+
+        // then the end time should not be overwritten
+        assertEquals(
+            firstAppStartEndTime!!.nanoTimestamp(),
+            AppStartState.getInstance().appStartEndTime!!.nanoTimestamp()
+        )
+    }
+
+    @Test
     fun `When firstActivityCreated is true, start app start warm span with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
