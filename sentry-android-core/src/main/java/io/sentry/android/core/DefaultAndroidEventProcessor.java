@@ -227,7 +227,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         }
 
         // This should not be set by Hybrid SDKs since they have their own threading model
-        if (!isHybridSDK && thread.getMain() == null) {
+        if (!isHybridSDK && thread.isMain() == null) {
           thread.setMain(isMainThread);
         }
       }
@@ -279,7 +279,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @SuppressWarnings({"ObsoleteSdkInt", "deprecation", "NewApi"})
   private void setArchitectures(final @NotNull Device device) {
-    String[] supportedAbis;
+    final String[] supportedAbis;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.LOLLIPOP) {
       supportedAbis = Build.SUPPORTED_ABIS;
     } else {

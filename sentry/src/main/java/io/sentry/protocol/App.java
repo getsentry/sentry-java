@@ -55,8 +55,8 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.buildType = app.buildType;
     this.deviceAppHash = app.deviceAppHash;
     this.permissions = CollectionUtils.newConcurrentHashMap(app.permissions);
-    this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
     this.inForeground = app.inForeground;
+    this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
   @SuppressWarnings("unused")

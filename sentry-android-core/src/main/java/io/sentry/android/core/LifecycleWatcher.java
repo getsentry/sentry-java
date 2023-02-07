@@ -67,9 +67,9 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   public void onStart(final @NotNull LifecycleOwner owner) {
     startSession();
     addAppBreadcrumb("foreground");
-    // TODO: check if this still makes sense, I found a few threads that the right way would be
-    // owner.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED);
-    // This would be the only state that is responding to the user
+
+    // Consider using owner.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED);
+    // in the future.
     AppState.getInstance().setInBackground(false);
   }
 
