@@ -12,6 +12,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
@@ -522,6 +523,33 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(SentryEvent(), Hint())) {
             val app = it.contexts.app!!
             assertFalse(app.inForeground!!)
+        }
+    }
+
+    @Test
+    fun `Events from HybridSDKs don't set main thread and in foreground context`() {
+        val sut = fixture.getSut(context)
+
+        val cachedHint = CustomCachedApplyScopeDataHint()
+        val hint = HintUtils.createWithTypeCheckHint(cachedHint)
+
+        val sdkVersion = SdkVersion(SENTRY_DART_SDK_NAME, "1.0.0")
+        val event = SentryEvent().apply {
+            sdk = sdkVersion
+            threads = mutableListOf(
+                SentryThread().apply {
+                    id = 10L
+                }
+            )
+        }
+        // set by OutboxSender during event deserialization
+        HintUtils.setIsFromHybridSdk(hint, sdkVersion.name)
+
+        assertNotNull(sut.process(event, hint)) {
+            val app = it.contexts.app!!
+            assertNull(app.inForeground)
+            val thread = it.threads!!.first()
+            assertNull(thread.isMain)
         }
     }
 }
