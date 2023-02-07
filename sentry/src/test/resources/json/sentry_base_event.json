@@ -15,7 +15,8 @@
       {
         "WRITE_EXTERNAL_STORAGE": "not_granted",
         "CAMERA": "granted"
-      }
+      },
+      "in_foreground": true
     },
     "browser":
     {
