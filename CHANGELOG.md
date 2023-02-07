@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Ignore Shutdown in progress when closing ShutdownHookIntegration ([#2521](https://github.com/getsentry/sentry-java/pull/2521))
+
 ## 6.13.1
 
 ### Fixes
