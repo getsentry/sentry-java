@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
+
 ### Fixes
 
 - Fix transaction performance collector oom ([#2505](https://github.com/getsentry/sentry-java/pull/2505))
