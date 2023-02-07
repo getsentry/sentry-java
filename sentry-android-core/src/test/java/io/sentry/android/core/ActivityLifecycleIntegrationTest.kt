@@ -6,6 +6,7 @@ import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.os.Bundle
 import io.sentry.Breadcrumb
+import io.sentry.DateUtils
 import io.sentry.Hub
 import io.sentry.Scope
 import io.sentry.SentryDate
@@ -706,6 +707,54 @@ class ActivityLifecycleIntegrationTest {
                 it.finishDate!!.nanoTimestamp() == endDate.nanoTimestamp()
         }
         assertEquals(1, appStartSpanCount)
+    }
+
+    @Test
+    fun `When SentryPerformanceProvider is disabled, app start time span is still created`() {
+        val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        // usually done by SentryPerformanceProvider, if disabled it's done by
+        // SentryAndroid.init
+        val startDate = SentryNanotimeDate(Date(0), 0)
+        setAppStartTime(startDate)
+        AppStartState.getInstance().setColdStart(false)
+
+        // when activity is created
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        // then app-start end time should still be null
+        assertNull(AppStartState.getInstance().appStartEndTime)
+
+        // when activity is resumed
+        sut.onActivityResumed(activity)
+        // end-time should be set
+        assertNotNull(AppStartState.getInstance().appStartEndTime)
+    }
+
+    @Test
+    fun `When app-start end time is already set, it should not be overwritten`() {
+        val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        // usually done by SentryPerformanceProvider
+        val startDate = SentryNanotimeDate(Date(0), 0)
+        setAppStartTime(startDate)
+        AppStartState.getInstance().setColdStart(false)
+        AppStartState.getInstance().setAppStartEnd(1234)
+
+        // when activity is created and resumed
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+
+        // then the end time should not be overwritten
+        assertEquals(
+            DateUtils.millisToNanos(1234),
+            AppStartState.getInstance().appStartEndTime!!.nanoTimestamp()
+        )
     }
 
     @Test
