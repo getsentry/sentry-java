@@ -5,7 +5,9 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
+import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 
 class ShutdownHookIntegrationTest {
@@ -76,5 +78,30 @@ class ShutdownHookIntegrationTest {
         }
 
         verify(fixture.hub).flush(eq(10000))
+    }
+
+    @Test
+    fun `shutdown in progress is handled gracefully`() {
+        val integration = fixture.getSut()
+        whenever(fixture.runtime.removeShutdownHook(any())).thenThrow(java.lang.IllegalStateException("Shutdown in progress"))
+
+        integration.register(fixture.hub, fixture.options)
+        integration.close()
+
+        verify(fixture.runtime).removeShutdownHook(any())
+    }
+
+    @Test
+    fun `non shutdown in progress during removeShutdownHook is rethrown`() {
+        val integration = fixture.getSut()
+        whenever(fixture.runtime.removeShutdownHook(any())).thenThrow(java.lang.IllegalStateException())
+
+        integration.register(fixture.hub, fixture.options)
+
+        assertFails {
+            integration.close()
+        }
+
+        verify(fixture.runtime).removeShutdownHook(any())
     }
 }
