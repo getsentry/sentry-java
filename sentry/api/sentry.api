@@ -2510,6 +2510,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getAppVersion ()Ljava/lang/String;
 	public fun getBuildType ()Ljava/lang/String;
 	public fun getDeviceAppHash ()Ljava/lang/String;
+	public fun getInForeground ()Ljava/lang/Boolean;
 	public fun getPermissions ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
@@ -2520,6 +2521,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setAppVersion (Ljava/lang/String;)V
 	public fun setBuildType (Ljava/lang/String;)V
 	public fun setDeviceAppHash (Ljava/lang/String;)V
+	public fun setInForeground (Ljava/lang/Boolean;)V
 	public fun setPermissions (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -2539,6 +2541,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field APP_VERSION Ljava/lang/String;
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEVICE_APP_HASH Ljava/lang/String;
+	public static final field IN_FOREGROUND Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -3344,11 +3347,13 @@ public final class io/sentry/protocol/SentryThread : io/sentry/JsonSerializable,
 	public fun isCrashed ()Ljava/lang/Boolean;
 	public fun isCurrent ()Ljava/lang/Boolean;
 	public fun isDaemon ()Ljava/lang/Boolean;
+	public fun isMain ()Ljava/lang/Boolean;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCrashed (Ljava/lang/Boolean;)V
 	public fun setCurrent (Ljava/lang/Boolean;)V
 	public fun setDaemon (Ljava/lang/Boolean;)V
 	public fun setId (Ljava/lang/Long;)V
+	public fun setMain (Ljava/lang/Boolean;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setPriority (Ljava/lang/Integer;)V
 	public fun setStacktrace (Lio/sentry/protocol/SentryStackTrace;)V
@@ -3367,6 +3372,7 @@ public final class io/sentry/protocol/SentryThread$JsonKeys {
 	public static final field CURRENT Ljava/lang/String;
 	public static final field DAEMON Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
+	public static final field MAIN Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
 	public static final field PRIORITY Ljava/lang/String;
 	public static final field STACKTRACE Ljava/lang/String;

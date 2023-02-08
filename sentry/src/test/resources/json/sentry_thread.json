@@ -6,6 +6,7 @@
     "crashed": false,
     "current": false,
     "daemon": true,
+    "main": true,
     "stacktrace":
     {
         "frames":

@@ -24,6 +24,7 @@ class SentryThreadSerializationTest {
             isCrashed = false
             isCurrent = false
             isDaemon = true
+            isMain = true
             stacktrace = SentryStackTrace().apply {
                 frames = listOf(
                     SentryStackFrame().apply {
