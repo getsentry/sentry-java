@@ -206,6 +206,22 @@ public final class Sentry {
     for (final Integration integration : options.getIntegrations()) {
       integration.register(HubAdapter.getInstance(), options);
     }
+
+    // enqueue a task to trigger the static options change for the observers. Since the executor
+    // is single-threaded, this task will be enqueued sequentially after all integrations that rely
+    // on the observers have done their work, even if they do that async.
+    options
+      .getExecutorService()
+      .submit(() -> {
+        // for static things like sentry options we can immediately trigger observers
+        for (final IScopeObserver observer : options.getScopeObservers()) {
+          observer.setRelease(options.getRelease());
+          observer.setProguardUuid(options.getProguardUuid());
+          observer.setSdkVersion(options.getSdkVersion());
+          observer.setDist(options.getDist());
+          observer.setEnvironment(options.getEnvironment());
+        }
+      });
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

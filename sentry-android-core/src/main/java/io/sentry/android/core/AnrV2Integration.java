@@ -14,8 +14,8 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
-import io.sentry.android.core.hints.AnrHint;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
@@ -25,6 +25,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class AnrIntegrationV2 implements Integration, Closeable {
+@SuppressLint("NewApi") // we check this in AnrIntegrationFactory
+public class AnrV2Integration implements Integration, Closeable {
 
   // using 91 to avoid timezone change hassle, 90 days is how long Sentry keeps the events
   private static final long NINETY_DAYS_THRESHOLD = TimeUnit.DAYS.toMillis(91);
@@ -41,12 +43,12 @@ public class AnrIntegrationV2 implements Integration, Closeable {
   private final @NotNull ICurrentDateProvider dateProvider;
   private @Nullable SentryAndroidOptions options;
 
-  public AnrIntegrationV2(final @NotNull Context context) {
+  public AnrV2Integration(final @NotNull Context context) {
     // using CurrentDateProvider instead of AndroidCurrentDateProvider as AppExitInfo uses System.currentTimeMillis
     this(context, CurrentDateProvider.getInstance());
   }
 
-  AnrIntegrationV2(final @NotNull Context context,
+  AnrV2Integration(final @NotNull Context context,
     final @NotNull ICurrentDateProvider dateProvider) {
     this.context = context;
     this.dateProvider = dateProvider;
@@ -81,7 +83,7 @@ public class AnrIntegrationV2 implements Integration, Closeable {
         options.getExecutorService()
           .submit(
             new AnrProcessor(
-              applicationExitInfoList,
+              new ArrayList<>(applicationExitInfoList), // just making a deep copy to be safe, as we're modifying the list
               hub,
               this.options,
               dateProvider)
@@ -89,13 +91,13 @@ public class AnrIntegrationV2 implements Integration, Closeable {
       } else {
         options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");
       }
-      options.getLogger().log(SentryLevel.DEBUG, "AnrIntegrationV2 installed.");
+      options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
     }
   }
 
   @Override public void close() throws IOException {
     if (options != null) {
-      options.getLogger().log(SentryLevel.DEBUG, "AnrIntegrationV2 removed.");
+      options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration removed.");
     }
   }
 
@@ -104,7 +106,7 @@ public class AnrIntegrationV2 implements Integration, Closeable {
     private final @NotNull List<ApplicationExitInfo> exitInfos;
     private final @NotNull IHub hub;
     private final @NotNull SentryAndroidOptions options;
-    private final @NotNull ICurrentDateProvider dateProvider;
+    private final long threshold;
 
     AnrProcessor(
       final @NotNull List<ApplicationExitInfo> exitInfos,
@@ -114,63 +116,120 @@ public class AnrIntegrationV2 implements Integration, Closeable {
       this.exitInfos = exitInfos;
       this.hub = hub;
       this.options = options;
-      this.dateProvider = dateProvider;
+      this.threshold = dateProvider.getCurrentTimeMillis() - NINETY_DAYS_THRESHOLD;
     }
 
     @SuppressLint("NewApi") // we check this in AnrIntegrationFactory
     @Override public void run() {
-      final long threshold = dateProvider.getCurrentTimeMillis() - NINETY_DAYS_THRESHOLD;
-      final long lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(options);
+      final long lastReportedAnrTimestamp = AndroidEnvelopeCache.lastReportedAnr(options);
 
+      /**
+       * TODO: Report old ANRs without enriching, just as crashes. Only the latest ANR in the list
+       * should be enriched with contexts, breadcrumbs etc. On the first run after the SDK update
+       * there won't be any contexts serialized on disk, therefore we'll report all past ANRs as
+       * crashes without enriching, which is  correct. From that point on, we'll start serializing
+       * contexts, therefore upon app restart we can always enrich the latest ANR
+       */
+      // search for the latest ANR to report it separately as we're gonna enrich it. The latest
+      // ANR will be first in the list, as it's filled last-to-first in order of appearance
+      ApplicationExitInfo latestAnr = null;
+      for (ApplicationExitInfo applicationExitInfo : exitInfos) {
+        if (applicationExitInfo.getReason() == ApplicationExitInfo.REASON_ANR) {
+          latestAnr = applicationExitInfo;
+          // remove it, so it's not reported twice
+          exitInfos.remove(applicationExitInfo);
+          break;
+        }
+      }
+
+      if (latestAnr == null) {
+        options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "No ANRs have been found in the historical exit reasons list.");
+        return;
+      }
+
+      if (latestAnr.getTimestamp() < threshold) {
+        options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Latest ANR happened too long ago, returning early.");
+        return;
+      }
+
+      if (latestAnr.getTimestamp() <= lastReportedAnrTimestamp) {
+        options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Latest ANR has already been reported, returning early.");
+        return;
+      }
+
+      // report the remainder without enriching
+      reportNonEnrichedHistoricalAnrs(exitInfos, lastReportedAnrTimestamp);
+
+      // report the latest ANR with enriching, if contexts are available, otherwise report it non-enriched
+      reportAsSentryEvent(latestAnr, true);
+    }
+
+    private void reportNonEnrichedHistoricalAnrs(
+      final @NotNull List<ApplicationExitInfo> exitInfos,
+      final long lastReportedAnr) {
       // we reverse the list, because the OS puts errors in order of appearance, last-to-first
       // and we want to write a marker file after each ANR has been processed, so in case the app
-      // gets killed meanwhile, we can proceed from the last reported ANR and processed the whole list
+      // gets killed meanwhile, we can proceed from the last reported ANR and not process the entire
+      // list again
       Collections.reverse(exitInfos);
       for (ApplicationExitInfo applicationExitInfo : exitInfos) {
         if (applicationExitInfo.getReason() == ApplicationExitInfo.REASON_ANR) {
-          final long anrTimestamp = applicationExitInfo.getTimestamp();
-          if (anrTimestamp < threshold) {
+          if (applicationExitInfo.getTimestamp() < threshold) {
             options
               .getLogger()
               .log(SentryLevel.DEBUG, "ANR happened too long ago %s.", applicationExitInfo);
             continue;
           }
 
-          if (anrTimestamp <= lastReportedAnr) {
+          if (applicationExitInfo.getTimestamp() <= lastReportedAnr) {
             options
               .getLogger()
-              .log(SentryLevel.DEBUG, "ANR has already been reported %s", applicationExitInfo);
+              .log(SentryLevel.DEBUG, "ANR has already been reported %s.", applicationExitInfo);
             continue;
           }
 
-          final Throwable anrThrowable = buildAnrThrowable(applicationExitInfo);
-          final AnrV2Hint anrHint =
-            new AnrV2Hint(options.getFlushTimeoutMillis(), options.getLogger(), anrTimestamp);
-
-          final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
-
-          final SentryEvent event = new SentryEvent(anrThrowable);
-          event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
-          event.setLevel(SentryLevel.FATAL);
-
-          final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
-          final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-          if (!isEventDropped) {
-            // Block until the event is flushed to disk and the last_reported_anr marker is updated
-            if (!anrHint.waitFlush()) {
-              options
-                .getLogger()
-                .log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting to flush ANR event to disk. Event: %s",
-                  event.getEventId());
-            }
-          }
+          reportAsSentryEvent(applicationExitInfo, false); // do not enrich past events
         }
       }
     }
 
-    @SuppressLint("NewApi") // we check this in AnrIntegrationFactory
+    private void reportAsSentryEvent(
+      final @NotNull ApplicationExitInfo exitInfo,
+      final boolean shouldEnrich
+    ) {
+      final long anrTimestamp = exitInfo.getTimestamp();
+      final Throwable anrThrowable = buildAnrThrowable(exitInfo);
+      final AnrV2Hint anrHint =
+        new AnrV2Hint(options.getFlushTimeoutMillis(), options.getLogger(), anrTimestamp,
+          shouldEnrich);
+
+      final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
+
+      final SentryEvent event = new SentryEvent(anrThrowable);
+      event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
+      event.setLevel(SentryLevel.FATAL);
+
+      final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
+      final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
+      if (!isEventDropped) {
+        // Block until the event is flushed to disk and the last_reported_anr marker is updated
+        if (!anrHint.waitFlush()) {
+          options
+            .getLogger()
+            .log(
+              SentryLevel.WARNING,
+              "Timed out waiting to flush ANR event to disk. Event: %s",
+              event.getEventId());
+        }
+      }
+    }
+
     private @NotNull Throwable buildAnrThrowable(final @NotNull ApplicationExitInfo exitInfo) {
       final boolean isBackground = exitInfo.getImportance() !=
         ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
@@ -180,26 +239,36 @@ public class AnrIntegrationV2 implements Integration, Closeable {
         message = "Background " + message;
       }
 
+      // TODO: here we should actually parse the trace file and extract the thread dump from there
+      // and then we could properly get the main thread stracktrace and construct a proper exception
       final ApplicationNotResponding error =
         new ApplicationNotResponding(message, Looper.getMainLooper().getThread());
       final Mechanism mechanism = new Mechanism();
-      mechanism.setType("ANR");
+      mechanism.setType("ANRv2");
       return new ExceptionMechanismException(mechanism, error, error.getThread(), true);
     }
   }
 
   @ApiStatus.Internal
-  public static final class AnrV2Hint extends BlockingFlushHint implements AnrHint {
+  public static final class AnrV2Hint extends BlockingFlushHint implements Backfillable {
 
     private final long timestamp;
 
-    AnrV2Hint(final long flushTimeoutMillis, final @NotNull ILogger logger, final long timestamp) {
+    private final boolean shouldEnrich;
+
+    AnrV2Hint(final long flushTimeoutMillis, final @NotNull ILogger logger, final long timestamp,
+      final boolean shouldEnrich) {
       super(flushTimeoutMillis, logger);
       this.timestamp = timestamp;
+      this.shouldEnrich = shouldEnrich;
     }
 
-    @Override public long timestamp() {
+    public long timestamp() {
       return timestamp;
+    }
+
+    @Override public boolean shouldEnrich() {
+      return shouldEnrich;
     }
   }
 }

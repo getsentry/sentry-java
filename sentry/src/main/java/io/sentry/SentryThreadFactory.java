@@ -10,12 +10,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java Threads to SentryThreads */
-final class SentryThreadFactory {
+@ApiStatus.Internal
+public final class SentryThreadFactory {
 
   /** the SentryStackTraceFactory */
   private final @NotNull SentryStackTraceFactory sentryStackTraceFactory;

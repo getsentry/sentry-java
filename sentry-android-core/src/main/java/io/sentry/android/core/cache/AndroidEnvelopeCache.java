@@ -8,12 +8,11 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
-import io.sentry.android.core.AnrIntegrationV2;
+import io.sentry.android.core.AnrV2Integration;
 import io.sentry.android.core.AppStartState;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.cache.EnvelopeCache;
-import io.sentry.hints.DiskFlushNotification;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
@@ -68,7 +67,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
     HintUtils.runIfHasType(
       hint,
-      AnrIntegrationV2.AnrV2Hint.class,
+      AnrV2Integration.AnrV2Hint.class,
       (anrHint) -> {
         final long timestamp = anrHint.timestamp();
         options

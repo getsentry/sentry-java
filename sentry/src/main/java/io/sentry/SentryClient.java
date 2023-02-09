@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
@@ -304,7 +305,15 @@ public final class SentryClient implements ISentryClient {
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
       try {
-        event = processor.process(event, hint);
+        // only wire backfillable events through the backfilling processors, skip from others, and
+        // the other way around
+        final boolean isBackfillingProcessor = processor instanceof BackfillingEventProcessor;
+        final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+        if (isBackfillable && isBackfillingProcessor) {
+          event = processor.process(event, hint);
+        } else if (!isBackfillable && !isBackfillingProcessor) {
+          event = processor.process(event, hint);
+        }
       } catch (Throwable e) {
         options
             .getLogger()
