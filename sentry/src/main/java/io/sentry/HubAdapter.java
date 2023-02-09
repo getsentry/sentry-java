@@ -229,4 +229,9 @@ public final class HubAdapter implements IHub {
   public @Nullable Boolean isCrashedLastRun() {
     return Sentry.isCrashedLastRun();
   }
+
+  @Override
+  public void reportFullyDrawn() {
+    Sentry.reportFullDisplayed();
+  }
 }

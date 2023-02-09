@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.SystemClock;
 import io.sentry.IHub;
@@ -12,7 +11,6 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
-import io.sentry.android.core.internal.util.FullyDrawnReporter;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
@@ -38,9 +36,6 @@ public final class SentryAndroid {
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
-
-  private static final @NotNull FullyDrawnReporter fullyDrawnReporter =
-      FullyDrawnReporter.getInstance();
 
   private SentryAndroid() {}
 
@@ -121,8 +116,7 @@ public final class SentryAndroid {
                 buildInfoProvider,
                 loadClass,
                 isFragmentAvailable,
-                isTimberAvailable,
-                fullyDrawnReporter);
+                isTimberAvailable);
 
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
@@ -195,9 +189,5 @@ public final class SentryAndroid {
         options.getIntegrations().remove(integration);
       }
     }
-  }
-
-  public static void reportFullyDrawn(@NotNull Activity activity) {
-    fullyDrawnReporter.reportFullyDrawn(activity);
   }
 }

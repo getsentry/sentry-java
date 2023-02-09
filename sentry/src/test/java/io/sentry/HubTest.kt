@@ -1647,6 +1647,49 @@ class HubTest {
         assertFalse(nativeMarker.exists())
     }
 
+    @Test
+    fun `reportFullyDrawn is ignored if TimeToFullDisplayTracing is disabled`() {
+        var called = false
+        val hub = generateHub {
+            it.fullyDrawnReporter.registerFullyDrawnListener {
+                called = !called
+                true
+            }
+        }
+        hub.reportFullyDrawn()
+        assertFalse(called)
+    }
+
+    @Test
+    fun `reportFullyDrawn calls FullyDrawnReporter if TimeToFullDisplayTracing is enabled`() {
+        var called = false
+        val hub = generateHub {
+            it.isEnableTimeToFullDisplayTracing = true
+            it.fullyDrawnReporter.registerFullyDrawnListener {
+                called = !called
+                true
+            }
+        }
+        hub.reportFullyDrawn()
+        assertTrue(called)
+    }
+
+    @Test
+    fun `reportFullyDrawn calls FullyDrawnReporter only once`() {
+        var called = false
+        val hub = generateHub {
+            it.isEnableTimeToFullDisplayTracing = true
+            it.fullyDrawnReporter.registerFullyDrawnListener {
+                called = !called
+                true
+            }
+        }
+        hub.reportFullyDrawn()
+        assertTrue(called)
+        hub.reportFullyDrawn()
+        assertTrue(called)
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {

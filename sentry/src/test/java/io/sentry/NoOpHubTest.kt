@@ -81,4 +81,7 @@ class NoOpHubTest {
 
     @Test
     fun `setSpanContext doesnt throw`() = sut.setSpanContext(RuntimeException(), mock(), "")
+
+    @Test
+    fun `reportFullyDrawn doesnt throw`() = sut.reportFullyDrawn()
 }

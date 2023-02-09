@@ -14,7 +14,6 @@ import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
-import io.sentry.android.core.internal.util.FullyDrawnReporter
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
@@ -54,7 +53,6 @@ class AndroidTransactionProfilerTest {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val mockLogger = mock<ILogger>()
-        val mockFullyDrawnReporter = mock<FullyDrawnReporter>()
         var lastScheduledRunnable: Runnable? = null
         val mockExecutorService = object : ISentryExecutorService {
             override fun submit(runnable: Runnable): Future<*> {
@@ -119,8 +117,7 @@ class AndroidTransactionProfilerTest {
             buildInfoProvider,
             LoadClass(),
             false,
-            false,
-            fixture.mockFullyDrawnReporter
+            false
         )
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.

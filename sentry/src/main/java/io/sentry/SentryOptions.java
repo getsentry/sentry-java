@@ -399,6 +399,13 @@ public class SentryOptions {
   private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
       NoOpTransactionPerformanceCollector.getInstance();
 
+  /** Enables the time-to-full-display spans in automatic ui transactions. */
+  private boolean enableTimeToFullDisplayTracing = false;
+
+  /** Screen fully displayed reporter, used for time-to-full-display spans. */
+  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
+      FullyDisplayedReporter.getInstance();
+
   /**
    * Adds an event processor
    *
@@ -1909,6 +1916,34 @@ public class SentryOptions {
   public void setTransactionPerformanceCollector(
       final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
     this.transactionPerformanceCollector = transactionPerformanceCollector;
+  }
+
+  /**
+   * Gets if the time-to-full-display spans is tracked in automatic ui transactions.
+   *
+   * @return if the time-to-full-display is tracked.
+   */
+  public boolean isEnableTimeToFullDisplayTracing() {
+    return enableTimeToFullDisplayTracing;
+  }
+
+  /**
+   * Sets if the time-to-full-display spans should be tracked in automatic ui transactions.
+   *
+   * @param enableTimeToFullDisplayTracing if the time-to-full-display spans should be tracked.
+   */
+  public void setEnableTimeToFullDisplayTracing(final boolean enableTimeToFullDisplayTracing) {
+    this.enableTimeToFullDisplayTracing = enableTimeToFullDisplayTracing;
+  }
+
+  /**
+   * Gets the reporter to call when a screen is fully loaded, used for time-to-full-display spans.
+   *
+   * @return The reporter to call when a screen is fully loaded.
+   */
+  @ApiStatus.Internal
+  public @NotNull FullyDisplayedReporter getFullyDrawnReporter() {
+    return fullyDisplayedReporter;
   }
 
   /**

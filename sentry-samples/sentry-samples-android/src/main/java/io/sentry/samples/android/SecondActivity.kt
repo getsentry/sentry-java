@@ -6,7 +6,6 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.sentry.Sentry
 import io.sentry.SpanStatus
-import io.sentry.android.core.SentryAndroid
 import io.sentry.samples.android.databinding.ActivitySecondBinding
 import retrofit2.Call
 import retrofit2.Callback
@@ -77,7 +76,7 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(true, "error: ${t.message}")
 
-                SentryAndroid.reportFullyDrawn(this@SecondActivity)
+                Sentry.reportFullDisplayed()
                 // I opt out enableActivityLifecycleTracingAutoFinish so I know best when to end my transaction
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()
@@ -91,7 +90,7 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(text = "items: ${repos.size}")
 
-                SentryAndroid.reportFullyDrawn(this@SecondActivity)
+                Sentry.reportFullDisplayed()
                 // I opt out enableActivityLifecycleTracingAutoFinish so I know best when to end my transaction
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()

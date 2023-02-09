@@ -8,6 +8,10 @@
 - Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
 - Fix `sentry-bom` containing incorrect artifacts ([#2504](https://github.com/getsentry/sentry-java/pull/2504))
 
+### Features
+
+- Add time-to-full-display span to Activity automatic transactions ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
+
 ### Dependencies
 
 - Bump Native SDK from v0.5.3 to v0.5.4 ([#2500](https://github.com/getsentry/sentry-java/pull/2500))
@@ -78,7 +82,6 @@
 
 ### Features
 
-- Add time-to-full-display span to Activity transactions ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 - Add time-to-initial-display span to Activity transactions ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
 - Start a session after init if AutoSessionTracking is enabled ([#2356](https://github.com/getsentry/sentry-java/pull/2356))
 - Provide automatic breadcrumbs and transactions for click/scroll events for Compose ([#2390](https://github.com/getsentry/sentry-java/pull/2390))

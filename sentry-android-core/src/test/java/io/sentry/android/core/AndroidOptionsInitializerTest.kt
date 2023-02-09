@@ -12,7 +12,6 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker
-import io.sentry.android.core.internal.util.FullyDrawnReporter
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.compose.gestures.ComposeGestureTargetLocator
@@ -38,7 +37,6 @@ class AndroidOptionsInitializerTest {
         val sentryOptions = SentryAndroidOptions()
         lateinit var mockContext: Context
         val logger = mock<ILogger>()
-        val mockFullyDrawnReporter = mock<FullyDrawnReporter>()
 
         fun initSut(
             metadata: Bundle? = null,
@@ -98,8 +96,7 @@ class AndroidOptionsInitializerTest {
                 buildInfo,
                 createClassMock(classesToLoad),
                 isFragmentAvailable,
-                isTimberAvailable,
-                mockFullyDrawnReporter
+                isTimberAvailable
             )
         }
 

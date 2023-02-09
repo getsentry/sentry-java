@@ -69,6 +69,7 @@ class ProfilingActivity : AppCompatActivity() {
             }.start()
         }
         setContentView(binding.root)
+        Sentry.reportFullDisplayed()
     }
 
     private fun finishTransactionAndPrintResults(t: ITransaction) {
