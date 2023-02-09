@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add time-to-full-display span to Activity automatic transactions ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 - Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
 
 ### Fixes
@@ -18,10 +19,6 @@
 - Fix transaction performance collector oom ([#2505](https://github.com/getsentry/sentry-java/pull/2505))
 - Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
 - Fix `sentry-bom` containing incorrect artifacts ([#2504](https://github.com/getsentry/sentry-java/pull/2504))
-
-### Features
-
-- Add time-to-full-display span to Activity automatic transactions ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 
 ### Dependencies
 
