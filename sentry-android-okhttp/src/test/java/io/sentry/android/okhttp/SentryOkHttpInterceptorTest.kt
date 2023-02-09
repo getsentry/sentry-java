@@ -263,7 +263,8 @@ class SentryOkHttpInterceptorTest {
     @SuppressWarnings("SwallowedException")
     @Test
     fun `adds breadcrumb when http calls results in exception`() {
-        whenever(fixture.hub.options).thenReturn(SentryOptions())
+        // to setup mocks
+        fixture.getSut()
         val interceptor = SentryOkHttpInterceptor(fixture.hub)
         val chain = mock<Interceptor.Chain>()
         whenever(chain.proceed(any())).thenThrow(IOException())
@@ -409,7 +410,8 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(
             captureFailedRequests = true,
             httpStatusCode = statusCode,
-            responseBody = "fail"
+            responseBody = "fail",
+            sendDefaultPii = true
         )
 
         val request = getRequest(url = "/hello?myQuery=myValue#myFragment")
@@ -424,7 +426,7 @@ class SentryOkHttpInterceptorTest {
                 assertEquals("GET", sentryRequest.method)
 
                 // because of isSendDefaultPii
-                assertNull(sentryRequest.headers)
+                assertNotNull(sentryRequest.headers)
                 assertNull(sentryRequest.cookies)
 
                 val sentryResponse = it.contexts.response!!
@@ -432,8 +434,8 @@ class SentryOkHttpInterceptorTest {
                 assertEquals(response.body!!.contentLength(), sentryResponse.bodySize)
 
                 // because of isSendDefaultPii
-                assertNull(sentryRequest.headers)
-                assertNull(sentryRequest.cookies)
+                assertNotNull(sentryResponse.headers)
+                assertNull(sentryResponse.cookies)
 
                 assertTrue(it.throwable is SentryHttpClientException)
             },
@@ -490,7 +492,8 @@ class SentryOkHttpInterceptorTest {
     @SuppressWarnings("SwallowedException")
     @Test
     fun `does not capture an error even if it throws`() {
-        whenever(fixture.hub.options).thenReturn(SentryOptions())
+        // to setup mocks
+        fixture.getSut()
         val interceptor = SentryOkHttpInterceptor(
             fixture.hub,
             captureFailedRequests = true

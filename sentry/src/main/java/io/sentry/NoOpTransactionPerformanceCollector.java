@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +19,7 @@ public final class NoOpTransactionPerformanceCollector implements TransactionPer
   public void start(@NotNull ITransaction transaction) {}
 
   @Override
-  public @Nullable PerformanceCollectionData stop(@NotNull ITransaction transaction) {
+  public @Nullable List<PerformanceCollectionData> stop(@NotNull ITransaction transaction) {
     return null;
   }
 }

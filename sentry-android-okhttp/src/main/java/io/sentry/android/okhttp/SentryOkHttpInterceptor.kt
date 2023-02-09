@@ -17,6 +17,7 @@ import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpUtils
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.UrlUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -61,11 +62,13 @@ class SentryOkHttpInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
-        val url = request.url.toString()
+        val urlDetails = UrlUtils.parse(request.url.toString())
+        val url = urlDetails.urlOrFallback
         val method = request.method
 
         // read transaction from the bound scope
         val span = hub.span?.startChild("http.client", "$method $url")
+        urlDetails.applyToSpan(span)
 
         var response: Response? = null
 
@@ -157,20 +160,10 @@ class SentryOkHttpInterceptor(
         // url will be: https://api.github.com/users/getsentry/repos/
         // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
         // but that's not possible
-        var requestUrl = request.url.toString()
-
-        val query = request.url.query
-        if (!query.isNullOrEmpty()) {
-            requestUrl = requestUrl.replace("?$query", "")
-        }
-
-        val urlFragment = request.url.fragment
-        if (!urlFragment.isNullOrEmpty()) {
-            requestUrl = requestUrl.replace("#$urlFragment", "")
-        }
+        val urlDetails = UrlUtils.parse(request.url.toString())
 
         // return if its not a target match
-        if (!PropagationTargetsUtils.contain(failedRequestTargets, requestUrl)) {
+        if (!PropagationTargetsUtils.contain(failedRequestTargets, request.url.toString())) {
             return
         }
 
@@ -188,13 +181,11 @@ class SentryOkHttpInterceptor(
         hint.set(OKHTTP_RESPONSE, response)
 
         val sentryRequest = io.sentry.protocol.Request().apply {
-            url = requestUrl
+            urlDetails.applyToRequest(this)
             // Cookie is only sent if isSendDefaultPii is enabled
             cookies = if (hub.options.isSendDefaultPii) request.headers["Cookie"] else null
             method = request.method
-            queryString = query
             headers = getHeaders(request.headers)
-            fragment = urlFragment
 
             request.body?.contentLength().ifHasValidLength {
                 bodySize = it

@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
 import android.os.SystemClock;
+import io.sentry.DateUtils;
 import io.sentry.SentryDate;
+import io.sentry.SentryLongDate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,6 +84,20 @@ public final class AppStartState {
   @Nullable
   public SentryDate getAppStartTime() {
     return appStartTime;
+  }
+
+  @Nullable
+  public SentryDate getAppStartEndTime() {
+    @Nullable final SentryDate start = getAppStartTime();
+    if (start != null) {
+      @Nullable final Long durationMillis = getAppStartInterval();
+      if (durationMillis != null) {
+        final long startNanos = start.nanoTimestamp();
+        final long endNanos = startNanos + DateUtils.millisToNanos(durationMillis);
+        return new SentryLongDate(endNanos);
+      }
+    }
+    return null;
   }
 
   @Nullable

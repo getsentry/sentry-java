@@ -57,8 +57,7 @@ public final class ActivityLifecycleIntegration
   private boolean isAllActivityCallbacksAvailable;
 
   private boolean firstActivityCreated = false;
-  private boolean firstActivityResumed = false;
-  private boolean foregroundImportance = false;
+  private final boolean foregroundImportance;
 
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
@@ -212,6 +211,11 @@ public final class ActivityLifecycleIntegration
                 getAppStartDesc(coldStart),
                 appStartTime,
                 Instrumenter.SENTRY);
+
+        // in case there's already an end time (e.g. due to deferred SDK init)
+        // we can finish the app-start span
+        finishAppStartSpan();
+
         // The first activity ttidSpan should start at the same time as the app start time
         ttidSpanMap.put(
             activity,
@@ -330,28 +334,17 @@ public final class ActivityLifecycleIntegration
   @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
-    if (!firstActivityResumed) {
 
-      // we only finish the app start if the process is of foregroundImportance
-      if (foregroundImportance) {
-        // sets App start as finished when the very first activity calls onResume
-        AppStartState.getInstance().setAppStartEnd();
-      } else {
-        if (options != null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "App Start won't be reported because Process wasn't of foregroundImportance.");
-        }
-      }
-
-      // finishes app start span
-      if (performanceEnabled && appStartSpan != null) {
-        appStartSpan.finish();
-      }
-      firstActivityResumed = true;
+    // app start span
+    @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
+    @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+    // in case the SentryPerformanceProvider is disabled it does not set the app start times,
+    // and we need to set the end time manually here,
+    // the start time gets set manually in SentryAndroid.init()
+    if (appStartStartTime != null && appStartEndTime == null) {
+      AppStartState.getInstance().setAppStartEnd();
     }
+    finishAppStartSpan();
 
     final ISpan ttidSpan = ttidSpanMap.get(activity);
     final View rootView = activity.findViewById(android.R.id.content);
@@ -507,6 +500,19 @@ public final class ActivityLifecycleIntegration
       return APP_START_COLD;
     } else {
       return APP_START_WARM;
+    }
+  }
+
+  private void finishAppStartSpan() {
+    final @Nullable SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+    if (appStartSpan != null
+        && !appStartSpan.isFinished()
+        && performanceEnabled
+        && appStartEndTime != null) {
+
+      final SpanStatus status =
+          appStartSpan.getStatus() != null ? appStartSpan.getStatus() : SpanStatus.OK;
+      appStartSpan.finish(status, appStartEndTime);
     }
   }
 }
