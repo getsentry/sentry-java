@@ -591,7 +591,7 @@ public abstract interface class io/sentry/Integration : io/sentry/IntegrationNam
 }
 
 public abstract interface class io/sentry/IntegrationName {
-	public fun addIntegrationToSdkVersion (Lio/sentry/protocol/SdkVersion;)V
+	public fun addIntegrationToSdkVersion ()V
 	public fun getIntegrationName ()Ljava/lang/String;
 }
 
@@ -1434,6 +1434,16 @@ public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
 public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDateProvider {
 	public fun <init> ()V
 	public fun now ()Lio/sentry/SentryDate;
+}
+
+public final class io/sentry/SentryIntegrationPackageStorage {
+	public static fun addIntegration (Ljava/lang/String;)V
+	public static fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public static fun clearStorage ()V
+	public static fun getIntegrations ()Ljava/util/Set;
+	public static fun getPackages ()Ljava/util/List;
+	public static fun setIntegrations (Ljava/util/List;)V
+	public static fun setPackages (Ljava/util/List;)V
 }
 
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
@@ -3071,7 +3081,6 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getIntegrations ()Ljava/util/Set;
@@ -3154,9 +3163,11 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
