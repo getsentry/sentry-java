@@ -35,6 +35,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
   private @Nullable Boolean crashed;
   private @Nullable Boolean current;
   private @Nullable Boolean daemon;
+  private @Nullable Boolean main;
   private @Nullable SentryStackTrace stacktrace;
 
   @SuppressWarnings("unused")
@@ -167,6 +168,29 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
   }
 
   /**
+   * If applicable, a flag indicating whether the thread was responsible for rendering the user
+   * interface. On mobile platforms this is oftentimes referred to as the "main thread" or "ui
+   * thread".
+   *
+   * @return if its the main thread or not
+   */
+  @Nullable
+  public Boolean isMain() {
+    return main;
+  }
+
+  /**
+   * If applicable, a flag indicating whether the thread was responsible for rendering the user
+   * interface. On mobile platforms this is oftentimes referred to as the "main thread" or "ui
+   * thread".
+   *
+   * @param main if its the main thread or not
+   */
+  public void setMain(final @Nullable Boolean main) {
+    this.main = main;
+  }
+
+  /**
    * Gets the state of the thread.
    *
    * @return the state of the thread.
@@ -205,6 +229,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     public static final String CRASHED = "crashed";
     public static final String CURRENT = "current";
     public static final String DAEMON = "daemon";
+    public static final String MAIN = "main";
     public static final String STACKTRACE = "stacktrace";
   }
 
@@ -232,6 +257,9 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     }
     if (daemon != null) {
       writer.name(JsonKeys.DAEMON).value(daemon);
+    }
+    if (main != null) {
+      writer.name(JsonKeys.MAIN).value(main);
     }
     if (stacktrace != null) {
       writer.name(JsonKeys.STACKTRACE).value(logger, stacktrace);
@@ -277,6 +305,9 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.DAEMON:
             sentryThread.daemon = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.MAIN:
+            sentryThread.main = reader.nextBooleanOrNull();
             break;
           case JsonKeys.STACKTRACE:
             sentryThread.stacktrace =
