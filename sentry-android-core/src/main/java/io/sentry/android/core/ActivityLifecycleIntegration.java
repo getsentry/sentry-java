@@ -239,14 +239,14 @@ public final class ActivityLifecycleIntegration
               TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY));
 
       if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
-        ttfdSpan = transaction.startChild(
-            TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
+        ttfdSpan =
+            transaction.startChild(
+                TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
         ttfdAutoCloseFuture =
             options
                 .getExecutorService()
                 .schedule(
-                    () -> finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED),
-                    TTFD_TIMEOUT_MILLIS);
+                    () -> finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED), TTFD_TIMEOUT_MILLIS);
       }
 
       // lets bind to the scope so other integrations can pick it up
