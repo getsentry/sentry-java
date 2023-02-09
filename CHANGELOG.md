@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add capabilities to track compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
+- Add capabilities to track Jetpack Compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
 
 ### Fixes
 

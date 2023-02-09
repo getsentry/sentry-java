@@ -13,11 +13,11 @@ import androidx.compose.ui.platform.testTag
 import io.sentry.Sentry
 import io.sentry.SpanOptions
 
-private const val OP_PARENT_COMPOSITION = "compose.composition"
-private const val OP_COMPOSE = "compose"
+private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
+private const val OP_COMPOSE = "ui.compose"
 
-private const val OP_PARENT_RENDER = "compose.rendering"
-private const val OP_RENDER = "render"
+private const val OP_PARENT_RENDER = "ui.compose.rendering"
+private const val OP_RENDER = "ui.render"
 
 @Immutable
 private class ImmutableHolder<T>(var item: T)

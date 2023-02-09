@@ -41,7 +41,7 @@ class ComposeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val navController = rememberNavController()
+            val navController = rememberNavController().withSentryObservableEffect()
             SampleNavigation(navController)
         }
     }
