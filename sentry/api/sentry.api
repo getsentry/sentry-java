@@ -186,7 +186,7 @@ public final class io/sentry/DateUtils {
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
@@ -393,7 +393,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 }
 
 public abstract interface class io/sentry/ICollector {
-	public abstract fun collect (Ljava/lang/Iterable;)V
+	public abstract fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public abstract fun setup ()V
 }
 
@@ -576,7 +576,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
-	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Lio/sentry/PerformanceCollectionData;)Lio/sentry/ProfilingTraceData;
+	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
@@ -601,7 +601,7 @@ public final class io/sentry/IpAddressUtils {
 
 public final class io/sentry/JavaMemoryCollector : io/sentry/ICollector {
 	public fun <init> ()V
-	public fun collect (Ljava/lang/Iterable;)V
+	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
 }
 
@@ -872,12 +872,12 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
 	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
-	public fun onTransactionFinish (Lio/sentry/ITransaction;Lio/sentry/PerformanceCollectionData;)Lio/sentry/ProfilingTraceData;
+	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
@@ -901,9 +901,8 @@ public final class io/sentry/PerformanceCollectionData {
 	public fun <init> ()V
 	public fun addCpuData (Lio/sentry/CpuCollectionData;)V
 	public fun addMemoryData (Lio/sentry/MemoryCollectionData;)V
-	public fun commitData ()V
-	public fun getCpuData ()Ljava/util/List;
-	public fun getMemoryData ()Ljava/util/List;
+	public fun getCpuData ()Lio/sentry/CpuCollectionData;
+	public fun getMemoryData ()Lio/sentry/MemoryCollectionData;
 }
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1660,6 +1659,7 @@ public class io/sentry/SentryOptions {
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
 	public fun setTracingOrigins (Ljava/util/List;)V
+	public fun setTransactionPerformanceCollector (Lio/sentry/TransactionPerformanceCollector;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
@@ -2098,7 +2098,7 @@ public final class io/sentry/TransactionOptions {
 
 public abstract interface class io/sentry/TransactionPerformanceCollector {
 	public abstract fun start (Lio/sentry/ITransaction;)V
-	public abstract fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/TypeCheckHint {
@@ -2539,6 +2539,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getAppVersion ()Ljava/lang/String;
 	public fun getBuildType ()Ljava/lang/String;
 	public fun getDeviceAppHash ()Ljava/lang/String;
+	public fun getInForeground ()Ljava/lang/Boolean;
 	public fun getPermissions ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
@@ -2549,6 +2550,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setAppVersion (Ljava/lang/String;)V
 	public fun setBuildType (Ljava/lang/String;)V
 	public fun setDeviceAppHash (Ljava/lang/String;)V
+	public fun setInForeground (Ljava/lang/Boolean;)V
 	public fun setPermissions (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -2568,6 +2570,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field APP_VERSION Ljava/lang/String;
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEVICE_APP_HASH Ljava/lang/String;
+	public static final field IN_FOREGROUND Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -3373,11 +3376,13 @@ public final class io/sentry/protocol/SentryThread : io/sentry/JsonSerializable,
 	public fun isCrashed ()Ljava/lang/Boolean;
 	public fun isCurrent ()Ljava/lang/Boolean;
 	public fun isDaemon ()Ljava/lang/Boolean;
+	public fun isMain ()Ljava/lang/Boolean;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCrashed (Ljava/lang/Boolean;)V
 	public fun setCurrent (Ljava/lang/Boolean;)V
 	public fun setDaemon (Ljava/lang/Boolean;)V
 	public fun setId (Ljava/lang/Long;)V
+	public fun setMain (Ljava/lang/Boolean;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setPriority (Ljava/lang/Integer;)V
 	public fun setStacktrace (Lio/sentry/protocol/SentryStackTrace;)V
@@ -3396,6 +3401,7 @@ public final class io/sentry/protocol/SentryThread$JsonKeys {
 	public static final field CURRENT Ljava/lang/String;
 	public static final field DAEMON Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
+	public static final field MAIN Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
 	public static final field PRIORITY Ljava/lang/String;
 	public static final field STACKTRACE Ljava/lang/String;

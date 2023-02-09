@@ -42,6 +42,8 @@ jobs:
       - name: Run All Tests in SauceLab
         uses: saucelabs/saucectl-run-action@889cc2382b05b47e4a78bd35516603acc6c15fad # pin@v2
         if: github.event_name != 'pull_request' && env.SAUCE_USERNAME != null
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
@@ -50,6 +52,8 @@ jobs:
       - name: Run one test in SauceLab
         uses: saucelabs/saucectl-run-action@889cc2382b05b47e4a78bd35516603acc6c15fad # pin@v2
         if: github.event_name == 'pull_request' && env.SAUCE_USERNAME != null
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}

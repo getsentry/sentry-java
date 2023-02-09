@@ -381,7 +381,7 @@ class SentryTest {
 
     private class CustomMemoryCollector : ICollector {
         override fun setup() {}
-        override fun collect(performanceCollectionData: MutableIterable<PerformanceCollectionData>) {}
+        override fun collect(performanceCollectionData: PerformanceCollectionData) {}
     }
 
     private class CustomModulesLoader : IModulesLoader {

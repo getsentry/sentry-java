@@ -12,6 +12,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
@@ -56,7 +57,7 @@ class DefaultAndroidEventProcessorTest {
     private class Fixture {
         val buildInfo = mock<BuildInfoProvider>()
         val options = SentryAndroidOptions().apply {
-            setDebug(true)
+            isDebug = true
             setLogger(mock())
             sdkVersion = SdkVersion("test", "1.2.3")
         }
@@ -77,6 +78,7 @@ class DefaultAndroidEventProcessorTest {
     @BeforeTest
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
+        AppState.getInstance().resetInstance()
     }
 
     @Test
@@ -161,7 +163,7 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Current should be true if it comes from main thread`() {
+    fun `Current and Main should be true if it comes from main thread`() {
         val sut = fixture.getSut(context)
 
         val sentryThread = SentryThread().apply {
@@ -174,6 +176,7 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
                 assertTrue(threads.first().isCurrent == true)
+                assertTrue(threads.first().isMain == true)
             }
         }
     }
@@ -193,6 +196,7 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
                 assertFalse(threads.first().isCurrent == true)
+                assertFalse(threads.first().isMain == true)
             }
         }
     }
@@ -495,6 +499,57 @@ class DefaultAndroidEventProcessorTest {
             val device = it.contexts.device!!
             assertEquals("en", device.language)
             assertEquals("en_US", device.locale)
+        }
+    }
+
+    @Test
+    fun `Event sets InForeground to true if not in the background`() {
+        val sut = fixture.getSut(context)
+
+        AppState.getInstance().setInBackground(false)
+
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
+            val app = it.contexts.app!!
+            assertTrue(app.inForeground!!)
+        }
+    }
+
+    @Test
+    fun `Event sets InForeground to false if in the background`() {
+        val sut = fixture.getSut(context)
+
+        AppState.getInstance().setInBackground(true)
+
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
+            val app = it.contexts.app!!
+            assertFalse(app.inForeground!!)
+        }
+    }
+
+    @Test
+    fun `Events from HybridSDKs don't set main thread and in foreground context`() {
+        val sut = fixture.getSut(context)
+
+        val cachedHint = CustomCachedApplyScopeDataHint()
+        val hint = HintUtils.createWithTypeCheckHint(cachedHint)
+
+        val sdkVersion = SdkVersion(SENTRY_DART_SDK_NAME, "1.0.0")
+        val event = SentryEvent().apply {
+            sdk = sdkVersion
+            threads = mutableListOf(
+                SentryThread().apply {
+                    id = 10L
+                }
+            )
+        }
+        // set by OutboxSender during event deserialization
+        HintUtils.setIsFromHybridSdk(hint, sdkVersion.name)
+
+        assertNotNull(sut.process(event, hint)) {
+            val app = it.contexts.app!!
+            assertNull(app.inForeground)
+            val thread = it.threads!!.first()
+            assertNull(thread.isMain)
         }
     }
 }

@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -18,7 +19,7 @@ public final class DefaultTransactionPerformanceCollector
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull Object timerLock = new Object();
   private volatile @Nullable Timer timer = null;
-  private final @NotNull Map<String, PerformanceCollectionData> performanceDataMap =
+  private final @NotNull Map<String, List<PerformanceCollectionData>> performanceDataMap =
       new ConcurrentHashMap<>();
   private final @NotNull List<ICollector> collectors;
   private final @NotNull SentryOptions options;
@@ -42,17 +43,11 @@ public final class DefaultTransactionPerformanceCollector
     }
 
     if (!performanceDataMap.containsKey(transaction.getEventId().toString())) {
-      performanceDataMap.put(transaction.getEventId().toString(), new PerformanceCollectionData());
+      performanceDataMap.put(transaction.getEventId().toString(), new ArrayList<>());
+      // We schedule deletion of collected performance data after a timeout
       options
           .getExecutorService()
-          .schedule(
-              () -> {
-                PerformanceCollectionData data = stop(transaction);
-                if (data != null) {
-                  performanceDataMap.put(transaction.getEventId().toString(), data);
-                }
-              },
-              TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
+          .schedule(() -> stop(transaction), TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
@@ -74,22 +69,23 @@ public final class DefaultTransactionPerformanceCollector
         // and collect() calls.
         // This way ICollectors that collect average stats based on time intervals, like
         // AndroidCpuCollector, can have an actual time interval to evaluate.
-        timer.scheduleAtFixedRate(
+        TimerTask timerTask =
             new TimerTask() {
               @Override
               public void run() {
-                synchronized (timerLock) {
-                  for (ICollector collector : collectors) {
-                    collector.collect(performanceDataMap.values());
-                  }
-                  // We commit data after calling all collectors.
-                  // This way we avoid issues caused by having multiple cpu or memory collectors.
-                  for (PerformanceCollectionData data : performanceDataMap.values()) {
-                    data.commitData();
-                  }
+                final @NotNull PerformanceCollectionData tempData = new PerformanceCollectionData();
+
+                for (ICollector collector : collectors) {
+                  collector.collect(tempData);
+                }
+
+                for (List<PerformanceCollectionData> data : performanceDataMap.values()) {
+                  data.add(tempData);
                 }
               }
-            },
+            };
+        timer.scheduleAtFixedRate(
+            timerTask,
             TRANSACTION_COLLECTION_INTERVAL_MILLIS,
             TRANSACTION_COLLECTION_INTERVAL_MILLIS);
       }
@@ -97,17 +93,24 @@ public final class DefaultTransactionPerformanceCollector
   }
 
   @Override
-  public @Nullable PerformanceCollectionData stop(final @NotNull ITransaction transaction) {
-    synchronized (timerLock) {
-      PerformanceCollectionData data =
-          performanceDataMap.remove(transaction.getEventId().toString());
-      if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
+  public @Nullable List<PerformanceCollectionData> stop(final @NotNull ITransaction transaction) {
+    List<PerformanceCollectionData> data =
+        performanceDataMap.remove(transaction.getEventId().toString());
+    options
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "stop collecting performance info for transactions %s (%s)",
+            transaction.getName(),
+            transaction.getSpanContext().getTraceId().toString());
+    if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
+      synchronized (timerLock) {
         if (timer != null) {
           timer.cancel();
           timer = null;
         }
       }
-      return data;
     }
+    return data;
   }
 }

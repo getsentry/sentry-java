@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.DefaultTransactionPerformanceCollector
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.SentryOptions
@@ -24,6 +25,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -524,5 +526,12 @@ class AndroidOptionsInitializerTest {
         fixture.initSut()
 
         assertTrue { fixture.sentryOptions.collectors.any { it is AndroidCpuCollector } }
+    }
+
+    @Test
+    fun `DefaultTransactionPerformanceCollector is set to options`() {
+        fixture.initSut()
+
+        assertIs<DefaultTransactionPerformanceCollector>(fixture.sentryOptions.transactionPerformanceCollector)
     }
 }

@@ -29,6 +29,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
   private static long appStartMillis = SystemClock.uptimeMillis();
 
   private boolean firstActivityCreated = false;
+  private boolean firstActivityResumed = false;
+
   private @Nullable Application application;
 
   public SentryPerformanceProvider() {
@@ -91,9 +93,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
       final boolean coldStart = savedInstanceState == null;
       AppStartState.getInstance().setColdStart(coldStart);
 
-      if (application != null) {
-        application.unregisterActivityLifecycleCallbacks(this);
-      }
       firstActivityCreated = true;
     }
   }
@@ -102,7 +101,16 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
   public void onActivityStarted(@NotNull Activity activity) {}
 
   @Override
-  public void onActivityResumed(@NotNull Activity activity) {}
+  public void onActivityResumed(@NotNull Activity activity) {
+    if (!firstActivityResumed) {
+      // sets App start as finished when the very first activity calls onResume
+      firstActivityResumed = true;
+      AppStartState.getInstance().setAppStartEnd();
+    }
+    if (application != null) {
+      application.unregisterActivityLifecycleCallbacks(this);
+    }
+  }
 
   @Override
   public void onActivityPaused(@NotNull Activity activity) {}

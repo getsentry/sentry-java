@@ -36,6 +36,8 @@ jobs:
 
       - name: Run Tests in SauceLab
         uses: saucelabs/saucectl-run-action@889cc2382b05b47e4a78bd35516603acc6c15fad # pin@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
