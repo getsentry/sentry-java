@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +24,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     SendFireAndForget create(@NotNull IHub hub, @NotNull SentryOptions options);
 
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
-      if (dirPath == null) {
+      if (dirPath == null || dirPath.isEmpty()) {
         logger.log(SentryLevel.INFO, "No cached dir path is defined in options.");
         return false;
       }
@@ -88,10 +87,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-      final SdkVersion sdkVersion = options.getSdkVersion();
-      if (sdkVersion != null) {
-        sdkVersion.addIntegration("SendCachedEventFireAndForget");
-      }
+      addIntegrationToSdkVersion();
     } catch (Throwable e) {
       options
           .getLogger()

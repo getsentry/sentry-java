@@ -13,6 +13,7 @@ import io.sentry.ITransportFactory;
 import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
@@ -134,6 +135,7 @@ public class SentryAppender extends AbstractAppender implements IntegrationName 
         LOGGER.info("Failed to init Sentry during appender initialization: " + e.getMessage());
       }
     }
+    addPackageAndIntegrationInfo();
     super.start();
   }
 
@@ -267,9 +269,12 @@ public class SentryAppender extends AbstractAppender implements IntegrationName 
     final String version = BuildConfig.VERSION_NAME;
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-    sdkVersion.addPackage("maven:io.sentry:sentry-log4j2", version);
-    addIntegrationToSdkVersion(sdkVersion);
-
     return sdkVersion;
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.addPackage(
+        "maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
   }
 }

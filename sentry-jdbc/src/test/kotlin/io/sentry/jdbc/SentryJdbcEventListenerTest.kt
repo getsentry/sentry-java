@@ -21,9 +21,11 @@ class SentryJdbcEventListenerTest {
 
     class Fixture {
         val hub = mock<IHub>().apply {
-            whenever(options).thenReturn(SentryOptions().apply {
-                sdkVersion = SdkVersion("test", "1.2.3")
-            })
+            whenever(options).thenReturn(
+                SentryOptions().apply {
+                    sdkVersion = SdkVersion("test", "1.2.3")
+                }
+            )
         }
         lateinit var tx: SentryTracer
         val actualDataSource = JDBCDataSource()

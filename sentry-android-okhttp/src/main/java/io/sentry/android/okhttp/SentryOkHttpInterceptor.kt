@@ -53,7 +53,7 @@ class SentryOkHttpInterceptor(
 
     init {
         hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion(sdkVersion)
+            addIntegrationToSdkVersion()
             sdkVersion.addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
         }
     }

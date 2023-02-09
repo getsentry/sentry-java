@@ -46,6 +46,19 @@ public final class SentryPackage implements JsonUnknown, JsonSerializable {
     this.version = Objects.requireNonNull(version, "version is required.");
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SentryPackage that = (SentryPackage) o;
+    return name.equals(that.name) && version.equals(that.version);
+  }
+
+  @Override
+  public int hashCode() {
+    return java.util.Objects.hash(name, version);
+  }
+
   // JsonKeys
 
   public static final class JsonKeys {

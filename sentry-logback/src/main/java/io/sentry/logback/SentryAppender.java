@@ -17,6 +17,7 @@ import io.sentry.ITransportFactory;
 import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
@@ -65,6 +66,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
             .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
       }
     }
+    addPackageAndIntegrationInfo();
     super.start();
   }
 
@@ -210,10 +212,13 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
     final String version = BuildConfig.VERSION_NAME;
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-    sdkVersion.addPackage("maven:io.sentry:sentry-logback", version);
-    addIntegrationToSdkVersion(sdkVersion);
-
     return sdkVersion;
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.addPackage(
+        "maven:io.sentry:sentry-logback", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
   }
 
   public void setOptions(final @Nullable SentryOptions options) {

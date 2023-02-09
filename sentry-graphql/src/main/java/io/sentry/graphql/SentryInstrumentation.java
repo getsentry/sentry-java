@@ -32,7 +32,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation implement
     this.beforeSpan = beforeSpan;
     SdkVersion sdkVersion = hub.getOptions().getSdkVersion();
     if (sdkVersion != null) {
-      addIntegrationToSdkVersion(sdkVersion);
+      addIntegrationToSdkVersion();
       sdkVersion.addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
     }
   }

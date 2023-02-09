@@ -28,7 +28,7 @@ class SentryTimberIntegration(
         logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
         options.sdkVersion?.let { sdkVersion ->
             sdkVersion.addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
-            addIntegrationToSdkVersion(sdkVersion)
+            addIntegrationToSdkVersion()
         }
     }
 

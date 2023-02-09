@@ -7,9 +7,9 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.IntegrationName;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.Span;
 import io.sentry.SpanStatus;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.sql.SQLException;
 import org.jetbrains.annotations.NotNull;
@@ -23,11 +23,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener implements 
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    SdkVersion sdkVersion = hub.getOptions().getSdkVersion();
-    if (sdkVersion != null) {
-      addIntegrationToSdkVersion(sdkVersion);
-      sdkVersion.addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
-    }
+    addPackageAndIntegrationInfo();
   }
 
   public SentryJdbcEventListener() {
@@ -59,5 +55,11 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener implements 
       span.finish();
       CURRENT_SPAN.set(null);
     }
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.addPackage(
+        "maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
   }
 }

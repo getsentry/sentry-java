@@ -8,6 +8,7 @@ import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.IntegrationName;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
@@ -116,6 +117,7 @@ public class SentryAutoConfiguration implements IntegrationName {
 
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
+      addPackageAndIntegrationInfo();
       if (options.getTracesSampleRate() == null) {
         options.setTracesSampleRate(0.0);
       }
@@ -321,10 +323,12 @@ public class SentryAutoConfiguration implements IntegrationName {
       final String version = BuildConfig.VERSION_NAME;
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", version);
-      sdkVersion.addIntegration("SpringBoot3");
-
       return sdkVersion;
+    }
+
+    private static void addPackageAndIntegrationInfo() {
+      SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
+      SentryIntegrationPackageStorage.addIntegration("SpringBoot3");
     }
   }
 

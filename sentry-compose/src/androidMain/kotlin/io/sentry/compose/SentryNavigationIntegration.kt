@@ -26,7 +26,7 @@ internal class SentryLifecycleObserver(
 
     init {
         HubAdapter.getInstance().options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion(sdkVersion)
+            addIntegrationToSdkVersion()
             sdkVersion.addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
         }
     }

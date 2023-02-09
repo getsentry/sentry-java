@@ -6,7 +6,6 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -95,8 +94,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     try {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
       options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
-      final SdkVersion sdkVersion = this.options.getSdkVersion();
-      addIntegrationToSdkVersion(sdkVersion);
+      addIntegrationToSdkVersion();
     } catch (Throwable e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.

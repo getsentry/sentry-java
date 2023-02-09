@@ -34,7 +34,7 @@ class SentryApolloInterceptor(
 
     init {
         hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion(sdkVersion)
+            addIntegrationToSdkVersion()
             sdkVersion.addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
         }
     }

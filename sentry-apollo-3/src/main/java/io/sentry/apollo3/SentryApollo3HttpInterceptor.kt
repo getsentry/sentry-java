@@ -24,7 +24,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
 
     init {
         hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion(sdkVersion)
+            addIntegrationToSdkVersion()
             sdkVersion.addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
         }
     }

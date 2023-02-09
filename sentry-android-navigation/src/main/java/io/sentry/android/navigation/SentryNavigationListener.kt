@@ -44,7 +44,7 @@ class SentryNavigationListener @JvmOverloads constructor(
 
     init {
         hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion(sdkVersion)
+            addIntegrationToSdkVersion()
             sdkVersion.addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
         }
     }

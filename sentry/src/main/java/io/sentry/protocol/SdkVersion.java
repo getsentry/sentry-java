@@ -1,12 +1,12 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.Integration;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,23 +45,6 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * <p>Examples: `0.1.0`, `1.0.0`, `4.3.12`
    */
   private @NotNull String version;
-  /**
-   * List of installed and loaded SDK packages. _Optional._
-   *
-   * <p>A list of packages that were installed as part of this SDK or the activated integrations.
-   * Each package consists of a name in the format `source:identifier` and `version`. If the source
-   * is a Git repository, the `source` should be `git`, the identifier should be a checkout link and
-   * the version should be a Git reference (branch, tag or SHA).
-   */
-  private @Nullable List<SentryPackage> packages;
-  /**
-   * List of integrations that are enabled in the SDK. _Optional._
-   *
-   * <p>The list should have all enabled integrations, including default integrations. Default
-   * integrations are included because different SDK releases may contain different default
-   * integrations.
-   */
-  private @Nullable Set<String> integrations;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -89,35 +71,19 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
   }
 
   public void addPackage(final @NotNull String name, final @NotNull String version) {
-    Objects.requireNonNull(name, "name is required.");
-    Objects.requireNonNull(version, "version is required.");
-
-    SentryPackage newPackage = new SentryPackage(name, version);
-    if (packages == null) {
-      packages = new ArrayList<>();
-    }
-    packages.add(newPackage);
+    SentryIntegrationPackageStorage.addPackage(name, version);
   }
 
   public void addIntegration(final @NotNull String integration) {
-    Objects.requireNonNull(integration, "integration is required.");
-
-    if (integrations == null) {
-      integrations = new CopyOnWriteArraySet<>();
-    }
-    integrations.add(integration);
-  }
-
-  public void addIntegration(final @NotNull Integration integration) {
-    integration.getIntegrationName();
+    SentryIntegrationPackageStorage.addIntegration(integration);
   }
 
   public @Nullable List<SentryPackage> getPackages() {
-    return packages;
+    return SentryIntegrationPackageStorage.getPackages();
   }
 
   public @Nullable Set<String> getIntegrations() {
-    return integrations != null ? new CopyOnWriteArraySet<>(integrations) : null;
+    return SentryIntegrationPackageStorage.getIntegrations();
   }
 
   /**
@@ -171,6 +137,8 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     writer.beginObject();
     writer.name(JsonKeys.NAME).value(name);
     writer.name(JsonKeys.VERSION).value(version);
+    List<SentryPackage> packages = getPackages();
+    Set<String> integrations = getIntegrations();
     if (packages != null && !packages.isEmpty()) {
       writer.name(JsonKeys.PACKAGES).value(logger, packages);
     }
@@ -247,8 +215,9 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
       }
 
       SdkVersion sdkVersion = new SdkVersion(name, version);
-      sdkVersion.packages = packages;
-      sdkVersion.integrations = new CopyOnWriteArraySet<>(integrations);
+      SentryIntegrationPackageStorage.setPackages(packages);
+      SentryIntegrationPackageStorage.setIntegrations(integrations);
+
       sdkVersion.setUnknown(unknown);
       return sdkVersion;
     }

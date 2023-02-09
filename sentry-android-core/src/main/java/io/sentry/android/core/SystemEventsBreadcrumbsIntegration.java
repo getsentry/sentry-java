@@ -44,7 +44,6 @@ import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -104,8 +103,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         this.options
             .getLogger()
             .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-        final SdkVersion sdkVersion = this.options.getSdkVersion();
-        addIntegrationToSdkVersion(sdkVersion);
+        addIntegrationToSdkVersion();
       } catch (Throwable e) {
         this.options.setEnableSystemEventBreadcrumbs(false);
         this.options

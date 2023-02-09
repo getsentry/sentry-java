@@ -10,6 +10,7 @@ import io.sentry.HubAdapter;
 import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
@@ -71,6 +72,7 @@ public class SentryHandler extends Handler implements IntegrationName {
       options.setSdkVersion(createSdkVersion(options));
       Sentry.init(options);
     }
+    addPackageAndIntegrationInfo();
   }
 
   @Override
@@ -277,10 +279,14 @@ public class SentryHandler extends Handler implements IntegrationName {
     final String version = BuildConfig.VERSION_NAME;
 
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
-    sdkVersion.addPackage("maven:io.sentry:sentry-jul", version);
-    addIntegrationToSdkVersion(sdkVersion);
 
     return sdkVersion;
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.addPackage(
+        "maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
   }
 
   @Override

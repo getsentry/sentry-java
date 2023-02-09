@@ -6,12 +6,16 @@ import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.sentry.Instrumenter;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryPackage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -23,17 +27,27 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
+    final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setInstrumenter(Instrumenter.OTEL);
             options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
-            final @Nullable SdkVersion sdkVersion = createSdkVersion(options);
+            final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
             }
           });
+    }
+
+    if (versionInfoHolder != null) {
+      for (SentryPackage pkg : versionInfoHolder.getPackages()) {
+        SentryIntegrationPackageStorage.addPackage(pkg.getName(), pkg.getVersion());
+      }
+      for (String integration : versionInfoHolder.integrations) {
+        SentryIntegrationPackageStorage.addIntegration(integration);
+      }
     }
 
     autoConfiguration
@@ -54,9 +68,8 @@ public final class SentryAutoConfigurationCustomizerProvider
     }
   }
 
-  private @Nullable SdkVersion createSdkVersion(final @NotNull SentryOptions sentryOptions) {
-    SdkVersion sdkVersion = sentryOptions.getSdkVersion();
-
+  private @Nullable VersionInfoHolder createVersionInfo() {
+    VersionInfoHolder infoHolder = null;
     try {
       final @NotNull Enumeration<URL> resources =
           ClassLoader.getSystemClassLoader().getResources("META-INF/MANIFEST.MF");
@@ -69,21 +82,26 @@ public final class SentryAutoConfigurationCustomizerProvider
             final @Nullable String version = mainAttributes.getValue("Sentry-Version-Name");
 
             if (name != null && version != null) {
-              sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
-              sdkVersion.addPackage("maven:io.sentry:sentry-opentelemetry-agent", version);
+              infoHolder = new VersionInfoHolder();
+              infoHolder.setSdkName(name);
+              infoHolder.setSdkVersion(version);
+              infoHolder.packages.add(
+                  new SentryPackage("maven:io.sentry:sentry-opentelemetry-agent", version));
               final @Nullable String otelVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Version-Name");
               if (otelVersion != null) {
-                sdkVersion.addPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion);
-                sdkVersion.addIntegration("OTEL");
+                infoHolder.packages.add(
+                    new SentryPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion));
+                infoHolder.integrations.add("OTEL");
               }
               final @Nullable String otelJavaagentVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
               if (otelJavaagentVersion != null) {
-                sdkVersion.addPackage(
-                    "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
-                    otelJavaagentVersion);
-                sdkVersion.addIntegration("OTEL-Agent");
+                infoHolder.packages.add(
+                    new SentryPackage(
+                        "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
+                        otelJavaagentVersion));
+                infoHolder.integrations.add("OTEL-Agent");
               }
             }
           }
@@ -94,8 +112,41 @@ public final class SentryAutoConfigurationCustomizerProvider
     } catch (IOException e) {
       // ignore
     }
+    return infoHolder;
+  }
 
+  private @Nullable SdkVersion createSdkVersion(
+      final @NotNull SentryOptions sentryOptions,
+      final @Nullable VersionInfoHolder versionInfoHolder) {
+    SdkVersion sdkVersion = sentryOptions.getSdkVersion();
+
+    if (versionInfoHolder != null
+        && versionInfoHolder.sdkName != null
+        && versionInfoHolder.sdkVersion != null) {
+      sdkVersion =
+          SdkVersion.updateSdkVersion(
+              sdkVersion, versionInfoHolder.sdkName, versionInfoHolder.sdkVersion);
+    }
     return sdkVersion;
+  }
+
+  private static class VersionInfoHolder {
+    private @Nullable String sdkName;
+    private @Nullable String sdkVersion;
+    private List<SentryPackage> packages = new ArrayList<>();
+    private List<String> integrations = new ArrayList<>();
+
+    public void setSdkName(String sdkName) {
+      this.sdkName = sdkName;
+    }
+
+    public void setSdkVersion(String sdkVersion) {
+      this.sdkVersion = sdkVersion;
+    }
+
+    public List<SentryPackage> getPackages() {
+      return packages;
+    }
   }
 
   private SdkTracerProviderBuilder configureSdkTracerProvider(

@@ -2068,6 +2068,7 @@ public class SentryOptions {
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(createSdkVersion());
+      addPackageInfo();
     }
   }
 
@@ -2155,9 +2156,12 @@ public class SentryOptions {
     final SdkVersion sdkVersion = new SdkVersion(BuildConfig.SENTRY_JAVA_SDK_NAME, version);
 
     sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:io.sentry:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void addPackageInfo() {
+    SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
   }
 
   public static final class Proxy {

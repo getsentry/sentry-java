@@ -27,7 +27,6 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -113,8 +112,7 @@ public final class ActivityLifecycleIntegration
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-      final SdkVersion sdkVersion = this.options.getSdkVersion();
-      addIntegrationToSdkVersion(sdkVersion);
+      addIntegrationToSdkVersion();
     }
   }
 

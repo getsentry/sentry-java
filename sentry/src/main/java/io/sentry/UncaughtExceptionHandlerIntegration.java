@@ -7,7 +7,6 @@ import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -82,8 +81,7 @@ public final class UncaughtExceptionHandlerIntegration
       this.options
           .getLogger()
           .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
-      final SdkVersion sdkVersion = this.options.getSdkVersion();
-      addIntegrationToSdkVersion(sdkVersion);
+      addIntegrationToSdkVersion();
     }
   }
 
