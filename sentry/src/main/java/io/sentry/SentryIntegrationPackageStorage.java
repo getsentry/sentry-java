@@ -13,19 +13,19 @@ import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SentryIntegrationPackageStorage {
-  //  private static volatile @Nullable SentryIntegrationPackageStorage INSTANCE;
+  private static volatile @Nullable SentryIntegrationPackageStorage INSTANCE;
 
-  //  public static @NotNull SentryIntegrationPackageStorage getInstance() {
-  //    if (INSTANCE == null) {
-  //      synchronized (SentryIntegrationPackageStorage.class) {
-  //        if (INSTANCE == null) {
-  //          INSTANCE = new SentryIntegrationPackageStorage();
-  //        }
-  //      }
-  //    }
-  //
-  //    return INSTANCE;
-  //  }
+  public static @NotNull SentryIntegrationPackageStorage getInstance() {
+    if (INSTANCE == null) {
+      synchronized (SentryIntegrationPackageStorage.class) {
+        if (INSTANCE == null) {
+          INSTANCE = new SentryIntegrationPackageStorage();
+        }
+      }
+    }
+
+    return INSTANCE;
+  }
 
   /**
    * List of integrations that are enabled in the SDK. _Optional._
@@ -34,7 +34,7 @@ public final class SentryIntegrationPackageStorage {
    * integrations are included because different SDK releases may contain different default
    * integrations.
    */
-  private static Set<String> integrations = new CopyOnWriteArraySet<>();
+  private final Set<String> integrations = new CopyOnWriteArraySet<>();
 
   /**
    * List of installed and loaded SDK packages. _Optional._
@@ -44,26 +44,26 @@ public final class SentryIntegrationPackageStorage {
    * is a Git repository, the `source` should be `git`, the identifier should be a checkout link and
    * the version should be a Git reference (branch, tag or SHA).
    */
-  private static Set<SentryPackage> packages = new CopyOnWriteArraySet<>();
+  private final Set<SentryPackage> packages = new CopyOnWriteArraySet<>();
 
   private SentryIntegrationPackageStorage() {}
 
-  public static void addIntegration(final @NotNull String integration) {
+  public void addIntegration(final @NotNull String integration) {
     Objects.requireNonNull(integration, "integration is required.");
     integrations.add(integration);
   }
 
-  public static @Nullable Set<String> getIntegrations() {
-    return integrations != null ? new CopyOnWriteArraySet<>(integrations) : null;
+  public @NotNull Set<String> getIntegrations() {
+    return new CopyOnWriteArraySet<>(integrations);
   }
 
-  public static void setIntegrations(final @NotNull List<String> integrationList) {
+  public void setIntegrations(final @NotNull List<String> integrationList) {
     Objects.requireNonNull(integrationList, "integrationList is required.");
     integrations.clear();
     integrations.addAll(integrationList);
   }
 
-  public static void addPackage(final @NotNull String name, final @NotNull String version) {
+  public void addPackage(final @NotNull String name, final @NotNull String version) {
     Objects.requireNonNull(name, "name is required.");
     Objects.requireNonNull(version, "version is required.");
 
@@ -71,11 +71,11 @@ public final class SentryIntegrationPackageStorage {
     packages.add(newPackage);
   }
 
-  public static @Nullable List<SentryPackage> getPackages() {
-    return packages != null ? new CopyOnWriteArrayList<>(packages) : null;
+  public @NotNull List<SentryPackage> getPackages() {
+    return new CopyOnWriteArrayList<>(packages);
   }
 
-  public static void setPackages(final @NotNull List<SentryPackage> packageList) {
+  public void setPackages(final @NotNull List<SentryPackage> packageList) {
     Objects.requireNonNull(packageList, "packageList is required.");
 
     packages.clear();
@@ -83,7 +83,7 @@ public final class SentryIntegrationPackageStorage {
   }
 
   @TestOnly
-  public static void clearStorage() {
+  public void clearStorage() {
     integrations.clear();
     packages.clear();
   }

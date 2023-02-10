@@ -34,7 +34,7 @@ class SdkVersionSerializationTest {
 
     @Before
     fun clearIntegrationPackageStorage() {
-        SentryIntegrationPackageStorage.clearStorage()
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
     }
 
     @Test

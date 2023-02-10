@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
   public ComposeGestureTargetLocator() {
-    SentryIntegrationPackageStorage.addIntegration("ComposeHelper");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeHelper");
   }
 
   @Override

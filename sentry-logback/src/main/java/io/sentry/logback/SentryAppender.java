@@ -216,9 +216,9 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.addPackage(
-        "maven:io.sentry:sentry-logback", BuildConfig.VERSION_NAME);
-    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-logback", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
   }
 
   public void setOptions(final @Nullable SentryOptions options) {

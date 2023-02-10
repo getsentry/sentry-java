@@ -327,8 +327,8 @@ public class SentryAutoConfiguration implements IntegrationName {
     }
 
     private static void addPackageAndIntegrationInfo() {
-      SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
-      SentryIntegrationPackageStorage.addIntegration("SpringBoot3");
+      SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
+      SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot3");
     }
   }
 

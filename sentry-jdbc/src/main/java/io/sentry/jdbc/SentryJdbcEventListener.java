@@ -58,8 +58,8 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener implements 
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
-    SentryIntegrationPackageStorage.addPackage(
-        "maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
   }
 }

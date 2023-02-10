@@ -43,10 +43,10 @@ public final class SentryAutoConfigurationCustomizerProvider
 
     if (versionInfoHolder != null) {
       for (SentryPackage pkg : versionInfoHolder.getPackages()) {
-        SentryIntegrationPackageStorage.addPackage(pkg.getName(), pkg.getVersion());
+        SentryIntegrationPackageStorage.getInstance().addPackage(pkg.getName(), pkg.getVersion());
       }
       for (String integration : versionInfoHolder.integrations) {
-        SentryIntegrationPackageStorage.addIntegration(integration);
+        SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
       }
     }
 

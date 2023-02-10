@@ -10,6 +10,6 @@ public interface IntegrationName {
   }
 
   default void addIntegrationToSdkVersion() {
-    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
   }
 }

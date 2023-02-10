@@ -2172,7 +2172,8 @@ public class SentryOptions {
   }
 
   private void addPackageInfo() {
-    SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
   }
 
   public static final class Proxy {

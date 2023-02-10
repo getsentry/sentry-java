@@ -45,7 +45,7 @@ class SentryNavigationListener @JvmOverloads constructor(
 
     init {
         addIntegrationToSdkVersion()
-        SentryIntegrationPackageStorage
+        SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }
 

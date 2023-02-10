@@ -35,7 +35,7 @@ class SentryApolloInterceptor(
 
     init {
         addIntegrationToSdkVersion()
-        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {

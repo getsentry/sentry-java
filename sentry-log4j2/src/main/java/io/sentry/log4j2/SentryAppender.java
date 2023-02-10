@@ -273,8 +273,8 @@ public class SentryAppender extends AbstractAppender implements IntegrationName 
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.addPackage(
-        "maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
-    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
   }
 }

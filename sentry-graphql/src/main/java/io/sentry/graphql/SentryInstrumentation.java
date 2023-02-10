@@ -31,8 +31,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation implement
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.beforeSpan = beforeSpan;
     addIntegrationToSdkVersion();
-    SentryIntegrationPackageStorage.addPackage(
-        "maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
   }
 
   public SentryInstrumentation(final @Nullable BeforeSpanCallback beforeSpan) {

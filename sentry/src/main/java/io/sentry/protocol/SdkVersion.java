@@ -71,19 +71,19 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
   }
 
   public void addPackage(final @NotNull String name, final @NotNull String version) {
-    SentryIntegrationPackageStorage.addPackage(name, version);
+    SentryIntegrationPackageStorage.getInstance().addPackage(name, version);
   }
 
   public void addIntegration(final @NotNull String integration) {
-    SentryIntegrationPackageStorage.addIntegration(integration);
+    SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
   }
 
   public @Nullable List<SentryPackage> getPackages() {
-    return SentryIntegrationPackageStorage.getPackages();
+    return SentryIntegrationPackageStorage.getInstance().getPackages();
   }
 
   public @Nullable Set<String> getIntegrations() {
-    return SentryIntegrationPackageStorage.getIntegrations();
+    return SentryIntegrationPackageStorage.getInstance().getIntegrations();
   }
 
   /**
@@ -215,8 +215,8 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
       }
 
       SdkVersion sdkVersion = new SdkVersion(name, version);
-      SentryIntegrationPackageStorage.setPackages(packages);
-      SentryIntegrationPackageStorage.setIntegrations(integrations);
+      SentryIntegrationPackageStorage.getInstance().setPackages(packages);
+      SentryIntegrationPackageStorage.getInstance().setIntegrations(integrations);
 
       sdkVersion.setUnknown(unknown);
       return sdkVersion;

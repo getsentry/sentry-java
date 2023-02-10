@@ -284,9 +284,9 @@ public class SentryHandler extends Handler implements IntegrationName {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.addPackage(
-        "maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
-    SentryIntegrationPackageStorage.addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
   }
 
   @Override

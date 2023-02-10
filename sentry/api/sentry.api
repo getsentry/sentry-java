@@ -1436,13 +1436,14 @@ public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDatePro
 }
 
 public final class io/sentry/SentryIntegrationPackageStorage {
-	public static fun addIntegration (Ljava/lang/String;)V
-	public static fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
-	public static fun clearStorage ()V
-	public static fun getIntegrations ()Ljava/util/Set;
-	public static fun getPackages ()Ljava/util/List;
-	public static fun setIntegrations (Ljava/util/List;)V
-	public static fun setPackages (Ljava/util/List;)V
+	public fun addIntegration (Ljava/lang/String;)V
+	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun clearStorage ()V
+	public static fun getInstance ()Lio/sentry/SentryIntegrationPackageStorage;
+	public fun getIntegrations ()Ljava/util/Set;
+	public fun getPackages ()Ljava/util/List;
+	public fun setIntegrations (Ljava/util/List;)V
+	public fun setPackages (Ljava/util/List;)V
 }
 
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {

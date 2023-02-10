@@ -91,7 +91,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private static void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
-    SentryIntegrationPackageStorage.addIntegration("Spring6");
+    SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6");
   }
 }

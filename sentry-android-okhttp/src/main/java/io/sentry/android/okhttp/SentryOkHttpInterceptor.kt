@@ -55,7 +55,8 @@ class SentryOkHttpInterceptor(
 
     init {
         addIntegrationToSdkVersion()
-        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
+        SentryIntegrationPackageStorage.getInstance()
+            .addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {

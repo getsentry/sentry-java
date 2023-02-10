@@ -26,7 +26,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
 
     init {
         addIntegrationToSdkVersion()
-        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
 
     override suspend fun intercept(

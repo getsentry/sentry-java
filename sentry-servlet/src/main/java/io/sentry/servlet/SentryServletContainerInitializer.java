@@ -19,8 +19,8 @@ public class SentryServletContainerInitializer implements ServletContainerInitia
   public void onStartup(@Nullable Set<Class<?>> c, @NotNull ServletContext ctx)
       throws ServletException {
     ctx.addListener(SentryServletRequestListener.class);
-    SentryIntegrationPackageStorage.addIntegration("Servlet");
-    SentryIntegrationPackageStorage.addPackage(
-        "maven:io.sentry:sentry-servlet", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Servlet");
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-servlet", BuildConfig.VERSION_NAME);
   }
 }
