@@ -5,6 +5,7 @@
 ### Features
 
 - Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
+- Add `enableTracing` option ([#2530](https://github.com/getsentry/sentry-java/pull/2530))
 
 ### Fixes
 
