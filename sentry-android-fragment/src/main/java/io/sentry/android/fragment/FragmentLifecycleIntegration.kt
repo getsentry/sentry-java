@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import io.sentry.IHub
 import io.sentry.Integration
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import java.io.Closeable
@@ -47,10 +48,8 @@ class FragmentLifecycleIntegration(
 
         application.registerActivityLifecycleCallbacks(this)
         options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
-        options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion()
-            sdkVersion.addPackage("maven:io.sentry:sentry-android-fragment", BuildConfig.VERSION_NAME)
-        }
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-android-fragment", BuildConfig.VERSION_NAME)
     }
 
     override fun close() {

@@ -18,6 +18,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
@@ -33,10 +34,8 @@ class SentryApolloInterceptor(
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-        hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion()
-            sdkVersion.addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
-        }
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {

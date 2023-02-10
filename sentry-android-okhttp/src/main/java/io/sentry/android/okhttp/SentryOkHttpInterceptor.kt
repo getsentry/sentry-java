@@ -9,6 +9,7 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.IntegrationName
 import io.sentry.SentryEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
@@ -53,10 +54,8 @@ class SentryOkHttpInterceptor(
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-        hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion()
-            sdkVersion.addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
-        }
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {

@@ -10,6 +10,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -43,10 +44,9 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var activeTransaction: ITransaction? = null
 
     init {
-        hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion()
-            sdkVersion.addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
-        }
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage
+            .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }
 
     override fun onDestinationChanged(

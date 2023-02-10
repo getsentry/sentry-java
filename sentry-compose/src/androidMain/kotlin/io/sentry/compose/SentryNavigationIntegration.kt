@@ -12,9 +12,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import io.sentry.Breadcrumb
-import io.sentry.HubAdapter
 import io.sentry.ITransaction
 import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.navigation.SentryNavigationListener
 
@@ -25,10 +25,8 @@ internal class SentryLifecycleObserver(
 ) : LifecycleEventObserver, IntegrationName {
 
     init {
-        HubAdapter.getInstance().options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion()
-            sdkVersion.addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
-        }
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {

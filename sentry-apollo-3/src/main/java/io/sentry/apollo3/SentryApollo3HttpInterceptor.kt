@@ -14,6 +14,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
@@ -24,10 +25,8 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     HttpInterceptor, IntegrationName {
 
     init {
-        hub.options.sdkVersion?.let { sdkVersion ->
-            addIntegrationToSdkVersion()
-            sdkVersion.addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
-        }
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
 
     override suspend fun intercept(
