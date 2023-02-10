@@ -115,6 +115,51 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when tracesSampleRate is set tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.tracesSampleRate = 1.0
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when tracesSampler is set tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.tracesSampler = SentryOptions.TracesSamplerCallback { samplingContext -> 1.0 }
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when enableTracing is set to true tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.isEnableTracing = true
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `by default tracing is considered disabled`() {
+        val options = SentryOptions()
+
+        assertFalse(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when enableTracing is set to false tracing is considered disabled`() {
+        val options = SentryOptions().apply {
+            this.isEnableTracing = false
+            this.tracesSampleRate = 1.0
+            this.tracesSampler = SentryOptions.TracesSamplerCallback { _ -> 1.0 }
+        }
+
+        assertFalse(options.isTracingEnabled)
+    }
+
+    @Test
     fun `when there's no cacheDirPath, outboxPath returns null`() {
         val options = SentryOptions()
         assertNull(options.outboxPath)
