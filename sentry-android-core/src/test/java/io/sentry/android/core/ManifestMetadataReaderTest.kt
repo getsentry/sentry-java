@@ -646,6 +646,45 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads enableTracing from metadata`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.isEnableTracing)
+    }
+
+    @Test
+    fun `applyMetadata does not override enableTracing from options`() {
+        // Arrange
+        fixture.options.isEnableTracing = true
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.isEnableTracing)
+    }
+
+    @Test
+    fun `applyMetadata without specifying enableTracing, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options.isEnableTracing)
+    }
+
+    @Test
     fun `applyMetadata reads enableAutoActivityLifecycleTracing to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACES_ACTIVITY_ENABLE to false)

@@ -54,6 +54,7 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
+  static final String TRACING_ENABLE = "io.sentry.traces.enable";
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
@@ -234,6 +235,10 @@ final class ManifestMetadataReader {
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
 
+        if (options.isEnableTracing() == null) {
+          options.setEnableTracing(readBoolNullable(metadata, logger, TRACING_ENABLE, null));
+        }
+
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
           if (tracesSampleRate != -1) {
@@ -331,6 +336,23 @@ final class ManifestMetadataReader {
     final boolean value = metadata.getBoolean(key, defaultValue);
     logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
     return value;
+  }
+
+  @SuppressWarnings("deprecation")
+  private static @Nullable Boolean readBoolNullable(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final @Nullable Boolean defaultValue) {
+    if (metadata.getSerializable(key) != null) {
+      final boolean nonNullDefault = defaultValue == null ? false : true;
+      final boolean bool = metadata.getBoolean(key, nonNullDefault);
+      logger.log(SentryLevel.DEBUG, "%s read: %s", key, bool);
+      return bool;
+    } else {
+      logger.log(SentryLevel.DEBUG, "%s used default %s", key, defaultValue);
+      return defaultValue;
+    }
   }
 
   private static @Nullable String readString(
