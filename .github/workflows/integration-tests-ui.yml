@@ -35,7 +35,7 @@ jobs:
         run: make stop
 
       - name: Run Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@044f1588f56b7b094dfbe7e939b151281e73be8b # pin@v2
+        uses: saucelabs/saucectl-run-action@044f1588f56b7b094dfbe7e939b151281e73be8b # pin@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
