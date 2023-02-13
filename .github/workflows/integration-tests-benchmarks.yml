@@ -40,7 +40,7 @@ jobs:
         run: make stop
 
       - name: Run All Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@889cc2382b05b47e4a78bd35516603acc6c15fad # pin@v2
+        uses: saucelabs/saucectl-run-action@044f1588f56b7b094dfbe7e939b151281e73be8b # pin@v2
         if: github.event_name != 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -50,7 +50,7 @@ jobs:
           config-file: .sauce/sentry-uitest-android-benchmark.yml
 
       - name: Run one test in SauceLab
-        uses: saucelabs/saucectl-run-action@889cc2382b05b47e4a78bd35516603acc6c15fad # pin@v2
+        uses: saucelabs/saucectl-run-action@044f1588f56b7b094dfbe7e939b151281e73be8b # pin@v2
         if: github.event_name == 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
