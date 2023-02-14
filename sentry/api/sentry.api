@@ -2417,8 +2417,16 @@ public final class io/sentry/internal/gestures/UiElement$Type : java/lang/Enum {
 	public static fun values ()[Lio/sentry/internal/gestures/UiElement$Type;
 }
 
+public final class io/sentry/internal/modules/CompositeModulesLoader : io/sentry/internal/modules/ModulesLoader {
+	public fun <init> (Ljava/util/List;Lio/sentry/ILogger;)V
+}
+
 public abstract interface class io/sentry/internal/modules/IModulesLoader {
 	public abstract fun getOrLoadModules ()Ljava/util/Map;
+}
+
+public final class io/sentry/internal/modules/ManifestModulesLoader : io/sentry/internal/modules/ModulesLoader {
+	public fun <init> (Lio/sentry/ILogger;)V
 }
 
 public abstract class io/sentry/internal/modules/ModulesLoader : io/sentry/internal/modules/IModulesLoader {
@@ -3632,6 +3640,11 @@ public abstract class io/sentry/transport/TransportResult {
 	public abstract fun getResponseCode ()I
 	public abstract fun isSuccess ()Z
 	public static fun success ()Lio/sentry/transport/TransportResult;
+}
+
+public final class io/sentry/util/ClassLoaderUtils {
+	public fun <init> ()V
+	public static fun classLoaderOrDefault (Ljava/lang/ClassLoader;)Ljava/lang/ClassLoader;
 }
 
 public final class io/sentry/util/CollectionUtils {

@@ -1,5 +1,7 @@
 package io.sentry.config;
 
+import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
+
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import java.io.BufferedInputStream;
@@ -18,12 +20,7 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
   public ClasspathPropertiesLoader(
       @NotNull String fileName, @Nullable ClassLoader classLoader, @NotNull ILogger logger) {
     this.fileName = fileName;
-    // bootstrap classloader is represented as null, so using system classloader instead
-    if (classLoader == null) {
-      this.classLoader = ClassLoader.getSystemClassLoader();
-    } else {
-      this.classLoader = classLoader;
-    }
+    this.classLoader = classLoaderOrDefault(classLoader);
     this.logger = logger;
   }
 
