@@ -71,17 +71,9 @@ public final class ActivityLifecycleIntegration
   private final @NotNull ActivityFramesTracker activityFramesTracker;
 
   public ActivityLifecycleIntegration(
-    final @NotNull Application application,
-    final @NotNull BuildInfoProvider buildInfoProvider,
-    final @NotNull ActivityFramesTracker activityFramesTracker) {
-    this(application, buildInfoProvider, activityFramesTracker, true);
-  }
-
-  public ActivityLifecycleIntegration(
       final @NotNull Application application,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ActivityFramesTracker activityFramesTracker,
-      final boolean enableReadForegroundImportance) {
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
@@ -94,7 +86,7 @@ public final class ActivityLifecycleIntegration
 
     // we only track app start for processes that will show an Activity (full launch).
     // Here we check the process importance which will tell us that.
-    foregroundImportance = !enableReadForegroundImportance || ContextUtils.isForegroundImportance(this.application);
+    foregroundImportance = ContextUtils.isForegroundImportance(this.application);
   }
 
   @Override
