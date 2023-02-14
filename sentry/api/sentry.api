@@ -1525,7 +1525,7 @@ public class io/sentry/SentryOptions {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getFlushTimeoutMillis ()J
-	public fun getFullyDrawnReporter ()Lio/sentry/FullDisplayedReporter;
+	public fun getFullDisplayedReporter ()Lio/sentry/FullDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
