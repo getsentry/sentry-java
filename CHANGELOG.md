@@ -5,6 +5,7 @@
 ### Features
 
 - Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
+- Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
 
 ### Fixes
 
