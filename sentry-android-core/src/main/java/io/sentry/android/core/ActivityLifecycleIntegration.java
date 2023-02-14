@@ -115,7 +115,7 @@ public final class ActivityLifecycleIntegration
             this.options.isEnableActivityLifecycleBreadcrumbs());
 
     performanceEnabled = isPerformanceEnabled(this.options);
-    fullDisplayedReporter = this.options.getFullyDrawnReporter();
+    fullDisplayedReporter = this.options.getFullDisplayedReporter();
     timeToFullDisplaySpanEnabled = this.options.isEnableTimeToFullDisplayTracing();
 
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {

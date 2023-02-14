@@ -1942,7 +1942,7 @@ public class SentryOptions {
    * @return The reporter to call when a screen is fully loaded.
    */
   @ApiStatus.Internal
-  public @NotNull FullDisplayedReporter getFullyDrawnReporter() {
+  public @NotNull FullDisplayedReporter getFullDisplayedReporter() {
     return fullDisplayedReporter;
   }
 
