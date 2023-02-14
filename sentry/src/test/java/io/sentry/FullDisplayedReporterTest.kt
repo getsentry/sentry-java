@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.FullyDisplayedReporter.FullyDrawnReporterListener
+import io.sentry.FullDisplayedReporter.FullDisplayedReporterListener
 import io.sentry.test.getProperty
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -9,14 +9,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class FullyDisplayedReporterTest {
+class FullDisplayedReporterTest {
 
-    private val reporter = FullyDisplayedReporter.getInstance()
-    private val listeners = reporter.getProperty<MutableList<FullyDrawnReporterListener>>("listeners")
-    private val listener1 = FullyDrawnReporterListener {}
-    private val listener2 = FullyDrawnReporterListener {}
-    private val mockListener1 = mock<FullyDrawnReporterListener>()
-    private val mockListener2 = mock<FullyDrawnReporterListener>()
+    private val reporter = FullDisplayedReporter.getInstance()
+    private val listeners = reporter.getProperty<MutableList<FullDisplayedReporterListener>>("listeners")
+    private val listener1 = FullDisplayedReporterListener {}
+    private val listener2 = FullDisplayedReporterListener {}
+    private val mockListener1 = mock<FullDisplayedReporterListener>()
+    private val mockListener2 = mock<FullDisplayedReporterListener>()
 
     @AfterTest
     fun shutdown() {

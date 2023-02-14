@@ -1656,7 +1656,7 @@ class HubTest {
                 true
             }
         }
-        hub.reportFullyDrawn()
+        hub.reportFullDisplayed()
         assertFalse(called)
     }
 
@@ -1670,7 +1670,7 @@ class HubTest {
                 true
             }
         }
-        hub.reportFullyDrawn()
+        hub.reportFullDisplayed()
         assertTrue(called)
     }
 
@@ -1684,9 +1684,9 @@ class HubTest {
                 true
             }
         }
-        hub.reportFullyDrawn()
+        hub.reportFullDisplayed()
         assertTrue(called)
-        hub.reportFullyDrawn()
+        hub.reportFullDisplayed()
         assertTrue(called)
     }
 

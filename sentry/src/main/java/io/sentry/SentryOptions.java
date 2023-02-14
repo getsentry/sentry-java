@@ -399,12 +399,12 @@ public class SentryOptions {
   private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
       NoOpTransactionPerformanceCollector.getInstance();
 
-  /** Enables the time-to-full-display spans in automatic ui transactions. */
+  /** Enables the time-to-full-display spans in navigation transactions. */
   private boolean enableTimeToFullDisplayTracing = false;
 
   /** Screen fully displayed reporter, used for time-to-full-display spans. */
-  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
-      FullyDisplayedReporter.getInstance();
+  private final @NotNull FullDisplayedReporter fullDisplayedReporter =
+      FullDisplayedReporter.getInstance();
 
   /**
    * Adds an event processor
@@ -1919,7 +1919,7 @@ public class SentryOptions {
   }
 
   /**
-   * Gets if the time-to-full-display spans is tracked in automatic ui transactions.
+   * Gets if the time-to-full-display spans is tracked in navigation transactions.
    *
    * @return if the time-to-full-display is tracked.
    */
@@ -1928,7 +1928,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets if the time-to-full-display spans should be tracked in automatic ui transactions.
+   * Sets if the time-to-full-display spans should be tracked in navigation transactions.
    *
    * @param enableTimeToFullDisplayTracing if the time-to-full-display spans should be tracked.
    */
@@ -1942,8 +1942,8 @@ public class SentryOptions {
    * @return The reporter to call when a screen is fully loaded.
    */
   @ApiStatus.Internal
-  public @NotNull FullyDisplayedReporter getFullyDrawnReporter() {
-    return fullyDisplayedReporter;
+  public @NotNull FullDisplayedReporter getFullyDrawnReporter() {
+    return fullDisplayedReporter;
   }
 
   /**

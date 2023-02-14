@@ -853,7 +853,7 @@ public final class Sentry {
    * finished, this call will be ignored.
    */
   public static void reportFullDisplayed() {
-    getCurrentHub().reportFullyDrawn();
+    getCurrentHub().reportFullDisplayed();
   }
 
   /**

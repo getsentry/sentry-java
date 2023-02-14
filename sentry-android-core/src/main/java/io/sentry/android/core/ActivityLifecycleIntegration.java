@@ -12,7 +12,7 @@ import android.os.Looper;
 import android.view.View;
 import androidx.annotation.NonNull;
 import io.sentry.Breadcrumb;
-import io.sentry.FullyDisplayedReporter;
+import io.sentry.FullDisplayedReporter;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -64,7 +64,7 @@ public final class ActivityLifecycleIntegration
   private boolean firstActivityCreated = false;
   private final boolean foregroundImportance;
 
-  private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
+  private @Nullable FullDisplayedReporter fullDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private @NotNull SentryDate lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
@@ -115,7 +115,7 @@ public final class ActivityLifecycleIntegration
             this.options.isEnableActivityLifecycleBreadcrumbs());
 
     performanceEnabled = isPerformanceEnabled(this.options);
-    fullyDisplayedReporter = this.options.getFullyDrawnReporter();
+    fullDisplayedReporter = this.options.getFullyDrawnReporter();
     timeToFullDisplaySpanEnabled = this.options.isEnableTimeToFullDisplayTracing();
 
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
@@ -238,7 +238,7 @@ public final class ActivityLifecycleIntegration
           transaction.startChild(
               TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY));
 
-      if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
+      if (timeToFullDisplaySpanEnabled && fullDisplayedReporter != null && options != null) {
         ttfdSpan =
             transaction.startChild(
                 TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
@@ -339,8 +339,8 @@ public final class ActivityLifecycleIntegration
 
     firstActivityCreated = true;
 
-    if (fullyDisplayedReporter != null) {
-      fullyDisplayedReporter.registerFullyDrawnListener(
+    if (fullDisplayedReporter != null) {
+      fullDisplayedReporter.registerFullyDrawnListener(
           () -> {
             finishSpan(ttfdSpan);
             cancelTtfdAutoClose();
