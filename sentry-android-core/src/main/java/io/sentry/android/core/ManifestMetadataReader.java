@@ -78,6 +78,7 @@ final class ManifestMetadataReader {
   static final String ATTACH_VIEW_HIERARCHY = "io.sentry.attach-view-hierarchy";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
+  static final String ACTIVITY_LIFECYCLE_GET_PROCESS = "io.sentry.activity-lifecycle-get-process";
 
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
@@ -179,6 +180,13 @@ final class ManifestMetadataReader {
                 logger,
                 BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE,
                 options.isEnableActivityLifecycleBreadcrumbs()));
+
+        options.setEnableActivityLifecycleGetProcess(
+            readBool(
+                metadata,
+                logger,
+                ACTIVITY_LIFECYCLE_GET_PROCESS,
+                options.isEnableActivityLifecycleGetProcess()));
 
         options.setEnableAppLifecycleBreadcrumbs(
             readBool(

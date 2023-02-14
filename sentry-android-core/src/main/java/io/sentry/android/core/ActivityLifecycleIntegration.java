@@ -56,7 +56,9 @@ public final class ActivityLifecycleIntegration
   private boolean isAllActivityCallbacksAvailable;
 
   private boolean firstActivityCreated = false;
-  private final boolean foregroundImportance;
+
+  // It is null until the integration is registered
+  private Boolean foregroundImportance;
 
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
@@ -83,10 +85,6 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
-
-    // we only track app start for processes that will show an Activity (full launch).
-    // Here we check the process importance which will tell us that.
-    foregroundImportance = ContextUtils.isForegroundImportance(this.application);
   }
 
   @Override
@@ -111,6 +109,10 @@ public final class ActivityLifecycleIntegration
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     }
+
+    // we only track app start for processes that will show an Activity (full launch).
+    // Here we check the process importance which will tell us that.
+    foregroundImportance = this.options.isEnableActivityLifecycleGetProcess() ? ContextUtils.isForegroundImportance(this.application) : true;
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {
@@ -166,7 +168,7 @@ public final class ActivityLifecycleIntegration
       final String activityName = getActivityName(activity);
 
       final SentryDate appStartTime =
-          foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
+        (foregroundImportance != null && foregroundImportance) ? AppStartState.getInstance().getAppStartTime() : null;
       final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
       final TransactionOptions transactionOptions = new TransactionOptions();

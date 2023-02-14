@@ -30,6 +30,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleBreadcrumbs = true;
 
+  /**
+   * Enable or disable calling `activityManager.getRunningAppProcesses` automatically.
+   * This needs to be disabled, for example, when an app store forbids this function call.
+   */
+  private boolean enableActivityLifecycleGetProcess = true;
+
   /** Enable or disable automatic breadcrumbs for App's lifecycle Using ProcessLifecycleOwner */
   private boolean enableAppLifecycleBreadcrumbs = true;
 
@@ -210,8 +216,16 @@ public final class SentryAndroidOptions extends SentryOptions {
     return enableActivityLifecycleBreadcrumbs;
   }
 
+  public boolean isEnableActivityLifecycleGetProcess() {
+    return enableActivityLifecycleGetProcess;
+  }
+
   public void setEnableActivityLifecycleBreadcrumbs(boolean enableActivityLifecycleBreadcrumbs) {
     this.enableActivityLifecycleBreadcrumbs = enableActivityLifecycleBreadcrumbs;
+  }
+
+  public void setEnableActivityLifecycleGetProcess(boolean enableActivityLifecycleGetProcess) {
+    this.enableActivityLifecycleGetProcess = enableActivityLifecycleGetProcess;
   }
 
   public boolean isEnableAppLifecycleBreadcrumbs() {
