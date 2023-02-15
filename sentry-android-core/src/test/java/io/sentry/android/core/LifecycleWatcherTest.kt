@@ -227,28 +227,31 @@ class LifecycleWatcherTest {
 
     @Test
     fun `if the hub has already a fresh session running, don't start new one`() {
+        val session = Session(
+            State.Ok,
+            DateUtils.getCurrentDateTime(),
+            DateUtils.getCurrentDateTime(),
+            0,
+            "abc",
+            UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+            true,
+            0,
+            10.0,
+            null,
+            null,
+            null,
+            "release",
+            null,
+            false
+        )
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
-            session = Session(
-                State.Ok,
-                DateUtils.getCurrentDateTime(),
-                DateUtils.getCurrentDateTime(),
-                0,
-                "abc",
-                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
-                true,
-                0,
-                10.0,
-                null,
-                null,
-                null,
-                "release",
-                null
-            )
+            session = session
         )
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub, never()).startSession()
+        assertEquals(true, session.isAppInForeground)
     }
 
     @Test
@@ -269,6 +272,7 @@ class LifecycleWatcherTest {
                 null,
                 null,
                 "release",
+                null,
                 null
             )
         )
@@ -289,5 +293,14 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT()
         watcher.onStop(fixture.ownerMock)
         assertTrue(AppState.getInstance().isInBackground!!)
+    }
+
+    @Test
+    fun `When app goes into foreground, then isAppInForeground is set to true`() {
+        val session = Session("1234", null, "prod", "1.0")
+        val watcher = fixture.getSUT(session = session)
+        assertEquals(false, session.isAppInForeground)
+        watcher.onStart(fixture.ownerMock)
+        assertEquals(true, session.isAppInForeground)
     }
 }

@@ -123,8 +123,7 @@ public final class SentryAndroid {
           true);
 
       final @NotNull IHub hub = Sentry.getCurrentHub();
-      if (hub.getOptions().isEnableAutoSessionTracking()
-          && ContextUtils.isForegroundImportance(context)) {
+      if (hub.getOptions().isEnableAutoSessionTracking()) {
         hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
         hub.startSession();
       }

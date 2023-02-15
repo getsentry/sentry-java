@@ -174,6 +174,7 @@ class CacheStrategyTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
+            null,
             null
         )
 

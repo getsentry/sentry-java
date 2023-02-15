@@ -31,6 +31,7 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
+            null,
             null
         )
 
@@ -55,7 +56,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -79,7 +81,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -103,7 +106,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -127,7 +131,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -151,7 +156,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -175,7 +181,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -199,7 +206,8 @@ class SessionAdapterTest {
             null,
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -223,7 +231,8 @@ class SessionAdapterTest {
             "jamesBond",
             null,
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         val actual = getActual(expected)!!
@@ -247,7 +256,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
         expected.injectForField("started", null)
         val actual = getActual(expected)
@@ -271,7 +281,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
         expected.injectForField("release", null)
         val actual = getActual(expected)
@@ -295,7 +306,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
         expected.injectForField("status", null)
         assertFailsWith<Exception> { getActual(expected) }
@@ -338,7 +350,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         assertSessionData(expected, actual)
@@ -381,7 +394,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         assertSessionData(expected, actual)
@@ -520,7 +534,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         assertSessionData(expected, actual)
@@ -562,7 +577,8 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground"
+            "anr_foreground",
+            null
         )
 
         assertSessionData(expected, actual)
@@ -603,6 +619,7 @@ class SessionAdapterTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
+            null,
             null
         )
 

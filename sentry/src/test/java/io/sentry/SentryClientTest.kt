@@ -833,13 +833,19 @@ class SentryClientTest {
 
     @Test
     fun `when captureSession and release is set, send an envelope`() {
-        fixture.getSut().captureSession(createSession())
+        fixture.getSut().captureSession(createSession(appInForeground = true))
         verify(fixture.transport).send(any(), anyOrNull())
     }
 
     @Test
+    fun `when captureSession and release is set, but session was not in foreground do not send an envelope`() {
+        fixture.getSut().captureSession(createSession(appInForeground = false))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
     fun `when captureSession, sdkInfo should be in the envelope header`() {
-        fixture.getSut().captureSession(createSession())
+        fixture.getSut().captureSession(createSession(appInForeground = true))
         verify(fixture.transport).send(
             check {
                 assertNotNull(it.header.sdkVersion)
@@ -2107,8 +2113,10 @@ class SentryClientTest {
         }
     }
 
-    private fun createSession(release: String = "rel"): Session {
-        return Session("dis", User(), "env", release)
+    private fun createSession(release: String = "rel", appInForeground: Boolean = false): Session {
+        val session = Session("dis", User(), "env", release)
+        session.isAppInForeground = appInForeground
+        return session
     }
 
     private val userFeedback: UserFeedback

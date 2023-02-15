@@ -96,6 +96,14 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
             }
             this.lastUpdatedSession.set(currentTimeMillis);
           });
+
+      hub.withScope(
+          scope -> {
+            @Nullable final Session session = scope.getSession();
+            if (session != null) {
+              session.setAppInForeground(true);
+            }
+          });
     }
   }
 

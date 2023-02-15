@@ -69,6 +69,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
   /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
 
+  /** True, if the app was foreground during session creation, won't be serialized */
+  private @Nullable Boolean isAppInForeground;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -86,7 +89,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final @Nullable String userAgent,
       final @Nullable String environment,
       final @NotNull String release,
-      final @Nullable String abnormalMechanism) {
+      final @Nullable String abnormalMechanism,
+      final @Nullable Boolean isAppInForeground) {
     this.status = status;
     this.started = started;
     this.timestamp = timestamp;
@@ -101,6 +105,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     this.environment = environment;
     this.release = release;
     this.abnormalMechanism = abnormalMechanism;
+    this.isAppInForeground = isAppInForeground;
   }
 
   public Session(
@@ -122,7 +127,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
         null,
         environment,
         release,
-        null);
+        null,
+        false);
   }
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
@@ -191,6 +197,14 @@ public final class Session implements JsonUnknown, JsonSerializable {
   public @Nullable Date getTimestamp() {
     final Date timestampRef = timestamp;
     return timestampRef != null ? (Date) timestampRef.clone() : null;
+  }
+
+  public @Nullable Boolean isAppInForeground() {
+    return isAppInForeground;
+  }
+
+  public void setAppInForeground(final @Nullable Boolean appInForeground) {
+    this.isAppInForeground = appInForeground;
   }
 
   /** Ends a session and update its values */
@@ -332,7 +346,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
         userAgent,
         environment,
         release,
-        abnormalMechanism);
+        abnormalMechanism,
+        isAppInForeground);
   }
 
   // JsonSerializable
@@ -542,7 +557,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
               userAgent,
               environment,
               release,
-              abnormalMechanism);
+              abnormalMechanism,
+              null);
       session.setUnknown(unknown);
       reader.endObject();
       return session;
