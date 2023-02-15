@@ -107,6 +107,29 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When activity lifecycle breadcrumb is disabled but tracing is enabled, it registers callback`() {
+        val sut = fixture.getSut()
+        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
+        fixture.options.enableTracing = true
+
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    }
+
+    @Test
+    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it does not register callback`() {
+        val sut = fixture.getSut()
+        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.enableTracing = false
+
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+    }
+
+    @Test
     fun `When activity lifecycle breadcrumb is disabled but tracing sample rate is enabled, it registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false

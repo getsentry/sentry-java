@@ -99,8 +99,10 @@
         <!--    how to change the session tracking interval-->
         <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="10000" />
 
-        <!--    how to enable the performance API by setting a sample-rate-->
-        <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+        <!--    how to enable the performance API by either enabling tracing or setting a sample-rate-->
+        <meta-data android:name="io.sentry.traces.enable" android:value="true" />
+<!-- how to set custom sample rate different from the default 1.0 -->
+<!--        <meta-data android:name="io.sentry.traces.sample-rate" android:value="0.8" /> -->
 
         <!--    how to enable profiling when starting transactions -->
         <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
