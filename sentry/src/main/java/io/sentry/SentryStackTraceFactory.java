@@ -92,9 +92,12 @@ public final class SentryStackTraceFactory {
     if (inAppExcludes != null) {
       for (String exclude : inAppExcludes) {
         if (className.startsWith(exclude)) {
+          // If the class name starts with an exclude, it's not inApp
           return false;
         }
       }
+      // else if it doesn't start with any of the excludes, it's inApp
+      return true;
     }
     return false;
   }
