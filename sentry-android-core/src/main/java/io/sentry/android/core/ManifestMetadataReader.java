@@ -60,6 +60,8 @@ final class ManifestMetadataReader {
       "io.sentry.traces.activity.auto-finish.enable";
   static final String TRACES_UI_ENABLE = "io.sentry.traces.user-interaction.enable";
 
+  static final String TTFD_ENABLE = "io.sentry.traces.time-to-full-display.enable";
+
   static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling.enable";
   static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
 
@@ -270,6 +272,9 @@ final class ManifestMetadataReader {
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
+
+        options.setEnableTimeToFullDisplayTracing(
+            readBool(metadata, logger, TTFD_ENABLE, options.isEnableTimeToFullDisplayTracing()));
 
         final long idleTimeout = readLong(metadata, logger, IDLE_TIMEOUT, -1);
         if (idleTimeout != -1) {
