@@ -452,4 +452,14 @@ class SentryOptionsTest {
         options.transactionPerformanceCollector = performanceCollector
         assertEquals(performanceCollector, options.transactionPerformanceCollector)
     }
+
+    @Test
+    fun `when options are initialized, TimeToFullDisplayTracing is false`() {
+        assertFalse(SentryOptions().isEnableTimeToFullDisplayTracing)
+    }
+
+    @Test
+    fun `when options are initialized, FullyDrawnReporter is set`() {
+        assertEquals(FullDisplayedReporter.getInstance(), SentryOptions().fullDisplayedReporter)
+    }
 }
