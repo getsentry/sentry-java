@@ -852,6 +852,18 @@ public final class Sentry {
   }
 
   /**
+   * Report a screen has been fully loaded. That means all data needed by the UI was loaded. If
+   * time-to-full-display tracing {{@link SentryOptions#isEnableTimeToFullDisplayTracing()} } is
+   * disabled this call is ignored.
+   *
+   * <p>This method is safe to be called multiple times. If the time-to-full-display span is already
+   * finished, this call will be ignored.
+   */
+  public static void reportFullDisplayed() {
+    getCurrentHub().reportFullDisplayed();
+  }
+
+  /**
    * Configuration options callback
    *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.
