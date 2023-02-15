@@ -11,6 +11,7 @@
 
 - Ignore Shutdown in progress when closing ShutdownHookIntegration ([#2521](https://github.com/getsentry/sentry-java/pull/2521))
 - Fix app start span end-time is wrong if SDK init is deferred ([#2519](https://github.com/getsentry/sentry-java/pull/2519))
+- Leave inApp undecided if unsure ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
 
 ## 6.13.1
 
