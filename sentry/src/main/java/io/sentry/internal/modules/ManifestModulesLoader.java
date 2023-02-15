@@ -58,7 +58,7 @@ public final class ManifestModulesLoader extends ModulesLoader {
           modules.add(module);
         }
       }
-    } catch (IOException e) {
+    } catch (Thowable e) {
       logger.log(SentryLevel.ERROR, "Unable to detect modules via manifest files.", e);
     }
 
