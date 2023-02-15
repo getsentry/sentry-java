@@ -115,6 +115,51 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when tracesSampleRate is set tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.tracesSampleRate = 1.0
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when tracesSampler is set tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.tracesSampler = SentryOptions.TracesSamplerCallback { samplingContext -> 1.0 }
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when enableTracing is set to true tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.enableTracing = true
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `by default tracing is considered disabled`() {
+        val options = SentryOptions()
+
+        assertFalse(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when enableTracing is set to false tracing is considered disabled`() {
+        val options = SentryOptions().apply {
+            this.enableTracing = false
+            this.tracesSampleRate = 1.0
+            this.tracesSampler = SentryOptions.TracesSamplerCallback { _ -> 1.0 }
+        }
+
+        assertFalse(options.isTracingEnabled)
+    }
+
+    @Test
     fun `when there's no cacheDirPath, outboxPath returns null`() {
         val options = SentryOptions()
         assertNull(options.outboxPath)
@@ -292,6 +337,7 @@ class SentryOptionsTest {
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
+        externalOptions.enableTracing = true
         externalOptions.tracesSampleRate = 0.5
         externalOptions.profilesSampleRate = 0.5
         externalOptions.addInAppInclude("com.app")
@@ -316,6 +362,7 @@ class SentryOptionsTest {
         assertEquals("8090", options.proxy!!.port)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
+        assertEquals(true, options.enableTracing)
         assertEquals(0.5, options.tracesSampleRate)
         assertEquals(0.5, options.profilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)

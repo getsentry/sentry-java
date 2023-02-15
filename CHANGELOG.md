@@ -4,6 +4,19 @@
 
 ### Features
 
+- Add `enableTracing` option ([#2530](https://github.com/getsentry/sentry-java/pull/2530))
+    - This change is backwards compatible. The default is `null` meaning existing behaviour remains unchanged (setting either `tracesSampleRate` or `tracesSampler` enables performance).
+    - If set to `true`, performance is enabled, even if no `tracesSampleRate` or `tracesSampler` have been configured.
+    - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
+
+### Fixes
+
+- Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
+
+## 6.14.0
+
+### Features
+
 - Add time-to-full-display span to Activity auto-instrumentation ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 - Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
 
@@ -11,7 +24,7 @@
 
 - Ignore Shutdown in progress when closing ShutdownHookIntegration ([#2521](https://github.com/getsentry/sentry-java/pull/2521))
 - Fix app start span end-time is wrong if SDK init is deferred ([#2519](https://github.com/getsentry/sentry-java/pull/2519))
-- Leave inApp undecided if unsure ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
+- Fix invalid session creation when app is launched in background ([#2543](https://github.com/getsentry/sentry-java/pull/2543))
 
 ## 6.13.1
 

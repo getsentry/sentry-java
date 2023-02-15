@@ -167,6 +167,9 @@ public class SentryOptions {
    */
   private @Nullable Double sampleRate;
 
+  /** Enables generation of transactions and propagation of trace data. */
+  private @Nullable Boolean enableTracing;
+
   /**
    * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
    * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
@@ -826,6 +829,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether generation of transactions and propagation of trace data is enabled.
+   *
+   * <p>NOTE: There is also {@link SentryOptions#isTracingEnabled()} which checks other options as
+   * well.
+   *
+   * @return true if enabled, false if disabled, null can mean enabled if {@link
+   *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
+   */
+  public @Nullable Boolean getEnableTracing() {
+    return enableTracing;
+  }
+
+  /** Enables generation of transactions and propagation of trace data. */
+  public void setEnableTracing(@Nullable Boolean enableTracing) {
+    this.enableTracing = enableTracing;
+  }
+
+  /**
    * Returns the traces sample rate Default is null (disabled)
    *
    * @return the sample rate
@@ -1422,6 +1443,10 @@ public class SentryOptions {
    * @return if tracing is enabled.
    */
   public boolean isTracingEnabled() {
+    if (enableTracing != null) {
+      return enableTracing;
+    }
+
     return getTracesSampleRate() != null || getTracesSampler() != null;
   }
 
@@ -2147,6 +2172,9 @@ public class SentryOptions {
     }
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
+    }
+    if (options.getEnableTracing() != null) {
+      setEnableTracing(options.getEnableTracing());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
