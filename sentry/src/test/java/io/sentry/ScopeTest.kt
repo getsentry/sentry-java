@@ -325,7 +325,7 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope starts a new session with release, env, user and isAppInForeground`() {
+    fun `Scope starts a new session with release, env and user`() {
         val options = SentryOptions().apply {
             distinctId = "123"
         }
@@ -342,7 +342,6 @@ class ScopeTest {
             assertEquals("rel", it.current.release)
             assertEquals("env", it.current.environment)
             assertEquals("123", it.current.distinctId)
-            assertEquals(false, it.current.isAppInForeground)
         }
     }
 

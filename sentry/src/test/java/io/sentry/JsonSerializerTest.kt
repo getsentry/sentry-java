@@ -1186,8 +1186,7 @@ class JsonSerializerTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            "anr_foreground",
-            null
+            "anr_foreground"
         )
 
     private val userFeedback: UserFeedback get() {

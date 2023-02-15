@@ -479,13 +479,6 @@ public final class SentryClient implements ISentryClient {
       return;
     }
 
-    if (session.isAppInForeground() != null && !session.isAppInForeground()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Sessions can't be captured because app was in background.");
-      return;
-    }
-
     SentryEnvelope envelope;
     try {
       envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
