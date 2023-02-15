@@ -12,7 +12,6 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.FileUtils;
-import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
@@ -282,16 +281,12 @@ public final class Sentry {
 
     final @NotNull IModulesLoader modulesLoader = options.getModulesLoader();
     if (modulesLoader instanceof NoOpModulesLoader) {
-      if (Platform.isJvm()) {
-        options.setModulesLoader(
-            new CompositeModulesLoader(
-                Arrays.asList(
-                    new ManifestModulesLoader(options.getLogger()),
-                    new ResourcesModulesLoader(options.getLogger())),
-                options.getLogger()));
-      } else {
-        options.setModulesLoader(new ResourcesModulesLoader(options.getLogger()));
-      }
+      options.setModulesLoader(
+          new CompositeModulesLoader(
+              Arrays.asList(
+                  new ManifestModulesLoader(options.getLogger()),
+                  new ResourcesModulesLoader(options.getLogger())),
+              options.getLogger()));
     }
 
     final IMainThreadChecker mainThreadChecker = options.getMainThreadChecker();
