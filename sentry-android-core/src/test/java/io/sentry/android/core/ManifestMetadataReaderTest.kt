@@ -1137,4 +1137,30 @@ class ManifestMetadataReaderTest {
         // Assert
         assertFalse(fixture.options.isEnableFramesTracking)
     }
+
+    @Test
+    fun `applyMetadata reads time-to-full-display tracking and sets it to enabled if true`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TTFD_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableTimeToFullDisplayTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads time-to-full-display tracking and sets it to disabled if false`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TTFD_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableTimeToFullDisplayTracing)
+    }
 }

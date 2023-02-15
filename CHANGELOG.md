@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add time-to-full-display span to Activity auto-instrumentation ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 - Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
 - Add integrations to integration list ([#2179](https://github.com/getsentry/sentry-java/pull/2179))
 
@@ -11,6 +12,7 @@
 
 - Ignore Shutdown in progress when closing ShutdownHookIntegration ([#2521](https://github.com/getsentry/sentry-java/pull/2521))
 - Fix app start span end-time is wrong if SDK init is deferred ([#2519](https://github.com/getsentry/sentry-java/pull/2519))
+- Fix invalid session creation when app is launched in background ([#2543](https://github.com/getsentry/sentry-java/pull/2543))
 
 ## 6.13.1
 

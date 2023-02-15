@@ -109,10 +109,13 @@
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
 
         <!--    how to disable the Activity auto instrumentation automatically finished on onActivityPostPaused-->
-        <meta-data android:name="io.sentry.traces.activity.auto-finish.enable" android:value="false" />
+        <!--    <meta-data android:name="io.sentry.traces.activity.auto-finish.enable" android:value="false" />-->
 
         <!-- how to enable the UI auto instrumentation for tracing -->
         <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+
+        <!-- how to enable the time-to-full-display tracing in Activity auto instrumentation -->
+        <meta-data android:name="io.sentry.traces.time-to-full-display.enable" android:value="true" />
 
         <!--    how to enable and set a sampleRate (anything between 0.01 and 1.0), it's disabled by default-->
         <!--    <meta-data android:name="io.sentry.sample-rate" android:value="0.5" />-->
