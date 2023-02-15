@@ -43,7 +43,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
    * <ul>
-   *   <li>It also requires setting any of {@link SentryOptions#isEnableTracing()}, {@link
+   *   <li>It also requires setting any of {@link SentryOptions#getEnableTracing()}, {@link
    *       SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()}.
    * </ul>
    *

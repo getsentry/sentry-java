@@ -235,7 +235,7 @@ final class ManifestMetadataReader {
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
 
-        if (options.isEnableTracing() == null) {
+        if (options.getEnableTracing() == null) {
           options.setEnableTracing(readBoolNullable(metadata, logger, TRACING_ENABLE, null));
         }
 

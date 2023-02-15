@@ -102,7 +102,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity lifecycle breadcrumb is disabled but tracing is enabled, it registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-        fixture.options.isEnableTracing = true
+        fixture.options.enableTracing = true
 
         sut.register(fixture.hub, fixture.options)
 
@@ -114,7 +114,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
         fixture.options.tracesSampleRate = 1.0
-        fixture.options.isEnableTracing = false
+        fixture.options.enableTracing = false
 
         sut.register(fixture.hub, fixture.options)
 

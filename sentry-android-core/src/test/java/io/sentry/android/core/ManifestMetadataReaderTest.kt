@@ -655,13 +655,13 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(true, fixture.options.isEnableTracing)
+        assertEquals(true, fixture.options.enableTracing)
     }
 
     @Test
     fun `applyMetadata does not override enableTracing from options`() {
         // Arrange
-        fixture.options.isEnableTracing = true
+        fixture.options.enableTracing = true
         val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to false)
         val context = fixture.getContext(metaData = bundle)
 
@@ -669,7 +669,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(true, fixture.options.isEnableTracing)
+        assertEquals(true, fixture.options.enableTracing)
     }
 
     @Test
@@ -681,7 +681,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertNull(fixture.options.isEnableTracing)
+        assertNull(fixture.options.enableTracing)
     }
 
     @Test

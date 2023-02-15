@@ -115,7 +115,7 @@ public class SentryAutoConfiguration {
 
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
-      if (options.getTracesSampleRate() == null && options.isEnableTracing() == null) {
+      if (options.getTracesSampleRate() == null && options.getEnableTracing() == null) {
         options.setTracesSampleRate(0.0);
       }
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic

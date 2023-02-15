@@ -135,7 +135,7 @@ class SentryOptionsTest {
     @Test
     fun `when enableTracing is set to true tracing is considered enabled`() {
         val options = SentryOptions().apply {
-            this.isEnableTracing = true
+            this.enableTracing = true
         }
 
         assertTrue(options.isTracingEnabled)
@@ -151,7 +151,7 @@ class SentryOptionsTest {
     @Test
     fun `when enableTracing is set to false tracing is considered disabled`() {
         val options = SentryOptions().apply {
-            this.isEnableTracing = false
+            this.enableTracing = false
             this.tracesSampleRate = 1.0
             this.tracesSampler = SentryOptions.TracesSamplerCallback { _ -> 1.0 }
         }
@@ -362,7 +362,7 @@ class SentryOptionsTest {
         assertEquals("8090", options.proxy!!.port)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
-        assertEquals(true, options.isEnableTracing)
+        assertEquals(true, options.enableTracing)
         assertEquals(0.5, options.tracesSampleRate)
         assertEquals(0.5, options.profilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)

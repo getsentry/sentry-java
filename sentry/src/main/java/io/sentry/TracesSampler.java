@@ -67,7 +67,7 @@ final class TracesSampler {
     }
 
     final @Nullable Double tracesSampleRateFromOptions = options.getTracesSampleRate();
-    final @Nullable Boolean isEnableTracing = options.isEnableTracing();
+    final @Nullable Boolean isEnableTracing = options.getEnableTracing();
     final @Nullable Double defaultSampleRate =
         Boolean.TRUE.equals(isEnableTracing) ? DEFAULT_TRACES_SAMPLE_RATE : null;
     final @Nullable Double tracesSampleRateOrDefault =

@@ -830,7 +830,7 @@ public class SentryOptions {
    * @return true if enabled, false if disabled, null can mean enabled if {@link
    *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
    */
-  public @Nullable Boolean isEnableTracing() {
+  public @Nullable Boolean getEnableTracing() {
     return enableTracing;
   }
 

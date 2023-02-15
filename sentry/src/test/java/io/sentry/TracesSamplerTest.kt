@@ -29,7 +29,7 @@ class TracesSamplerTest {
             }
             val options = SentryOptions()
             if (enableTracing != null) {
-                options.isEnableTracing = enableTracing
+                options.enableTracing = enableTracing
             }
             if (tracesSampleRate != null) {
                 options.tracesSampleRate = tracesSampleRate
