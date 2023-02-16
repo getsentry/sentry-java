@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `enableTracing` option ([#2530](https://github.com/getsentry/sentry-java/pull/2530))
+    - This change is backwards compatible. The default is `null` meaning existing behaviour remains unchanged (setting either `tracesSampleRate` or `tracesSampler` enables performance).
+    - If set to `true`, performance is enabled, even if no `tracesSampleRate` or `tracesSampler` have been configured.
+    - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
+- Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
+
 ## 6.14.0
 
 ### Features

@@ -2,8 +2,8 @@ package io.sentry
 
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
+import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
-import io.sentry.internal.modules.ResourcesModulesLoader
 import io.sentry.protocol.SentryId
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
@@ -309,7 +309,7 @@ class SentryTest {
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.modulesLoader is ResourcesModulesLoader }
+        assertTrue { sentryOptions!!.modulesLoader is CompositeModulesLoader }
     }
 
     @Test

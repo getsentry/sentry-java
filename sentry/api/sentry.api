@@ -238,6 +238,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getDist ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
 	public fun getEnableDeduplication ()Ljava/lang/Boolean;
+	public fun getEnableTracing ()Ljava/lang/Boolean;
 	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getIdleTimeout ()Ljava/lang/Long;
@@ -260,6 +261,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
@@ -1535,6 +1537,7 @@ public class io/sentry/SentryOptions {
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
+	public fun getEnableTracing ()Ljava/lang/Boolean;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
@@ -1630,6 +1633,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V
+	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
 	public fun setEnableUserInteractionTracing (Z)V
@@ -2451,8 +2455,16 @@ public final class io/sentry/internal/gestures/UiElement$Type : java/lang/Enum {
 	public static fun values ()[Lio/sentry/internal/gestures/UiElement$Type;
 }
 
+public final class io/sentry/internal/modules/CompositeModulesLoader : io/sentry/internal/modules/ModulesLoader {
+	public fun <init> (Ljava/util/List;Lio/sentry/ILogger;)V
+}
+
 public abstract interface class io/sentry/internal/modules/IModulesLoader {
 	public abstract fun getOrLoadModules ()Ljava/util/Map;
+}
+
+public final class io/sentry/internal/modules/ManifestModulesLoader : io/sentry/internal/modules/ModulesLoader {
+	public fun <init> (Lio/sentry/ILogger;)V
 }
 
 public abstract class io/sentry/internal/modules/ModulesLoader : io/sentry/internal/modules/IModulesLoader {
@@ -3668,6 +3680,11 @@ public abstract class io/sentry/transport/TransportResult {
 	public abstract fun getResponseCode ()I
 	public abstract fun isSuccess ()Z
 	public static fun success ()Lio/sentry/transport/TransportResult;
+}
+
+public final class io/sentry/util/ClassLoaderUtils {
+	public fun <init> ()V
+	public static fun classLoaderOrDefault (Ljava/lang/ClassLoader;)Ljava/lang/ClassLoader;
 }
 
 public final class io/sentry/util/CollectionUtils {

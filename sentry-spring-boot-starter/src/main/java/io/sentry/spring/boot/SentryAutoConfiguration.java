@@ -118,7 +118,7 @@ public class SentryAutoConfiguration {
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
       addPackageAndIntegrationInfo();
-      if (options.getTracesSampleRate() == null) {
+      if (options.getTracesSampleRate() == null && options.getEnableTracing() == null) {
         options.setTracesSampleRate(0.0);
       }
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
@@ -338,6 +338,10 @@ public class SentryAutoConfiguration {
     public SentryTracingCondition() {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
+
+    @ConditionalOnProperty(name = "sentry.enable-tracing")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryEnableTracingCondition {}
 
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")
