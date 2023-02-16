@@ -9,7 +9,7 @@ public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql
 	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
 }
 
-public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation, io/sentry/IntegrationName {
+public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V

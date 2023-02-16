@@ -6,7 +6,6 @@ import com.p6spy.engine.event.SimpleJdbcEventListener;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.IntegrationName;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.Span;
 import io.sentry.SpanStatus;
@@ -17,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** P6Spy JDBC event listener that creates {@link Span}s around database queries. */
 @Open
-public class SentryJdbcEventListener extends SimpleJdbcEventListener implements IntegrationName {
+public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private final @NotNull IHub hub;
   private static final @NotNull ThreadLocal<ISpan> CURRENT_SPAN = new ThreadLocal<>();
 
@@ -58,7 +57,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener implements 
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance().addIntegration("JDBC");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
   }

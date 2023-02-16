@@ -8,7 +8,7 @@ public final class io/sentry/android/core/ActivityFramesTracker {
 	public fun takeMetrics (Lio/sentry/protocol/SentryId;)Ljava/util/Map;
 }
 
-public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, io/sentry/IntegrationName, java/io/Closeable {
+public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V

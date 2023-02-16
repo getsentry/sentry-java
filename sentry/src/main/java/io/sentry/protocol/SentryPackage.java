@@ -51,7 +51,8 @@ public final class SentryPackage implements JsonUnknown, JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SentryPackage that = (SentryPackage) o;
-    return name.equals(that.name) && version.equals(that.version);
+    return java.util.Objects.equals(name, that.name)
+        && java.util.Objects.equals(version, that.version);
   }
 
   @Override

@@ -10,7 +10,6 @@ import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransportFactory;
-import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
@@ -41,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
 /** Appender for Log4j2 in charge of sending the logged events to a Sentry server. */
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
 @Open
-public class SentryAppender extends AbstractAppender implements IntegrationName {
+public class SentryAppender extends AbstractAppender {
   private final @Nullable String dsn;
   private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
@@ -257,11 +256,6 @@ public class SentryAppender extends AbstractAppender implements IntegrationName 
     }
   }
 
-  @Override
-  public String getIntegrationName() {
-    return "Log4j";
-  }
-
   private @NotNull SdkVersion createSdkVersion(final @NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
@@ -275,6 +269,6 @@ public class SentryAppender extends AbstractAppender implements IntegrationName 
   private void addPackageAndIntegrationInfo() {
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
-    SentryIntegrationPackageStorage.getInstance().addIntegration(getIntegrationName());
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Log4j");
   }
 }

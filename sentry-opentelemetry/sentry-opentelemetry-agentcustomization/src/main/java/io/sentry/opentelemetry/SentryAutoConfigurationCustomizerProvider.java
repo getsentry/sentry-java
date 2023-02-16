@@ -92,7 +92,7 @@ public final class SentryAutoConfigurationCustomizerProvider
               if (otelVersion != null) {
                 infoHolder.packages.add(
                     new SentryPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion));
-                infoHolder.integrations.add("OTEL");
+                infoHolder.integrations.add("OpenTelemetry");
               }
               final @Nullable String otelJavaagentVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
@@ -101,7 +101,7 @@ public final class SentryAutoConfigurationCustomizerProvider
                     new SentryPackage(
                         "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
                         otelJavaagentVersion));
-                infoHolder.integrations.add("OTEL-Agent");
+                infoHolder.integrations.add("OpenTelemetry-Agent");
               }
               break;
             }

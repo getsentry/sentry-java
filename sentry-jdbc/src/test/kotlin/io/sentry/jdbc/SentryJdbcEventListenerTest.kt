@@ -115,8 +115,7 @@ class SentryJdbcEventListenerTest {
     fun `sets SDKVersion Info`() {
         val sut = fixture.getSut()
         assertNotNull(fixture.hub.options.sdkVersion!!.integrations)
-        assert(fixture.hub.options.sdkVersion!!.integrations!!.contains("JdbcEventListener"))
-        println(fixture.hub.options.sdkVersion!!.version)
+        assert(fixture.hub.options.sdkVersion!!.integrations!!.contains("JDBC"))
         assertNotNull(fixture.hub.options.sdkVersion!!.packages)
         val packageInfo = fixture.hub.options.sdkVersion!!.packages!!.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
         assertNotNull(packageInfo)
