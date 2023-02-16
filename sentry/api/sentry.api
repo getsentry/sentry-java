@@ -325,7 +325,6 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun flush (J)V
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
-	public fun getRootSpan ()Lio/sentry/ISpan;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
@@ -369,7 +368,6 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public static fun getInstance ()Lio/sentry/HubAdapter;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
-	public fun getRootSpan ()Lio/sentry/ISpan;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
@@ -438,7 +436,6 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun flush (J)V
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
-	public abstract fun getRootSpan ()Lio/sentry/ISpan;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
@@ -761,7 +758,6 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public static fun getInstance ()Lio/sentry/NoOpHub;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
-	public fun getRootSpan ()Lio/sentry/ISpan;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
@@ -1063,7 +1059,6 @@ public final class io/sentry/Scope {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getRequest ()Lio/sentry/protocol/Request;
-	public fun getRootSpan ()Lio/sentry/ISpan;
 	public fun getSession ()Lio/sentry/Session;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTags ()Ljava/util/Map;
@@ -1154,7 +1149,6 @@ public final class io/sentry/Sentry {
 	public static fun flush (J)V
 	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
-	public static fun getRootSpan ()Lio/sentry/ISpan;
 	public static fun getSpan ()Lio/sentry/ISpan;
 	public static fun init ()V
 	public static fun init (Lio/sentry/OptionsContainer;Lio/sentry/Sentry$OptionsConfiguration;)V
@@ -1879,7 +1873,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
-	public fun setEndDate (Lio/sentry/SentryDate;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -1895,6 +1888,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1965,10 +1959,12 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 
 public final class io/sentry/SpanOptions {
 	public fun <init> ()V
-	public fun <init> (ZZZ)V
-	public fun isAutoFinish ()Z
+	public fun <init> (ZZZZLjava/lang/Long;)V
+	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun isIdle ()Z
 	public fun isTrimEnd ()Z
 	public fun isTrimStart ()Z
+	public fun isWaitForChildren ()Z
 }
 
 public final class io/sentry/SpanStatus : java/lang/Enum, io/sentry/JsonSerializable {

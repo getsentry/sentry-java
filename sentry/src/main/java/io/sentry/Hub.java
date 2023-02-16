@@ -778,19 +778,6 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable ISpan getRootSpan() {
-    ISpan span = null;
-    if (!isEnabled()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'getRootSpan' call is a no-op.");
-    } else {
-      span = stack.peek().getScope().getRootSpan();
-    }
-    return span;
-  }
-
-  @Override
   @ApiStatus.Internal
   public void setSpanContext(
       final @NotNull Throwable throwable,

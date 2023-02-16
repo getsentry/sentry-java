@@ -200,16 +200,6 @@ public final class Scope {
   }
 
   /**
-   * Returns current active root Span, aka the Transaction.
-   *
-   * @return current active Span or Transaction or null if transaction has not been set.
-   */
-  @Nullable
-  public ISpan getRootSpan() {
-    return transaction;
-  }
-
-  /**
    * Sets the current active transaction
    *
    * @param transaction the transaction

@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -186,6 +188,30 @@ public final class Span implements ISpan {
 
     this.context.setStatus(status);
     this.timestamp = timestamp == null ? hub.getOptions().getDateProvider().now() : timestamp;
+    if (options.isTrimStart() || options.isTrimEnd()) {
+      @Nullable SentryDate minChildStart = null;
+      @Nullable SentryDate maxChildEnd = null;
+
+      final @NotNull List<Span> children = getChildren();
+      for (final Span child : children) {
+        if (child.getParentSpanId() != null && child.getParentSpanId().equals(getSpanId())) {
+          if (minChildStart == null || child.getStartDate().isBefore(minChildStart)) {
+            minChildStart = child.getStartDate();
+          }
+          if (maxChildEnd == null
+              || (child.getFinishDate() != null && child.getFinishDate().isAfter(maxChildEnd))) {
+            maxChildEnd = child.getFinishDate();
+          }
+        }
+      }
+      if (options.isTrimStart() && minChildStart != null) {
+        setStartDate(minChildStart);
+      }
+      if (options.isTrimEnd() && maxChildEnd != null) {
+        updateEndDate(maxChildEnd);
+      }
+    }
+
     if (throwable != null) {
       hub.setSpanContext(throwable, this, this.transaction.getName());
     }
@@ -341,16 +367,41 @@ public final class Span implements ISpan {
     this.spanFinishedCallback = callback;
   }
 
-  public void setStartDate(SentryDate date) {
+  public void setStartDate(@NotNull SentryDate date) {
     this.startTimestamp = date;
   }
 
-  public void setEndDate(SentryDate date) {
-    this.timestamp = date;
+  /**
+   * Updates the end date of the span. Note: This will only update the end date if the span is
+   * already finished.
+   *
+   * @param date the end date to set
+   * @return true if the end date was updated, false otherwise
+   */
+  public boolean updateEndDate(@NotNull SentryDate date) {
+    if (this.timestamp != null) {
+      this.timestamp = date;
+      return true;
+    }
+    return false;
   }
 
   @NotNull
   public SpanOptions getOptions() {
     return options;
+  }
+
+  @NotNull
+  private List<Span> getChildren() {
+    final List<Span> children = new ArrayList<>();
+    final Iterator<Span> iterator = transaction.getSpans().iterator();
+
+    while (iterator.hasNext()) {
+      final Span span = iterator.next();
+      if (span.getParentSpanId() != null && span.getParentSpanId().equals(getSpanId())) {
+        children.add(span);
+      }
+    }
+    return children;
   }
 }

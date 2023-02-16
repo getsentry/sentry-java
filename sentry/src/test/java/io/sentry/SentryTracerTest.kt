@@ -924,7 +924,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
 
         // when a span is created with auto-finish
-        val span = transaction.startChild("composition", null, SpanOptions(false, false, true)) as Span
+        val span = transaction.startChild("composition", null, SpanOptions(false, false, true, false, null)) as Span
 
         // and the transaction is finished
         transaction.finish()
@@ -936,7 +936,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(1, it.spans.size)
-                assertEquals(transaction.root.finishDate, span.finishDate)
+                assertEquals(transaction.root.finishDate!!.nanoTimestamp(), span.finishDate!!.nanoTimestamp())
             },
             anyOrNull(),
             anyOrNull(),
@@ -949,7 +949,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
 
         // when a span is created with auto-finish
-        val span = transaction.startChild("composition", null, SpanOptions(false, false, true)) as Span
+        val span = transaction.startChild("composition", null, SpanOptions(false, false, true, false, null)) as Span
 
         // and the transaction is finished
         Thread.sleep(1)
@@ -976,7 +976,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
 
         // when a parent span is created
-        val parentSpan = transaction.startChild("composition", null, SpanOptions(true, false, true)) as Span
+        val parentSpan = transaction.startChild("composition", null, SpanOptions(true, false, true, false, null)) as Span
 
         // with a child which starts later
         Thread.sleep(5)
@@ -1013,7 +1013,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
 
         // when a parent span is created
-        val parentSpan = transaction.startChild("composition", null, SpanOptions(false, true, true)) as Span
+        val parentSpan = transaction.startChild("composition", null, SpanOptions(false, true, true, false, null)) as Span
 
         // with a child which starts later
         Thread.sleep(5)

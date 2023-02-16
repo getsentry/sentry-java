@@ -10,6 +10,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.platform.testTag
+import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SpanOptions
 
@@ -22,17 +23,25 @@ private const val OP_RENDER = "ui.render"
 @Immutable
 private class ImmutableHolder<T>(var item: T)
 
+private fun getRootSpan(): ISpan? {
+    var rootSpan: ISpan? = null
+    Sentry.configureScope {
+        rootSpan = it.transaction
+    }
+    return rootSpan
+}
+
 private val localSentryCompositionParentSpan = compositionLocalOf {
     ImmutableHolder(
-        Sentry.getRootSpan()
-            ?.startChild(OP_PARENT_COMPOSITION, null, SpanOptions(true, true, true))
+        getRootSpan()
+            ?.startChild(OP_PARENT_COMPOSITION, null, SpanOptions(true, true, true, false, null))
     )
 }
 
 private val localSentryRenderingParentSpan = compositionLocalOf {
     ImmutableHolder(
-        Sentry.getRootSpan()
-            ?.startChild(OP_PARENT_RENDER, null, SpanOptions(true, true, true))
+        getRootSpan()
+            ?.startChild(OP_PARENT_RENDER, null, SpanOptions(true, true, true, false, null))
     )
 }
 
