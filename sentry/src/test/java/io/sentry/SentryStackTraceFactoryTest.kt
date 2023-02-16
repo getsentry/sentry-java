@@ -67,23 +67,23 @@ class SentryStackTraceFactoryTest {
     }
 
     @Test
-    fun `when getStackFrames is called passing a valid inAppExcludes, inApp should be false if prefix doesnt matches it`() {
+    fun `when getStackFrames is called passing a valid inAppExcludes, inApp should be undecided if prefix doesnt matches it`() {
         val element = generateStackTrace("io.myapp.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
 
     @Test
-    fun `when getStackFrames is called passing an invalid inAppExcludes, inApp should be false`() {
+    fun `when getStackFrames is called passing an invalid inAppExcludes, inApp should undecided`() {
         val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
     //endregion
 
@@ -99,23 +99,23 @@ class SentryStackTraceFactoryTest {
     }
 
     @Test
-    fun `when getStackFrames is called passing a valid inAppIncludes, inApp should be false if prefix doesnt matches it`() {
+    fun `when getStackFrames is called passing a valid inAppIncludes, inApp should be undecided if prefix doesnt matches it`() {
         val element = generateStackTrace("io.myapp.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.mysentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
 
     @Test
-    fun `when getStackFrames is called passing an invalid inAppIncludes, inApp should be false`() {
+    fun `when getStackFrames is called passing an invalid inAppIncludes, inApp should be undecided`() {
         val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
     //endregion
 
@@ -132,16 +132,16 @@ class SentryStackTraceFactoryTest {
     @Test
     fun `when class is defined in the app, inApp is true`() {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry.not"), listOf("io.mysentry.inApp"))
-        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.ClassName"))
-        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.somePackage.ClassName"))
-        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.ClassName"))
-        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.somePackage.ClassName"))
+        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.ClassName")!!)
+        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.somePackage.ClassName")!!)
+        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.ClassName")!!)
+        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.somePackage.ClassName")!!)
     }
 
     @Test
-    fun `when class is not in the list, is not inApp`() {
+    fun `when class is not in the list, is left undecided`() {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf(), listOf("io.mysentry"))
-        assertFalse(sentryStackTraceFactory.isInApp("com.getsentry"))
+        assertNull(sentryStackTraceFactory.isInApp("com.getsentry"))
     }
 
     @Test
