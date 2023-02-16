@@ -1,5 +1,5 @@
 public final class io/sentry/servlet/BuildConfig {
-	public static final field SENTRY_JDBC_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_SERVLET_SDK_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 

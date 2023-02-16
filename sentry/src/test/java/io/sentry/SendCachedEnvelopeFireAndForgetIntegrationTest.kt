@@ -17,7 +17,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         var hub: IHub = mock()
         var logger: ILogger = mock()
         var options = SentryOptions()
-        var callback = mock<CustomFactoryWithDefaults>().apply {
+        var callback = mock<CustomFactory>().apply {
             whenever(hasValidPath(any(), any())).thenCallRealMethod()
         }
 
@@ -83,12 +83,6 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
-        override fun create(hub: IHub, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
-            return null
-        }
-    }
-
-    private abstract class CustomFactoryWithDefaults : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
         override fun create(hub: IHub, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
             return null
         }

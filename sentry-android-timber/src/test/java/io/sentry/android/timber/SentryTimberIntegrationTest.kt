@@ -91,7 +91,7 @@ class SentryTimberIntegrationTest {
     }
 
     @Test
-    fun `Integrations adds itself to the package list`() {
+    fun `Integration adds itself to the package list`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
@@ -104,7 +104,7 @@ class SentryTimberIntegrationTest {
     }
 
     @Test
-    fun `Integrations adds itself to the integration list`() {
+    fun `Integration adds itself to the integration list`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 

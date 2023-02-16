@@ -101,6 +101,6 @@ tasks.withType<JavaCompile>().configureEach {
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.servlet.jakarta")
-    buildConfigField("String", "SENTRY_JDBC_SDK_NAME", "\"${Config.Sentry.SENTRY_SERVLET_JAKARTA_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_SERVLET_JAKARTA_SDK_NAME", "\"${Config.Sentry.SENTRY_SERVLET_JAKARTA_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
