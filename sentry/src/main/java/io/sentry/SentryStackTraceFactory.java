@@ -77,7 +77,8 @@ public final class SentryStackTraceFactory {
    * @return true if it is or false otherwise
    */
   @TestOnly
-  boolean isInApp(final @Nullable String className) {
+  @Nullable
+  Boolean isInApp(final @Nullable String className) {
     if (className == null || className.isEmpty()) {
       return true;
     }
@@ -96,7 +97,7 @@ public final class SentryStackTraceFactory {
         }
       }
     }
-    return false;
+    return null;
   }
 
   /**

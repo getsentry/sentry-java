@@ -10,6 +10,10 @@
     - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
 - Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
 
+### Fixes
+
+- Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
+
 ## 6.14.0
 
 ### Features
