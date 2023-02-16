@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,6 +47,24 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * <p>Examples: `0.1.0`, `1.0.0`, `4.3.12`
    */
   private @NotNull String version;
+
+  /**
+   * List of installed and loaded SDK packages. _Optional._
+   *
+   * <p>A list of packages that were installed as part of this SDK or the activated integrations.
+   * Each package consists of a name in the format `source:identifier` and `version`. If the source
+   * is a Git repository, the `source` should be `git`, the identifier should be a checkout link and
+   * the version should be a Git reference (branch, tag or SHA).
+   */
+  private @Nullable Set<SentryPackage> deserializedPackages;
+  /**
+   * List of integrations that are enabled in the SDK. _Optional._
+   *
+   * <p>The list should have all enabled integrations, including default integrations. Default
+   * integrations are included because different SDK releases may contain different default
+   * integrations.
+   */
+  private @Nullable Set<String> deserializedIntegrations;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -79,11 +99,15 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
   }
 
   public @Nullable List<SentryPackage> getPackages() {
-    return SentryIntegrationPackageStorage.getInstance().getPackages();
+    return deserializedPackages != null
+        ? new CopyOnWriteArrayList<>(deserializedPackages)
+        : SentryIntegrationPackageStorage.getInstance().getPackages();
   }
 
-  public @Nullable Set<String> getIntegrations() {
-    return SentryIntegrationPackageStorage.getInstance().getIntegrations();
+  public @Nullable List<String> getIntegrations() {
+    return deserializedIntegrations != null
+        ? new CopyOnWriteArrayList<>(deserializedIntegrations)
+        : SentryIntegrationPackageStorage.getInstance().getIntegrations();
   }
 
   /**
@@ -138,7 +162,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.NAME).value(name);
     writer.name(JsonKeys.VERSION).value(version);
     List<SentryPackage> packages = getPackages();
-    Set<String> integrations = getIntegrations();
+    List<String> integrations = getIntegrations();
     if (packages != null && !packages.isEmpty()) {
       writer.name(JsonKeys.PACKAGES).value(logger, packages);
     }
@@ -215,8 +239,8 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
       }
 
       SdkVersion sdkVersion = new SdkVersion(name, version);
-      SentryIntegrationPackageStorage.getInstance().setPackages(packages);
-      SentryIntegrationPackageStorage.getInstance().setIntegrations(integrations);
+      sdkVersion.deserializedPackages = new CopyOnWriteArraySet<>(packages);
+      sdkVersion.deserializedIntegrations = new CopyOnWriteArraySet<>(integrations);
 
       sdkVersion.setUnknown(unknown);
       return sdkVersion;

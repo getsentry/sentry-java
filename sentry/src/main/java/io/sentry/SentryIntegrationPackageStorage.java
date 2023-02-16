@@ -9,7 +9,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SentryIntegrationPackageStorage {
@@ -53,14 +52,8 @@ public final class SentryIntegrationPackageStorage {
     integrations.add(integration);
   }
 
-  public @NotNull Set<String> getIntegrations() {
-    return new CopyOnWriteArraySet<>(integrations);
-  }
-
-  public void setIntegrations(final @NotNull List<String> integrationList) {
-    Objects.requireNonNull(integrationList, "integrationList is required.");
-    integrations.clear();
-    integrations.addAll(integrationList);
+  public @NotNull List<String> getIntegrations() {
+    return new CopyOnWriteArrayList<>(integrations);
   }
 
   public void addPackage(final @NotNull String name, final @NotNull String version) {
@@ -73,18 +66,5 @@ public final class SentryIntegrationPackageStorage {
 
   public @NotNull List<SentryPackage> getPackages() {
     return new CopyOnWriteArrayList<>(packages);
-  }
-
-  public void setPackages(final @NotNull List<SentryPackage> packageList) {
-    Objects.requireNonNull(packageList, "packageList is required.");
-
-    packages.clear();
-    packages.addAll(packageList);
-  }
-
-  @TestOnly
-  public void clearStorage() {
-    integrations.clear();
-    packages.clear();
   }
 }
