@@ -45,14 +45,4 @@ public interface IScopeObserver {
   default void setTransaction(@Nullable String transaction) {}
 
   default void setTrace(@Nullable SpanContext spanContext) {}
-
-  default void setRelease(@Nullable String release) {}
-
-  default void setProguardUuid(@Nullable String proguardUuid) {}
-
-  default void setSdkVersion(@Nullable SdkVersion sdkVersion) {}
-
-  default void setEnvironment(@Nullable String environment) {}
-
-  default void setDist(@Nullable String dist) {}
 }

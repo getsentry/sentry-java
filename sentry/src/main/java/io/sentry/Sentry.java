@@ -214,12 +214,13 @@ public final class Sentry {
       .getExecutorService()
       .submit(() -> {
         // for static things like sentry options we can immediately trigger observers
-        for (final IScopeObserver observer : options.getScopeObservers()) {
+        for (final IOptionsObserver observer : options.getOptionsObservers()) {
           observer.setRelease(options.getRelease());
           observer.setProguardUuid(options.getProguardUuid());
           observer.setSdkVersion(options.getSdkVersion());
           observer.setDist(options.getDist());
           observer.setEnvironment(options.getEnvironment());
+          observer.setTags(options.getTags());
         }
       });
   }

@@ -19,6 +19,7 @@ import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.internal.gestures.GestureTargetLocator;
@@ -140,7 +141,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
-    options.addEventProcessor(new AnrV2EventProcessor(options));
+    options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     final SentryFrameMetricsCollector frameMetricsCollector =
         new SentryFrameMetricsCollector(context, options, buildInfoProvider);
@@ -174,6 +175,7 @@ final class AndroidOptionsInitializer {
 
     if (options.getCacheDirPath() != null) {
       options.addScopeObserver(new PersistingScopeObserver(options));
+      options.addOptionsObserver(new PersistingOptionsObserver(options));
     }
   }
 

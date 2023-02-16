@@ -123,13 +123,6 @@ public class AnrV2Integration implements Integration, Closeable {
     @Override public void run() {
       final long lastReportedAnrTimestamp = AndroidEnvelopeCache.lastReportedAnr(options);
 
-      /**
-       * TODO: Report old ANRs without enriching, just as crashes. Only the latest ANR in the list
-       * should be enriched with contexts, breadcrumbs etc. On the first run after the SDK update
-       * there won't be any contexts serialized on disk, therefore we'll report all past ANRs as
-       * crashes without enriching, which is  correct. From that point on, we'll start serializing
-       * contexts, therefore upon app restart we can always enrich the latest ANR
-       */
       // search for the latest ANR to report it separately as we're gonna enrich it. The latest
       // ANR will be first in the list, as it's filled last-to-first in order of appearance
       ApplicationExitInfo latestAnr = null;

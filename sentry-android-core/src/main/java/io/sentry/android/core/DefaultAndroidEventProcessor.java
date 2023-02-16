@@ -105,7 +105,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     map.put(ROOTED, rootChecker.isDeviceRooted());
 
-    String kernelVersion = getKernelVersion();
+    String kernelVersion = ContextUtils.getKernelVersion(options.getLogger());
     if (kernelVersion != null) {
       map.put(KERNEL_VERSION, kernelVersion);
     }
@@ -113,7 +113,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // its not IO, but it has been cached in the old version as well
     map.put(EMULATOR, buildInfoProvider.isEmulator());
 
-    final Map<String, String> sideLoadedInfo = getSideLoadedInfo();
+    final Map<String, String> sideLoadedInfo =
+      ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
     if (sideLoadedInfo != null) {
       map.put(SIDE_LOADED, sideLoadedInfo);
     }
@@ -242,30 +243,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setAppExtras(final @NotNull App app) {
-    app.setAppName(getApplicationName());
+    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
     app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
-  }
-
-  @SuppressWarnings("deprecation")
-  private @NotNull String getAbi() {
-    return Build.CPU_ABI;
-  }
-
-  @SuppressWarnings("deprecation")
-  private @NotNull String getAbi2() {
-    return Build.CPU_ABI2;
-  }
-
-  @SuppressWarnings({"ObsoleteSdkInt", "deprecation"})
-  private void setArchitectures(final @NotNull Device device) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      String[] supportedAbis = Build.SUPPORTED_ABIS;
-      device.setArchs(supportedAbis);
-    } else {
-      String[] supportedAbis = {getAbi(), getAbi2()};
-      device.setArchs(supportedAbis);
-      // we were not checking CPU_ABI2, but I've added to the list now
-    }
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
@@ -284,14 +263,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     Device device = new Device();
     if (options.isSendDefaultPii()) {
-      device.setName(getDeviceName());
+      device.setName(ContextUtils.getDeviceName(context, buildInfoProvider));
     }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
-    device.setFamily(getFamily());
+    device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    setArchitectures(device);
+    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
 
     // setting such values require IO hence we don't run for transactions
     if (errorEvent) {
@@ -311,7 +290,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       options.getLogger().log(SentryLevel.ERROR, "Error getting emulator.", e);
     }
 
-    DisplayMetrics displayMetrics = getDisplayMetrics();
+    DisplayMetrics displayMetrics = ContextUtils.getDisplayMetrics(context, options.getLogger());
     if (displayMetrics != null) {
       device.setScreenWidthPixels(displayMetrics.widthPixels);
       device.setScreenHeightPixels(displayMetrics.heightPixels);
@@ -358,7 +337,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     device.setOnline(connected);
 
-    final ActivityManager.MemoryInfo memInfo = getMemInfo();
+    final ActivityManager.MemoryInfo memInfo = ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
       // in bytes
       device.setMemorySize(getMemorySize(memInfo));
@@ -393,15 +372,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  @SuppressWarnings("ObsoleteSdkInt")
-  private @Nullable String getDeviceName() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return Settings.Global.getString(context.getContentResolver(), "device_name");
-    } else {
-      return null;
-    }
-  }
-
   private TimeZone getTimeZone() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       LocaleList locales = context.getResources().getConfiguration().getLocales();
@@ -425,44 +395,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  /**
-   * Get MemoryInfo object representing the memory state of the application.
-   *
-   * @return MemoryInfo object representing the memory state of the application
-   */
-  private @Nullable ActivityManager.MemoryInfo getMemInfo() {
-    try {
-      ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
-      ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
-      if (actManager != null) {
-        actManager.getMemoryInfo(memInfo);
-        return memInfo;
-      }
-      options.getLogger().log(SentryLevel.INFO, "Error getting MemoryInfo.");
-      return null;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
-      return null;
-    }
-  }
-
   private @Nullable Intent getBatteryIntent() {
     return context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-  }
-
-  /**
-   * Fake the device family by using the first word in the Build.MODEL. Works well in most cases...
-   * "Nexus 6P" -> "Nexus", "Galaxy S7" -> "Galaxy".
-   *
-   * @return family name of the device, as best we can tell
-   */
-  private @Nullable String getFamily() {
-    try {
-      return Build.MODEL.split(" ", -1)[0];
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting device family.", e);
-      return null;
-    }
   }
 
   /**
@@ -712,20 +646,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  /**
-   * Get the DisplayMetrics object for the current application.
-   *
-   * @return the DisplayMetrics object for the current application
-   */
-  private @Nullable DisplayMetrics getDisplayMetrics() {
-    try {
-      return context.getResources().getDisplayMetrics();
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting DisplayMetrics.", e);
-      return null;
-    }
-  }
-
   private @NotNull OperatingSystem getOperatingSystem() {
     OperatingSystem os = new OperatingSystem();
     os.setName("Android");
@@ -779,56 +699,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   /**
-   * Get the device's current kernel version, as a string. Attempts to read /proc/version, and falls
-   * back to the 'os.version' System Property.
-   *
-   * @return the device's current kernel version, as a string
-   */
-  @SuppressWarnings("DefaultCharset")
-  private @Nullable String getKernelVersion() {
-    // its possible to try to execute 'uname' and parse it or also another unix commands or even
-    // looking for well known root installed apps
-    String errorMsg = "Exception while attempting to read kernel information";
-    String defaultVersion = System.getProperty("os.version");
-
-    File file = new File("/proc/version");
-    if (!file.canRead()) {
-      return defaultVersion;
-    }
-    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-      return br.readLine();
-    } catch (IOException e) {
-      options.getLogger().log(SentryLevel.ERROR, errorMsg, e);
-    }
-
-    return defaultVersion;
-  }
-
-  /**
-   * Get the human-facing Application name.
-   *
-   * @return Application name
-   */
-  private @Nullable String getApplicationName() {
-    try {
-      ApplicationInfo applicationInfo = context.getApplicationInfo();
-      int stringId = applicationInfo.labelRes;
-      if (stringId == 0) {
-        if (applicationInfo.nonLocalizedLabel != null) {
-          return applicationInfo.nonLocalizedLabel.toString();
-        }
-        return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
-      } else {
-        return context.getString(stringId);
-      }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting application name.", e);
-    }
-
-    return null;
-  }
-
-  /**
    * Sets the default user which contains only the userId.
    *
    * @return the User object
@@ -846,42 +716,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
-    return null;
-  }
-
-  @SuppressWarnings("deprecation")
-  private @Nullable Map<String, String> getSideLoadedInfo() {
-    String packageName = null;
-    try {
-      final PackageInfo packageInfo =
-          ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
-      final PackageManager packageManager = context.getPackageManager();
-
-      if (packageInfo != null && packageManager != null) {
-        packageName = packageInfo.packageName;
-
-        // getInstallSourceInfo requires INSTALL_PACKAGES permission which is only given to system
-        // apps.
-        final String installerPackageName = packageManager.getInstallerPackageName(packageName);
-
-        final Map<String, String> sideLoadedInfo = new HashMap<>();
-
-        if (installerPackageName != null) {
-          sideLoadedInfo.put("isSideLoaded", "false");
-          // could be amazon, google play etc
-          sideLoadedInfo.put("installerStore", installerPackageName);
-        } else {
-          // if it's installed via adb, system apps or untrusted sources
-          sideLoadedInfo.put("isSideLoaded", "true");
-        }
-
-        return sideLoadedInfo;
-      }
-    } catch (IllegalArgumentException e) {
-      // it'll never be thrown as we are querying its own App's package.
-      options.getLogger().log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
-    }
-
     return null;
   }
 

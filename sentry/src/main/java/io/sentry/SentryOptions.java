@@ -272,6 +272,8 @@ public class SentryOptions {
   /** list of scope observers */
   private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
 
+  private final @NotNull List<IOptionsObserver> optionsObservers = new ArrayList<>();
+
   /**
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.
@@ -1312,6 +1314,25 @@ public class SentryOptions {
   @NotNull
   public List<IScopeObserver> getScopeObservers() {
     return observers;
+  }
+
+  /**
+   * Adds a SentryOptions observer
+   *
+   * @param observer the Observer
+   */
+  public void addOptionsObserver(final @NotNull IOptionsObserver observer) {
+    optionsObservers.add(observer);
+  }
+
+  /**
+   * Returns the list of SentryOptions observers
+   *
+   * @return the SentryOptions observer list
+   */
+  @NotNull
+  public List<IOptionsObserver> getOptionsObservers() {
+    return optionsObservers;
   }
 
   /**
