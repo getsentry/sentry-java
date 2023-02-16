@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SentryIntegrationPackageStorage {
@@ -66,5 +67,11 @@ public final class SentryIntegrationPackageStorage {
 
   public @NotNull List<SentryPackage> getPackages() {
     return new CopyOnWriteArrayList<>(packages);
+  }
+
+  @TestOnly
+  public void clearStorage() {
+    integrations.clear();
+    packages.clear();
   }
 }
