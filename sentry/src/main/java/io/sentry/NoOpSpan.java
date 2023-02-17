@@ -125,6 +125,11 @@ public final class NoOpSpan implements ISpan {
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
 
   @Override
+  public boolean updateEndDate(final @NotNull SentryDate date) {
+    return false;
+  }
+
+  @Override
   public boolean isNoOp() {
     return true;
   }

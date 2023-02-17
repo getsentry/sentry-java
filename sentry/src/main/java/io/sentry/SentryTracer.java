@@ -701,6 +701,11 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
+  public boolean updateEndDate(final @NotNull SentryDate date) {
+    return root.updateEndDate(date);
+  }
+
+  @Override
   public boolean isNoOp() {
     return false;
   }

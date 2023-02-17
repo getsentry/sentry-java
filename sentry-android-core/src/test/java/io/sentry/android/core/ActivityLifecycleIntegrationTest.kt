@@ -5,6 +5,11 @@ import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.os.Bundle
+import android.os.Looper
+import android.view.View
+import android.view.ViewTreeObserver
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.FullDisplayedReporter
@@ -16,6 +21,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.Span
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TransactionContext
@@ -23,6 +29,7 @@ import io.sentry.TransactionFinishedCallback
 import io.sentry.TransactionOptions
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.getProperty
+import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -31,6 +38,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
@@ -45,6 +53,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
+@RunWith(AndroidJUnit4::class)
 class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
@@ -78,6 +87,17 @@ class ActivityLifecycleIntegrationTest {
             whenever(am.runningAppProcesses).thenReturn(processes)
 
             return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
+        }
+
+        fun createView(): View {
+            val view = View(ApplicationProvider.getApplicationContext())
+
+            // Adding a listener forces ViewTreeObserver.mOnDrawListeners to be initialized and non-null.
+            val dummyListener = ViewTreeObserver.OnDrawListener {}
+            view.viewTreeObserver.addOnDrawListener(dummyListener)
+            view.viewTreeObserver.removeOnDrawListener(dummyListener)
+
+            return view
         }
     }
 
@@ -1105,6 +1125,69 @@ class ActivityLifecycleIntegrationTest {
         assertFalse(ttfdSpan2.isFinished)
         assertNotNull(autoCloseFuture2)
         assertFalse(autoCloseFuture2.isCancelled)
+    }
+
+    @Test
+    fun `ttid is finished after first frame drawn`() {
+        val sut = fixture.getSut()
+        val view = fixture.createView()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = 1.0
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
+
+        // Make the integration create the spans and register to the FirstDrawDoneListener
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+
+        // The ttid span should be running
+        val ttidSpan = sut.ttidSpanMap[activity]
+        assertNotNull(ttidSpan)
+        assertFalse(ttidSpan.isFinished)
+
+        // Mock the draw of the view. The ttid span should finish now
+        runFirstDraw(view)
+        assertTrue(ttidSpan.isFinished)
+    }
+
+    @Test
+    fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is called too early, ttfd is adjusted to equal ttid`() {
+        val sut = fixture.getSut()
+        val view = fixture.createView()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
+
+        // Make the integration create the spans and register to the FirstDrawDoneListener
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+
+        // The ttid and ttfd spans should be running
+        val ttidSpan = sut.ttidSpanMap[activity] as Span
+        val ttfdSpan = sut.ttfdSpan as Span
+        assertFalse(ttidSpan.isFinished)
+        assertFalse(ttfdSpan.isFinished)
+
+        // Let's finish the ttfd span too early (before the first view is drawn)
+        ttfdSpan.finish()
+        assertTrue(ttfdSpan.isFinished)
+        val oldEndDate = ttfdSpan.finishDate
+
+        // Mock the draw of the view. The ttid span should finish now and the ttfd end date should be adjusted
+        runFirstDraw(view)
+        assertTrue(ttidSpan.isFinished)
+        val newEndDate = ttfdSpan.finishDate
+        assertNotEquals(newEndDate, oldEndDate)
+        assertEquals(newEndDate, ttidSpan.finishDate)
+    }
+
+    private fun runFirstDraw(view: View) {
+        // Removes OnDrawListener in the next OnGlobalLayout after onDraw
+        view.viewTreeObserver.dispatchOnDraw()
+        view.viewTreeObserver.dispatchOnGlobalLayout()
+        shadowOf(Looper.getMainLooper()).idle()
     }
 
     private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(0), 0)) {
