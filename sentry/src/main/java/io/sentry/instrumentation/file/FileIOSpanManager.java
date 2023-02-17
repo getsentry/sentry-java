@@ -2,6 +2,7 @@ package io.sentry.instrumentation.file;
 
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanStatus;
@@ -40,6 +41,7 @@ final class FileIOSpanManager {
     this.options = options;
     this.stackTraceFactory =
         new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
+    SentryIntegrationPackageStorage.getInstance().addIntegration("FileIO");
   }
 
   /**
