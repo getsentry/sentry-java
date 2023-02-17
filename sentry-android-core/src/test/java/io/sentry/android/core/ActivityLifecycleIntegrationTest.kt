@@ -702,6 +702,24 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `stop transaction on resumed does not finish ttfd if isEnableTimeToFullDisplayTracing`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+        val ttfd = sut.ttfdSpan
+        sut.ttidSpanMap.values.first().finish()
+        sut.onActivityResumed(activity)
+        sut.onActivityPostResumed(activity)
+
+        assertNotNull(ttfd)
+        assertFalse(ttfd.isFinished)
+    }
+
+    @Test
     fun `reportFullyDrawn finishes the ttfd`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
