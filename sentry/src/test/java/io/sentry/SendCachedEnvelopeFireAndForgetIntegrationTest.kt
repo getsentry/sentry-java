@@ -78,8 +78,8 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         )
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-        assertNotNull(fixture.options.sdkVersion!!.integrations)
-        assert(fixture.options.sdkVersion!!.integrations!!.contains("SendCachedEnvelopeFireAndForget"))
+        assertNotNull(fixture.options.sdkVersion)
+        assert(fixture.options.sdkVersion!!.integrationSet.contains("SendCachedEnvelopeFireAndForget"))
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {

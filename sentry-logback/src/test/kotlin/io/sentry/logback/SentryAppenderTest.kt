@@ -368,15 +368,13 @@ class SentryAppenderTest {
                 assertNotNull(event.sdk) {
                     assertEquals(BuildConfig.SENTRY_LOGBACK_SDK_NAME, it.name)
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
-                    assertNotNull(it.packages)
                     assertTrue(
-                        it.packages!!.any { pkg ->
+                        it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-logback" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
                         }
                     )
-                    assertNotNull(it.integrations)
-                    assertTrue(it.integrations!!.contains("Logback"))
+                    assertTrue(it.integrationSet.contains("Logback"))
                 }
             },
             anyOrNull()

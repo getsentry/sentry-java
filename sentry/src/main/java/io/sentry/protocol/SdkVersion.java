@@ -98,15 +98,43 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
   }
 
+  /**
+   * Gets installed Sentry packages as list
+   *
+   * @deprecated use {@link SdkVersion#getPackageSet()} ()}
+   */
+  @Deprecated
   public @Nullable List<SentryPackage> getPackages() {
+    final Set<SentryPackage> packages =
+        deserializedPackages != null
+            ? deserializedPackages
+            : SentryIntegrationPackageStorage.getInstance().getPackages();
+    return new CopyOnWriteArrayList<>(packages);
+  }
+
+  public @NotNull Set<SentryPackage> getPackageSet() {
     return deserializedPackages != null
-        ? new CopyOnWriteArrayList<>(deserializedPackages)
+        ? deserializedPackages
         : SentryIntegrationPackageStorage.getInstance().getPackages();
   }
 
+  /**
+   * Gets installed Sentry integration names as list
+   *
+   * @deprecated use {@link SdkVersion#getIntegrationSet()}
+   */
+  @Deprecated
   public @Nullable List<String> getIntegrations() {
+    final Set<String> integrations =
+        deserializedIntegrations != null
+            ? deserializedIntegrations
+            : SentryIntegrationPackageStorage.getInstance().getIntegrations();
+    return new CopyOnWriteArrayList<>(integrations);
+  }
+
+  public @NotNull Set<String> getIntegrationSet() {
     return deserializedIntegrations != null
-        ? new CopyOnWriteArrayList<>(deserializedIntegrations)
+        ? deserializedIntegrations
         : SentryIntegrationPackageStorage.getInstance().getIntegrations();
   }
 
@@ -161,12 +189,12 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     writer.beginObject();
     writer.name(JsonKeys.NAME).value(name);
     writer.name(JsonKeys.VERSION).value(version);
-    List<SentryPackage> packages = getPackages();
-    List<String> integrations = getIntegrations();
-    if (packages != null && !packages.isEmpty()) {
+    Set<SentryPackage> packages = getPackageSet();
+    Set<String> integrations = getIntegrationSet();
+    if (!packages.isEmpty()) {
       writer.name(JsonKeys.PACKAGES).value(logger, packages);
     }
-    if (integrations != null && !integrations.isEmpty()) {
+    if (!integrations.isEmpty()) {
       writer.name(JsonKeys.INTEGRATIONS).value(logger, integrations);
     }
     if (unknown != null) {

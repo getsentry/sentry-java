@@ -113,7 +113,7 @@ class ShutdownHookIntegrationTest {
         integration.register(fixture.hub, fixture.options)
 
         assertTrue(
-            fixture.options.sdkVersion!!.integrations!!.contains("ShutdownHook")
+            fixture.options.sdkVersion!!.integrationSet.contains("ShutdownHook")
         )
     }
 }

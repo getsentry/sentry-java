@@ -1457,8 +1457,8 @@ public final class io/sentry/SentryIntegrationPackageStorage {
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
 	public fun clearStorage ()V
 	public static fun getInstance ()Lio/sentry/SentryIntegrationPackageStorage;
-	public fun getIntegrations ()Ljava/util/List;
-	public fun getPackages ()Ljava/util/List;
+	public fun getIntegrations ()Ljava/util/Set;
+	public fun getPackages ()Ljava/util/Set;
 }
 
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
@@ -3115,8 +3115,10 @@ public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, i
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getIntegrationSet ()Ljava/util/Set;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getName ()Ljava/lang/String;
+	public fun getPackageSet ()Ljava/util/Set;
 	public fun getPackages ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;

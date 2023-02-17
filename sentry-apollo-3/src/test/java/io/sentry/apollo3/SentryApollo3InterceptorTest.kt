@@ -248,10 +248,9 @@ class SentryApollo3InterceptorTest {
 
     @Test
     fun `sets SDKVersion Info`() {
-        assertNotNull(fixture.hub.options.sdkVersion!!.integrations)
-        assert(fixture.hub.options.sdkVersion!!.integrations!!.contains("Apollo3"))
-        assertNotNull(fixture.hub.options.sdkVersion!!.packages)
-        val packageInfo = fixture.hub.options.sdkVersion!!.packages!!.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo-3" }
+        assertNotNull(fixture.hub.options.sdkVersion)
+        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("Apollo3"))
+        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo-3" }
         assertNotNull(packageInfo)
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }

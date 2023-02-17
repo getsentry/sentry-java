@@ -2,9 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryPackage;
 import io.sentry.util.Objects;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -53,8 +51,8 @@ public final class SentryIntegrationPackageStorage {
     integrations.add(integration);
   }
 
-  public @NotNull List<String> getIntegrations() {
-    return new CopyOnWriteArrayList<>(integrations);
+  public @NotNull Set<String> getIntegrations() {
+    return integrations;
   }
 
   public void addPackage(final @NotNull String name, final @NotNull String version) {
@@ -65,8 +63,8 @@ public final class SentryIntegrationPackageStorage {
     packages.add(newPackage);
   }
 
-  public @NotNull List<SentryPackage> getPackages() {
-    return new CopyOnWriteArrayList<>(packages);
+  public @NotNull Set<SentryPackage> getPackages() {
+    return packages;
   }
 
   @TestOnly

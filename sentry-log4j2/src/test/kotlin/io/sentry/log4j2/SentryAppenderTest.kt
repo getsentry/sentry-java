@@ -332,15 +332,13 @@ class SentryAppenderTest {
                 assertNotNull(event.sdk) {
                     assertEquals(BuildConfig.SENTRY_LOG4J2_SDK_NAME, it.name)
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
-                    assertNotNull(it.packages)
-                    assertNotNull(it.integrations)
                     assertTrue(
-                        it.packages!!.any { pkg ->
+                        it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-log4j2" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
                         }
                     )
-                    assertTrue(it.integrations!!.contains("Log4j"))
+                    assertTrue(it.integrationSet.contains("Log4j"))
                 }
             },
             anyOrNull()

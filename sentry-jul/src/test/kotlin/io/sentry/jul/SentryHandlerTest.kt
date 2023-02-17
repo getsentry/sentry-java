@@ -386,16 +386,14 @@ class SentryHandlerTest {
                 assertNotNull(event.sdk) {
                     assertEquals(BuildConfig.SENTRY_JUL_SDK_NAME, it.name)
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
-                    assertNotNull(it.packages)
-                    assertNotNull(it.integrations)
                     assertTrue(
-                        it.packages!!.any { pkg ->
+                        it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-jul" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
                         }
                     )
                     assertTrue(
-                        it.integrations!!.contains("Jul")
+                        it.integrationSet.contains("Jul")
                     )
                 }
             },
