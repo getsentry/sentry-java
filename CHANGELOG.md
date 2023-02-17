@@ -4,6 +4,7 @@
 
 ### Features
 
+- Adjust time-to-full-display span if reportFullDisplayed is called too early ([#2550](https://github.com/getsentry/sentry-java/pull/2550))
 - Add `enableTracing` option ([#2530](https://github.com/getsentry/sentry-java/pull/2530))
     - This change is backwards compatible. The default is `null` meaning existing behaviour remains unchanged (setting either `tracesSampleRate` or `tracesSampler` enables performance).
     - If set to `true`, performance is enabled, even if no `tracesSampleRate` or `tracesSampler` have been configured.
