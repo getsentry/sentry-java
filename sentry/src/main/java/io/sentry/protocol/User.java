@@ -59,6 +59,7 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.id = user.id;
     this.ipAddress = user.ipAddress;
     this.segment = user.segment;
+    this.name = user.name;
     this.geo = user.geo;
     this.data = CollectionUtils.newConcurrentHashMap(user.data);
     this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
