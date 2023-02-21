@@ -11,6 +11,7 @@
     - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
 - Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
 - Report integrations in use, report packages in use more consistently ([#2179](https://github.com/getsentry/sentry-java/pull/2179))
+- Add `name` and `geo` to `User` ([#2556](https://github.com/getsentry/sentry-java/pull/2556)) 
 
 ### Fixes
 
