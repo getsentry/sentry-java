@@ -7,7 +7,9 @@ import io.sentry.HttpStatusCodeRange
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
+import io.sentry.IntegrationName
 import io.sentry.SentryEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
@@ -45,11 +47,17 @@ class SentryOkHttpInterceptor(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
     private val failedRequestTargets: List<String> = listOf(".*")
-) : Interceptor {
+) : Interceptor, IntegrationName {
 
     constructor() : this(HubAdapter.getInstance())
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+
+    init {
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.getInstance()
+            .addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
+    }
 
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()

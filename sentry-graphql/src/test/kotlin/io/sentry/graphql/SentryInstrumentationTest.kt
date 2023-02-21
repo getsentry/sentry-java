@@ -133,5 +133,15 @@ class SentryInstrumentationTest {
         assertTrue(span.isFinished)
     }
 
+    @Test
+    fun `Integration adds itself to integration and package list`() {
+        val sut = fixture.getSut()
+        assertNotNull(fixture.hub.options.sdkVersion)
+        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("GraphQL"))
+        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
+        assertNotNull(packageInfo)
+        assert(packageInfo.version == BuildConfig.VERSION_NAME)
+    }
+
     data class Show(val id: Int)
 }

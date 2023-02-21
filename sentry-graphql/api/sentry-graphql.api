@@ -1,3 +1,8 @@
+public final class io/sentry/graphql/BuildConfig {
+	public static final field SENTRY_GRAPHQL_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
 public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V

@@ -103,6 +103,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         this.options
             .getLogger()
             .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+        addIntegrationToSdkVersion();
       } catch (Throwable e) {
         this.options.setEnableSystemEventBreadcrumbs(false);
         this.options

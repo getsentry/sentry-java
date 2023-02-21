@@ -6,6 +6,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.protocol.SdkVersion
 import org.hsqldb.jdbc.JDBCDataSource
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -13,17 +14,23 @@ import javax.sql.DataSource
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryJdbcEventListenerTest {
 
     class Fixture {
-        private val hub = mock<IHub>()
+        val hub = mock<IHub>().apply {
+            whenever(options).thenReturn(
+                SentryOptions().apply {
+                    sdkVersion = SdkVersion("test", "1.2.3")
+                }
+            )
+        }
         lateinit var tx: SentryTracer
         val actualDataSource = JDBCDataSource()
 
         fun getSut(withRunningTransaction: Boolean = true, existingRow: Int? = null): DataSource {
-            whenever(hub.options).thenReturn(SentryOptions())
             tx = SentryTracer(TransactionContext("name", "op"), hub)
             if (withRunningTransaction) {
                 whenever(hub.span).thenReturn(tx)
@@ -102,5 +109,15 @@ class SentryJdbcEventListenerTest {
         }
 
         assertTrue(fixture.tx.children.isEmpty())
+    }
+
+    @Test
+    fun `sets SDKVersion Info`() {
+        val sut = fixture.getSut()
+        assertNotNull(fixture.hub.options.sdkVersion)
+        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("JDBC"))
+        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
+        assertNotNull(packageInfo)
+        assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 }
