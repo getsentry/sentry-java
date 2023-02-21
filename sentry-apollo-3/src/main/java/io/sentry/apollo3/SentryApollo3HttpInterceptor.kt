@@ -13,6 +13,8 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
+import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
@@ -20,7 +22,12 @@ import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.UrlUtils
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
-    HttpInterceptor {
+    HttpInterceptor, IntegrationName {
+
+    init {
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
+    }
 
     override suspend fun intercept(
         request: HttpRequest,
@@ -74,6 +81,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
                 finish(span, modifiedRequest, httpResponse, statusCode)
             }
         }
+    }
+
+    override fun getIntegrationName(): String {
+        return super.getIntegrationName().replace("Http", "")
     }
 
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {

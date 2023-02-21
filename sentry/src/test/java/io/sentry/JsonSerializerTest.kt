@@ -380,13 +380,10 @@ class JsonSerializerTest {
         assertEquals("test", sdkInfo.name)
         assertEquals("1.2.3", sdkInfo.version)
 
-        assertNotNull(sdkInfo.integrations)
-        assertTrue(sdkInfo.integrations!!.any { it == "NdkIntegration" })
-
-        assertNotNull(sdkInfo.packages)
+        assertTrue(sdkInfo.integrationSet.contains("Ndk"))
 
         assertTrue(
-            sdkInfo.packages!!.any {
+            sdkInfo.packageSet.any {
                 it.name == "io.sentry:maven:sentry-android-core" && it.version == "4.5.6"
             }
         )
@@ -420,13 +417,9 @@ class JsonSerializerTest {
         val sdkVersion = envelope.header.sdkVersion!!
         assertEquals(version.name, sdkVersion.name)
         assertEquals(version.version, sdkVersion.version)
-
-        assertNotNull(sdkVersion.integrations)
-        assertTrue(sdkVersion.integrations!!.any { it == "TestIntegration" })
-
-        assertNotNull(sdkVersion.packages)
+        assertTrue(sdkVersion.integrationSet.any { it == "TestIntegration" })
         assertTrue(
-            sdkVersion.packages!!.any {
+            sdkVersion.packageSet.any {
                 it.name == "abc" && it.version == "4.5.6"
             }
         )

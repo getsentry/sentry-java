@@ -42,3 +42,13 @@ val embeddedJar by configurations.creating {
 artifacts {
     add("embeddedJar", File("$buildDir/libs/sentry-compose-helper-jvm-$version.jar"))
 }
+
+buildConfig {
+    sourceSets.getByName("jvmMain") {
+        useKotlinOutput()
+        className("BuildConfig")
+        packageName("io.sentry.compose.helper")
+        buildConfigField("String", "SENTRY_COMPOSE_HELPER_SDK_NAME", "\"${Config.Sentry.SENTRY_COMPOSE_HELPER_SDK_NAME}\"")
+        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    }
+}

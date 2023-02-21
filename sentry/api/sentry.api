@@ -602,8 +602,13 @@ public final class io/sentry/Instrumenter : java/lang/Enum {
 	public static fun values ()[Lio/sentry/Instrumenter;
 }
 
-public abstract interface class io/sentry/Integration {
+public abstract interface class io/sentry/Integration : io/sentry/IntegrationName {
 	public abstract fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public abstract interface class io/sentry/IntegrationName {
+	public fun addIntegrationToSdkVersion ()V
+	public fun getIntegrationName ()Ljava/lang/String;
 }
 
 public final class io/sentry/IpAddressUtils {
@@ -1448,6 +1453,15 @@ public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
 public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDateProvider {
 	public fun <init> ()V
 	public fun now ()Lio/sentry/SentryDate;
+}
+
+public final class io/sentry/SentryIntegrationPackageStorage {
+	public fun addIntegration (Ljava/lang/String;)V
+	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun clearStorage ()V
+	public static fun getInstance ()Lio/sentry/SentryIntegrationPackageStorage;
+	public fun getIntegrations ()Ljava/util/Set;
+	public fun getPackages ()Ljava/util/Set;
 }
 
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
@@ -3106,8 +3120,10 @@ public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, i
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getIntegrationSet ()Ljava/util/Set;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getName ()Ljava/lang/String;
+	public fun getPackageSet ()Ljava/util/Set;
 	public fun getPackages ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
@@ -3186,9 +3202,11 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
