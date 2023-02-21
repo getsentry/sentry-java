@@ -9,6 +9,7 @@
     - If set to `true`, performance is enabled, even if no `tracesSampleRate` or `tracesSampler` have been configured.
     - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
 - Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
+- Add capabilities to track Jetpack Compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
 
 ### Fixes
 
@@ -20,7 +21,6 @@
 
 - Add time-to-full-display span to Activity auto-instrumentation ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 - Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
-- Add capabilities to track Jetpack Compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
 
 ### Fixes
 
