@@ -165,7 +165,7 @@ public final class ActivityLifecycleIntegration
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
       final ISpan ttidSpan = ttidSpanMap.get(entry.getKey());
-      finishTransaction(transaction, ttidSpan);
+      finishTransaction(transaction, ttidSpan, true);
     }
   }
 
@@ -296,12 +296,14 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction, null);
+      finishTransaction(transaction, null, false);
     }
   }
 
   private void finishTransaction(
-      final @Nullable ITransaction transaction, final @Nullable ISpan ttidSpan) {
+      final @Nullable ITransaction transaction,
+      final @Nullable ISpan ttidSpan,
+      final boolean finishTtfd) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
@@ -311,7 +313,9 @@ public final class ActivityLifecycleIntegration
 
       // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
       finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
-      finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED);
+      if (finishTtfd) {
+        finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED);
+      }
       cancelTtfdAutoClose();
 
       SpanStatus status = transaction.getStatus();
@@ -381,11 +385,11 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
         && rootView != null) {
       FirstDrawDoneListener.registerForNextDraw(
-          rootView, () -> finishSpan(ttidSpan), buildInfoProvider);
+          rootView, () -> onFirstFrameDrawn(ttidSpan), buildInfoProvider);
     } else {
       // Posting a task to the main thread's handler will make it executed after it finished
       // its current job. That is, right after the activity draws the layout.
-      mainHandler.post(() -> finishSpan(ttidSpan));
+      mainHandler.post(() -> onFirstFrameDrawn(ttidSpan));
     }
     addBreadcrumb(activity, "resumed");
 
@@ -474,9 +478,23 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void finishSpan(@Nullable ISpan span) {
+  private void finishSpan(final @Nullable ISpan span) {
     if (span != null && !span.isFinished()) {
       span.finish();
+    }
+  }
+
+  private void finishSpan(final @Nullable ISpan span, final @NotNull SentryDate endTimestamp) {
+    if (span != null && !span.isFinished()) {
+      final @NotNull SpanStatus status =
+          span.getStatus() != null ? span.getStatus() : SpanStatus.OK;
+      span.finish(status, endTimestamp);
+    }
+  }
+
+  private void finishSpan(final @Nullable ISpan span, final @NotNull SpanStatus status) {
+    if (span != null && !span.isFinished()) {
+      span.finish(status);
     }
   }
 
@@ -487,9 +505,13 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void finishSpan(@Nullable ISpan span, @NotNull SpanStatus status) {
-    if (span != null && !span.isFinished()) {
-      span.finish(status);
+  private void onFirstFrameDrawn(final @Nullable ISpan ttidSpan) {
+    if (options != null && ttfdSpan != null && ttfdSpan.isFinished()) {
+      final SentryDate endDate = options.getDateProvider().now();
+      ttfdSpan.updateEndDate(endDate);
+      finishSpan(ttidSpan, endDate);
+    } else {
+      finishSpan(ttidSpan);
     }
   }
 
@@ -557,14 +579,8 @@ public final class ActivityLifecycleIntegration
 
   private void finishAppStartSpan() {
     final @Nullable SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
-    if (appStartSpan != null
-        && !appStartSpan.isFinished()
-        && performanceEnabled
-        && appStartEndTime != null) {
-
-      final SpanStatus status =
-          appStartSpan.getStatus() != null ? appStartSpan.getStatus() : SpanStatus.OK;
-      appStartSpan.finish(status, appStartEndTime);
+    if (performanceEnabled && appStartEndTime != null) {
+      finishSpan(appStartSpan, appStartEndTime);
     }
   }
 }

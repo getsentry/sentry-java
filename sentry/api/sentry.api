@@ -567,6 +567,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
+	public abstract fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
@@ -835,6 +836,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
@@ -878,6 +880,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
@@ -1800,6 +1803,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1910,6 +1914,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
