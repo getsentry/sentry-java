@@ -1,6 +1,8 @@
 package io.sentry
 
+import org.mockito.kotlin.mock
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 class NoOpSpanTest {
@@ -21,5 +23,10 @@ class NoOpSpanTest {
     @Test
     fun `getOperation does not return null`() {
         assertNotNull(span.operation)
+    }
+
+    @Test
+    fun `updateEndDate return false`() {
+        assertFalse(span.updateEndDate(mock()))
     }
 }
