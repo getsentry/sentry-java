@@ -36,6 +36,10 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
+  /** Human readable name. */
+  private @Nullable String name;
+
+  /** User geo location. */
   private @Nullable Geo geo;
 
   /**
@@ -174,10 +178,38 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.setData(other);
   }
 
+  /**
+   * Get human readable name.
+   *
+   * @return Human readable name
+   */
+  public @Nullable String getName() {
+    return name;
+  }
+
+  /**
+   * Set human readable name.
+   *
+   * @param name Human readable name
+   */
+  public void setName(final @Nullable String name) {
+    this.name = name;
+  }
+
+  /**
+   * Get user geo location.
+   *
+   * @return User geo location
+   */
   public @Nullable Geo getGeo() {
     return geo;
   }
 
+  /**
+   * Set user geo location.
+   *
+   * @param geo User geo location
+   */
   public void setGeo(final @Nullable Geo geo) {
     this.geo = geo;
   }
@@ -219,6 +251,7 @@ public final class User implements JsonUnknown, JsonSerializable {
     public static final String USERNAME = "username";
     public static final String SEGMENT = "segment";
     public static final String IP_ADDRESS = "ip_address";
+    public static final String NAME = "name";
     public static final String GEO = "geo";
     public static final String OTHER = "other";
     public static final String DATA = "data";
@@ -242,6 +275,9 @@ public final class User implements JsonUnknown, JsonSerializable {
     }
     if (ipAddress != null) {
       writer.name(JsonKeys.IP_ADDRESS).value(ipAddress);
+    }
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
     }
     if (geo != null) {
       writer.name(JsonKeys.GEO);
@@ -285,6 +321,9 @@ public final class User implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.IP_ADDRESS:
             user.ipAddress = reader.nextStringOrNull();
+            break;
+          case JsonKeys.NAME:
+            user.name = reader.nextStringOrNull();
             break;
           case JsonKeys.GEO:
             user.geo = new Geo.Deserializer().deserialize(reader, logger);
