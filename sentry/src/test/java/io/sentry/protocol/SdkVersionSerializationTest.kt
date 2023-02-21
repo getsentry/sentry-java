@@ -12,6 +12,8 @@ import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 
 class SdkVersionSerializationTest {
 
@@ -50,6 +52,18 @@ class SdkVersionSerializationTest {
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun deserializeIgnoresStoredIntegrationsAndPackages() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("testIntegration")
+        SentryIntegrationPackageStorage.getInstance().addPackage("testPackage", "0.0.1")
+
+        val expectedJson = sanitizedFile("json/sdk_version.json")
+        val actual = deserialize(expectedJson)
+
+        assertFalse(actual.integrationSet.contains("testIntegration"))
+        assertNull(actual.packageSet.firstOrNull { it.name == "testIntegration" })
     }
 
     // Helper
