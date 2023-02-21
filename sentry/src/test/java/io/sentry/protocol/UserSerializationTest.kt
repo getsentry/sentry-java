@@ -21,6 +21,11 @@ class UserSerializationTest {
             id = "efb2084b-1871-4b59-8897-b4bd9f196a01"
             username = "60c05dff-7140-4d94-9a61-c9cdd9ca9b96"
             ipAddress = "51d22b77-f663-4dbe-8103-8b749d1d9a48"
+            geo = Geo().apply {
+                city = "0e6ed0b0-b1c5-11ed-afa1-0242ac120002"
+                countryCode = "16717632-b1c5-11ed-afa1-0242ac120002"
+                region = "273a3d0a-b1c5-11ed-afa1-0242ac120002"
+            }
             others = mapOf(
                 "dc2813d0-0f66-4a3f-a995-71268f61a8fa" to "991659ad-7c59-4dd3-bb89-0bd5c74014bd"
             )
@@ -45,8 +50,12 @@ class UserSerializationTest {
 
     @Test
     fun `deserialize legacy`() {
+        var expectedJson = sanitizedFile("json/user.json")
+        val expected = deserialize(expectedJson)
+        expected.geo = null // Geo not part of this test
+        expectedJson = serialize(expected)
+
         val inputJson = sanitizedFile("json/user_legacy.json")
-        val expectedJson = sanitizedFile("json/user.json")
         val actual = deserialize(inputJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
