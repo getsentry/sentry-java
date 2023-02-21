@@ -34,14 +34,30 @@ private fun getRootSpan(): ISpan? {
 private val localSentryCompositionParentSpan = compositionLocalOf {
     ImmutableHolder(
         getRootSpan()
-            ?.startChild(OP_PARENT_COMPOSITION, null, SpanOptions(true, true, true, false, null))
+            ?.startChild(
+                OP_PARENT_COMPOSITION,
+                null,
+                SpanOptions().apply {
+                    isTrimStart = true
+                    isTrimEnd = true
+                    isIdle = true
+                }
+            )
     )
 }
 
 private val localSentryRenderingParentSpan = compositionLocalOf {
     ImmutableHolder(
         getRootSpan()
-            ?.startChild(OP_PARENT_RENDER, null, SpanOptions(true, true, true, false, null))
+            ?.startChild(
+                OP_PARENT_RENDER,
+                null,
+                SpanOptions().apply {
+                    isTrimStart = true
+                    isTrimEnd = true
+                    isIdle = true
+                }
+            )
     )
 }
 

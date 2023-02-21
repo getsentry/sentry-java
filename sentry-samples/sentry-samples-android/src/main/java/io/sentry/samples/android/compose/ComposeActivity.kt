@@ -32,6 +32,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.sentry.compose.SentryTraced
+import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
 

@@ -64,7 +64,10 @@ class ActivityLifecycleIntegrationTest {
 
         fun getSut(apiVersion: Int = 29, importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND): ActivityLifecycleIntegration {
             whenever(hub.options).thenReturn(options)
-            transaction = SentryTracer(context, hub, true, transactionFinishedCallback)
+            val transactionOptions = TransactionOptions().apply {
+                isWaitForChildren = true
+            }
+            transaction = SentryTracer(context, hub, transactionOptions, transactionFinishedCallback)
             whenever(hub.startTransaction(any(), any<TransactionOptions>())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
 

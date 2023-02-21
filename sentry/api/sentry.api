@@ -1750,7 +1750,7 @@ public final class io/sentry/SentryTraceHeader {
 
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;ZLio/sentry/TransactionFinishedCallback;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;Lio/sentry/TransactionOptions;Lio/sentry/TransactionFinishedCallback;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1979,14 +1979,14 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/SpanOptions {
+public class io/sentry/SpanOptions {
 	public fun <init> ()V
-	public fun <init> (ZZZZLjava/lang/Long;)V
-	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun isIdle ()Z
 	public fun isTrimEnd ()Z
 	public fun isTrimStart ()Z
-	public fun isWaitForChildren ()Z
+	public fun setIdle (Z)V
+	public fun setTrimEnd (Z)V
+	public fun setTrimStart (Z)V
 }
 
 public final class io/sentry/SpanStatus : java/lang/Enum, io/sentry/JsonSerializable {
@@ -2096,21 +2096,19 @@ public abstract interface class io/sentry/TransactionFinishedCallback {
 	public abstract fun execute (Lio/sentry/ITransaction;)V
 }
 
-public final class io/sentry/TransactionOptions {
+public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun <init> ()V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
 	public fun isBindToScope ()Z
-	public fun isTrimEnd ()Z
 	public fun isWaitForChildren ()Z
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
-	public fun setTrimEnd (Z)V
 	public fun setWaitForChildren (Z)V
 }
 

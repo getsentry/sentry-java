@@ -53,63 +53,40 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull TransactionOptions transactionOptions;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
-    this(context, hub, null, false, null, false, null);
+    this(context, hub, new TransactionOptions(), null, null);
   }
 
   public SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
-      final boolean waitForChildren,
+      final @NotNull TransactionOptions transactionOptions,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, null, waitForChildren, null, false, transactionFinishedCallback);
+    this(context, hub, transactionOptions, transactionFinishedCallback, null);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
-      final @Nullable SentryDate startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(
-        context,
-        hub,
-        startTimestamp,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        transactionFinishedCallback,
-        null);
-  }
-
-  SentryTracer(
-      final @NotNull TransactionContext context,
-      final @NotNull IHub hub,
-      final @Nullable SentryDate startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
+      final @NotNull TransactionOptions transactionOptions,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback,
       final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.measurements = new ConcurrentHashMap<>();
+
     this.root =
-        new Span(
-            context,
-            this,
-            hub,
-            startTimestamp,
-            new SpanOptions(false, trimEnd, false, waitForChildren, idleTimeout));
+        new Span(context, this, hub, transactionOptions.getStartTimestamp(), transactionOptions);
+
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.hub = hub;
     this.transactionFinishedCallback = transactionFinishedCallback;
     this.transactionPerformanceCollector = transactionPerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
+    this.transactionOptions = transactionOptions;
 
     if (context.getBaggage() != null) {
       this.baggage = context.getBaggage();
@@ -123,7 +100,7 @@ public final class SentryTracer implements ITransaction {
       transactionPerformanceCollector.start(this);
     }
 
-    if (idleTimeout != null) {
+    if (transactionOptions.getIdleTimeout() != null) {
       timer = new Timer(true);
       scheduleFinish();
     }
@@ -145,7 +122,7 @@ public final class SentryTracer implements ITransaction {
               }
             };
 
-        timer.schedule(timerTask, root.getOptions().getIdleTimeout());
+        timer.schedule(timerTask, transactionOptions.getIdleTimeout());
       }
     }
   }
@@ -276,11 +253,11 @@ public final class SentryTracer implements ITransaction {
             spanOptions,
             __ -> {
               final FinishStatus finishStatus = this.finishStatus;
-              if (root.getOptions().getIdleTimeout() != null) {
+              if (transactionOptions.getIdleTimeout() != null) {
                 // if it's an idle transaction, no matter the status, we'll reset the timeout here
                 // so the transaction will either idle and finish itself, or a new child will be
                 // added and we'll wait for it again
-                if (!root.getOptions().isWaitForChildren() || hasAllChildrenFinished()) {
+                if (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished()) {
                   scheduleFinish();
                 }
               } else if (finishStatus.isFinishing) {
@@ -398,7 +375,7 @@ public final class SentryTracer implements ITransaction {
 
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished()
-        && (!root.getOptions().isWaitForChildren() || hasAllChildrenFinished())) {
+        && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
       List<PerformanceCollectionData> performanceCollectionData = null;
       if (transactionPerformanceCollector != null) {
         performanceCollectionData = transactionPerformanceCollector.stop(this);
@@ -448,7 +425,7 @@ public final class SentryTracer implements ITransaction {
         }
       }
 
-      if (children.isEmpty() && root.getOptions().getIdleTimeout() != null) {
+      if (children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         return;
       }
