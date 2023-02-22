@@ -2,6 +2,7 @@ package io.sentry.uitest.android
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -32,6 +33,10 @@ class ProfilingSampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            window.setSustainedPerformanceMode(true)
+        }
+
         binding = ActivityProfilingSampleBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -42,10 +47,12 @@ class ProfilingSampleActivity : AppCompatActivity() {
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING)
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                         scrollingIdlingResource.increment()
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE)
+                    }
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                         scrollingIdlingResource.decrement()
+                    }
                 }
             })
         }

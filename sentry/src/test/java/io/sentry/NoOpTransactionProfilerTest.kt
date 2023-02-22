@@ -11,6 +11,7 @@ class NoOpTransactionProfilerTest {
         profiler.onTransactionStart(NoOpTransaction.getInstance())
 
     @Test
-    fun `onTransactionFinish returns null`() =
-        assertNull(profiler.onTransactionFinish(NoOpTransaction.getInstance()))
+    fun `onTransactionFinish does returns null`() {
+        assertNull(profiler.onTransactionFinish(NoOpTransaction.getInstance(), null))
+    }
 }

@@ -1,12 +1,15 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
+import kotlin.test.assertFails
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class ShutdownHookIntegrationTest {
 
@@ -76,5 +79,41 @@ class ShutdownHookIntegrationTest {
         }
 
         verify(fixture.hub).flush(eq(10000))
+    }
+
+    @Test
+    fun `shutdown in progress is handled gracefully`() {
+        val integration = fixture.getSut()
+        whenever(fixture.runtime.removeShutdownHook(any())).thenThrow(java.lang.IllegalStateException("Shutdown in progress"))
+
+        integration.register(fixture.hub, fixture.options)
+        integration.close()
+
+        verify(fixture.runtime).removeShutdownHook(any())
+    }
+
+    @Test
+    fun `non shutdown in progress during removeShutdownHook is rethrown`() {
+        val integration = fixture.getSut()
+        whenever(fixture.runtime.removeShutdownHook(any())).thenThrow(java.lang.IllegalStateException())
+
+        integration.register(fixture.hub, fixture.options)
+
+        assertFails {
+            integration.close()
+        }
+
+        verify(fixture.runtime).removeShutdownHook(any())
+    }
+
+    @Test
+    fun `Integration adds itself to integration list`() {
+        val integration = fixture.getSut()
+
+        integration.register(fixture.hub, fixture.options)
+
+        assertTrue(
+            fixture.options.sdkVersion!!.integrationSet.contains("ShutdownHook")
+        )
     }
 }

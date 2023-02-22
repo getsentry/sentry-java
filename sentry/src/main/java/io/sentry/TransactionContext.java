@@ -12,6 +12,7 @@ public final class TransactionContext extends SpanContext {
   private final @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private @Nullable Baggage baggage;
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
   /**
    * Creates {@link TransactionContext} from sentry-trace header.
@@ -25,7 +26,7 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace) {
-    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace, null);
+    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace, null, null);
   }
 
   /**
@@ -71,7 +72,8 @@ public final class TransactionContext extends SpanContext {
       final @NotNull TransactionNameSource transactionNameSource,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace,
-      final @Nullable Baggage baggage) {
+      final @Nullable Baggage baggage,
+      final @Nullable SpanId spanId) {
     @Nullable Boolean parentSampled = sentryTrace.isSampled();
     TracesSamplingDecision samplingDecision =
         parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
@@ -80,18 +82,21 @@ public final class TransactionContext extends SpanContext {
       baggage.freeze();
 
       Double sampleRate = baggage.getSampleRateDouble();
+      Boolean sampled = parentSampled != null ? parentSampled.booleanValue() : true;
       if (sampleRate != null) {
-        samplingDecision = new TracesSamplingDecision(true, sampleRate);
+        samplingDecision = new TracesSamplingDecision(sampled, sampleRate);
       } else {
-        samplingDecision = new TracesSamplingDecision(true);
+        samplingDecision = new TracesSamplingDecision(sampled);
       }
     }
+
+    final @NotNull SpanId spanIdToUse = spanId == null ? new SpanId() : spanId;
 
     return new TransactionContext(
         name,
         operation,
         sentryTrace.getTraceId(),
-        new SpanId(),
+        spanIdToUse,
         transactionNameSource,
         sentryTrace.getSpanId(),
         samplingDecision,
@@ -143,7 +148,8 @@ public final class TransactionContext extends SpanContext {
     this.setSamplingDecision(samplingDecision);
   }
 
-  private TransactionContext(
+  @ApiStatus.Internal
+  public TransactionContext(
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryId traceId,
@@ -201,5 +207,13 @@ public final class TransactionContext extends SpanContext {
 
   public @NotNull TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
+  }
+
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
   }
 }

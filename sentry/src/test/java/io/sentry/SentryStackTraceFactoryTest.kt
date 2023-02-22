@@ -1,5 +1,6 @@
 package io.sentry
 
+import java.lang.Exception
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -66,23 +67,23 @@ class SentryStackTraceFactoryTest {
     }
 
     @Test
-    fun `when getStackFrames is called passing a valid inAppExcludes, inApp should be false if prefix doesnt matches it`() {
+    fun `when getStackFrames is called passing a valid inAppExcludes, inApp should be undecided if prefix doesnt matches it`() {
         val element = generateStackTrace("io.myapp.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry"), null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
 
     @Test
-    fun `when getStackFrames is called passing an invalid inAppExcludes, inApp should be false`() {
+    fun `when getStackFrames is called passing an invalid inAppExcludes, inApp should undecided`() {
         val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
     //endregion
 
@@ -98,23 +99,23 @@ class SentryStackTraceFactoryTest {
     }
 
     @Test
-    fun `when getStackFrames is called passing a valid inAppIncludes, inApp should be false if prefix doesnt matches it`() {
+    fun `when getStackFrames is called passing a valid inAppIncludes, inApp should be undecided if prefix doesnt matches it`() {
         val element = generateStackTrace("io.myapp.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, listOf("io.mysentry"))
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
 
     @Test
-    fun `when getStackFrames is called passing an invalid inAppIncludes, inApp should be false`() {
+    fun `when getStackFrames is called passing an invalid inAppIncludes, inApp should be undecided`() {
         val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(null, null)
         val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
 
-        assertFalse(sentryElements!!.first().isInApp!!)
+        assertNull(sentryElements!!.first().isInApp)
     }
     //endregion
 
@@ -131,16 +132,16 @@ class SentryStackTraceFactoryTest {
     @Test
     fun `when class is defined in the app, inApp is true`() {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf("io.mysentry.not"), listOf("io.mysentry.inApp"))
-        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.ClassName"))
-        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.somePackage.ClassName"))
-        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.ClassName"))
-        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.somePackage.ClassName"))
+        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.ClassName")!!)
+        assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.somePackage.ClassName")!!)
+        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.ClassName")!!)
+        assertFalse(sentryStackTraceFactory.isInApp("io.mysentry.not.somePackage.ClassName")!!)
     }
 
     @Test
-    fun `when class is not in the list, is not inApp`() {
+    fun `when class is not in the list, is left undecided`() {
         val sentryStackTraceFactory = SentryStackTraceFactory(listOf(), listOf("io.mysentry"))
-        assertFalse(sentryStackTraceFactory.isInApp("com.getsentry"))
+        assertNull(sentryStackTraceFactory.isInApp("com.getsentry"))
     }
 
     @Test
@@ -180,6 +181,71 @@ class SentryStackTraceFactoryTest {
                 it.module != null && it.module!!.startsWith("io.sentry")
             }
         )
+    }
+
+    @Test
+    fun `when stacktrace is not available, returns empty list for call stack`() {
+        val exception = Exception()
+        exception.stackTrace = arrayOf<StackTraceElement>()
+        val sut = SentryStackTraceFactory(listOf(), listOf("io.mysentry"))
+
+        val callStack = sut.getInAppCallStack(exception)
+
+        assertEquals(0, callStack.size)
+    }
+
+    @Test
+    fun `excludes sentry frames from the call stack`() {
+        val exception = Exception()
+        exception.stackTrace = arrayOf(
+            generateStackTrace("io.sentry.instrumentation.file.FileIOSpanManager"),
+            generateStackTrace("io.sentry.instrumentation.file.SentryFileOutputStream"),
+            generateStackTrace("com.example.myapp.MainActivity")
+        )
+        val sut = SentryStackTraceFactory(listOf(), listOf("io.mysentry"))
+
+        val callStack = sut.getInAppCallStack(exception)
+
+        assertEquals(1, callStack.size)
+        assertEquals("com.example.myapp.MainActivity", callStack[0].module)
+    }
+
+    @Test
+    fun `includes only in-app frames to the call stack`() {
+        val exception = Exception()
+        exception.stackTrace = arrayOf(
+            generateStackTrace("io.sentry.instrumentation.file.FileIOSpanManager"),
+            generateStackTrace("io.sentry.instrumentation.file.SentryFileOutputStream"),
+            generateStackTrace("com.example.myapp.MainActivity"),
+            generateStackTrace("com.thirdparty.Adapter")
+        )
+        val sut = SentryStackTraceFactory(listOf(), listOf("com.example"))
+
+        val callStack = sut.getInAppCallStack(exception)
+
+        assertEquals(1, callStack.size)
+        assertEquals("com.example.myapp.MainActivity", callStack[0].module)
+    }
+
+    @Test
+    fun `when inAppIncludes are not provided, excludes at least system frames`() {
+        val exception = Exception()
+        exception.stackTrace = arrayOf(
+            generateStackTrace("io.sentry.instrumentation.file.FileIOSpanManager"),
+            generateStackTrace("io.sentry.instrumentation.file.SentryFileOutputStream"),
+            generateStackTrace("com.example.myapp.MainActivity"),
+            generateStackTrace("com.thirdparty.Adapter"),
+            generateStackTrace("sun.misc.unsafe.park.Object"),
+            generateStackTrace("java.lang.Object")
+        )
+        val sut = SentryStackTraceFactory(listOf(), listOf())
+
+        val callStack = sut.getInAppCallStack(exception)
+
+        assertEquals(2, callStack.size)
+        // underlying getStackFrames reverses the order
+        assertEquals("com.thirdparty.Adapter", callStack[0].module)
+        assertEquals("com.example.myapp.MainActivity", callStack[1].module)
     }
 
     private fun generateStackTrace(className: String?) =

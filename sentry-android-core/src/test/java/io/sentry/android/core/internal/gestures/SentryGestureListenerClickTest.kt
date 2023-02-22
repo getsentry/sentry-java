@@ -9,17 +9,17 @@ import android.view.ViewGroup
 import android.view.Window
 import android.widget.CheckBox
 import android.widget.RadioButton
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -30,6 +30,9 @@ class SentryGestureListenerClickTest {
         val context = mock<Context>()
         val resources = mock<Resources>()
         val options = SentryAndroidOptions().apply {
+            isEnableUserInteractionBreadcrumbs = true
+            isEnableUserInteractionTracing = true
+            gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
             dsn = "https://key@sentry.io/proj"
         }
         val hub = mock<IHub>()
@@ -48,12 +51,14 @@ class SentryGestureListenerClickTest {
                 event = event,
                 visible = isInvalidTargetVisible,
                 clickable = isInvalidTargetClickable,
+                context = context
             )
 
             if (targetOverride == null) {
                 this.target = mockView<T>(
                     event = event,
-                    clickable = true
+                    clickable = true,
+                    context = context
                 )
             } else {
                 this.target = targetOverride
@@ -62,6 +67,7 @@ class SentryGestureListenerClickTest {
             if (attachViewsToRoot) {
                 window.mockDecorView<ViewGroup>(
                     event = event,
+                    context = context
                 ) {
                     whenever(it.childCount).thenReturn(2)
                     whenever(it.getChildAt(0)).thenReturn(invalidTarget)
@@ -76,8 +82,7 @@ class SentryGestureListenerClickTest {
             return SentryGestureListener(
                 activity,
                 hub,
-                options,
-                true
+                options
             )
         }
     }
@@ -93,15 +98,15 @@ class SentryGestureListenerClickTest {
             attachViewsToRoot = false
         )
 
-        val container1 = mockView<ViewGroup>(event = event, touchWithinBounds = false)
+        val container1 = mockView<ViewGroup>(event = event, touchWithinBounds = false, context = fixture.context)
         val notClickableInvalidTarget = mockView<View>(event = event)
-        val container2 = mockView<ViewGroup>(event = event, clickable = true) {
+        val container2 = mockView<ViewGroup>(event = event, clickable = true, context = fixture.context) {
             whenever(it.childCount).thenReturn(3)
             whenever(it.getChildAt(0)).thenReturn(notClickableInvalidTarget)
             whenever(it.getChildAt(1)).thenReturn(fixture.invalidTarget)
             whenever(it.getChildAt(2)).thenReturn(fixture.target)
         }
-        fixture.window.mockDecorView<ViewGroup>(event = event) {
+        fixture.window.mockDecorView<ViewGroup>(event = event, context = fixture.context) {
             whenever(it.childCount).thenReturn(2)
             whenever(it.getChildAt(0)).thenReturn(container1)
             whenever(it.getChildAt(1)).thenReturn(container2)

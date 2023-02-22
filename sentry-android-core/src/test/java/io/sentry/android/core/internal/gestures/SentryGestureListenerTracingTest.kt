@@ -9,13 +9,6 @@ import android.view.ViewGroup
 import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.clearInvocations
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryTracer
@@ -24,6 +17,13 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.protocol.TransactionNameSource
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -52,12 +52,15 @@ class SentryGestureListenerTracingTest {
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
+            options.isEnableUserInteractionBreadcrumbs = true
+            options.gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+
             whenever(hub.options).thenReturn(options)
 
             this.transaction = transaction ?: SentryTracer(TransactionContext("name", "op"), hub)
 
-            target = mockView<T>(event = event, clickable = true)
-            window.mockDecorView<ViewGroup>(event = event) {
+            target = mockView<T>(event = event, clickable = true, context = context)
+            window.mockDecorView<ViewGroup>(event = event, context = context) {
                 whenever(it.childCount).thenReturn(1)
                 whenever(it.getChildAt(0)).thenReturn(target)
             }
@@ -80,8 +83,7 @@ class SentryGestureListenerTracingTest {
             return SentryGestureListener(
                 activity,
                 hub,
-                options,
-                true
+                options
             )
         }
     }
@@ -95,7 +97,8 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), any<TransactionOptions>()
+            any(),
+            any<TransactionOptions>()
         )
     }
 
@@ -106,7 +109,8 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), any<TransactionOptions>()
+            any(),
+            any<TransactionOptions>()
         )
     }
 
@@ -117,7 +121,8 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), any<TransactionOptions>()
+            any(),
+            any<TransactionOptions>()
         )
     }
 
@@ -225,13 +230,13 @@ class SentryGestureListenerTracingTest {
 
         clearInvocations(fixture.hub)
         // second view interaction with another view
-        val newTarget = mockView<View>(event = fixture.event, clickable = true)
+        val newTarget = mockView<View>(event = fixture.event, clickable = true, context = fixture.context)
         val newContext = mock<Context>()
         val newRes = mock<Resources>()
         newRes.mockForTarget(newTarget, "test_checkbox")
         whenever(newContext.resources).thenReturn(newRes)
         whenever(newTarget.context).thenReturn(newContext)
-        fixture.window.mockDecorView<ViewGroup>(event = fixture.event) {
+        fixture.window.mockDecorView<ViewGroup>(event = fixture.event, context = fixture.context) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(newTarget)
         }

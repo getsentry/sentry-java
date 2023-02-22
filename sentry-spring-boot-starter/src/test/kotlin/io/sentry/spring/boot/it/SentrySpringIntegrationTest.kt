@@ -1,12 +1,5 @@
 package io.sentry.spring.boot.it
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
@@ -16,6 +9,13 @@ import io.sentry.spring.tracing.SentrySpan
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -32,13 +32,12 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
+import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -46,7 +45,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-import java.lang.RuntimeException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -270,17 +268,10 @@ open class HelloService {
 }
 
 @Configuration
-open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
-
-    override fun configure(http: HttpSecurity) {
-        http.csrf().disable()
-            .authorizeRequests().anyRequest().authenticated()
-            .and()
-            .httpBasic()
-    }
+open class SecurityConfiguration {
 
     @Bean
-    override fun userDetailsService(): UserDetailsService {
+    open fun userDetailsService(): InMemoryUserDetailsManager {
         val encoder: PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
         val user: UserDetails = User
             .builder()
@@ -290,6 +281,17 @@ open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
             .roles("USER")
             .build()
         return InMemoryUserDetailsManager(user)
+    }
+
+    @Bean
+    @Throws(Exception::class)
+    open fun filterChain(http: HttpSecurity): SecurityFilterChain {
+        http.csrf().disable()
+            .authorizeRequests().anyRequest().authenticated()
+            .and()
+            .httpBasic()
+
+        return http.build()
     }
 }
 

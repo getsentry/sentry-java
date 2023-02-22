@@ -1,14 +1,15 @@
 package io.sentry.instrumentation.file
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus.OK
 import io.sentry.TransactionContext
+import io.sentry.util.thread.MainThreadChecker
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,10 +21,14 @@ class SentryFileReaderTest {
 
         internal fun getSut(
             tmpFile: File,
-            activeTransaction: Boolean = true,
+            activeTransaction: Boolean = true
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    mainThreadChecker = MainThreadChecker.getInstance()
+                }
+            )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
@@ -52,6 +57,7 @@ class SentryFileReaderTest {
         assertEquals(fileIOSpan.data["file.size"], 4L)
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
+        assertEquals(fileIOSpan.data["blocked_main_thread"], true)
         assertEquals(fileIOSpan.status, OK)
     }
 }

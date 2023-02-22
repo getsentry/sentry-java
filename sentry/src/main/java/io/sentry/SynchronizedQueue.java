@@ -131,4 +131,18 @@ final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Qu
       return decorated().remove();
     }
   }
+
+  @Override
+  public Object[] toArray() {
+    synchronized (lock) {
+      return decorated().toArray();
+    }
+  }
+
+  @Override
+  public <T> T[] toArray(T[] object) {
+    synchronized (lock) {
+      return decorated().toArray(object);
+    }
+  }
 }

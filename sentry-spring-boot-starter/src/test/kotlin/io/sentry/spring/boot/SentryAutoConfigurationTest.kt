@@ -1,11 +1,6 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
@@ -20,6 +15,8 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.spring.ContextTagsEventProcessor
 import io.sentry.spring.HttpServletRequestSentryUserProvider
@@ -33,6 +30,11 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -148,6 +150,7 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
+            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
@@ -176,6 +179,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.port).isEqualTo("8090")
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
+            assertThat(options.enableTracing).isEqualTo(true)
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
@@ -186,7 +190,7 @@ class SentryAutoConfigurationTest {
     @Test
     fun `when tracePropagationTargets are not set, default is returned`() {
         contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
+            "sentry.dsn=http://key@localhost/proj"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")
@@ -240,7 +244,7 @@ class SentryAutoConfigurationTest {
     fun `sets sentryClientName property on SentryOptions`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot")
+                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot${optionalJakartaPrefix()}")
             }
     }
 
@@ -253,13 +257,14 @@ class SentryAutoConfigurationTest {
                 val transport = it.getBean(ITransport::class.java)
                 verify(transport).send(
                     checkEvent { event ->
-                        assertThat(event.sdk).isNotNull()
+                        assertThat(event.sdk).isNotNull
                         val sdk = event.sdk!!
                         assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
                         assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
-                        assertThat(sdk.packages).anyMatch { pkg ->
+                        assertThat(sdk.packageSet).anyMatch { pkg ->
                             pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
                         }
+                        assertTrue(sdk.integrationSet.contains("SpringBoot"))
                     },
                     anyOrNull()
                 )
@@ -272,6 +277,15 @@ class SentryAutoConfigurationTest {
             .withUserConfiguration(CustomBeforeSendCallbackConfiguration::class.java)
             .run {
                 assertThat(it.getBean(SentryOptions::class.java).beforeSend).isInstanceOf(CustomBeforeSendCallback::class.java)
+            }
+    }
+
+    @Test
+    fun `registers beforeSendTransactionCallback on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomBeforeSendTransactionCallbackConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction).isInstanceOf(CustomBeforeSendTransactionCallback::class.java)
             }
     }
 
@@ -673,6 +687,47 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath and auto init off, creates OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+            .run {
+                assertThat(it).hasSingleBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init on, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=true")
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init default, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is not on the classpath, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+            .withClassLoader(FilteredClassLoader(OpenTelemetryLinkErrorEventProcessor::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
@@ -718,6 +773,17 @@ class SentryAutoConfigurationTest {
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
         override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class CustomBeforeSendTransactionCallbackConfiguration {
+
+        @Bean
+        open fun beforeSendTransactionCallback() = CustomBeforeSendTransactionCallback()
+    }
+
+    class CustomBeforeSendTransactionCallback : SentryOptions.BeforeSendTransactionCallback {
+        override fun execute(event: SentryTransaction, hint: Hint): SentryTransaction? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -857,5 +923,12 @@ class SentryAutoConfigurationTest {
     private fun ApplicationContext.getSentryUserProviders(): List<SentryUserProvider> {
         val userFilter = this.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
         return userFilter.sentryUserProviders
+    }
+
+    private fun optionalJakartaPrefix(): String {
+        if (this.javaClass.packageName.endsWith("jakarta")) {
+            return ".jakarta"
+        }
+        return ""
     }
 }

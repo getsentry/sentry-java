@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -60,20 +61,28 @@ fun Landing(
         modifier = Modifier.fillMaxSize()
     ) {
         Button(
-            onClick = { navigateGithub() },
-            modifier = Modifier.padding(top = 32.dp)
+            onClick = {
+                navigateGithub()
+            },
+            modifier = Modifier
+                .testTag("button_nav_github")
+                .padding(top = 32.dp)
         ) {
             Text("Navigate to Github Page")
         }
         Button(
             onClick = { navigateGithubWithArgs() },
-            modifier = Modifier.padding(top = 32.dp)
+            modifier = Modifier
+                .testTag("button_nav_github_args")
+                .padding(top = 32.dp)
         ) {
             Text("Navigate to Github Page With Args")
         }
         Button(
             onClick = { throw RuntimeException("Crash from Compose") },
-            modifier = Modifier.padding(top = 32.dp)
+            modifier = Modifier
+                .testTag("button_crash")
+                .padding(top = 32.dp)
         ) {
             Text("Crash from Compose")
         }
@@ -111,7 +120,9 @@ fun Github(
                     result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
                 }
             },
-            modifier = Modifier.padding(top = 32.dp)
+            modifier = Modifier
+                .testTag("button_list_repos_async")
+                .padding(top = 32.dp)
         ) {
             Text("Make Request")
         }

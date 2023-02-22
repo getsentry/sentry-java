@@ -7,7 +7,9 @@ import io.sentry.IHub;
 import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
+import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.ContextTagsEventProcessor;
 import io.sentry.spring.SentryExceptionResolver;
@@ -71,6 +73,8 @@ public class SentryAutoConfiguration {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public @NotNull Sentry.OptionsConfiguration<SentryOptions> sentryOptionsConfiguration(
         final @NotNull ObjectProvider<SentryOptions.BeforeSendCallback> beforeSendCallback,
+        final @NotNull ObjectProvider<SentryOptions.BeforeSendTransactionCallback>
+                beforeSendTransactionCallback,
         final @NotNull ObjectProvider<SentryOptions.BeforeBreadcrumbCallback>
                 beforeBreadcrumbCallback,
         final @NotNull ObjectProvider<SentryOptions.TracesSamplerCallback> tracesSamplerCallback,
@@ -81,6 +85,7 @@ public class SentryAutoConfiguration {
         final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
+        beforeSendTransactionCallback.ifAvailable(options::setBeforeSendTransaction);
         beforeBreadcrumbCallback.ifAvailable(options::setBeforeBreadcrumb);
         tracesSamplerCallback.ifAvailable(options::setTracesSampler);
         eventProcessors.forEach(options::addEventProcessor);
@@ -112,7 +117,8 @@ public class SentryAutoConfiguration {
 
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
-      if (options.getTracesSampleRate() == null) {
+      addPackageAndIntegrationInfo();
+      if (options.getTracesSampleRate() == null && options.getEnableTracing() == null) {
         options.setTracesSampleRate(0.0);
       }
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
@@ -133,6 +139,19 @@ public class SentryAutoConfiguration {
       public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
           final @NotNull SentryOptions sentryOptions) {
         return new ContextTagsEventProcessor(sentryOptions);
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
+    @ConditionalOnClass(OpenTelemetryLinkErrorEventProcessor.class)
+    @Open
+    static class OpenTelemetryLinkErrorEventProcessorConfiguration {
+
+      @Bean
+      @ConditionalOnMissingBean
+      public @NotNull OpenTelemetryLinkErrorEventProcessor openTelemetryLinkErrorEventProcessor() {
+        return new OpenTelemetryLinkErrorEventProcessor();
       }
     }
 
@@ -304,9 +323,13 @@ public class SentryAutoConfiguration {
       final String version = BuildConfig.VERSION_NAME;
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter", version);
-
       return sdkVersion;
+    }
+
+    private static void addPackageAndIntegrationInfo() {
+      SentryIntegrationPackageStorage.getInstance()
+          .addPackage("maven:io.sentry:sentry-spring-boot-starter", BuildConfig.VERSION_NAME);
+      SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot");
     }
   }
 
@@ -315,6 +338,10 @@ public class SentryAutoConfiguration {
     public SentryTracingCondition() {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
+
+    @ConditionalOnProperty(name = "sentry.enable-tracing")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryEnableTracingCondition {}
 
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")

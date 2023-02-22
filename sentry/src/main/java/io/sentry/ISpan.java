@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +19,10 @@ public interface ISpan {
   @ApiStatus.Internal
   @NotNull
   ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp);
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull Instrumenter instrumenter);
 
   /**
    * Starts a child Span.
@@ -67,6 +69,14 @@ public interface ISpan {
    * @param status - the status
    */
   void finish(@Nullable SpanStatus status);
+
+  /**
+   * Sets span timestamp marking this span as finished.
+   *
+   * @param status - the status
+   * @param timestamp - the end timestamp
+   */
+  void finish(@Nullable SpanStatus status, @Nullable SentryDate timestamp);
 
   /**
    * Sets span operation.
@@ -194,4 +204,22 @@ public interface ISpan {
    * @param unit the unit the value is measured in
    */
   void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
+
+  /**
+   * Updates the end date of the span. Note: This will only update the end date if the span is
+   * already finished.
+   *
+   * @param date the end date to set
+   * @return true if the end date was updated, false otherwise
+   */
+  @ApiStatus.Internal
+  boolean updateEndDate(@NotNull SentryDate date);
+
+  /**
+   * Whether this span instance is a NOOP that doesn't collect information
+   *
+   * @return true if NOOP
+   */
+  @ApiStatus.Internal
+  boolean isNoOp();
 }

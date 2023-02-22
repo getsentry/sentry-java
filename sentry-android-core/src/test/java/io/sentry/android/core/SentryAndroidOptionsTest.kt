@@ -3,6 +3,7 @@ package io.sentry.android.core
 import io.sentry.ITransaction
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.PerformanceCollectionData
 import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
@@ -32,14 +33,14 @@ class SentryAndroidOptionsTest {
         assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
 
         assertTrue(
-            sdkVersion.packages!!.any {
+            sdkVersion.packageSet.any {
                 it.name == "maven:io.sentry:sentry-android-core" &&
                     it.version == BuildConfig.VERSION_NAME
             }
         )
 
         assertTrue(
-            sdkVersion.packages!!.any {
+            sdkVersion.packageSet.any {
                 it.name == "maven:io.sentry:sentry" &&
                     it.version == BuildConfig.VERSION_NAME
             }
@@ -110,6 +111,9 @@ class SentryAndroidOptionsTest {
 
     private class CustomTransactionProfiler : ITransactionProfiler {
         override fun onTransactionStart(transaction: ITransaction) {}
-        override fun onTransactionFinish(transaction: ITransaction): ProfilingTraceData? = null
+        override fun onTransactionFinish(
+            transaction: ITransaction,
+            performanceCollectionData: List<PerformanceCollectionData>?
+        ): ProfilingTraceData? = null
     }
 }

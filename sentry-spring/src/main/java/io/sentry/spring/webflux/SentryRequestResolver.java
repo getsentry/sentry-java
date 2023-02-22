@@ -3,11 +3,12 @@ package io.sentry.spring.webflux;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.protocol.Request;
+import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
-import java.util.Arrays;
+import io.sentry.util.UrlUtils;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -18,9 +19,6 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 @Open
 @ApiStatus.Experimental
 public class SentryRequestResolver {
-  private static final List<String> SENSITIVE_HEADERS =
-      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
-
   private final @NotNull IHub hub;
 
   public SentryRequestResolver(final @NotNull IHub hub) {
@@ -29,9 +27,12 @@ public class SentryRequestResolver {
 
   public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
     final Request sentryRequest = new Request();
-    sentryRequest.setMethod(httpRequest.getMethodValue());
-    sentryRequest.setQueryString(httpRequest.getURI().getQuery());
-    sentryRequest.setUrl(httpRequest.getURI().toString());
+    final String methodName =
+        httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
+    sentryRequest.setMethod(methodName);
+    final @NotNull URI uri = httpRequest.getURI();
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(uri.toString());
+    urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
     if (hub.getOptions().isSendDefaultPii()) {
@@ -46,7 +47,7 @@ public class SentryRequestResolver {
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
       // do not copy personal information identifiable headers
       if (hub.getOptions().isSendDefaultPii()
-          || !SENSITIVE_HEADERS.contains(entry.getKey().toUpperCase(Locale.ROOT))) {
+          || !HttpUtils.containsSensitiveHeader(entry.getKey())) {
         headersMap.put(entry.getKey(), toString(entry.getValue()));
       }
     }

@@ -1,15 +1,15 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
-import java.util.Date
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SpanTest {
@@ -28,8 +28,11 @@ class SpanTest {
 
         fun getSut(): Span {
             return Span(
-                SentryId(), SpanId(),
-                SentryTracer(TransactionContext("name", "op"), hub), "op", hub
+                SentryId(),
+                SpanId(),
+                SentryTracer(TransactionContext("name", "op"), hub),
+                "op",
+                hub
             )
         }
     }
@@ -41,31 +44,7 @@ class SpanTest {
         val span = fixture.getSut()
         span.finish()
 
-        assertNotNull(span.timestamp)
-        assertNotNull(span.highPrecisionTimestamp)
-    }
-
-    @Test
-    fun `when span is created without a start timestamp, high precision timestamp is more precise than timestamp`() {
-        val span = fixture.getSut().startChild("op", "desc") as Span
-        span.finish()
-
-        assertNotNull(span.highPrecisionTimestamp) { highPrecisionTimestamp ->
-            assertNotNull(span.timestamp) { timestamp ->
-                assertTrue(highPrecisionTimestamp >= timestamp - 0.001)
-                assertTrue(highPrecisionTimestamp <= timestamp + 0.001)
-            }
-        }
-    }
-
-    @Test
-    fun `when span is created with a start timestamp, finish timestamp is equals to high precision timestamp`() {
-        val span = fixture.getSut().startChild("op", "desc", Date()) as Span
-        span.finish()
-
-        assertNotNull(span.timestamp)
-        assertNotNull(span.highPrecisionTimestamp)
-        assertEquals(span.timestamp, span.highPrecisionTimestamp)
+        assertNotNull(span.finishDate)
     }
 
     @Test
@@ -73,7 +52,7 @@ class SpanTest {
         val span = fixture.getSut()
         span.finish(SpanStatus.CANCELLED)
 
-        assertNotNull(span.timestamp)
+        assertNotNull(span.finishDate)
         assertEquals(SpanStatus.CANCELLED, span.status)
     }
 
@@ -110,11 +89,14 @@ class SpanTest {
         val traceId = SentryId()
         val parentSpanId = SpanId()
         val span = Span(
-            traceId, parentSpanId,
+            traceId,
+            parentSpanId,
             SentryTracer(
-                TransactionContext("name", "op", TracesSamplingDecision(true)), fixture.hub
+                TransactionContext("name", "op", TracesSamplingDecision(true)),
+                fixture.hub
             ),
-            "op", fixture.hub
+            "op",
+            fixture.hub
         )
         val sentryTrace = span.toSentryTrace()
 
@@ -131,6 +113,24 @@ class SpanTest {
         val span = transaction.startChild("operation", "description")
 
         span.startChild("op")
+        assertEquals(2, transaction.spans.size)
+    }
+
+    @Test
+    fun `starting a child with different instrumenter no-ops`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description")
+
+        span.startChild("op")
+        assertEquals(0, transaction.spans.size)
+    }
+
+    @Test
+    fun `starting a child with same instrumenter adds span to transaction`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description", null, Instrumenter.OTEL)
+
+        span.startChild("op", "desc", null, Instrumenter.OTEL)
         assertEquals(2, transaction.spans.size)
     }
 
@@ -152,7 +152,8 @@ class SpanTest {
     @Test
     fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
         val transaction = SentryTracer(
-            TransactionContext("name", "op"), fixture.hub
+            TransactionContext("name", "op"),
+            fixture.hub
         )
         val span = transaction.startChild("op")
         val ex = RuntimeException()
@@ -169,16 +170,14 @@ class SpanTest {
         span.throwable = ex
 
         span.finish(SpanStatus.OK)
-        val timestamp = span.timestamp
-        val highPrecisionTimestamp = span.highPrecisionTimestamp
+        val timestamp = span.finishDate
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
         verify(fixture.hub).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
-        assertEquals(timestamp, span.timestamp)
-        assertEquals(highPrecisionTimestamp, span.highPrecisionTimestamp)
+        assertEquals(timestamp, span.finishDate)
     }
 
     @Test
@@ -193,7 +192,7 @@ class SpanTest {
         span.finish(SpanStatus.OK)
         assertTrue(span.isFinished)
 
-        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null))
+        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null, Instrumenter.SENTRY))
         assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc"))
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
@@ -241,8 +240,28 @@ class SpanTest {
         }
     }
 
-    private fun getTransaction(): SentryTracer {
-        return SentryTracer(TransactionContext("name", "op"), fixture.hub)
+    @Test
+    fun `updateEndDate is ignored and returns false if span is not finished`() {
+        val span = fixture.getSut()
+        assertFalse(span.isFinished)
+        assertNull(span.finishDate)
+        assertFalse(span.updateEndDate(mock()))
+        assertNull(span.finishDate)
+    }
+
+    @Test
+    fun `updateEndDate updates finishDate and returns true if span is finished`() {
+        val span = fixture.getSut()
+        val endDate: SentryDate = mock()
+        span.finish()
+        assertTrue(span.isFinished)
+        assertNotNull(span.finishDate)
+        assertTrue(span.updateEndDate(endDate))
+        assertEquals(endDate, span.finishDate)
+    }
+
+    private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
+        return SentryTracer(transactionContext, fixture.hub)
     }
 
     private fun startChildFromSpan(): Span {

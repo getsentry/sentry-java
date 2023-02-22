@@ -6,11 +6,11 @@ public final class io/sentry/android/okhttp/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
+public final class io/sentry/android/okhttp/SentryOkHttpInterceptor : io/sentry/IntegrationName, okhttp3/Interceptor {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;)V
 	public fun intercept (Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 }

@@ -23,6 +23,7 @@
                 "crashed": false,
                 "current": false,
                 "daemon": true,
+                "main": true,
                 "stacktrace":
                 {
                     "frames":
@@ -122,30 +123,6 @@
     {
         "01c8a4f6-8861-4575-a10e-5ed3fba7c794": "b4083431-47e9-433a-b58f-58796f63e27c"
     },
-    "debug_meta":
-    {
-        "sdk_info":
-        {
-            "sdk_name": "182c4407-c1e1-4427-9b5a-ad2e22b1046a",
-            "version_major": 2045114005,
-            "version_minor": 1436566288,
-            "version_patchlevel": 1637914973
-        },
-        "images":
-        [
-            {
-                "uuid": "8994027e-1cd9-4be8-b611-88ce08cf16e6",
-                "type": "fd6e053b-a7fe-4754-916e-bfb3ab77177d",
-                "debug_id": "8c653f5a-3418-4823-ba91-29a84c9c1235",
-                "debug_file": "55cc15dd-51f3-4cad-803c-6fd90eac21f6",
-                "code_id": "01230ece-f729-4af4-8b48-df74700aa4bf",
-                "code_file": "415c8995-1cb4-4bed-ba5c-5b3d6ba1ad47",
-                "image_addr": "8a258c81-641d-4e54-b06e-a0f56b1ee2ef",
-                "image_size": -7905338721846826571,
-                "arch": "d00d5bea-fb5c-43c9-85f0-dc1350d957a4"
-            }
-        ]
-    },
     "event_id": "afcb46b1140ade5187c4bbb5daa804df",
     "contexts":
     {
@@ -162,7 +139,8 @@
             {
               "WRITE_EXTERNAL_STORAGE": "not_granted",
               "CAMERA": "granted"
-            }
+            },
+            "in_foreground": true
         },
         "browser":
         {
@@ -214,7 +192,7 @@
         {
             "name": "d623a6b5-e1ab-4402-931b-c06f5a43a5ae",
             "id": -596576280,
-            "vendor_id": 1874778041,
+            "vendor_id": "1874778041",
             "vendor_name": "d732cf76-07dc-48e2-8920-96d6bfc2439d",
             "memory_size": -1484004451,
             "api_type": "95dfc8bc-88ae-4d66-b85f-6c88ad45b80f",
@@ -230,6 +208,16 @@
             "build": "bd197b97-eb68-49c3-9d07-ef789caf3069",
             "kernel_version": "1df24aec-3a6f-49a9-8b50-69ae5f9dde08",
             "rooted": true
+        },
+        "response":
+        {
+            "cookies": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
+            "headers": {
+                "content-type": "text/html"
+            },
+            "status_code": 500,
+            "body_size": 1000,
+            "arbitrary_field": "arbitrary"
         },
         "runtime":
         {
@@ -291,7 +279,9 @@
         "other":
         {
             "669ff1c1-517b-46dc-a889-131555364a56": "89043294-f6e1-4e2e-b152-1fdf9b1102fc"
-        }
+        },
+        "fragment": "fragment",
+        "body_size": 1000
     },
     "tags":
     {
@@ -327,6 +317,30 @@
             "level": "debug"
         }
     ],
+    "debug_meta":
+    {
+      "sdk_info":
+      {
+        "sdk_name": "182c4407-c1e1-4427-9b5a-ad2e22b1046a",
+        "version_major": 2045114005,
+        "version_minor": 1436566288,
+        "version_patchlevel": 1637914973
+      },
+      "images":
+      [
+        {
+          "uuid": "8994027e-1cd9-4be8-b611-88ce08cf16e6",
+          "type": "fd6e053b-a7fe-4754-916e-bfb3ab77177d",
+          "debug_id": "8c653f5a-3418-4823-ba91-29a84c9c1235",
+          "debug_file": "55cc15dd-51f3-4cad-803c-6fd90eac21f6",
+          "code_id": "01230ece-f729-4af4-8b48-df74700aa4bf",
+          "code_file": "415c8995-1cb4-4bed-ba5c-5b3d6ba1ad47",
+          "image_addr": "8a258c81-641d-4e54-b06e-a0f56b1ee2ef",
+          "image_size": -7905338721846826571,
+          "arch": "d00d5bea-fb5c-43c9-85f0-dc1350d957a4"
+        }
+      ]
+    },
     "extra":
     {
         "34a7d067-fad2-49d9-97b9-71eff243127b": "fe3dc1cf-4a99-4213-85bb-e0957b8349b8"

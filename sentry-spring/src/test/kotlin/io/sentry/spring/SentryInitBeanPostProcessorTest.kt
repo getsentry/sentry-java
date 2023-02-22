@@ -1,8 +1,8 @@
 package io.sentry.spring
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

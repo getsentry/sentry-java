@@ -100,7 +100,13 @@ public final class Request implements JsonUnknown, JsonSerializable {
    */
   private @Nullable Map<String, String> env;
 
+  /** The body size in bytes */
+  private @Nullable Long bodySize;
+
   private @Nullable Map<String, String> other;
+
+  /** The fragment (anchor) of the request URL. */
+  private @Nullable String fragment;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -117,6 +123,8 @@ public final class Request implements JsonUnknown, JsonSerializable {
     this.other = CollectionUtils.newConcurrentHashMap(request.other);
     this.unknown = CollectionUtils.newConcurrentHashMap(request.unknown);
     this.data = request.data;
+    this.fragment = request.fragment;
+    this.bodySize = request.bodySize;
   }
 
   public @Nullable String getUrl() {
@@ -196,6 +204,22 @@ public final class Request implements JsonUnknown, JsonSerializable {
     this.unknown = unknown;
   }
 
+  public @Nullable String getFragment() {
+    return fragment;
+  }
+
+  public void setFragment(final @Nullable String fragment) {
+    this.fragment = fragment;
+  }
+
+  public @Nullable Long getBodySize() {
+    return bodySize;
+  }
+
+  public void setBodySize(final @Nullable Long bodySize) {
+    this.bodySize = bodySize;
+  }
+
   public static final class JsonKeys {
     public static final String URL = "url";
     public static final String METHOD = "method";
@@ -205,6 +229,8 @@ public final class Request implements JsonUnknown, JsonSerializable {
     public static final String HEADERS = "headers";
     public static final String ENV = "env";
     public static final String OTHER = "other";
+    public static final String FRAGMENT = "fragment";
+    public static final String BODY_SIZE = "body_size";
   }
 
   @Override
@@ -234,6 +260,12 @@ public final class Request implements JsonUnknown, JsonSerializable {
     }
     if (other != null) {
       writer.name(JsonKeys.OTHER).value(logger, other);
+    }
+    if (fragment != null) {
+      writer.name(JsonKeys.FRAGMENT).value(logger, fragment);
+    }
+    if (bodySize != null) {
+      writer.name(Response.JsonKeys.BODY_SIZE).value(logger, bodySize);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -289,6 +321,12 @@ public final class Request implements JsonUnknown, JsonSerializable {
             if (deserializedOther != null) {
               request.other = CollectionUtils.newConcurrentHashMap(deserializedOther);
             }
+            break;
+          case JsonKeys.FRAGMENT:
+            request.fragment = reader.nextStringOrNull();
+            break;
+          case Response.JsonKeys.BODY_SIZE:
+            request.bodySize = reader.nextLongOrNull();
             break;
           default:
             if (unknown == null) {

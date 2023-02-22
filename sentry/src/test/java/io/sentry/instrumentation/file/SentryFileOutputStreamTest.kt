@@ -1,18 +1,25 @@
 package io.sentry.instrumentation.file
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.protocol.SentryStackFrame
+import io.sentry.util.thread.MainThreadChecker
+import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SentryFileOutputStreamTest {
     class Fixture {
@@ -22,13 +29,19 @@ class SentryFileOutputStreamTest {
         internal fun getSut(
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
+            append: Boolean = false
         ): SentryFileOutputStream {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    mainThreadChecker = MainThreadChecker.getInstance()
+                    addInAppInclude("org.junit")
+                }
+            )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            return SentryFileOutputStream(tmpFile, hub)
+            return SentryFileOutputStream(tmpFile, append, hub)
         }
     }
 
@@ -111,5 +124,36 @@ class SentryFileOutputStreamTest {
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
         assertEquals(fileIOSpan.data["file.size"], 4L)
+    }
+
+    @Test
+    fun `when run on main thread, attaches call_stack with blocked_main_thread=true`() {
+        val fis = fixture.getSut(tmpFile)
+        fis.close()
+
+        val fileIOSpan = fixture.sentryTracer.children.first()
+        assertEquals(true, fileIOSpan.data["blocked_main_thread"])
+        // assuming our "in-app" is org.junit, we check that only org.junit frames are in the call stack
+        assertTrue {
+            (fileIOSpan.data["call_stack"] as List<SentryStackFrame>).all {
+                it.module?.startsWith("org.junit") == true
+            }
+        }
+    }
+
+    @Test
+    fun `when run on a background thread, does not attach call_stack with blocked_main_thread=false`() {
+        val finished = AtomicBoolean(false)
+        thread {
+            val fis = fixture.getSut(tmpFile)
+            fis.close()
+            finished.set(true)
+        }
+
+        await.untilTrue(finished)
+
+        val fileIOSpan = fixture.sentryTracer.children.first()
+        assertEquals(false, fileIOSpan.data["blocked_main_thread"])
+        assertNull(fileIOSpan.data["call_stack"])
     }
 }

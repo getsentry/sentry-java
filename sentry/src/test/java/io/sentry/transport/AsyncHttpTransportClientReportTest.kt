@@ -1,15 +1,5 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.same
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
@@ -21,6 +11,16 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.dsnString
 import io.sentry.protocol.User
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.same
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

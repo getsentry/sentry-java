@@ -20,7 +20,11 @@ final class TransactionNameProvider {
         serverWebExchange.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
 
     if (pattern != null) {
-      return serverWebExchange.getRequest().getMethodValue() + " " + pattern.getPatternString();
+      final String methodName =
+          serverWebExchange.getRequest().getMethod() != null
+              ? serverWebExchange.getRequest().getMethod().name()
+              : "unknown";
+      return methodName + " " + pattern.getPatternString();
     } else {
       return null;
     }

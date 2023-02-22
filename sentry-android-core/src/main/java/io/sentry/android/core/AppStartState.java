@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
 import android.os.SystemClock;
-import java.util.Date;
+import io.sentry.DateUtils;
+import io.sentry.SentryDate;
+import io.sentry.SentryLongDate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +26,7 @@ public final class AppStartState {
   private @Nullable Boolean coldStart = null;
 
   /** appStart as a Date used in the App's Context */
-  private @Nullable Date appStartTime;
+  private @Nullable SentryDate appStartTime;
 
   private AppStartState() {}
 
@@ -80,16 +82,48 @@ public final class AppStartState {
   }
 
   @Nullable
-  public Date getAppStartTime() {
+  public SentryDate getAppStartTime() {
     return appStartTime;
   }
 
-  synchronized void setAppStartTime(final long appStartMillis, final @NotNull Date appStartTime) {
+  @Nullable
+  public SentryDate getAppStartEndTime() {
+    @Nullable final SentryDate start = getAppStartTime();
+    if (start != null) {
+      @Nullable final Long durationMillis = getAppStartInterval();
+      if (durationMillis != null) {
+        final long startNanos = start.nanoTimestamp();
+        final long endNanos = startNanos + DateUtils.millisToNanos(durationMillis);
+        return new SentryLongDate(endNanos);
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  public Long getAppStartMillis() {
+    return appStartMillis;
+  }
+
+  synchronized void setAppStartTime(
+      final long appStartMillis, final @NotNull SentryDate appStartTime) {
     // method is synchronized because the SDK may by init. on a background thread.
     if (this.appStartTime != null && this.appStartMillis != null) {
       return;
     }
     this.appStartTime = appStartTime;
     this.appStartMillis = appStartMillis;
+  }
+
+  @TestOnly
+  public synchronized void setAppStartMillis(final long appStartMillis) {
+    this.appStartMillis = appStartMillis;
+  }
+
+  @TestOnly
+  public synchronized void reset() {
+    appStartTime = null;
+    appStartMillis = null;
+    appStartEndMillis = null;
   }
 }

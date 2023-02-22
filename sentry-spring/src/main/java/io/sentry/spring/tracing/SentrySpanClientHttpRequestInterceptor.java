@@ -12,8 +12,9 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.TracePropagationTargets;
 import io.sentry.util.Objects;
+import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.UrlUtils;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,12 +46,16 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       }
 
       final ISpan span = activeSpan.startChild("http.client");
-      span.setDescription(request.getMethodValue() + " " + request.getURI());
+      final String methodName =
+          request.getMethod() != null ? request.getMethod().name() : "unknown";
+      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());
+      urlDetails.applyToSpan(span);
+      span.setDescription(methodName + " " + urlDetails.getUrlOrFallback());
 
-      final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-
-      if (TracePropagationTargets.contain(
-          hub.getOptions().getTracePropagationTargets(), request.getURI())) {
+      if (!span.isNoOp()
+          && PropagationTargetsUtils.contain(
+              hub.getOptions().getTracePropagationTargets(), request.getURI())) {
+        final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
         request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
         @Nullable
         BaggageHeader baggage =
@@ -63,8 +68,8 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       try {
         response = execution.execute(request, body);
         // handles both success and error responses
-        span.setStatus(SpanStatus.fromHttpStatusCode(response.getRawStatusCode()));
-        responseStatusCode = response.getRawStatusCode();
+        span.setStatus(SpanStatus.fromHttpStatusCode(response.getStatusCode().value()));
+        responseStatusCode = response.getStatusCode().value();
         return response;
       } catch (Throwable e) {
         // handles cases like connection errors
@@ -84,8 +89,10 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @NotNull byte[] body,
       final @Nullable Integer responseStatusCode,
       final @Nullable ClientHttpResponse response) {
+    final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
+
     final Breadcrumb breadcrumb =
-        Breadcrumb.http(request.getURI().toString(), request.getMethodValue(), responseStatusCode);
+        Breadcrumb.http(request.getURI().toString(), methodName, responseStatusCode);
     breadcrumb.setData("request_body_size", body.length);
 
     final Hint hint = new Hint();

@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
@@ -178,6 +179,7 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
         transport.send(envelope, hint);
       }
@@ -231,6 +233,11 @@ public final class SentryClient implements ISentryClient {
       attachments.add(screenshot);
     }
 
+    @Nullable final Attachment viewHierarchy = hint.getViewHierarchy();
+    if (viewHierarchy != null) {
+      attachments.add(viewHierarchy);
+    }
+
     return attachments;
   }
 
@@ -263,12 +270,20 @@ public final class SentryClient implements ISentryClient {
           SentryEnvelopeItem.fromProfilingTrace(
               profilingTraceData, options.getMaxTraceFileSize(), options.getSerializer());
       envelopeItems.add(profilingTraceItem);
+
+      if (sentryId == null) {
+        sentryId = new SentryId(profilingTraceData.getProfileId());
+      }
     }
 
     if (attachments != null) {
       for (final Attachment attachment : attachments) {
         final SentryEnvelopeItem attachmentItem =
-            SentryEnvelopeItem.fromAttachment(attachment, options.getMaxAttachmentSize());
+            SentryEnvelopeItem.fromAttachment(
+                options.getSerializer(),
+                options.getLogger(),
+                attachment,
+                options.getMaxAttachmentSize());
         envelopeItems.add(attachmentItem);
       }
     }
@@ -425,7 +440,14 @@ public final class SentryClient implements ISentryClient {
                       }
                     }
 
-                    if (session.update(status, userAgent, crashedOrErrored)) {
+                    final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+                    @Nullable String abnormalMechanism = null;
+                    if (sentrySdkHint instanceof AbnormalExit) {
+                      abnormalMechanism = ((AbnormalExit) sentrySdkHint).mechanism();
+                      status = Session.State.Abnormal;
+                    }
+
+                    if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
                       // if hint is DiskFlushNotification, it means we have an uncaughtException
                       // and we can end the session.
                       if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
@@ -479,6 +501,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
+      hint.clear();
       transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
@@ -539,6 +562,18 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    transaction = executeBeforeSendTransaction(transaction, hint);
+
+    if (transaction == null) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Transaction was dropped by beforeSendTransaction.");
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
+      return SentryId.EMPTY_ID;
+    }
+
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
@@ -548,6 +583,7 @@ public final class SentryClient implements ISentryClient {
               traceContext,
               profilingTraceData);
 
+      hint.clear();
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {
@@ -681,6 +717,35 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
+  }
+
+  private @Nullable SentryTransaction executeBeforeSendTransaction(
+      @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
+    final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
+        options.getBeforeSendTransaction();
+    if (beforeSendTransaction != null) {
+      try {
+        transaction = beforeSendTransaction.execute(transaction, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendTransaction callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
+
+        final Breadcrumb breadcrumb = new Breadcrumb();
+        breadcrumb.setMessage("BeforeSendTransaction callback failed.");
+        breadcrumb.setCategory("SentryClient");
+        breadcrumb.setLevel(SentryLevel.ERROR);
+        if (e.getMessage() != null) {
+          breadcrumb.setData("sentry:message", e.getMessage());
+        }
+
+        transaction.addBreadcrumb(breadcrumb);
+      }
+    }
+    return transaction;
   }
 
   @Override

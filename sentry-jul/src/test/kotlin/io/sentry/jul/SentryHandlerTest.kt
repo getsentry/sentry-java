@@ -1,13 +1,13 @@
 package io.sentry.jul
 
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.transport.ITransport
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.slf4j.MDC
 import java.time.Instant
 import java.time.LocalDateTime
@@ -386,12 +386,14 @@ class SentryHandlerTest {
                 assertNotNull(event.sdk) {
                     assertEquals(BuildConfig.SENTRY_JUL_SDK_NAME, it.name)
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
-                    assertNotNull(it.packages)
                     assertTrue(
-                        it.packages!!.any { pkg ->
+                        it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-jul" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
                         }
+                    )
+                    assertTrue(
+                        it.integrationSet.contains("Jul")
                     )
                 }
             },

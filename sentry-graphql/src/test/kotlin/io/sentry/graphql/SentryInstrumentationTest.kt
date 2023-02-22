@@ -1,7 +1,5 @@
 package io.sentry.graphql
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import graphql.GraphQL
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
@@ -11,6 +9,8 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.lang.RuntimeException
 import kotlin.random.Random
 import kotlin.test.Test
@@ -131,6 +131,16 @@ class SentryInstrumentationTest {
         assertEquals("Query.shows", span.operation)
         assertEquals("changed", span.description)
         assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `Integration adds itself to integration and package list`() {
+        val sut = fixture.getSut()
+        assertNotNull(fixture.hub.options.sdkVersion)
+        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("GraphQL"))
+        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
+        assertNotNull(packageInfo)
+        assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
     data class Show(val id: Int)

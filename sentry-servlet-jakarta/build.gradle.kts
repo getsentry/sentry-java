@@ -11,6 +11,7 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
 the<DependencyManagementExtension>().apply {
@@ -95,4 +96,11 @@ tasks.withType<JavaCompile>().configureEach {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
+}
+
+buildConfig {
+    useJavaOutput()
+    packageName("io.sentry.servlet.jakarta")
+    buildConfigField("String", "SENTRY_SERVLET_JAKARTA_SDK_NAME", "\"${Config.Sentry.SENTRY_SERVLET_JAKARTA_SDK_NAME}\"")
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }

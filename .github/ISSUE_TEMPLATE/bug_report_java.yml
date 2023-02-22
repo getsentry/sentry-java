@@ -14,10 +14,14 @@ body:
         - sentry-apollo
         - sentry-apollo-3
         - sentry-kotlin-extensions
+        - sentry-opentelemetry-agent
+        - sentry-opentelemetry-core
         - sentry-servlet
         - sentry-servlet-jakarta
         - sentry-spring-boot-starter
+        - sentry-spring-boot-starter-jakarta
         - sentry-spring
+        - sentry-spring-jakarta
         - sentry-logback
         - sentry-log4j2
         - sentry-graphql

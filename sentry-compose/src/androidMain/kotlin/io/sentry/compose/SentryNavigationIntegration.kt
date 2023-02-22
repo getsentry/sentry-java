@@ -13,6 +13,8 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import io.sentry.Breadcrumb
 import io.sentry.ITransaction
+import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.navigation.SentryNavigationListener
 
@@ -20,7 +22,12 @@ internal class SentryLifecycleObserver(
     private val navController: NavController,
     private val navListener: NavController.OnDestinationChangedListener =
         SentryNavigationListener()
-) : LifecycleEventObserver {
+) : LifecycleEventObserver, IntegrationName {
+
+    init {
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+    }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         if (event == Lifecycle.Event.ON_RESUME) {
@@ -30,6 +37,10 @@ internal class SentryLifecycleObserver(
         }
     }
 
+    override fun getIntegrationName(): String {
+        return "ComposeNavigation"
+    }
+
     fun dispose() {
         navController.removeOnDestinationChangedListener(navListener)
     }
@@ -37,7 +48,7 @@ internal class SentryLifecycleObserver(
 
 /**
  * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
- * them to Sentry for when attached to the respective [NavHostController].
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
  * navigation events.
@@ -72,4 +83,19 @@ public fun NavHostController.withSentryObservableEffect(
         }
     }
     return this
+}
+
+/**
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
+ *
+ * Used by the sentry android gradle plugin for Jetpack Compose instrumentation.
+ *
+ */
+@Composable
+internal fun NavHostController.withSentryObservableEffect(): NavHostController {
+    return withSentryObservableEffect(
+        enableNavigationBreadcrumbs = true,
+        enableNavigationTracing = true
+    )
 }

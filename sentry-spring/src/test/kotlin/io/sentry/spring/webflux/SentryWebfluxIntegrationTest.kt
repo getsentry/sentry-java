@@ -1,12 +1,5 @@
 package io.sentry.spring.webflux
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ITransportFactory
@@ -16,6 +9,13 @@ import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -38,6 +38,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -63,7 +64,7 @@ class SentryWebfluxIntegrationTest {
     @Test
     fun `attaches request information to SentryEvents`() {
         testClient.get()
-            .uri("http://localhost:$port/hello?param=value")
+            .uri("http://localhost:$port/hello?param=value#top")
             .exchange()
             .expectStatus()
             .isOk
@@ -71,9 +72,10 @@ class SentryWebfluxIntegrationTest {
         verify(transport).send(
             checkEvent { event ->
                 assertNotNull(event.request) {
-                    assertEquals("http://localhost:$port/hello?param=value", it.url)
+                    assertEquals("http://localhost:$port/hello", it.url)
                     assertEquals("GET", it.method)
                     assertEquals("param=value", it.queryString)
+                    assertNull(it.fragment)
                 }
             },
             anyOrNull()

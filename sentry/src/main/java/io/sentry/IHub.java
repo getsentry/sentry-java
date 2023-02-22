@@ -356,7 +356,7 @@ public interface IHub {
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       @Nullable Hint hint,
-      final @Nullable ProfilingTraceData profilingTraceData);
+      @Nullable ProfilingTraceData profilingTraceData);
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
@@ -563,4 +563,14 @@ public interface IHub {
    */
   @Nullable
   Boolean isCrashedLastRun();
+
+  /**
+   * Report a screen has been fully loaded. That means all data needed by the UI was loaded. If
+   * time-to-full-display tracing {{@link SentryOptions#isEnableTimeToFullDisplayTracing()} } is
+   * disabled this call is ignored.
+   *
+   * <p>This method is safe to be called multiple times. If the time-to-full-display span is already
+   * finished, this call will be ignored.
+   */
+  void reportFullDisplayed();
 }

@@ -14,7 +14,7 @@ targets:
     mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
     android:
       distDirRegex: /^(sentry-android-|.*-android).*$/
-      fileReplaceeRegex: /\d\.\d\.\d(-\w+(\.\d)?)?(-SNAPSHOT)?/
+      fileReplaceeRegex: /\d+\.\d+\.\d+(-\w+(\.\d+)?)?(-SNAPSHOT)?/
       fileReplacerStr: release.aar
   - name: github
     excludeNames: /^libsentry.*\.so$/
@@ -22,7 +22,9 @@ targets:
     sdks:
       maven:io.sentry:sentry:
       maven:io.sentry:sentry-spring:
+      maven:io.sentry:sentry-spring-jakarta:
       maven:io.sentry:sentry-spring-boot-starter:
+      maven:io.sentry:sentry-spring-boot-starter-jakarta:
       maven:io.sentry:sentry-servlet:
       maven:io.sentry:sentry-servlet-jakarta:
       maven:io.sentry:sentry-logback:
@@ -38,6 +40,9 @@ targets:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
+      maven:io.sentry:sentry-opentelemetry-agent:
+      maven:io.sentry:sentry-opentelemetry-agentcustomization:
+      maven:io.sentry:sentry-opentelemetry-core:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:

@@ -1,12 +1,12 @@
 package io.sentry.android.timber
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SdkVersion
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import timber.log.Timber
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -91,26 +91,25 @@ class SentryTimberIntegrationTest {
     }
 
     @Test
-    fun `Integrations adds itself to the package list`() {
+    fun `Integration adds itself to the package list`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
         assertTrue(
-            fixture.options.sdkVersion!!.packages!!.any {
-                it.name == "maven:io.sentry:sentry-android-timber"
-                it.version == BuildConfig.VERSION_NAME
+            fixture.options.sdkVersion!!.packageSet.any {
+                it.name == "maven:io.sentry:sentry-android-timber" &&
+                    it.version == BuildConfig.VERSION_NAME
             }
         )
     }
 
     @Test
-    fun `Integration sets SDK name and version to options`() {
+    fun `Integration adds itself to the integration list`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
-        val sdkVersion = fixture.options.sdkVersion!!
-
-        assertEquals(sdkVersion.name, "sentry.java.android.timber")
-        assertEquals(sdkVersion.version, BuildConfig.VERSION_NAME)
+        assertTrue(
+            fixture.options.sdkVersion!!.integrationSet.contains("Timber")
+        )
     }
 }

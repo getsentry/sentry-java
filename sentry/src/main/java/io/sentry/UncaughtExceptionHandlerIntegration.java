@@ -7,6 +7,7 @@ import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
+import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -80,6 +81,7 @@ public final class UncaughtExceptionHandlerIntegration
       this.options
           .getLogger()
           .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
+      addIntegrationToSdkVersion();
     }
   }
 
@@ -97,15 +99,18 @@ public final class UncaughtExceptionHandlerIntegration
 
         final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
 
-        hub.captureEvent(event, hint);
-        // Block until the event is flushed to disk
-        if (!exceptionHint.waitFlush()) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting to flush event to disk before crashing. Event: %s",
-                  event.getEventId());
+        final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
+        final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
+        if (!isEventDropped) {
+          // Block until the event is flushed to disk
+          if (!exceptionHint.waitFlush()) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Timed out waiting to flush event to disk before crashing. Event: %s",
+                    event.getEventId());
+          }
         }
       } catch (Throwable e) {
         options

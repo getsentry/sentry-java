@@ -1,12 +1,12 @@
 package io.sentry.spring
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.spring.tracing.SpringMvcTransactionNameProvider
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.web.servlet.HandlerMapping

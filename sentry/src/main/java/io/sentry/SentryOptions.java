@@ -5,13 +5,20 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.modules.IModulesLoader;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryTransaction;
+import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
-import io.sentry.util.SampleRateUtil;
+import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
+import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +35,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
@@ -112,6 +120,12 @@ public class SentryOptions {
   private @Nullable BeforeSendCallback beforeSend;
 
   /**
+   * This function is called with an SDK specific transaction object and can return a modified
+   * transaction object or nothing to skip reporting the transaction
+   */
+  private @Nullable BeforeSendTransactionCallback beforeSendTransaction;
+
+  /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
    * to the scope. When nothing is returned from the function, the breadcrumb is dropped
    */
@@ -153,6 +167,9 @@ public class SentryOptions {
    */
   private @Nullable Double sampleRate;
 
+  /** Enables generation of transactions and propagation of trace data. */
+  private @Nullable Boolean enableTracing;
+
   /**
    * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
    * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
@@ -180,8 +197,8 @@ public class SentryOptions {
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
   /**
-   * The transport factory creates instances of {@link io.sentry.transport.ITransport} - internal
-   * construct of the client that abstracts away the event sending.
+   * The transport factory creates instances of {@link ITransport} - internal construct of the
+   * client that abstracts away the event sending.
    */
   private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
 
@@ -353,6 +370,44 @@ public class SentryOptions {
 
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
   @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
+
+  /** Modules (dependencies, packages) that will be send along with each event. */
+  private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
+
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
+  /** Enable or disable automatic breadcrumbs for User interactions */
+  private boolean enableUserInteractionBreadcrumbs = true;
+
+  /** Which framework is responsible for instrumenting. */
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
+  private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
+
+  private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
+
+  // TODO this should default to false on the next major
+  /** Whether OPTIONS requests should be traced. */
+  private boolean traceOptionsRequests = true;
+
+  /** Date provider to retrieve the current date from. */
+  @ApiStatus.Internal
+  private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+
+  private final @NotNull List<ICollector> collectors = new ArrayList<>();
+
+  /** Performance collector that collect performance stats while transactions run. */
+  private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      NoOpTransactionPerformanceCollector.getInstance();
+
+  /** Enables the time-to-full-display spans in navigation transactions. */
+  private boolean enableTimeToFullDisplayTracing = false;
+
+  /** Screen fully displayed reporter, used for time-to-full-display spans. */
+  private final @NotNull FullDisplayedReporter fullDisplayedReporter =
+      FullDisplayedReporter.getInstance();
 
   /**
    * Adds an event processor
@@ -606,6 +661,25 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the BeforeSendTransaction callback
+   *
+   * @return the beforeSendTransaction callback or null if not set
+   */
+  public @Nullable BeforeSendTransactionCallback getBeforeSendTransaction() {
+    return beforeSendTransaction;
+  }
+
+  /**
+   * Sets the beforeSendTransaction callback
+   *
+   * @param beforeSendTransaction the beforeSendTransaction callback
+   */
+  public void setBeforeSendTransaction(
+      @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
+    this.beforeSendTransaction = beforeSendTransaction;
+  }
+
+  /**
    * Returns the beforeBreadcrumb callback
    *
    * @return the beforeBreadcrumb callback or null if not set
@@ -745,13 +819,31 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (!SampleRateUtil.isValidSampleRate(sampleRate)) {
+    if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
               + " is not valid. Use null to disable or values > 0.0 and <= 1.0.");
     }
     this.sampleRate = sampleRate;
+  }
+
+  /**
+   * Whether generation of transactions and propagation of trace data is enabled.
+   *
+   * <p>NOTE: There is also {@link SentryOptions#isTracingEnabled()} which checks other options as
+   * well.
+   *
+   * @return true if enabled, false if disabled, null can mean enabled if {@link
+   *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
+   */
+  public @Nullable Boolean getEnableTracing() {
+    return enableTracing;
+  }
+
+  /** Enables generation of transactions and propagation of trace data. */
+  public void setEnableTracing(@Nullable Boolean enableTracing) {
+    this.enableTracing = enableTracing;
   }
 
   /**
@@ -769,7 +861,7 @@ public class SentryOptions {
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
-    if (!SampleRateUtil.isValidTracesSampleRate(tracesSampleRate)) {
+    if (!SampleRateUtils.isValidTracesSampleRate(tracesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + tracesSampleRate
@@ -1085,7 +1177,9 @@ public class SentryOptions {
    *
    * @param executorService the SentryExecutorService
    */
-  void setExecutorService(final @NotNull ISentryExecutorService executorService) {
+  @ApiStatus.Internal
+  @TestOnly
+  public void setExecutorService(final @NotNull ISentryExecutorService executorService) {
     if (executorService != null) {
       this.executorService = executorService;
     }
@@ -1349,6 +1443,10 @@ public class SentryOptions {
    * @return if tracing is enabled.
    */
   public boolean isTracingEnabled() {
+    if (enableTracing != null) {
+      return enableTracing;
+    }
+
     return getTracesSampleRate() != null || getTracesSampler() != null;
   }
 
@@ -1568,7 +1666,7 @@ public class SentryOptions {
    * @param profilesSampleRate the sample rate
    */
   public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
-    if (!SampleRateUtil.isValidProfilesSampleRate(profilesSampleRate)) {
+    if (!SampleRateUtils.isValidProfilesSampleRate(profilesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + profilesSampleRate
@@ -1732,6 +1830,44 @@ public class SentryOptions {
     }
   }
 
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  }
+
+  public boolean isEnableUserInteractionBreadcrumbs() {
+    return enableUserInteractionBreadcrumbs;
+  }
+
+  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
+    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
+  }
+
+  /**
+   * Sets the instrumenter used for performance instrumentation.
+   *
+   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
+   * any transactions automatically nor will it create transactions if you call
+   * startTransaction(...), nor will it create child spans if you call startChild(...)
+   *
+   * @param instrumenter - the instrumenter to use
+   */
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  /**
+   * Returns the instrumenter used for performance instrumentation
+   *
+   * @return the configured instrumenter
+   */
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
   /**
    * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
    *
@@ -1740,6 +1876,154 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
+  }
+
+  /**
+   * Returns a ModulesLoader to load external modules (dependencies/packages) of the program.
+   *
+   * @return a modules loader or no-op
+   */
+  @ApiStatus.Internal
+  public @NotNull IModulesLoader getModulesLoader() {
+    return modulesLoader;
+  }
+
+  @ApiStatus.Internal
+  public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
+    this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
+  }
+
+  /**
+   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link
+   * io.sentry.internal.gestures.UiElement} was part of an user interaction.
+   *
+   * @return a list of {@link GestureTargetLocator}
+   */
+  public List<GestureTargetLocator> getGestureTargetLocators() {
+    return gestureTargetLocators;
+  }
+
+  /**
+   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link
+   * io.sentry.internal.gestures.UiElement} for user interactions.
+   *
+   * @param locators a list of {@link GestureTargetLocator}
+   */
+  public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
+    gestureTargetLocators.clear();
+    gestureTargetLocators.addAll(locators);
+  }
+
+  public @NotNull IMainThreadChecker getMainThreadChecker() {
+    return mainThreadChecker;
+  }
+
+  public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
+    this.mainThreadChecker = mainThreadChecker;
+  }
+
+  /**
+   * Gets the performance collector used to collect performance stats while transactions run.
+   *
+   * @return the performance collector.
+   */
+  @ApiStatus.Internal
+  public @NotNull TransactionPerformanceCollector getTransactionPerformanceCollector() {
+    return transactionPerformanceCollector;
+  }
+
+  /**
+   * Sets the performance collector used to collect performance stats while transactions run.
+   *
+   * @param transactionPerformanceCollector the performance collector.
+   */
+  @ApiStatus.Internal
+  public void setTransactionPerformanceCollector(
+      final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
+    this.transactionPerformanceCollector = transactionPerformanceCollector;
+  }
+
+  /**
+   * Gets if the time-to-full-display spans is tracked in navigation transactions.
+   *
+   * @return if the time-to-full-display is tracked.
+   */
+  public boolean isEnableTimeToFullDisplayTracing() {
+    return enableTimeToFullDisplayTracing;
+  }
+
+  /**
+   * Sets if the time-to-full-display spans should be tracked in navigation transactions.
+   *
+   * @param enableTimeToFullDisplayTracing if the time-to-full-display spans should be tracked.
+   */
+  public void setEnableTimeToFullDisplayTracing(final boolean enableTimeToFullDisplayTracing) {
+    this.enableTimeToFullDisplayTracing = enableTimeToFullDisplayTracing;
+  }
+
+  /**
+   * Gets the reporter to call when a screen is fully loaded, used for time-to-full-display spans.
+   *
+   * @return The reporter to call when a screen is fully loaded.
+   */
+  @ApiStatus.Internal
+  public @NotNull FullDisplayedReporter getFullDisplayedReporter() {
+    return fullDisplayedReporter;
+  }
+
+  /**
+   * Whether OPTIONS requests should be traced.
+   *
+   * @return true if OPTIONS requests should be traced
+   */
+  public boolean isTraceOptionsRequests() {
+    return traceOptionsRequests;
+  }
+
+  /**
+   * Whether OPTIONS requests should be traced.
+   *
+   * @param traceOptionsRequests true if OPTIONS requests should be traced
+   */
+  public void setTraceOptionsRequests(boolean traceOptionsRequests) {
+    this.traceOptionsRequests = traceOptionsRequests;
+  }
+
+  /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
+  @ApiStatus.Internal
+  public @NotNull SentryDateProvider getDateProvider() {
+    return dateProvider;
+  }
+
+  /**
+   * Sets the {@link SentryDateProvider} which is used to retrieve the current date.
+   *
+   * <p>Different providers offer different precision. By default Sentry tries to offer the highest
+   * precision available for the system.
+   */
+  @ApiStatus.Internal
+  public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
+    this.dateProvider = dateProvider;
+  }
+
+  /**
+   * Adds a ICollector.
+   *
+   * @param collector the ICollector.
+   */
+  @ApiStatus.Internal
+  public void addCollector(final @NotNull ICollector collector) {
+    collectors.add(collector);
+  }
+
+  /**
+   * Returns the list of ICollectors.
+   *
+   * @return the ICollector list.
+   */
+  @ApiStatus.Internal
+  public @NotNull List<ICollector> getCollectors() {
+    return collectors;
   }
 
   /** The BeforeSend callback */
@@ -1754,6 +2038,21 @@ public class SentryOptions {
      */
     @Nullable
     SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
+  /** The BeforeSendTransaction callback */
+  public interface BeforeSendTransactionCallback {
+
+    /**
+     * Mutates or drop a transaction before being sent
+     *
+     * @param transaction the transaction
+     * @param hint the hints
+     * @return the original transaction or the mutated transaction or null if transaction was
+     *     dropped
+     */
+    @Nullable
+    SentryTransaction execute(@NotNull SentryTransaction transaction, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -1840,6 +2139,7 @@ public class SentryOptions {
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(createSdkVersion());
+      addPackageInfo();
     }
   }
 
@@ -1873,6 +2173,9 @@ public class SentryOptions {
     }
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
+    }
+    if (options.getEnableTracing() != null) {
+      setEnableTracing(options.getEnableTracing());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
@@ -1927,9 +2230,13 @@ public class SentryOptions {
     final SdkVersion sdkVersion = new SdkVersion(BuildConfig.SENTRY_JAVA_SDK_NAME, version);
 
     sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:io.sentry:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void addPackageInfo() {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
   }
 
   public static final class Proxy {

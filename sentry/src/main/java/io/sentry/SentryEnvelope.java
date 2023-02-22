@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
@@ -75,5 +76,20 @@ public final class SentryEnvelope {
 
     return new SentryEnvelope(
         event.getEventId(), sdkVersion, SentryEnvelopeItem.fromEvent(serializer, event));
+  }
+
+  public static @NotNull SentryEnvelope from(
+      final @NotNull ISerializer serializer,
+      final @NotNull ProfilingTraceData profilingTraceData,
+      final long maxTraceFileSize,
+      final @Nullable SdkVersion sdkVersion)
+      throws SentryEnvelopeException {
+    Objects.requireNonNull(serializer, "Serializer is required.");
+    Objects.requireNonNull(profilingTraceData, "Profiling trace data is required.");
+
+    return new SentryEnvelope(
+        new SentryId(profilingTraceData.getProfileId()),
+        sdkVersion,
+        SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, maxTraceFileSize, serializer));
   }
 }

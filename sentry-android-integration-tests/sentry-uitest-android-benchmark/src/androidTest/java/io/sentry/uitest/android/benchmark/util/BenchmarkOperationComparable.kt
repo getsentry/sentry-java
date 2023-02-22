@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 /** Stores the results of a single run of [BenchmarkOperation]. */
 internal data class BenchmarkOperationComparable(
-    val cpuTimeMillis: List<Long>,
+    val cpuTimeNanos: List<Long>,
     val droppedFrames: List<Double>,
     val durationNanos: List<Long>,
     val fps: List<Int>,
@@ -12,11 +12,10 @@ internal data class BenchmarkOperationComparable(
 ) {
     /** Compare two [BenchmarkOperation], calculating increases of each parameter. */
     fun compare(other: BenchmarkOperationComparable, iterations: Int, refreshRate: Float): BenchmarkComparisonResult {
-
         val cores = Runtime.getRuntime().availableProcessors()
         val durationIncreaseNanos = ArrayList<Long>()
         val durationIncreasePercentage = ArrayList<Double>()
-        val cpuTimeIncreaseMillis = ArrayList<Long>()
+        val cpuTimeIncreaseNanos = ArrayList<Long>()
         val cpuTimeOverheadPercentage = ArrayList<Double>()
         val fpsDecrease = ArrayList<Int>()
         val fpsDecreasePercentage = ArrayList<Double>()
@@ -30,8 +29,8 @@ internal data class BenchmarkOperationComparable(
 
             // Measure average cpu time
             // Cpu time spent profiling is weighted based on available threads, as profiling runs on 1 thread only.
-            cpuTimeIncreaseMillis.add((cpuTimeMillis[index] - other.cpuTimeMillis[index]) / cores)
-            cpuTimeOverheadPercentage.add(cpuTimeIncreaseMillis[index] * 100.0 / other.cpuTimeMillis[index])
+            cpuTimeIncreaseNanos.add((cpuTimeNanos[index] - other.cpuTimeNanos[index]) / cores)
+            cpuTimeOverheadPercentage.add(cpuTimeIncreaseNanos[index] * 100.0 / other.cpuTimeNanos[index])
 
             // Measure average fps
             fpsDecrease.add(other.fps[index] - fps[index])
@@ -51,9 +50,9 @@ internal data class BenchmarkOperationComparable(
             cores,
             operationName,
             other.operationName,
-            cpuTimeMillis,
-            other.cpuTimeMillis,
-            cpuTimeIncreaseMillis,
+            cpuTimeNanos,
+            other.cpuTimeNanos,
+            cpuTimeIncreaseNanos,
             cpuTimeOverheadPercentage,
             droppedFrames,
             other.droppedFrames,

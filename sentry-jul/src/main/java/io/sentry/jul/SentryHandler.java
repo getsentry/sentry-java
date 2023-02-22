@@ -9,6 +9,7 @@ import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
@@ -70,6 +71,7 @@ public class SentryHandler extends Handler {
       options.setSdkVersion(createSdkVersion(options));
       Sentry.init(options);
     }
+    addPackageAndIntegrationInfo();
   }
 
   @Override
@@ -167,7 +169,7 @@ public class SentryHandler extends Handler {
    * @return the sentry event
    */
   // for the Android compatibility we must use old Java Date class
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate", "deprecation"})
   @NotNull
   SentryEvent createEvent(final @NotNull LogRecord record) {
     final SentryEvent event = new SentryEvent(new Date(record.getMillis()));
@@ -276,9 +278,14 @@ public class SentryHandler extends Handler {
     final String version = BuildConfig.VERSION_NAME;
 
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
-    sdkVersion.addPackage("maven:io.sentry:sentry-jul", version);
 
     return sdkVersion;
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Jul");
   }
 
   public void setPrintfStyle(final boolean printfStyle) {

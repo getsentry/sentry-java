@@ -4,16 +4,16 @@ import android.app.Activity
 import android.app.Application
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
-import kotlin.test.assertFalse
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FragmentLifecycleIntegrationTest {
@@ -91,7 +91,7 @@ class FragmentLifecycleIntegrationTest {
             check { fragmentCallbacks ->
                 val callback = (fragmentCallbacks as SentryFragmentLifecycleCallbacks)
                 assertTrue(callback.enableAutoFragmentLifecycleTracing)
-                assertFalse(callback.enableFragmentLifecycleBreadcrumbs)
+                assertEquals(emptySet(), callback.filterFragmentLifecycleBreadcrumbs)
             },
             eq(true)
         )

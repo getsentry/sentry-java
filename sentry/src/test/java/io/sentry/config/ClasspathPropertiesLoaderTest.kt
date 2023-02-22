@@ -1,8 +1,8 @@
 package io.sentry.config
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.NoOpLogger
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.IOException
 import java.nio.charset.Charset
 import kotlin.test.Test

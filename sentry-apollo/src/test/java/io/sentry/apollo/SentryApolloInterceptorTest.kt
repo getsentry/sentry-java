@@ -3,11 +3,6 @@ package io.sentry.apollo
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
@@ -18,12 +13,18 @@ import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -33,7 +34,14 @@ class SentryApolloInterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
-        val hub = mock<IHub>()
+        val hub = mock<IHub>().apply {
+            whenever(options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    sdkVersion = SdkVersion("test", "1.2.3")
+                }
+            )
+        }
         private var interceptor = SentryApolloInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
@@ -56,12 +64,6 @@ class SentryApolloInterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null
         ): ApolloClient {
-            whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "http://key@localhost/proj"
-                }
-            )
-
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
@@ -189,6 +191,15 @@ class SentryApolloInterceptorTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `sets SDKVersion Info`() {
+        assertNotNull(fixture.hub.options.sdkVersion)
+        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("Apollo"))
+        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo" }
+        assertNotNull(packageInfo)
+        assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {

@@ -1,6 +1,5 @@
 package io.sentry.cache
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.JsonSerializer
@@ -10,6 +9,7 @@ import io.sentry.Session
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
+import org.mockito.kotlin.mock
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
@@ -173,7 +173,8 @@ class CacheStrategyTest {
             "127.0.0.1",
             "jamesBond",
             "debug",
-            "io.sentry@1.0+123"
+            "io.sentry@1.0+123",
+            null
         )
 
     private fun getSessionFromFile(file: File, sut: CacheStrategy): Session {

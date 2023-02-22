@@ -9,22 +9,42 @@ sauce:
     tags:
       - e2e
       - android
+
+defaults:
+  timeout: 30m
+
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
 
+  - name: "Android 13 Ui test (api 33)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
+    devices:
+      - id: Google_Pixel_5_13_real_us # Google Pixel 5 - api 33 (13)
+
   - name: "Android 12 Ui test (api 31)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
       - id: Samsung_Galaxy_S22_Ultra_5G_real_us # Samsung Galaxy S22 Ultra 5G - api 31 (12)
 
   - name: "Android 11 Ui test (api 30)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
       - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11)
 
   - name: "Android 10 Ui test (api 29)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
-      - id: OnePlus_7_Pro_real # OnePlus 7 Pro - api 29 (10)
+      - id: OnePlus_7T_real_us # OnePlus 7T - api 29 (10)
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:

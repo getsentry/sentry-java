@@ -2,16 +2,12 @@ package io.sentry.android.core;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.ContentProvider;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
-import io.sentry.DateUtils;
-import java.util.Date;
+import io.sentry.SentryDate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,15 +20,17 @@ import org.jetbrains.annotations.TestOnly;
  * AppComponentFactory but it depends on androidx.core.app.AppComponentFactory
  */
 @ApiStatus.Internal
-public final class SentryPerformanceProvider extends ContentProvider
+public final class SentryPerformanceProvider extends EmptySecureContentProvider
     implements Application.ActivityLifecycleCallbacks {
 
   // static to rely on Class load
-  private static @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  private static @NotNull SentryDate appStartTime = AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static long appStartMillis = SystemClock.uptimeMillis();
 
   private boolean firstActivityCreated = false;
+  private boolean firstActivityResumed = false;
+
   private @Nullable Application application;
 
   public SentryPerformanceProvider() {
@@ -72,44 +70,13 @@ public final class SentryPerformanceProvider extends ContentProvider
 
   @Nullable
   @Override
-  public Cursor query(
-      @NotNull Uri uri,
-      @Nullable String[] projection,
-      @Nullable String selection,
-      @Nullable String[] selectionArgs,
-      @Nullable String sortOrder) {
-    return null;
-  }
-
-  @Nullable
-  @Override
   public String getType(@NotNull Uri uri) {
     return null;
   }
 
-  @Nullable
-  @Override
-  public Uri insert(@NotNull Uri uri, @Nullable ContentValues values) {
-    return null;
-  }
-
-  @Override
-  public int delete(
-      @NotNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
-    return 0;
-  }
-
-  @Override
-  public int update(
-      @NotNull Uri uri,
-      @Nullable ContentValues values,
-      @Nullable String selection,
-      @Nullable String[] selectionArgs) {
-    return 0;
-  }
-
   @TestOnly
-  static void setAppStartTime(final long appStartMillisLong, final @NotNull Date appStartTimeDate) {
+  static void setAppStartTime(
+      final long appStartMillisLong, final @NotNull SentryDate appStartTimeDate) {
     appStartMillis = appStartMillisLong;
     appStartTime = appStartTimeDate;
   }
@@ -126,9 +93,6 @@ public final class SentryPerformanceProvider extends ContentProvider
       final boolean coldStart = savedInstanceState == null;
       AppStartState.getInstance().setColdStart(coldStart);
 
-      if (application != null) {
-        application.unregisterActivityLifecycleCallbacks(this);
-      }
       firstActivityCreated = true;
     }
   }
@@ -137,7 +101,16 @@ public final class SentryPerformanceProvider extends ContentProvider
   public void onActivityStarted(@NotNull Activity activity) {}
 
   @Override
-  public void onActivityResumed(@NotNull Activity activity) {}
+  public void onActivityResumed(@NotNull Activity activity) {
+    if (!firstActivityResumed) {
+      // sets App start as finished when the very first activity calls onResume
+      firstActivityResumed = true;
+      AppStartState.getInstance().setAppStartEnd();
+    }
+    if (application != null) {
+      application.unregisterActivityLifecycleCallbacks(this);
+    }
+  }
 
   @Override
   public void onActivityPaused(@NotNull Activity activity) {}

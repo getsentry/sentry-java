@@ -97,7 +97,7 @@ public final class Scope {
     this.fingerprint = new ArrayList<>(scope.fingerprint);
     this.eventProcessors = new CopyOnWriteArrayList<>(scope.eventProcessors);
 
-    final Queue<Breadcrumb> breadcrumbsRef = scope.breadcrumbs;
+    final Breadcrumb[] breadcrumbsRef = scope.breadcrumbs.toArray(new Breadcrumb[0]);
 
     Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(scope.options.getMaxBreadcrumbs());
 
@@ -760,6 +760,11 @@ public final class Scope {
     synchronized (transactionLock) {
       callback.accept(transaction);
     }
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Session getSession() {
+    return session;
   }
 
   /** the IWithTransaction callback */

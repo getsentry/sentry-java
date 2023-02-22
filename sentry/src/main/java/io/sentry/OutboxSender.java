@@ -3,6 +3,7 @@ package io.sentry;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
+import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
@@ -13,7 +14,7 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
-import io.sentry.util.SampleRateUtil;
+import io.sentry.util.SampleRateUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -96,7 +97,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   @Override
   protected boolean isRelevantFileName(final @Nullable String fileName) {
     // ignore current.envelope
-    return fileName != null && !fileName.startsWith(PREFIX_CURRENT_SESSION_FILE);
+    return fileName != null
+        && !fileName.startsWith(PREFIX_CURRENT_SESSION_FILE)
+        && !fileName.startsWith(EnvelopeCache.STARTUP_CRASH_MARKER_FILE);
     // TODO: Use an extension to filter out relevant files
   }
 
@@ -130,6 +133,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           if (event == null) {
             logEnvelopeItemNull(item, currentItem);
           } else {
+            if (event.getSdk() != null) {
+              HintUtils.setIsFromHybridSdk(hint, event.getSdk().getName());
+            }
             if (envelope.getHeader().getEventId() != null
                 && !envelope.getHeader().getEventId().equals(event.getEventId())) {
               logUnexpectedEventId(envelope, event.getEventId(), currentItem);
@@ -229,7 +235,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       if (sampleRateString != null) {
         try {
           final Double sampleRate = Double.parseDouble(sampleRateString);
-          if (!SampleRateUtil.isValidTracesSampleRate(sampleRate, false)) {
+          if (!SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
             logger.log(
                 SentryLevel.ERROR,
                 "Invalid sample rate parsed from TraceContext: %s",

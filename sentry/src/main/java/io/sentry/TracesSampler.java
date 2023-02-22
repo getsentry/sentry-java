@@ -3,9 +3,12 @@ package io.sentry;
 import io.sentry.util.Objects;
 import java.security.SecureRandom;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 final class TracesSampler {
+  private static final @NotNull Double DEFAULT_TRACES_SAMPLE_RATE = 1.0;
+
   private final @NotNull SentryOptions options;
   private final @NotNull SecureRandom random;
 
@@ -29,7 +32,13 @@ final class TracesSampler {
 
     Double profilesSampleRate = null;
     if (options.getProfilesSampler() != null) {
-      profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
+      try {
+        profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'ProfilesSamplerCallback' callback.", t);
+      }
     }
     if (profilesSampleRate == null) {
       profilesSampleRate = options.getProfilesSampleRate();
@@ -37,7 +46,14 @@ final class TracesSampler {
     Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate);
 
     if (options.getTracesSampler() != null) {
-      final Double samplerResult = options.getTracesSampler().sample(samplingContext);
+      Double samplerResult = null;
+      try {
+        samplerResult = options.getTracesSampler().sample(samplingContext);
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);
+      }
       if (samplerResult != null) {
         return new TracesSamplingDecision(
             sample(samplerResult), samplerResult, profilesSampled, profilesSampleRate);
@@ -50,11 +66,17 @@ final class TracesSampler {
       return parentSamplingDecision;
     }
 
-    final Double tracesSampleRateFromOptions = options.getTracesSampleRate();
-    if (tracesSampleRateFromOptions != null) {
+    final @Nullable Double tracesSampleRateFromOptions = options.getTracesSampleRate();
+    final @Nullable Boolean isEnableTracing = options.getEnableTracing();
+    final @Nullable Double defaultSampleRate =
+        Boolean.TRUE.equals(isEnableTracing) ? DEFAULT_TRACES_SAMPLE_RATE : null;
+    final @Nullable Double tracesSampleRateOrDefault =
+        tracesSampleRateFromOptions == null ? defaultSampleRate : tracesSampleRateFromOptions;
+
+    if (tracesSampleRateOrDefault != null) {
       return new TracesSamplingDecision(
-          sample(tracesSampleRateFromOptions),
-          tracesSampleRateFromOptions,
+          sample(tracesSampleRateOrDefault),
+          tracesSampleRateOrDefault,
           profilesSampled,
           profilesSampleRate);
     }

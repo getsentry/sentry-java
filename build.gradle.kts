@@ -55,13 +55,17 @@ apiValidation {
             "sentry-samples-openfeign",
             "sentry-samples-servlet",
             "sentry-samples-spring",
+            "sentry-samples-spring-jakarta",
+            "sentry-spring-jakarta",
+            "sentry-spring-boot-starter-jakarta",
             "sentry-samples-spring-boot",
+            "sentry-samples-spring-boot-jakarta",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-netflix-dgs",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
             "test-app-plain",
-            "test-app-sentry",
+            "test-app-sentry"
         )
     )
 }
@@ -100,7 +104,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
         apply<DistributionPlugin>()
 
         val sep = File.separator
@@ -155,12 +159,13 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**")
+        targetExclude("**/generated/**", "**/vendor/**", "sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
     }
 
     kotlin {
         target("**/*.kt")
         ktlint()
+        targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
     }
     kotlinGradle {
         target("**/*.kts")

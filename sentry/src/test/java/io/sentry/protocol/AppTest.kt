@@ -18,8 +18,9 @@ class AppTest {
         app.appVersion = "app version"
         app.buildType = "build type"
         app.deviceAppHash = "device app hash"
+        app.inForeground = true
         val unknown = mapOf(Pair("unknown", "unknown"))
-        app.setUnknown(unknown)
+        app.unknown = unknown
 
         val clone = App(app)
 
@@ -41,8 +42,9 @@ class AppTest {
         app.appVersion = "app version"
         app.buildType = "build type"
         app.deviceAppHash = "device app hash"
+        app.inForeground = true
         val unknown = mapOf(Pair("unknown", "unknown"))
-        app.setUnknown(unknown)
+        app.unknown = unknown
 
         val clone = App(app)
 
@@ -55,6 +57,7 @@ class AppTest {
         assertEquals("app version", clone.appVersion)
         assertEquals("build type", clone.buildType)
         assertEquals("device app hash", clone.deviceAppHash)
+        assertEquals(true, clone.inForeground)
         assertNotNull(clone.unknown) {
             assertEquals("unknown", it["unknown"])
         }

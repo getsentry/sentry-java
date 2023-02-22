@@ -1,7 +1,5 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
-import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonDeserializer
 import io.sentry.JsonObjectReader
@@ -10,8 +8,7 @@ import io.sentry.JsonSerializable
 import io.sentry.SentryBaseEvent
 import io.sentry.vendor.gson.stream.JsonToken
 import org.junit.Test
-import java.io.StringReader
-import java.io.StringWriter
+import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class SentryBaseEventSerializationTest {
@@ -55,6 +52,7 @@ class SentryBaseEventSerializationTest {
                     setGpu(GpuSerializationTest.Fixture().getSut())
                     setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
                     setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
+                    setResponse(ResponseSerializationTest.Fixture().getSut())
                     trace = SpanContextSerializationTest.Fixture().getSut()
                 }
                 sdk = SdkVersionSerializationTest.Fixture().getSut()
@@ -71,6 +69,7 @@ class SentryBaseEventSerializationTest {
                 breadcrumbs = listOf(
                     BreadcrumbSerializationTest.Fixture().getSut()
                 )
+                debugMeta = DebugMetaSerializationTest.Fixture().getSut()
                 setExtra("34a7d067-fad2-49d9-97b9-71eff243127b", "fe3dc1cf-4a99-4213-85bb-e0957b8349b8")
             }
         }
@@ -79,37 +78,23 @@ class SentryBaseEventSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("json/sentry_base_event.json")
+        val expected = SerializationUtils.sanitizedFile("json/sentry_base_event.json")
         val sut = Sut().apply { fixture.update(this) }
-        val actual = serialize(sut)
+        val actual = SerializationUtils.serializeToString(sut, fixture.logger)
+
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("json/sentry_base_event.json")
-        val actual = deserialize(expectedJson)
-        val actualJson = serialize(actual)
+        val expectedJson = SerializationUtils.sanitizedFile("json/sentry_base_event.json")
+        val actual = SerializationUtils.deserializeJson(
+            expectedJson,
+            Sut.Deserializer(),
+            fixture.logger
+        )
+        val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
+
         assertEquals(expectedJson, actualJson)
-    }
-
-    // Helper
-
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
-            .replace(Regex("[\n\r]"), "")
-            .replace(" ", "")
-    }
-
-    private fun serialize(jsonSerializable: JsonSerializable): String {
-        val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt, 100)
-        jsonSerializable.serialize(jsonWrt, fixture.logger)
-        return wrt.toString()
-    }
-
-    private fun deserialize(json: String): Sut {
-        val reader = JsonObjectReader(StringReader(json))
-        return Sut.Deserializer().deserialize(reader, fixture.logger)
     }
 }

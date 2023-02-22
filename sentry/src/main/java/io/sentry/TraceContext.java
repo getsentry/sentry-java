@@ -89,7 +89,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return sampleRate;
   }
 
-  /** @deprecated only here to support parsing legacy JSON with non flattened user */
+  /**
+   * @deprecated only here to support parsing legacy JSON with non flattened user
+   */
   @Deprecated
   private static final class TraceContextUser implements JsonUnknown {
     private @Nullable String id;

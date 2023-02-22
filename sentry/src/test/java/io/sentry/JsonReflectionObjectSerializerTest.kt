@@ -1,8 +1,15 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import java.net.URI
+import java.util.Calendar
+import java.util.Currency
+import java.util.Locale
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.test.assertEquals
 
 class JsonReflectionObjectSerializerTest {
@@ -87,11 +94,13 @@ class JsonReflectionObjectSerializerTest {
     }
 
     @Test
-    fun `serialize object without fields`() {
+    fun `serialize object without fields using toString`() {
         val objectWithoutFields = ClassWithoutFields()
-        val expected = mapOf<String, Any>()
+        val expected = mapOf<String, Any>(
+            "toString" to ""
+        )
         val actual = fixture.getSut().serialize(objectWithoutFields, fixture.logger)
-        assertEquals(expected, actual)
+        assertEquals(objectWithoutFields.toString(), actual)
     }
 
     @Test
@@ -261,6 +270,78 @@ class JsonReflectionObjectSerializerTest {
     fun `enum`() {
         val actual = fixture.getSut().serialize(DataCategory.Error, fixture.logger)
         assertEquals("Error", actual)
+    }
+
+    @Test
+    fun `locale`() {
+        val actual = fixture.getSut().serialize(Locale.US, fixture.logger)
+        assertEquals("en_US", actual)
+    }
+
+    @Test
+    fun `AtomicIntegerArray is serialized`() {
+        val actual = fixture.getSut().serialize(AtomicIntegerArray(arrayOf(1, 2, 3).toIntArray()), fixture.logger)
+        assertEquals(listOf(1, 2, 3), actual)
+    }
+
+    @Test
+    fun `AtomicBoolean is serialized`() {
+        val actual = fixture.getSut().serialize(AtomicBoolean(true), fixture.logger)
+        assertEquals(true, actual)
+    }
+
+    @Test
+    fun `StringBuffer is serialized`() {
+        val sb = StringBuffer()
+        sb.append("hello")
+        sb.append(" ")
+        sb.append("world")
+        val actual = fixture.getSut().serialize(sb, fixture.logger)
+        assertEquals("hello world", actual)
+    }
+
+    @Test
+    fun `StringBuilder is serialized`() {
+        val sb = StringBuilder()
+        sb.append("hello")
+        sb.append(" ")
+        sb.append("world")
+        val actual = fixture.getSut().serialize(sb, fixture.logger)
+        assertEquals("hello world", actual)
+    }
+
+    @Test
+    fun `URI is serialized`() {
+        val actual = fixture.getSut().serialize(URI("http://localhost:8081/api/product?id=99"), fixture.logger)
+        assertEquals("http://localhost:8081/api/product?id=99", actual)
+    }
+
+    @Test
+    fun `UUID is serialized`() {
+        val actual = fixture.getSut().serialize(UUID.fromString("828900a5-15dc-413f-8c17-6ef04d74e074"), fixture.logger)
+        assertEquals("828900a5-15dc-413f-8c17-6ef04d74e074", actual)
+    }
+
+    @Test
+    fun `Currency is serialized`() {
+        val actual = fixture.getSut().serialize(Currency.getInstance("USD"), fixture.logger)
+        assertEquals("USD", actual)
+    }
+
+    @Test
+    fun `Calendar is serialized`() {
+        val calendar = Calendar.getInstance()
+        calendar.set(2022, 0, 1, 11, 59, 58)
+        val actual = fixture.getSut().serialize(calendar, fixture.logger)
+        val expected = mapOf<String, Any?>(
+            "month" to 0,
+            "year" to 2022,
+            "dayOfMonth" to 1,
+            "hourOfDay" to 11,
+            "minute" to 59,
+            "second" to 58
+        )
+        assertEquals(expected, actual)
     }
 
     // Helper

@@ -6,6 +6,7 @@ import com.p6spy.engine.event.SimpleJdbcEventListener;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
@@ -21,6 +22,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    addPackageAndIntegrationInfo();
   }
 
   public SentryJdbcEventListener() {
@@ -30,7 +32,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   @Override
   public void onBeforeAnyExecute(final @NotNull StatementInformation statementInformation) {
     final ISpan parent = hub.getSpan();
-    if (parent != null) {
+    if (parent != null && !parent.isNoOp()) {
       final ISpan span = parent.startChild("db.query", statementInformation.getSql());
       CURRENT_SPAN.set(span);
     }
@@ -52,5 +54,11 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       span.finish();
       CURRENT_SPAN.set(null);
     }
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.getInstance().addIntegration("JDBC");
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
   }
 }

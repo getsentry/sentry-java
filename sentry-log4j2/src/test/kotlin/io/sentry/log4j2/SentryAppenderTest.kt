@@ -1,10 +1,5 @@
 package io.sentry.log4j2
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.HubAdapter
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
@@ -20,6 +15,11 @@ import org.apache.logging.log4j.core.config.AppenderRef
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import org.apache.logging.log4j.spi.ExtendedLogger
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -332,13 +332,13 @@ class SentryAppenderTest {
                 assertNotNull(event.sdk) {
                     assertEquals(BuildConfig.SENTRY_LOG4J2_SDK_NAME, it.name)
                     assertEquals(BuildConfig.VERSION_NAME, it.version)
-                    assertNotNull(it.packages)
                     assertTrue(
-                        it.packages!!.any { pkg ->
+                        it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-log4j2" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
                         }
                     )
+                    assertTrue(it.integrationSet.contains("Log4j"))
                 }
             },
             anyOrNull()

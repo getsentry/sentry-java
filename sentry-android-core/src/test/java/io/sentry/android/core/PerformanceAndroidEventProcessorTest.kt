@@ -1,18 +1,18 @@
 package io.sentry.android.core
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.MeasurementUnit
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryTransaction
-import java.util.Date
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -166,7 +166,7 @@ class PerformanceAndroidEventProcessorTest {
 
     private fun setAppStart(coldStart: Boolean = true) {
         AppStartState.getInstance().setColdStart(coldStart)
-        AppStartState.getInstance().setAppStartTime(0, Date())
+        AppStartState.getInstance().setAppStartTime(0, SentryNanotimeDate())
         AppStartState.getInstance().setAppStartEnd()
     }
 

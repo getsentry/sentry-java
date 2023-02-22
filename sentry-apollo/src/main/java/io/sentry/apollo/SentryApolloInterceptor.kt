@@ -17,6 +17,8 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
+import io.sentry.IntegrationName
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
@@ -26,10 +28,15 @@ import java.util.concurrent.Executor
 class SentryApolloInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
-) : ApolloInterceptor {
+) : ApolloInterceptor, IntegrationName {
 
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+
+    init {
+        addIntegrationToSdkVersion()
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
+    }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
         val activeSpan = hub.span
@@ -37,21 +44,29 @@ class SentryApolloInterceptor(
             chain.proceedAsync(request, dispatcher, callBack)
         } else {
             val span = startChild(request, activeSpan)
-            val sentryTraceHeader = span.toSentryTrace()
 
-            // we have no access to URI, no way to verify tracing origins
-            val requestHeaderBuilder = request.requestHeaders.toBuilder()
-            requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
-            span.toBaggageHeader(listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)))?.let {
-                requestHeaderBuilder.addHeader(it.name, it.value)
+            val requestWithHeader = if (span.isNoOp) {
+                request
+            } else {
+                val sentryTraceHeader = span.toSentryTrace()
+
+                // we have no access to URI, no way to verify tracing origins
+                val requestHeaderBuilder = request.requestHeaders.toBuilder()
+                requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
+                span.toBaggageHeader(listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)))
+                    ?.let {
+                        requestHeaderBuilder.addHeader(it.name, it.value)
+                    }
+                val headers = requestHeaderBuilder.build()
+                request.toBuilder().requestHeaders(headers).build()
             }
-            val headers = requestHeaderBuilder.build()
-            val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
+
             span.setData("operationId", requestWithHeader.operation.operationId())
             span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
 
             chain.proceedAsync(
-                requestWithHeader, dispatcher,
+                requestWithHeader,
+                dispatcher,
                 object : CallBack {
                     override fun onResponse(response: InterceptorResponse) {
                         // onResponse is called only for statuses 2xx

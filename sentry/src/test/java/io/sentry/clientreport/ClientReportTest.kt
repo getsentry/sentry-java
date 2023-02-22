@@ -5,6 +5,7 @@ import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
 import io.sentry.Hint
+import io.sentry.NoOpLogger
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -43,7 +44,7 @@ class ClientReportTest {
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
                 DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1)
             )
         )
 
@@ -52,7 +53,7 @@ class ClientReportTest {
             SentryEnvelopeItem.fromEvent(opts.serializer, SentryEvent()),
             SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
             SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
-            SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+            SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
@@ -88,7 +89,7 @@ class ClientReportTest {
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
                 DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1)
             )
         )
 

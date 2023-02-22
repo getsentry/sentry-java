@@ -8,6 +8,7 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -38,15 +39,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
-  /** Enable or disable automatic breadcrumbs for User interactions Using Window.Callback */
-  private boolean enableUserInteractionBreadcrumbs = true;
-
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
    * <ul>
-   *   <li>It also requires setting {@link SentryOptions#getTracesSampleRate()} or {@link
-   *       SentryOptions#getTracesSampler()}.
+   *   <li>It also requires setting any of {@link SentryOptions#getEnableTracing()}, {@link
+   *       SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()}.
    * </ul>
    *
    * <ul>
@@ -92,20 +90,45 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private int profilingTracesHz = 101;
 
-  /** Enables the Auto instrumentation for user interaction tracing. */
-  private boolean enableUserInteractionTracing = false;
-
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
   /** Enables or disables the attach screenshot feature when an error happened. */
   private boolean attachScreenshot;
 
+  /** Enables or disables the attach view hierarchy feature when an error happened. */
+  private boolean attachViewHierarchy;
+
   /**
    * Enables or disables collecting of device information which requires Inter-Process Communication
    * (IPC)
    */
   private boolean collectAdditionalContext = true;
+
+  /**
+   * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
+   * previous run. Sentry SDKs normally send events from a background queue, but in the case of
+   * Startup Crashes, it blocks the execution of the {@link Sentry#init()} function for the amount
+   * of startupCrashFlushTimeoutMillis to make sure the events make it to Sentry.
+   *
+   * <p>When the timeout is reached, the execution will continue on background.
+   *
+   * <p>Default is 5000 = 5s.
+   */
+  private long startupCrashFlushTimeoutMillis = 5000; // 5s
+
+  /**
+   * Controls the threshold after the application startup time, within which a crash should happen
+   * to be considered a Startup Crash.
+   *
+   * <p>Startup Crashes are sent on {@link Sentry#init()} in a blocking way, controlled by {@link
+   * SentryAndroidOptions#startupCrashFlushTimeoutMillis}.
+   *
+   * <p>Default is 2000 = 2s.
+   */
+  private final long startupCrashDurationThresholdMillis = 2000; // 2s
+
+  private boolean enableFramesTracking = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -215,14 +238,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAppComponentBreadcrumbs = enableAppComponentBreadcrumbs;
   }
 
-  public boolean isEnableUserInteractionBreadcrumbs() {
-    return enableUserInteractionBreadcrumbs;
-  }
-
-  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
-    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
-  }
-
   /**
    * Enable or disable all the automatic breadcrumbs
    *
@@ -233,7 +248,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
-    enableUserInteractionBreadcrumbs = enable;
+    setEnableUserInteractionBreadcrumbs(enable);
   }
 
   /**
@@ -317,12 +332,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachScreenshot = attachScreenshot;
   }
 
-  public boolean isEnableUserInteractionTracing() {
-    return enableUserInteractionTracing;
+  public boolean isAttachViewHierarchy() {
+    return attachViewHierarchy;
   }
 
-  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
-    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  public void setAttachViewHierarchy(boolean attachViewHierarchy) {
+    this.attachViewHierarchy = attachViewHierarchy;
   }
 
   public boolean isCollectAdditionalContext() {
@@ -331,5 +346,48 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  public boolean isEnableFramesTracking() {
+    return enableFramesTracking;
+  }
+
+  /**
+   * Enable or disable Frames Tracking, which is used to report slow and frozen frames.
+   *
+   * @param enableFramesTracking true if frames tracking should be enabled, false otherwise.
+   */
+  public void setEnableFramesTracking(boolean enableFramesTracking) {
+    this.enableFramesTracking = enableFramesTracking;
+  }
+
+  /**
+   * Returns the Startup Crash flush timeout in Millis
+   *
+   * @return the timeout in Millis
+   */
+  @ApiStatus.Internal
+  long getStartupCrashFlushTimeoutMillis() {
+    return startupCrashFlushTimeoutMillis;
+  }
+
+  /**
+   * Sets the Startup Crash flush timeout in Millis
+   *
+   * @param startupCrashFlushTimeoutMillis the timeout in Millis
+   */
+  @TestOnly
+  void setStartupCrashFlushTimeoutMillis(long startupCrashFlushTimeoutMillis) {
+    this.startupCrashFlushTimeoutMillis = startupCrashFlushTimeoutMillis;
+  }
+
+  /**
+   * Returns the Startup Crash duration threshold in Millis
+   *
+   * @return the threshold in Millis
+   */
+  @ApiStatus.Internal
+  public long getStartupCrashDurationThresholdMillis() {
+    return startupCrashDurationThresholdMillis;
   }
 }

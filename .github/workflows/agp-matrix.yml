@@ -1,0 +1,44 @@
+name: AGP Matrix Sample Release
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+  pull_request:
+
+jobs:
+  cancel-previous-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # pin@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
+  agp-matrix-sample-release:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agp: ['7.3.0','7.4.0-rc01','8.0.0-alpha09']
+
+    name: AGP Matrix Sample Release - AGP ${{ matrix.agp }}
+    env:
+      VERSION_AGP: ${{ matrix.agp }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Java Version
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build the Release variant
+        uses: gradle/gradle-build-action@6095a76664413da4c8c134ee32e8a8ae900f0f1f # pin@v2
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          arguments: sentry-android-integration-tests:sentry-test-agp:assembleRelease

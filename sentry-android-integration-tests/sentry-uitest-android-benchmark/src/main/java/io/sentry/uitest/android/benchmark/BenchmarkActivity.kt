@@ -12,7 +12,6 @@ import java.util.concurrent.Executors
 
 /** A simple activity with a list of bitmaps. */
 class BenchmarkActivity : AppCompatActivity() {
-
     companion object {
 
         /** The activity will set this when scrolling. */
@@ -20,6 +19,8 @@ class BenchmarkActivity : AppCompatActivity() {
 
         /** The refresh rate of the device, set on activity create. */
         var refreshRate: Float? = null
+
+        internal const val EXTRA_SUSTAINED_PERFORMANCE_MODE = "EXTRA_SUSTAINED_PERFORMANCE_MODE"
     }
 
     /**
@@ -34,6 +35,12 @@ class BenchmarkActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+            savedInstanceState?.getBoolean(EXTRA_SUSTAINED_PERFORMANCE_MODE) == true
+        ) {
+            window.setSustainedPerformanceMode(true)
+        }
 
         refreshRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             display?.refreshRate
@@ -50,10 +57,12 @@ class BenchmarkActivity : AppCompatActivity() {
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING)
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                         scrollingIdlingResource.increment()
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE)
+                    }
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                         scrollingIdlingResource.decrement()
+                    }
                 }
             })
         }

@@ -1,10 +1,10 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals

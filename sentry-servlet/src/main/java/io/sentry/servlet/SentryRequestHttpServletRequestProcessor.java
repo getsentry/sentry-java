@@ -4,12 +4,12 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.Request;
+import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
-import java.util.Arrays;
+import io.sentry.util.UrlUtils;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -18,8 +18,6 @@ import org.jetbrains.annotations.Nullable;
 
 /** Attaches information about HTTP request to {@link SentryEvent}. */
 final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
-  private static final List<String> SENSITIVE_HEADERS =
-      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
   private final @NotNull HttpServletRequest httpRequest;
 
@@ -33,8 +31,10 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethod());
+    final @NotNull UrlUtils.UrlDetails urlDetails =
+        UrlUtils.parse(httpRequest.getRequestURL().toString());
+    urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setQueryString(httpRequest.getQueryString());
-    sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
 
     event.setRequest(sentryRequest);
@@ -46,7 +46,7 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
-      if (!SENSITIVE_HEADERS.contains(headerName.toUpperCase(Locale.ROOT))) {
+      if (!HttpUtils.containsSensitiveHeader(headerName.toUpperCase(Locale.ROOT))) {
         headersMap.put(headerName, toString(request.getHeaders(headerName)));
       }
     }

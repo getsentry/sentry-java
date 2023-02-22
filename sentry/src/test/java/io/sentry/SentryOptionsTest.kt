@@ -1,12 +1,13 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.util.StringUtils
+import org.mockito.kotlin.mock
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -114,6 +115,51 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when tracesSampleRate is set tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.tracesSampleRate = 1.0
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when tracesSampler is set tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.tracesSampler = SentryOptions.TracesSamplerCallback { samplingContext -> 1.0 }
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when enableTracing is set to true tracing is considered enabled`() {
+        val options = SentryOptions().apply {
+            this.enableTracing = true
+        }
+
+        assertTrue(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `by default tracing is considered disabled`() {
+        val options = SentryOptions()
+
+        assertFalse(options.isTracingEnabled)
+    }
+
+    @Test
+    fun `when enableTracing is set to false tracing is considered disabled`() {
+        val options = SentryOptions().apply {
+            this.enableTracing = false
+            this.tracesSampleRate = 1.0
+            this.tracesSampler = SentryOptions.TracesSamplerCallback { _ -> 1.0 }
+        }
+
+        assertFalse(options.isTracingEnabled)
+    }
+
+    @Test
     fun `when there's no cacheDirPath, outboxPath returns null`() {
         val options = SentryOptions()
         assertNull(options.outboxPath)
@@ -142,7 +188,7 @@ class SentryOptionsTest {
         assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
 
         assertTrue(
-            sdkVersion.packages!!.any {
+            sdkVersion.packageSet.any {
                 it.name == "maven:io.sentry:sentry" &&
                     it.version == BuildConfig.VERSION_NAME
             }
@@ -255,8 +301,18 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, transactionPerformanceCollector is set`() {
+        assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
+    }
+
+    @Test
     fun `when options is initialized, transactionProfiler is noop`() {
         assert(SentryOptions().transactionProfiler == NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
+    fun `when options is initialized, collector is empty list`() {
+        assertTrue(SentryOptions().collectors.isEmpty())
     }
 
     @Test
@@ -281,6 +337,7 @@ class SentryOptionsTest {
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
+        externalOptions.enableTracing = true
         externalOptions.tracesSampleRate = 0.5
         externalOptions.profilesSampleRate = 0.5
         externalOptions.addInAppInclude("com.app")
@@ -305,6 +362,7 @@ class SentryOptionsTest {
         assertEquals("8090", options.proxy!!.port)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
+        assertEquals(true, options.enableTracing)
         assertEquals(0.5, options.tracesSampleRate)
         assertEquals(0.5, options.profilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)
@@ -377,7 +435,31 @@ class SentryOptionsTest {
         assertEquals("${File.separator}test${File.separator}${hash}${File.separator}profiling_traces", options.profilingTracesDirPath)
     }
 
+    @Test
     fun `when options are initialized, idleTimeout is 3000`() {
         assertEquals(3000L, SentryOptions().idleTimeout)
+    }
+
+    @Test
+    fun `when options are initialized, TransactionPerformanceCollector is a NoOp`() {
+        assertEquals(SentryOptions().transactionPerformanceCollector, NoOpTransactionPerformanceCollector.getInstance())
+    }
+
+    @Test
+    fun `when setTransactionPerformanceCollector is called, overrides default`() {
+        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val options = SentryOptions()
+        options.transactionPerformanceCollector = performanceCollector
+        assertEquals(performanceCollector, options.transactionPerformanceCollector)
+    }
+
+    @Test
+    fun `when options are initialized, TimeToFullDisplayTracing is false`() {
+        assertFalse(SentryOptions().isEnableTimeToFullDisplayTracing)
+    }
+
+    @Test
+    fun `when options are initialized, FullyDrawnReporter is set`() {
+        assertEquals(FullDisplayedReporter.getInstance(), SentryOptions().fullDisplayedReporter)
     }
 }

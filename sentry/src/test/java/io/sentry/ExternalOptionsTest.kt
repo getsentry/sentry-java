@@ -1,11 +1,11 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.config.PropertiesProviderFactory
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -103,6 +103,13 @@ class ExternalOptionsTest {
         withPropertiesFile(listOf("in-app-includes=org.springframework,com.myapp", "in-app-excludes=org.jboss,com.microsoft")) {
             assertEquals(listOf("org.springframework", "com.myapp"), it.inAppIncludes)
             assertEquals(listOf("org.jboss", "com.microsoft"), it.inAppExcludes)
+        }
+    }
+
+    @Test
+    fun `creates options with enableTracing using external properties`() {
+        withPropertiesFile("enable-tracing=true") {
+            assertEquals(true, it.enableTracing)
         }
     }
 

@@ -5,11 +5,12 @@ import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
+import io.sentry.Session;
+import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +28,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   private final @NotNull IHub hub;
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
-  private final @NotNull AtomicBoolean runningSession = new AtomicBoolean();
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
@@ -67,6 +67,10 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   public void onStart(final @NotNull LifecycleOwner owner) {
     startSession();
     addAppBreadcrumb("foreground");
+
+    // Consider using owner.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED);
+    // in the future.
+    AppState.getInstance().setInBackground(false);
   }
 
   private void startSession() {
@@ -74,15 +78,24 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       cancelTask();
 
       final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
-      final long lastUpdatedSession = this.lastUpdatedSession.get();
 
-      if (lastUpdatedSession == 0L
-          || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
-        addSessionBreadcrumb("start");
-        hub.startSession();
-        runningSession.set(true);
-      }
-      this.lastUpdatedSession.set(currentTimeMillis);
+      hub.withScope(
+          scope -> {
+            long lastUpdatedSession = this.lastUpdatedSession.get();
+            if (lastUpdatedSession == 0L) {
+              @Nullable Session currentSession = scope.getSession();
+              if (currentSession != null && currentSession.getStarted() != null) {
+                lastUpdatedSession = currentSession.getStarted().getTime();
+              }
+            }
+
+            if (lastUpdatedSession == 0L
+                || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+              addSessionBreadcrumb("start");
+              hub.startSession();
+            }
+            this.lastUpdatedSession.set(currentTimeMillis);
+          });
     }
   }
 
@@ -97,6 +110,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       scheduleEndSession();
     }
 
+    AppState.getInstance().setInBackground(true);
     addAppBreadcrumb("background");
   }
 
@@ -110,7 +124,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
               public void run() {
                 addSessionBreadcrumb("end");
                 hub.endSession();
-                runningSession.set(false);
               }
             };
 
@@ -140,18 +153,8 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void addSessionBreadcrumb(final @NotNull String state) {
-    final Breadcrumb breadcrumb = new Breadcrumb();
-    breadcrumb.setType("session");
-    breadcrumb.setData("state", state);
-    breadcrumb.setCategory("app.lifecycle");
-    breadcrumb.setLevel(SentryLevel.INFO);
+    final Breadcrumb breadcrumb = BreadcrumbFactory.forSession(state);
     hub.addBreadcrumb(breadcrumb);
-  }
-
-  @TestOnly
-  @NotNull
-  AtomicBoolean isRunningSession() {
-    return runningSession;
   }
 
   @TestOnly

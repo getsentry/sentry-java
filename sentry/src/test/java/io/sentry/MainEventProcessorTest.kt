@@ -1,10 +1,6 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
@@ -13,6 +9,11 @@ import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
 import org.mockito.Mockito
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.lang.RuntimeException
 import java.net.InetAddress
 import kotlin.test.AfterTest
@@ -37,12 +38,25 @@ class MainEventProcessorTest {
         lateinit var sentryTracer: SentryTracer
         private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
-        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10, proguardUuid: String? = null): MainEventProcessor {
+        fun getSut(
+            attachThreads: Boolean = true,
+            attachStackTrace: Boolean = true,
+            environment: String? = "environment",
+            tags: Map<String, String> = emptyMap(),
+            sendDefaultPii: Boolean? = null,
+            serverName: String? = "server",
+            host: String? = null,
+            resolveHostDelay: Long? = null,
+            hostnameCacheDuration: Long = 10,
+            proguardUuid: String? = null,
+            modules: Map<String, String>? = null
+        ): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
             sentryOptions.isAttachServerName = true
             sentryOptions.environment = environment
             sentryOptions.serverName = serverName
+            sentryOptions.setModulesLoader { modules }
             if (sendDefaultPii != null) {
                 sentryOptions.isSendDefaultPii = sendDefaultPii
             }
@@ -238,6 +252,30 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `when attach threads is disabled, but the hint is Abnormal, still sets threads`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
+
+        var event = SentryEvent(RuntimeException("error"))
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint())
+        event = sut.process(event, hint)
+
+        assertNotNull(event.threads)
+        assertEquals(1, event.threads!!.count { it.isCrashed == true })
+    }
+
+    @Test
+    fun `when the hint is Abnormal with ignoreCurrentThread, does not mark thread as crashed`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
+
+        var event = SentryEvent(RuntimeException("error"))
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint(ignoreCurrentThread = true))
+        event = sut.process(event, hint)
+
+        assertNotNull(event.threads)
+        assertEquals(0, event.threads!!.count { it.isCrashed == true })
+    }
+
+    @Test
     fun `sets sdkVersion in the event`() {
         val sut = fixture.getSut()
         val event = SentryEvent()
@@ -348,7 +386,8 @@ class MainEventProcessorTest {
 
     @Test
     fun `uses cache to retrieve servername for subsequent events`() {
-        val processor = fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
+        val processor =
+            fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
         val firstEvent = SentryEvent()
         processor.process(firstEvent, Hint())
         assertEquals("aHost", firstEvent.serverName)
@@ -473,13 +512,64 @@ class MainEventProcessorTest {
 
         sut.close()
         assertNotNull(sut.hostnameCache) {
-            assertTrue(it.isClosed())
+            assertTrue(it.isClosed)
         }
     }
 
-    private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {
-        val mockThrowable = mock<Throwable>()
-        val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(crashedThread, mockThrowable)
-        throwable = actualThrowable
+    @Test
+    fun `when event has modules, appends to them`() {
+        val sut = fixture.getSut(modules = mapOf("group1:artifact1" to "2.0.0"))
+
+        var event = SentryEvent().apply {
+            modules = mapOf("group:artifact" to "1.0.0")
+        }
+        event = sut.process(event, Hint())
+
+        assertEquals(2, event.modules!!.size)
+        assertEquals("1.0.0", event.modules!!["group:artifact"])
+        assertEquals("2.0.0", event.modules!!["group1:artifact1"])
+    }
+
+    @Test
+    fun `sets event modules`() {
+        val sut = fixture.getSut(modules = mapOf("group1:artifact1" to "2.0.0"))
+
+        var event = SentryEvent()
+        event = sut.process(event, Hint())
+
+        assertEquals(1, event.modules!!.size)
+        assertEquals("2.0.0", event.modules!!["group1:artifact1"])
+    }
+
+    @Test
+    fun `sets debugMeta for transactions`() {
+        val sut = fixture.getSut(proguardUuid = "id1")
+
+        var transaction = SentryTransaction(fixture.sentryTracer)
+        transaction.debugMeta = DebugMeta()
+        transaction = sut.process(transaction, Hint())
+
+        assertNotNull(transaction.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].uuid)
+                assertEquals("proguard", images[0].type)
+            }
+        }
+    }
+
+    private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =
+        SentryEvent().apply {
+            val mockThrowable = mock<Throwable>()
+            val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(
+                crashedThread,
+                mockThrowable
+            )
+            throwable = actualThrowable
+        }
+
+    private class AbnormalHint(private val ignoreCurrentThread: Boolean = false) : AbnormalExit {
+        override fun mechanism(): String? = null
+
+        override fun ignoreCurrentThread(): Boolean = ignoreCurrentThread
     }
 }

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
@@ -60,6 +61,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     setCommons(event);
     setExceptions(event);
     setDebugMeta(event);
+    setModules(event);
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
@@ -69,7 +71,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     return event;
   }
 
-  private void setDebugMeta(final @NotNull SentryEvent event) {
+  private void setDebugMeta(final @NotNull SentryBaseEvent event) {
     if (options.getProguardUuid() != null) {
       DebugMeta debugMeta = event.getDebugMeta();
 
@@ -87,6 +89,20 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         images.add(debugImage);
         event.setDebugMeta(debugMeta);
       }
+    }
+  }
+
+  private void setModules(final @NotNull SentryEvent event) {
+    final Map<String, String> modules = options.getModulesLoader().getOrLoadModules();
+    if (modules == null) {
+      return;
+    }
+
+    final Map<String, String> eventModules = event.getModules();
+    if (eventModules == null) {
+      event.setModules(modules);
+    } else {
+      eventModules.putAll(modules);
     }
   }
 
@@ -119,6 +135,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   public @NotNull SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
     setCommons(transaction);
+    setDebugMeta(transaction);
 
     if (shouldApplyScopeData(transaction, hint)) {
       processNonCachedEvent(transaction);
@@ -236,8 +253,16 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         }
       }
 
-      if (options.isAttachThreads()) {
-        event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
+      // typically Abnormal exits can be tackled by looking at the thread dump (e.g. ANRs), hence
+      // we force attach threads regardless of the config
+      if (options.isAttachThreads() || HintUtils.hasType(hint, AbnormalExit.class)) {
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        boolean ignoreCurrentThread = false;
+        if (sentrySdkHint instanceof AbnormalExit) {
+          ignoreCurrentThread = ((AbnormalExit) sentrySdkHint).ignoreCurrentThread();
+        }
+        event.setThreads(
+            sentryThreadFactory.getCurrentThreads(mechanismThreadIds, ignoreCurrentThread));
       } else if (options.isAttachStacktrace()
           && (eventExceptions == null || eventExceptions.isEmpty())
           && !isCachedHint(hint)) {

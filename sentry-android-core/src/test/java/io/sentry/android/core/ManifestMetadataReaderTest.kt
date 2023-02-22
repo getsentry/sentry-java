@@ -4,14 +4,14 @@ import android.content.Context
 import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.ILogger
 import io.sentry.SentryLevel
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -646,6 +646,45 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads enableTracing from metadata`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.enableTracing)
+    }
+
+    @Test
+    fun `applyMetadata does not override enableTracing from options`() {
+        // Arrange
+        fixture.options.enableTracing = true
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.enableTracing)
+    }
+
+    @Test
+    fun `applyMetadata without specifying enableTracing, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options.enableTracing)
+    }
+
+    @Test
     fun `applyMetadata reads enableAutoActivityLifecycleTracing to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACES_ACTIVITY_ENABLE to false)
@@ -950,6 +989,19 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads attach viewhierarchy to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ATTACH_VIEW_HIERARCHY to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isAttachViewHierarchy)
+    }
+
+    @Test
     fun `applyMetadata reads attach screenshots and keep default value if not found`() {
         // Arrange
         val context = fixture.getContext()
@@ -1060,5 +1112,94 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertTrue(fixture.options.isCollectAdditionalContext)
+    }
+
+    @Test
+    fun `applyMetadata reads send default pii and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isSendDefaultPii)
+    }
+
+    @Test
+    fun `applyMetadata reads send default pii to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.SEND_DEFAULT_PII to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isSendDefaultPii)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking flag and keeps default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking and sets it to enabled if true`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_FRAMES_TRACKING to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking and sets it to disabled if false`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_FRAMES_TRACKING to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads time-to-full-display tracking and sets it to enabled if true`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TTFD_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableTimeToFullDisplayTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads time-to-full-display tracking and sets it to disabled if false`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TTFD_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableTimeToFullDisplayTracing)
     }
 }

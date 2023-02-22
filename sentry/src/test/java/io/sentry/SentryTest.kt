@@ -1,11 +1,18 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.argThat
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
+import io.sentry.cache.EnvelopeCache
+import io.sentry.cache.IEnvelopeCache
+import io.sentry.internal.modules.CompositeModulesLoader
+import io.sentry.internal.modules.IModulesLoader
 import io.sentry.protocol.SentryId
+import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.MainThreadChecker
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
@@ -16,6 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+
 class SentryTest {
 
     private val dsn = "http://key@localhost/proj"
@@ -231,6 +239,159 @@ class SentryTest {
         val hub = Sentry.getCurrentHub()
         assertNotNull(hub)
         assertFalse(hub is NoOpHub)
+    }
+
+    @Test
+    fun `when init is called and configure throws an exception then an error is logged`() {
+        val logger = mock<ILogger>()
+        val initException = Exception("init")
+
+        Sentry.init({
+            it.dsn = dsn
+            it.isDebug = true
+            it.setLogger(logger)
+            throw initException
+        }, true)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
+    }
+
+    @Test
+    fun `when init with a SentryOptions Subclass is called and configure throws an exception then an error is logged`() {
+        class ExtendedSentryOptions : SentryOptions()
+
+        val logger = mock<ILogger>()
+        val initException = Exception("init")
+
+        Sentry.init(OptionsContainer.create(ExtendedSentryOptions::class.java)) { options: ExtendedSentryOptions ->
+            options.dsn = dsn
+            options.isDebug = true
+            options.setLogger(logger)
+            throw initException
+        }
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
+    }
+
+    @Test
+    fun `overrides envelope cache if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.envelopeDiskCache is EnvelopeCache }
+    }
+
+    @Test
+    fun `does not override envelope cache if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            it.setEnvelopeDiskCache(CustomEnvelopCache())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    @Test
+    fun `overrides modules loader if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.modulesLoader is CompositeModulesLoader }
+    }
+
+    @Test
+    fun `does not override modules loader if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setModulesLoader(CustomModulesLoader())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.modulesLoader is CustomModulesLoader }
+    }
+
+    @Test
+    fun `overrides main thread checker if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.mainThreadChecker is MainThreadChecker }
+    }
+
+    @Test
+    fun `does not override main thread checker if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.mainThreadChecker = CustomMainThreadChecker()
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.mainThreadChecker is CustomMainThreadChecker }
+    }
+
+    @Test
+    fun `overrides collector if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.collectors.any { it is JavaMemoryCollector } }
+    }
+
+    @Test
+    fun `does not override collector if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.addCollector(CustomMemoryCollector())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.collectors.any { it is CustomMemoryCollector } }
+    }
+
+    private class CustomMainThreadChecker : IMainThreadChecker {
+        override fun isMainThread(threadId: Long): Boolean = false
+    }
+
+    private class CustomMemoryCollector : ICollector {
+        override fun setup() {}
+        override fun collect(performanceCollectionData: PerformanceCollectionData) {}
+    }
+
+    private class CustomModulesLoader : IModulesLoader {
+        override fun getOrLoadModules(): MutableMap<String, String>? = null
+    }
+
+    private class CustomEnvelopCache : IEnvelopeCache {
+        override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
+        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+        override fun discard(envelope: SentryEnvelope) = Unit
     }
 
     private fun getTempPath(): String {

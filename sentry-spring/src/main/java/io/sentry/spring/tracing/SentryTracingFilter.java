@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
@@ -74,7 +75,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
-    if (hub.isEnabled()) {
+    if (hub.isEnabled() && shouldTraceRequest(httpRequest)) {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final List<String> baggageHeader =
           Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
@@ -111,6 +112,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     }
   }
 
+  private boolean shouldTraceRequest(final @NotNull HttpServletRequest request) {
+    return hub.getOptions().isTraceOptionsRequests()
+        || !HttpMethod.OPTIONS.name().equals(request.getMethod());
+  }
+
   private ITransaction startTransaction(
       final @NotNull HttpServletRequest request,
       final @Nullable String sentryTraceHeader,
@@ -131,7 +137,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
                 TransactionNameSource.URL,
                 "http.server",
                 new SentryTraceHeader(sentryTraceHeader),
-                baggage);
+                baggage,
+                null);
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         transactionOptions.setCustomSamplingContext(customSamplingContext);

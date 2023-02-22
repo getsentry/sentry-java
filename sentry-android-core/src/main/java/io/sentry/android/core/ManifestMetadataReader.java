@@ -54,11 +54,14 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
+  static final String TRACING_ENABLE = "io.sentry.traces.enable";
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
       "io.sentry.traces.activity.auto-finish.enable";
   static final String TRACES_UI_ENABLE = "io.sentry.traces.user-interaction.enable";
+
+  static final String TTFD_ENABLE = "io.sentry.traces.time-to-full-display.enable";
 
   static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling.enable";
   static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
@@ -75,8 +78,13 @@ final class ManifestMetadataReader {
   static final String IDLE_TIMEOUT = "io.sentry.traces.idle-timeout";
 
   static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
+  static final String ATTACH_VIEW_HIERARCHY = "io.sentry.attach-view-hierarchy";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
+
+  static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
+
+  static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -216,6 +224,9 @@ final class ManifestMetadataReader {
         options.setAttachScreenshot(
             readBool(metadata, logger, ATTACH_SCREENSHOT, options.isAttachScreenshot()));
 
+        options.setAttachViewHierarchy(
+            readBool(metadata, logger, ATTACH_VIEW_HIERARCHY, options.isAttachViewHierarchy()));
+
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
 
@@ -225,6 +236,10 @@ final class ManifestMetadataReader {
                 logger,
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
+
+        if (options.getEnableTracing() == null) {
+          options.setEnableTracing(readBoolNullable(metadata, logger, TRACING_ENABLE, null));
+        }
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
@@ -263,6 +278,9 @@ final class ManifestMetadataReader {
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
 
+        options.setEnableTimeToFullDisplayTracing(
+            readBool(metadata, logger, TTFD_ENABLE, options.isEnableTimeToFullDisplayTracing()));
+
         final long idleTimeout = readLong(metadata, logger, IDLE_TIMEOUT, -1);
         if (idleTimeout != -1) {
           options.setIdleTimeout(idleTimeout);
@@ -286,6 +304,8 @@ final class ManifestMetadataReader {
           options.setTracePropagationTargets(tracePropagationTargets);
         }
 
+        options.setEnableFramesTracking(readBool(metadata, logger, PERFORM_FRAMES_TRACKING, true));
+
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
 
@@ -297,6 +317,9 @@ final class ManifestMetadataReader {
         sdkInfo.setName(readStringNotNull(metadata, logger, SDK_NAME, sdkInfo.getName()));
         sdkInfo.setVersion(readStringNotNull(metadata, logger, SDK_VERSION, sdkInfo.getVersion()));
         options.setSdkVersion(sdkInfo);
+
+        options.setSendDefaultPii(
+            readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
       }
 
       options
@@ -318,6 +341,23 @@ final class ManifestMetadataReader {
     final boolean value = metadata.getBoolean(key, defaultValue);
     logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
     return value;
+  }
+
+  @SuppressWarnings("deprecation")
+  private static @Nullable Boolean readBoolNullable(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final @Nullable Boolean defaultValue) {
+    if (metadata.getSerializable(key) != null) {
+      final boolean nonNullDefault = defaultValue == null ? false : true;
+      final boolean bool = metadata.getBoolean(key, nonNullDefault);
+      logger.log(SentryLevel.DEBUG, "%s read: %s", key, bool);
+      return bool;
+    } else {
+      logger.log(SentryLevel.DEBUG, "%s used default %s", key, defaultValue);
+      return defaultValue;
+    }
   }
 
   private static @Nullable String readString(
