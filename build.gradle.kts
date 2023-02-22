@@ -172,12 +172,12 @@ spotless {
 
     kotlin {
         target("**/*.kt")
-        ktlint()
+        ktlint("0.47.1")
         targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
     }
     kotlinGradle {
         target("**/*.kts")
-        ktlint()
+        ktlint("0.47.1")
     }
 }
 
