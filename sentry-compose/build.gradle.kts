@@ -20,6 +20,9 @@ kotlin {
 
     android {
         publishLibraryVariants("release")
+        compilations.all {
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
     }
     jvm("desktop") {
         compilations.all {
@@ -54,7 +57,7 @@ kotlin {
                 implementation(Config.Libs.lifecycleCommonJava8)
             }
         }
-        val androidTest by getting {
+        val androidUnitTest by getting {
             dependencies {
                 implementation(Config.TestLibs.kotlinTestJunit)
                 implementation(Config.TestLibs.mockitoKotlin)

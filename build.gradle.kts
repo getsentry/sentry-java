@@ -122,6 +122,14 @@ subprojects {
                     from("build${sep}publications${sep}release")
                 }
             }
+            // craft only uses zip archives
+            this.forEach { dist ->
+                if (dist.name == DistributionPlugin.MAIN_DISTRIBUTION_NAME) {
+                    tasks.getByName("distTar").enabled = false
+                } else {
+                    tasks.getByName(dist.name + "DistTar").enabled = false
+                }
+            }
         }
 
         tasks.named("distZip").configure {

@@ -2,14 +2,14 @@ import java.math.BigDecimal
 
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "7.3.0"
-    val kotlinVersion = "1.6.10"
+    val kotlinVersion = "1.8.0"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
     val springBoot3Version = "3.0.0"
     val kotlinCompatibleLanguageVersion = "1.4"
 
-    val composeVersion = "1.1.1"
+    val composeVersion = "1.3.0"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
@@ -22,7 +22,7 @@ object Config {
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
     }
@@ -40,7 +40,7 @@ object Config {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
         fun shouldSkipDebugVariant(name: String): Boolean {
-            return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
+            return System.getenv("CI")?.toBoolean() ?: true && name == "debug"
         }
     }
 
@@ -189,7 +189,7 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.11.0"
+        val spotlessVersion = "6.15.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:3.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
@@ -197,7 +197,7 @@ object Config {
         val detekt = "io.gitlab.arturbosch.detekt"
         val detektVersion = "1.19.0"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.8.0"
+        val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }

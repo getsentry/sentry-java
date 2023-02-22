@@ -64,7 +64,7 @@ tasks.withType<KotlinCompile> {
 }
 
 task("jakartaTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
+    mainClass.set("org.eclipse.transformer.cli.JakartaTransformerCLI")
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-samples-spring/src/main/java/io/sentry/samples/spring", "src/main/java/io/sentry/samples/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }

@@ -111,19 +111,19 @@ tasks {
 }
 
 task("jakartaTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
+    mainClass.set("org.eclipse.transformer.cli.JakartaTransformerCLI")
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-spring-boot-starter/src/main/java/io/sentry/spring/boot", "src/main/java/io/sentry/spring/boot/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }.dependsOn("jakartaTestTransformation")
 
 task("jakartaTestTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
+    mainClass.set("org.eclipse.transformer.cli.JakartaTransformerCLI")
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-spring-boot-starter/src/test/kotlin/io/sentry/spring/boot", "src/test/kotlin/io/sentry/spring/boot/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }.dependsOn("jakartaMainClassTransformation")
 
 task("jakartaMainClassTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
+    mainClass.set("org.eclipse.transformer.cli.JakartaTransformerCLI")
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-spring-boot-starter/src/test/kotlin/com/acme", "src/test/kotlin/com/acme", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
