@@ -16,6 +16,12 @@
 
 - Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
 
+### Dependencies
+
+- Bump Gradle from v7.6.0 to v8.0.1 ([#2551](https://github.com/getsentry/sentry-java/pull/2551))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v801)
+  - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.1)
+
 ## 6.14.0
 
 ### Features
