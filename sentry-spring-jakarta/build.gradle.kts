@@ -15,16 +15,6 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
 }
 
-repositories {
-    mavenCentral()
-}
-
-the<DependencyManagementExtension>().apply {
-    imports {
-        mavenBom(SpringBootPlugin.BOM_COORDINATES)
-    }
-}
-
 configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -44,6 +34,7 @@ dependencies {
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
 
     api(projects.sentry)
+    compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)

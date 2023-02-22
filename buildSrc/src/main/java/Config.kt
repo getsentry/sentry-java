@@ -40,7 +40,7 @@ object Config {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
         fun shouldSkipDebugVariant(name: String): Boolean {
-            return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
+            return System.getenv("CI")?.toBoolean() ?: true && name == "debug"
         }
     }
 
@@ -48,8 +48,7 @@ object Config {
         val okHttpVersion = "4.9.2"
         val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
-        val okhttp = "com.squareup.okhttp3:okhttp"
+        val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
         val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
@@ -177,7 +176,6 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
-        val mockWebserver4 = "com.squareup.okhttp3:mockwebserver:4.9.3"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"

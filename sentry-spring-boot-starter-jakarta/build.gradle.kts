@@ -1,4 +1,3 @@
-import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -12,17 +11,6 @@ plugins {
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
-}
-
-repositories {
-    mavenCentral()
-}
-
-the<DependencyManagementExtension>().apply {
-    imports {
-        mavenBom(SpringBootPlugin.BOM_COORDINATES)
-        mavenBom(Config.Libs.okhttpBom)
-    }
 }
 
 configure<JavaPluginExtension> {
@@ -47,6 +35,7 @@ dependencies {
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
     implementation(Config.Libs.springBoot3Starter)
+    implementation(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApiJakarta)
@@ -55,6 +44,7 @@ dependencies {
     compileOnly(Config.Libs.reactorCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
+    annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
@@ -72,6 +62,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockWebserver)
+
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBoot3StarterTest)
     testImplementation(Config.Libs.springBoot3StarterWeb)
