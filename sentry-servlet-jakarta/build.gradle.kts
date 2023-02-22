@@ -77,19 +77,6 @@ tasks {
         dependsOn(jacocoTestReport)
     }
 }
-repositories {
-    mavenCentral()
-}
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_1_8.toString()
-    languageVersion = Config.kotlinCompatibleLanguageVersion
-}
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_1_8.toString()
-    languageVersion = Config.kotlinCompatibleLanguageVersion
-}
 
 tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
