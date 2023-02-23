@@ -41,7 +41,7 @@ object Config {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
         fun shouldSkipDebugVariant(name: String): Boolean {
-            return System.getenv("CI")?.toBoolean() ?: true && name == "debug"
+            return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
         }
     }
 

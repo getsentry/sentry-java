@@ -1,3 +1,4 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
@@ -7,7 +8,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
+    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply false
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
@@ -104,6 +105,36 @@ subprojects {
         }
     }
 
+    apply(plugin = Config.QualityPlugins.spotless)
+    configure<SpotlessExtension> {
+        lineEndings = LineEnding.UNIX
+        java {
+            target("**/*.java")
+            removeUnusedImports()
+            googleJavaFormat()
+            targetExclude(
+                "**/generated/**",
+                "**/vendor/**",
+                "sentry-spring-jakarta/**",
+                "sentry-spring-boot-starter-jakarta/**"
+            )
+        }
+
+        kotlin {
+            target("**/*.kt")
+            ktlint("0.47.1")
+            targetExclude(
+                "sentry-spring-jakarta/**",
+                "sentry-spring-boot-starter-jakarta/**"
+            )
+        }
+        kotlinGradle {
+            target("**/*.kts")
+            ktlint("0.47.1")
+        }
+    }
+
+
     if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
         apply<DistributionPlugin>()
 
@@ -135,7 +166,8 @@ subprojects {
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
-                val distributionFilePath = "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
+                val distributionFilePath =
+                    "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
@@ -158,26 +190,6 @@ subprojects {
             // mavenCentralUsername=user name
             // mavenCentralPassword=password
         }
-    }
-}
-
-spotless {
-    lineEndings = LineEnding.UNIX
-    java {
-        target("**/*.java")
-        removeUnusedImports()
-        googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**", "sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
-    }
-
-    kotlin {
-        target("**/*.kt")
-        ktlint("0.47.1")
-        targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
-    }
-    kotlinGradle {
-        target("**/*.kts")
-        ktlint("0.47.1")
     }
 }
 
