@@ -1,5 +1,8 @@
 package io.sentry.spring.jakarta.webflux;
 
+import com.jakewharton.nopen.annotation.Open;
+
+import io.sentry.Sentry;
 import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_REQUEST;
 import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
 
@@ -18,7 +21,8 @@ import reactor.core.publisher.Mono;
 
 /** Manages {@link io.sentry.Scope} in Webflux request processing. */
 @ApiStatus.Experimental
-public final class SentryWebFilter implements WebFilter {
+@Open
+public class SentryWebFilter implements WebFilter {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 

@@ -64,6 +64,12 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
+    // TODO remove these (v) once this lands in Spring (Boot)
+    compileOnly("io.projectreactor:reactor-core:3.5.3")
+    compileOnly("io.projectreactor.netty:reactor-netty:1.1.3")
+    compileOnly("io.micrometer:context-propagation:1.0.2")
+    // TODO remove these (^) once this lands in Spring (Boot)
+
     // tests
     testImplementation(projects.sentryLogback)
     testImplementation(projects.sentryApacheHttpClient5)
