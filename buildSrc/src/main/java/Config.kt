@@ -10,6 +10,7 @@ object Config {
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.3.0"
+    val androidComposeCompilerVersion = "1.4.0"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
@@ -187,7 +188,7 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.15.0"
+        val spotlessVersion = "6.11.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:3.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
