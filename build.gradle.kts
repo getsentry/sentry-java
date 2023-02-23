@@ -149,7 +149,9 @@ subprojects {
                     from("build${sep}libs")
                     from("build${sep}publications${sep}maven")
                     // android modules
-                    from("build${sep}outputs${sep}aar")
+                    from("build${sep}outputs${sep}aar") {
+                        include("*-release*")
+                    }
                     from("build${sep}publications${sep}release")
                 }
             }
