@@ -9,6 +9,8 @@ import io.sentry.SentryOptions.RequestSize.ALWAYS
 import io.sentry.SentryOptions.RequestSize.MEDIUM
 import io.sentry.SentryOptions.RequestSize.NONE
 import io.sentry.SentryOptions.RequestSize.SMALL
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
 import org.assertj.core.api.Assertions
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -23,8 +25,6 @@ import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import java.net.URI
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

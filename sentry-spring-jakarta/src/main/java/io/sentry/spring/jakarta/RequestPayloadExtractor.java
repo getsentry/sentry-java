@@ -2,9 +2,9 @@ package io.sentry.spring.jakarta;
 
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.util.StreamUtils;
