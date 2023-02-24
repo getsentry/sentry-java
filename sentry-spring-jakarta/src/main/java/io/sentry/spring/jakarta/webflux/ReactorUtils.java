@@ -13,7 +13,7 @@ import reactor.util.context.Context;
 public final class ReactorUtils {
 
   /**
-   * Writes the Sentry {@link IHub} to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
+   * Writes the current Sentry {@link IHub} to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
@@ -21,22 +21,14 @@ public final class ReactorUtils {
    *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
    */
   @ApiStatus.Experimental
-  public static <T> Mono<T> withSentry(Mono<T> mono) {
+  public static <T> Mono<T> withSentry(final @NotNull Mono<T> mono) {
     final @NotNull IHub oldHub = Sentry.getCurrentHub();
     final @NotNull IHub clonedHub = oldHub.clone();
-
-    /**
-     * WARNING: Cannot set the clonedHub as current hub.
-     * It would be used by others to clone again causing shared hubs and scopes and thus
-     * leading to issues like unrelated breadcrumbs showing up in events.
-     */
-    // Sentry.setCurrentHub(clonedHub);
-
-    return Mono.deferContextual(ctx -> mono).contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, clonedHub));
+    return withSentryHub(mono, clonedHub);
   }
 
   /**
-   * Writes the Sentry {@link IHub} to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
+   * Writes a new Sentry {@link IHub} cloned from the main hub to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
@@ -44,17 +36,78 @@ public final class ReactorUtils {
    *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
    */
   @ApiStatus.Experimental
-  public static <T> Flux<T> withSentry(Flux<T> flux) {
-    final @NotNull IHub oldHub = Sentry.getCurrentHub();
-    final @NotNull IHub clonedHub = oldHub.clone();
+  public static <T> Mono<T> withFreshSentry(final @NotNull Mono<T> mono) {
+    final @NotNull IHub hub = Sentry.getNewHub();
+    return withSentryHub(mono, hub);
+  }
 
+  /**
+   * Writes the given Sentry {@link IHub} to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
+   *
+   * This requires
+   *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
+   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
+   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   */
+  @ApiStatus.Experimental
+  public static <T> Mono<T> withSentryHub(final @NotNull Mono<T> mono, final @NotNull IHub hub) {
     /**
-     * WARNING: Cannot set the clonedHub as current hub.
+     * WARNING: Cannot set the hub as current.
      * It would be used by others to clone again causing shared hubs and scopes and thus
      * leading to issues like unrelated breadcrumbs showing up in events.
      */
     // Sentry.setCurrentHub(clonedHub);
 
-    return Flux.deferContextual(ctx -> flux).contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, clonedHub));
+    return Mono.deferContextual(ctx -> mono).contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, hub));
+  }
+
+  /**
+   * Writes the current Sentry {@link IHub} to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
+   *
+   * This requires
+   *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
+   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
+   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   */
+  @ApiStatus.Experimental
+  public static <T> Flux<T> withSentry(final @NotNull Flux<T> flux) {
+    final @NotNull IHub oldHub = Sentry.getCurrentHub();
+    final @NotNull IHub clonedHub = oldHub.clone();
+
+    return withSentryHub(flux, clonedHub);
+  }
+
+  /**
+   * Writes a new Sentry {@link IHub} cloned from the main hub to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
+   *
+   * This requires
+   *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
+   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
+   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   */
+  @ApiStatus.Experimental
+  public static <T> Flux<T> withFreshSentry(final @NotNull Flux<T> flux) {
+    final @NotNull IHub hub = Sentry.getNewHub();
+    return withSentryHub(flux, hub);
+  }
+
+  /**
+   * Writes the given Sentry {@link IHub} to the {@link Context} and uses {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
+   *
+   * This requires
+   *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
+   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
+   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   */
+  @ApiStatus.Experimental
+  public static <T> Flux<T> withSentryHub(final @NotNull Flux<T> flux, final @NotNull IHub hub) {
+    /**
+     * WARNING: Cannot set the hub as current.
+     * It would be used by others to clone again causing shared hubs and scopes and thus
+     * leading to issues like unrelated breadcrumbs showing up in events.
+     */
+    // Sentry.setCurrentHub(clonedHub);
+
+    return Flux.deferContextual(ctx -> flux).contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, hub));
   }
 }

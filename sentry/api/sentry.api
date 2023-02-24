@@ -1167,6 +1167,7 @@ public final class io/sentry/Sentry {
 	public static fun flush (J)V
 	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
+	public static fun getNewHub ()Lio/sentry/IHub;
 	public static fun getSpan ()Lio/sentry/ISpan;
 	public static fun init ()V
 	public static fun init (Lio/sentry/OptionsContainer;Lio/sentry/Sentry$OptionsConfiguration;)V

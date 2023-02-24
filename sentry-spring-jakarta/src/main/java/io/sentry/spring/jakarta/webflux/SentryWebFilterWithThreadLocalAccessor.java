@@ -20,6 +20,6 @@ public final class SentryWebFilterWithThreadLocalAccessor extends SentryWebFilte
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
-    return ReactorUtils.withSentry(super.filter(serverWebExchange, webFilterChain));
+    return ReactorUtils.withFreshSentry(super.filter(serverWebExchange, webFilterChain));
   }
 }
