@@ -1,7 +1,7 @@
 import java.math.BigDecimal
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "7.3.0"
+    val AGP = System.getenv("VERSION_AGP") ?: "7.4.1"
     val kotlinVersion = "1.6.10"
     val kotlinStdLib = "stdlib-jdk8"
 
