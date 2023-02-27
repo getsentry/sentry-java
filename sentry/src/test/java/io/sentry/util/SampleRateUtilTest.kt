@@ -47,16 +47,6 @@ class SampleRateUtilTest {
     }
 
     @Test
-    fun `accepts null sample rate if told so`() {
-        assertTrue(SampleRateUtils.isValidSampleRate(null, true))
-    }
-
-    @Test
-    fun `rejects null sample rate if told so`() {
-        assertFalse(SampleRateUtils.isValidSampleRate(null, false))
-    }
-
-    @Test
     fun `accepts 0 for traces sample rate`() {
         assertTrue(SampleRateUtils.isValidTracesSampleRate(0.0))
     }
