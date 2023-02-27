@@ -66,6 +66,7 @@ private val localSentryRenderingParentSpan = compositionLocalOf {
 public fun SentryTraced(
     tag: String,
     modifier: Modifier = Modifier,
+    enableUserInteractionTracing: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
     val parentCompositionSpan = localSentryCompositionParentSpan.current
@@ -73,9 +74,10 @@ public fun SentryTraced(
     val compositionSpan = parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)
     val firstRendered = remember { ImmutableHolder(false) }
 
+    val baseModifier = if (enableUserInteractionTracing) modifier.testTag(tag) else modifier
+
     Box(
-        modifier = modifier
-            .testTag(tag)
+        modifier = baseModifier
             .drawWithContent {
                 val renderSpan = if (!firstRendered.item) {
                     parentRenderingSpan.item?.startChild(
