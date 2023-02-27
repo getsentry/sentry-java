@@ -369,7 +369,7 @@ public final class SentryTracer implements ITransaction {
     // auto-finish any idle spans first
     for (final Span span : children) {
       if (span.getOptions().isIdle()) {
-        span.finish(getSpanContext().status, finishTimestamp);
+        span.finish((status != null) ? status : getSpanContext().status, finishTimestamp);
       }
     }
 
