@@ -194,14 +194,12 @@ public final class Span implements ISpan {
 
       final @NotNull List<Span> children = getChildren();
       for (final Span child : children) {
-        if (child.getParentSpanId() != null && child.getParentSpanId().equals(getSpanId())) {
-          if (minChildStart == null || child.getStartDate().isBefore(minChildStart)) {
-            minChildStart = child.getStartDate();
-          }
-          if (maxChildEnd == null
-              || (child.getFinishDate() != null && child.getFinishDate().isAfter(maxChildEnd))) {
-            maxChildEnd = child.getFinishDate();
-          }
+        if (minChildStart == null || child.getStartDate().isBefore(minChildStart)) {
+          minChildStart = child.getStartDate();
+        }
+        if (maxChildEnd == null
+            || (child.getFinishDate() != null && child.getFinishDate().isAfter(maxChildEnd))) {
+          maxChildEnd = child.getFinishDate();
         }
       }
       if (options.isTrimStart() && minChildStart != null) {
@@ -387,7 +385,7 @@ public final class Span implements ISpan {
   }
 
   @NotNull
-  public SpanOptions getOptions() {
+  SpanOptions getOptions() {
     return options;
   }
 

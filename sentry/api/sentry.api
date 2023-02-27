@@ -1878,7 +1878,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getDescription ()Ljava/lang/String;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getOperation ()Ljava/lang/String;
-	public fun getOptions ()Lio/sentry/SpanOptions;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
