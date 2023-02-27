@@ -17,8 +17,8 @@ public final class ReactorUtils {
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
-   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
-   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   *  - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+)
+   *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
   public static <T> Mono<T> withSentry(final @NotNull Mono<T> mono) {
@@ -32,8 +32,8 @@ public final class ReactorUtils {
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
-   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
-   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   *  - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+)
+   *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
   public static <T> Mono<T> withFreshSentry(final @NotNull Mono<T> mono) {
@@ -46,8 +46,8 @@ public final class ReactorUtils {
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
-   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
-   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   *  - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+)
+   *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
   public static <T> Mono<T> withSentryHub(final @NotNull Mono<T> mono, final @NotNull IHub hub) {
@@ -66,8 +66,8 @@ public final class ReactorUtils {
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
-   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
-   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   *  - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+)
+   *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
   public static <T> Flux<T> withSentry(final @NotNull Flux<T> flux) {
@@ -82,8 +82,8 @@ public final class ReactorUtils {
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
-   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
-   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   *  - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+)
+   *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
   public static <T> Flux<T> withFreshSentry(final @NotNull Flux<T> flux) {
@@ -96,8 +96,8 @@ public final class ReactorUtils {
    *
    * This requires
    *  - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be enabled
-   *  - having `io.micrometer:context-propagation:1.0.2` or newer as dependency
-   *  - having `io.projectreactor:reactor-core:3.5.3` or newer as dependency
+   *  - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+)
+   *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
   public static <T> Flux<T> withSentryHub(final @NotNull Flux<T> flux, final @NotNull IHub hub) {
