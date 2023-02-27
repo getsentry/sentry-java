@@ -122,7 +122,7 @@ public final class Geo implements JsonUnknown, JsonSerializable {
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
-        Object value = unknown.get(key);
+        final Object value = unknown.get(key);
         writer.name(key);
         writer.value(logger, value);
       }
@@ -135,7 +135,7 @@ public final class Geo implements JsonUnknown, JsonSerializable {
     @Override
     public Geo deserialize(JsonObjectReader reader, ILogger logger) throws Exception {
       reader.beginObject();
-      Geo geo = new Geo();
+      final Geo geo = new Geo();
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();

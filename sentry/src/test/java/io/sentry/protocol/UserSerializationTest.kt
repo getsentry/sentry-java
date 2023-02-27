@@ -24,7 +24,7 @@ class UserSerializationTest {
             name = "c8c60762-b1cf-11ed-afa1-0242ac120002"
             geo = Geo().apply {
                 city = "0e6ed0b0-b1c5-11ed-afa1-0242ac120002"
-                countryCode = "16717632-b1c5-11ed-afa1-0242ac120002"
+                countryCode = "JP"
                 region = "273a3d0a-b1c5-11ed-afa1-0242ac120002"
             }
             others = mapOf(
