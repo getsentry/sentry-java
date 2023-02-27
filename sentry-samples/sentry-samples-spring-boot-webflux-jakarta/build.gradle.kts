@@ -19,14 +19,11 @@ repositories {
 
 dependencies {
     implementation(Config.Libs.springBoot3StarterWebflux)
+    implementation(Config.Libs.contextPropagation)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
-
-    implementation("io.projectreactor:reactor-core:3.5.3")
-    implementation("io.projectreactor.netty:reactor-netty:1.1.3")
-    implementation("io.micrometer:context-propagation:1.0.2")
 
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
