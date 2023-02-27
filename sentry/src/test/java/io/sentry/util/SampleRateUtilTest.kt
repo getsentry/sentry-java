@@ -17,8 +17,8 @@ class SampleRateUtilTest {
     }
 
     @Test
-    fun `rejects 0 for sample rate`() {
-        assertFalse(SampleRateUtils.isValidSampleRate(0.0))
+    fun `accepts 0 for sample rate`() {
+        assertTrue(SampleRateUtils.isValidSampleRate(0.0))
     }
 
     @Test
