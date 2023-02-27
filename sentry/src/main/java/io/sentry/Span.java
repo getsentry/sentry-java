@@ -378,21 +378,6 @@ public final class Span implements ISpan {
     this.startTimestamp = date;
   }
 
-  /**
-   * Updates the end date of the span. Note: This will only update the end date if the span is
-   * already finished.
-   *
-   * @param date the end date to set
-   * @return true if the end date was updated, false otherwise
-   */
-  public boolean updateEndDate(@NotNull SentryDate date) {
-    if (this.timestamp != null) {
-      this.timestamp = date;
-      return true;
-    }
-    return false;
-  }
-
   @NotNull
   SpanOptions getOptions() {
     return options;
