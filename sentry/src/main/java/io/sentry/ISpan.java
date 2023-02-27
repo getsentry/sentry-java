@@ -220,6 +220,16 @@ public interface ISpan {
   void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
 
   /**
+   * Updates the end date of the span. Note: This will only update the end date if the span is
+   * already finished.
+   *
+   * @param date the end date to set
+   * @return true if the end date was updated, false otherwise
+   */
+  @ApiStatus.Internal
+  boolean updateEndDate(@NotNull SentryDate date);
+
+  /**
    * Whether this span instance is a NOOP that doesn't collect information
    *
    * @return true if NOOP

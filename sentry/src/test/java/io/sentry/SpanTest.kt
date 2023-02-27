@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SpanTest {
@@ -314,6 +315,26 @@ class SpanTest {
         assertNotNull(transaction.toBaggageHeader(null)) {
             assertEquals(it.value, span.toBaggageHeader(null)!!.value)
         }
+    }
+
+    @Test
+    fun `updateEndDate is ignored and returns false if span is not finished`() {
+        val span = fixture.getSut()
+        assertFalse(span.isFinished)
+        assertNull(span.finishDate)
+        assertFalse(span.updateEndDate(mock()))
+        assertNull(span.finishDate)
+    }
+
+    @Test
+    fun `updateEndDate updates finishDate and returns true if span is finished`() {
+        val span = fixture.getSut()
+        val endDate: SentryDate = mock()
+        span.finish()
+        assertTrue(span.isFinished)
+        assertNotNull(span.finishDate)
+        assertTrue(span.updateEndDate(endDate))
+        assertEquals(endDate, span.finishDate)
     }
 
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {

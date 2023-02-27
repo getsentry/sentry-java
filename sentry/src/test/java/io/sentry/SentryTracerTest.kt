@@ -1076,4 +1076,24 @@ class SentryTracerTest {
         transaction.finish()
         assertTrue(data.isEmpty())
     }
+
+    @Test
+    fun `updateEndDate is ignored and returns false if span is not finished`() {
+        val transaction = fixture.getSut()
+        assertFalse(transaction.isFinished)
+        assertNull(transaction.finishDate)
+        assertFalse(transaction.updateEndDate(mock()))
+        assertNull(transaction.finishDate)
+    }
+
+    @Test
+    fun `updateEndDate updates finishDate and returns true if span is finished`() {
+        val transaction = fixture.getSut()
+        val endDate: SentryDate = mock()
+        transaction.finish()
+        assertTrue(transaction.isFinished)
+        assertNotNull(transaction.finishDate)
+        assertTrue(transaction.updateEndDate(endDate))
+        assertEquals(endDate, transaction.finishDate)
+    }
 }

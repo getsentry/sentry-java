@@ -569,6 +569,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
+	public abstract fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
@@ -603,8 +604,13 @@ public final class io/sentry/Instrumenter : java/lang/Enum {
 	public static fun values ()[Lio/sentry/Instrumenter;
 }
 
-public abstract interface class io/sentry/Integration {
+public abstract interface class io/sentry/Integration : io/sentry/IntegrationName {
 	public abstract fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public abstract interface class io/sentry/IntegrationName {
+	public fun addIntegrationToSdkVersion ()V
+	public fun getIntegrationName ()Ljava/lang/String;
 }
 
 public final class io/sentry/IpAddressUtils {
@@ -834,6 +840,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
@@ -879,6 +886,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
@@ -1455,6 +1463,15 @@ public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDatePro
 	public fun now ()Lio/sentry/SentryDate;
 }
 
+public final class io/sentry/SentryIntegrationPackageStorage {
+	public fun addIntegration (Ljava/lang/String;)V
+	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun clearStorage ()V
+	public static fun getInstance ()Lio/sentry/SentryIntegrationPackageStorage;
+	public fun getIntegrations ()Ljava/util/Set;
+	public fun getPackages ()Ljava/util/Set;
+}
+
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field Attachment Lio/sentry/SentryItemType;
 	public static final field ClientReport Lio/sentry/SentryItemType;
@@ -1796,6 +1813,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3123,8 +3141,10 @@ public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, i
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getIntegrationSet ()Ljava/util/Set;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getName ()Ljava/lang/String;
+	public fun getPackageSet ()Ljava/util/Set;
 	public fun getPackages ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
@@ -3203,9 +3223,11 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V

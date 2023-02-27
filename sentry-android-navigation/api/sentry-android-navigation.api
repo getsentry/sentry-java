@@ -6,7 +6,7 @@ public final class io/sentry/android/navigation/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/navigation/SentryNavigationListener : androidx/navigation/NavController$OnDestinationChangedListener {
+public final class io/sentry/android/navigation/SentryNavigationListener : androidx/navigation/NavController$OnDestinationChangedListener, io/sentry/IntegrationName {
 	public static final field Companion Lio/sentry/android/navigation/SentryNavigationListener$Companion;
 	public static final field NAVIGATION_OP Ljava/lang/String;
 	public fun <init> ()V

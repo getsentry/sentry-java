@@ -1,6 +1,7 @@
 package io.sentry.servlet;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.SentryIntegrationPackageStorage;
 import java.util.Set;
 import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletContext;
@@ -18,5 +19,8 @@ public class SentryServletContainerInitializer implements ServletContainerInitia
   public void onStartup(@Nullable Set<Class<?>> c, @NotNull ServletContext ctx)
       throws ServletException {
     ctx.addListener(SentryServletRequestListener.class);
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Servlet");
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-servlet", BuildConfig.VERSION_NAME);
   }
 }

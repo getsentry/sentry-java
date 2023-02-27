@@ -7,6 +7,8 @@ import androidx.compose.ui.node.Owner;
 import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
+import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.compose.helper.BuildConfig;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
 import java.util.LinkedList;
@@ -18,6 +20,12 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("KotlinInternalInJava")
 public final class ComposeGestureTargetLocator implements GestureTargetLocator {
+
+  public ComposeGestureTargetLocator() {
+    SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
+  }
 
   @Override
   public @Nullable UiElement locate(

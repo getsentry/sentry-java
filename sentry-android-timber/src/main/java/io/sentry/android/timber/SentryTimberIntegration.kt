@@ -3,6 +3,7 @@ package io.sentry.android.timber
 import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.Integration
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
@@ -20,14 +21,14 @@ class SentryTimberIntegration(
     private lateinit var logger: ILogger
 
     override fun register(hub: IHub, options: SentryOptions) {
-        options.sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
-
         logger = options.logger
 
         tree = SentryTimberTree(hub, minEventLevel, minBreadcrumbLevel)
         Timber.plant(tree)
 
         logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
+        addIntegrationToSdkVersion()
     }
 
     override fun close() {
