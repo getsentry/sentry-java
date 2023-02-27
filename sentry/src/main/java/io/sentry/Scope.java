@@ -378,6 +378,10 @@ public final class Scope {
   /** Clear all the breadcrumbs */
   public void clearBreadcrumbs() {
     breadcrumbs.clear();
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setBreadcrumbs(breadcrumbs);
+    }
   }
 
   /** Clears the transaction. */
@@ -386,6 +390,11 @@ public final class Scope {
       transaction = null;
     }
     transactionName = null;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTransaction(null);
+      observer.setTrace(null);
+    }
   }
 
   /**

@@ -103,8 +103,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       return event;
     }
 
-    // we always set exception values, even if the ANR is not enrich-able
+    // we always set exception values, platform, os and device even if the ANR is not enrich-able
+    // even though the OS context may change in the meantime (OS update), we consider this an edge-case
     setExceptions(event);
+    setPlatform(event);
+    mergeOS(event);
+    setDevice(event);
 
     if (!((Backfillable) unwrappedHint).shouldEnrich()) {
       options
@@ -151,8 +155,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private void setFingerprints(final @NotNull SentryEvent event) {
-    final List<String> fingerprint = PersistingScopeObserver.read(options, FINGERPRINT_FILENAME, List.class);
+    final List<String> fingerprint = (List<String>) PersistingScopeObserver.read(options, FINGERPRINT_FILENAME, List.class);
     if (event.getFingerprints() == null) {
       event.setFingerprints(fingerprint);
     }
@@ -178,8 +183,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private void setExtras(final @NotNull SentryBaseEvent event) {
-    final Map<String, Object> extras = PersistingScopeObserver.read(options, EXTRAS_FILENAME, Map.class);
+    final Map<String, Object> extras = (Map<String, Object>) PersistingScopeObserver.read(options, EXTRAS_FILENAME, Map.class);
     if (extras == null) {
       return;
     }
@@ -194,8 +200,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
-    final List<Breadcrumb> breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List.class);
+    final List<Breadcrumb> breadcrumbs = (List<Breadcrumb>) PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List.class);
     if (breadcrumbs != null) {
       if (event.getBreadcrumbs() == null) {
         event.setBreadcrumbs(new ArrayList<>(breadcrumbs));
@@ -205,8 +212,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private void setScopeTags(final @NotNull SentryBaseEvent event) {
-    final Map<String, String> tags = PersistingScopeObserver.read(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
+    final Map<String, String> tags = (Map<String, String>) PersistingScopeObserver.read(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
     if (tags == null) {
       return;
     }
@@ -325,7 +333,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       final String release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
       if (release != null) {
         try {
-          final String versionCode = release.substring(release.indexOf('+'));
+          final String versionCode = release.substring(release.indexOf('+') + 1);
           event.setDist(versionCode);
         } catch (Throwable e) {
           options.getLogger().log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
@@ -345,10 +353,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   // region static values
   private void setStaticValues(final @NotNull SentryEvent event) {
-    setPlatform(event);
     mergeUser(event);
-    setDevice(event);
-    mergeOS(event);
     setSideLoadedInfo(event);
   }
 
@@ -429,7 +434,6 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   // only use static data that does not change between app launches (e.g. timezone, boottime, battery level will change)
-  @SuppressWarnings("deprecation")
   @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();

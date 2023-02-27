@@ -39,6 +39,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -116,6 +117,7 @@ public final class JsonSerializer implements ISerializer {
 
   // Deserialize
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
     try {
@@ -124,6 +126,8 @@ public final class JsonSerializer implements ISerializer {
       if (deserializer != null) {
         Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
         return clazz.cast(object);
+      } else if (isKnownPrimitive(clazz)) {
+        return (T) new JsonObjectDeserializer().deserialize(jsonObjectReader);
       } else {
         return null; // No way to deserialize objects we don't know about.
       }
@@ -169,7 +173,7 @@ public final class JsonSerializer implements ISerializer {
    */
   @Override
   public void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream)
-      throws Exception {
+    throws Exception {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
     Objects.requireNonNull(outputStream, "The Stream object is required.");
 
@@ -179,8 +183,8 @@ public final class JsonSerializer implements ISerializer {
 
     try {
       envelope
-          .getHeader()
-          .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+        .getHeader()
+        .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
@@ -222,5 +226,10 @@ public final class JsonSerializer implements ISerializer {
     }
     jsonObjectWriter.value(options.getLogger(), object);
     return stringWriter.toString();
+  }
+
+  private <T> boolean isKnownPrimitive(final @NotNull Class<T> clazz) {
+    return clazz.isArray() || Collection.class.isAssignableFrom(clazz) ||
+      String.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz);
   }
 }
