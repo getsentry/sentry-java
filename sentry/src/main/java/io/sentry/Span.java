@@ -203,7 +203,7 @@ public final class Span implements ISpan {
         }
       }
       if (options.isTrimStart() && minChildStart != null) {
-        setStartDate(minChildStart);
+        updateStartDate(minChildStart);
       }
       if (options.isTrimEnd() && maxChildEnd != null) {
         updateEndDate(maxChildEnd);
@@ -374,7 +374,7 @@ public final class Span implements ISpan {
     this.spanFinishedCallback = callback;
   }
 
-  public void setStartDate(@NotNull SentryDate date) {
+  private void updateStartDate(@NotNull SentryDate date) {
     this.startTimestamp = date;
   }
 
