@@ -36,12 +36,6 @@ dependencies {
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
 
-    // TODO remove these (v) once this lands in Spring (Boot)
-    implementation("io.projectreactor:reactor-core:3.5.3")
-    implementation("io.projectreactor.netty:reactor-netty:1.1.3")
-    implementation("io.micrometer:context-propagation:1.0.2")
-    // TODO remove these (^) once this lands in Spring (Boot)
-
     // database query tracing
     implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)

@@ -11,6 +11,11 @@
     - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
 - Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
 - Report integrations in use, report packages in use more consistently ([#2179](https://github.com/getsentry/sentry-java/pull/2179))
+- Implement `ThreadLocalAccessor` for propagating Sentry hub with reactor / WebFlux ([#2570](https://github.com/getsentry/sentry-java/pull/2570))
+  - Requires `io.micrometer:context-propagation:1.0.2+` as well as Spring Boot 3.0.3+
+  - Enable the feature by setting `sentry.reactive.thread-local-accessor-enabled=true`
+  - This is still considered experimental. Once we have enough feedback we may turn this on by default.
+  - Checkout the sample here: https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux-jakarta
 
 ### Fixes
 
