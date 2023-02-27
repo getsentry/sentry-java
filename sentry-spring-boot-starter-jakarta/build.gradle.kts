@@ -80,6 +80,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(Config.Libs.contextPropagation)
 }
 
 configure<SourceSetContainer> {
