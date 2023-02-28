@@ -65,7 +65,10 @@ public final class Sentry {
    */
   @ApiStatus.Internal
   @ApiStatus.Experimental
-  public static @NotNull IHub getNewHub() {
+  public static @NotNull IHub cloneMainHub() {
+    if (globalHubMode) {
+      return mainHub;
+    }
     return mainHub.clone();
   }
 

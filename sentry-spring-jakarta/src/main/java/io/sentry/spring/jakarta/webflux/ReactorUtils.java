@@ -37,7 +37,7 @@ public final class ReactorUtils {
    */
   @ApiStatus.Experimental
   public static <T> Mono<T> withFreshSentry(final @NotNull Mono<T> mono) {
-    final @NotNull IHub hub = Sentry.getNewHub();
+    final @NotNull IHub hub = Sentry.cloneMainHub();
     return withSentryHub(mono, hub);
   }
 
@@ -87,7 +87,7 @@ public final class ReactorUtils {
    */
   @ApiStatus.Experimental
   public static <T> Flux<T> withFreshSentry(final @NotNull Flux<T> flux) {
-    final @NotNull IHub hub = Sentry.getNewHub();
+    final @NotNull IHub hub = Sentry.cloneMainHub();
     return withSentryHub(flux, hub);
   }
 
