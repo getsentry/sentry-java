@@ -16,6 +16,7 @@
   - Enable the feature by setting `sentry.reactive.thread-local-accessor-enabled=true`
   - This is still considered experimental. Once we have enough feedback we may turn this on by default.
   - Checkout the sample here: https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux-jakarta
+  - A new hub is now cloned from the main hub for every request
 
 ### Fixes
 
