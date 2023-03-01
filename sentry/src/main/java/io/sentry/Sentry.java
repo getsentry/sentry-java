@@ -58,6 +58,20 @@ public final class Sentry {
     return hub;
   }
 
+  /**
+   * Returns a new hub which is cloned from the mainHub.
+   *
+   * @return the hub
+   */
+  @ApiStatus.Internal
+  @ApiStatus.Experimental
+  public static @NotNull IHub cloneMainHub() {
+    if (globalHubMode) {
+      return mainHub;
+    }
+    return mainHub.clone();
+  }
+
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   public static void setCurrentHub(final @NotNull IHub hub) {
     currentHub.set(hub);
