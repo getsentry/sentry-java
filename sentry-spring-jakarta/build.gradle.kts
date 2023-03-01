@@ -50,6 +50,7 @@ dependencies {
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
+    compileOnly(Config.Libs.contextPropagation)
 
     compileOnly(Config.Libs.springWebflux)
 
@@ -69,6 +70,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
+    testImplementation(Config.Libs.contextPropagation)
     testImplementation(Config.TestLibs.awaitility)
 }
 
