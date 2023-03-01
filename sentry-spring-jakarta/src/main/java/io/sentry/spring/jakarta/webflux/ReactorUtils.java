@@ -36,7 +36,7 @@ public final class ReactorUtils {
    *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
-  public static <T> Mono<T> withFreshSentry(final @NotNull Mono<T> mono) {
+  public static <T> Mono<T> withSentryNewMainHubClone(final @NotNull Mono<T> mono) {
     final @NotNull IHub hub = Sentry.cloneMainHub();
     return withSentryHub(mono, hub);
   }
@@ -86,7 +86,7 @@ public final class ReactorUtils {
    *  - having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
   @ApiStatus.Experimental
-  public static <T> Flux<T> withFreshSentry(final @NotNull Flux<T> flux) {
+  public static <T> Flux<T> withSentryNewMainHubClone(final @NotNull Flux<T> flux) {
     final @NotNull IHub hub = Sentry.cloneMainHub();
     return withSentryHub(flux, hub);
   }
