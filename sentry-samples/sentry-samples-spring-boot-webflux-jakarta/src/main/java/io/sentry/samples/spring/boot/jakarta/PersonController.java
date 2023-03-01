@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot;
+package io.sentry.samples.spring.boot.jakarta;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
