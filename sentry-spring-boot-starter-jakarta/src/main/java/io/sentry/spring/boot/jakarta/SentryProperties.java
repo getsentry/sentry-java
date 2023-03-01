@@ -28,6 +28,9 @@ public class SentryProperties extends SentryOptions {
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
 
+  /** Reactive framework (e.g. WebFlux) integration properties */
+  private @NotNull Reactive reactive = new Reactive();
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -72,6 +75,14 @@ public class SentryProperties extends SentryOptions {
     this.logging = logging;
   }
 
+  public @NotNull Reactive getReactive() {
+    return reactive;
+  }
+
+  public void setReactive(@NotNull Reactive reactive) {
+    this.reactive = reactive;
+  }
+
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
@@ -105,6 +116,20 @@ public class SentryProperties extends SentryOptions {
 
     public void setMinimumEventLevel(@Nullable Level minimumEventLevel) {
       this.minimumEventLevel = minimumEventLevel;
+    }
+  }
+
+  @Open
+  public static class Reactive {
+    /** Enable/Disable usage of {@link io.micrometer.context.ThreadLocalAccessor} for Hub propagation */
+    private boolean threadLocalAccessorEnabled = true;
+
+    public boolean isThreadLocalAccessorEnabled() {
+      return threadLocalAccessorEnabled;
+    }
+
+    public void setThreadLocalAccessorEnabled(boolean threadLocalAccessorEnabled) {
+      this.threadLocalAccessorEnabled = threadLocalAccessorEnabled;
     }
   }
 }

@@ -814,7 +814,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the sampleRate Can be anything between 0.01 and 1.0 or null (default), to disable it.
+   * Sets the sampleRate Can be anything between 0.0 and 1.0 or null (default), to disable it.
    *
    * @param sampleRate the sample rate
    */
@@ -823,7 +823,7 @@ public class SentryOptions {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
-              + " is not valid. Use null to disable or values > 0.0 and <= 1.0.");
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
     this.sampleRate = sampleRate;
   }
