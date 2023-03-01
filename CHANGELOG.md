@@ -16,10 +16,12 @@
   - Enable the feature by setting `sentry.reactive.thread-local-accessor-enabled=true`
   - This is still considered experimental. Once we have enough feedback we may turn this on by default.
   - Checkout the sample here: https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux-jakarta
+  - A new hub is now cloned from the main hub for every request
 
 ### Fixes
 
 - Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
+- Use the same hub in WebFlux exception handler as we do in WebFilter ([#2566](https://github.com/getsentry/sentry-java/pull/2566))
 
 ## 6.14.0
 
