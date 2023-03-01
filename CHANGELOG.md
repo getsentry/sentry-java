@@ -23,7 +23,7 @@
 - Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
 - Allow `0.0` error sample rate ([#2573](https://github.com/getsentry/sentry-java/pull/2573))
 - Use the same hub in WebFlux exception handler as we do in WebFilter ([#2566](https://github.com/getsentry/sentry-java/pull/2566))
-- Switch upstream Jetpack Compose dependencies to `compileOnly` ([#2578](https://github.com/getsentry/sentry-java/pull/2578))
+- Switch upstream Jetpack Compose dependencies to `compileOnly` in `sentry-compose-android` ([#2578](https://github.com/getsentry/sentry-java/pull/2578))
   - NOTE: If you're using Compose Navigation/User Interaction integrations, make sure to have the following dependencies on the classpath as we do not bring them in transitively anymore:
     - `androidx.navigation:navigation-compose:`
     - `androidx.compose.runtime:runtime:`
