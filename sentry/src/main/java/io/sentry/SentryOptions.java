@@ -1660,7 +1660,7 @@ public class SentryOptions {
 
   /**
    * Sets the profilesSampleRate. Can be anything between 0.0 and 1.0 or null (default), to disable
-   * it. It’s dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
+   * it. It's dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
    * is sampled, then a profile could be sampled with a probability given by profilesSampleRate.
    *
    * @param profilesSampleRate the sample rate
