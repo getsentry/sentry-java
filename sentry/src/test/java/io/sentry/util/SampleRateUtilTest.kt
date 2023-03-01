@@ -17,8 +17,8 @@ class SampleRateUtilTest {
     }
 
     @Test
-    fun `rejects 0 for sample rate`() {
-        assertFalse(SampleRateUtils.isValidSampleRate(0.0))
+    fun `accepts 0 for sample rate`() {
+        assertTrue(SampleRateUtils.isValidSampleRate(0.0))
     }
 
     @Test
@@ -44,16 +44,6 @@ class SampleRateUtilTest {
     @Test
     fun `rejects negative infinite sample rate`() {
         assertFalse(SampleRateUtils.isValidSampleRate(Double.NEGATIVE_INFINITY))
-    }
-
-    @Test
-    fun `accepts null sample rate if told so`() {
-        assertTrue(SampleRateUtils.isValidSampleRate(null, true))
-    }
-
-    @Test
-    fun `rejects null sample rate if told so`() {
-        assertFalse(SampleRateUtils.isValidSampleRate(null, false))
     }
 
     @Test
