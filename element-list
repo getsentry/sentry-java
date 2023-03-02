@@ -1,4 +1,6 @@
 io.sentry
+io.sentry.apollo
+io.sentry.apollo3
 io.sentry.cache
 io.sentry.clientreport
 io.sentry.compose.gestures
