@@ -64,6 +64,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     return order;
   }
 
+  @NotNull
   protected SentryEvent createEvent(
       final @NotNull HttpServletRequest request,
       final @NotNull Exception ex) {
@@ -80,6 +81,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     return event;
   }
 
+  @Nullable
   protected Hint createHint(
       final @NotNull HttpServletRequest request,
       final @NotNull HttpServletResponse response) {

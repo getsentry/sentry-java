@@ -1,13 +1,13 @@
-package io.sentry.spring
+package io.sentry.spring.jakarta
 
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.exception.ExceptionMechanismException
-import io.sentry.spring.tracing.TransactionNameProvider
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import io.sentry.spring.jakarta.tracing.TransactionNameProvider
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
