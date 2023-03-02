@@ -24,6 +24,11 @@
 - Allow `0.0` error sample rate ([#2573](https://github.com/getsentry/sentry-java/pull/2573))
 - Fix memory leak in WebFlux related to an ever growing stack ([#2580](https://github.com/getsentry/sentry-java/pull/2580))
 - Use the same hub in WebFlux exception handler as we do in WebFilter ([#2566](https://github.com/getsentry/sentry-java/pull/2566))
+- Switch upstream Jetpack Compose dependencies to `compileOnly` in `sentry-compose-android` ([#2578](https://github.com/getsentry/sentry-java/pull/2578))
+  - NOTE: If you're using Compose Navigation/User Interaction integrations, make sure to have the following dependencies on the classpath as we do not bring them in transitively anymore:
+    - `androidx.navigation:navigation-compose:`
+    - `androidx.compose.runtime:runtime:`
+    - `androidx.compose.ui:ui:`
 
 ## 6.14.0
 

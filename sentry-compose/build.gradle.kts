@@ -38,10 +38,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(compose.runtime)
-                api(compose.ui)
+                compileOnly(compose.runtime)
+                compileOnly(compose.ui)
 
-                implementation(Config.Libs.kotlinStdLib)
                 api(projects.sentryComposeHelper)
             }
         }
@@ -50,7 +49,7 @@ kotlin {
                 api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
-                api(Config.Libs.composeNavigation)
+                compileOnly(Config.Libs.composeNavigation)
                 implementation(Config.Libs.lifecycleCommonJava8)
             }
         }
@@ -59,6 +58,7 @@ kotlin {
                 implementation(Config.TestLibs.kotlinTestJunit)
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
+                implementation(Config.Libs.composeNavigation)
             }
         }
     }
