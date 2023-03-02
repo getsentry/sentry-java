@@ -22,6 +22,7 @@
 
 - Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
 - Allow `0.0` error sample rate ([#2573](https://github.com/getsentry/sentry-java/pull/2573))
+- Fix memory leak in WebFlux related to an ever growing stack ([#2580](https://github.com/getsentry/sentry-java/pull/2580))
 - Use the same hub in WebFlux exception handler as we do in WebFilter ([#2566](https://github.com/getsentry/sentry-java/pull/2566))
 
 ## 6.14.0
