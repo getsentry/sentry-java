@@ -1,23 +1,18 @@
 package io.sentry.spring.jakarta.webflux;
 
-import com.jakewharton.nopen.annotation.Open;
+import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_REQUEST;
+import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
 
+import io.sentry.Breadcrumb;
+import io.sentry.Hint;
+import io.sentry.IHub;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
-
-import io.sentry.Breadcrumb;
-import io.sentry.Hint;
-import io.sentry.IHub;
-import io.sentry.Sentry;
-import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_REQUEST;
-import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
-import io.sentry.util.Objects;
-import reactor.core.publisher.Mono;
 
 /** Manages {@link io.sentry.Scope} in Webflux request processing. */
 @ApiStatus.Experimental
@@ -34,7 +29,8 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     requestHub.popScope();
   }
 
-  protected void doFirst(final @NotNull ServerWebExchange serverWebExchange, final @NotNull IHub requestHub) {
+  protected void doFirst(
+      final @NotNull ServerWebExchange serverWebExchange, final @NotNull IHub requestHub) {
     serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
     requestHub.pushScope();
     final ServerHttpRequest request = serverWebExchange.getRequest();
@@ -43,10 +39,9 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     final Hint hint = new Hint();
     hint.set(WEBFLUX_FILTER_REQUEST, request);
     hint.set(WEBFLUX_FILTER_RESPONSE, response);
-    final String methodName =
-      request.getMethod() != null ? request.getMethod().name() : "unknown";
+    final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
     requestHub.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
     requestHub.configureScope(
-      scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
+        scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
   }
 }
