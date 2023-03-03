@@ -207,6 +207,6 @@ public class MainActivity extends AppCompatActivity {
     if (span != null) {
       span.setMeasurement("screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
     }
-    Sentry.reportFullDisplayed();
+    Sentry.reportFullyDisplayed();
   }
 }

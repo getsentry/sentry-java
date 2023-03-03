@@ -572,5 +572,13 @@ public interface IHub {
    * <p>This method is safe to be called multiple times. If the time-to-full-display span is already
    * finished, this call will be ignored.
    */
-  void reportFullDisplayed();
+  void reportFullyDisplayed();
+
+  /**
+   * @deprecated See {@link IHub#reportFullyDisplayed()}.
+   */
+  @Deprecated
+  default void reportFullDisplayed() {
+    reportFullyDisplayed();
+  }
 }

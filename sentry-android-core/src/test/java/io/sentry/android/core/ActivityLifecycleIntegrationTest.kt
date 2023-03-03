@@ -12,7 +12,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.FullDisplayedReporter
+import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
 import io.sentry.ISentryExecutorService
 import io.sentry.Scope
@@ -66,7 +66,7 @@ class ActivityLifecycleIntegrationTest {
         val bundle = mock<Bundle>()
         val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
-        val fullDisplayedReporter = FullDisplayedReporter.getInstance()
+        val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
         lateinit var transaction: SentryTracer
         val buildInfo = mock<BuildInfoProvider>()
@@ -729,7 +729,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
         sut.ttidSpanMap.values.first().finish()
-        fixture.fullDisplayedReporter.reportFullyDrawn()
+        fixture.fullyDisplayedReporter.reportFullyDrawn()
         assertTrue(sut.ttfdSpan!!.isFinished)
         assertNotEquals(SpanStatus.CANCELLED, sut.ttfdSpan?.status)
     }
