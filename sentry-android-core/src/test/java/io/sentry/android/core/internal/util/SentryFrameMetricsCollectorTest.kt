@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
+import android.view.Choreographer
 import android.view.Window
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,7 +18,9 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows
 import java.lang.ref.WeakReference
+import java.lang.reflect.Field
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -73,12 +77,7 @@ class SentryFrameMetricsCollectorTest {
             whenever(activity2.window).thenReturn(window2)
             addOnFrameMetricsAvailableListenerCounter = 0
             removeOnFrameMetricsAvailableListenerCounter = 0
-            return SentryFrameMetricsCollector(
-                context,
-                options,
-                buildInfoProvider,
-                windowFrameMetricsManager
-            )
+            return SentryFrameMetricsCollector(context, options, buildInfoProvider, windowFrameMetricsManager)
         }
     }
 
@@ -250,5 +249,19 @@ class SentryFrameMetricsCollectorTest {
         // Stopping last activity clears current tracked window reference
         collector.onActivityStopped(fixture.activity2)
         assertNull(collector.getProperty<WeakReference<Window>?>("currentWindow"))
+    }
+
+    @Test
+    fun `collector accesses choreographer instance on creation on main thread`() {
+        val collector = fixture.getSut(context)
+        val field: Field? = collector.getProperty("choreographerLastFrameTimeField")
+        var choreographer: Choreographer? = collector.getProperty("choreographer")
+        // Choreographer instance is accessed on main thread, but the field accessor happens in whatever thread created the collector
+        assertNotNull(field)
+        assertNull(choreographer)
+        // Execute all posted tasks
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        choreographer = collector.getProperty("choreographer")
+        assertNotNull(choreographer)
     }
 }

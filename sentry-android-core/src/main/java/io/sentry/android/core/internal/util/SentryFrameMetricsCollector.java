@@ -8,6 +8,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
+import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
 import androidx.annotation.RequiresApi;
@@ -16,6 +18,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,8 +40,11 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final WindowFrameMetricsManager windowFrameMetricsManager;
 
   private @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener;
+  private @Nullable Choreographer choreographer;
+  private @Nullable Field choreographerLastFrameTimeField;
+  private long lastFrameStartNanos = 0;
+  private long lastFrameEndNanos = 0;
 
-  @SuppressWarnings("deprecation")
   @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
@@ -48,7 +54,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @SuppressWarnings("deprecation")
-  @SuppressLint("NewApi")
+  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -83,16 +89,81 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     // start a profile, we wouldn't have the current activity and couldn't get the frameMetrics.
     ((Application) context).registerActivityLifecycleCallbacks(this);
 
+    // Most considerations regarding timestamps of frames are inspired from JankStats library:
+    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt
+
+    // The Choreographer instance must be accessed on the main thread
+    new Handler(Looper.getMainLooper()).post(() -> choreographer = Choreographer.getInstance());
+    // Let's get the last frame timestamp from the choreographer private field
+    try {
+      choreographerLastFrameTimeField = Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
+      choreographerLastFrameTimeField.setAccessible(true);
+    } catch (NoSuchFieldException e) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
+    }
     frameMetricsAvailableListener =
         (window, frameMetrics, dropCountSinceLastInvocation) -> {
-          float refreshRate =
+          final long now = System.nanoTime();
+          final float refreshRate =
               buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R
                   ? window.getContext().getDisplay().getRefreshRate()
                   : window.getWindowManager().getDefaultDisplay().getRefreshRate();
+
+          final long cpuDuration = getFrameCpuDuration(frameMetrics);
+          long startTime = getFrameStartTimestamp();
+          // If we couldn't get the timestamp through reflection, we use current time
+          if (startTime == -1) {
+            startTime = now - cpuDuration;
+          }
+          // Let's "adjust" the start time of a frame to be after the end of the previous frame
+          startTime = Math.max(startTime, lastFrameEndNanos);
+          // Let's avoid emitting duplicates (start time equals to last start time)
+          if (startTime == lastFrameStartNanos) {
+            return;
+          }
+          lastFrameStartNanos = startTime;
+          lastFrameEndNanos = startTime + cpuDuration;
+
           for (FrameMetricsCollectorListener l : listenerMap.values()) {
-            l.onFrameMetricCollected(frameMetrics, refreshRate);
+            l.onFrameMetricCollected(lastFrameEndNanos, cpuDuration, refreshRate);
           }
         };
+  }
+
+  /**
+   * Return the internal timestamp in the choreographer of the last frame start timestamp through
+   * reflection.
+   */
+  private long getFrameStartTimestamp() {
+    // Let's read the choreographer private field to get start timestamp of the frame, which
+    // uses System.nanoTime() under the hood
+    if (choreographer != null && choreographerLastFrameTimeField != null) {
+      try {
+        Long choreographerFrameStartTime =
+            (Long) choreographerLastFrameTimeField.get(choreographer);
+        if (choreographerFrameStartTime != null) {
+          return choreographerFrameStartTime;
+        }
+      } catch (IllegalAccessException ignored) {
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Return time spent on the main thread (cpu) for frame creation. It doesn't consider time spent
+   * on the render thread (gpu).
+   */
+  @RequiresApi(api = Build.VERSION_CODES.N)
+  private long getFrameCpuDuration(final @NotNull FrameMetrics frameMetrics) {
+    return frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION)
+        + frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION)
+        + frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION)
+        + frameMetrics.getMetric(FrameMetrics.LAYOUT_MEASURE_DURATION)
+        + frameMetrics.getMetric(FrameMetrics.DRAW_DURATION)
+        + frameMetrics.getMetric(FrameMetrics.SYNC_DURATION);
   }
 
   // addOnFrameMetricsAvailableListener internally calls Activity.getWindow().getDecorView(),
@@ -192,7 +263,16 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @ApiStatus.Internal
   public interface FrameMetricsCollectorListener {
-    void onFrameMetricCollected(final @NotNull FrameMetrics frameMetrics, final float refreshRate);
+    /**
+     * Called when a frame is collected.
+     *
+     * @param frameEndNanos End timestamp of a frame in nanoseconds relative to System.nanotime().
+     * @param durationNanos Duration in nanoseconds of the time spent from the cpu on the main
+     *     thread to create the frame.
+     * @param refreshRate Refresh rate of the screen.
+     */
+    void onFrameMetricCollected(
+        final long frameEndNanos, final long durationNanos, final float refreshRate);
   }
 
   @ApiStatus.Internal
