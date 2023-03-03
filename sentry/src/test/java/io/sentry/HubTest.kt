@@ -22,6 +22,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -1688,6 +1689,13 @@ class HubTest {
         assertTrue(called)
         hub.reportFullyDisplayed()
         assertTrue(called)
+    }
+
+    @Test
+    fun `reportFullDisplayed calls reportFullyDisplayed`() {
+        val hub = spy(generateHub())
+        hub.reportFullDisplayed()
+        verify(hub).reportFullyDisplayed()
     }
 
     private val dsnTest = "https://key@sentry.io/proj"
