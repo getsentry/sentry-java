@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fixed timestamps of slow and frozen frames ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
+
 ## 6.15.0
 
 ### Features
