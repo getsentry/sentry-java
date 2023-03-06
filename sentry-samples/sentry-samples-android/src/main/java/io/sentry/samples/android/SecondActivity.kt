@@ -76,7 +76,7 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(true, "error: ${t.message}")
 
-                Sentry.reportFullDisplayed()
+                Sentry.reportFullyDisplayed()
             }
 
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
@@ -86,7 +86,7 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(text = "items: ${repos.size}")
 
-                Sentry.reportFullDisplayed()
+                Sentry.reportFullyDisplayed()
             }
         })
     }

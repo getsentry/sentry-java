@@ -38,6 +38,6 @@ class PermissionsActivity : AppCompatActivity() {
         }
 
         setContentView(binding.root)
-        Sentry.reportFullDisplayed()
+        Sentry.reportFullyDisplayed()
     }
 }
