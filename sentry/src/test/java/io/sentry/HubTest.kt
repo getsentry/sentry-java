@@ -22,6 +22,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -1648,46 +1649,50 @@ class HubTest {
     }
 
     @Test
-    fun `reportFullDisplayed is ignored if TimeToFullDisplayTracing is disabled`() {
+    fun `reportFullyDisplayed is ignored if TimeToFullDisplayTracing is disabled`() {
         var called = false
         val hub = generateHub {
-            it.fullDisplayedReporter.registerFullyDrawnListener {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
-                true
             }
         }
-        hub.reportFullDisplayed()
+        hub.reportFullyDisplayed()
         assertFalse(called)
     }
 
     @Test
-    fun `reportFullDisplayed calls FullDisplayedReporter if TimeToFullDisplayTracing is enabled`() {
+    fun `reportFullyDisplayed calls FullyDisplayedReporter if TimeToFullDisplayTracing is enabled`() {
         var called = false
         val hub = generateHub {
             it.isEnableTimeToFullDisplayTracing = true
-            it.fullDisplayedReporter.registerFullyDrawnListener {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
-                true
             }
         }
-        hub.reportFullDisplayed()
+        hub.reportFullyDisplayed()
         assertTrue(called)
     }
 
     @Test
-    fun `reportFullDisplayed calls FullDisplayedReporter only once`() {
+    fun `reportFullyDisplayed calls FullyDisplayedReporter only once`() {
         var called = false
         val hub = generateHub {
             it.isEnableTimeToFullDisplayTracing = true
-            it.fullDisplayedReporter.registerFullyDrawnListener {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
-                true
             }
         }
-        hub.reportFullDisplayed()
+        hub.reportFullyDisplayed()
         assertTrue(called)
-        hub.reportFullDisplayed()
+        hub.reportFullyDisplayed()
         assertTrue(called)
+    }
+
+    @Test
+    fun `reportFullDisplayed calls reportFullyDisplayed`() {
+        val hub = spy(generateHub())
+        hub.reportFullDisplayed()
+        verify(hub).reportFullyDisplayed()
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

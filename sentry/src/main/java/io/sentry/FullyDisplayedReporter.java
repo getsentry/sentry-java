@@ -7,26 +7,26 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public final class FullDisplayedReporter {
+public final class FullyDisplayedReporter {
 
-  private static final @NotNull FullDisplayedReporter instance = new FullDisplayedReporter();
+  private static final @NotNull FullyDisplayedReporter instance = new FullyDisplayedReporter();
 
-  private final @NotNull List<FullDisplayedReporterListener> listeners =
+  private final @NotNull List<FullyDisplayedReporterListener> listeners =
       new CopyOnWriteArrayList<>();
 
-  private FullDisplayedReporter() {}
+  private FullyDisplayedReporter() {}
 
-  public static @NotNull FullDisplayedReporter getInstance() {
+  public static @NotNull FullyDisplayedReporter getInstance() {
     return instance;
   }
 
   public void registerFullyDrawnListener(
-      final @NotNull FullDisplayedReporter.FullDisplayedReporterListener listener) {
+      final @NotNull FullyDisplayedReporter.FullyDisplayedReporterListener listener) {
     listeners.add(listener);
   }
 
   public void reportFullyDrawn() {
-    final @NotNull Iterator<FullDisplayedReporterListener> listenerIterator = listeners.iterator();
+    final @NotNull Iterator<FullyDisplayedReporterListener> listenerIterator = listeners.iterator();
     listeners.clear();
     while (listenerIterator.hasNext()) {
       listenerIterator.next().onFullyDrawn();
@@ -34,7 +34,7 @@ public final class FullDisplayedReporter {
   }
 
   @ApiStatus.Internal
-  public interface FullDisplayedReporterListener {
+  public interface FullyDisplayedReporterListener {
     void onFullyDrawn();
   }
 }
