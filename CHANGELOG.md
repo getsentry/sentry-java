@@ -6,6 +6,10 @@
 
 - Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
 
+### Fixes
+
+- Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+
 ## 6.15.0
 
 ### Features

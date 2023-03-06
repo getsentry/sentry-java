@@ -406,8 +406,8 @@ public class SentryOptions {
   private boolean enableTimeToFullDisplayTracing = false;
 
   /** Screen fully displayed reporter, used for time-to-full-display spans. */
-  private final @NotNull FullDisplayedReporter fullDisplayedReporter =
-      FullDisplayedReporter.getInstance();
+  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
+      FullyDisplayedReporter.getInstance();
 
   /**
    * Adds an event processor
@@ -1967,8 +1967,8 @@ public class SentryOptions {
    * @return The reporter to call when a screen is fully loaded.
    */
   @ApiStatus.Internal
-  public @NotNull FullDisplayedReporter getFullDisplayedReporter() {
-    return fullDisplayedReporter;
+  public @NotNull FullyDisplayedReporter getFullyDisplayedReporter() {
+    return fullyDisplayedReporter;
   }
 
   /**

@@ -478,6 +478,28 @@ class SentryTest {
         assertTrue { sentryOptions!!.collectors.any { it is CustomMemoryCollector } }
     }
 
+    @Test
+    fun `reportFullyDisplayed calls hub reportFullyDisplayed`() {
+        val hub = mock<IHub>()
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentHub(hub)
+        Sentry.reportFullyDisplayed()
+        verify(hub).reportFullyDisplayed()
+    }
+
+    @Test
+    fun `reportFullDisplayed calls reportFullyDisplayed`() {
+        val hub = mock<IHub>()
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentHub(hub)
+        Sentry.reportFullDisplayed()
+        verify(hub).reportFullyDisplayed()
+    }
+
     private class CustomMainThreadChecker : IMainThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
     }
