@@ -91,15 +91,25 @@ class SentryTimberIntegrationTest {
     }
 
     @Test
-    fun `Integrations adds itself to the package list`() {
+    fun `Integration adds itself to the package list`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
         assertTrue(
-            fixture.options.sdkVersion!!.packages!!.any {
+            fixture.options.sdkVersion!!.packageSet.any {
                 it.name == "maven:io.sentry:sentry-android-timber" &&
                     it.version == BuildConfig.VERSION_NAME
             }
+        )
+    }
+
+    @Test
+    fun `Integration adds itself to the integration list`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        assertTrue(
+            fixture.options.sdkVersion!!.integrationSet.contains("Timber")
         )
     }
 }

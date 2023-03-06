@@ -3,7 +3,9 @@ package io.sentry;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
+import io.sentry.internal.modules.CompositeModulesLoader;
 import io.sentry.internal.modules.IModulesLoader;
+import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.protocol.SentryId;
@@ -15,6 +17,7 @@ import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +56,20 @@ public final class Sentry {
       currentHub.set(hub);
     }
     return hub;
+  }
+
+  /**
+   * Returns a new hub which is cloned from the mainHub.
+   *
+   * @return the hub
+   */
+  @ApiStatus.Internal
+  @ApiStatus.Experimental
+  public static @NotNull IHub cloneMainHub() {
+    if (globalHubMode) {
+      return mainHub;
+    }
+    return mainHub.clone();
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -276,10 +293,14 @@ public final class Sentry {
               });
     }
 
-    final IModulesLoader modulesLoader = options.getModulesLoader();
-    // only override the ModulesLoader if it's not already set by Android
+    final @NotNull IModulesLoader modulesLoader = options.getModulesLoader();
     if (modulesLoader instanceof NoOpModulesLoader) {
-      options.setModulesLoader(new ResourcesModulesLoader(options.getLogger()));
+      options.setModulesLoader(
+          new CompositeModulesLoader(
+              Arrays.asList(
+                  new ManifestModulesLoader(options.getLogger()),
+                  new ResourcesModulesLoader(options.getLogger())),
+              options.getLogger()));
     }
 
     final IMainThreadChecker mainThreadChecker = options.getMainThreadChecker();
@@ -842,6 +863,18 @@ public final class Sentry {
    */
   public static @Nullable Boolean isCrashedLastRun() {
     return getCurrentHub().isCrashedLastRun();
+  }
+
+  /**
+   * Report a screen has been fully loaded. That means all data needed by the UI was loaded. If
+   * time-to-full-display tracing {{@link SentryOptions#isEnableTimeToFullDisplayTracing()} } is
+   * disabled this call is ignored.
+   *
+   * <p>This method is safe to be called multiple times. If the time-to-full-display span is already
+   * finished, this call will be ignored.
+   */
+  public static void reportFullDisplayed() {
+    getCurrentHub().reportFullDisplayed();
   }
 
   /**

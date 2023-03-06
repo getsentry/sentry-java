@@ -5,21 +5,31 @@ import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.os.Bundle
+import android.os.Looper
+import android.view.View
+import android.view.ViewTreeObserver
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
+import io.sentry.FullDisplayedReporter
 import io.sentry.Hub
+import io.sentry.ISentryExecutorService
 import io.sentry.Scope
 import io.sentry.SentryDate
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.Span
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
 import io.sentry.TransactionOptions
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.test.getProperty
+import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -28,16 +38,22 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 import java.util.Date
+import java.util.concurrent.Callable
+import java.util.concurrent.Future
+import java.util.concurrent.FutureTask
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
+@RunWith(AndroidJUnit4::class)
 class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
@@ -50,6 +66,7 @@ class ActivityLifecycleIntegrationTest {
         val bundle = mock<Bundle>()
         val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
+        val fullDisplayedReporter = FullDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
         lateinit var transaction: SentryTracer
         val buildInfo = mock<BuildInfoProvider>()
@@ -70,6 +87,17 @@ class ActivityLifecycleIntegrationTest {
             whenever(am.runningAppProcesses).thenReturn(processes)
 
             return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
+        }
+
+        fun createView(): View {
+            val view = View(ApplicationProvider.getApplicationContext())
+
+            // Adding a listener forces ViewTreeObserver.mOnDrawListeners to be initialized and non-null.
+            val dummyListener = ViewTreeObserver.OnDrawListener {}
+            view.viewTreeObserver.addOnDrawListener(dummyListener)
+            view.viewTreeObserver.removeOnDrawListener(dummyListener)
+
+            return view
         }
     }
 
@@ -92,6 +120,29 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity lifecycle breadcrumb and tracing are disabled, it doesn't register callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
+
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+    }
+
+    @Test
+    fun `When activity lifecycle breadcrumb is disabled but tracing is enabled, it registers callback`() {
+        val sut = fixture.getSut()
+        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
+        fixture.options.enableTracing = true
+
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    }
+
+    @Test
+    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it does not register callback`() {
+        val sut = fixture.getSut()
+        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.enableTracing = false
 
         sut.register(fixture.hub, fixture.options)
 
@@ -366,14 +417,16 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When tracing auto finish is enabled and ttid span is finished, it stops the transaction on onActivityPostResumed`() {
+    fun `When tracing auto finish is enabled and ttid and ttfd spans are finished, it stops the transaction on onActivityPostResumed`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.ttidSpanMap.values.first().finish()
+        sut.ttfdSpan?.finish()
         sut.onActivityPostResumed(activity)
 
         verify(fixture.hub).captureTransaction(
@@ -526,7 +579,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When Activity is destroyed, sets ttidSpan status to cancelled and finish it`() {
+    fun `When Activity is destroyed, sets ttidSpan status to deadline_exceeded and finish it`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -538,7 +591,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityDestroyed(activity)
 
         val span = fixture.transaction.children.first { it.operation == ActivityLifecycleIntegration.TTID_OP }
-        assertEquals(SpanStatus.CANCELLED, span.status)
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, span.status)
         assertTrue(span.isFinished)
     }
 
@@ -556,6 +609,41 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityDestroyed(activity)
         assertNull(sut.ttidSpanMap[activity])
+    }
+
+    @Test
+    fun `When Activity is destroyed, sets ttfdSpan status to deadline_exceeded and finish it`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
+
+        val span = fixture.transaction.children.first { it.operation == ActivityLifecycleIntegration.TTFD_OP }
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, span.status)
+        assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `When Activity is destroyed, sets ttfdSpan to null`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        assertNotNull(sut.ttfdSpan)
+
+        sut.onActivityDestroyed(activity)
+        assertNull(sut.ttfdSpan)
     }
 
     @Test
@@ -598,17 +686,52 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `stop transaction on resumed if API 29 less than 29 and ttid is finished`() {
+    fun `stop transaction on resumed if API 29 less than 29 and ttid and ttfd are finished`() {
         val sut = fixture.getSut(14)
         fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
         sut.ttidSpanMap.values.first().finish()
+        sut.ttfdSpan?.finish()
         sut.onActivityResumed(activity)
 
         verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `stop transaction on resumed does not finish ttfd if isEnableTimeToFullDisplayTracing`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+        val ttfd = sut.ttfdSpan
+        sut.ttidSpanMap.values.first().finish()
+        sut.onActivityResumed(activity)
+        sut.onActivityPostResumed(activity)
+
+        assertNotNull(ttfd)
+        assertFalse(ttfd.isFinished)
+    }
+
+    @Test
+    fun `reportFullyDrawn finishes the ttfd`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+        sut.ttidSpanMap.values.first().finish()
+        fixture.fullDisplayedReporter.reportFullyDrawn()
+        assertTrue(sut.ttfdSpan!!.isFinished)
+        assertNotEquals(SpanStatus.CANCELLED, sut.ttfdSpan?.status)
     }
 
     @Test
@@ -905,6 +1028,184 @@ class ActivityLifecycleIntegrationTest {
         }
 
         sut.onActivityDestroyed(activity)
+    }
+
+    @Test
+    fun `When transaction is started and isEnableTimeToFullDisplayTracing is disabled, no ttfd span is started`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = false
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        assertNull(sut.ttfdSpan)
+    }
+
+    @Test
+    fun `When transaction is started and isEnableTimeToFullDisplayTracing is enabled, ttfd span is started`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        assertNotNull(sut.ttfdSpan)
+    }
+
+    @Test
+    fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is not called, ttfd span is finished automatically with timeout`() {
+        val sut = fixture.getSut()
+        var lastScheduledRunnable: Runnable? = null
+        val mockExecutorService = object : ISentryExecutorService {
+            override fun submit(runnable: Runnable): Future<*> = mock()
+            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
+            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+                lastScheduledRunnable = runnable
+                return FutureTask {}
+            }
+            override fun close(timeoutMillis: Long) {}
+        }
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        fixture.options.executorService = mockExecutorService
+        sut.register(fixture.hub, fixture.options)
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        val ttfdSpan = sut.ttfdSpan
+
+        // Assert the ttfd span is running and a timeout autoCancel task has been scheduled
+        assertNotNull(ttfdSpan)
+        assertFalse(ttfdSpan.isFinished)
+        assertNotNull(lastScheduledRunnable)
+
+        // Run the autoClose task and assert the ttfd span is finished with deadlineExceeded
+        lastScheduledRunnable!!.run()
+        assertTrue(ttfdSpan.isFinished)
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
+    }
+
+    @Test
+    fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is called, ttfd autoClose future is cancelled`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        val ttfdSpan = sut.ttfdSpan
+        var autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
+
+        // Assert the ttfd span is running and a timeout autoCancel future has been scheduled
+        assertNotNull(ttfdSpan)
+        assertFalse(ttfdSpan.isFinished)
+        assertNotNull(autoCloseFuture)
+
+        // ReportFullyDrawn should finish the ttfd span and cancel the future
+        fixture.options.fullDisplayedReporter.reportFullyDrawn()
+        assertTrue(ttfdSpan.isFinished)
+        assertNotEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
+        assertTrue(autoCloseFuture.isCancelled)
+
+        // The current internal reference to autoClose future should be null after ReportFullyDrawn
+        autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
+        assertNull(autoCloseFuture)
+    }
+
+    @Test
+    fun `When isEnableTimeToFullDisplayTracing is true and another activity starts, the old ttfd is finished and the old autoClose future is cancelled`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+        val activity = mock<Activity>()
+        val activity2 = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        val ttfdSpan = sut.ttfdSpan
+        val autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
+
+        // Assert the ttfd span is running and a timeout autoCancel future has been scheduled
+        assertNotNull(ttfdSpan)
+        assertFalse(ttfdSpan.isFinished)
+        assertNotNull(autoCloseFuture)
+
+        // Starting a new Activity should finish the old ttfd span with deadlineExceeded and cancel the old future
+        sut.onActivityCreated(activity2, fixture.bundle)
+        assertTrue(ttfdSpan.isFinished)
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
+        assertTrue(autoCloseFuture.isCancelled)
+
+        // Another autoClose future and ttfd span should be started after the second activity starts
+        val autoCloseFuture2 = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
+        val ttfdSpan2 = sut.ttfdSpan
+        assertNotNull(ttfdSpan2)
+        assertFalse(ttfdSpan2.isFinished)
+        assertNotNull(autoCloseFuture2)
+        assertFalse(autoCloseFuture2.isCancelled)
+    }
+
+    @Test
+    fun `ttid is finished after first frame drawn`() {
+        val sut = fixture.getSut()
+        val view = fixture.createView()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = 1.0
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
+
+        // Make the integration create the spans and register to the FirstDrawDoneListener
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+
+        // The ttid span should be running
+        val ttidSpan = sut.ttidSpanMap[activity]
+        assertNotNull(ttidSpan)
+        assertFalse(ttidSpan.isFinished)
+
+        // Mock the draw of the view. The ttid span should finish now
+        runFirstDraw(view)
+        assertTrue(ttidSpan.isFinished)
+    }
+
+    @Test
+    fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is called too early, ttfd is adjusted to equal ttid`() {
+        val sut = fixture.getSut()
+        val view = fixture.createView()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
+
+        // Make the integration create the spans and register to the FirstDrawDoneListener
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+
+        // The ttid and ttfd spans should be running
+        val ttidSpan = sut.ttidSpanMap[activity] as Span
+        val ttfdSpan = sut.ttfdSpan as Span
+        assertFalse(ttidSpan.isFinished)
+        assertFalse(ttfdSpan.isFinished)
+
+        // Let's finish the ttfd span too early (before the first view is drawn)
+        ttfdSpan.finish()
+        assertTrue(ttfdSpan.isFinished)
+        val oldEndDate = ttfdSpan.finishDate
+
+        // Mock the draw of the view. The ttid span should finish now and the ttfd end date should be adjusted
+        runFirstDraw(view)
+        assertTrue(ttidSpan.isFinished)
+        val newEndDate = ttfdSpan.finishDate
+        assertNotEquals(newEndDate, oldEndDate)
+        assertEquals(newEndDate, ttidSpan.finishDate)
+    }
+
+    private fun runFirstDraw(view: View) {
+        // Removes OnDrawListener in the next OnGlobalLayout after onDraw
+        view.viewTreeObserver.dispatchOnDraw()
+        view.viewTreeObserver.dispatchOnGlobalLayout()
+        shadowOf(Looper.getMainLooper()).idle()
     }
 
     private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(0), 0)) {

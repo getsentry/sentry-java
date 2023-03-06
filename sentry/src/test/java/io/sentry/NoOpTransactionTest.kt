@@ -1,6 +1,8 @@
 package io.sentry
 
+import org.mockito.kotlin.mock
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -27,5 +29,10 @@ class NoOpTransactionTest {
     @Test
     fun `isProfileSampled returns null`() {
         assertNull(transaction.isProfileSampled)
+    }
+
+    @Test
+    fun `updateEndDate return false`() {
+        assertFalse(transaction.updateEndDate(mock()))
     }
 }

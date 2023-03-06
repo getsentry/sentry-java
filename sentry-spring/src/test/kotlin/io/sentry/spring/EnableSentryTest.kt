@@ -47,8 +47,8 @@ class EnableSentryTest {
             assertThat(options.sdkVersion).isNotNull
             assertThat(options.sdkVersion!!.name).isEqualTo("sentry.java.spring")
             assertThat(options.sdkVersion!!.version).isEqualTo(BuildConfig.VERSION_NAME)
-            assertThat(options.sdkVersion!!.packages).isNotNull
-            assertThat(options.sdkVersion!!.packages!!.map { pkg -> pkg.name }).contains("maven:io.sentry:sentry-spring")
+            assertThat(options.sdkVersion!!.packageSet.map { pkg -> pkg.name }).contains("maven:io.sentry:sentry-spring")
+            assertThat(options.sdkVersion!!.integrationSet).contains("Spring")
         }
     }
 

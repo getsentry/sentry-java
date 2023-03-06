@@ -73,6 +73,7 @@ public final class AnrIntegration implements Integration, Closeable {
           anrWatchDog.start();
 
           options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
+          addIntegrationToSdkVersion();
         }
       }
     }

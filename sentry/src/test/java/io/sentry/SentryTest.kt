@@ -2,8 +2,8 @@ package io.sentry
 
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
+import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
-import io.sentry.internal.modules.ResourcesModulesLoader
 import io.sentry.protocol.SentryId
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
@@ -22,6 +22,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryTest {
@@ -242,6 +243,108 @@ class SentryTest {
     }
 
     @Test
+    fun `main hub can be cloned and does not share scope with current hub`() {
+        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        Sentry.addBreadcrumb("breadcrumbNoOp")
+        Sentry.captureMessage("messageNoOp")
+
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+
+        val capturedEvents = mutableListOf<SentryEvent>()
+
+        // init Sentry in another thread
+        val thread = Thread() {
+            Sentry.init {
+                it.dsn = dsn
+                it.isDebug = true
+                it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+                    capturedEvents.add(event)
+                    event
+                }
+            }
+        }
+        thread.start()
+        thread.join()
+
+        Sentry.addBreadcrumb("breadcrumbCurrent")
+
+        val hub = Sentry.getCurrentHub()
+        assertNotNull(hub)
+        assertFalse(hub is NoOpHub)
+
+        val newMainHubClone = Sentry.cloneMainHub()
+        newMainHubClone.addBreadcrumb("breadcrumbMainClone")
+
+        hub.captureMessage("messageCurrent")
+        newMainHubClone.captureMessage("messageMainClone")
+
+        assertEquals(2, capturedEvents.size)
+        val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
+        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+
+        assertNotNull(mainCloneEvent)
+        assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+
+        assertNotNull(currentHubEvent)
+        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+    }
+
+    @Test
+    fun `main hub is not cloned in global hub mode and shares scope with current hub`() {
+        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        Sentry.addBreadcrumb("breadcrumbNoOp")
+        Sentry.captureMessage("messageNoOp")
+
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+
+        val capturedEvents = mutableListOf<SentryEvent>()
+
+        // init Sentry in another thread
+        val thread = Thread() {
+            Sentry.init({
+                it.dsn = dsn
+                it.isDebug = true
+                it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+                    capturedEvents.add(event)
+                    event
+                }
+            }, true)
+        }
+        thread.start()
+        thread.join()
+
+        Sentry.addBreadcrumb("breadcrumbCurrent")
+
+        val hub = Sentry.getCurrentHub()
+        assertNotNull(hub)
+        assertFalse(hub is NoOpHub)
+
+        val newMainHubClone = Sentry.cloneMainHub()
+        newMainHubClone.addBreadcrumb("breadcrumbMainClone")
+
+        hub.captureMessage("messageCurrent")
+        newMainHubClone.captureMessage("messageMainClone")
+
+        assertEquals(2, capturedEvents.size)
+        val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
+        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+
+        assertNotNull(mainCloneEvent)
+        assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+
+        assertNotNull(currentHubEvent)
+        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+    }
+
+    @Test
     fun `when init is called and configure throws an exception then an error is logged`() {
         val logger = mock<ILogger>()
         val initException = Exception("init")
@@ -309,7 +412,7 @@ class SentryTest {
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.modulesLoader is ResourcesModulesLoader }
+        assertTrue { sentryOptions!!.modulesLoader is CompositeModulesLoader }
     }
 
     @Test

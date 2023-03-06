@@ -6,6 +6,7 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -14,6 +15,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +47,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * <p>Examples: `0.1.0`, `1.0.0`, `4.3.12`
    */
   private @NotNull String version;
+
   /**
    * List of installed and loaded SDK packages. _Optional._
    *
@@ -51,7 +56,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * is a Git repository, the `source` should be `git`, the identifier should be a checkout link and
    * the version should be a Git reference (branch, tag or SHA).
    */
-  private @Nullable List<SentryPackage> packages;
+  private @Nullable Set<SentryPackage> deserializedPackages;
   /**
    * List of integrations that are enabled in the SDK. _Optional._
    *
@@ -59,7 +64,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * integrations are included because different SDK releases may contain different default
    * integrations.
    */
-  private @Nullable List<String> integrations;
+  private @Nullable Set<String> deserializedIntegrations;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -86,31 +91,51 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
   }
 
   public void addPackage(final @NotNull String name, final @NotNull String version) {
-    Objects.requireNonNull(name, "name is required.");
-    Objects.requireNonNull(version, "version is required.");
-
-    SentryPackage newPackage = new SentryPackage(name, version);
-    if (packages == null) {
-      packages = new ArrayList<>();
-    }
-    packages.add(newPackage);
+    SentryIntegrationPackageStorage.getInstance().addPackage(name, version);
   }
 
   public void addIntegration(final @NotNull String integration) {
-    Objects.requireNonNull(integration, "integration is required.");
-
-    if (integrations == null) {
-      integrations = new ArrayList<>();
-    }
-    integrations.add(integration);
+    SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
   }
 
+  /**
+   * Gets installed Sentry packages as list
+   *
+   * @deprecated use {@link SdkVersion#getPackageSet()} ()}
+   */
+  @Deprecated
   public @Nullable List<SentryPackage> getPackages() {
-    return packages;
+    final Set<SentryPackage> packages =
+        deserializedPackages != null
+            ? deserializedPackages
+            : SentryIntegrationPackageStorage.getInstance().getPackages();
+    return new CopyOnWriteArrayList<>(packages);
   }
 
+  public @NotNull Set<SentryPackage> getPackageSet() {
+    return deserializedPackages != null
+        ? deserializedPackages
+        : SentryIntegrationPackageStorage.getInstance().getPackages();
+  }
+
+  /**
+   * Gets installed Sentry integration names as list
+   *
+   * @deprecated use {@link SdkVersion#getIntegrationSet()}
+   */
+  @Deprecated
   public @Nullable List<String> getIntegrations() {
-    return integrations;
+    final Set<String> integrations =
+        deserializedIntegrations != null
+            ? deserializedIntegrations
+            : SentryIntegrationPackageStorage.getInstance().getIntegrations();
+    return new CopyOnWriteArrayList<>(integrations);
+  }
+
+  public @NotNull Set<String> getIntegrationSet() {
+    return deserializedIntegrations != null
+        ? deserializedIntegrations
+        : SentryIntegrationPackageStorage.getInstance().getIntegrations();
   }
 
   /**
@@ -164,10 +189,12 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     writer.beginObject();
     writer.name(JsonKeys.NAME).value(name);
     writer.name(JsonKeys.VERSION).value(version);
-    if (packages != null && !packages.isEmpty()) {
+    Set<SentryPackage> packages = getPackageSet();
+    Set<String> integrations = getIntegrationSet();
+    if (!packages.isEmpty()) {
       writer.name(JsonKeys.PACKAGES).value(logger, packages);
     }
-    if (integrations != null && !integrations.isEmpty()) {
+    if (!integrations.isEmpty()) {
       writer.name(JsonKeys.INTEGRATIONS).value(logger, integrations);
     }
     if (unknown != null) {
@@ -240,8 +267,9 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
       }
 
       SdkVersion sdkVersion = new SdkVersion(name, version);
-      sdkVersion.packages = packages;
-      sdkVersion.integrations = integrations;
+      sdkVersion.deserializedPackages = new CopyOnWriteArraySet<>(packages);
+      sdkVersion.deserializedIntegrations = new CopyOnWriteArraySet<>(integrations);
+
       sdkVersion.setUnknown(unknown);
       return sdkVersion;
     }

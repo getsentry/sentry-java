@@ -11,6 +11,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.FATAL
 import io.sentry.SentryOptions
+import io.sentry.Session
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
@@ -18,6 +19,7 @@ import io.sentry.cache.IEnvelopeCache
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -188,12 +190,36 @@ class SentryAndroidTest {
     }
 
     @Test
-    fun `init starts a session if auto session tracking is enabled`() {
-        fixture.initSut { options ->
-            options.isEnableAutoSessionTracking = true
+    fun `init starts a session if auto session tracking is enabled and app is in foreground`() {
+        initSentryWithForegroundImportance(true) { session: Session? ->
+            assertNotNull(session)
         }
-        Sentry.getCurrentHub().withScope { scope ->
-            assertNotNull(scope.session)
+    }
+
+    @Test
+    fun `init does not start a session if auto session tracking is enabled but the app is in background`() {
+        initSentryWithForegroundImportance(false) { session: Session? ->
+            assertNull(session)
+        }
+    }
+
+    private fun initSentryWithForegroundImportance(inForeground: Boolean, callback: (session: Session?) -> Unit) {
+        val context = ContextUtilsTest.createMockContext()
+
+        Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
+            mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance(context) }
+                .thenReturn(inForeground)
+            SentryAndroid.init(context) { options ->
+                options.release = "prod"
+                options.dsn = "https://key@sentry.io/123"
+                options.isEnableAutoSessionTracking = true
+            }
+
+            var session: Session? = null
+            Sentry.getCurrentHub().configureScope { scope ->
+                session = scope.session
+            }
+            callback(session)
         }
     }
 

@@ -7,6 +7,7 @@ import io.sentry.IHub;
 import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
@@ -113,9 +114,10 @@ public class SentryAutoConfiguration {
             }
           });
 
-      options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
+      options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
-      if (options.getTracesSampleRate() == null) {
+      addPackageAndIntegrationInfo();
+      if (options.getTracesSampleRate() == null && options.getEnableTracing() == null) {
         options.setTracesSampleRate(0.0);
       }
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
@@ -316,13 +318,16 @@ public class SentryAutoConfiguration {
         final @NotNull SentryOptions sentryOptions) {
       SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-      final String name = BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME;
+      final String name = BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME;
       final String version = BuildConfig.VERSION_NAME;
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter", version);
-
       return sdkVersion;
+    }
+
+    private static void addPackageAndIntegrationInfo() {
+      SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
+      SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot3");
     }
   }
 
@@ -331,6 +336,10 @@ public class SentryAutoConfiguration {
     public SentryTracingCondition() {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
+
+    @ConditionalOnProperty(name = "sentry.enable-tracing")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryEnableTracingCondition {}
 
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")

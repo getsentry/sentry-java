@@ -77,3 +77,10 @@ tasks.withType<JavaCompile>().configureEach {
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
 }
+
+buildConfig {
+    useJavaOutput()
+    packageName("io.sentry.apollo3")
+    buildConfigField("String", "SENTRY_APOLLO3_SDK_NAME", "\"${Config.Sentry.SENTRY_APOLLO3_SDK_NAME}\"")
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+}

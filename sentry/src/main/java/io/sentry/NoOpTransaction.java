@@ -189,6 +189,11 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public boolean updateEndDate(final @NotNull SentryDate date) {
+    return false;
+  }
+
+  @Override
   public boolean isNoOp() {
     return true;
   }

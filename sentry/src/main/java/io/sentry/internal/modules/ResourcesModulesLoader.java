@@ -1,5 +1,7 @@
 package io.sentry.internal.modules;
 
+import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
+
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import java.io.InputStream;
@@ -20,12 +22,7 @@ public final class ResourcesModulesLoader extends ModulesLoader {
 
   ResourcesModulesLoader(final @NotNull ILogger logger, final @Nullable ClassLoader classLoader) {
     super(logger);
-    // bootstrap classloader is represented as null, so using system classloader instead
-    if (classLoader == null) {
-      this.classLoader = ClassLoader.getSystemClassLoader();
-    } else {
-      this.classLoader = classLoader;
-    }
+    this.classLoader = classLoaderOrDefault(classLoader);
   }
 
   @Override

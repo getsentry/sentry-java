@@ -53,6 +53,7 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterAop)
     compileOnly(Config.Libs.springBoot3StarterSecurity)
     compileOnly(Config.Libs.reactorCore)
+    compileOnly(Config.Libs.contextPropagation)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -79,6 +80,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(Config.Libs.contextPropagation)
 }
 
 configure<SourceSetContainer> {
@@ -133,7 +135,7 @@ task("jakartaMainClassTransformation", JavaExec::class) {
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.spring.boot.jakarta")
-    buildConfigField("String", "SENTRY_SPRING_BOOT_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 

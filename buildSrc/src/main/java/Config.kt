@@ -6,7 +6,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.0.0"
+    val springBoot3Version = "3.0.3"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.1.1"
@@ -107,7 +107,8 @@ object Config {
 
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
-        val reactorCore = "io.projectreactor:reactor-core:3.4.6"
+        val reactorCore = "io.projectreactor:reactor-core:3.5.3"
+        val contextPropagation = "io.micrometer:context-propagation:1.0.2"
 
         private val feignVersion = "11.6"
         val feignCore = "io.github.openfeign:feign-core:$feignVersion"
@@ -210,9 +211,17 @@ object Config {
         val SENTRY_JUL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jul"
         val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"
         val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
+        val SENTRY_SPRING_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring.jakarta"
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot.jakarta"
         val SENTRY_OPENTELEMETRY_AGENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agent"
+        val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
+        val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
+        val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
+        val SENTRY_JDBC_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jdbc"
+        val SENTRY_SERVLET_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet"
+        val SENTRY_SERVLET_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet.jakarta"
+        val SENTRY_COMPOSE_HELPER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.compose.helper"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"

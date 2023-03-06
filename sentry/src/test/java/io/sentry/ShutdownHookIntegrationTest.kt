@@ -9,6 +9,7 @@ import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class ShutdownHookIntegrationTest {
 
@@ -103,5 +104,16 @@ class ShutdownHookIntegrationTest {
         }
 
         verify(fixture.runtime).removeShutdownHook(any())
+    }
+
+    @Test
+    fun `Integration adds itself to integration list`() {
+        val integration = fixture.getSut()
+
+        integration.register(fixture.hub, fixture.options)
+
+        assertTrue(
+            fixture.options.sdkVersion!!.integrationSet.contains("ShutdownHook")
+        )
     }
 }
