@@ -66,8 +66,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
 
   @NotNull
   protected SentryEvent createEvent(
-      final @NotNull HttpServletRequest request,
-      final @NotNull Exception ex) {
+      final @NotNull HttpServletRequest request, final @NotNull Exception ex) {
 
     final Mechanism mechanism = new Mechanism();
     mechanism.setHandled(false);
@@ -83,8 +82,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
 
   @Nullable
   protected Hint createHint(
-      final @NotNull HttpServletRequest request,
-      final @NotNull HttpServletResponse response) {
+      final @NotNull HttpServletRequest request, final @NotNull HttpServletResponse response) {
 
     final Hint hint = new Hint();
     hint.set(SPRING_RESOLVER_REQUEST, request);

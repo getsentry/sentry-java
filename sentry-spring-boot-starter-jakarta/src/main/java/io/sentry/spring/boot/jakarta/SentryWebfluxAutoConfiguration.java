@@ -1,11 +1,11 @@
 package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-
 import io.sentry.IHub;
 import io.sentry.spring.jakarta.webflux.SentryScheduleHook;
 import io.sentry.spring.jakarta.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.jakarta.webflux.SentryWebFilter;
+import io.sentry.spring.jakarta.webflux.SentryWebFilterWithThreadLocalAccessor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.ApplicationRunner;
@@ -19,8 +19,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-
-import io.sentry.spring.jakarta.webflux.SentryWebFilterWithThreadLocalAccessor;
 import reactor.core.publisher.Hooks;
 import reactor.core.scheduler.Schedulers;
 
@@ -41,11 +39,12 @@ public class SentryWebfluxAutoConfiguration {
     /**
      * Configures a filter that sets up Sentry {@link io.sentry.Scope} for each request.
      *
-     * Makes use of newer reactor-core and context-propagation library feature ThreadLocalAccessor
-     * to propagate the Sentry hub.
+     * <p>Makes use of newer reactor-core and context-propagation library feature
+     * ThreadLocalAccessor to propagate the Sentry hub.
      */
     @Bean
-    public @NotNull SentryWebFilterWithThreadLocalAccessor sentryWebFilterWithContextPropagation(final @NotNull IHub hub) {
+    public @NotNull SentryWebFilterWithThreadLocalAccessor sentryWebFilterWithContextPropagation(
+        final @NotNull IHub hub) {
       Hooks.enableAutomaticContextPropagation();
       return new SentryWebFilterWithThreadLocalAccessor(hub);
     }
@@ -83,7 +82,10 @@ public class SentryWebfluxAutoConfiguration {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    @ConditionalOnProperty(name = "sentry.reactive.thread-local-accessor-enabled", havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(
+        name = "sentry.reactive.thread-local-accessor-enabled",
+        havingValue = "false",
+        matchIfMissing = true)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryDisableThreadLocalAccessorCondition {}
 
@@ -98,7 +100,9 @@ public class SentryWebfluxAutoConfiguration {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    @ConditionalOnProperty(name = "sentry.reactive.thread-local-accessor-enabled", havingValue = "true")
+    @ConditionalOnProperty(
+        name = "sentry.reactive.thread-local-accessor-enabled",
+        havingValue = "true")
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryEnableThreadLocalAccessorCondition {}
 
