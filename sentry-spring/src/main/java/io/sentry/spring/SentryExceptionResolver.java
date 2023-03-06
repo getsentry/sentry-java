@@ -50,18 +50,8 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
       final @Nullable Object handler,
       final @NotNull Exception ex) {
 
-    final Mechanism mechanism = new Mechanism();
-    mechanism.setHandled(false);
-    mechanism.setType(MECHANISM_TYPE);
-    final Throwable throwable =
-        new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
-    final SentryEvent event = new SentryEvent(throwable);
-    event.setLevel(SentryLevel.FATAL);
-    event.setTransaction(transactionNameProvider.provideTransactionName(request));
-
-    final Hint hint = new Hint();
-    hint.set(SPRING_RESOLVER_REQUEST, request);
-    hint.set(SPRING_RESOLVER_RESPONSE, response);
+    final SentryEvent event = createEvent(request, ex);
+    final Hint hint = createHint(request, response);
 
     hub.captureEvent(event, hint);
 
@@ -72,5 +62,32 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
   @Override
   public int getOrder() {
     return order;
+  }
+
+  @NotNull
+  protected SentryEvent createEvent(
+      final @NotNull HttpServletRequest request, final @NotNull Exception ex) {
+
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setHandled(false);
+    mechanism.setType(MECHANISM_TYPE);
+    final Throwable throwable =
+        new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
+    final SentryEvent event = new SentryEvent(throwable);
+    event.setLevel(SentryLevel.FATAL);
+    event.setTransaction(transactionNameProvider.provideTransactionName(request));
+
+    return event;
+  }
+
+  @Nullable
+  protected Hint createHint(
+      final @NotNull HttpServletRequest request, final @NotNull HttpServletResponse response) {
+
+    final Hint hint = new Hint();
+    hint.set(SPRING_RESOLVER_REQUEST, request);
+    hint.set(SPRING_RESOLVER_RESPONSE, response);
+
+    return hint;
   }
 }
