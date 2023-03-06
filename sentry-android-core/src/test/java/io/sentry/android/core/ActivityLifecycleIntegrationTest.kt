@@ -1103,7 +1103,7 @@ class ActivityLifecycleIntegrationTest {
         assertNotNull(autoCloseFuture)
 
         // ReportFullyDrawn should finish the ttfd span and cancel the future
-        fixture.options.fullDisplayedReporter.reportFullyDrawn()
+        fixture.options.fullyDisplayedReporter.reportFullyDrawn()
         assertTrue(ttfdSpan.isFinished)
         assertNotEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
         assertTrue(autoCloseFuture.isCancelled)

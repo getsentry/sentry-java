@@ -455,6 +455,6 @@ class SentryOptionsTest {
 
     @Test
     fun `when options are initialized, FullyDrawnReporter is set`() {
-        assertEquals(FullyDisplayedReporter.getInstance(), SentryOptions().fullDisplayedReporter)
+        assertEquals(FullyDisplayedReporter.getInstance(), SentryOptions().fullyDisplayedReporter)
     }
 }

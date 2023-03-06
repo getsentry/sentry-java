@@ -1652,9 +1652,8 @@ class HubTest {
     fun `reportFullyDisplayed is ignored if TimeToFullDisplayTracing is disabled`() {
         var called = false
         val hub = generateHub {
-            it.fullDisplayedReporter.registerFullyDrawnListener {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
-                true
             }
         }
         hub.reportFullyDisplayed()
@@ -1662,13 +1661,12 @@ class HubTest {
     }
 
     @Test
-    fun `reportFullyDisplayed calls FullDisplayedReporter if TimeToFullDisplayTracing is enabled`() {
+    fun `reportFullyDisplayed calls FullyDisplayedReporter if TimeToFullDisplayTracing is enabled`() {
         var called = false
         val hub = generateHub {
             it.isEnableTimeToFullDisplayTracing = true
-            it.fullDisplayedReporter.registerFullyDrawnListener {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
-                true
             }
         }
         hub.reportFullyDisplayed()
@@ -1676,13 +1674,12 @@ class HubTest {
     }
 
     @Test
-    fun `reportFullyDisplayed calls FullDisplayedReporter only once`() {
+    fun `reportFullyDisplayed calls FullyDisplayedReporter only once`() {
         var called = false
         val hub = generateHub {
             it.isEnableTimeToFullDisplayTracing = true
-            it.fullDisplayedReporter.registerFullyDrawnListener {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
-                true
             }
         }
         hub.reportFullyDisplayed()

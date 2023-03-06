@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Renamed reportFullDisplayed to reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
 
 ## 6.15.0
 
