@@ -3,13 +3,13 @@ package io.sentry.spring.jakarta
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
+import jakarta.servlet.FilterChain
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
-import jakarta.servlet.FilterChain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

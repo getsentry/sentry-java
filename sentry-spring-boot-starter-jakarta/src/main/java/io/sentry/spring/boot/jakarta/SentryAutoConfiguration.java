@@ -27,9 +27,9 @@ import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
-import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
@@ -73,7 +73,8 @@ public class SentryAutoConfiguration {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public @NotNull Sentry.OptionsConfiguration<SentryOptions> sentryOptionsConfiguration(
         final @NotNull ObjectProvider<SentryOptions.BeforeSendCallback> beforeSendCallback,
-        final @NotNull ObjectProvider<SentryOptions.BeforeSendTransactionCallback> beforeSendTransactionCallback,
+        final @NotNull ObjectProvider<SentryOptions.BeforeSendTransactionCallback>
+                beforeSendTransactionCallback,
         final @NotNull ObjectProvider<SentryOptions.BeforeBreadcrumbCallback>
                 beforeBreadcrumbCallback,
         final @NotNull ObjectProvider<SentryOptions.TracesSamplerCallback> tracesSamplerCallback,
@@ -326,7 +327,9 @@ public class SentryAutoConfiguration {
     }
 
     private static void addPackageAndIntegrationInfo() {
-      SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
+      SentryIntegrationPackageStorage.getInstance()
+          .addPackage(
+              "maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
       SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot3");
     }
   }
