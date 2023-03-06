@@ -110,15 +110,13 @@ final class ANRWatchDog extends Thread {
           continue;
         }
 
-        if (isProcessNotResponding()) {
-          logger.log(SentryLevel.INFO, "Raising ANR");
+        if (isProcessNotResponding() && reported.compareAndSet(false, true)) {
           final String message =
               "Application Not Responding for at least " + timeoutIntervalMillis + " ms.";
 
           final ApplicationNotResponding error =
               new ApplicationNotResponding(message, uiHandler.getThread());
           anrListener.onAppNotResponding(error);
-          reported.set(true);
         }
       }
     }
