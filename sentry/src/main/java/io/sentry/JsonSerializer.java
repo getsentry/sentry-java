@@ -119,7 +119,8 @@ public final class JsonSerializer implements ISerializer {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
+  public <T, R> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz,
+    @Nullable JsonDeserializer<R> elementDeserializer) {
     try {
       JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
       JsonDeserializer<?> deserializer = deserializersByClass.get(clazz);
@@ -127,7 +128,16 @@ public final class JsonSerializer implements ISerializer {
         Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
         return clazz.cast(object);
       } else if (isKnownPrimitive(clazz)) {
-        return (T) new JsonObjectDeserializer().deserialize(jsonObjectReader);
+        if (Collection.class.isAssignableFrom(clazz)) {
+          if (elementDeserializer == null) {
+            // if the object has no known deserializer we do best effort and deserialize it as map
+            return (T) jsonObjectReader.nextObjectOrNull();
+          }
+
+          return (T) jsonObjectReader.nextList(options.getLogger(), elementDeserializer);
+        } else {
+          return (T) jsonObjectReader.nextObjectOrNull();
+        }
       } else {
         return null; // No way to deserialize objects we don't know about.
       }

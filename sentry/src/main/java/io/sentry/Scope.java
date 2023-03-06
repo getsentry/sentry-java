@@ -288,6 +288,9 @@ public final class Scope {
    * @param fingerprint the fingerprint list
    */
   public void setFingerprint(final @NotNull List<String> fingerprint) {
+    if (fingerprint == null) {
+      return;
+    }
     this.fingerprint = new ArrayList<>(fingerprint);
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
@@ -519,7 +522,6 @@ public final class Scope {
     this.contexts.put(key, value);
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
-      // TODO: should this be a deep copy? also for other collections that we pass to the observer
       observer.setContexts(contexts);
     }
   }

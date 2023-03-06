@@ -202,7 +202,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
-    final List<Breadcrumb> breadcrumbs = (List<Breadcrumb>) PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List.class);
+    final List<Breadcrumb> breadcrumbs = (List<Breadcrumb>) PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List.class, new Breadcrumb.Deserializer());
     if (breadcrumbs != null) {
       if (event.getBreadcrumbs() == null) {
         event.setBreadcrumbs(new ArrayList<>(breadcrumbs));

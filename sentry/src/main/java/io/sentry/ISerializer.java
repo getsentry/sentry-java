@@ -10,7 +10,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface ISerializer {
-  <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz);
+
+  <T, R> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz, @Nullable JsonDeserializer<R> elementDeserializer);
+
+  default <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
+    return deserialize(reader, clazz, null);
+  }
 
   @Nullable
   SentryEnvelope deserializeEnvelope(@NotNull InputStream inputStream);

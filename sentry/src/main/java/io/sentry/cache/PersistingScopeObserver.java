@@ -2,33 +2,19 @@ package io.sentry.cache;
 
 import io.sentry.Breadcrumb;
 import io.sentry.IScopeObserver;
+import io.sentry.JsonDeserializer;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.User;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
-import static io.sentry.SentryLevel.INFO;
-import static io.sentry.cache.CacheUtils.delete;
 
 public final class PersistingScopeObserver implements IScopeObserver {
 
@@ -151,6 +137,15 @@ public final class PersistingScopeObserver implements IScopeObserver {
     final @NotNull String fileName,
     final @NotNull Class<T> clazz
   ) {
-    return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz);
+    return read(options, fileName, clazz, null);
+  }
+
+  public static <T, R> @Nullable T read(
+    final @NotNull SentryOptions options,
+    final @NotNull String fileName,
+    final @NotNull Class<T> clazz,
+    final @Nullable JsonDeserializer<R> elementDeserializer
+  ) {
+    return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz, elementDeserializer);
   }
 }

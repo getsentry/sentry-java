@@ -1,5 +1,6 @@
 package io.sentry.cache;
 
+import io.sentry.JsonDeserializer;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.io.BufferedReader;
@@ -70,11 +71,12 @@ final class CacheUtils {
     }
   }
 
-  static <T> @Nullable T read(
+  static <T, R> @Nullable T read(
     final @NotNull SentryOptions options,
     final @NotNull String dirName,
     final @NotNull String fileName,
-    final @NotNull Class<T> clazz
+    final @NotNull Class<T> clazz,
+    final @Nullable JsonDeserializer<R> elementDeserializer
   ) {
     final File cacheDir = ensureCacheDir(options, dirName);
     if (cacheDir == null) {
@@ -87,7 +89,7 @@ final class CacheUtils {
       try (final Reader reader = new BufferedReader(
         new InputStreamReader(new FileInputStream(file), UTF_8)
       )) {
-        return options.getSerializer().deserialize(reader, clazz);
+        return options.getSerializer().deserialize(reader, clazz, elementDeserializer);
       } catch (Throwable e) {
         options.getLogger().log(ERROR, e, "Error reading entity from scope cache: %s", fileName);
       }

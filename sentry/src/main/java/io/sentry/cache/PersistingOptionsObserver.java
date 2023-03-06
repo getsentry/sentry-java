@@ -1,6 +1,7 @@
 package io.sentry.cache;
 
 import io.sentry.IOptionsObserver;
+import io.sentry.JsonDeserializer;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import java.io.File;
@@ -103,7 +104,7 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
     CacheUtils.store(options, entity, OPTIONS_CACHE, fileName);
   }
 
-  private <T> void delete(final @NotNull String fileName) {
+  private void delete(final @NotNull String fileName) {
     CacheUtils.delete(options, OPTIONS_CACHE, fileName);
   }
 
@@ -112,6 +113,15 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
     final @NotNull String fileName,
     final @NotNull Class<T> clazz
   ) {
-    return CacheUtils.read(options, OPTIONS_CACHE, fileName, clazz);
+    return read(options, fileName, clazz, null);
+  }
+
+  public static <T, R> @Nullable T read(
+    final @NotNull SentryOptions options,
+    final @NotNull String fileName,
+    final @NotNull Class<T> clazz,
+    final @Nullable JsonDeserializer<R> elementDeserializer
+  ) {
+    return CacheUtils.read(options, OPTIONS_CACHE, fileName, clazz, elementDeserializer);
   }
 }
