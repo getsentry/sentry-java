@@ -106,6 +106,7 @@ public final class PersistingScopeObserver implements IScopeObserver {
     serializeToDisk(() -> store(contexts, CONTEXTS_FILENAME));
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void serializeToDisk(final @NotNull Runnable task) {
     try {
       options.getExecutorService().submit(() -> {

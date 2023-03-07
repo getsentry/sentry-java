@@ -7,6 +7,7 @@ import io.sentry.clientreport.DropEverythingEventProcessor
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
+import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.Mechanism
@@ -693,6 +694,37 @@ class SentryClientTest {
             fixture.sentryOptions.clientReportRecorder,
             listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
         )
+    }
+
+    @Test
+    fun `backfillable events are only wired through backfilling processors`() {
+        val backfillingProcessor = mock<BackfillingEventProcessor>()
+        val nonBackfillingProcessor = mock<EventProcessor>()
+        fixture.sentryOptions.addEventProcessor(backfillingProcessor)
+        fixture.sentryOptions.addEventProcessor(nonBackfillingProcessor)
+
+        val event = SentryEvent()
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+        fixture.getSut().captureEvent(event, hint)
+
+        verify(backfillingProcessor).process(eq(event), eq(hint))
+        verify(nonBackfillingProcessor, never()).process(any<SentryEvent>(), anyOrNull())
+    }
+
+    @Test
+    fun `non-backfillable events are only wired through regular processors`() {
+        val backfillingProcessor = mock<BackfillingEventProcessor>()
+        val nonBackfillingProcessor = mock<EventProcessor>()
+        fixture.sentryOptions.addEventProcessor(backfillingProcessor)
+        fixture.sentryOptions.addEventProcessor(nonBackfillingProcessor)
+
+        val event = SentryEvent()
+
+        fixture.getSut().captureEvent(event)
+
+        verify(backfillingProcessor, never()).process(any<SentryEvent>(), anyOrNull())
+        verify(nonBackfillingProcessor).process(eq(event), anyOrNull())
     }
 
     @Test
@@ -2206,16 +2238,16 @@ class SentryClientTest {
         override fun mechanism(): String? = mechanism
     }
 
-    internal class DiskFlushNotificationHint : DiskFlushNotification {
-        override fun markFlushed() {}
-    }
-
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
             override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
                 throw Throwable()
             }
         }
+    }
+
+    private class BackfillableHint : Backfillable {
+        override fun shouldEnrich(): Boolean = false
     }
 }
 

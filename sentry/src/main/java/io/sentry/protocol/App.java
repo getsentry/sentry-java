@@ -7,6 +7,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Date;
@@ -120,6 +121,24 @@ public final class App implements JsonUnknown, JsonSerializable {
 
   public void setPermissions(@Nullable Map<String, String> permissions) {
     this.permissions = permissions;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    App app = (App) o;
+    return Objects.equals(appIdentifier, app.appIdentifier)
+      && Objects.equals(appStartTime, app.appStartTime)
+      && Objects.equals(deviceAppHash, app.deviceAppHash)
+      && Objects.equals(buildType, app.buildType)
+      && Objects.equals(appName, app.appName)
+      && Objects.equals(appVersion, app.appVersion)
+      && Objects.equals(appBuild, app.appBuild);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(appIdentifier, appStartTime, deviceAppHash, buildType, appName, appVersion,
+      appBuild);
   }
 
   // region json

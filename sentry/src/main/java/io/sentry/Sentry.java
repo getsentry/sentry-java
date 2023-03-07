@@ -207,22 +207,31 @@ public final class Sentry {
       integration.register(HubAdapter.getInstance(), options);
     }
 
+    notifyOptionsObservers(options);
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void notifyOptionsObservers(final @NotNull SentryOptions options) {
     // enqueue a task to trigger the static options change for the observers. Since the executor
     // is single-threaded, this task will be enqueued sequentially after all integrations that rely
     // on the observers have done their work, even if they do that async.
-    options
-      .getExecutorService()
-      .submit(() -> {
-        // for static things like sentry options we can immediately trigger observers
-        for (final IOptionsObserver observer : options.getOptionsObservers()) {
-          observer.setRelease(options.getRelease());
-          observer.setProguardUuid(options.getProguardUuid());
-          observer.setSdkVersion(options.getSdkVersion());
-          observer.setDist(options.getDist());
-          observer.setEnvironment(options.getEnvironment());
-          observer.setTags(options.getTags());
-        }
-      });
+    try {
+      options
+        .getExecutorService()
+        .submit(() -> {
+          // for static things like sentry options we can immediately trigger observers
+          for (final IOptionsObserver observer : options.getOptionsObservers()) {
+            observer.setRelease(options.getRelease());
+            observer.setProguardUuid(options.getProguardUuid());
+            observer.setSdkVersion(options.getSdkVersion());
+            observer.setDist(options.getDist());
+            observer.setEnvironment(options.getEnvironment());
+            observer.setTags(options.getTags());
+          }
+        });
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
+    }
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

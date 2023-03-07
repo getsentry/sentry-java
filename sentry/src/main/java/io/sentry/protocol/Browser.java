@@ -7,6 +7,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -46,6 +47,18 @@ public final class Browser implements JsonUnknown, JsonSerializable {
 
   public void setVersion(final @Nullable String version) {
     this.version = version;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Browser browser = (Browser) o;
+    return Objects.equals(name, browser.name) && Objects.equals(version,
+      browser.version);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(name, version);
   }
 
   // region json

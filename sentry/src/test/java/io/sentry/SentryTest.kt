@@ -4,9 +4,11 @@ import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.ResourcesModulesLoader
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
+import org.awaitility.kotlin.await
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
@@ -15,7 +17,10 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -111,7 +116,10 @@ class SentryTest {
             it.setDebug(true)
             it.setLogger(logger)
         }
-        verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
+        verify(logger).log(
+            eq(SentryLevel.WARNING),
+            eq("Sentry has been already initialized. Previous configuration will be overwritten.")
+        )
     }
 
     @Test
@@ -123,7 +131,10 @@ class SentryTest {
             it.setDebug(true)
             it.setLogger(logger)
         }
-        verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
+        verify(logger).log(
+            eq(SentryLevel.WARNING),
+            eq("Sentry has been already initialized. Previous configuration will be overwritten.")
+        )
     }
 
     @Test
@@ -373,6 +384,117 @@ class SentryTest {
         }
 
         assertTrue { sentryOptions!!.collectors.any { it is CustomMemoryCollector } }
+    }
+
+    @Test
+    fun `init notifies option observers`() {
+        val optionsObserver = InMemoryOptionsObserver()
+
+        Sentry.init {
+            it.dsn = dsn
+
+            it.executorService = MockExecutorService()
+
+            it.addOptionsObserver(optionsObserver)
+
+            it.release = "io.sentry.sample@1.1.0+220"
+            it.proguardUuid = "uuid"
+            it.dist = "220"
+            it.sdkVersion = SdkVersion("sentry.java.android", "6.13.0")
+            it.environment = "debug"
+            it.setTag("one", "two")
+        }
+
+        assertEquals("io.sentry.sample@1.1.0+220", optionsObserver.release)
+        assertEquals("debug", optionsObserver.environment)
+        assertEquals("220", optionsObserver.dist)
+        assertEquals("uuid", optionsObserver.proguardUuid)
+        assertEquals(mapOf("one" to "two"), optionsObserver.tags)
+        assertEquals(SdkVersion("sentry.java.android", "6.13.0"), optionsObserver.sdkVersion)
+    }
+
+    @Test
+    fun `if there is work enqueued, init notifies options observers after that work is done`() {
+        val optionsObserver = InMemoryOptionsObserver().apply {
+            setRelease("io.sentry.sample@2.0.0")
+            setEnvironment("production")
+        }
+        val triggered = AtomicBoolean(false)
+
+        Sentry.init {
+            it.dsn = dsn
+
+            it.addOptionsObserver(optionsObserver)
+
+            it.release = "io.sentry.sample@1.1.0+220"
+            it.environment = "debug"
+
+            it.executorService.submit {
+                // here the values should be still old. Sentry.init will submit another runnable
+                // to notify the options observers, but because the executor is single-threaded, the
+                // work will be enqueued and the observers will be notified after current work is
+                // finished, ensuring that even if something is using the options observer from a
+                // different thread, it will still use the old values.
+                Thread.sleep(1000L)
+                assertEquals("io.sentry.sample@2.0.0", optionsObserver.release)
+                assertEquals("production", optionsObserver.environment)
+                triggered.set(true)
+            }
+        }
+
+        await.untilTrue(triggered)
+        assertEquals("io.sentry.sample@1.1.0+220", optionsObserver.release)
+        assertEquals("debug", optionsObserver.environment)
+    }
+
+    private class MockExecutorService : ISentryExecutorService {
+        override fun submit(runnable: Runnable): Future<*> {
+            runnable.run()
+            return mock()
+        }
+
+        override fun <T> submit(callable: Callable<T>): Future<T> = mock()
+        override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = mock()
+        override fun close(timeoutMillis: Long) {}
+    }
+
+    private class InMemoryOptionsObserver : IOptionsObserver {
+        var release: String? = null
+            private set
+        var environment: String? = null
+            private set
+        var proguardUuid: String? = null
+            private set
+        var sdkVersion: SdkVersion? = null
+            private set
+        var dist: String? = null
+            private set
+        var tags: Map<String, String> = mapOf()
+            private set
+
+        override fun setRelease(release: String?) {
+            this.release = release
+        }
+
+        override fun setEnvironment(environment: String?) {
+            this.environment = environment
+        }
+
+        override fun setProguardUuid(proguardUuid: String?) {
+            this.proguardUuid = proguardUuid
+        }
+
+        override fun setSdkVersion(sdkVersion: SdkVersion?) {
+            this.sdkVersion = sdkVersion
+        }
+
+        override fun setDist(dist: String?) {
+            this.dist = dist
+        }
+
+        override fun setTags(tags: MutableMap<String, String>) {
+            this.tags = tags
+        }
     }
 
     private class CustomMainThreadChecker : IMainThreadChecker {

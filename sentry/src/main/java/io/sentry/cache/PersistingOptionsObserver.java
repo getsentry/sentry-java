@@ -27,6 +27,7 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
     this.options = options;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void serializeToDisk(final @NotNull Runnable task) {
     try {
       options.getExecutorService().submit(() -> {

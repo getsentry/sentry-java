@@ -4,8 +4,8 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
-import io.sentry.clientreport.ClientReportTestHelper.Companion.diskFlushNotificationHint
-import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableDiskFlushNotificationHint
+import io.sentry.clientreport.ClientReportTestHelper.Companion.uncaughtExceptionHint
+import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableUncaughtExceptionHint
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableHint
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
@@ -160,12 +160,12 @@ class AsyncHttpTransportClientReportTest {
     }
 
     @Test
-    fun `attaches report and records lost envelope on full queue for non retryable disk flush notification`() {
+    fun `attaches report and records lost envelope on full queue for non retryable uncaught exception`() {
         // given
         givenSetup(cancel = true)
 
         // when
-        fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, diskFlushNotificationHint())
+        fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, uncaughtExceptionHint())
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
@@ -174,12 +174,12 @@ class AsyncHttpTransportClientReportTest {
     }
 
     @Test
-    fun `attaches report and records lost envelope on full queue for retryable disk flush notification`() {
+    fun `attaches report and records lost envelope on full queue for retryable uncaught exception`() {
         // given
         givenSetup(cancel = true)
 
         // when
-        fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableDiskFlushNotificationHint())
+        fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableUncaughtExceptionHint())
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))

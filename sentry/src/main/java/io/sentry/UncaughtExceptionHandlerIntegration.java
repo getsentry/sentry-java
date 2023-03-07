@@ -1,5 +1,6 @@
 package io.sentry;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.SessionEnd;
@@ -145,10 +146,11 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
+  @Open // open for tests
   @ApiStatus.Internal
-  public static final class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd {
+  public static class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd {
 
-    UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
+    public UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       super(flushTimeoutMillis, logger);
     }
   }

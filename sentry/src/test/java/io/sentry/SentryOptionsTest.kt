@@ -281,6 +281,16 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when adds options observer, observer list has it`() {
+        val observer = mock<IOptionsObserver>()
+        val options = SentryOptions().apply {
+            addOptionsObserver(observer)
+        }
+
+        assertTrue(options.optionsObservers.contains(observer))
+    }
+
+    @Test
     fun `copies options from another SentryOptions instance`() {
         val externalOptions = ExternalOptions()
         externalOptions.dsn = "http://key@localhost/proj"

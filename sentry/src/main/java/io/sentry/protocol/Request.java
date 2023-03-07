@@ -7,6 +7,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -191,19 +192,6 @@ public final class Request implements JsonUnknown, JsonSerializable {
     this.other = CollectionUtils.newConcurrentHashMap(other);
   }
 
-  // region json
-
-  @Nullable
-  @Override
-  public Map<String, Object> getUnknown() {
-    return unknown;
-  }
-
-  @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
-    this.unknown = unknown;
-  }
-
   public @Nullable String getFragment() {
     return fragment;
   }
@@ -218,6 +206,37 @@ public final class Request implements JsonUnknown, JsonSerializable {
 
   public void setBodySize(final @Nullable Long bodySize) {
     this.bodySize = bodySize;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Request request = (Request) o;
+    return Objects.equals(url, request.url)
+      && Objects.equals(method, request.method)
+      && Objects.equals(queryString, request.queryString)
+      && Objects.equals(cookies, request.cookies)
+      && Objects.equals(headers, request.headers)
+      && Objects.equals(env, request.env)
+      && Objects.equals(bodySize, request.bodySize)
+      && Objects.equals(fragment, request.fragment);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(url, method, queryString, cookies, headers, env, bodySize, fragment);
+  }
+
+  // region json
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 
   public static final class JsonKeys {
