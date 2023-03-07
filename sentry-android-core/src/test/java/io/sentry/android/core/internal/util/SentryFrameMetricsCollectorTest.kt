@@ -352,7 +352,7 @@ class SentryFrameMetricsCollectorTest {
         }
         listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
         listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
-        // Assert the callback was called twice
+        // Assert the callback was called two times
         assertEquals(2, timesCalled)
     }
 
