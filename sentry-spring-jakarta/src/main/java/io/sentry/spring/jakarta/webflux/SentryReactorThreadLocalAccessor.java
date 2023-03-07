@@ -1,11 +1,10 @@
 package io.sentry.spring.jakarta.webflux;
 
-import org.jetbrains.annotations.ApiStatus;
-
 import io.micrometer.context.ThreadLocalAccessor;
 import io.sentry.IHub;
 import io.sentry.NoOpHub;
 import io.sentry.Sentry;
+import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
 public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccessor<IHub> {

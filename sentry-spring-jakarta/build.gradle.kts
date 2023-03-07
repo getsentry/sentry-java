@@ -35,14 +35,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 
-val jakartaTransform by configurations.creating
-
 dependencies {
-
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer:0.5.0")
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.cli:0.5.0")
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
-
     api(projects.sentry)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
@@ -109,20 +102,6 @@ tasks {
         dependsOn(jacocoTestReport)
     }
 }
-
-task("jakartaTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring/src/main/java/io/sentry/spring", "src/main/java/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}.dependsOn("jakartaTestTransformation")
-
-task("jakartaTestTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring/src/test/kotlin/io/sentry/spring", "src/test/kotlin/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}
-
-// tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()

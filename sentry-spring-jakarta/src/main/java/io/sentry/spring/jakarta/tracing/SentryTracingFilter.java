@@ -15,13 +15,13 @@ import io.sentry.TransactionOptions;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.http.HttpMethod;
@@ -113,7 +113,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   private boolean shouldTraceRequest(final @NotNull HttpServletRequest request) {
-    return hub.getOptions().isTraceOptionsRequests() || !HttpMethod.OPTIONS.name().equals(request.getMethod());
+    return hub.getOptions().isTraceOptionsRequests()
+        || !HttpMethod.OPTIONS.name().equals(request.getMethod());
   }
 
   private ITransaction startTransaction(
@@ -137,8 +138,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
                 "http.server",
                 new SentryTraceHeader(sentryTraceHeader),
                 baggage,
-                null
-            );
+                null);
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         transactionOptions.setCustomSamplingContext(customSamplingContext);

@@ -8,7 +8,6 @@ import io.sentry.checkTransaction
 import io.sentry.spring.jakarta.tracing.SentrySpan
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
