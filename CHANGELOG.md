@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Fixed timestamps of slow and frozen frames ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
+- Fix timestamps of slow and frozen frames for profiles ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
 
 ## 6.15.0

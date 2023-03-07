@@ -112,9 +112,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                   : window.getWindowManager().getDefaultDisplay().getRefreshRate();
 
           final long cpuDuration = getFrameCpuDuration(frameMetrics);
-          long startTime = getFrameStartTimestamp();
+          long startTime = getFrameStartTimestamp(frameMetrics);
           // If we couldn't get the timestamp through reflection, we use current time
-          if (startTime == -1) {
+          if (startTime < 0) {
             startTime = now - cpuDuration;
           }
           // Let's "adjust" the start time of a frame to be after the end of the previous frame
@@ -134,9 +134,15 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   /**
    * Return the internal timestamp in the choreographer of the last frame start timestamp through
-   * reflection.
+   * reflection. On Android O the value is read from the frameMetrics itself.
    */
-  private long getFrameStartTimestamp() {
+  @SuppressLint("NewApi")
+  private long getFrameStartTimestamp(final @NotNull FrameMetrics frameMetrics) {
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
+      return frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP);
+    }
+
     // Let's read the choreographer private field to get start timestamp of the frame, which
     // uses System.nanoTime() under the hood
     if (choreographer != null && choreographerLastFrameTimeField != null) {
