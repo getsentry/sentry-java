@@ -1,13 +1,13 @@
 package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import java.util.EnumSet;
-import java.util.Set;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import java.util.EnumSet;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -28,6 +28,7 @@ import io.sentry.spring.jakarta.tracing.SentryTracingFilter
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
+import jakarta.servlet.Filter
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.any
@@ -55,11 +56,9 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.HandlerExceptionResolver
 import java.lang.RuntimeException
-import jakarta.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryAutoConfigurationTest {

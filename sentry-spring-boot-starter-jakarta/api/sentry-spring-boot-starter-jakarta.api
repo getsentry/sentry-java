@@ -1,0 +1,55 @@
+public final class io/sentry/spring/boot/jakarta/BuildConfig {
+	public static final field SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public class io/sentry/spring/boot/jakarta/InAppIncludesResolver : org/springframework/context/ApplicationContextAware {
+	public fun <init> ()V
+	public fun resolveInAppIncludes ()Ljava/util/List;
+	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
+}
+
+public class io/sentry/spring/boot/jakarta/SentryAutoConfiguration {
+	public fun <init> ()V
+}
+
+public class io/sentry/spring/boot/jakarta/SentryLogbackAppenderAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryLogbackInitializer (Lio/sentry/spring/boot/jakarta/SentryProperties;)Lio/sentry/spring/boot/jakarta/SentryLogbackInitializer;
+}
+
+public class io/sentry/spring/boot/jakarta/SentryProperties : io/sentry/SentryOptions {
+	public fun <init> ()V
+	public fun getExceptionResolverOrder ()I
+	public fun getLogging ()Lio/sentry/spring/boot/jakarta/SentryProperties$Logging;
+	public fun getReactive ()Lio/sentry/spring/boot/jakarta/SentryProperties$Reactive;
+	public fun getUserFilterOrder ()Ljava/lang/Integer;
+	public fun isUseGitCommitIdAsRelease ()Z
+	public fun setExceptionResolverOrder (I)V
+	public fun setLogging (Lio/sentry/spring/boot/jakarta/SentryProperties$Logging;)V
+	public fun setReactive (Lio/sentry/spring/boot/jakarta/SentryProperties$Reactive;)V
+	public fun setUseGitCommitIdAsRelease (Z)V
+	public fun setUserFilterOrder (Ljava/lang/Integer;)V
+}
+
+public class io/sentry/spring/boot/jakarta/SentryProperties$Logging {
+	public fun <init> ()V
+	public fun getMinimumBreadcrumbLevel ()Lorg/slf4j/event/Level;
+	public fun getMinimumEventLevel ()Lorg/slf4j/event/Level;
+	public fun isEnabled ()Z
+	public fun setEnabled (Z)V
+	public fun setMinimumBreadcrumbLevel (Lorg/slf4j/event/Level;)V
+	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
+}
+
+public class io/sentry/spring/boot/jakarta/SentryProperties$Reactive {
+	public fun <init> ()V
+	public fun isThreadLocalAccessorEnabled ()Z
+	public fun setThreadLocalAccessorEnabled (Z)V
+}
+
+public class io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/jakarta/webflux/SentryWebExceptionHandler;
+}
+

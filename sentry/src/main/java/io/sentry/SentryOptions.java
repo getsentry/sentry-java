@@ -406,8 +406,8 @@ public class SentryOptions {
   private boolean enableTimeToFullDisplayTracing = false;
 
   /** Screen fully displayed reporter, used for time-to-full-display spans. */
-  private final @NotNull FullDisplayedReporter fullDisplayedReporter =
-      FullDisplayedReporter.getInstance();
+  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
+      FullyDisplayedReporter.getInstance();
 
   /**
    * Adds an event processor
@@ -814,7 +814,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the sampleRate Can be anything between 0.01 and 1.0 or null (default), to disable it.
+   * Sets the sampleRate Can be anything between 0.0 and 1.0 or null (default), to disable it.
    *
    * @param sampleRate the sample rate
    */
@@ -823,7 +823,7 @@ public class SentryOptions {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
-              + " is not valid. Use null to disable or values > 0.0 and <= 1.0.");
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
     this.sampleRate = sampleRate;
   }
@@ -1660,7 +1660,7 @@ public class SentryOptions {
 
   /**
    * Sets the profilesSampleRate. Can be anything between 0.0 and 1.0 or null (default), to disable
-   * it. It’s dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
+   * it. It's dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
    * is sampled, then a profile could be sampled with a probability given by profilesSampleRate.
    *
    * @param profilesSampleRate the sample rate
@@ -1967,8 +1967,8 @@ public class SentryOptions {
    * @return The reporter to call when a screen is fully loaded.
    */
   @ApiStatus.Internal
-  public @NotNull FullDisplayedReporter getFullDisplayedReporter() {
-    return fullDisplayedReporter;
+  public @NotNull FullyDisplayedReporter getFullyDisplayedReporter() {
+    return fullyDisplayedReporter;
   }
 
   /**

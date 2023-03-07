@@ -6,7 +6,6 @@ import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
-
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +28,7 @@ public class SentryRequestResolver {
   public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
     final Request sentryRequest = new Request();
     final String methodName =
-      httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
+        httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
     sentryRequest.setMethod(methodName);
     final @NotNull URI uri = httpRequest.getURI();
     final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(uri.toString());
