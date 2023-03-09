@@ -34,29 +34,36 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
   @Override
   public @NotNull Mono<Void> handle(
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull Throwable ex) {
-    final @Nullable IHub requestHub = serverWebExchange.getAttributeOrDefault(SentryWebFilter.SENTRY_HUB_KEY, null);
+    final @Nullable IHub requestHub =
+        serverWebExchange.getAttributeOrDefault(SentryWebFilter.SENTRY_HUB_KEY, null);
     final @NotNull IHub hubToUse = requestHub != null ? requestHub : hub;
 
-    return ReactorUtils.withSentryHub(Mono.just(ex)
-      .map(it -> {
-          if (!(ex instanceof ResponseStatusException)) {
-            final Mechanism mechanism = new Mechanism();
-            mechanism.setType("SentryWebExceptionHandler");
-            mechanism.setHandled(false);
-            final Throwable throwable =
-              new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
-            final SentryEvent event = new SentryEvent(throwable);
-            event.setLevel(SentryLevel.FATAL);
-            event.setTransaction(TransactionNameProvider.provideTransactionName(serverWebExchange));
+    return ReactorUtils.withSentryHub(
+            Mono.just(ex)
+                .map(
+                    it -> {
+                      if (!(ex instanceof ResponseStatusException)) {
+                        final Mechanism mechanism = new Mechanism();
+                        mechanism.setType("SentryWebExceptionHandler");
+                        mechanism.setHandled(false);
+                        final Throwable throwable =
+                            new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
+                        final SentryEvent event = new SentryEvent(throwable);
+                        event.setLevel(SentryLevel.FATAL);
+                        event.setTransaction(
+                            TransactionNameProvider.provideTransactionName(serverWebExchange));
 
-            final Hint hint = new Hint();
-            hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
-            hint.set(WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
+                        final Hint hint = new Hint();
+                        hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
+                        hint.set(
+                            WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
 
-            hub.captureEvent(event, hint);
-          }
+                        hub.captureEvent(event, hint);
+                      }
 
-          return it;
-    }), hubToUse).flatMap(it -> Mono.error(ex));
+                      return it;
+                    }),
+            hubToUse)
+        .flatMap(it -> Mono.error(ex));
   }
 }

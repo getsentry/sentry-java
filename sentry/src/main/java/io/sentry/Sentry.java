@@ -873,8 +873,17 @@ public final class Sentry {
    * <p>This method is safe to be called multiple times. If the time-to-full-display span is already
    * finished, this call will be ignored.
    */
+  public static void reportFullyDisplayed() {
+    getCurrentHub().reportFullyDisplayed();
+  }
+
+  /**
+   * @deprecated See {@link Sentry#reportFullyDisplayed()}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void reportFullDisplayed() {
-    getCurrentHub().reportFullDisplayed();
+    reportFullyDisplayed();
   }
 
   /**

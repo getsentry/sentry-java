@@ -1,10 +1,10 @@
 package io.sentry.spring.jakarta;
 
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletInputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

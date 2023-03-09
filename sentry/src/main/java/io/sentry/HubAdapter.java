@@ -231,7 +231,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void reportFullDisplayed() {
-    Sentry.reportFullDisplayed();
+  public void reportFullyDisplayed() {
+    Sentry.reportFullyDisplayed();
   }
 }
