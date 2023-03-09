@@ -7,6 +7,14 @@ public final class io/sentry/SkipError : java/lang/Error {
 	public fun <init> (Ljava/lang/String;)V
 }
 
+public final class io/sentry/test/ImmediateExecutorService : io/sentry/ISentryExecutorService {
+	public fun <init> ()V
+	public fun close (J)V
+	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
 public final class io/sentry/test/ReflectionKt {
 	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Z
 	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Z
