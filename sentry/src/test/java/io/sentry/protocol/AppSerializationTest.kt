@@ -29,6 +29,7 @@ class AppSerializationTest {
                 "WRITE_EXTERNAL_STORAGE" to "not_granted",
                 "CAMERA" to "granted"
             )
+            inForeground = true
         }
     }
     private val fixture = Fixture()

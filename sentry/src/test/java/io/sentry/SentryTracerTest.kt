@@ -45,10 +45,11 @@ class SentryTracerTest {
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
-            samplingDecision: TracesSamplingDecision? = null
+            samplingDecision: TracesSamplingDecision? = null,
+            performanceCollector: TransactionPerformanceCollector? = transactionPerformanceCollector
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, transactionPerformanceCollector)
+            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, performanceCollector)
         }
     }
 
@@ -888,8 +889,16 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction is created, transactionPerformanceCollector is started`() {
+    fun `when transaction is created, but not profiled, transactionPerformanceCollector is not started`() {
         val transaction = fixture.getSut()
+        verify(fixture.transactionPerformanceCollector, never()).start(anyOrNull())
+    }
+
+    @Test
+    fun `when transaction is created and profiled transactionPerformanceCollector is started`() {
+        val transaction = fixture.getSut(optionsConfiguration = {
+            it.profilesSampleRate = 1.0
+        }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         verify(fixture.transactionPerformanceCollector).start(check { assertEquals(transaction, it) })
     }
 
@@ -908,5 +917,39 @@ class SentryTracerTest {
 
         assertEquals("new-name-2", transaction.name)
         assertEquals(TransactionNameSource.CUSTOM, transaction.transactionNameSource)
+    }
+
+    @Test
+    fun `when transaction is finished, collected performance data is cleared`() {
+        val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
+        val mockPerformanceCollector = object : TransactionPerformanceCollector {
+            override fun start(transaction: ITransaction) {}
+            override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+        }
+        val transaction = fixture.getSut(optionsConfiguration = {
+            it.profilesSampleRate = 1.0
+        }, performanceCollector = mockPerformanceCollector)
+        transaction.finish()
+        assertTrue(data.isEmpty())
+    }
+
+    @Test
+    fun `updateEndDate is ignored and returns false if span is not finished`() {
+        val transaction = fixture.getSut()
+        assertFalse(transaction.isFinished)
+        assertNull(transaction.finishDate)
+        assertFalse(transaction.updateEndDate(mock()))
+        assertNull(transaction.finishDate)
+    }
+
+    @Test
+    fun `updateEndDate updates finishDate and returns true if span is finished`() {
+        val transaction = fixture.getSut()
+        val endDate: SentryDate = mock()
+        transaction.finish()
+        assertTrue(transaction.isFinished)
+        assertNotNull(transaction.finishDate)
+        assertTrue(transaction.updateEndDate(endDate))
+        assertEquals(endDate, transaction.finishDate)
     }
 }

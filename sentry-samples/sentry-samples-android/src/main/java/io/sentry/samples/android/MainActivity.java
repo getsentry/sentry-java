@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
     final ISpan span = Sentry.getSpan();
     if (span != null) {
       span.setMeasurement("screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
-      // span.finish(SpanStatus.OK);
     }
+    Sentry.reportFullyDisplayed();
   }
 }

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AppCompatActivity
+import io.sentry.Sentry
 import io.sentry.samples.android.databinding.ActivityPermissionsBinding
 
 class PermissionsActivity : AppCompatActivity() {
@@ -37,5 +38,6 @@ class PermissionsActivity : AppCompatActivity() {
         }
 
         setContentView(binding.root)
+        Sentry.reportFullyDisplayed()
     }
 }

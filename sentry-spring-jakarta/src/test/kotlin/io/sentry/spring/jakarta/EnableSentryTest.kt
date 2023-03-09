@@ -43,12 +43,12 @@ class EnableSentryTest {
         contextRunner.run {
             assertThat(it).hasSingleBean(SentryOptions::class.java)
             val options = it.getBean(SentryOptions::class.java)
-            assertThat(options.sentryClientName).isEqualTo("sentry.java.spring")
+            assertThat(options.sentryClientName).isEqualTo("sentry.java.spring.jakarta")
             assertThat(options.sdkVersion).isNotNull
-            assertThat(options.sdkVersion!!.name).isEqualTo("sentry.java.spring")
+            assertThat(options.sdkVersion!!.name).isEqualTo("sentry.java.spring.jakarta")
             assertThat(options.sdkVersion!!.version).isEqualTo(BuildConfig.VERSION_NAME)
-            assertThat(options.sdkVersion!!.packages).isNotNull
-            assertThat(options.sdkVersion!!.packages!!.map { pkg -> pkg.name }).contains("maven:io.sentry:sentry-spring")
+            assertThat(options.sdkVersion!!.packageSet.map { pkg -> pkg.name }).contains("maven:io.sentry:sentry-spring-jakarta")
+            assertThat(options.sdkVersion!!.integrationSet).contains("Spring6")
         }
     }
 

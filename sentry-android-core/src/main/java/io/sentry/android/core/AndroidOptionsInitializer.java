@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.os.Build;
+import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.IScopeObserver;
 import io.sentry.SendFireAndForgetEnvelopeSender;
@@ -172,6 +173,7 @@ final class AndroidOptionsInitializer {
       options.addCollector(new AndroidMemoryCollector());
       options.addCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
     }
+    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
 
     if (options.getCacheDirPath() != null) {
       options.addScopeObserver(new PersistingScopeObserver(options));

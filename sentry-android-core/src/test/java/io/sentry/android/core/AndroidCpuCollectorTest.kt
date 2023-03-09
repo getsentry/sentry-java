@@ -8,10 +8,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.assertNull
 
 class AndroidCpuCollectorTest {
 
@@ -43,9 +42,8 @@ class AndroidCpuCollectorTest {
     @Test
     fun `collect works only after setup`() {
         val data = PerformanceCollectionData()
-        fixture.getSut().collect(listOf(data))
-        data.commitData()
-        assertTrue(data.cpuData.isEmpty())
+        fixture.getSut().collect(data)
+        assertNull(data.cpuData)
     }
 
     @Test
@@ -53,13 +51,11 @@ class AndroidCpuCollectorTest {
         val data = PerformanceCollectionData()
         val collector = fixture.getSut()
         collector.setup()
-        collector.collect(listOf(data))
-        data.commitData()
+        collector.collect(data)
         val cpuData = data.cpuData
-        assertNotNull(data.cpuData)
-        assertFalse(data.cpuData.isEmpty())
-        assertNotEquals(0.0, cpuData[0].cpuUsagePercentage)
-        assertNotEquals(0, cpuData[0].timestampMillis)
+        assertNotNull(cpuData)
+        assertNotEquals(0.0, cpuData.cpuUsagePercentage)
+        assertNotEquals(0, cpuData.timestampMillis)
     }
 
     @Test
@@ -69,8 +65,7 @@ class AndroidCpuCollectorTest {
         whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
         val collector = fixture.getSut(mockBuildInfoProvider)
         collector.setup()
-        collector.collect(listOf(data))
-        data.commitData()
-        assertTrue(data.cpuData.isEmpty())
+        collector.collect(data)
+        assertNull(data.cpuData)
     }
 }

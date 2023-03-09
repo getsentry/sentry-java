@@ -7,6 +7,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
+    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
 configure<JavaPluginExtension> {
@@ -73,4 +74,11 @@ tasks.withType<JavaCompile>().configureEach {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
+}
+
+buildConfig {
+    useJavaOutput()
+    packageName("io.sentry.graphql")
+    buildConfigField("String", "SENTRY_GRAPHQL_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL_SDK_NAME}\"")
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }

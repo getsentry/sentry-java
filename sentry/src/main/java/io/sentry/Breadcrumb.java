@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.UrlUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -68,10 +69,19 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    */
   public static @NotNull Breadcrumb http(final @NotNull String url, final @NotNull String method) {
     final Breadcrumb breadcrumb = new Breadcrumb();
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
     breadcrumb.setType("http");
     breadcrumb.setCategory("http");
-    breadcrumb.setData("url", url);
+    if (urlDetails.getUrl() != null) {
+      breadcrumb.setData("url", urlDetails.getUrl());
+    }
     breadcrumb.setData("method", method.toUpperCase(Locale.ROOT));
+    if (urlDetails.getQuery() != null) {
+      breadcrumb.setData("http.query", urlDetails.getQuery());
+    }
+    if (urlDetails.getFragment() != null) {
+      breadcrumb.setData("http.fragment", urlDetails.getFragment());
+    }
     return breadcrumb;
   }
 

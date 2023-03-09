@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+### Features
+
+- Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
+
+### Fixes
+
+- Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+
+## 6.15.0
+
+### Features
+
+- Adjust time-to-full-display span if reportFullDisplayed is called too early ([#2550](https://github.com/getsentry/sentry-java/pull/2550))
+- Add `enableTracing` option ([#2530](https://github.com/getsentry/sentry-java/pull/2530))
+    - This change is backwards compatible. The default is `null` meaning existing behaviour remains unchanged (setting either `tracesSampleRate` or `tracesSampler` enables performance).
+    - If set to `true`, performance is enabled, even if no `tracesSampleRate` or `tracesSampler` have been configured.
+    - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
+- Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
+- Report integrations in use, report packages in use more consistently ([#2179](https://github.com/getsentry/sentry-java/pull/2179))
+- Implement `ThreadLocalAccessor` for propagating Sentry hub with reactor / WebFlux ([#2570](https://github.com/getsentry/sentry-java/pull/2570))
+  - Requires `io.micrometer:context-propagation:1.0.2+` as well as Spring Boot 3.0.3+
+  - Enable the feature by setting `sentry.reactive.thread-local-accessor-enabled=true`
+  - This is still considered experimental. Once we have enough feedback we may turn this on by default.
+  - Checkout the sample here: https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux-jakarta
+  - A new hub is now cloned from the main hub for every request
+
+### Fixes
+
+- Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
+- Allow `0.0` error sample rate ([#2573](https://github.com/getsentry/sentry-java/pull/2573))
+- Fix memory leak in WebFlux related to an ever growing stack ([#2580](https://github.com/getsentry/sentry-java/pull/2580))
+- Use the same hub in WebFlux exception handler as we do in WebFilter ([#2566](https://github.com/getsentry/sentry-java/pull/2566))
+- Switch upstream Jetpack Compose dependencies to `compileOnly` in `sentry-compose-android` ([#2578](https://github.com/getsentry/sentry-java/pull/2578))
+  - NOTE: If you're using Compose Navigation/User Interaction integrations, make sure to have the following dependencies on the classpath as we do not bring them in transitively anymore:
+    - `androidx.navigation:navigation-compose:`
+    - `androidx.compose.runtime:runtime:`
+    - `androidx.compose.ui:ui:`
+
+## 6.14.0
+
+### Features
+
+- Add time-to-full-display span to Activity auto-instrumentation ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
+- Add `main` flag to threads and `in_foreground` flag for app contexts  ([#2516](https://github.com/getsentry/sentry-java/pull/2516))
+
+### Fixes
+
+- Ignore Shutdown in progress when closing ShutdownHookIntegration ([#2521](https://github.com/getsentry/sentry-java/pull/2521))
+- Fix app start span end-time is wrong if SDK init is deferred ([#2519](https://github.com/getsentry/sentry-java/pull/2519))
+- Fix invalid session creation when app is launched in background ([#2543](https://github.com/getsentry/sentry-java/pull/2543))
+
+## 6.13.1
+
+### Fixes
+
+- Fix transaction performance collector oom ([#2505](https://github.com/getsentry/sentry-java/pull/2505))
+- Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
+- Fix `sentry-bom` containing incorrect artifacts ([#2504](https://github.com/getsentry/sentry-java/pull/2504))
+
 ### Dependencies
 
 - Bump Native SDK from v0.5.3 to v0.5.4 ([#2500](https://github.com/getsentry/sentry-java/pull/2500))

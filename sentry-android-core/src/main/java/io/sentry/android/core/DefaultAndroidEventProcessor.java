@@ -93,7 +93,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     this.options = Objects.requireNonNull(options, "The options object is required.");
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
-    // dont ref. to method reference, theres a bug on it
+    // don't ref. to method reference, theres a bug on it
     //noinspection Convert2MethodRef
     contextData = executorService.submit(() -> loadContextData());
 
@@ -129,8 +129,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       // we only set memory data if it's not a hard crash, when it's a hard crash the event is
       // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
       // be different if the App. crashes because of OOM.
-      processNonCachedEvent(event);
-      setThreads(event);
+      processNonCachedEvent(event, hint);
+      setThreads(event, hint);
     }
 
     setCommons(event, true, applyScopeData);
@@ -202,23 +202,34 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   // Data to be applied to events that was created in the running process
-  private void processNonCachedEvent(final @NotNull SentryBaseEvent event) {
+  private void processNonCachedEvent(
+      final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
-    setAppExtras(app);
+    setAppExtras(app, hint);
 
     setPackageInfo(event, app);
 
     event.getContexts().setApp(app);
   }
 
-  private void setThreads(final @NotNull SentryEvent event) {
+  private void setThreads(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     if (event.getThreads() != null) {
-      for (SentryThread thread : event.getThreads()) {
+      final boolean isHybridSDK = HintUtils.isFromHybridSdk(hint);
+
+      for (final SentryThread thread : event.getThreads()) {
+        final boolean isMainThread = AndroidMainThreadChecker.getInstance().isMainThread(thread);
+
+        // TODO: Fix https://github.com/getsentry/team-mobile/issues/47
         if (thread.isCurrent() == null) {
-          thread.setCurrent(AndroidMainThreadChecker.getInstance().isMainThread(thread));
+          thread.setCurrent(isMainThread);
+        }
+
+        // This should not be set by Hybrid SDKs since they have their own threading model
+        if (!isHybridSDK && thread.isMain() == null) {
+          thread.setMain(isMainThread);
         }
       }
     }
@@ -242,14 +253,24 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private void setAppExtras(final @NotNull App app) {
+  private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
     app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
+
+    // This should not be set by Hybrid SDKs since they have their own app's lifecycle
+    if (!HintUtils.isFromHybridSdk(hint) && app.getInForeground() == null) {
+      // This feature depends on the AppLifecycleIntegration being installed, so only if
+      // enableAutoSessionTracking or enableAppLifecycleBreadcrumbs are enabled.
+      final @Nullable Boolean isBackground = AppState.getInstance().isInBackground();
+      if (isBackground != null) {
+        app.setInForeground(!isBackground);
+      }
+    }
   }
 
-  @SuppressWarnings("ObsoleteSdkInt")
+  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
   private @NotNull Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
       return memInfo.totalMem;
     }
     // using Runtime as a fallback
@@ -372,8 +393,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
+  @SuppressWarnings("NewApi")
   private TimeZone getTimeZone() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N) {
       LocaleList locales = context.getResources().getConfiguration().getLocales();
       if (!locales.isEmpty()) {
         Locale locale = locales.get(0);
@@ -491,9 +513,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  @SuppressWarnings("ObsoleteSdkInt")
+  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
   private long getBlockSizeLong(final @NotNull StatFs stat) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       return stat.getBlockSizeLong();
     }
     return getBlockSizeDep(stat);
@@ -504,9 +526,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return stat.getBlockSize();
   }
 
-  @SuppressWarnings("ObsoleteSdkInt")
+  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
   private long getBlockCountLong(final @NotNull StatFs stat) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       return stat.getBlockCountLong();
     }
     return getBlockCountDep(stat);
@@ -517,9 +539,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return stat.getBlockCount();
   }
 
-  @SuppressWarnings("ObsoleteSdkInt")
+  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
   private long getAvailableBlocksLong(final @NotNull StatFs stat) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       return stat.getAvailableBlocksLong();
     }
     return getAvailableBlocksDep(stat);
@@ -561,9 +583,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return null;
   }
 
-  @SuppressWarnings("ObsoleteSdkInt")
+  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
   private @Nullable File[] getExternalFilesDirs() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.KITKAT) {
       return context.getExternalFilesDirs(null);
     } else {
       File single = context.getExternalFilesDir(null);
@@ -741,7 +763,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
     if (applyScopeData) {
-      processNonCachedEvent(transaction);
+      processNonCachedEvent(transaction, hint);
     }
 
     setCommons(transaction, false, applyScopeData);

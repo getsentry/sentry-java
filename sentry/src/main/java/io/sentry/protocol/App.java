@@ -39,6 +39,11 @@ public final class App implements JsonUnknown, JsonSerializable {
   private @Nullable String appBuild;
   /** Application permissions in the form of "permission_name" : "granted|not_granted" */
   private @Nullable Map<String, String> permissions;
+  /**
+   * A flag indicating whether the app is in foreground or not. An app is in foreground when it's
+   * visible to the user.
+   */
+  private @Nullable Boolean inForeground;
 
   public App() {}
 
@@ -51,6 +56,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.buildType = app.buildType;
     this.deviceAppHash = app.deviceAppHash;
     this.permissions = CollectionUtils.newConcurrentHashMap(app.permissions);
+    this.inForeground = app.inForeground;
     this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
@@ -123,6 +129,15 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.permissions = permissions;
   }
 
+  @Nullable
+  public Boolean getInForeground() {
+    return inForeground;
+  }
+
+  public void setInForeground(final @Nullable Boolean inForeground) {
+    this.inForeground = inForeground;
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -163,6 +178,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     public static final String APP_VERSION = "app_version";
     public static final String APP_BUILD = "app_build";
     public static final String APP_PERMISSIONS = "permissions";
+    public static final String IN_FOREGROUND = "in_foreground";
   }
 
   @Override
@@ -192,6 +208,9 @@ public final class App implements JsonUnknown, JsonSerializable {
     }
     if (permissions != null && !permissions.isEmpty()) {
       writer.name(JsonKeys.APP_PERMISSIONS).value(logger, permissions);
+    }
+    if (inForeground != null) {
+      writer.name(JsonKeys.IN_FOREGROUND).value(inForeground);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -238,6 +257,9 @@ public final class App implements JsonUnknown, JsonSerializable {
             app.permissions =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.IN_FOREGROUND:
+            app.inForeground = reader.nextBooleanOrNull();
             break;
           default:
             if (unknown == null) {

@@ -9,5 +9,5 @@ public interface ICollector {
 
   void setup();
 
-  void collect(@NotNull final Iterable<PerformanceCollectionData> performanceCollectionData);
+  void collect(final @NotNull PerformanceCollectionData performanceCollectionData);
 }

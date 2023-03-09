@@ -2,6 +2,7 @@ package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
@@ -43,8 +44,9 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
     builder.addPropertyValue("enableExternalConfiguration", true);
-    builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_SDK_NAME);
+    builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
+    addPackageAndIntegrationInfo();
     if (annotationAttributes.containsKey("sendDefaultPii")) {
       builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));
     }
@@ -81,12 +83,16 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final SentryOptions defaultOptions = new SentryOptions();
     SdkVersion sdkVersion = defaultOptions.getSdkVersion();
 
-    final String name = BuildConfig.SENTRY_SPRING_SDK_NAME;
+    final String name = BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-    sdkVersion.addPackage("maven:io.sentry:sentry-spring", version);
-
     return sdkVersion;
+  }
+
+  private static void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6");
   }
 }

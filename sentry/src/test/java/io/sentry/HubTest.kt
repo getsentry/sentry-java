@@ -22,6 +22,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -1645,6 +1646,53 @@ class HubTest {
 
         assertTrue(hub.isCrashedLastRun!!)
         assertFalse(nativeMarker.exists())
+    }
+
+    @Test
+    fun `reportFullyDisplayed is ignored if TimeToFullDisplayTracing is disabled`() {
+        var called = false
+        val hub = generateHub {
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
+                called = !called
+            }
+        }
+        hub.reportFullyDisplayed()
+        assertFalse(called)
+    }
+
+    @Test
+    fun `reportFullyDisplayed calls FullyDisplayedReporter if TimeToFullDisplayTracing is enabled`() {
+        var called = false
+        val hub = generateHub {
+            it.isEnableTimeToFullDisplayTracing = true
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
+                called = !called
+            }
+        }
+        hub.reportFullyDisplayed()
+        assertTrue(called)
+    }
+
+    @Test
+    fun `reportFullyDisplayed calls FullyDisplayedReporter only once`() {
+        var called = false
+        val hub = generateHub {
+            it.isEnableTimeToFullDisplayTracing = true
+            it.fullyDisplayedReporter.registerFullyDrawnListener {
+                called = !called
+            }
+        }
+        hub.reportFullyDisplayed()
+        assertTrue(called)
+        hub.reportFullyDisplayed()
+        assertTrue(called)
+    }
+
+    @Test
+    fun `reportFullDisplayed calls reportFullyDisplayed`() {
+        val hub = spy(generateHub())
+        hub.reportFullDisplayed()
+        verify(hub).reportFullyDisplayed()
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

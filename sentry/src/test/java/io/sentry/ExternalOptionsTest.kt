@@ -107,6 +107,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with enableTracing using external properties`() {
+        withPropertiesFile("enable-tracing=true") {
+            assertEquals(true, it.enableTracing)
+        }
+    }
+
+    @Test
     fun `creates options with tracesSampleRate using external properties`() {
         withPropertiesFile("traces-sample-rate=0.2") {
             assertEquals(0.2, it.tracesSampleRate)

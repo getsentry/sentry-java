@@ -33,6 +33,7 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
       thread = new Thread(() -> hub.flush(options.getFlushTimeoutMillis()));
       runtime.addShutdownHook(thread);
       options.getLogger().log(SentryLevel.DEBUG, "ShutdownHookIntegration installed.");
+      addIntegrationToSdkVersion();
     } else {
       options.getLogger().log(SentryLevel.INFO, "enableShutdownHook is disabled.");
     }
@@ -41,7 +42,17 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   @Override
   public void close() throws IOException {
     if (thread != null) {
-      runtime.removeShutdownHook(thread);
+      try {
+        runtime.removeShutdownHook(thread);
+      } catch (IllegalStateException e) {
+        @Nullable final String message = e.getMessage();
+        // https://github.com/openjdk/jdk/blob/09b8a1959771213cb982d062f0a913285e4a0c6e/src/java.base/share/classes/java/lang/ApplicationShutdownHooks.java#L83
+        if (message != null && message.equals("Shutdown in progress")) {
+          // ignore
+        } else {
+          throw e;
+        }
+      }
     }
   }
 

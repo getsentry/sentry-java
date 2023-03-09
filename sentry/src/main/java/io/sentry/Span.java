@@ -310,6 +310,15 @@ public final class Span implements ISpan {
   }
 
   @Override
+  public boolean updateEndDate(final @NotNull SentryDate date) {
+    if (this.timestamp != null) {
+      this.timestamp = date;
+      return true;
+    }
+    return false;
+  }
+
+  @Override
   public boolean isNoOp() {
     return false;
   }

@@ -28,6 +28,7 @@ import io.sentry.spring.jakarta.tracing.SentryTracingFilter
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
+import jakarta.servlet.Filter
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.any
@@ -55,7 +56,6 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.HandlerExceptionResolver
 import java.lang.RuntimeException
-import jakarta.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -150,6 +150,7 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
+            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
@@ -178,6 +179,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.port).isEqualTo("8090")
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
+            assertThat(options.enableTracing).isEqualTo(true)
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
@@ -255,13 +257,14 @@ class SentryAutoConfigurationTest {
                 val transport = it.getBean(ITransport::class.java)
                 verify(transport).send(
                     checkEvent { event ->
-                        assertThat(event.sdk).isNotNull()
+                        assertThat(event.sdk).isNotNull
                         val sdk = event.sdk!!
                         assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
-                        assertThat(sdk.packages).anyMatch { pkg ->
-                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
+                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME)
+                        assertThat(sdk.packageSet).anyMatch { pkg ->
+                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter-jakarta" && pkg.version == BuildConfig.VERSION_NAME
                         }
+                        assertTrue(sdk.integrationSet.contains("SpringBoot3"))
                     },
                     anyOrNull()
                 )

@@ -94,6 +94,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     try {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
       options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
+      addIntegrationToSdkVersion();
     } catch (Throwable e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.

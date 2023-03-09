@@ -35,14 +35,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 
-val jakartaTransform by configurations.creating
-
 dependencies {
-
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer:0.5.0")
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.cli:0.5.0")
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
-
     api(projects.sentry)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
@@ -50,6 +43,7 @@ dependencies {
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
+    compileOnly(Config.Libs.contextPropagation)
 
     compileOnly(Config.Libs.springWebflux)
 
@@ -69,6 +63,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
+    testImplementation(Config.Libs.contextPropagation)
     testImplementation(Config.TestLibs.awaitility)
 }
 
@@ -108,24 +103,10 @@ tasks {
     }
 }
 
-task("jakartaTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring/src/main/java/io/sentry/spring", "src/main/java/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}.dependsOn("jakartaTestTransformation")
-
-task("jakartaTestTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring/src/test/kotlin/io/sentry/spring", "src/test/kotlin/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}
-
-// tasks.named("build").dependsOn("jakartaTransformation")
-
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.spring.jakarta")
-    buildConfigField("String", "SENTRY_SPRING_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_SPRING_JAKARTA_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_JAKARTA_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 

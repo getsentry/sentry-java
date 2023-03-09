@@ -66,8 +66,7 @@ public final class AndroidCpuCollector implements ICollector {
 
   @SuppressLint("NewApi")
   @Override
-  public void collect(
-      @NotNull final Iterable<PerformanceCollectionData> performanceCollectionData) {
+  public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP || !isEnabled) {
       return;
     }
@@ -86,9 +85,7 @@ public final class AndroidCpuCollector implements ICollector {
         new CpuCollectionData(
             System.currentTimeMillis(), (cpuUsagePercentage / (double) numCores) * 100.0);
 
-    for (PerformanceCollectionData data : performanceCollectionData) {
-      data.addCpuData(cpuData);
-    }
+    performanceCollectionData.addCpuData(cpuData);
   }
 
   /** Read the /proc/self/stat file and parses the result. */

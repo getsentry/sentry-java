@@ -186,4 +186,7 @@ public final class NoOpHub implements IHub {
   public @Nullable Boolean isCrashedLastRun() {
     return null;
   }
+
+  @Override
+  public void reportFullyDisplayed() {}
 }

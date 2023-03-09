@@ -167,6 +167,9 @@ public class SentryOptions {
    */
   private @Nullable Double sampleRate;
 
+  /** Enables generation of transactions and propagation of trace data. */
+  private @Nullable Boolean enableTracing;
+
   /**
    * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
    * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
@@ -398,8 +401,15 @@ public class SentryOptions {
   private final @NotNull List<ICollector> collectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+  private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
       NoOpTransactionPerformanceCollector.getInstance();
+
+  /** Enables the time-to-full-display spans in navigation transactions. */
+  private boolean enableTimeToFullDisplayTracing = false;
+
+  /** Screen fully displayed reporter, used for time-to-full-display spans. */
+  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
+      FullyDisplayedReporter.getInstance();
 
   /**
    * Adds an event processor
@@ -806,7 +816,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the sampleRate Can be anything between 0.01 and 1.0 or null (default), to disable it.
+   * Sets the sampleRate Can be anything between 0.0 and 1.0 or null (default), to disable it.
    *
    * @param sampleRate the sample rate
    */
@@ -815,9 +825,27 @@ public class SentryOptions {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
-              + " is not valid. Use null to disable or values > 0.0 and <= 1.0.");
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
     this.sampleRate = sampleRate;
+  }
+
+  /**
+   * Whether generation of transactions and propagation of trace data is enabled.
+   *
+   * <p>NOTE: There is also {@link SentryOptions#isTracingEnabled()} which checks other options as
+   * well.
+   *
+   * @return true if enabled, false if disabled, null can mean enabled if {@link
+   *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
+   */
+  public @Nullable Boolean getEnableTracing() {
+    return enableTracing;
+  }
+
+  /** Enables generation of transactions and propagation of trace data. */
+  public void setEnableTracing(@Nullable Boolean enableTracing) {
+    this.enableTracing = enableTracing;
   }
 
   /**
@@ -1436,6 +1464,10 @@ public class SentryOptions {
    * @return if tracing is enabled.
    */
   public boolean isTracingEnabled() {
+    if (enableTracing != null) {
+      return enableTracing;
+    }
+
     return getTracesSampleRate() != null || getTracesSampler() != null;
   }
 
@@ -1649,7 +1681,7 @@ public class SentryOptions {
 
   /**
    * Sets the profilesSampleRate. Can be anything between 0.0 and 1.0 or null (default), to disable
-   * it. It’s dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
+   * it. It's dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
    * is sampled, then a profile could be sampled with a probability given by profilesSampleRate.
    *
    * @param profilesSampleRate the sample rate
@@ -1922,6 +1954,45 @@ public class SentryOptions {
   }
 
   /**
+   * Sets the performance collector used to collect performance stats while transactions run.
+   *
+   * @param transactionPerformanceCollector the performance collector.
+   */
+  @ApiStatus.Internal
+  public void setTransactionPerformanceCollector(
+      final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
+    this.transactionPerformanceCollector = transactionPerformanceCollector;
+  }
+
+  /**
+   * Gets if the time-to-full-display spans is tracked in navigation transactions.
+   *
+   * @return if the time-to-full-display is tracked.
+   */
+  public boolean isEnableTimeToFullDisplayTracing() {
+    return enableTimeToFullDisplayTracing;
+  }
+
+  /**
+   * Sets if the time-to-full-display spans should be tracked in navigation transactions.
+   *
+   * @param enableTimeToFullDisplayTracing if the time-to-full-display spans should be tracked.
+   */
+  public void setEnableTimeToFullDisplayTracing(final boolean enableTimeToFullDisplayTracing) {
+    this.enableTimeToFullDisplayTracing = enableTimeToFullDisplayTracing;
+  }
+
+  /**
+   * Gets the reporter to call when a screen is fully loaded, used for time-to-full-display spans.
+   *
+   * @return The reporter to call when a screen is fully loaded.
+   */
+  @ApiStatus.Internal
+  public @NotNull FullyDisplayedReporter getFullyDisplayedReporter() {
+    return fullyDisplayedReporter;
+  }
+
+  /**
    * Whether OPTIONS requests should be traced.
    *
    * @return true if OPTIONS requests should be traced
@@ -2089,6 +2160,7 @@ public class SentryOptions {
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(createSdkVersion());
+      addPackageInfo();
     }
   }
 
@@ -2122,6 +2194,9 @@ public class SentryOptions {
     }
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
+    }
+    if (options.getEnableTracing() != null) {
+      setEnableTracing(options.getEnableTracing());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
@@ -2176,9 +2251,13 @@ public class SentryOptions {
     final SdkVersion sdkVersion = new SdkVersion(BuildConfig.SENTRY_JAVA_SDK_NAME, version);
 
     sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:io.sentry:sentry", version);
 
     return sdkVersion;
+  }
+
+  private void addPackageInfo() {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
   }
 
   public static final class Proxy {

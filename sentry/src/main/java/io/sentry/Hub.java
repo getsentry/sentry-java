@@ -515,6 +515,13 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void reportFullyDisplayed() {
+    if (options.isEnableTimeToFullDisplayTracing()) {
+      options.getFullyDisplayedReporter().reportFullyDrawn();
+    }
+  }
+
+  @Override
   public void popScope() {
     if (!isEnabled()) {
       options

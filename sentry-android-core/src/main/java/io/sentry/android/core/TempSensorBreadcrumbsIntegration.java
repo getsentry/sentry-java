@@ -62,6 +62,7 @@ public final class TempSensorBreadcrumbsIntegration
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
+            addIntegrationToSdkVersion();
           } else {
             this.options
                 .getLogger()
