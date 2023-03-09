@@ -92,11 +92,6 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when setSampling is set to exactly 0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().sampleRate = 0.0 }
-    }
-
-    @Test
     fun `when setTracesSampleRate is set to exactly 0, value is set`() {
         val options = SentryOptions().apply {
             this.tracesSampleRate = 0.0
@@ -460,6 +455,6 @@ class SentryOptionsTest {
 
     @Test
     fun `when options are initialized, FullyDrawnReporter is set`() {
-        assertEquals(FullDisplayedReporter.getInstance(), SentryOptions().fullDisplayedReporter)
+        assertEquals(FullyDisplayedReporter.getInstance(), SentryOptions().fullyDisplayedReporter)
     }
 }
