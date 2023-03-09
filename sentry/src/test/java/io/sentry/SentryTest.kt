@@ -6,6 +6,7 @@ import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.ResourcesModulesLoader
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
@@ -17,9 +18,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import java.io.File
 import java.nio.file.Files
-import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -393,7 +392,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
 
-            it.executorService = MockExecutorService()
+            it.executorService = ImmediateExecutorService()
 
             it.addOptionsObserver(optionsObserver)
 
@@ -445,17 +444,6 @@ class SentryTest {
         await.untilTrue(triggered)
         assertEquals("io.sentry.sample@1.1.0+220", optionsObserver.release)
         assertEquals("debug", optionsObserver.environment)
-    }
-
-    private class MockExecutorService : ISentryExecutorService {
-        override fun submit(runnable: Runnable): Future<*> {
-            runnable.run()
-            return mock()
-        }
-
-        override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-        override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = mock()
-        override fun close(timeoutMillis: Long) {}
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

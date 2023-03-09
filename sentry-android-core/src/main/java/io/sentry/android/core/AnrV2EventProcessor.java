@@ -67,7 +67,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
    * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
    * SentryOptions} do not have the environment field set.
    */
-  private static final String DEFAULT_ENVIRONMENT = "production";
+  static final String DEFAULT_ENVIRONMENT = "production";
 
   private final @NotNull Context context;
 
@@ -143,7 +143,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setTrace(final @NotNull SentryEvent event) {
     final SpanContext spanContext = PersistingScopeObserver.read(options, TRACE_FILENAME, SpanContext.class);
-    if (event.getContexts().getTrace() == null) {
+    if (event.getContexts().getTrace() == null && spanContext != null) {
       event.getContexts().setTrace(spanContext);
     }
   }
@@ -203,12 +203,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
     final List<Breadcrumb> breadcrumbs = (List<Breadcrumb>) PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List.class, new Breadcrumb.Deserializer());
-    if (breadcrumbs != null) {
-      if (event.getBreadcrumbs() == null) {
-        event.setBreadcrumbs(new ArrayList<>(breadcrumbs));
-      } else {
-        event.getBreadcrumbs().addAll(breadcrumbs);
-      }
+    if (breadcrumbs == null) {
+      return;
+    }
+    if (event.getBreadcrumbs() == null) {
+      event.setBreadcrumbs(new ArrayList<>(breadcrumbs));
+    } else {
+      event.getBreadcrumbs().addAll(breadcrumbs);
     }
   }
 
@@ -253,6 +254,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setDebugMeta(event);
     setSdk(event);
     setApp(event);
+    setOptionsTags(event);
   }
 
   private void setApp(final @NotNull SentryBaseEvent event) {
@@ -268,7 +270,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
 
     // backfill versionName and versionCode from the persisted release string
-    final String release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+    final String release = event.getRelease() != null ?
+      event.getRelease() : PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
     if (release != null) {
       try {
         final String versionName = release.substring(release.indexOf('@') + 1, release.indexOf('+'));
@@ -300,26 +303,24 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
-    if (options.getProguardUuid() != null) {
-      DebugMeta debugMeta = event.getDebugMeta();
+    DebugMeta debugMeta = event.getDebugMeta();
 
-      if (debugMeta == null) {
-        debugMeta = new DebugMeta();
-      }
-      if (debugMeta.getImages() == null) {
-        debugMeta.setImages(new ArrayList<>());
-      }
-      List<DebugImage> images = debugMeta.getImages();
-      if (images != null) {
-        final String proguardUuid =
-          PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
+    if (debugMeta == null) {
+      debugMeta = new DebugMeta();
+    }
+    if (debugMeta.getImages() == null) {
+      debugMeta.setImages(new ArrayList<>());
+    }
+    List<DebugImage> images = debugMeta.getImages();
+    if (images != null) {
+      final String proguardUuid =
+        PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
 
-        final DebugImage debugImage = new DebugImage();
-        debugImage.setType(DebugImage.PROGUARD);
-        debugImage.setUuid(proguardUuid);
-        images.add(debugImage);
-        event.setDebugMeta(debugMeta);
-      }
+      final DebugImage debugImage = new DebugImage();
+      debugImage.setType(DebugImage.PROGUARD);
+      debugImage.setUuid(proguardUuid);
+      images.add(debugImage);
+      event.setDebugMeta(debugMeta);
     }
   }
 
@@ -347,6 +348,23 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       final SdkVersion sdkVersion =
         PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion.class);
       event.setSdk(sdkVersion);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void setOptionsTags(final @NotNull SentryBaseEvent event) {
+    final Map<String, String> tags = (Map<String, String>) PersistingOptionsObserver.read(options, PersistingOptionsObserver.TAGS_FILENAME, Map.class);
+    if (tags == null) {
+      return;
+    }
+    if (event.getTags() == null) {
+      event.setTags(new HashMap<>(tags));
+    } else {
+      for (Map.Entry<String, String> item : tags.entrySet()) {
+        if (!event.getTags().containsKey(item.getKey())) {
+          event.setTag(item.getKey(), item.getValue());
+        }
+      }
     }
   }
   // endregion

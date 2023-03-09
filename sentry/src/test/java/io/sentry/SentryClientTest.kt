@@ -713,6 +713,20 @@ class SentryClientTest {
     }
 
     @Test
+    fun `scope is not applied to backfillable events`() {
+        val event = SentryEvent()
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val scope = createScope()
+
+        fixture.getSut().captureEvent(event, scope, hint)
+
+        assertNull(event.user)
+        assertNull(event.level)
+        assertNull(event.breadcrumbs)
+        assertNull(event.request)
+    }
+
+    @Test
     fun `non-backfillable events are only wired through regular processors`() {
         val backfillingProcessor = mock<BackfillingEventProcessor>()
         val nonBackfillingProcessor = mock<EventProcessor>()

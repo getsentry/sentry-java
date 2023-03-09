@@ -27,7 +27,7 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class AndroidEnvelopeCache extends EnvelopeCache {
 
-  private static final String LAST_ANR_REPORT = "last_anr_report";
+  public static final String LAST_ANR_REPORT = "last_anr_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 

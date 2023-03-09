@@ -1,1 +1,4 @@
 INSTALLATION
+last_crash
+.options-cache/
+.scope-cache/

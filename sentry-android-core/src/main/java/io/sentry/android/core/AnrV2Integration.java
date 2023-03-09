@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
 public class AnrV2Integration implements Integration, Closeable {
 
   // using 91 to avoid timezone change hassle, 90 days is how long Sentry keeps the events
-  private static final long NINETY_DAYS_THRESHOLD = TimeUnit.DAYS.toMillis(91);
+  static final long NINETY_DAYS_THRESHOLD = TimeUnit.DAYS.toMillis(91);
 
   private final @NotNull Context context;
   private final @NotNull ICurrentDateProvider dateProvider;
@@ -103,7 +103,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
   static class AnrProcessor implements Runnable {
 
-    private final @NotNull List<ApplicationExitInfo> exitInfos;
+    final @NotNull List<ApplicationExitInfo> exitInfos;
     private final @NotNull IHub hub;
     private final @NotNull SentryAndroidOptions options;
     private final long threshold;
@@ -249,7 +249,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
     private final boolean shouldEnrich;
 
-    AnrV2Hint(final long flushTimeoutMillis, final @NotNull ILogger logger, final long timestamp,
+    public AnrV2Hint(final long flushTimeoutMillis, final @NotNull ILogger logger, final long timestamp,
       final boolean shouldEnrich) {
       super(flushTimeoutMillis, logger);
       this.timestamp = timestamp;

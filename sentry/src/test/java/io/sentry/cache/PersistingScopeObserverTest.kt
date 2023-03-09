@@ -2,7 +2,6 @@ package io.sentry.cache
 
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.ISentryExecutorService
 import io.sentry.JsonDeserializer
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -28,13 +27,11 @@ import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.ImmediateExecutorService
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import org.mockito.kotlin.mock
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -65,22 +62,11 @@ class PersistingScopeObserverTest<T, R>(
 
     class Fixture {
 
-        private val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> {
-                runnable.run()
-                return mock()
-            }
-
-            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = mock()
-            override fun close(timeoutMillis: Long) {}
-        }
-
         val options = SentryOptions()
 
         fun getSut(cacheDir: TemporaryFolder): PersistingScopeObserver {
             options.run {
-                executorService = mockExecutorService
+                executorService = ImmediateExecutorService()
                 cacheDirPath = cacheDir.newFolder().absolutePath
             }
             return PersistingScopeObserver(options)

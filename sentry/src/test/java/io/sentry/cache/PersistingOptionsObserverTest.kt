@@ -1,6 +1,5 @@
 package io.sentry.cache
 
-import io.sentry.ISentryExecutorService
 import io.sentry.SentryOptions
 import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
@@ -9,13 +8,11 @@ import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.TAGS_FILENAME
 import io.sentry.protocol.SdkVersion
+import io.sentry.test.ImmediateExecutorService
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import org.mockito.kotlin.mock
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -45,22 +42,11 @@ class PersistingOptionsObserverTest<T>(
 
     class Fixture {
 
-        private val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> {
-                runnable.run()
-                return mock()
-            }
-
-            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = mock()
-            override fun close(timeoutMillis: Long) {}
-        }
-
         val options = SentryOptions()
 
         fun getSut(cacheDir: TemporaryFolder): PersistingOptionsObserver {
             options.run {
-                executorService = mockExecutorService
+                executorService = ImmediateExecutorService()
                 cacheDirPath = cacheDir.newFolder().absolutePath
             }
             return PersistingOptionsObserver(options)
