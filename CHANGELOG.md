@@ -9,6 +9,7 @@
 ### Fixes
 
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
 
 ## 6.15.0
 
