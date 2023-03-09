@@ -1,12 +1,10 @@
 package io.sentry
 
 import io.sentry.SentryLevel.WARNING
-import io.sentry.protocol.Contexts
 import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import org.junit.Assert.assertArrayEquals
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -602,9 +600,11 @@ class ScopeTest {
 
         scope.addBreadcrumb(Breadcrumb.debug("test"))
         verify(observer).addBreadcrumb(argThat { message == "test" })
-        verify(observer, times(2)).setBreadcrumbs(argThat {
-            elementAt(0) == breadcrumb && elementAt(1).message == "test"
-        })
+        verify(observer, times(2)).setBreadcrumbs(
+            argThat {
+                elementAt(0) == breadcrumb && elementAt(1).message == "test"
+            }
+        )
     }
 
     @Test
@@ -783,9 +783,11 @@ class ScopeTest {
         val scope = Scope(options)
 
         scope.fingerprint = listOf("finger", "print")
-        verify(observer).setFingerprint(argThat {
-            elementAt(0) == "finger" && elementAt(1) == "print"
-        })
+        verify(observer).setFingerprint(
+            argThat {
+                elementAt(0) == "finger" && elementAt(1) == "print"
+            }
+        )
     }
 
     @Test
@@ -798,9 +800,11 @@ class ScopeTest {
 
         data class Obj(val stuff: Int)
         scope.setContexts("test", Obj(3))
-        verify(observer).setContexts(argThat {
-            (get("test") as Obj).stuff == 3
-        })
+        verify(observer).setContexts(
+            argThat {
+                (get("test") as Obj).stuff == 3
+            }
+        )
     }
 
     @Test

@@ -5,5 +5,4 @@ package io.sentry;
  * currently stored in-memory data (like Scope or SentryOptions) is irrelevant, because the event
  * happened in the past.
  */
-public interface BackfillingEventProcessor extends EventProcessor {
-}
+public interface BackfillingEventProcessor extends EventProcessor {}

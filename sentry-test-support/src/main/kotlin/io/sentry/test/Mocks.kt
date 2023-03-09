@@ -1,3 +1,4 @@
+// ktlint-disable filename
 package io.sentry.test
 
 import io.sentry.ISentryExecutorService

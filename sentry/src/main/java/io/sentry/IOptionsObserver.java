@@ -6,8 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A SentryOptions observer that tracks changes of SentryOptions.
- * All methods are "default", so implementors can subscribe to only those properties, that they are interested in.
+ * A SentryOptions observer that tracks changes of SentryOptions. All methods are "default", so
+ * implementors can subscribe to only those properties, that they are interested in.
  */
 public interface IOptionsObserver {
 

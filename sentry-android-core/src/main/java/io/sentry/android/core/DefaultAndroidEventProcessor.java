@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import static android.os.BatteryManager.EXTRA_TEMPERATURE;
 
@@ -9,7 +8,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.BatteryManager;
@@ -18,7 +16,6 @@ import android.os.Environment;
 import android.os.LocaleList;
 import android.os.StatFs;
 import android.os.SystemClock;
-import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
@@ -38,10 +35,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -114,7 +108,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     map.put(EMULATOR, buildInfoProvider.isEmulator());
 
     final Map<String, String> sideLoadedInfo =
-      ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+        ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
     if (sideLoadedInfo != null) {
       map.put(SIDE_LOADED, sideLoadedInfo);
     }
@@ -358,7 +352,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     device.setOnline(connected);
 
-    final ActivityManager.MemoryInfo memInfo = ContextUtils.getMemInfo(context, options.getLogger());
+    final ActivityManager.MemoryInfo memInfo =
+        ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
       // in bytes
       device.setMemorySize(getMemorySize(memInfo));

@@ -9,7 +9,6 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
-import io.sentry.IScopeObserver;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;

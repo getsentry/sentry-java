@@ -119,8 +119,10 @@ public final class JsonSerializer implements ISerializer {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T, R> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz,
-    @Nullable JsonDeserializer<R> elementDeserializer) {
+  public <T, R> @Nullable T deserialize(
+      @NotNull Reader reader,
+      @NotNull Class<T> clazz,
+      @Nullable JsonDeserializer<R> elementDeserializer) {
     try {
       JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
       JsonDeserializer<?> deserializer = deserializersByClass.get(clazz);
@@ -183,7 +185,7 @@ public final class JsonSerializer implements ISerializer {
    */
   @Override
   public void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream)
-    throws Exception {
+      throws Exception {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
     Objects.requireNonNull(outputStream, "The Stream object is required.");
 
@@ -193,8 +195,8 @@ public final class JsonSerializer implements ISerializer {
 
     try {
       envelope
-        .getHeader()
-        .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+          .getHeader()
+          .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
@@ -239,7 +241,9 @@ public final class JsonSerializer implements ISerializer {
   }
 
   private <T> boolean isKnownPrimitive(final @NotNull Class<T> clazz) {
-    return clazz.isArray() || Collection.class.isAssignableFrom(clazz) ||
-      String.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz);
+    return clazz.isArray()
+        || Collection.class.isAssignableFrom(clazz)
+        || String.class.isAssignableFrom(clazz)
+        || Map.class.isAssignableFrom(clazz);
   }
 }

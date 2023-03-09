@@ -142,11 +142,13 @@ class ContextUtilsUnitTests {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val shadowActivityManager = Shadow.extract<ShadowActivityManager>(activityManager)
 
-        shadowActivityManager.setMemoryInfo(MemoryInfo().apply {
-            availMem = 128
-            totalMem = 2048
-            lowMemory = true
-        })
+        shadowActivityManager.setMemoryInfo(
+            MemoryInfo().apply {
+                availMem = 128
+                totalMem = 2048
+                lowMemory = true
+            }
+        )
         val memInfo = ContextUtils.getMemInfo(context, logger)
         assertEquals(128, memInfo!!.availMem)
         assertEquals(2048, memInfo.totalMem)

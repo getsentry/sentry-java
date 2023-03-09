@@ -371,11 +371,13 @@ class AnrV2EventProcessorTest {
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
 
         val processed = processEvent(hint, populateScopeCache = true, populateOptionsCache = true) {
-            contexts.setDevice(Device().apply {
-                brand = "Pixel"
-                model = "3XL"
-                memorySize = 4096
-            })
+            contexts.setDevice(
+                Device().apply {
+                    brand = "Pixel"
+                    model = "3XL"
+                    memorySize = 4096
+                }
+            )
             platform = "NotAndroid"
 
             transaction = "MainActivity"

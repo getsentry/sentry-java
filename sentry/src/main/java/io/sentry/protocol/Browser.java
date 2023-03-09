@@ -49,15 +49,16 @@ public final class Browser implements JsonUnknown, JsonSerializable {
     this.version = version;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Browser browser = (Browser) o;
-    return Objects.equals(name, browser.name) && Objects.equals(version,
-      browser.version);
+    return Objects.equals(name, browser.name) && Objects.equals(version, browser.version);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(name, version);
   }
 

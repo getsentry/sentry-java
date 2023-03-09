@@ -104,19 +104,21 @@ public final class OperatingSystem implements JsonUnknown, JsonSerializable {
     this.rooted = rooted;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     OperatingSystem that = (OperatingSystem) o;
     return Objects.equals(name, that.name)
-      && Objects.equals(version, that.version)
-      && Objects.equals(rawDescription, that.rawDescription)
-      && Objects.equals(build, that.build)
-      && Objects.equals(kernelVersion, that.kernelVersion)
-      && Objects.equals(rooted, that.rooted);
+        && Objects.equals(version, that.version)
+        && Objects.equals(rawDescription, that.rawDescription)
+        && Objects.equals(build, that.build)
+        && Objects.equals(kernelVersion, that.kernelVersion)
+        && Objects.equals(rooted, that.rooted);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(name, version, rawDescription, build, kernelVersion, rooted);
   }
 

@@ -52,7 +52,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
 
     final Long appStartTime = AppStartState.getInstance().getAppStartMillis();
-    if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class) && appStartTime != null) {
+    if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
+        && appStartTime != null) {
       long timeSinceSdkInit = currentDateProvider.getCurrentTimeMillis() - appStartTime;
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
@@ -66,16 +67,19 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     }
 
     HintUtils.runIfHasType(
-      hint,
-      AnrV2Integration.AnrV2Hint.class,
-      (anrHint) -> {
-        final long timestamp = anrHint.timestamp();
-        options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Writing last reported ANR marker with timestamp %d", timestamp);
+        hint,
+        AnrV2Integration.AnrV2Hint.class,
+        (anrHint) -> {
+          final long timestamp = anrHint.timestamp();
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Writing last reported ANR marker with timestamp %d",
+                  timestamp);
 
-        writeLastReportedAnrMarker(anrHint.timestamp());
-      });
+          writeLastReportedAnrMarker(anrHint.timestamp());
+        });
   }
 
   @TestOnly
@@ -133,8 +137,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   }
 
   public static long lastReportedAnr(final @NotNull SentryOptions options) {
-    final String cacheDirPath = Objects.requireNonNull(options.getCacheDirPath(),
-      "Cache dir path should be set for getting ANRs reported");
+    final String cacheDirPath =
+        Objects.requireNonNull(
+            options.getCacheDirPath(), "Cache dir path should be set for getting ANRs reported");
 
     final File lastAnrMarker = new File(cacheDirPath, LAST_ANR_REPORT);
     try {
@@ -145,16 +150,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         return Long.parseLong(content.trim());
       } else {
         options
-          .getLogger()
-          .log(
-            DEBUG,
-            "Last ANR marker does not exist. %s.",
-            lastAnrMarker.getAbsolutePath());
+            .getLogger()
+            .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
       }
     } catch (Throwable e) {
-      options
-        .getLogger()
-        .log(ERROR, "Error reading last ANR marker", e);
+      options.getLogger().log(ERROR, "Error reading last ANR marker", e);
     }
     return 0L;
   }
@@ -162,9 +162,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   private void writeLastReportedAnrMarker(final long timestamp) {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
-      options
-        .getLogger()
-        .log(DEBUG, "Cache dir path is null, the ANR marker will not be written");
+      options.getLogger().log(DEBUG, "Cache dir path is null, the ANR marker will not be written");
       return;
     }
 

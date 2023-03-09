@@ -1,5 +1,7 @@
 package io.sentry.cache;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.Breadcrumb;
 import io.sentry.IScopeObserver;
 import io.sentry.JsonDeserializer;
@@ -13,8 +15,6 @@ import java.util.Collection;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static io.sentry.SentryLevel.ERROR;
 
 public final class PersistingScopeObserver implements IScopeObserver {
 
@@ -36,92 +36,106 @@ public final class PersistingScopeObserver implements IScopeObserver {
     this.options = options;
   }
 
-  @Override public void setUser(final @Nullable User user) {
-    serializeToDisk(() -> {
-      if (user == null) {
-        delete(USER_FILENAME);
-      } else {
-        store(user, USER_FILENAME);
-      }
-    });
+  @Override
+  public void setUser(final @Nullable User user) {
+    serializeToDisk(
+        () -> {
+          if (user == null) {
+            delete(USER_FILENAME);
+          } else {
+            store(user, USER_FILENAME);
+          }
+        });
   }
 
-  @Override public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
+  @Override
+  public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
     serializeToDisk(() -> store(breadcrumbs, BREADCRUMBS_FILENAME));
   }
 
-  @Override public void setTags(@NotNull Map<String, @NotNull String> tags) {
+  @Override
+  public void setTags(@NotNull Map<String, @NotNull String> tags) {
     serializeToDisk(() -> store(tags, TAGS_FILENAME));
   }
 
-  @Override public void setExtras(@NotNull Map<String, @NotNull Object> extras) {
+  @Override
+  public void setExtras(@NotNull Map<String, @NotNull Object> extras) {
     serializeToDisk(() -> store(extras, EXTRAS_FILENAME));
   }
 
-  @Override public void setRequest(@Nullable Request request) {
-    serializeToDisk(() -> {
-      if (request == null) {
-        delete(REQUEST_FILENAME);
-      } else {
-        store(request, REQUEST_FILENAME);
-      }
-    });
+  @Override
+  public void setRequest(@Nullable Request request) {
+    serializeToDisk(
+        () -> {
+          if (request == null) {
+            delete(REQUEST_FILENAME);
+          } else {
+            store(request, REQUEST_FILENAME);
+          }
+        });
   }
 
-  @Override public void setFingerprint(@NotNull Collection<String> fingerprint) {
+  @Override
+  public void setFingerprint(@NotNull Collection<String> fingerprint) {
     serializeToDisk(() -> store(fingerprint, FINGERPRINT_FILENAME));
   }
 
-  @Override public void setLevel(@Nullable SentryLevel level) {
-    serializeToDisk(() -> {
-      if (level == null) {
-        delete(LEVEL_FILENAME);
-      } else {
-        store(level, LEVEL_FILENAME);
-      }
-    });
+  @Override
+  public void setLevel(@Nullable SentryLevel level) {
+    serializeToDisk(
+        () -> {
+          if (level == null) {
+            delete(LEVEL_FILENAME);
+          } else {
+            store(level, LEVEL_FILENAME);
+          }
+        });
   }
 
-  @Override public void setTransaction(@Nullable String transaction) {
-    serializeToDisk(() -> {
-      if (transaction == null) {
-        delete(TRANSACTION_FILENAME);
-      } else {
-        store(transaction, TRANSACTION_FILENAME);
-      }
-    });
+  @Override
+  public void setTransaction(@Nullable String transaction) {
+    serializeToDisk(
+        () -> {
+          if (transaction == null) {
+            delete(TRANSACTION_FILENAME);
+          } else {
+            store(transaction, TRANSACTION_FILENAME);
+          }
+        });
   }
 
-  @Override public void setTrace(@Nullable SpanContext spanContext) {
-    serializeToDisk(() -> {
-      if (spanContext == null) {
-        delete(TRACE_FILENAME);
-      } else {
-        store(spanContext, TRACE_FILENAME);
-      }
-    });
+  @Override
+  public void setTrace(@Nullable SpanContext spanContext) {
+    serializeToDisk(
+        () -> {
+          if (spanContext == null) {
+            delete(TRACE_FILENAME);
+          } else {
+            store(spanContext, TRACE_FILENAME);
+          }
+        });
   }
 
-  @Override public void setContexts(@NotNull Contexts contexts) {
+  @Override
+  public void setContexts(@NotNull Contexts contexts) {
     serializeToDisk(() -> store(contexts, CONTEXTS_FILENAME));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private void serializeToDisk(final @NotNull Runnable task) {
     try {
-      options.getExecutorService().submit(() -> {
-        try {
-          task.run();
-        } catch (Throwable e) {
-          options
-            .getLogger()
-            .log(ERROR, "Serialization task failed", e);
-        }
-      });
-    } catch (Throwable e) {
       options
-        .getLogger()
-        .log(ERROR, "Serialization task could not be scheduled", e);
+          .getExecutorService()
+          .submit(
+              () -> {
+                try {
+                  task.run();
+                } catch (Throwable e) {
+                  options.getLogger().log(ERROR, "Serialization task failed", e);
+                }
+              });
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Serialization task could not be scheduled", e);
     }
   }
 
@@ -134,19 +148,17 @@ public final class PersistingScopeObserver implements IScopeObserver {
   }
 
   public static <T> @Nullable T read(
-    final @NotNull SentryOptions options,
-    final @NotNull String fileName,
-    final @NotNull Class<T> clazz
-  ) {
+      final @NotNull SentryOptions options,
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz) {
     return read(options, fileName, clazz, null);
   }
 
   public static <T, R> @Nullable T read(
-    final @NotNull SentryOptions options,
-    final @NotNull String fileName,
-    final @NotNull Class<T> clazz,
-    final @Nullable JsonDeserializer<R> elementDeserializer
-  ) {
+      final @NotNull SentryOptions options,
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz,
+      final @Nullable JsonDeserializer<R> elementDeserializer) {
     return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz, elementDeserializer);
   }
 }

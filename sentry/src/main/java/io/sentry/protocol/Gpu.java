@@ -131,24 +131,34 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
     this.npotSupport = npotSupport;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Gpu gpu = (Gpu) o;
     return Objects.equals(name, gpu.name)
-      && Objects.equals(id, gpu.id)
-      && Objects.equals(vendorId, gpu.vendorId)
-      && Objects.equals(vendorName, gpu.vendorName)
-      && Objects.equals(memorySize, gpu.memorySize)
-      && Objects.equals(apiType, gpu.apiType)
-      && Objects.equals(multiThreadedRendering, gpu.multiThreadedRendering)
-      && Objects.equals(version, gpu.version)
-      && Objects.equals(npotSupport, gpu.npotSupport);
+        && Objects.equals(id, gpu.id)
+        && Objects.equals(vendorId, gpu.vendorId)
+        && Objects.equals(vendorName, gpu.vendorName)
+        && Objects.equals(memorySize, gpu.memorySize)
+        && Objects.equals(apiType, gpu.apiType)
+        && Objects.equals(multiThreadedRendering, gpu.multiThreadedRendering)
+        && Objects.equals(version, gpu.version)
+        && Objects.equals(npotSupport, gpu.npotSupport);
   }
 
-  @Override public int hashCode() {
-    return Objects.hash(name, id, vendorId, vendorName, memorySize, apiType, multiThreadedRendering,
-      version, npotSupport);
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        name,
+        id,
+        vendorId,
+        vendorName,
+        memorySize,
+        apiType,
+        multiThreadedRendering,
+        version,
+        npotSupport);
   }
 
   // region JsonSerializable

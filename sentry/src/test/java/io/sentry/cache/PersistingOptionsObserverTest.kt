@@ -34,7 +34,7 @@ class PersistingOptionsObserverTest<T>(
     private val store: StoreOptionsValue<T>,
     private val filename: String,
     private val delete: DeleteOptionsValue,
-    private val deletedEntity: T?,
+    private val deletedEntity: T?
 ) {
 
     @get:Rule
@@ -124,7 +124,7 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<Map<String, String>> { setTags(it) },
             TAGS_FILENAME,
             DeleteOptionsValue { setTags(emptyMap()) },
-            emptyMap<String, String>(),
+            emptyMap<String, String>()
         )
 
         @JvmStatic

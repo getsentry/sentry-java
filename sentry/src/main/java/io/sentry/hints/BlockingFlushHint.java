@@ -1,12 +1,12 @@
 package io.sentry.hints;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.ILogger;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-
-import static io.sentry.SentryLevel.ERROR;
 
 @ApiStatus.Internal
 public abstract class BlockingFlushHint implements DiskFlushNotification, Flushable {

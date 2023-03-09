@@ -234,18 +234,19 @@ public final class Sentry {
     // on the observers have done their work, even if they do that async.
     try {
       options
-        .getExecutorService()
-        .submit(() -> {
-          // for static things like sentry options we can immediately trigger observers
-          for (final IOptionsObserver observer : options.getOptionsObservers()) {
-            observer.setRelease(options.getRelease());
-            observer.setProguardUuid(options.getProguardUuid());
-            observer.setSdkVersion(options.getSdkVersion());
-            observer.setDist(options.getDist());
-            observer.setEnvironment(options.getEnvironment());
-            observer.setTags(options.getTags());
-          }
-        });
+          .getExecutorService()
+          .submit(
+              () -> {
+                // for static things like sentry options we can immediately trigger observers
+                for (final IOptionsObserver observer : options.getOptionsObservers()) {
+                  observer.setRelease(options.getRelease());
+                  observer.setProguardUuid(options.getProguardUuid());
+                  observer.setSdkVersion(options.getSdkVersion());
+                  observer.setDist(options.getDist());
+                  observer.setEnvironment(options.getEnvironment());
+                  observer.setTags(options.getTags());
+                }
+              });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
     }

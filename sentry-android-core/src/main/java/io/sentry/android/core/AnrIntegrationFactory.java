@@ -10,8 +10,8 @@ import org.jetbrains.annotations.NotNull;
 public final class AnrIntegrationFactory {
 
   @NotNull
-  public static Integration create(final @NotNull Context context,
-    final @NotNull BuildInfoProvider buildInfoProvider) {
+  public static Integration create(
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
       return new AnrV2Integration(context);
     } else {

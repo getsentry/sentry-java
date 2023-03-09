@@ -85,7 +85,8 @@ public final class AsyncHttpTransport implements ITransport {
       }
     } else {
       SentryEnvelope envelopeThatMayIncludeClientReport;
-      if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
+      if (HintUtils.hasType(
+          hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
         envelopeThatMayIncludeClientReport =
             options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
       } else {

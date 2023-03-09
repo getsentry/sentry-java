@@ -1,16 +1,14 @@
 package io.sentry.cache;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.IOptionsObserver;
 import io.sentry.JsonDeserializer;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
-import java.io.File;
-import java.nio.charset.Charset;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static io.sentry.SentryLevel.ERROR;
 
 public final class PersistingOptionsObserver implements IOptionsObserver {
   public static final String OPTIONS_CACHE = ".options-cache";
@@ -30,74 +28,83 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
   @SuppressWarnings("FutureReturnValueIgnored")
   private void serializeToDisk(final @NotNull Runnable task) {
     try {
-      options.getExecutorService().submit(() -> {
-        try {
-          task.run();
-        } catch (Throwable e) {
-          options
-            .getLogger()
-            .log(ERROR, "Serialization task failed", e);
-        }
-      });
-    } catch (Throwable e) {
       options
-        .getLogger()
-        .log(ERROR, "Serialization task could not be scheduled", e);
+          .getExecutorService()
+          .submit(
+              () -> {
+                try {
+                  task.run();
+                } catch (Throwable e) {
+                  options.getLogger().log(ERROR, "Serialization task failed", e);
+                }
+              });
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Serialization task could not be scheduled", e);
     }
   }
 
-
-  @Override public void setRelease(@Nullable String release) {
-    serializeToDisk(() -> {
-      if (release == null) {
-        delete(RELEASE_FILENAME);
-      } else {
-        store(release, RELEASE_FILENAME);
-      }
-    });
+  @Override
+  public void setRelease(@Nullable String release) {
+    serializeToDisk(
+        () -> {
+          if (release == null) {
+            delete(RELEASE_FILENAME);
+          } else {
+            store(release, RELEASE_FILENAME);
+          }
+        });
   }
 
-  @Override public void setProguardUuid(@Nullable String proguardUuid) {
-    serializeToDisk(() -> {
-      if (proguardUuid == null) {
-        delete(PROGUARD_UUID_FILENAME);
-      } else {
-        store(proguardUuid, PROGUARD_UUID_FILENAME);
-      }
-    });
+  @Override
+  public void setProguardUuid(@Nullable String proguardUuid) {
+    serializeToDisk(
+        () -> {
+          if (proguardUuid == null) {
+            delete(PROGUARD_UUID_FILENAME);
+          } else {
+            store(proguardUuid, PROGUARD_UUID_FILENAME);
+          }
+        });
   }
 
-  @Override public void setSdkVersion(@Nullable SdkVersion sdkVersion) {
-    serializeToDisk(() -> {
-      if (sdkVersion == null) {
-        delete(SDK_VERSION_FILENAME);
-      } else {
-        store(sdkVersion, SDK_VERSION_FILENAME);
-      }
-    });
+  @Override
+  public void setSdkVersion(@Nullable SdkVersion sdkVersion) {
+    serializeToDisk(
+        () -> {
+          if (sdkVersion == null) {
+            delete(SDK_VERSION_FILENAME);
+          } else {
+            store(sdkVersion, SDK_VERSION_FILENAME);
+          }
+        });
   }
 
-  @Override public void setDist(@Nullable String dist) {
-    serializeToDisk(() -> {
-      if (dist == null) {
-        delete(DIST_FILENAME);
-      } else {
-        store(dist, DIST_FILENAME);
-      }
-    });
+  @Override
+  public void setDist(@Nullable String dist) {
+    serializeToDisk(
+        () -> {
+          if (dist == null) {
+            delete(DIST_FILENAME);
+          } else {
+            store(dist, DIST_FILENAME);
+          }
+        });
   }
 
-  @Override public void setEnvironment(@Nullable String environment) {
-    serializeToDisk(() -> {
-      if (environment == null) {
-        delete(ENVIRONMENT_FILENAME);
-      } else {
-        store(environment, ENVIRONMENT_FILENAME);
-      }
-    });
+  @Override
+  public void setEnvironment(@Nullable String environment) {
+    serializeToDisk(
+        () -> {
+          if (environment == null) {
+            delete(ENVIRONMENT_FILENAME);
+          } else {
+            store(environment, ENVIRONMENT_FILENAME);
+          }
+        });
   }
 
-  @Override public void setTags(@NotNull Map<String, @NotNull String> tags) {
+  @Override
+  public void setTags(@NotNull Map<String, @NotNull String> tags) {
     serializeToDisk(() -> store(tags, TAGS_FILENAME));
   }
 
@@ -110,19 +117,17 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
   }
 
   public static <T> @Nullable T read(
-    final @NotNull SentryOptions options,
-    final @NotNull String fileName,
-    final @NotNull Class<T> clazz
-  ) {
+      final @NotNull SentryOptions options,
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz) {
     return read(options, fileName, clazz, null);
   }
 
   public static <T, R> @Nullable T read(
-    final @NotNull SentryOptions options,
-    final @NotNull String fileName,
-    final @NotNull Class<T> clazz,
-    final @Nullable JsonDeserializer<R> elementDeserializer
-  ) {
+      final @NotNull SentryOptions options,
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz,
+      final @Nullable JsonDeserializer<R> elementDeserializer) {
     return CacheUtils.read(options, OPTIONS_CACHE, fileName, clazz, elementDeserializer);
   }
 }

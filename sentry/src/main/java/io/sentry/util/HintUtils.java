@@ -100,7 +100,8 @@ public final class HintUtils {
    * @return true if it should apply scope's data or false otherwise
    */
   public static boolean shouldApplyScopeData(@NotNull Hint hint) {
-    return (!hasType(hint, Cached.class) && !hasType(hint, Backfillable.class)) || hasType(hint, ApplyScopeData.class);
+    return (!hasType(hint, Cached.class) && !hasType(hint, Backfillable.class))
+        || hasType(hint, ApplyScopeData.class);
   }
 
   @FunctionalInterface

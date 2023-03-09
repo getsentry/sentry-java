@@ -1,8 +1,8 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
-import io.sentry.util.UrlUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Collections;
@@ -436,18 +436,20 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   }
 
   @SuppressWarnings("JavaUtilDate")
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Breadcrumb that = (Breadcrumb) o;
     return timestamp.getTime() == that.timestamp.getTime()
-      && Objects.equals(message, that.message)
-      && Objects.equals(type, that.type)
-      && Objects.equals(category, that.category)
-      && level == that.level;
+        && Objects.equals(message, that.message)
+        && Objects.equals(type, that.type)
+        && Objects.equals(category, that.category)
+        && level == that.level;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(timestamp, message, type, category, level);
   }
 

@@ -201,51 +201,61 @@ class PersistingScopeObserverTest<T, R>(
 
         private fun contexts(): Array<Any?> = arrayOf(
             Contexts().apply {
-                setApp(App().apply {
-                    appBuild = "1"
-                    appIdentifier = "io.sentry.sample"
-                    appName = "sample"
-                    appStartTime = DateUtils.getCurrentDateTime()
-                    buildType = "debug"
-                    appVersion = "2021"
-                })
-                setBrowser(Browser().apply {
-                    name = "Chrome"
-                })
-                setDevice(Device().apply {
-                    name = "Pixel 3XL"
-                    manufacturer = "Google"
-                    brand = "Pixel"
-                    family = "Pixels"
-                    model = "3XL"
-                    isCharging = true
-                    isOnline = true
-                    orientation = PORTRAIT
-                    isSimulator = false
-                    memorySize = 4096
-                    freeMemory = 2048
-                    usableMemory = 1536
-                    isLowMemory = false
-                    storageSize = 64000
-                    freeStorage = 32000
-                    screenWidthPixels = 1080
-                    screenHeightPixels = 1920
-                    screenDpi = 446
-                    connectionType = "wifi"
-                    batteryTemperature = 37.0f
-                    batteryLevel = 92.0f
-                    locale = "en-US"
-                })
-                setGpu(Gpu().apply {
-                    vendorName = "GeForce"
-                    memorySize = 1000
-                })
-                setOperatingSystem(OperatingSystem().apply {
-                    isRooted = true
-                    build = "2021.123_alpha"
-                    name = "Android"
-                    version = "12"
-                })
+                setApp(
+                    App().apply {
+                        appBuild = "1"
+                        appIdentifier = "io.sentry.sample"
+                        appName = "sample"
+                        appStartTime = DateUtils.getCurrentDateTime()
+                        buildType = "debug"
+                        appVersion = "2021"
+                    }
+                )
+                setBrowser(
+                    Browser().apply {
+                        name = "Chrome"
+                    }
+                )
+                setDevice(
+                    Device().apply {
+                        name = "Pixel 3XL"
+                        manufacturer = "Google"
+                        brand = "Pixel"
+                        family = "Pixels"
+                        model = "3XL"
+                        isCharging = true
+                        isOnline = true
+                        orientation = PORTRAIT
+                        isSimulator = false
+                        memorySize = 4096
+                        freeMemory = 2048
+                        usableMemory = 1536
+                        isLowMemory = false
+                        storageSize = 64000
+                        freeStorage = 32000
+                        screenWidthPixels = 1080
+                        screenHeightPixels = 1920
+                        screenDpi = 446
+                        connectionType = "wifi"
+                        batteryTemperature = 37.0f
+                        batteryLevel = 92.0f
+                        locale = "en-US"
+                    }
+                )
+                setGpu(
+                    Gpu().apply {
+                        vendorName = "GeForce"
+                        memorySize = 1000
+                    }
+                )
+                setOperatingSystem(
+                    OperatingSystem().apply {
+                        isRooted = true
+                        build = "2021.123_alpha"
+                        name = "Android"
+                        version = "12"
+                    }
+                )
             },
             StoreScopeValue<Contexts> { setContexts(it) },
             CONTEXTS_FILENAME,

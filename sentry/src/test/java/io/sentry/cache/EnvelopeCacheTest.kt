@@ -12,7 +12,6 @@ import io.sentry.Session
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.cache.EnvelopeCache.SUFFIX_CURRENT_SESSION_FILE
-import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.User

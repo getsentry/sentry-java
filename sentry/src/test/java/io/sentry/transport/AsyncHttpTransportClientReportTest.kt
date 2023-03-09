@@ -4,9 +4,9 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
-import io.sentry.clientreport.ClientReportTestHelper.Companion.uncaughtExceptionHint
-import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableUncaughtExceptionHint
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableHint
+import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableUncaughtExceptionHint
+import io.sentry.clientreport.ClientReportTestHelper.Companion.uncaughtExceptionHint
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.dsnString

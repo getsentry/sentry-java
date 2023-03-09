@@ -4,7 +4,6 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
-import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -458,7 +457,8 @@ public final class SentryClient implements ISentryClient {
 
                     if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
                       // if we have an uncaughtExceptionHint we can end the session.
-                      if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
+                      if (HintUtils.hasType(
+                          hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
                         session.end();
                       }
                     }

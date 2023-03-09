@@ -2,18 +2,15 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
-import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.User;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A Scope observer that tracks changes on Scope.
- * All methods are "default", so implementors can subscribe to only those properties, that they are
- * interested in.
+ * A Scope observer that tracks changes on Scope. All methods are "default", so implementors can
+ * subscribe to only those properties, that they are interested in.
  */
 public interface IScopeObserver {
   default void setUser(@Nullable User user) {}

@@ -138,22 +138,24 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.inForeground = inForeground;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     App app = (App) o;
     return Objects.equals(appIdentifier, app.appIdentifier)
-      && Objects.equals(appStartTime, app.appStartTime)
-      && Objects.equals(deviceAppHash, app.deviceAppHash)
-      && Objects.equals(buildType, app.buildType)
-      && Objects.equals(appName, app.appName)
-      && Objects.equals(appVersion, app.appVersion)
-      && Objects.equals(appBuild, app.appBuild);
+        && Objects.equals(appStartTime, app.appStartTime)
+        && Objects.equals(deviceAppHash, app.deviceAppHash)
+        && Objects.equals(buildType, app.buildType)
+        && Objects.equals(appName, app.appName)
+        && Objects.equals(appVersion, app.appVersion)
+        && Objects.equals(appBuild, app.appBuild);
   }
 
-  @Override public int hashCode() {
-    return Objects.hash(appIdentifier, appStartTime, deviceAppHash, buildType, appName, appVersion,
-      appBuild);
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        appIdentifier, appStartTime, deviceAppHash, buildType, appName, appVersion, appBuild);
   }
 
   // region json

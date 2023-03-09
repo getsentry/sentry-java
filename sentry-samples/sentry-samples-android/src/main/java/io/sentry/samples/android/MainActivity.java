@@ -151,31 +151,35 @@ public class MainActivity extends AppCompatActivity {
           // Sentry.
           // NOTE: By default it doesn't raise if the debugger is attached. That can also be
           // configured.
-          new Thread(new Runnable() {
-            @Override
-            public void run() {
-              synchronized (mutex) {
-                while (true) {
-                  try {
-                    Thread.sleep(10000);
-                  }
-                  catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                }
-              }
-            }
-          }).start();
+          new Thread(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        while (true) {
+                          try {
+                            Thread.sleep(10000);
+                          } catch (InterruptedException e) {
+                            e.printStackTrace();
+                          }
+                        }
+                      }
+                    }
+                  })
+              .start();
 
-          new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-              synchronized (mutex) {
-                // Shouldn't happen
-                throw new IllegalStateException();
-              }
-            }
-          }, 1000);
+          new Handler()
+              .postDelayed(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        // Shouldn't happen
+                        throw new IllegalStateException();
+                      }
+                    }
+                  },
+                  1000);
         });
 
     binding.openSecondActivity.setOnClickListener(

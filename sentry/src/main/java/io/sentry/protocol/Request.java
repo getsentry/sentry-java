@@ -208,21 +208,23 @@ public final class Request implements JsonUnknown, JsonSerializable {
     this.bodySize = bodySize;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Request request = (Request) o;
     return Objects.equals(url, request.url)
-      && Objects.equals(method, request.method)
-      && Objects.equals(queryString, request.queryString)
-      && Objects.equals(cookies, request.cookies)
-      && Objects.equals(headers, request.headers)
-      && Objects.equals(env, request.env)
-      && Objects.equals(bodySize, request.bodySize)
-      && Objects.equals(fragment, request.fragment);
+        && Objects.equals(method, request.method)
+        && Objects.equals(queryString, request.queryString)
+        && Objects.equals(cookies, request.cookies)
+        && Objects.equals(headers, request.headers)
+        && Objects.equals(env, request.env)
+        && Objects.equals(bodySize, request.bodySize)
+        && Objects.equals(fragment, request.fragment);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(url, method, queryString, cookies, headers, env, bodySize, fragment);
   }
 

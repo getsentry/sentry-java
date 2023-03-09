@@ -9,15 +9,12 @@ import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.SentryLevel
-import io.sentry.android.core.AnrV2Integration.AnrProcessor
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.exception.ExceptionMechanismException
-import io.sentry.hints.BlockingFlushHint
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
-import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.HintUtils
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -25,12 +22,10 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -39,14 +34,11 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 import java.io.File
-import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotSame
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -87,7 +79,6 @@ class AnrV2IntegrationTest {
                 lastReportedAnrFile.writeText(lastReportedAnrTimestamp.toString())
             }
             whenever(hub.captureEvent(any(), anyOrNull<Hint>())).thenReturn(lastEventId)
-
 
             return AnrV2Integration(context)
         }
@@ -288,10 +279,13 @@ class AnrV2IntegrationTest {
 
         integration.register(fixture.hub, fixture.options)
 
-        verify(fixture.hub, times(2)).captureEvent(any(), argThat<Hint> {
-            val hint = HintUtils.getSentrySdkHint(this)
-            !(hint as AnrV2Hint).shouldEnrich()
-        })
+        verify(fixture.hub, times(2)).captureEvent(
+            any(),
+            argThat<Hint> {
+                val hint = HintUtils.getSentrySdkHint(this)
+                !(hint as AnrV2Hint).shouldEnrich()
+            }
+        )
     }
 
     @Test
@@ -329,10 +323,12 @@ class AnrV2IntegrationTest {
 
         integration.register(fixture.hub, fixture.options)
 
-        verify(fixture.hub).captureEvent(any(), argThat<Hint> {
-            val hint = HintUtils.getSentrySdkHint(this)
-            (hint as AnrV2Hint).timestamp() == newTimestamp
-        })
+        verify(fixture.hub).captureEvent(
+            any(),
+            argThat<Hint> {
+                val hint = HintUtils.getSentrySdkHint(this)
+                (hint as AnrV2Hint).timestamp() == newTimestamp
+            }
+        )
     }
 }
-

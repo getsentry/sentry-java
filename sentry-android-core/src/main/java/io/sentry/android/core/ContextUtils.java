@@ -27,8 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 final class ContextUtils {
 
-  private ContextUtils() {
-  }
+  private ContextUtils() {}
 
   /**
    * Return the Application's PackageInfo if possible, or null.
@@ -37,9 +36,9 @@ final class ContextUtils {
    */
   @Nullable
   static PackageInfo getPackageInfo(
-    final @NotNull Context context,
-    final @NotNull ILogger logger,
-    final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     return getPackageInfo(context, 0, logger, buildInfoProvider);
   }
 
@@ -52,15 +51,15 @@ final class ContextUtils {
   @Nullable
   @SuppressWarnings("deprecation")
   static PackageInfo getPackageInfo(
-    final @NotNull Context context,
-    final int flags,
-    final @NotNull ILogger logger,
-    final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull Context context,
+      final int flags,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     try {
       if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
         return context
-          .getPackageManager()
-          .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(flags));
+            .getPackageManager()
+            .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(flags));
       } else {
         return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
       }
@@ -80,19 +79,19 @@ final class ContextUtils {
   @NotNull
   @SuppressWarnings("deprecation")
   static ApplicationInfo getApplicationInfo(
-    final @NotNull Context context,
-    final long flag,
-    final @NotNull BuildInfoProvider buildInfoProvider)
-    throws PackageManager.NameNotFoundException {
+      final @NotNull Context context,
+      final long flag,
+      final @NotNull BuildInfoProvider buildInfoProvider)
+      throws PackageManager.NameNotFoundException {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
       return context
-        .getPackageManager()
-        .getApplicationInfo(
-          context.getPackageName(), PackageManager.ApplicationInfoFlags.of(flag));
+          .getPackageManager()
+          .getApplicationInfo(
+              context.getPackageName(), PackageManager.ApplicationInfoFlags.of(flag));
     } else {
       return context
-        .getPackageManager()
-        .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+          .getPackageManager()
+          .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
     }
   }
 
@@ -105,7 +104,7 @@ final class ContextUtils {
   @SuppressLint("NewApi")
   @NotNull
   static String getVersionCode(
-    final @NotNull PackageInfo packageInfo, final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull PackageInfo packageInfo, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.P) {
       return Long.toString(packageInfo.getLongVersionCode());
     }
@@ -140,7 +139,7 @@ final class ContextUtils {
       if (service instanceof ActivityManager) {
         final ActivityManager activityManager = (ActivityManager) service;
         final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
-          activityManager.getRunningAppProcesses();
+            activityManager.getRunningAppProcesses();
 
         if (runningAppProcesses != null) {
           final int myPid = Process.myPid();
@@ -190,10 +189,9 @@ final class ContextUtils {
 
   @SuppressWarnings("deprecation")
   static @Nullable Map<String, String> getSideLoadedInfo(
-    final @NotNull Context context,
-    final @NotNull ILogger logger,
-    final @NotNull BuildInfoProvider buildInfoProvider
-  ) {
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     String packageName = null;
     try {
       final PackageInfo packageInfo = getPackageInfo(context, logger, buildInfoProvider);
@@ -232,7 +230,8 @@ final class ContextUtils {
    *
    * @return Application name
    */
-  static @Nullable String getApplicationName(final @NotNull Context context, final @NotNull ILogger logger) {
+  static @Nullable String getApplicationName(
+      final @NotNull Context context, final @NotNull ILogger logger) {
     try {
       ApplicationInfo applicationInfo = context.getApplicationInfo();
       int stringId = applicationInfo.labelRes;
@@ -257,9 +256,7 @@ final class ContextUtils {
    * @return the DisplayMetrics object for the current application
    */
   static @Nullable DisplayMetrics getDisplayMetrics(
-    final @NotNull Context context,
-    final @NotNull ILogger logger
-  ) {
+      final @NotNull Context context, final @NotNull ILogger logger) {
     try {
       return context.getResources().getDisplayMetrics();
     } catch (Throwable e) {
@@ -285,9 +282,7 @@ final class ContextUtils {
 
   @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
   static @Nullable String getDeviceName(
-    final @NotNull Context context,
-    final @NotNull BuildInfoProvider buildInfoProvider
-  ) {
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
       return Settings.Global.getString(context.getContentResolver(), "device_name");
     } else {
@@ -302,7 +297,7 @@ final class ContextUtils {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.LOLLIPOP) {
       supportedAbis = Build.SUPPORTED_ABIS;
     } else {
-      supportedAbis = new String[] { Build.CPU_ABI, Build.CPU_ABI2 };
+      supportedAbis = new String[] {Build.CPU_ABI, Build.CPU_ABI2};
     }
     return supportedAbis;
   }
@@ -313,9 +308,7 @@ final class ContextUtils {
    * @return MemoryInfo object representing the memory state of the application
    */
   static @Nullable ActivityManager.MemoryInfo getMemInfo(
-    final @NotNull Context context,
-    final @NotNull ILogger logger
-  ) {
+      final @NotNull Context context, final @NotNull ILogger logger) {
     try {
       ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
       ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();

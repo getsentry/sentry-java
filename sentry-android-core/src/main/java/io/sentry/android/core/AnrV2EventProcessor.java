@@ -1,5 +1,20 @@
 package io.sentry.android.core;
 
+import static io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME;
+import static io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME;
+import static io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME;
+import static io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME;
+import static io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.FINGERPRINT_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.LEVEL_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.REQUEST_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
+
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
@@ -40,21 +55,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME;
-import static io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME;
-import static io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME;
-import static io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME;
-import static io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.FINGERPRINT_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.LEVEL_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.REQUEST_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
-import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
-
 /**
  * AnrV2Integration processes events on a background thread, hence the event processors will also be
  * invoked on the same background thread, so we can safely read data from disk synchronously.
@@ -78,33 +78,35 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
 
   public AnrV2EventProcessor(
-    final @NotNull Context context,
-    final @NotNull SentryAndroidOptions options,
-    final @NotNull BuildInfoProvider buildInfoProvider
-  ) {
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context = context;
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
-      new SentryStackTraceFactory(
-        this.options.getInAppExcludes(), this.options.getInAppIncludes());
+        new SentryStackTraceFactory(
+            this.options.getInAppExcludes(), this.options.getInAppIncludes());
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
   }
 
-  @Override public @Nullable SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
+  @Override
+  public @Nullable SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     final Object unwrappedHint = HintUtils.getSentrySdkHint(hint);
     if (!(unwrappedHint instanceof Backfillable)) {
       options
-        .getLogger()
-        .log(SentryLevel.WARNING,
-          "The event is not Backfillable, but has been passed to BackfillingEventProcessor, skipping.");
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "The event is not Backfillable, but has been passed to BackfillingEventProcessor, skipping.");
       return event;
     }
 
     // we always set exception values, platform, os and device even if the ANR is not enrich-able
-    // even though the OS context may change in the meantime (OS update), we consider this an edge-case
+    // even though the OS context may change in the meantime (OS update), we consider this an
+    // edge-case
     setExceptions(event);
     setPlatform(event);
     mergeOS(event);
@@ -112,9 +114,10 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     if (!((Backfillable) unwrappedHint).shouldEnrich()) {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG,
-          "The event is Backfillable, but should not be enriched, skipping.");
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The event is Backfillable, but should not be enriched, skipping.");
       return event;
     }
 
@@ -142,14 +145,16 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setTrace(final @NotNull SentryEvent event) {
-    final SpanContext spanContext = PersistingScopeObserver.read(options, TRACE_FILENAME, SpanContext.class);
+    final SpanContext spanContext =
+        PersistingScopeObserver.read(options, TRACE_FILENAME, SpanContext.class);
     if (event.getContexts().getTrace() == null && spanContext != null) {
       event.getContexts().setTrace(spanContext);
     }
   }
 
   private void setLevel(final @NotNull SentryEvent event) {
-    final SentryLevel level = PersistingScopeObserver.read(options, LEVEL_FILENAME, SentryLevel.class);
+    final SentryLevel level =
+        PersistingScopeObserver.read(options, LEVEL_FILENAME, SentryLevel.class);
     if (event.getLevel() == null) {
       event.setLevel(level);
     }
@@ -157,21 +162,24 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   @SuppressWarnings("unchecked")
   private void setFingerprints(final @NotNull SentryEvent event) {
-    final List<String> fingerprint = (List<String>) PersistingScopeObserver.read(options, FINGERPRINT_FILENAME, List.class);
+    final List<String> fingerprint =
+        (List<String>) PersistingScopeObserver.read(options, FINGERPRINT_FILENAME, List.class);
     if (event.getFingerprints() == null) {
       event.setFingerprints(fingerprint);
     }
   }
 
   private void setTransaction(final @NotNull SentryEvent event) {
-    final String transaction = PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String.class);
+    final String transaction =
+        PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String.class);
     if (event.getTransaction() == null) {
       event.setTransaction(transaction);
     }
   }
 
   private void setContexts(final @NotNull SentryBaseEvent event) {
-    final Contexts persistedContexts = PersistingScopeObserver.read(options, CONTEXTS_FILENAME, Contexts.class);
+    final Contexts persistedContexts =
+        PersistingScopeObserver.read(options, CONTEXTS_FILENAME, Contexts.class);
     if (persistedContexts == null) {
       return;
     }
@@ -185,7 +193,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   @SuppressWarnings("unchecked")
   private void setExtras(final @NotNull SentryBaseEvent event) {
-    final Map<String, Object> extras = (Map<String, Object>) PersistingScopeObserver.read(options, EXTRAS_FILENAME, Map.class);
+    final Map<String, Object> extras =
+        (Map<String, Object>) PersistingScopeObserver.read(options, EXTRAS_FILENAME, Map.class);
     if (extras == null) {
       return;
     }
@@ -202,7 +211,10 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
-    final List<Breadcrumb> breadcrumbs = (List<Breadcrumb>) PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List.class, new Breadcrumb.Deserializer());
+    final List<Breadcrumb> breadcrumbs =
+        (List<Breadcrumb>)
+            PersistingScopeObserver.read(
+                options, BREADCRUMBS_FILENAME, List.class, new Breadcrumb.Deserializer());
     if (breadcrumbs == null) {
       return;
     }
@@ -215,7 +227,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   @SuppressWarnings("unchecked")
   private void setScopeTags(final @NotNull SentryBaseEvent event) {
-    final Map<String, String> tags = (Map<String, String>) PersistingScopeObserver.read(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
+    final Map<String, String> tags =
+        (Map<String, String>)
+            PersistingScopeObserver.read(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
     if (tags == null) {
       return;
     }
@@ -239,7 +253,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setRequest(final @NotNull SentryBaseEvent event) {
     if (event.getRequest() == null) {
-      final Request request = PersistingScopeObserver.read(options, REQUEST_FILENAME, Request.class);
+      final Request request =
+          PersistingScopeObserver.read(options, REQUEST_FILENAME, Request.class);
       event.setRequest(request);
     }
   }
@@ -264,22 +279,28 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
 
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
     if (packageInfo != null) {
       app.setAppIdentifier(packageInfo.packageName);
     }
 
     // backfill versionName and versionCode from the persisted release string
-    final String release = event.getRelease() != null ?
-      event.getRelease() : PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+    final String release =
+        event.getRelease() != null
+            ? event.getRelease()
+            : PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
     if (release != null) {
       try {
-        final String versionName = release.substring(release.indexOf('@') + 1, release.indexOf('+'));
+        final String versionName =
+            release.substring(release.indexOf('@') + 1, release.indexOf('+'));
         final String versionCode = release.substring(release.indexOf('+') + 1);
         app.setAppVersion(versionName);
         app.setAppBuild(versionCode);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
       }
     }
 
@@ -289,7 +310,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setRelease(final @NotNull SentryBaseEvent event) {
     if (event.getRelease() == null) {
       final String release =
-        PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
       event.setRelease(release);
     }
   }
@@ -297,7 +318,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setEnvironment(final @NotNull SentryBaseEvent event) {
     if (event.getEnvironment() == null) {
       final String environment =
-        PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
+          PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
       event.setEnvironment(environment != null ? environment : DEFAULT_ENVIRONMENT);
     }
   }
@@ -314,7 +335,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     List<DebugImage> images = debugMeta.getImages();
     if (images != null) {
       final String proguardUuid =
-        PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
+          PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
 
       final DebugImage debugImage = new DebugImage();
       debugImage.setType(DebugImage.PROGUARD);
@@ -331,13 +352,16 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
     // if there's no user-set dist, fall back to versionCode from the persisted release string
     if (event.getDist() == null) {
-      final String release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+      final String release =
+          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
       if (release != null) {
         try {
           final String versionCode = release.substring(release.indexOf('+') + 1);
           event.setDist(versionCode);
         } catch (Throwable e) {
-          options.getLogger().log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
         }
       }
     }
@@ -346,14 +370,17 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setSdk(final @NotNull SentryBaseEvent event) {
     if (event.getSdk() == null) {
       final SdkVersion sdkVersion =
-        PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion.class);
+          PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion.class);
       event.setSdk(sdkVersion);
     }
   }
 
   @SuppressWarnings("unchecked")
   private void setOptionsTags(final @NotNull SentryBaseEvent event) {
-    final Map<String, String> tags = (Map<String, String>) PersistingOptionsObserver.read(options, PersistingOptionsObserver.TAGS_FILENAME, Map.class);
+    final Map<String, String> tags =
+        (Map<String, String>)
+            PersistingOptionsObserver.read(
+                options, PersistingOptionsObserver.TAGS_FILENAME, Map.class);
     if (tags == null) {
       return;
     }
@@ -433,7 +460,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
       final Map<String, String> sideLoadedInfo =
-        ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+          ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
 
       if (sideLoadedInfo != null) {
         for (final Map.Entry<String, String> entry : sideLoadedInfo.entrySet()) {
@@ -451,7 +478,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
-  // only use static data that does not change between app launches (e.g. timezone, boottime, battery level will change)
+  // only use static data that does not change between app launches (e.g. timezone, boottime,
+  // battery level will change)
   @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
@@ -465,7 +493,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     device.setModelId(Build.ID);
     device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
 
-    final ActivityManager.MemoryInfo memInfo = ContextUtils.getMemInfo(context, options.getLogger());
+    final ActivityManager.MemoryInfo memInfo =
+        ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
       // in bytes
       device.setMemorySize(getMemorySize(memInfo));
