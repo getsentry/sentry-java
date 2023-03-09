@@ -9,6 +9,7 @@
 ### Fixes
 
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Add mechanism for logging integrations and update spring mechanism types ([#2595](https://github.com/getsentry/sentry-java/pull/2595))
 
 ## 6.15.0
 
