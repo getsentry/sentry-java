@@ -98,6 +98,7 @@ class SentryWebfluxIntegrationTest {
                     assertEquals("something went wrong", ex.value)
                     assertNotNull(ex.mechanism) {
                         assertThat(it.isHandled).isFalse()
+                        assertThat(it.type).isEqualTo(SentryWebExceptionHandler.MECHANISM_TYPE)
                     }
                 }
             },
