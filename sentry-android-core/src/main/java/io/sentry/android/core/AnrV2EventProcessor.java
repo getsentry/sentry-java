@@ -441,7 +441,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
    *
    * @return the User object
    */
-  public @NotNull User getDefaultUser() {
+  private @NotNull User getDefaultUser() {
     User user = new User();
     user.setId(getDeviceId());
 

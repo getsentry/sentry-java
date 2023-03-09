@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
   final Object mutex = new Object();
 
   @Override
+  @SuppressWarnings("deprecation")
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
