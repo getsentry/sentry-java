@@ -9,6 +9,9 @@
 ### Fixes
 
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Filter out session cookies sent by Spring and Spring Boot integrations ([#2593](https://github.com/getsentry/sentry-java/pull/2593))
+  - We filter out some common cookies like JSESSIONID
+  - We also read the value from `server.servlet.session.cookie.name` and filter it out
 
 ## 6.15.0
 
