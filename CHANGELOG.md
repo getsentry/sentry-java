@@ -9,6 +9,7 @@
 ### Fixes
 
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
 
 ## 6.15.0
 
