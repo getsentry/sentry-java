@@ -36,7 +36,7 @@ private val localSentryCompositionParentSpan = compositionLocalOf {
         getRootSpan()
             ?.startChild(
                 OP_PARENT_COMPOSITION,
-                null,
+                "Jetpack Compose Initial Composition",
                 SpanOptions().apply {
                     isTrimStart = true
                     isTrimEnd = true
@@ -51,7 +51,7 @@ private val localSentryRenderingParentSpan = compositionLocalOf {
         getRootSpan()
             ?.startChild(
                 OP_PARENT_RENDER,
-                null,
+                "Jetpack Compose Initial Render",
                 SpanOptions().apply {
                     isTrimStart = true
                     isTrimEnd = true

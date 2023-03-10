@@ -16,6 +16,7 @@ import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
 import io.sentry.ISentryExecutorService
 import io.sentry.Scope
+import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
@@ -71,10 +72,21 @@ class ActivityLifecycleIntegrationTest {
         lateinit var transaction: SentryTracer
         val buildInfo = mock<BuildInfoProvider>()
 
-        fun getSut(apiVersion: Int = 29, importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND): ActivityLifecycleIntegration {
+        fun getSut(
+            apiVersion: Int = 29,
+            importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+            initializer: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null
+        ): ActivityLifecycleIntegration {
+            initializer?.configure(options)
+
             whenever(hub.options).thenReturn(options)
+
+            // TODO: we should let the ActivityLifecycleIntegration create the proper transaction here
             val transactionOptions = TransactionOptions().apply {
                 isWaitForChildren = true
+                if (options.isEnableActivityLifecycleTracingAutoFinish) {
+                    idleTimeout = options.idleTimeout
+                }
             }
             transaction = SentryTracer(context, hub, transactionOptions, transactionFinishedCallback)
             whenever(hub.startTransaction(any(), any<TransactionOptions>())).thenReturn(transaction)
@@ -420,18 +432,32 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When tracing auto finish is enabled and ttid and ttfd spans are finished, it stops the transaction on onActivityPostResumed`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.hub, fixture.options)
-
+    fun `When tracing auto finish is enabled and ttid and ttfd spans are finished, it schedules the transaction finish`() {
         val activity = mock<Activity>()
+        val sut = fixture.getSut(initializer = {
+            it.tracesSampleRate = 1.0
+            it.isEnableTimeToFullDisplayTracing = true
+            it.idleTimeout = 200
+        })
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
+
         sut.ttidSpanMap.values.first().finish()
         sut.ttfdSpan?.finish()
-        sut.onActivityPostResumed(activity)
 
+        // then transaction should not be immediatelly finished
+        verify(fixture.hub, never())
+            .captureTransaction(
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull()
+            )
+
+        // but when idle timeout has passed
+        Thread.sleep(400)
+
+        // then the transaction should be finished
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(SpanStatus.OK, it.status)
@@ -488,16 +514,16 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `When tracing auto finish is disabled, do not finish transaction`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        fixture.options.isEnableActivityLifecycleTracingAutoFinish = false
+        val sut = fixture.getSut(initializer = {
+            it.tracesSampleRate = 1.0
+            it.isEnableActivityLifecycleTracingAutoFinish = false
+        })
         sut.register(fixture.hub, fixture.options)
-
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -671,7 +697,23 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `do not stop transaction on resumed if API less than 29 and ttid and ttfd are finished`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+        sut.ttidSpanMap.values.first().finish()
+        sut.ttfdSpan?.finish()
+        sut.onActivityResumed(activity)
+
+        verify(fixture.hub, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -686,22 +728,6 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
 
         verify(fixture.hub).startTransaction(any(), any<TransactionOptions>())
-    }
-
-    @Test
-    fun `stop transaction on resumed if API 29 less than 29 and ttid and ttfd are finished`() {
-        val sut = fixture.getSut(14)
-        fixture.options.tracesSampleRate = 1.0
-        fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, mock())
-        sut.ttidSpanMap.values.first().finish()
-        sut.ttfdSpan?.finish()
-        sut.onActivityResumed(activity)
-
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test

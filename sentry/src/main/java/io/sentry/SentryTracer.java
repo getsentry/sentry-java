@@ -427,6 +427,9 @@ public final class SentryTracer implements ITransaction {
 
       if (children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
+        hub.getOptions()
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Dropping idle transaction because it has no child spans");
         return;
       }
 
