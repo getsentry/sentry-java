@@ -62,7 +62,6 @@ public final class io/sentry/android/core/AnrIntegrationFactory {
 
 public final class io/sentry/android/core/AnrV2EventProcessor : io/sentry/BackfillingEventProcessor {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
-	public fun getDefaultUser ()Lio/sentry/protocol/User;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
