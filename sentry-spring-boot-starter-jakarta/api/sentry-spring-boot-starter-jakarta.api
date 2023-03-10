@@ -51,5 +51,6 @@ public class io/sentry/spring/boot/jakarta/SentryProperties$Reactive {
 public class io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration {
 	public fun <init> ()V
 	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/jakarta/webflux/SentryWebExceptionHandler;
+	public fun sentryWebTracingFilter ()Lio/sentry/spring/jakarta/webflux/SentryWebTracingFilter;
 }
 
