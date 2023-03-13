@@ -310,7 +310,8 @@ final class ContextUtils {
   static @Nullable ActivityManager.MemoryInfo getMemInfo(
       final @NotNull Context context, final @NotNull ILogger logger) {
     try {
-      final ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
+      final ActivityManager actManager =
+          (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
       final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
       if (actManager != null) {
         actManager.getMemoryInfo(memInfo);

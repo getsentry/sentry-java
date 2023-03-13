@@ -88,7 +88,11 @@ final class CacheUtils {
     if (file.exists()) {
       try (final Reader reader =
           new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_8))) {
-        return options.getSerializer().deserialize(reader, clazz, elementDeserializer);
+        if (elementDeserializer == null) {
+          return options.getSerializer().deserialize(reader, clazz);
+        } else {
+          return options.getSerializer().deserializeCollection(reader, clazz, elementDeserializer);
+        }
       } catch (Throwable e) {
         options.getLogger().log(ERROR, e, "Error reading entity from scope cache: %s", fileName);
       }

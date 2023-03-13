@@ -21,10 +21,15 @@ final class NoOpSerializer implements ISerializer {
   private NoOpSerializer() {}
 
   @Override
-  public <T, R> @Nullable T deserialize(
+  public <T, R> @Nullable T deserializeCollection(
       @NotNull Reader reader,
       @NotNull Class<T> clazz,
       @Nullable JsonDeserializer<R> elementDeserializer) {
+    return null;
+  }
+
+  @Override
+  public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
     return null;
   }
 

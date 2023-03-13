@@ -1153,7 +1153,7 @@ class JsonSerializerTest {
         val breadcrumb2 = Breadcrumb.navigation("one", "other")
         val collection = serializeToString(listOf(breadcrumb1, breadcrumb2))
 
-        val deserializedCollection = fixture.serializer.deserialize(StringReader(collection), List::class.java, Breadcrumb.Deserializer())
+        val deserializedCollection = fixture.serializer.deserializeCollection(StringReader(collection), List::class.java, Breadcrumb.Deserializer())
 
         assertEquals(listOf(breadcrumb1, breadcrumb2), deserializedCollection)
     }

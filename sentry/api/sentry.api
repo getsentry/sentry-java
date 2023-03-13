@@ -557,8 +557,8 @@ public abstract interface class io/sentry/ISentryExecutorService {
 }
 
 public abstract interface class io/sentry/ISerializer {
-	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
-	public abstract fun deserialize (Ljava/io/Reader;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
+	public abstract fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
+	public abstract fun deserializeCollection (Ljava/io/Reader;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
 	public abstract fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 	public abstract fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
 	public abstract fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
@@ -699,7 +699,8 @@ public abstract interface class io/sentry/JsonSerializable {
 
 public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
 	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
+	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
+	public fun deserializeCollection (Ljava/io/Reader;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
 	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
 	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
