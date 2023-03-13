@@ -19,6 +19,9 @@
 ### Dependencies
 
 - Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
+- Bump Gradle from v7.6.0 to v8.0.1 ([#2551](https://github.com/getsentry/sentry-java/pull/2551))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v801)
+  - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.1)
 
 ## 6.15.0
 
@@ -49,12 +52,6 @@
     - `androidx.navigation:navigation-compose:`
     - `androidx.compose.runtime:runtime:`
     - `androidx.compose.ui:ui:`
-
-### Dependencies
-
-- Bump Gradle from v7.6.0 to v8.0.1 ([#2551](https://github.com/getsentry/sentry-java/pull/2551))
-  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v801)
-  - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.1)
 
 ## 6.14.0
 
