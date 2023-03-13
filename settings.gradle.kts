@@ -54,6 +54,7 @@ include(
     "sentry-samples:sentry-samples-spring-boot",
     "sentry-samples:sentry-samples-spring-boot-jakarta",
     "sentry-samples:sentry-samples-spring-boot-webflux",
+    "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android",

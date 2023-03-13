@@ -58,6 +58,20 @@ public final class Sentry {
     return hub;
   }
 
+  /**
+   * Returns a new hub which is cloned from the mainHub.
+   *
+   * @return the hub
+   */
+  @ApiStatus.Internal
+  @ApiStatus.Experimental
+  public static @NotNull IHub cloneMainHub() {
+    if (globalHubMode) {
+      return mainHub;
+    }
+    return mainHub.clone();
+  }
+
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   public static void setCurrentHub(final @NotNull IHub hub) {
     currentHub.set(hub);
@@ -859,8 +873,17 @@ public final class Sentry {
    * <p>This method is safe to be called multiple times. If the time-to-full-display span is already
    * finished, this call will be ignored.
    */
+  public static void reportFullyDisplayed() {
+    getCurrentHub().reportFullyDisplayed();
+  }
+
+  /**
+   * @deprecated See {@link Sentry#reportFullyDisplayed()}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void reportFullDisplayed() {
-    getCurrentHub().reportFullDisplayed();
+    reportFullyDisplayed();
   }
 
   /**

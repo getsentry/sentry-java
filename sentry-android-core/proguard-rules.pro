@@ -29,4 +29,7 @@
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 -keepattributes LineNumberTable,SourceFile
 
+# Keep Classnames for integrations
+-keepnames class * implements io.sentry.IntegrationName
+
 ##---------------End: proguard configuration for android-core  ----------

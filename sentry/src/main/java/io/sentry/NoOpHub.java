@@ -188,5 +188,5 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void reportFullDisplayed() {}
+  public void reportFullyDisplayed() {}
 }

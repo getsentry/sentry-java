@@ -57,11 +57,10 @@ apiValidation {
             "sentry-samples-servlet",
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
-            "sentry-spring-jakarta",
-            "sentry-spring-boot-starter-jakarta",
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-jakarta",
             "sentry-samples-spring-boot-webflux",
+            "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-samples-netflix-dgs",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
@@ -171,13 +170,12 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**", "sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
+        targetExclude("**/generated/**", "**/vendor/**")
     }
 
     kotlin {
         target("**/*.kt")
         ktlint()
-        targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
     }
     kotlinGradle {
         target("**/*.kts")
