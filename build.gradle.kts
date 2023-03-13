@@ -172,13 +172,8 @@ spotless {
         googleJavaFormat()
         targetExclude("**/generated/**", "**/vendor/**")
     }
-
     kotlin {
         target("**/*.kt")
-        ktlint()
-    }
-    kotlinGradle {
-        target("**/*.kts")
         ktlint()
     }
 }
