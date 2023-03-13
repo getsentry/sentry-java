@@ -53,7 +53,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     if (!Sentry.isEnabled()) {
       if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
         options.setEnableExternalConfiguration(true);
-        options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
+        options.setSentryClientName(
+            BuildConfig.SENTRY_LOGBACK_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
         options.setSdkVersion(createSdkVersion(options));
         Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
         try {
