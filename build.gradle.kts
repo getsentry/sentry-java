@@ -1,4 +1,4 @@
-import com.diffplug.gradle.spotless.SpotlessExtension
+
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
@@ -8,7 +8,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply false
+    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
@@ -105,36 +105,6 @@ subprojects {
         }
     }
 
-    apply(plugin = Config.QualityPlugins.spotless)
-    configure<SpotlessExtension> {
-        lineEndings = LineEnding.UNIX
-        java {
-            target("**/*.java")
-            removeUnusedImports()
-            googleJavaFormat()
-            targetExclude(
-                "**/generated/**",
-                "**/vendor/**",
-                "sentry-spring-jakarta/**",
-                "sentry-spring-boot-starter-jakarta/**"
-            )
-        }
-
-        kotlin {
-            target("**/*.kt")
-            ktlint("0.47.1")
-            targetExclude(
-                "sentry-spring-jakarta/**",
-                "sentry-spring-boot-starter-jakarta/**"
-            )
-        }
-        kotlinGradle {
-            target("**/*.kts")
-            ktlint("0.47.1")
-        }
-    }
-
-
     if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
         apply<DistributionPlugin>()
 
@@ -192,6 +162,26 @@ subprojects {
             // mavenCentralUsername=user name
             // mavenCentralPassword=password
         }
+    }
+}
+
+spotless {
+    lineEndings = LineEnding.UNIX
+    java {
+        target("**/*.java")
+        removeUnusedImports()
+        googleJavaFormat()
+        targetExclude("**/generated/**", "**/vendor/**", "sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
+    }
+
+    kotlin {
+        target("**/*.kt")
+        ktlint()
+        targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
+    }
+    kotlinGradle {
+        target("**/*.kts")
+        ktlint()
     }
 }
 
