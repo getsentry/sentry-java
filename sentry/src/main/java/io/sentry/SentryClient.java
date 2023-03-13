@@ -705,15 +705,8 @@ public final class SentryClient implements ISentryClient {
                 "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
                 e);
 
-        final Breadcrumb breadcrumb = new Breadcrumb();
-        breadcrumb.setMessage("BeforeSend callback failed.");
-        breadcrumb.setCategory("SentryClient");
-        breadcrumb.setLevel(SentryLevel.ERROR);
-        if (e.getMessage() != null) {
-          breadcrumb.setData("sentry:message", e.getMessage());
-        }
-
-        event.addBreadcrumb(breadcrumb);
+        // drop event in case of an error in beforeSend due to PII concerns
+        event = null;
       }
     }
     return event;
@@ -734,15 +727,8 @@ public final class SentryClient implements ISentryClient {
                 "The BeforeSendTransaction callback threw an exception. It will be added as breadcrumb and continue.",
                 e);
 
-        final Breadcrumb breadcrumb = new Breadcrumb();
-        breadcrumb.setMessage("BeforeSendTransaction callback failed.");
-        breadcrumb.setCategory("SentryClient");
-        breadcrumb.setLevel(SentryLevel.ERROR);
-        if (e.getMessage() != null) {
-          breadcrumb.setData("sentry:message", e.getMessage());
-        }
-
-        transaction.addBreadcrumb(breadcrumb);
+        // drop transaction in case of an error in beforeSend due to PII concerns
+        transaction = null;
       }
     }
     return transaction;
