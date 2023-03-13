@@ -28,7 +28,7 @@ class SentryLogbackInitializer implements GenericApplicationListener {
 
   public SentryLogbackInitializer(final @NotNull SentryProperties sentryProperties) {
     this.sentryProperties = Objects.requireNonNull(sentryProperties, "properties are required");
-    loggers = sentryProperties.getLoggers();
+    loggers = sentryProperties.getLogging().getLoggers();
   }
 
   @Override

@@ -45,7 +45,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     @Test
     fun `configures SentryAppender for configured loggers`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.loggers[0]=foo.bar", "sentry.loggers[1]=baz")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.loggers[0]=foo.bar", "sentry.logging.loggers[1]=baz")
             .run {
                 val fooBarLogger = LoggerFactory.getLogger("foo.bar") as Logger
                 val bazLogger = LoggerFactory.getLogger("baz") as Logger
@@ -58,7 +58,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     @Test
     fun `configures SentryAppender for none of the loggers if so configured`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.loggers=")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.loggers=")
             .run {
                 val fooBarLogger = LoggerFactory.getLogger("foo.bar") as Logger
                 val bazLogger = LoggerFactory.getLogger("baz") as Logger

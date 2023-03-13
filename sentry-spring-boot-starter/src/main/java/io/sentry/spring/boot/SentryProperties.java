@@ -20,9 +20,6 @@ public class SentryProperties extends SentryOptions {
   /** Report all or only uncaught web exceptions. */
   private int exceptionResolverOrder = 1;
 
-  /** List of loggers, where the Sentry-Appender is registered */
-  private @NotNull List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
-
   /**
    * Defines the {@link io.sentry.spring.SentryUserFilter} order. The default value is {@link
    * org.springframework.core.Ordered.LOWEST_PRECEDENCE}, if Spring Security is auto-configured, its
@@ -77,15 +74,6 @@ public class SentryProperties extends SentryOptions {
     this.logging = logging;
   }
 
-  @NotNull
-  public List<String> getLoggers() {
-    return loggers;
-  }
-
-  public void setLoggers(final @NotNull List<String> loggers) {
-    this.loggers = loggers;
-  }
-
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
@@ -96,6 +84,9 @@ public class SentryProperties extends SentryOptions {
 
     /** Minimum logging level for recording event. */
     private @Nullable Level minimumEventLevel;
+
+    /** List of loggers the SentryAppender should be added to. */
+    private @NotNull List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
     public boolean isEnabled() {
       return enabled;
@@ -119,6 +110,15 @@ public class SentryProperties extends SentryOptions {
 
     public void setMinimumEventLevel(@Nullable Level minimumEventLevel) {
       this.minimumEventLevel = minimumEventLevel;
+    }
+
+    @NotNull
+    public List<String> getLoggers() {
+      return loggers;
+    }
+
+    public void setLoggers(final @NotNull List<String> loggers) {
+      this.loggers = loggers;
     }
   }
 }
