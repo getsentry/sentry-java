@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryRequestResolver {
   private final @NotNull IHub hub;
+  private volatile @Nullable List<String> extraSecurityCookies;
 
   public SentryRequestResolver(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "options is required");
@@ -36,7 +37,7 @@ public class SentryRequestResolver {
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setQueryString(httpRequest.getQueryString());
     final @NotNull List<String> additionalSecurityCookieNames =
-        extractSecurityCookieNames(httpRequest);
+        extractSecurityCookieNamesOrUseCached(httpRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));
 
     if (hub.getOptions().isSendDefaultPii()) {
@@ -64,6 +65,19 @@ public class SentryRequestResolver {
       }
     }
     return headersMap;
+  }
+
+  private List<String> extractSecurityCookieNamesOrUseCached(
+      final @NotNull HttpServletRequest httpRequest) {
+    if (extraSecurityCookies == null) {
+      synchronized (SentryRequestResolver.class) {
+        if (extraSecurityCookies == null) {
+          extraSecurityCookies = extractSecurityCookieNames(httpRequest);
+        }
+      }
+    }
+
+    return extraSecurityCookies;
   }
 
   private List<String> extractSecurityCookieNames(final @NotNull HttpServletRequest httpRequest) {
