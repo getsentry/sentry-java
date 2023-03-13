@@ -5,12 +5,20 @@
 ### Features
 
 - Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
+- The Spring Boot integration can now be configured to add the `SentryAppender` to specific loggers instead of the `ROOT` logger ([#2173](https://github.com/getsentry/sentry-java/pull/2173))
+  - You can specify the loggers using `"sentry.logging.loggers[0]=foo.bar` and `"sentry.logging.loggers[1]=baz` in your `application.properties`
 - Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
 
 ### Fixes
 
+- Fix timestamps of slow and frozen frames for profiles ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
 - Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
+
+### Dependencies
+
+- Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
 
 ## 6.15.0
 
