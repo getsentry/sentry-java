@@ -96,6 +96,7 @@ public class AnrV2Integration implements Integration, Closeable {
         options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");
       }
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
+      addIntegrationToSdkVersion();
     }
   }
 
