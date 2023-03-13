@@ -244,7 +244,7 @@ class SentryAutoConfigurationTest {
     fun `sets sentryClientName property on SentryOptions`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot${optionalJakartaPrefix()}")
+                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot.jakarta/${BuildConfig.VERSION_NAME}")
             }
     }
 
@@ -923,12 +923,5 @@ class SentryAutoConfigurationTest {
     private fun ApplicationContext.getSentryUserProviders(): List<SentryUserProvider> {
         val userFilter = this.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
         return userFilter.sentryUserProviders
-    }
-
-    private fun optionalJakartaPrefix(): String {
-        if (this.javaClass.packageName.endsWith("jakarta")) {
-            return ".jakarta"
-        }
-        return ""
     }
 }

@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
-import android.view.FrameMetrics;
 import io.sentry.CpuCollectionData;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
@@ -201,16 +200,21 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
               @Override
               public void onFrameMetricCollected(
-                  @NotNull FrameMetrics frameMetrics, float refreshRate) {
-                long frameTimestampRelativeNanos =
-                    SystemClock.elapsedRealtimeNanos() - transactionStartNanos;
+                  final long frameEndNanos, final long durationNanos, float refreshRate) {
+                // transactionStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
+                // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
+                // relative to transactionStartNanos
+                final long frameTimestampRelativeNanos =
+                    frameEndNanos
+                        - System.nanoTime()
+                        + SystemClock.elapsedRealtimeNanos()
+                        - transactionStartNanos;
 
                 // We don't allow negative relative timestamps.
                 // So we add a check, even if this should never happen.
                 if (frameTimestampRelativeNanos < 0) {
                   return;
                 }
-                long durationNanos = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
                 // Most frames take just a few nanoseconds longer than the optimal calculated
                 // duration.
                 // Therefore we subtract one, because otherwise almost all frames would be slow.

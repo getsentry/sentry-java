@@ -194,21 +194,21 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when beforeSend throws an exception, breadcrumb is added and event is sent`() {
+    fun `when beforeSend throws an exception, event is dropped`() {
         val exception = Exception("test")
 
         exception.stackTrace.toString()
         fixture.sentryOptions.setBeforeSend { _, _ -> throw exception }
         val sut = fixture.getSut()
         val actual = SentryEvent()
-        sut.captureEvent(actual)
+        val id = sut.captureEvent(actual)
 
-        assertNotNull(actual.breadcrumbs) {
-            assertEquals("test", it.first().data["sentry:message"])
-            assertEquals("SentryClient", it.first().category)
-            assertEquals(SentryLevel.ERROR, it.first().level)
-            assertEquals("BeforeSend callback failed.", it.first().message)
-        }
+        assertEquals(SentryId.EMPTY_ID, id)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
@@ -808,21 +808,21 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when beforeSendTransaction throws an exception, breadcrumb is added and event is sent`() {
+    fun `when beforeSendTransaction throws an exception, transaction is dropped`() {
         val exception = Exception("test")
 
         exception.stackTrace.toString()
         fixture.sentryOptions.setBeforeSendTransaction { _, _ -> throw exception }
 
         val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+        val id = fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
 
-        assertNotNull(transaction.breadcrumbs) {
-            assertEquals("test", it.first().data["sentry:message"])
-            assertEquals("SentryClient", it.first().category)
-            assertEquals(SentryLevel.ERROR, it.first().level)
-            assertEquals("BeforeSendTransaction callback failed.", it.first().message)
-        }
+        assertEquals(SentryId.EMPTY_ID, id)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1))
+        )
     }
 
     @Test
