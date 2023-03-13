@@ -49,7 +49,6 @@ import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.absolutePathString
 import kotlin.test.BeforeTest
@@ -363,7 +362,7 @@ class SentryAndroidTest {
               "type": "debug",
               "level": "debug"
             }]
-        """.trimIndent()
+            """.trimIndent()
         )
         File(scopeDir, TRANSACTION_FILENAME).writeText("\"MainActivity\"")
     }
