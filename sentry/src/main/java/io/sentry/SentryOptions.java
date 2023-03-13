@@ -273,9 +273,9 @@ public class SentryOptions {
   private @Nullable SSLSocketFactory sslSocketFactory;
 
   /** list of scope observers */
-  private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
+  private final @NotNull List<IScopeObserver> observers = new CopyOnWriteArrayList<>();
 
-  private final @NotNull List<IOptionsObserver> optionsObservers = new ArrayList<>();
+  private final @NotNull List<IOptionsObserver> optionsObservers = new CopyOnWriteArrayList<>();
 
   /**
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
