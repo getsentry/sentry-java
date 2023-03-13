@@ -99,7 +99,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     map.put(ROOTED, rootChecker.isDeviceRooted());
 
-    String kernelVersion = ContextUtils.getKernelVersion(options.getLogger());
+    final String kernelVersion = ContextUtils.getKernelVersion(options.getLogger());
     if (kernelVersion != null) {
       map.put(KERNEL_VERSION, kernelVersion);
     }

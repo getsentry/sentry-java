@@ -171,10 +171,10 @@ final class ContextUtils {
   static @Nullable String getKernelVersion(final @NotNull ILogger logger) {
     // its possible to try to execute 'uname' and parse it or also another unix commands or even
     // looking for well known root installed apps
-    String errorMsg = "Exception while attempting to read kernel information";
-    String defaultVersion = System.getProperty("os.version");
+    final String errorMsg = "Exception while attempting to read kernel information";
+    final String defaultVersion = System.getProperty("os.version");
 
-    File file = new File("/proc/version");
+    final File file = new File("/proc/version");
     if (!file.canRead()) {
       return defaultVersion;
     }
@@ -233,8 +233,8 @@ final class ContextUtils {
   static @Nullable String getApplicationName(
       final @NotNull Context context, final @NotNull ILogger logger) {
     try {
-      ApplicationInfo applicationInfo = context.getApplicationInfo();
-      int stringId = applicationInfo.labelRes;
+      final ApplicationInfo applicationInfo = context.getApplicationInfo();
+      final int stringId = applicationInfo.labelRes;
       if (stringId == 0) {
         if (applicationInfo.nonLocalizedLabel != null) {
           return applicationInfo.nonLocalizedLabel.toString();
@@ -293,7 +293,7 @@ final class ContextUtils {
   @SuppressWarnings("deprecation")
   @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
   static @NotNull String[] getArchitectures(final @NotNull BuildInfoProvider buildInfoProvider) {
-    String[] supportedAbis;
+    final String[] supportedAbis;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.LOLLIPOP) {
       supportedAbis = Build.SUPPORTED_ABIS;
     } else {
@@ -310,8 +310,8 @@ final class ContextUtils {
   static @Nullable ActivityManager.MemoryInfo getMemInfo(
       final @NotNull Context context, final @NotNull ILogger logger) {
     try {
-      ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
-      ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+      final ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
+      final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
       if (actManager != null) {
         actManager.getMemoryInfo(memInfo);
         return memInfo;
