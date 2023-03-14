@@ -7,6 +7,7 @@ import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,11 @@ public class SentryRequestResolver {
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
     if (hub.getOptions().isSendDefaultPii()) {
-      sentryRequest.setCookies(toString(httpRequest.getHeaders().get("Cookies")));
+      String headerName = HttpUtils.COOKIE_HEADER_NAME;
+      sentryRequest.setCookies(
+          toString(
+              HttpUtils.filterOutSecurityCookiesFromHeader(
+                  httpRequest.getHeaders().get(headerName), headerName, Collections.emptyList())));
     }
     return sentryRequest;
   }
@@ -46,9 +51,13 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
       // do not copy personal information identifiable headers
-      if (hub.getOptions().isSendDefaultPii()
-          || !HttpUtils.containsSensitiveHeader(entry.getKey())) {
-        headersMap.put(entry.getKey(), toString(entry.getValue()));
+      String headerName = entry.getKey();
+      if (hub.getOptions().isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
+        headersMap.put(
+            headerName,
+            toString(
+                HttpUtils.filterOutSecurityCookiesFromHeader(
+                    entry.getValue(), headerName, Collections.emptyList())));
       }
     }
     return headersMap;

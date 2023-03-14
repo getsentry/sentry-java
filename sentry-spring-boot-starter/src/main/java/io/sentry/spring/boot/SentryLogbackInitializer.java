@@ -9,8 +9,10 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.logback.SentryAppender;
 import io.sentry.util.Objects;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -21,9 +23,12 @@ import org.springframework.core.ResolvableType;
 @Open
 class SentryLogbackInitializer implements GenericApplicationListener {
   private final @NotNull SentryProperties sentryProperties;
+  private final @NotNull List<String> loggers;
+  @Nullable private SentryAppender sentryAppender;
 
   public SentryLogbackInitializer(final @NotNull SentryProperties sentryProperties) {
     this.sentryProperties = Objects.requireNonNull(sentryProperties, "properties are required");
+    loggers = sentryProperties.getLogging().getLoggers();
   }
 
   @Override
@@ -34,23 +39,33 @@ class SentryLogbackInitializer implements GenericApplicationListener {
 
   @Override
   public void onApplicationEvent(final @NotNull ApplicationEvent event) {
-    final Logger rootLogger = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+    this.loggers.forEach(
+        loggerName -> {
+          final Logger logger = (Logger) LoggerFactory.getLogger(loggerName);
+          if (!isSentryAppenderRegistered(logger)) {
+            final SentryAppender sentryAppender = getSentryAppender();
 
-    if (!isSentryAppenderRegistered(rootLogger)) {
-      final SentryAppender sentryAppender = new SentryAppender();
+            Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
+                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+                .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
+            Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
+                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+                .ifPresent(sentryAppender::setMinimumEventLevel);
+
+            sentryAppender.start();
+            logger.addAppender(sentryAppender);
+          }
+        });
+  }
+
+  @NotNull
+  private SentryAppender getSentryAppender() {
+    if (sentryAppender == null) {
+      sentryAppender = new SentryAppender();
       sentryAppender.setName("SENTRY_APPENDER");
       sentryAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
-
-      Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
-          .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-          .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
-      Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
-          .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-          .ifPresent(sentryAppender::setMinimumEventLevel);
-
-      sentryAppender.start();
-      rootLogger.addAppender(sentryAppender);
     }
+    return sentryAppender;
   }
 
   private boolean isSentryAppenderRegistered(final @NotNull Logger logger) {

@@ -32,10 +32,12 @@ public class io/sentry/spring/boot/SentryProperties : io/sentry/SentryOptions {
 
 public class io/sentry/spring/boot/SentryProperties$Logging {
 	public fun <init> ()V
+	public fun getLoggers ()Ljava/util/List;
 	public fun getMinimumBreadcrumbLevel ()Lorg/slf4j/event/Level;
 	public fun getMinimumEventLevel ()Lorg/slf4j/event/Level;
 	public fun isEnabled ()Z
 	public fun setEnabled (Z)V
+	public fun setLoggers (Ljava/util/List;)V
 	public fun setMinimumBreadcrumbLevel (Lorg/slf4j/event/Level;)V
 	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
 }
@@ -45,5 +47,6 @@ public class io/sentry/spring/boot/SentryWebfluxAutoConfiguration {
 	public fun sentryScheduleHookApplicationRunner ()Lorg/springframework/boot/ApplicationRunner;
 	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
 	public fun sentryWebFilter (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebFilter;
+	public fun sentryWebTracingFilter ()Lio/sentry/spring/webflux/SentryWebTracingFilter;
 }
 

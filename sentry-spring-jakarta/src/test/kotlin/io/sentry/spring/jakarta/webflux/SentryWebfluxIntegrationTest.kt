@@ -5,6 +5,7 @@ import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.checkEvent
+import io.sentry.checkTransaction
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -123,6 +124,22 @@ class SentryWebfluxIntegrationTest {
             )
         }
     }
+
+    @Test
+    fun `sends transaction`() {
+        testClient.get()
+            .uri("http://localhost:$port/hello?param=value#top")
+            .exchange()
+            .expectStatus()
+            .isOk
+
+        verify(transport).send(
+            checkTransaction { event ->
+                assertEquals("GET /hello", event.transaction)
+            },
+            anyOrNull()
+        )
+    }
 }
 
 @SpringBootApplication(exclude = [ReactiveSecurityAutoConfiguration::class, SecurityAutoConfiguration::class])
@@ -150,6 +167,9 @@ open class App {
     open fun sentryWebExceptionHandler(hub: IHub) = SentryWebExceptionHandler(hub)
 
     @Bean
+    open fun sentryTracingFilter(hub: IHub) = SentryWebTracingFilter()
+
+    @Bean
     open fun sentryScheduleHookRegistrar() = ApplicationRunner {
         Schedulers.onScheduleHook("sentry", SentryScheduleHook())
     }
@@ -160,6 +180,7 @@ open class App {
             it.dsn = "http://key@localhost/proj"
             it.setDebug(true)
             it.setTransportFactory(transportFactory)
+            it.enableTracing = true
         }
     }
 }
