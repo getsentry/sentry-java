@@ -17,6 +17,7 @@
   - We also read the value from `server.servlet.session.cookie.name` and filter it out
 - No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
 - Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
+- Keep integration names from being obfuscated ([#2599](https://github.com/getsentry/sentry-java/pull/2599))
 
 ### Dependencies
 
