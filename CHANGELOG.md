@@ -24,6 +24,9 @@
 ### Dependencies
 
 - Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
+- Bump Gradle from v7.6.0 to v8.0.2 ([#2588](https://github.com/getsentry/sentry-java/pull/2588))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v802)
+  - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.2)
 
 ## 6.15.0
 
