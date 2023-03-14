@@ -2,14 +2,18 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import javax.servlet.ServletContext;
+import javax.servlet.SessionCookieConfig;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryRequestResolver {
   private final @NotNull IHub hub;
+  private volatile @Nullable List<String> extraSecurityCookies;
 
   public SentryRequestResolver(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "options is required");
@@ -31,27 +36,73 @@ public class SentryRequestResolver {
         UrlUtils.parse(httpRequest.getRequestURL().toString());
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setQueryString(httpRequest.getQueryString());
-    sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
+    final @NotNull List<String> additionalSecurityCookieNames =
+        extractSecurityCookieNamesOrUseCached(httpRequest);
+    sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));
 
     if (hub.getOptions().isSendDefaultPii()) {
-      sentryRequest.setCookies(toString(httpRequest.getHeaders("Cookie")));
+      String cookieName = HttpUtils.COOKIE_HEADER_NAME;
+      final @Nullable List<String> filteredHeaders =
+          HttpUtils.filterOutSecurityCookiesFromHeader(
+              httpRequest.getHeaders(cookieName), cookieName, additionalSecurityCookieNames);
+      sentryRequest.setCookies(toString(filteredHeaders));
     }
     return sentryRequest;
   }
 
   @NotNull
-  Map<String, String> resolveHeadersMap(final @NotNull HttpServletRequest request) {
+  Map<String, String> resolveHeadersMap(
+      final @NotNull HttpServletRequest request,
+      final @NotNull List<String> additionalSecurityCookieNames) {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
       if (hub.getOptions().isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
-        headersMap.put(headerName, toString(request.getHeaders(headerName)));
+        final @Nullable List<String> filteredHeaders =
+            HttpUtils.filterOutSecurityCookiesFromHeader(
+                request.getHeaders(headerName), headerName, additionalSecurityCookieNames);
+        headersMap.put(headerName, toString(filteredHeaders));
       }
     }
     return headersMap;
   }
 
-  private static @Nullable String toString(final @Nullable Enumeration<String> enumeration) {
-    return enumeration != null ? String.join(",", Collections.list(enumeration)) : null;
+  private List<String> extractSecurityCookieNamesOrUseCached(
+      final @NotNull HttpServletRequest httpRequest) {
+    if (extraSecurityCookies == null) {
+      synchronized (SentryRequestResolver.class) {
+        if (extraSecurityCookies == null) {
+          extraSecurityCookies = extractSecurityCookieNames(httpRequest);
+        }
+      }
+    }
+
+    return extraSecurityCookies;
+  }
+
+  private List<String> extractSecurityCookieNames(final @NotNull HttpServletRequest httpRequest) {
+    try {
+      final @Nullable ServletContext servletContext = httpRequest.getServletContext();
+      if (servletContext != null) {
+        final @Nullable SessionCookieConfig sessionCookieConfig =
+            servletContext.getSessionCookieConfig();
+        if (sessionCookieConfig != null) {
+          final @Nullable String cookieName = sessionCookieConfig.getName();
+          if (cookieName != null) {
+            return Arrays.asList(cookieName);
+          }
+        }
+      }
+    } catch (Throwable t) {
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "Failed to extract session cookie name from request.", t);
+    }
+
+    return Collections.emptyList();
+  }
+
+  private static @Nullable String toString(final @Nullable List<String> list) {
+    return list != null ? String.join(",", list) : null;
   }
 }
