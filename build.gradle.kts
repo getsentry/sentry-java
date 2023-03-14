@@ -175,6 +175,12 @@ spotless {
     kotlin {
         target("**/*.kt")
         ktlint()
+        targetExclude("**/sentry-native/**")
+    }
+    kotlinGradle {
+        target("**/*.kts")
+        ktlint()
+        targetExclude("**/sentry-native/**")
     }
 }
 
