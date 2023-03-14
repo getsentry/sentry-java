@@ -238,6 +238,30 @@ class SpanTest {
     }
 
     @Test
+    fun `when span trim-start is enabled, do not trim to start of child span if it started earlier`() {
+        // when trim start is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimStart = true
+            }
+        )
+        val startDate = span.startDate
+
+        // and a child span is created but has an earlier timestamp
+        val child1 = span.startChild(
+            "op1", "desc",
+            SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
+            Instrumenter.SENTRY,
+            SpanOptions()
+        ) as Span
+        child1.finish()
+        span.finish(SpanStatus.OK)
+
+        // then the span start should remain unchanged
+        assertEquals(startDate, span.startDate)
+    }
+
+    @Test
     fun `when span trim-end is enabled, trim to end of child span`() {
         // when trim end is enabled
         val span = fixture.getSut(
@@ -259,6 +283,32 @@ class SpanTest {
         // but the end should match the child
         assertEquals(startDate, span.startDate)
         assertEquals(child1.finishDate, span.finishDate)
+    }
+
+    @Test
+    fun `when span trim-end is enabled, do not trim to end of child span if parent already finishes earlier`() {
+        // when trim end is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimEnd = true
+            }
+        )
+
+        val startDate = span.startDate
+
+        // and a child span is created, but finished later than the parent
+        val child1 = span.startChild("op1") as Span
+        span.finish(SpanStatus.OK)
+
+        val finishDate = span.finishDate!!
+
+        Thread.sleep(1)
+        child1.finish()
+
+
+        // then both start and finish date should be left unchanged
+        assertEquals(startDate, span.startDate)
+        assertEquals(finishDate, span.finishDate)
     }
 
     @Test
