@@ -249,7 +249,8 @@ class SpanTest {
 
         // and a child span is created but has an earlier timestamp
         val child1 = span.startChild(
-            "op1", "desc",
+            "op1",
+            "desc",
             SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
             Instrumenter.SENTRY,
             SpanOptions()
@@ -304,7 +305,6 @@ class SpanTest {
 
         Thread.sleep(1)
         child1.finish()
-
 
         // then both start and finish date should be left unchanged
         assertEquals(startDate, span.startDate)

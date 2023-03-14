@@ -202,12 +202,14 @@ public final class Span implements ISpan {
           maxChildEnd = child.getFinishDate();
         }
       }
-      if (options.isTrimStart() && minChildStart != null && startTimestamp.isBefore(minChildStart)) {
+      if (options.isTrimStart()
+          && minChildStart != null
+          && startTimestamp.isBefore(minChildStart)) {
         updateStartDate(minChildStart);
       }
-      if (options.isTrimEnd() &&
-        maxChildEnd != null &&
-        (this.timestamp == null || this.timestamp.isAfter(maxChildEnd))) {
+      if (options.isTrimEnd()
+          && maxChildEnd != null
+          && (this.timestamp == null || this.timestamp.isAfter(maxChildEnd))) {
         updateEndDate(maxChildEnd);
       }
     }
