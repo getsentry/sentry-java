@@ -12,12 +12,14 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java Throwable to SentryExceptions */
-final class SentryExceptionFactory {
+@ApiStatus.Internal
+public final class SentryExceptionFactory {
 
   /** the SentryStackTraceFactory */
   private final @NotNull SentryStackTraceFactory sentryStackTraceFactory;
@@ -38,7 +40,7 @@ final class SentryExceptionFactory {
    * @param throwable the {@link Throwable} to build this instance from
    */
   @NotNull
-  List<SentryException> getSentryExceptions(final @NotNull Throwable throwable) {
+  public List<SentryException> getSentryExceptions(final @NotNull Throwable throwable) {
     return getSentryExceptions(extractExceptionQueue(throwable));
   }
 

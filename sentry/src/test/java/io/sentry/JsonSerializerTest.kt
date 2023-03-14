@@ -1132,6 +1132,64 @@ class JsonSerializerTest {
         verify(stream, never()).close()
     }
 
+    @Test
+    fun `known primitives can be deserialized`() {
+        val string = serializeToString("value")
+        val collection = serializeToString(listOf("hello", "hallo"))
+        val map = serializeToString(mapOf("one" to "two"))
+
+        val deserializedString = fixture.serializer.deserialize(StringReader(string), String::class.java)
+        val deserializedCollection = fixture.serializer.deserialize(StringReader(collection), List::class.java)
+        val deserializedMap = fixture.serializer.deserialize(StringReader(map), Map::class.java)
+
+        assertEquals("value", deserializedString)
+        assertEquals(listOf("hello", "hallo"), deserializedCollection)
+        assertEquals(mapOf("one" to "two"), deserializedMap)
+    }
+
+    @Test
+    fun `collection with element deserializer can be deserialized`() {
+        val breadcrumb1 = Breadcrumb.debug("test")
+        val breadcrumb2 = Breadcrumb.navigation("one", "other")
+        val collection = serializeToString(listOf(breadcrumb1, breadcrumb2))
+
+        val deserializedCollection = fixture.serializer.deserializeCollection(StringReader(collection), List::class.java, Breadcrumb.Deserializer())
+
+        assertEquals(listOf(breadcrumb1, breadcrumb2), deserializedCollection)
+    }
+
+    @Test
+    fun `collection without element deserializer can be deserialized as map`() {
+        val timestamp = Date(0)
+        val timestampSerialized = serializeToString(timestamp)
+            .removePrefix("\"")
+            .removeSuffix("\"")
+        val collection = serializeToString(
+            listOf(
+                Breadcrumb(timestamp).apply { message = "test" },
+                Breadcrumb(timestamp).apply { category = "navigation" }
+            )
+        )
+
+        val deserializedCollection = fixture.serializer.deserialize(StringReader(collection), List::class.java)
+
+        assertEquals(
+            listOf(
+                mapOf(
+                    "data" to emptyMap<String, String>(),
+                    "message" to "test",
+                    "timestamp" to timestampSerialized
+                ),
+                mapOf(
+                    "data" to emptyMap<String, String>(),
+                    "category" to "navigation",
+                    "timestamp" to timestampSerialized
+                )
+            ),
+            deserializedCollection
+        )
+    }
+
     private fun assertSessionData(expectedSession: Session?) {
         assertNotNull(expectedSession)
         assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)

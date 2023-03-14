@@ -290,7 +290,7 @@ public abstract class SentryBaseEvent {
   }
 
   @Nullable
-  Map<String, Object> getExtras() {
+  public Map<String, Object> getExtras() {
     return extra;
   }
 

@@ -55,6 +55,28 @@ public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/AnrIntegrationFactory {
+	public fun <init> ()V
+	public static fun create (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)Lio/sentry/Integration;
+}
+
+public final class io/sentry/android/core/AnrV2EventProcessor : io/sentry/BackfillingEventProcessor {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/AnrV2Integration$AnrV2Hint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/Backfillable {
+	public fun <init> (JLio/sentry/ILogger;JZ)V
+	public fun shouldEnrich ()Z
+	public fun timestamp ()J
+}
+
 public final class io/sentry/android/core/AppComponentsBreadcrumbsIntegration : android/content/ComponentCallbacks2, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
@@ -271,9 +293,11 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
+	public static final field LAST_ANR_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
+	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)J
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 

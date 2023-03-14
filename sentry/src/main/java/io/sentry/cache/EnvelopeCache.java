@@ -16,7 +16,7 @@ import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
-import io.sentry.hints.DiskFlushNotification;
+import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -204,7 +204,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     writeEnvelopeToDisk(envelopeFile, envelope);
 
     // write file to the disk when its about to crash so crashedLastRun can be marked on restart
-    if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
+    if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
       writeCrashMarkerFile();
     }
   }

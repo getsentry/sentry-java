@@ -2,15 +2,16 @@ package io.sentry.cache
 
 import io.sentry.ILogger
 import io.sentry.ISerializer
+import io.sentry.NoOpLogger
 import io.sentry.SentryCrashLastRunState
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.cache.EnvelopeCache.SUFFIX_CURRENT_SESSION_FILE
-import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.User
@@ -250,7 +251,7 @@ class EnvelopeCacheTest {
     }
 
     @Test
-    fun `write java marker file to disk when disk flush hint`() {
+    fun `write java marker file to disk when uncaught exception hint`() {
         val cache = fixture.getSUT()
 
         val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
@@ -258,14 +259,10 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, SentryEvent(), null)
 
-        val hints = HintUtils.createWithTypeCheckHint(DiskFlushHint())
+        val hints = HintUtils.createWithTypeCheckHint(UncaughtExceptionHint(0, NoOpLogger.getInstance()))
         cache.store(envelope, hints)
 
         assertTrue(markerFile.exists())
-    }
-
-    internal class DiskFlushHint : DiskFlushNotification {
-        override fun markFlushed() {}
     }
 
     private fun createSession(): Session {

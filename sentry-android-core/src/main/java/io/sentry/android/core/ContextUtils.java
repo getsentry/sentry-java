@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+import static android.content.Context.ACTIVITY_SERVICE;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -10,9 +11,17 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Process;
+import android.provider.Settings;
+import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -150,5 +159,169 @@ final class ContextUtils {
       // should never happen
     }
     return false;
+  }
+
+  /**
+   * Get the device's current kernel version, as a string. Attempts to read /proc/version, and falls
+   * back to the 'os.version' System Property.
+   *
+   * @return the device's current kernel version, as a string
+   */
+  @SuppressWarnings("DefaultCharset")
+  static @Nullable String getKernelVersion(final @NotNull ILogger logger) {
+    // its possible to try to execute 'uname' and parse it or also another unix commands or even
+    // looking for well known root installed apps
+    final String errorMsg = "Exception while attempting to read kernel information";
+    final String defaultVersion = System.getProperty("os.version");
+
+    final File file = new File("/proc/version");
+    if (!file.canRead()) {
+      return defaultVersion;
+    }
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+      return br.readLine();
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, errorMsg, e);
+    }
+
+    return defaultVersion;
+  }
+
+  @SuppressWarnings("deprecation")
+  static @Nullable Map<String, String> getSideLoadedInfo(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    String packageName = null;
+    try {
+      final PackageInfo packageInfo = getPackageInfo(context, logger, buildInfoProvider);
+      final PackageManager packageManager = context.getPackageManager();
+
+      if (packageInfo != null && packageManager != null) {
+        packageName = packageInfo.packageName;
+
+        // getInstallSourceInfo requires INSTALL_PACKAGES permission which is only given to system
+        // apps.
+        final String installerPackageName = packageManager.getInstallerPackageName(packageName);
+
+        final Map<String, String> sideLoadedInfo = new HashMap<>();
+
+        if (installerPackageName != null) {
+          sideLoadedInfo.put("isSideLoaded", "false");
+          // could be amazon, google play etc
+          sideLoadedInfo.put("installerStore", installerPackageName);
+        } else {
+          // if it's installed via adb, system apps or untrusted sources
+          sideLoadedInfo.put("isSideLoaded", "true");
+        }
+
+        return sideLoadedInfo;
+      }
+    } catch (IllegalArgumentException e) {
+      // it'll never be thrown as we are querying its own App's package.
+      logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the human-facing Application name.
+   *
+   * @return Application name
+   */
+  static @Nullable String getApplicationName(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      final ApplicationInfo applicationInfo = context.getApplicationInfo();
+      final int stringId = applicationInfo.labelRes;
+      if (stringId == 0) {
+        if (applicationInfo.nonLocalizedLabel != null) {
+          return applicationInfo.nonLocalizedLabel.toString();
+        }
+        return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
+      } else {
+        return context.getString(stringId);
+      }
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Error getting application name.", e);
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the DisplayMetrics object for the current application.
+   *
+   * @return the DisplayMetrics object for the current application
+   */
+  static @Nullable DisplayMetrics getDisplayMetrics(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      return context.getResources().getDisplayMetrics();
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Error getting DisplayMetrics.", e);
+      return null;
+    }
+  }
+
+  /**
+   * Fake the device family by using the first word in the Build.MODEL. Works well in most cases...
+   * "Nexus 6P" -> "Nexus", "Galaxy S7" -> "Galaxy".
+   *
+   * @return family name of the device, as best we can tell
+   */
+  static @Nullable String getFamily(final @NotNull ILogger logger) {
+    try {
+      return Build.MODEL.split(" ", -1)[0];
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Error getting device family.", e);
+      return null;
+    }
+  }
+
+  @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
+  static @Nullable String getDeviceName(
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+      return Settings.Global.getString(context.getContentResolver(), "device_name");
+    } else {
+      return null;
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
+  static @NotNull String[] getArchitectures(final @NotNull BuildInfoProvider buildInfoProvider) {
+    final String[] supportedAbis;
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.LOLLIPOP) {
+      supportedAbis = Build.SUPPORTED_ABIS;
+    } else {
+      supportedAbis = new String[] {Build.CPU_ABI, Build.CPU_ABI2};
+    }
+    return supportedAbis;
+  }
+
+  /**
+   * Get MemoryInfo object representing the memory state of the application.
+   *
+   * @return MemoryInfo object representing the memory state of the application
+   */
+  static @Nullable ActivityManager.MemoryInfo getMemInfo(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      final ActivityManager actManager =
+          (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
+      final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+      if (actManager != null) {
+        actManager.getMemoryInfo(memInfo);
+        return memInfo;
+      }
+      logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
+      return null;
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
+      return null;
+    }
   }
 }

@@ -19,6 +19,8 @@ import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.cache.PersistingOptionsObserver;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -139,6 +141,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
+    options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     final SentryFrameMetricsCollector frameMetricsCollector =
         new SentryFrameMetricsCollector(context, options, buildInfoProvider);
@@ -170,6 +173,11 @@ final class AndroidOptionsInitializer {
       options.addCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
+
+    if (options.getCacheDirPath() != null) {
+      options.addScopeObserver(new PersistingScopeObserver(options));
+      options.addOptionsObserver(new PersistingOptionsObserver(options));
+    }
   }
 
   private static void installDefaultIntegrations(
@@ -213,7 +221,7 @@ final class AndroidOptionsInitializer {
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
-    options.addIntegration(new AnrIntegration(context));
+    options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {

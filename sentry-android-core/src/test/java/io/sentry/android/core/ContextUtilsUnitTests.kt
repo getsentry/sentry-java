@@ -1,17 +1,27 @@
 package io.sentry.android.core
 
+import android.app.ActivityManager
+import android.app.ActivityManager.MemoryInfo
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.NoOpLogger
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowActivityManager
+import org.robolectric.shadows.ShadowBuild
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class ContextUtilsUnitTests {
@@ -23,6 +33,7 @@ class ContextUtilsUnitTests {
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
         logger = NoOpLogger.getInstance()
+        ShadowBuild.reset()
     }
 
     @Test
@@ -55,5 +66,98 @@ class ContextUtilsUnitTests {
         val mockedPackageInfo = spy(packageInfo) { it.versionName = "" }
         val mockedVersionName = ContextUtils.getVersionName(mockedPackageInfo)
         assertNotNull(mockedVersionName)
+    }
+
+    @Test
+    fun `when context is valid, getApplicationName returns application name`() {
+        val appName = ContextUtils.getApplicationName(context, logger)
+        assertEquals("io.sentry.android.core.test", appName)
+    }
+
+    @Test
+    fun `when context is invalid, getApplicationName returns null`() {
+        val appName = ContextUtils.getApplicationName(mock(), logger)
+        assertNull(appName)
+    }
+
+    @Test
+    fun `isSideLoaded returns true for test context`() {
+        val sideLoadedInfo =
+            ContextUtils.getSideLoadedInfo(context, logger, BuildInfoProvider(logger))
+        assertEquals("true", sideLoadedInfo?.get("isSideLoaded"))
+    }
+
+    @Test
+    fun `when installerPackageName is not null, sideLoadedInfo returns false and installerStore`() {
+        val mockedContext = spy(context) {
+            val mockedPackageManager = spy(mock.packageManager) {
+                whenever(mock.getInstallerPackageName(any())).thenReturn("play.google.com")
+            }
+            whenever(mock.packageManager).thenReturn(mockedPackageManager)
+        }
+        val sideLoadedInfo =
+            ContextUtils.getSideLoadedInfo(mockedContext, logger, BuildInfoProvider(logger))
+        assertEquals("false", sideLoadedInfo?.get("isSideLoaded"))
+        assertEquals("play.google.com", sideLoadedInfo?.get("installerStore"))
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h640dp-xxhdpi")
+    fun `when display metrics specified, getDisplayMetrics returns correct values`() {
+        val displayMetrics = ContextUtils.getDisplayMetrics(context, logger)
+        assertEquals(1080, displayMetrics!!.widthPixels)
+        assertEquals(1920, displayMetrics.heightPixels)
+        assertEquals(3.0f, displayMetrics.density)
+        assertEquals(480, displayMetrics.densityDpi)
+    }
+
+    @Test
+    fun `when display metrics are not specified, getDisplayMetrics returns null`() {
+        val displayMetrics = ContextUtils.getDisplayMetrics(mock(), logger)
+        assertNull(displayMetrics)
+    }
+
+    @Test
+    fun `when Build MODEL specified, getFamily returns correct value`() {
+        ShadowBuild.setModel("Pixel 3XL")
+        val family = ContextUtils.getFamily(logger)
+        assertEquals("Pixel", family)
+    }
+
+    @Test
+    fun `when Build MODEL is not specified, getFamily returns null`() {
+        ShadowBuild.setModel(null)
+        val family = ContextUtils.getFamily(logger)
+        assertNull(family)
+    }
+
+    @Test
+    fun `when supported abis is specified, getArchitectures returns correct values`() {
+        val architectures = ContextUtils.getArchitectures(BuildInfoProvider(logger))
+        assertEquals("armeabi-v7a", architectures[0])
+    }
+
+    @Test
+    fun `when memory info is specified, returns correct values`() {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val shadowActivityManager = Shadow.extract<ShadowActivityManager>(activityManager)
+
+        shadowActivityManager.setMemoryInfo(
+            MemoryInfo().apply {
+                availMem = 128
+                totalMem = 2048
+                lowMemory = true
+            }
+        )
+        val memInfo = ContextUtils.getMemInfo(context, logger)
+        assertEquals(128, memInfo!!.availMem)
+        assertEquals(2048, memInfo.totalMem)
+        assertTrue(memInfo.lowMemory)
+    }
+
+    @Test
+    fun `when memory info is not specified, returns null`() {
+        val memInfo = ContextUtils.getMemInfo(mock(), logger)
+        assertNull(memInfo)
     }
 }

@@ -39,6 +39,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -116,6 +117,31 @@ public final class JsonSerializer implements ISerializer {
 
   // Deserialize
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T, R> @Nullable T deserializeCollection(
+      @NotNull Reader reader,
+      @NotNull Class<T> clazz,
+      @Nullable JsonDeserializer<R> elementDeserializer) {
+    try {
+      JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
+      if (Collection.class.isAssignableFrom(clazz)) {
+        if (elementDeserializer == null) {
+          // if the object has no known deserializer we do best effort and deserialize it as map
+          return (T) jsonObjectReader.nextObjectOrNull();
+        }
+
+        return (T) jsonObjectReader.nextList(options.getLogger(), elementDeserializer);
+      } else {
+        return (T) jsonObjectReader.nextObjectOrNull();
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
+      return null;
+    }
+  }
+
+  @SuppressWarnings("unchecked")
   @Override
   public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
     try {
@@ -124,6 +150,8 @@ public final class JsonSerializer implements ISerializer {
       if (deserializer != null) {
         Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
         return clazz.cast(object);
+      } else if (isKnownPrimitive(clazz)) {
+        return (T) jsonObjectReader.nextObjectOrNull();
       } else {
         return null; // No way to deserialize objects we don't know about.
       }
@@ -222,5 +250,12 @@ public final class JsonSerializer implements ISerializer {
     }
     jsonObjectWriter.value(options.getLogger(), object);
     return stringWriter.toString();
+  }
+
+  private <T> boolean isKnownPrimitive(final @NotNull Class<T> clazz) {
+    return clazz.isArray()
+        || Collection.class.isAssignableFrom(clazz)
+        || String.class.isAssignableFrom(clazz)
+        || Map.class.isAssignableFrom(clazz);
   }
 }

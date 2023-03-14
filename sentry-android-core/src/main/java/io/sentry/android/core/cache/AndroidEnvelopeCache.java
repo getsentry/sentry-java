@@ -5,22 +5,29 @@ import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
+import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.UncaughtExceptionHandlerIntegration;
+import io.sentry.android.core.AnrV2Integration;
 import io.sentry.android.core.AppStartState;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.cache.EnvelopeCache;
-import io.sentry.hints.DiskFlushNotification;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class AndroidEnvelopeCache extends EnvelopeCache {
+
+  public static final String LAST_ANR_REPORT = "last_anr_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
@@ -45,7 +52,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
 
     final Long appStartTime = AppStartState.getInstance().getAppStartMillis();
-    if (HintUtils.hasType(hint, DiskFlushNotification.class) && appStartTime != null) {
+    if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
+        && appStartTime != null) {
       long timeSinceSdkInit = currentDateProvider.getCurrentTimeMillis() - appStartTime;
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
@@ -57,6 +65,21 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         writeStartupCrashMarkerFile();
       }
     }
+
+    HintUtils.runIfHasType(
+        hint,
+        AnrV2Integration.AnrV2Hint.class,
+        (anrHint) -> {
+          final long timestamp = anrHint.timestamp();
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Writing last reported ANR marker with timestamp %d",
+                  timestamp);
+
+          writeLastReportedAnrMarker(anrHint.timestamp());
+        });
   }
 
   @TestOnly
@@ -74,7 +97,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
           .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
       return;
     }
-    final File crashMarkerFile = new File(options.getOutboxPath(), STARTUP_CRASH_MARKER_FILE);
+    final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
@@ -91,7 +114,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       return false;
     }
 
-    final File crashMarkerFile = new File(options.getOutboxPath(), STARTUP_CRASH_MARKER_FILE);
+    final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
       final boolean exists = crashMarkerFile.exists();
       if (exists) {
@@ -111,5 +134,44 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
           .log(ERROR, "Error reading/deleting the startup crash marker file on the disk", e);
     }
     return false;
+  }
+
+  public static long lastReportedAnr(final @NotNull SentryOptions options) {
+    final String cacheDirPath =
+        Objects.requireNonNull(
+            options.getCacheDirPath(), "Cache dir path should be set for getting ANRs reported");
+
+    final File lastAnrMarker = new File(cacheDirPath, LAST_ANR_REPORT);
+    try {
+      if (lastAnrMarker.exists() && lastAnrMarker.canRead()) {
+        final String content = FileUtils.readText(lastAnrMarker);
+        // we wrapped into try-catch already
+        //noinspection ConstantConditions
+        return Long.parseLong(content.trim());
+      } else {
+        options
+            .getLogger()
+            .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Error reading last ANR marker", e);
+    }
+    return 0L;
+  }
+
+  private void writeLastReportedAnrMarker(final long timestamp) {
+    final String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath == null) {
+      options.getLogger().log(DEBUG, "Cache dir path is null, the ANR marker will not be written");
+      return;
+    }
+
+    final File anrMarker = new File(cacheDirPath, LAST_ANR_REPORT);
+    try (final OutputStream outputStream = new FileOutputStream(anrMarker)) {
+      outputStream.write(String.valueOf(timestamp).getBytes(UTF_8));
+      outputStream.flush();
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Error writing the ANR marker to the disk", e);
+    }
   }
 }

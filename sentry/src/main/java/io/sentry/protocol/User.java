@@ -7,6 +7,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -187,6 +188,23 @@ public final class User implements JsonUnknown, JsonSerializable {
    */
   public void setData(final @Nullable Map<String, @NotNull String> data) {
     this.data = CollectionUtils.newConcurrentHashMap(data);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    User user = (User) o;
+    return Objects.equals(email, user.email)
+        && Objects.equals(id, user.id)
+        && Objects.equals(username, user.username)
+        && Objects.equals(segment, user.segment)
+        && Objects.equals(ipAddress, user.ipAddress);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(email, id, username, segment, ipAddress);
   }
 
   // region json
