@@ -10,6 +10,7 @@ import io.sentry.SentryOptions.RequestSize.MEDIUM
 import io.sentry.SentryOptions.RequestSize.NONE
 import io.sentry.SentryOptions.RequestSize.SMALL
 import jakarta.servlet.FilterChain
+import jakarta.servlet.ServletContext
 import jakarta.servlet.http.HttpServletRequest
 import org.assertj.core.api.Assertions
 import org.mockito.kotlin.any
@@ -150,7 +151,7 @@ class SentrySpringFilterTest {
     }
 
     @Test
-    fun `when sendDefaultPii is set to true, attaches cookies information to Scope request`() {
+    fun `when sendDefaultPii is set to true, attaches filtered cookies to Scope request`() {
         val sentryOptions = SentryOptions().apply {
             isSendDefaultPii = true
         }
@@ -158,16 +159,19 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut(
             request = MockMvcRequestBuilders
                 .get(URI.create("http://example.com?param1=xyz"))
-                .header("Cookie", "name=value")
-                .header("Cookie", "name2=value2")
-                .buildRequest(MockServletContext()),
+                .header("Cookie", "name=value; JSESSIONID=123; mysessioncookiename=789")
+                .header("Cookie", "name2=value2; SID=456")
+                .buildRequest(servletContextWithCustomCookieName("mysessioncookiename")),
             options = sentryOptions
         )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
         assertNotNull(fixture.scope.request) {
-            assertEquals("name=value,name2=value2", it.cookies)
+            val expectedCookieString =
+                "name=value; JSESSIONID=[Filtered]; mysessioncookiename=[Filtered],name2=value2; SID=[Filtered]"
+            assertEquals(expectedCookieString, it.cookies)
+            assertEquals(expectedCookieString, it.headers!!["Cookie"])
         }
     }
 
@@ -268,5 +272,9 @@ class SentrySpringFilterTest {
                 throw e
             }
         }
+    }
+
+    private fun servletContextWithCustomCookieName(name: String): ServletContext {
+        return MockServletContext().also { it.sessionCookieConfig.name = name }
     }
 }
