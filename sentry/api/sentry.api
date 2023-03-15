@@ -3771,8 +3771,13 @@ public abstract interface class io/sentry/util/HintUtils$SentryNullableConsumer 
 }
 
 public final class io/sentry/util/HttpUtils {
+	public static final field COOKIE_HEADER_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
+	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
+	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
 }
 
 public final class io/sentry/util/JsonSerializationUtils {
@@ -3831,6 +3836,7 @@ public final class io/sentry/util/StringUtils {
 }
 
 public final class io/sentry/util/UrlUtils {
+	public static final field SENSITIVE_DATA_SUBSTITUTE Ljava/lang/String;
 	public fun <init> ()V
 	public static fun parse (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
 	public static fun parseNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;

@@ -44,6 +44,32 @@ class SentryLogbackAppenderAutoConfigurationTest {
     }
 
     @Test
+    fun `configures SentryAppender for configured loggers`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.loggers[0]=foo.bar", "sentry.logging.loggers[1]=baz")
+            .run {
+                val fooBarLogger = LoggerFactory.getLogger("foo.bar") as Logger
+                val bazLogger = LoggerFactory.getLogger("baz") as Logger
+
+                assertThat(rootLogger.getAppenders(SentryAppender::class.java)).hasSize(0)
+                assertThat(fooBarLogger.getAppenders(SentryAppender::class.java)).hasSize(1)
+                assertThat(bazLogger.getAppenders(SentryAppender::class.java)).hasSize(1)
+            }
+    }
+
+    @Test
+    fun `configures SentryAppender for none of the loggers if so configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.loggers=")
+            .run {
+                val fooBarLogger = LoggerFactory.getLogger("foo.bar") as Logger
+                val bazLogger = LoggerFactory.getLogger("baz") as Logger
+
+                assertThat(rootLogger.getAppenders(SentryAppender::class.java)).hasSize(0)
+                assertThat(fooBarLogger.getAppenders(SentryAppender::class.java)).hasSize(0)
+                assertThat(bazLogger.getAppenders(SentryAppender::class.java)).hasSize(0)
+            }
+    }
+
+    @Test
     fun `sets SentryAppender properties`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.minimum-event-level=info", "sentry.logging.minimum-breadcrumb-level=debug")
             .run {

@@ -5,11 +5,28 @@
 ### Features
 
 - Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
+- Automatic performance instrumentation for WebFlux ([#2597](https://github.com/getsentry/sentry-java/pull/2597))
+  - You can enable it by adding `sentry.enable-tracing=true` to your `application.properties`
+- The Spring Boot integration can now be configured to add the `SentryAppender` to specific loggers instead of the `ROOT` logger ([#2173](https://github.com/getsentry/sentry-java/pull/2173))
+  - You can specify the loggers using `"sentry.logging.loggers[0]=foo.bar` and `"sentry.logging.loggers[1]=baz` in your `application.properties`
 - Add capabilities to track Jetpack Compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
 
 ### Fixes
 
+- Fix timestamps of slow and frozen frames for profiles ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Add mechanism for logging integrations and update spring mechanism types ([#2595](https://github.com/getsentry/sentry-java/pull/2595))
+	- NOTE: If you're using these mechanism types (`HandlerExceptionResolver`, `SentryWebExceptionHandler`) in your dashboards please update them to use the new types.
+- Filter out session cookies sent by Spring and Spring Boot integrations ([#2593](https://github.com/getsentry/sentry-java/pull/2593))
+  - We filter out some common cookies like JSESSIONID
+  - We also read the value from `server.servlet.session.cookie.name` and filter it out
+- No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
+- Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
+- Keep integration names from being obfuscated ([#2599](https://github.com/getsentry/sentry-java/pull/2599))
+
+### Dependencies
+
+- Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
 
 ## 6.15.0
 
