@@ -21,7 +21,7 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
-    LOGGER.info("Loading person with id={}", id);
+    LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
     throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
   }
 

@@ -19,6 +19,8 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -37,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
 @Open
 public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+  public static final String MECHANISM_TYPE = "LogbackSentryAppender";
   // WARNING: Do not use these options in here, they are only to be used for startup
   private @NotNull SentryOptions options = new SentryOptions();
   private @Nullable ITransportFactory transportFactory;
@@ -105,7 +108,12 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     final ThrowableProxy throwableInformation = (ThrowableProxy) loggingEvent.getThrowableProxy();
     if (throwableInformation != null) {
-      event.setThrowable(throwableInformation.getThrowable());
+      final Mechanism mechanism = new Mechanism();
+      mechanism.setType(MECHANISM_TYPE);
+      final Throwable mechanismException =
+          new ExceptionMechanismException(
+              mechanism, throwableInformation.getThrowable(), Thread.currentThread());
+      event.setThrowable(mechanismException);
     }
 
     if (loggingEvent.getThreadName() != null) {
