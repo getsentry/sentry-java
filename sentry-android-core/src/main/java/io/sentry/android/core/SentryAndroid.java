@@ -5,6 +5,7 @@ import android.os.SystemClock;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
+import io.sentry.MyClass;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
@@ -86,6 +87,9 @@ public final class SentryAndroid {
     AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
 
     try {
+      MyClass myClass = new MyClass();
+      myClass.GetCalled();
+
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
