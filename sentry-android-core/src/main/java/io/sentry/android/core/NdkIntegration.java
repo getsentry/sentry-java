@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import io.sentry.IHub;
 import io.sentry.Integration;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
@@ -53,7 +54,7 @@ public final class NdkIntegration implements Integration, Closeable {
         method.invoke(null, args);
 
         this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
-        addIntegrationToSdkVersion();
+        SentryIntegrationPackageStorage.getInstance().addIntegration("NDKIntegration");
       } catch (NoSuchMethodException e) {
         disableNdkIntegration(this.options);
         this.options

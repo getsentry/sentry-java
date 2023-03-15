@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Window;
 import io.sentry.IHub;
 import io.sentry.Integration;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
@@ -119,7 +120,7 @@ public final class UserInteractionIntegration
       if (isAndroidXAvailable) {
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
-        addIntegrationToSdkVersion();
+        SentryIntegrationPackageStorage.getInstance().addIntegration("UserInteractionIntegration");
       } else {
         options
             .getLogger()

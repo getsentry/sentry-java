@@ -81,7 +81,7 @@ public final class UncaughtExceptionHandlerIntegration
       this.options
           .getLogger()
           .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
-      addIntegrationToSdkVersion();
+      SentryIntegrationPackageStorage.getInstance().addIntegration("UncaughtExceptionHandlerIntegration");
     }
   }
 

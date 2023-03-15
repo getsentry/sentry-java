@@ -87,7 +87,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-      addIntegrationToSdkVersion();
+      SentryIntegrationPackageStorage.getInstance().addIntegration("SendCachedEventFireAndForgetIntegration");
     } catch (Throwable e) {
       options
           .getLogger()

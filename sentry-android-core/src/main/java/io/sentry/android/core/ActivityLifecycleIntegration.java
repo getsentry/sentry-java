@@ -21,6 +21,7 @@ import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.Scope;
 import io.sentry.SentryDate;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
@@ -121,7 +122,7 @@ public final class ActivityLifecycleIntegration
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-      addIntegrationToSdkVersion();
+      SentryIntegrationPackageStorage.getInstance().addIntegration("ActivityLifecycleIntegration");
     }
   }
 

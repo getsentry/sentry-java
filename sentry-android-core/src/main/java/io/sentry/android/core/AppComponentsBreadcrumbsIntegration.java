@@ -9,6 +9,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.Integration;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.DeviceOrientations;
@@ -53,7 +54,7 @@ public final class AppComponentsBreadcrumbsIntegration
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion();
+        SentryIntegrationPackageStorage.getInstance().addIntegration("AppComponentsBreadcrumbsIntegration");
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");

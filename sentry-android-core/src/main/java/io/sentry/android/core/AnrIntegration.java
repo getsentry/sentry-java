@@ -6,6 +6,7 @@ import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
@@ -73,7 +74,7 @@ public final class AnrIntegration implements Integration, Closeable {
           anrWatchDog.start();
 
           options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
-          addIntegrationToSdkVersion();
+          SentryIntegrationPackageStorage.getInstance().addIntegration("ANRIntegration");
         }
       }
     }

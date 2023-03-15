@@ -12,6 +12,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.Integration;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
@@ -62,7 +63,7 @@ public final class TempSensorBreadcrumbsIntegration
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-            addIntegrationToSdkVersion();
+            SentryIntegrationPackageStorage.getInstance().addIntegration("TempSensorBreadcrumbsIntegration");
           } else {
             this.options
                 .getLogger()
