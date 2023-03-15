@@ -4,6 +4,7 @@ public final class io/sentry/logback/BuildConfig {
 }
 
 public class io/sentry/logback/SentryAppender : ch/qos/logback/core/UnsynchronizedAppenderBase {
+	public static final field MECHANISM_TYPE Ljava/lang/String;
 	public fun <init> ()V
 	protected fun append (Lch/qos/logback/classic/spi/ILoggingEvent;)V
 	protected synthetic fun append (Ljava/lang/Object;)V
