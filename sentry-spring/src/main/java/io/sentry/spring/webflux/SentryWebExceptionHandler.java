@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 // at -1
 @ApiStatus.Experimental
 public final class SentryWebExceptionHandler implements WebExceptionHandler {
+  public static final String MECHANISM_TYPE = "Spring5WebFluxExceptionResolver";
   private final @NotNull IHub hub;
 
   public SentryWebExceptionHandler(final @NotNull IHub hub) {
@@ -35,7 +36,7 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull Throwable ex) {
     if (!(ex instanceof ResponseStatusException)) {
       final Mechanism mechanism = new Mechanism();
-      mechanism.setType("SentryWebExceptionHandler");
+      mechanism.setType(MECHANISM_TYPE);
       mechanism.setHandled(false);
       final Throwable throwable =
           new ExceptionMechanismException(mechanism, ex, Thread.currentThread());

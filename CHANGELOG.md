@@ -14,6 +14,8 @@
 
 - Fix timestamps of slow and frozen frames for profiles ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
 - Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Add mechanism for logging integrations and update spring mechanism types ([#2595](https://github.com/getsentry/sentry-java/pull/2595))
+	- NOTE: If you're using these mechanism types (`HandlerExceptionResolver`, `SentryWebExceptionHandler`) in your dashboards please update them to use the new types.
 - Filter out session cookies sent by Spring and Spring Boot integrations ([#2593](https://github.com/getsentry/sentry-java/pull/2593))
   - We filter out some common cookies like JSESSIONID
   - We also read the value from `server.servlet.session.cookie.name` and filter it out
