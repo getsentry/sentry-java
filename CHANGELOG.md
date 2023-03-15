@@ -9,6 +9,7 @@
   - You can enable it by adding `sentry.enable-tracing=true` to your `application.properties`
 - The Spring Boot integration can now be configured to add the `SentryAppender` to specific loggers instead of the `ROOT` logger ([#2173](https://github.com/getsentry/sentry-java/pull/2173))
   - You can specify the loggers using `"sentry.logging.loggers[0]=foo.bar` and `"sentry.logging.loggers[1]=baz` in your `application.properties`
+- Adapt span op and description for graphql to fit spec ([#2607](https://github.com/getsentry/sentry-java/pull/2607))
 
 ### Fixes
 
