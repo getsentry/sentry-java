@@ -1,7 +1,7 @@
 package io.sentry;
 
 public interface IMyInterInterface {
-  default void DoTheThing(){
+  default void DoTheThing() {
     System.out.println("Look at me!");
   }
 }

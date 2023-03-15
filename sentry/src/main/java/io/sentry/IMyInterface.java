@@ -1,5 +1,3 @@
 package io.sentry;
 
-public interface IMyInterface extends IMyInterInterface {
-
-}
+public interface IMyInterface extends IMyInterInterface {}

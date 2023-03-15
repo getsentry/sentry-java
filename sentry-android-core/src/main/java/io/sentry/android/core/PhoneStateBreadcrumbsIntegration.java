@@ -54,7 +54,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
           telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
           options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
-          SentryIntegrationPackageStorage.getInstance().addIntegration("PhoneStateBreadcrumbsIntegration");
+          SentryIntegrationPackageStorage.getInstance()
+              .addIntegration("PhoneStateBreadcrumbsIntegration");
         } catch (Throwable e) {
           this.options
               .getLogger()

@@ -54,7 +54,8 @@ public final class AppComponentsBreadcrumbsIntegration
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
-        SentryIntegrationPackageStorage.getInstance().addIntegration("AppComponentsBreadcrumbsIntegration");
+        SentryIntegrationPackageStorage.getInstance()
+            .addIntegration("AppComponentsBreadcrumbsIntegration");
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
