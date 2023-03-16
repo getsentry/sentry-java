@@ -636,7 +636,7 @@ public final class Scope {
    * @return a clone of the Session after executing the callback and mutating the session
    */
   @Nullable
-  public Session withSession(final @NotNull IWithSession sessionCallback) {
+  Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     synchronized (sessionLock) {
       sessionCallback.accept(session);
@@ -649,7 +649,7 @@ public final class Scope {
   }
 
   /** the IWithSession callback */
-  public interface IWithSession {
+  interface IWithSession {
 
     /**
      * The accept method of the callback
@@ -760,6 +760,11 @@ public final class Scope {
     synchronized (transactionLock) {
       callback.accept(transaction);
     }
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Session getSession() {
+    return session;
   }
 
   /** the IWithTransaction callback */

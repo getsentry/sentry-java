@@ -1084,6 +1084,7 @@ public final class io/sentry/Scope {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getRequest ()Lio/sentry/protocol/Request;
+	public fun getSession ()Lio/sentry/Session;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTransaction ()Lio/sentry/ITransaction;
@@ -1107,12 +1108,7 @@ public final class io/sentry/Scope {
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
-	public fun withSession (Lio/sentry/Scope$IWithSession;)Lio/sentry/Session;
 	public fun withTransaction (Lio/sentry/Scope$IWithTransaction;)V
-}
-
-public abstract interface class io/sentry/Scope$IWithSession {
-	public abstract fun accept (Lio/sentry/Session;)V
 }
 
 public abstract interface class io/sentry/Scope$IWithTransaction {

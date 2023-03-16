@@ -105,9 +105,7 @@ class SessionTrackingIntegrationTest {
     private fun lastSessionId(): String? {
         var sid: String? = null
         Sentry.configureScope { scope ->
-            scope.withSession { session ->
-                sid = session!!.sessionId.toString()
-            }
+            sid = scope.session?.sessionId.toString()
         }
         return sid
     }

@@ -82,7 +82,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       hub.configureScope(
           scope -> {
             if (lastUpdatedSession.get() == 0L) {
-              final @Nullable Session currentSession = scope.withSession(session -> {});
+              final @Nullable Session currentSession = scope.getSession();
               if (currentSession != null && currentSession.getStarted() != null) {
                 lastUpdatedSession.set(currentSession.getStarted().getTime());
               }
