@@ -39,7 +39,7 @@ class SessionTrackingIntegrationTest {
     }
 
     @Test
-    fun `test`() {
+    fun `session tracking works properly with multiple backgrounds and foregrounds`() {
         lateinit var options: SentryAndroidOptions
         SentryAndroid.init(context) {
             it.dsn = "https://key@sentry.io/proj"
