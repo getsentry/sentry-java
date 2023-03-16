@@ -320,6 +320,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads network events breadcrumbs to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_NETWORK_EVENTS_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableNetworkEventBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads network events breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableNetworkEventBreadcrumbs)
+    }
+
+    @Test
     fun `applyMetadata reads app components breadcrumbs to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_APP_COMPONENTS_ENABLE to false)
