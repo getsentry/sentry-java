@@ -11,7 +11,6 @@ import io.sentry.SentryLevel
 import io.sentry.Session
 import io.sentry.Session.State
 import io.sentry.transport.ICurrentDateProvider
-import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check

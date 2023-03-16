@@ -91,7 +91,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
       final long lastUpdatedSession = this.lastUpdatedSession.get();
       if (lastUpdatedSession == 0L
-        || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+          || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
         addSessionBreadcrumb("start");
         hub.startSession();
       }
