@@ -217,7 +217,7 @@ class SentryAndroidTest {
 
             var session: Session? = null
             Sentry.getCurrentHub().configureScope { scope ->
-                session = scope.session
+                session = scope.withSession {}
             }
             callback(session)
         }
@@ -229,7 +229,7 @@ class SentryAndroidTest {
             options.isEnableAutoSessionTracking = false
         }
         Sentry.getCurrentHub().withScope { scope ->
-            assertNull(scope.session)
+            assertNull(scope.withSession {})
         }
     }
 

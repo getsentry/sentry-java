@@ -5,6 +5,7 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IHub
 import io.sentry.Scope
+import io.sentry.Scope.IWithSession
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.Session
@@ -12,6 +13,7 @@ import io.sentry.Session.State
 import io.sentry.transport.ICurrentDateProvider
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -41,11 +43,15 @@ class LifecycleWatcherTest {
             enableAppLifecycleBreadcrumbs: Boolean = true,
             session: Session? = null
         ): LifecycleWatcher {
-            val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+            val scopeCaptor = argumentCaptor<ScopeCallback>()
+            val sessionCaptor = argumentCaptor<IWithSession>()
             val scope = mock<Scope>()
-            whenever(scope.session).thenReturn(session)
-            whenever(hub.withScope(argumentCaptor.capture())).thenAnswer {
-                argumentCaptor.value.run(scope)
+            whenever(scope.withSession(sessionCaptor.capture())).thenAnswer {
+                sessionCaptor.firstValue.accept(session)
+                return@thenAnswer session
+            }
+            whenever(hub.configureScope(scopeCaptor.capture())).thenAnswer {
+                scopeCaptor.firstValue.run(scope)
             }
 
             return LifecycleWatcher(
