@@ -23,6 +23,8 @@
 - No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
 - Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
 - Keep integration names from being obfuscated ([#2599](https://github.com/getsentry/sentry-java/pull/2599))
+- Change log level from INFO to WARN for error message indicating a failed Log4j2 Sentry.init ([#2606](https://github.com/getsentry/sentry-java/pull/2606))
+  - The log message was often not visible as our docs suggest a minimum log level of WARN 
 
 ### Dependencies
 

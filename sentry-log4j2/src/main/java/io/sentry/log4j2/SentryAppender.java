@@ -136,7 +136,7 @@ public class SentryAppender extends AbstractAppender {
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
             });
       } catch (IllegalArgumentException e) {
-        LOGGER.info("Failed to init Sentry during appender initialization: " + e.getMessage());
+        LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
       }
     }
     addPackageAndIntegrationInfo();
