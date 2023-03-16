@@ -26,13 +26,16 @@ class SpanTest {
             )
         }
 
-        fun getSut(): Span {
+        fun getSut(options: SpanOptions = SpanOptions()): Span {
             return Span(
                 SentryId(),
                 SpanId(),
                 SentryTracer(TransactionContext("name", "op"), hub),
                 "op",
-                hub
+                hub,
+                null,
+                options,
+                null
             )
         }
     }
@@ -209,6 +212,130 @@ class SpanTest {
         assertEquals("myValue", span.tags["myTag"])
         assertEquals("myValue", span.data["myData"])
         assertEquals(ex, span.throwable)
+    }
+
+    @Test
+    fun `when span trim-start is enabled, trim to start of child span`() {
+        // when trim start is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimStart = true
+            }
+        )
+
+        // and a child span is created
+        Thread.sleep(1)
+        val child1 = span.startChild("op1") as Span
+        child1.finish()
+
+        val finishDate = SentryInstantDateProvider().now()
+        span.finish(SpanStatus.OK, finishDate)
+
+        // then the span start should match the child
+        // but the finish date should be kept the same
+        assertEquals(child1.startDate, span.startDate)
+        assertEquals(finishDate, span.finishDate)
+    }
+
+    @Test
+    fun `when span trim-start is enabled, do not trim to start of child span if it started earlier`() {
+        // when trim start is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimStart = true
+            }
+        )
+        val startDate = span.startDate
+
+        // and a child span is created but has an earlier timestamp
+        val child1 = span.startChild(
+            "op1",
+            "desc",
+            SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
+            Instrumenter.SENTRY,
+            SpanOptions()
+        ) as Span
+        child1.finish()
+        span.finish(SpanStatus.OK)
+
+        // then the span start should remain unchanged
+        assertEquals(startDate, span.startDate)
+    }
+
+    @Test
+    fun `when span trim-end is enabled, trim to end of child span`() {
+        // when trim end is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimEnd = true
+            }
+        )
+
+        val startDate = span.startDate
+
+        // and a child span is created
+        Thread.sleep(1)
+        val child1 = span.startChild("op1") as Span
+        child1.finish()
+
+        span.finish(SpanStatus.OK)
+
+        // then the start should be left unchanged
+        // but the end should match the child
+        assertEquals(startDate, span.startDate)
+        assertEquals(child1.finishDate, span.finishDate)
+    }
+
+    @Test
+    fun `when span trim-end is enabled, do not trim to end of child span if parent already finishes earlier`() {
+        // when trim end is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimEnd = true
+            }
+        )
+
+        val startDate = span.startDate
+
+        // and a child span is created, but finished later than the parent
+        val child1 = span.startChild("op1") as Span
+        span.finish(SpanStatus.OK)
+
+        val finishDate = span.finishDate!!
+
+        Thread.sleep(1)
+        child1.finish()
+
+        // then both start and finish date should be left unchanged
+        assertEquals(startDate, span.startDate)
+        assertEquals(finishDate, span.finishDate)
+    }
+
+    @Test
+    fun `when span trimming is enabled, trim to child spans`() {
+        // when a span with start+end trimming is enabled
+        val span = fixture.getSut(
+            SpanOptions().apply {
+                isTrimStart = true
+                isTrimEnd = true
+            }
+        )
+
+        // and two child spans are started
+        val child1 = span.startChild("op1") as Span
+        Thread.sleep(1)
+        child1.finish()
+
+        val child2 = span.startChild("op2") as Span
+        Thread.sleep(1)
+        child2.finish()
+
+        span.finish(SpanStatus.OK)
+        assertTrue(span.isFinished)
+
+        // then the span should match start/finish should match it's children
+        assertEquals(child1.startDate, span.startDate)
+        assertEquals(child2.finishDate, span.finishDate)
     }
 
     @Test
