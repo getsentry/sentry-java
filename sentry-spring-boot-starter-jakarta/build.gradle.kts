@@ -1,4 +1,3 @@
-import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -11,18 +10,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
-}
-
-repositories {
-    mavenCentral()
-}
-
-the<DependencyManagementExtension>().apply {
-    imports {
-        mavenBom(SpringBootPlugin.BOM_COORDINATES)
-        mavenBom(Config.Libs.okhttpBom)
-    }
 }
 
 configure<JavaPluginExtension> {
@@ -35,26 +22,23 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 
-val jakartaTransform by configurations.creating
-
 dependencies {
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer:0.5.0")
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.cli:0.5.0")
-    jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
-
     api(projects.sentry)
     api(projects.sentrySpringJakarta)
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
     implementation(Config.Libs.springBoot3Starter)
+    implementation(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.springBoot3StarterAop)
     compileOnly(Config.Libs.springBoot3StarterSecurity)
     compileOnly(Config.Libs.reactorCore)
+    compileOnly(Config.Libs.contextPropagation)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
+    annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
@@ -72,6 +56,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockWebserver)
+
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBoot3StarterTest)
     testImplementation(Config.Libs.springBoot3StarterWeb)
@@ -79,6 +64,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(Config.Libs.contextPropagation)
 }
 
 configure<SourceSetContainer> {
@@ -109,26 +95,6 @@ tasks {
         dependsOn(jacocoTestReport)
     }
 }
-
-task("jakartaTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring-boot-starter/src/main/java/io/sentry/spring/boot", "src/main/java/io/sentry/spring/boot/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}.dependsOn("jakartaTestTransformation")
-
-task("jakartaTestTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring-boot-starter/src/test/kotlin/io/sentry/spring/boot", "src/test/kotlin/io/sentry/spring/boot/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}.dependsOn("jakartaMainClassTransformation")
-
-task("jakartaMainClassTransformation", JavaExec::class) {
-    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring-boot-starter/src/test/kotlin/com/acme", "src/test/kotlin/com/acme", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}
-
-// tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()

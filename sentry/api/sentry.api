@@ -277,13 +277,13 @@ public final class io/sentry/ExternalOptions {
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 }
 
-public final class io/sentry/FullDisplayedReporter {
-	public static fun getInstance ()Lio/sentry/FullDisplayedReporter;
-	public fun registerFullyDrawnListener (Lio/sentry/FullDisplayedReporter$FullDisplayedReporterListener;)V
+public final class io/sentry/FullyDisplayedReporter {
+	public static fun getInstance ()Lio/sentry/FullyDisplayedReporter;
+	public fun registerFullyDrawnListener (Lio/sentry/FullyDisplayedReporter$FullyDisplayedReporterListener;)V
 	public fun reportFullyDrawn ()V
 }
 
-public abstract interface class io/sentry/FullDisplayedReporter$FullDisplayedReporterListener {
+public abstract interface class io/sentry/FullyDisplayedReporter$FullyDisplayedReporterListener {
 	public abstract fun onFullyDrawn ()V
 }
 
@@ -344,7 +344,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
-	public fun reportFullDisplayed ()V
+	public fun reportFullyDisplayed ()V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -388,7 +388,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
-	public fun reportFullDisplayed ()V
+	public fun reportFullyDisplayed ()V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -457,7 +457,8 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun pushScope ()V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
-	public abstract fun reportFullDisplayed ()V
+	public fun reportFullDisplayed ()V
+	public abstract fun reportFullyDisplayed ()V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
@@ -784,7 +785,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
-	public fun reportFullDisplayed ()V
+	public fun reportFullyDisplayed ()V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1161,6 +1162,7 @@ public final class io/sentry/Sentry {
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public static fun clearBreadcrumbs ()V
+	public static fun cloneMainHub ()Lio/sentry/IHub;
 	public static fun close ()V
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
 	public static fun endSession ()V
@@ -1182,6 +1184,7 @@ public final class io/sentry/Sentry {
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
 	public static fun reportFullDisplayed ()V
+	public static fun reportFullyDisplayed ()V
 	public static fun setCurrentHub (Lio/sentry/IHub;)V
 	public static fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setFingerprint (Ljava/util/List;)V
@@ -1545,7 +1548,7 @@ public class io/sentry/SentryOptions {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getFlushTimeoutMillis ()J
-	public fun getFullDisplayedReporter ()Lio/sentry/FullDisplayedReporter;
+	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
@@ -3748,8 +3751,13 @@ public abstract interface class io/sentry/util/HintUtils$SentryNullableConsumer 
 }
 
 public final class io/sentry/util/HttpUtils {
+	public static final field COOKIE_HEADER_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
+	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
+	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
 }
 
 public final class io/sentry/util/JsonSerializationUtils {
@@ -3793,7 +3801,6 @@ public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
-	public static fun isValidSampleRate (Ljava/lang/Double;Z)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
 }
@@ -3809,6 +3816,7 @@ public final class io/sentry/util/StringUtils {
 }
 
 public final class io/sentry/util/UrlUtils {
+	public static final field SENSITIVE_DATA_SUBSTITUTE Ljava/lang/String;
 	public fun <init> ()V
 	public static fun parse (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
 	public static fun parseNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;

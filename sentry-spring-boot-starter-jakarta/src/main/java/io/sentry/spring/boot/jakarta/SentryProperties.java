@@ -2,6 +2,8 @@ package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.SentryOptions;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.event.Level;
@@ -27,6 +29,9 @@ public class SentryProperties extends SentryOptions {
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
+
+  /** Reactive framework (e.g. WebFlux) integration properties */
+  private @NotNull Reactive reactive = new Reactive();
 
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
@@ -72,6 +77,14 @@ public class SentryProperties extends SentryOptions {
     this.logging = logging;
   }
 
+  public @NotNull Reactive getReactive() {
+    return reactive;
+  }
+
+  public void setReactive(@NotNull Reactive reactive) {
+    this.reactive = reactive;
+  }
+
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
@@ -82,6 +95,9 @@ public class SentryProperties extends SentryOptions {
 
     /** Minimum logging level for recording event. */
     private @Nullable Level minimumEventLevel;
+
+    /** List of loggers the SentryAppender should be added to. */
+    private @NotNull List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
     public boolean isEnabled() {
       return enabled;
@@ -105,6 +121,31 @@ public class SentryProperties extends SentryOptions {
 
     public void setMinimumEventLevel(@Nullable Level minimumEventLevel) {
       this.minimumEventLevel = minimumEventLevel;
+    }
+
+    @NotNull
+    public List<String> getLoggers() {
+      return loggers;
+    }
+
+    public void setLoggers(final @NotNull List<String> loggers) {
+      this.loggers = loggers;
+    }
+  }
+
+  @Open
+  public static class Reactive {
+    /**
+     * Enable/Disable usage of {@link io.micrometer.context.ThreadLocalAccessor} for Hub propagation
+     */
+    private boolean threadLocalAccessorEnabled = true;
+
+    public boolean isThreadLocalAccessorEnabled() {
+      return threadLocalAccessorEnabled;
+    }
+
+    public void setThreadLocalAccessorEnabled(boolean threadLocalAccessorEnabled) {
+      this.threadLocalAccessorEnabled = threadLocalAccessorEnabled;
     }
   }
 }

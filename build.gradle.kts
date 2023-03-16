@@ -1,3 +1,4 @@
+
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
@@ -56,8 +57,6 @@ apiValidation {
             "sentry-samples-servlet",
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
-            "sentry-spring-jakarta",
-            "sentry-spring-boot-starter-jakarta",
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-jakarta",
             "sentry-samples-spring-boot-webflux",
@@ -119,8 +118,18 @@ subprojects {
                     from("build${sep}libs")
                     from("build${sep}publications${sep}maven")
                     // android modules
-                    from("build${sep}outputs${sep}aar")
+                    from("build${sep}outputs${sep}aar") {
+                        include("*-release*")
+                    }
                     from("build${sep}publications${sep}release")
+                }
+            }
+            // craft only uses zip archives
+            this.forEach { dist ->
+                if (dist.name == DistributionPlugin.MAIN_DISTRIBUTION_NAME) {
+                    tasks.getByName("distTar").enabled = false
+                } else {
+                    tasks.getByName(dist.name + "DistTar").enabled = false
                 }
             }
         }
@@ -128,7 +137,8 @@ subprojects {
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
-                val distributionFilePath = "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
+                val distributionFilePath =
+                    "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
@@ -160,17 +170,17 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**", "sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
+        targetExclude("**/generated/**", "**/vendor/**")
     }
-
     kotlin {
         target("**/*.kt")
         ktlint()
-        targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
+        targetExclude("**/sentry-native/**")
     }
     kotlinGradle {
         target("**/*.kts")
         ktlint()
+        targetExclude("**/sentry-native/**")
     }
 }
 

@@ -4,6 +4,34 @@
 
 ### Features
 
+- Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
+- Automatic performance instrumentation for WebFlux ([#2597](https://github.com/getsentry/sentry-java/pull/2597))
+  - You can enable it by adding `sentry.enable-tracing=true` to your `application.properties`
+- The Spring Boot integration can now be configured to add the `SentryAppender` to specific loggers instead of the `ROOT` logger ([#2173](https://github.com/getsentry/sentry-java/pull/2173))
+  - You can specify the loggers using `"sentry.logging.loggers[0]=foo.bar` and `"sentry.logging.loggers[1]=baz` in your `application.properties`
+
+### Fixes
+
+- Fix timestamps of slow and frozen frames for profiles ([#2584](https://github.com/getsentry/sentry-java/pull/2584))
+- Deprecate reportFullDisplayed in favor of reportFullyDisplayed ([#2585](https://github.com/getsentry/sentry-java/pull/2585))
+- Filter out session cookies sent by Spring and Spring Boot integrations ([#2593](https://github.com/getsentry/sentry-java/pull/2593))
+  - We filter out some common cookies like JSESSIONID
+  - We also read the value from `server.servlet.session.cookie.name` and filter it out
+- No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
+- Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
+- Keep integration names from being obfuscated ([#2599](https://github.com/getsentry/sentry-java/pull/2599))
+
+### Dependencies
+
+- Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
+- Bump Gradle from v7.6.0 to v8.0.2 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v802)
+  - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.2)
+
+## 6.15.0
+
+### Features
+
 - Adjust time-to-full-display span if reportFullDisplayed is called too early ([#2550](https://github.com/getsentry/sentry-java/pull/2550))
 - Add `enableTracing` option ([#2530](https://github.com/getsentry/sentry-java/pull/2530))
     - This change is backwards compatible. The default is `null` meaning existing behaviour remains unchanged (setting either `tracesSampleRate` or `tracesSampler` enables performance).
@@ -11,10 +39,24 @@
     - If set to `false` performance is disabled, regardless of `tracesSampleRate` and `tracesSampler` options.
 - Detect dependencies by listing MANIFEST.MF files at runtime ([#2538](https://github.com/getsentry/sentry-java/pull/2538))
 - Report integrations in use, report packages in use more consistently ([#2179](https://github.com/getsentry/sentry-java/pull/2179))
+- Implement `ThreadLocalAccessor` for propagating Sentry hub with reactor / WebFlux ([#2570](https://github.com/getsentry/sentry-java/pull/2570))
+  - Requires `io.micrometer:context-propagation:1.0.2+` as well as Spring Boot 3.0.3+
+  - Enable the feature by setting `sentry.reactive.thread-local-accessor-enabled=true`
+  - This is still considered experimental. Once we have enough feedback we may turn this on by default.
+  - Checkout the sample here: https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux-jakarta
+  - A new hub is now cloned from the main hub for every request
 
 ### Fixes
 
 - Leave `inApp` flag for stack frames undecided in SDK if unsure and let ingestion decide instead ([#2547](https://github.com/getsentry/sentry-java/pull/2547))
+- Allow `0.0` error sample rate ([#2573](https://github.com/getsentry/sentry-java/pull/2573))
+- Fix memory leak in WebFlux related to an ever growing stack ([#2580](https://github.com/getsentry/sentry-java/pull/2580))
+- Use the same hub in WebFlux exception handler as we do in WebFilter ([#2566](https://github.com/getsentry/sentry-java/pull/2566))
+- Switch upstream Jetpack Compose dependencies to `compileOnly` in `sentry-compose-android` ([#2578](https://github.com/getsentry/sentry-java/pull/2578))
+  - NOTE: If you're using Compose Navigation/User Interaction integrations, make sure to have the following dependencies on the classpath as we do not bring them in transitively anymore:
+    - `androidx.navigation:navigation-compose:`
+    - `androidx.compose.runtime:runtime:`
+    - `androidx.compose.ui:ui:`
 
 ## 6.14.0
 

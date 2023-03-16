@@ -20,6 +20,9 @@ kotlin {
 
     android {
         publishLibraryVariants("release")
+        compilations.all {
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
     }
     jvm("desktop") {
         compilations.all {
@@ -38,10 +41,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(compose.runtime)
-                api(compose.ui)
+                compileOnly(compose.runtime)
+                compileOnly(compose.ui)
 
-                implementation(Config.Libs.kotlinStdLib)
                 api(projects.sentryComposeHelper)
             }
         }
@@ -50,15 +52,16 @@ kotlin {
                 api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
-                api(Config.Libs.composeNavigation)
+                compileOnly(Config.Libs.composeNavigation)
                 implementation(Config.Libs.lifecycleCommonJava8)
             }
         }
-        val androidTest by getting {
+        val androidUnitTest by getting {
             dependencies {
                 implementation(Config.TestLibs.kotlinTestJunit)
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
+                implementation(Config.Libs.composeNavigation)
             }
         }
     }

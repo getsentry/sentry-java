@@ -121,7 +121,8 @@ public class SentryAppender extends AbstractAppender {
               if (debug != null) {
                 options.setDebug(debug);
               }
-              options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
+              options.setSentryClientName(
+                  BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
               options.setSdkVersion(createSdkVersion(options));
               if (contextTags != null) {
                 for (final String contextTag : contextTags) {
