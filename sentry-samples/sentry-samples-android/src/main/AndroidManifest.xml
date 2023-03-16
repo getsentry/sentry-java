@@ -97,7 +97,7 @@
         <meta-data android:name="io.sentry.environment" android:value="${sentryEnvironment}" />
 
         <!--    how to change the session tracking interval-->
-        <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="10000" />
+        <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="3000" />
 
         <!--    how to enable the performance API by either enabling tracing or setting a sample-rate-->
         <meta-data android:name="io.sentry.traces.enable" android:value="true" />
