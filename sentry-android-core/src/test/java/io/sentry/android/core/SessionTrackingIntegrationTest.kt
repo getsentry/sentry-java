@@ -22,14 +22,10 @@ import io.sentry.UserFeedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import java.util.LinkedList
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -88,7 +84,7 @@ class SessionTrackingIntegrationTest {
         val afterFirstStopSessionUpdate = client.sessionUpdates.pop()
         assertTrue {
             sidAfterFirstStart == sidAfterFirstStop &&
-            sidAfterFirstStop == afterFirstStopSessionUpdate.sessionId.toString() &&
+                sidAfterFirstStop == afterFirstStopSessionUpdate.sessionId.toString() &&
                 Session.State.Exited == afterFirstStopSessionUpdate.status
         }
 
@@ -101,7 +97,7 @@ class SessionTrackingIntegrationTest {
         val afterSecondStopSessionUpdate = client.sessionUpdates.pop()
         assertTrue {
             sidAfterSecondStart == sidAfterSecondStop &&
-            sidAfterSecondStop == afterSecondStopSessionUpdate.sessionId.toString() &&
+                sidAfterSecondStop == afterSecondStopSessionUpdate.sessionId.toString() &&
                 Session.State.Exited == afterSecondStopSessionUpdate.status
         }
     }
@@ -118,9 +114,11 @@ class SessionTrackingIntegrationTest {
 
     private fun setupLifecycle(options: SentryOptions): LifecycleRegistry {
         val lifecycle = LifecycleRegistry(mock())
-        val lifecycleWatcher = (options.integrations.find {
-            it is AppLifecycleIntegration
-        } as AppLifecycleIntegration).watcher
+        val lifecycleWatcher = (
+            options.integrations.find {
+                it is AppLifecycleIntegration
+            } as AppLifecycleIntegration
+            ).watcher
         lifecycle.addObserver(lifecycleWatcher!!)
         return lifecycle
     }
@@ -163,6 +161,5 @@ class SessionTrackingIntegrationTest {
         ): SentryId {
             TODO("Not yet implemented")
         }
-
     }
 }

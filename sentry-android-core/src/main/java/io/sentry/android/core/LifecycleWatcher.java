@@ -4,7 +4,6 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
-import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
