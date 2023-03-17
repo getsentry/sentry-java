@@ -31,12 +31,14 @@ import io.sentry.TransactionOptions
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
@@ -1015,26 +1017,26 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
+        // Using ArgumentCaptor because multiple verify() throws an assertionError, even if the test passes
+        val parameters: ArgumentCaptor<TransactionOptions> = ArgumentCaptor.forClass(TransactionOptions::class.java)
         val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime()
 
         val activity = mock<Activity>()
-        sut.onActivityCreated(activity, fixture.bundle)
-
-        verify(fixture.hub).startTransaction(
-            any(),
-            check<TransactionOptions> {
-                assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
-            }
-        )
+        // First invocation: we expect to start a transaction with the appStartTime
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
         val newActivity = mock<Activity>()
+        // Second invocation: we expect the transaction start timestamp not to be set
         sut.onActivityCreated(newActivity, fixture.bundle)
 
-        val nullDate: Date? = null
-        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertNull(it.startTimestamp) })
+        verify(fixture.hub, times(2)).startTransaction(any(), parameters.capture())
+        val capturedValues = parameters.allValues
+        // The first invocation contains the appStartTime
+        assertEquals(date.nanoTimestamp(), capturedValues[0].startTimestamp!!.nanoTimestamp())
+        // The second invocation contains no start timestamp
+        assertNull(capturedValues[1].startTimestamp)
     }
 
     @Test
@@ -1113,6 +1115,18 @@ class ActivityLifecycleIntegrationTest {
         lastScheduledRunnable!!.run()
         assertTrue(ttfdSpan.isFinished)
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
+
+        sut.onActivityDestroyed(activity)
+        verify(fixture.hub).captureTransaction(
+            check {
+                // ttfd timed out, so its measurement should not be set
+                val ttfdMeasurement = it.measurements["time-to-full-display"]
+                assertNull(ttfdMeasurement)
+            },
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 
     @Test
@@ -1140,6 +1154,19 @@ class ActivityLifecycleIntegrationTest {
         // The current internal reference to autoClose future should be null after ReportFullyDrawn
         autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
         assertNull(autoCloseFuture)
+
+        sut.onActivityDestroyed(activity)
+        verify(fixture.hub).captureTransaction(
+            check {
+                // ttfd was finished successfully, so its measurement should be set
+                val ttfdMeasurement = it.measurements["time-to-full-display"]
+                assertNotNull(ttfdMeasurement)
+                assertTrue(ttfdMeasurement.value.toLong() > 0)
+            },
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 
     @Test
@@ -1151,6 +1178,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         val activity2 = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityPostResumed(activity)
         val ttfdSpan = sut.ttfdSpan
         val autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
 
@@ -1172,6 +1200,7 @@ class ActivityLifecycleIntegrationTest {
         assertFalse(ttfdSpan2.isFinished)
         assertNotNull(autoCloseFuture2)
         assertFalse(autoCloseFuture2.isCancelled)
+        sut.onActivityDestroyed(activity)
     }
 
     @Test
@@ -1195,6 +1224,19 @@ class ActivityLifecycleIntegrationTest {
         // Mock the draw of the view. The ttid span should finish now
         runFirstDraw(view)
         assertTrue(ttidSpan.isFinished)
+
+        sut.onActivityDestroyed(activity)
+        verify(fixture.hub).captureTransaction(
+            check {
+                // ttid measurement should be set
+                val ttidMeasurement = it.measurements["time-to-initial-display"]
+                assertNotNull(ttidMeasurement)
+                assertTrue(ttidMeasurement.value.toLong() > 0)
+            },
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 
     @Test
@@ -1228,6 +1270,21 @@ class ActivityLifecycleIntegrationTest {
         val newEndDate = ttfdSpan.finishDate
         assertNotEquals(newEndDate, oldEndDate)
         assertEquals(newEndDate, ttidSpan.finishDate)
+
+        sut.onActivityDestroyed(activity)
+        verify(fixture.hub).captureTransaction(
+            check {
+                // ttid and ttfd measurements should be the same
+                val ttidMeasurement = it.measurements["time-to-initial-display"]
+                val ttfdMeasurement = it.measurements["time-to-full-display"]
+                assertNotNull(ttidMeasurement)
+                assertNotNull(ttfdMeasurement)
+                assertEquals(ttidMeasurement.value, ttfdMeasurement.value)
+            },
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 
     private fun runFirstDraw(view: View) {
