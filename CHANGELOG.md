@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.16.0
 
 ### Features
 
@@ -26,11 +26,16 @@
 - Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
 - Keep integration names from being obfuscated ([#2599](https://github.com/getsentry/sentry-java/pull/2599))
 - Change log level from INFO to WARN for error message indicating a failed Log4j2 Sentry.init ([#2606](https://github.com/getsentry/sentry-java/pull/2606))
-  - The log message was often not visible as our docs suggest a minimum log level of WARN 
+  - The log message was often not visible as our docs suggest a minimum log level of WARN
+- Fix session tracking on Android ([#2609](https://github.com/getsentry/sentry-java/pull/2609))
+  - Incorrect number of session has been sent. In addition, some of the sessions were not properly ended, messing up Session Health Metrics.
 
 ### Dependencies
 
 - Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
+- Bump Native SDK from v0.5.4 to v0.6.0 ([#2545](https://github.com/getsentry/sentry-java/pull/2545))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#060)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.4...0.6.0)
 
 ## 6.15.0
 
