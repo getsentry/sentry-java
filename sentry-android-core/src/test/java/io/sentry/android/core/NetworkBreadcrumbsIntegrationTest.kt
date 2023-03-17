@@ -24,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class NetworkBreadcrumbsIntegrationTest {
 
@@ -172,19 +173,37 @@ class NetworkBreadcrumbsIntegrationTest {
 
     @Test
     fun `When a network connection detail changes, a breadcrumb is captured`() {
-        val sut = fixture.getSut()
+        val buildInfo = mock<BuildInfoProvider>()
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
+        val sut = fixture.getSut(buildInfo = buildInfo)
         sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         val network = mock<Network>()
         assertNotNull(callback)
         callback.onAvailable(network)
-        callback.onCapabilitiesChanged(network, mock())
+        callback.onCapabilitiesChanged(
+            network,
+            createConnectionDetail(
+                downstreamBandwidthKbps = 1000,
+                upstreamBandwidthKbps = 500,
+                signalStrength = -50,
+                isVpn = true,
+                isEthernet = false,
+                isWifi = true,
+                isCellular = false
+            )
+        )
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
                 assertEquals("networkCapabilitiesChanged", it.data["action"])
+                assertEquals(1000, it.data["download_bandwidth"])
+                assertEquals(500, it.data["upload_bandwidth"])
+                assertTrue(it.data["vpn_active"] as Boolean)
+                assertEquals("wifi", it.data["network_type"])
+                assertEquals(-50, it.data["signal_strength"])
             },
             any()
         )

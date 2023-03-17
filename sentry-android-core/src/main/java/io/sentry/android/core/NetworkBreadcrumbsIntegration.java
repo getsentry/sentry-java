@@ -133,6 +133,13 @@ public class NetworkBreadcrumbsIntegration implements Integration, Closeable {
       }
       lastCapabilities = networkCapabilities;
       final Breadcrumb breadcrumb = createBreadcrumb("networkCapabilitiesChanged");
+      breadcrumb.setData("download_bandwidth", connectionDetail.downBandwidth);
+      breadcrumb.setData("upload_bandwidth", connectionDetail.upBandwidth);
+      breadcrumb.setData("vpn_active", connectionDetail.isVpn);
+      breadcrumb.setData("network_type", connectionDetail.type);
+      if (connectionDetail.signalStrength != 0) {
+        breadcrumb.setData("signal_strength", connectionDetail.signalStrength);
+      }
       Hint hint = new Hint();
       hint.set("data", connectionDetail);
       hub.addBreadcrumb(breadcrumb, hint);
