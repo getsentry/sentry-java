@@ -23,12 +23,6 @@ import org.jetbrains.annotations.VisibleForTesting;
 @ApiStatus.Internal
 public final class MainEventProcessor implements EventProcessor, Closeable {
 
-  /**
-   * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
-   * SentryOptions} do not have the environment field set.
-   */
-  private static final String DEFAULT_ENVIRONMENT = "production";
-
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
@@ -163,8 +157,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void setEnvironment(final @NotNull SentryBaseEvent event) {
     if (event.getEnvironment() == null) {
-      event.setEnvironment(
-          options.getEnvironment() != null ? options.getEnvironment() : DEFAULT_ENVIRONMENT);
+      event.setEnvironment(options.getEnvironment());
     }
   }
 
