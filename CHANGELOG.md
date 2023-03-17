@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
+
 ## 6.16.0
 
 ### Features
