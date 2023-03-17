@@ -23,12 +23,14 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.robolectric.annotation.Config
 import java.util.LinkedList
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [31])
 class SessionTrackingIntegrationTest {
 
     private lateinit var context: Context
@@ -57,6 +59,7 @@ class SessionTrackingIntegrationTest {
         val sidAfterFirstStart = lastSessionId()
         Thread.sleep(100L)
         lifecycle.handleLifecycleEvent(ON_STOP)
+        Thread.sleep(100L)
         val sidAfterFirstStop = lastSessionId()
 
         Thread.sleep(100L)
@@ -65,9 +68,8 @@ class SessionTrackingIntegrationTest {
         val sidAfterSecondStart = lastSessionId()
         Thread.sleep(100L)
         lifecycle.handleLifecycleEvent(ON_STOP)
-        val sidAfterSecondStop = lastSessionId()
-
         Thread.sleep(100L)
+        val sidAfterSecondStop = lastSessionId()
         // we bind our CapturingSentryClient only after .init is called, so we'll be able to capture
         // only the Exited status of the session started in .init
         val initSessionUpdate = client.sessionUpdates.pop()
@@ -84,8 +86,8 @@ class SessionTrackingIntegrationTest {
 
         val afterFirstStopSessionUpdate = client.sessionUpdates.pop()
         assertTrue {
-            sidAfterFirstStart == sidAfterFirstStop &&
-                sidAfterFirstStop == afterFirstStopSessionUpdate.sessionId.toString() &&
+            "null" == sidAfterFirstStop &&
+                sidAfterFirstStart == afterFirstStopSessionUpdate.sessionId.toString() &&
                 Session.State.Exited == afterFirstStopSessionUpdate.status
         }
 
@@ -97,8 +99,8 @@ class SessionTrackingIntegrationTest {
 
         val afterSecondStopSessionUpdate = client.sessionUpdates.pop()
         assertTrue {
-            sidAfterSecondStart == sidAfterSecondStop &&
-                sidAfterSecondStop == afterSecondStopSessionUpdate.sessionId.toString() &&
+            "null" == sidAfterSecondStop &&
+                sidAfterSecondStart == afterSecondStopSessionUpdate.sessionId.toString() &&
                 Session.State.Exited == afterSecondStopSessionUpdate.status
         }
     }
