@@ -30,6 +30,9 @@
 ### Dependencies
 
 - Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
+- Bump Native SDK from v0.5.4 to v0.6.0 ([#2545](https://github.com/getsentry/sentry-java/pull/2545))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#060)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.4...0.6.0)
 
 ## 6.15.0
 
