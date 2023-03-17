@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.MeasurementUnit.Duration.NANOSECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.annotation.SuppressLint;
@@ -23,6 +24,7 @@ import io.sentry.Scope;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -348,11 +350,7 @@ public final class ActivityLifecycleIntegration
     firstActivityCreated = true;
 
     if (fullyDisplayedReporter != null) {
-      fullyDisplayedReporter.registerFullyDrawnListener(
-          () -> {
-            finishSpan(ttfdSpan);
-            cancelTtfdAutoClose();
-          });
+      fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn());
     }
   }
 
@@ -499,13 +497,32 @@ public final class ActivityLifecycleIntegration
   }
 
   private void onFirstFrameDrawn(final @Nullable ISpan ttidSpan) {
-    if (options != null && ttfdSpan != null && ttfdSpan.isFinished()) {
+    if (options != null && ttidSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
-      ttfdSpan.updateEndDate(endDate);
+      final long durationNanos = endDate.diff(((Span) ttidSpan).getStartDate());
+      ttidSpan.setMeasurement("time-to-initial-display", durationNanos, NANOSECOND);
+
+      if (ttfdSpan != null && ttfdSpan.isFinished()) {
+        ttfdSpan.updateEndDate(endDate);
+        ttidSpan.setMeasurement("time-to-full-display", durationNanos, NANOSECOND);
+      }
       finishSpan(ttidSpan, endDate);
     } else {
       finishSpan(ttidSpan);
     }
+  }
+
+  private void onFullFrameDrawn() {
+    if (options != null && ttfdSpan != null) {
+      final SentryDate endDate = options.getDateProvider().now();
+// todo      add to ISpan
+      final long durationNanos = endDate.diff(((Span) ttfdSpan).getStartDate());
+      ttfdSpan.setMeasurement("time-to-full-display", durationNanos, NANOSECOND);
+      finishSpan(ttfdSpan, endDate);
+    } else {
+      finishSpan(ttfdSpan);
+    }
+    cancelTtfdAutoClose();
   }
 
   @TestOnly
