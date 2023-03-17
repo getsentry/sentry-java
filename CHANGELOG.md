@@ -1,10 +1,15 @@
 # Changelog
 
-## 6.16.0
+## Unreleased
 
 ### Features
 
 - Add breadcrumbs on network changes ([#2608](https://github.com/getsentry/sentry-java/pull/2608))
+
+## 6.16.0
+
+### Features
+
 - Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
 - Automatic performance instrumentation for WebFlux ([#2597](https://github.com/getsentry/sentry-java/pull/2597))
   - You can enable it by adding `sentry.enable-tracing=true` to your `application.properties`
