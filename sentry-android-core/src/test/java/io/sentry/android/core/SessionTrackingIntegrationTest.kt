@@ -67,6 +67,7 @@ class SessionTrackingIntegrationTest {
         lifecycle.handleLifecycleEvent(ON_STOP)
         val sidAfterSecondStop = lastSessionId()
 
+        Thread.sleep(100L)
         // we bind our CapturingSentryClient only after .init is called, so we'll be able to capture
         // only the Exited status of the session started in .init
         val initSessionUpdate = client.sessionUpdates.pop()
