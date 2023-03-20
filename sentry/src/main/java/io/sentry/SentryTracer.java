@@ -8,8 +8,6 @@ import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -30,12 +28,6 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
   private @NotNull String name;
-  /**
-   * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
-   * (the order of meeting condition does not matter): - tracer itself is finished - all child spans
-   * are finished
-   */
-  private final boolean waitForChildren;
 
   /**
    * Holds the status for finished tracer. Tracer can have finishedStatus set, but not be finished
@@ -50,28 +42,9 @@ public final class SentryTracer implements ITransaction {
    */
   private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
-  /**
-   * If `trimEnd` is true, sets the end timestamp of the transaction to the highest timestamp of
-   * child spans, trimming the duration of the transaction. This is useful to discard extra time in
-   * the idle transactions to trim their duration to children' duration.
-   */
-  private final boolean trimEnd;
-
-  /**
-   * The idle time, measured in ms, to wait until the transaction will be finished. The transaction
-   * will use the end timestamp of the last finished span as the endtime for the transaction.
-   *
-   * <p>When set to {@code null} the transaction must be finished manually.
-   *
-   * <p>The default is 3 seconds.
-   */
-  private final @Nullable Long idleTimeout;
-
   private volatile @Nullable TimerTask timerTask;
   private volatile @Nullable Timer timer = null;
   private final @NotNull Object timerLock = new Object();
-  private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
-      new SpanByTimestampComparator();
   private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
 
   private final @NotNull Baggage baggage;
@@ -80,60 +53,40 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull TransactionOptions transactionOptions;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
-    this(context, hub, null, false, null, false, null);
+    this(context, hub, new TransactionOptions(), null, null);
   }
 
   public SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
-      final boolean waitForChildren,
+      final @NotNull TransactionOptions transactionOptions,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, null, waitForChildren, null, false, transactionFinishedCallback);
+    this(context, hub, transactionOptions, transactionFinishedCallback, null);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
-      final @Nullable SentryDate startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(
-        context,
-        hub,
-        startTimestamp,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        transactionFinishedCallback,
-        null);
-  }
-
-  SentryTracer(
-      final @NotNull TransactionContext context,
-      final @NotNull IHub hub,
-      final @Nullable SentryDate startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
+      final @NotNull TransactionOptions transactionOptions,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback,
       final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.measurements = new ConcurrentHashMap<>();
-    this.root = new Span(context, this, hub, startTimestamp);
+
+    this.root =
+        new Span(context, this, hub, transactionOptions.getStartTimestamp(), transactionOptions);
+
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.hub = hub;
-    this.waitForChildren = waitForChildren;
-    this.idleTimeout = idleTimeout;
-    this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
     this.transactionPerformanceCollector = transactionPerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
+    this.transactionOptions = transactionOptions;
 
     if (context.getBaggage() != null) {
       this.baggage = context.getBaggage();
@@ -147,7 +100,7 @@ public final class SentryTracer implements ITransaction {
       transactionPerformanceCollector.start(this);
     }
 
-    if (idleTimeout != null) {
+    if (transactionOptions.getIdleTimeout() != null) {
       timer = new Timer(true);
       scheduleFinish();
     }
@@ -169,7 +122,7 @@ public final class SentryTracer implements ITransaction {
               }
             };
 
-        timer.schedule(timerTask, idleTimeout);
+        timer.schedule(timerTask, transactionOptions.getIdleTimeout());
       }
     }
   }
@@ -209,9 +162,25 @@ public final class SentryTracer implements ITransaction {
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description) {
-    final ISpan span = createChild(parentSpanId, operation);
-    span.setDescription(description);
-    return span;
+    return startChild(parentSpanId, operation, description, new SpanOptions());
+  }
+
+  /**
+   * Starts a child Span with given trace id and parent span id.
+   *
+   * @param parentSpanId - parent span id
+   * @param operation - span operation name
+   * @param description - span description
+   * @param spanOptions - span options
+   * @return a new transaction span
+   */
+  @NotNull
+  ISpan startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @NotNull SpanOptions spanOptions) {
+    return createChild(parentSpanId, operation, description, spanOptions);
   }
 
   @NotNull
@@ -221,18 +190,37 @@ public final class SentryTracer implements ITransaction {
       final @Nullable String description,
       final @Nullable SentryDate timestamp,
       final @NotNull Instrumenter instrumenter) {
-    return createChild(parentSpanId, operation, description, timestamp, instrumenter);
+    return createChild(
+        parentSpanId, operation, description, timestamp, instrumenter, new SpanOptions());
+  }
+
+  @NotNull
+  ISpan startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @Nullable SentryDate timestamp,
+      final @NotNull Instrumenter instrumenter,
+      final @NotNull SpanOptions spanOptions) {
+    return createChild(parentSpanId, operation, description, timestamp, instrumenter, spanOptions);
   }
 
   /**
    * Starts a child Span with given trace id and parent span id.
    *
    * @param parentSpanId - parent span id
+   * @param operation - the span operation
+   * @param description - the optional span description
+   * @param options - span options
    * @return a new transaction span
    */
   @NotNull
-  private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
-    return createChild(parentSpanId, operation, null, null, Instrumenter.SENTRY);
+  private ISpan createChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @NotNull SpanOptions options) {
+    return createChild(parentSpanId, operation, description, null, Instrumenter.SENTRY, options);
   }
 
   @NotNull
@@ -241,7 +229,8 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       final @Nullable String description,
       @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
+      final @NotNull Instrumenter instrumenter,
+      final @NotNull SpanOptions spanOptions) {
     if (root.isFinished()) {
       return NoOpSpan.getInstance();
     }
@@ -261,13 +250,14 @@ public final class SentryTracer implements ITransaction {
             operation,
             this.hub,
             timestamp,
+            spanOptions,
             __ -> {
               final FinishStatus finishStatus = this.finishStatus;
-              if (idleTimeout != null) {
+              if (transactionOptions.getIdleTimeout() != null) {
                 // if it's an idle transaction, no matter the status, we'll reset the timeout here
                 // so the transaction will either idle and finish itself, or a new child will be
                 // added and we'll wait for it again
-                if (!waitForChildren || hasAllChildrenFinished()) {
+                if (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished()) {
                   scheduleFinish();
                 }
               } else if (finishStatus.isFinishing) {
@@ -286,24 +276,41 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      final @NotNull String operation,
+      @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter) {
-    return createChild(operation, description, timestamp, instrumenter);
+    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull Instrumenter instrumenter,
+      @NotNull SpanOptions spanOptions) {
+    return createChild(operation, description, timestamp, instrumenter, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return createChild(operation, description, null, Instrumenter.SENTRY);
+    return startChild(operation, description, null, Instrumenter.SENTRY, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
+    return createChild(operation, description, null, Instrumenter.SENTRY, spanOptions);
   }
 
   private @NotNull ISpan createChild(
       final @NotNull String operation,
       final @Nullable String description,
       @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
+      final @NotNull Instrumenter instrumenter,
+      final @NotNull SpanOptions spanOptions) {
     if (root.isFinished()) {
       return NoOpSpan.getInstance();
     }
@@ -313,7 +320,7 @@ public final class SentryTracer implements ITransaction {
     }
 
     if (children.size() < hub.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description, timestamp, instrumenter);
+      return root.startChild(operation, description, timestamp, instrumenter, spanOptions);
     } else {
       hub.getOptions()
           .getLogger()
@@ -345,8 +352,30 @@ public final class SentryTracer implements ITransaction {
   @Override
   @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
+
+    // try to get the high precision timestamp from the root span
+    SentryDate finishTimestamp = root.getFinishDate();
+
+    // if a finishDate was passed in, use that instead
+    if (finishDate != null) {
+      finishTimestamp = finishDate;
+    }
+
+    // if it's not set -> fallback to the current time
+    if (finishTimestamp == null) {
+      finishTimestamp = hub.getOptions().getDateProvider().now();
+    }
+
+    // auto-finish any idle spans first
+    for (final Span span : children) {
+      if (span.getOptions().isIdle()) {
+        span.finish((status != null) ? status : getSpanContext().status, finishTimestamp);
+      }
+    }
+
     this.finishStatus = FinishStatus.finishing(status);
-    if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
+    if (!root.isFinished()
+        && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
       List<PerformanceCollectionData> performanceCollectionData = null;
       if (transactionPerformanceCollector != null) {
         performanceCollectionData = transactionPerformanceCollector.stop(this);
@@ -363,34 +392,12 @@ public final class SentryTracer implements ITransaction {
         performanceCollectionData.clear();
       }
 
-      // try to get the high precision timestamp from the root span
-      SentryDate finishTimestamp = root.getFinishDate();
-
-      // if a finishDate was passed in, use that instead
-      if (finishDate != null) {
-        finishTimestamp = finishDate;
-      }
-
-      // if it's not set -> fallback to the current time
-      if (finishTimestamp == null) {
-        finishTimestamp = hub.getOptions().getDateProvider().now();
-      }
       // finish unfinished children
       for (final Span child : children) {
         if (!child.isFinished()) {
           child.setSpanFinishedCallback(
               null); // reset the callback, as we're already in the finish method
           child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
-        }
-      }
-
-      // set the transaction finish timestamp to the latest child timestamp, if the transaction
-      // is an idle transaction
-      if (!children.isEmpty() && trimEnd) {
-        final @NotNull Span oldestChild = Collections.max(children, spanByTimestampComparator);
-        final @Nullable SentryDate oldestChildTimestamp = oldestChild.getFinishDate();
-        if (oldestChildTimestamp != null && finishTimestamp.compareTo(oldestChildTimestamp) > 0) {
-          finishTimestamp = oldestChildTimestamp;
         }
       }
       root.finish(finishStatus.spanStatus, finishTimestamp);
@@ -404,7 +411,7 @@ public final class SentryTracer implements ITransaction {
                   }
                 });
           });
-      SentryTransaction transaction = new SentryTransaction(this);
+      final SentryTransaction transaction = new SentryTransaction(this);
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
@@ -418,8 +425,11 @@ public final class SentryTracer implements ITransaction {
         }
       }
 
-      if (children.isEmpty() && idleTimeout != null) {
+      if (children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
+        hub.getOptions()
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Dropping idle transaction because it has no child spans");
         return;
       }
 
@@ -727,23 +737,6 @@ public final class SentryTracer implements ITransaction {
     private FinishStatus(final boolean isFinishing, final @Nullable SpanStatus spanStatus) {
       this.isFinishing = isFinishing;
       this.spanStatus = spanStatus;
-    }
-  }
-
-  private static final class SpanByTimestampComparator implements Comparator<Span> {
-
-    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-    @Override
-    public int compare(final @NotNull Span o1, final @NotNull Span o2) {
-      final @Nullable SentryDate first = o1.getFinishDate();
-      final @Nullable SentryDate second = o2.getFinishDate();
-      if (first == null) {
-        return -1;
-      } else if (second == null) {
-        return 1;
-      } else {
-        return first.compareTo(second);
-      }
     }
   }
 }

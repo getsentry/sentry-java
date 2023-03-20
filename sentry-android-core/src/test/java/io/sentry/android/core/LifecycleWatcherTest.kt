@@ -44,7 +44,7 @@ class LifecycleWatcherTest {
             val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
             val scope = mock<Scope>()
             whenever(scope.session).thenReturn(session)
-            whenever(hub.withScope(argumentCaptor.capture())).thenAnswer {
+            whenever(hub.configureScope(argumentCaptor.capture())).thenAnswer {
                 argumentCaptor.value.run(scope)
             }
 

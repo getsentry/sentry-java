@@ -75,7 +75,8 @@ class SentryInstrumentationTest {
         assertTrue(result.errors.isEmpty())
         assertEquals(1, fixture.activeSpan.children.size)
         val span = fixture.activeSpan.children.first()
-        assertEquals("Query.shows", span.operation)
+        assertEquals("graphql", span.operation)
+        assertEquals("Query.shows", span.description)
         assertTrue(span.isFinished)
         assertEquals(SpanStatus.OK, span.status)
     }
@@ -89,7 +90,8 @@ class SentryInstrumentationTest {
         assertTrue(result.errors.isNotEmpty())
         assertEquals(1, fixture.activeSpan.children.size)
         val span = fixture.activeSpan.children.first()
-        assertEquals("Query.shows", span.operation)
+        assertEquals("graphql", span.operation)
+        assertEquals("Query.shows", span.description)
         assertTrue(span.isFinished)
         assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
     }
@@ -113,7 +115,8 @@ class SentryInstrumentationTest {
         assertTrue(result.errors.isEmpty())
         assertEquals(1, fixture.activeSpan.children.size)
         val span = fixture.activeSpan.children.first()
-        assertEquals("Query.shows", span.operation)
+        assertEquals("graphql", span.operation)
+        assertEquals("Query.shows", span.description)
         assertNotNull(span.isSampled) {
             assertFalse(it)
         }
@@ -128,7 +131,7 @@ class SentryInstrumentationTest {
         assertTrue(result.errors.isEmpty())
         assertEquals(1, fixture.activeSpan.children.size)
         val span = fixture.activeSpan.children.first()
-        assertEquals("Query.shows", span.operation)
+        assertEquals("graphql", span.operation)
         assertEquals("changed", span.description)
         assertTrue(span.isFinished)
     }

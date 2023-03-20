@@ -172,12 +172,19 @@ public final class io/sentry/spring/webflux/SentryScheduleHook : java/util/funct
 }
 
 public final class io/sentry/spring/webflux/SentryWebExceptionHandler : org/springframework/web/server/WebExceptionHandler {
+	public static final field MECHANISM_TYPE Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun handle (Lorg/springframework/web/server/ServerWebExchange;Ljava/lang/Throwable;)Lreactor/core/publisher/Mono;
 }
 
 public final class io/sentry/spring/webflux/SentryWebFilter : org/springframework/web/server/WebFilter {
+	public static final field SENTRY_HUB_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
+	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
+}
+
+public class io/sentry/spring/webflux/SentryWebTracingFilter : org/springframework/web/server/WebFilter {
+	public fun <init> ()V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }
 

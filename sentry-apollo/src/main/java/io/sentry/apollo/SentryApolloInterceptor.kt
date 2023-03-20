@@ -108,8 +108,9 @@ class SentryApolloInterceptor(
             is Subscription -> "subscription"
             else -> request.operation.javaClass.simpleName
         }
+        val op = "http.graphql.$operationType"
         val description = "$operationType $operation"
-        return activeSpan.startChild(operation, description)
+        return activeSpan.startChild(op, description)
     }
 
     private fun finish(span: ISpan, request: InterceptorRequest, response: InterceptorResponse? = null) {

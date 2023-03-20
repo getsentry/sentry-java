@@ -182,7 +182,10 @@ public final class ActivityLifecycleIntegration
       final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
       final TransactionOptions transactionOptions = new TransactionOptions();
-
+      if (options.isEnableActivityLifecycleTracingAutoFinish()) {
+        transactionOptions.setIdleTimeout(options.getIdleTimeout());
+        transactionOptions.setTrimEnd(true);
+      }
       transactionOptions.setWaitForChildren(true);
       transactionOptions.setTransactionFinishedCallback(
           (finishingTransaction) -> {
@@ -392,21 +395,11 @@ public final class ActivityLifecycleIntegration
       mainHandler.post(() -> onFirstFrameDrawn(ttidSpan));
     }
     addBreadcrumb(activity, "resumed");
-
-    // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
-    if (!isAllActivityCallbacksAvailable && options != null) {
-      stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
-    }
   }
 
   @Override
-  public synchronized void onActivityPostResumed(final @NotNull Activity activity) {
-    // only executed if API >= 29 otherwise it happens on onActivityResumed
-    if (isAllActivityCallbacksAvailable && options != null) {
-      // this should be called only when onResume has been executed already, which means
-      // the UI is responsive at this moment.
-      stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
-    }
+  public void onActivityPostResumed(@NonNull Activity activity) {
+    // empty override, required to avoid a api-level breaking super.onActivityPostResumed() calls
   }
 
   @Override

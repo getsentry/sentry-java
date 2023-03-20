@@ -202,6 +202,22 @@ class SentryAppenderTest {
     }
 
     @Test
+    fun `converts error log level to Sentry level with exception`() {
+        val logger = fixture.getSut(minimumEventLevel = Level.ERROR)
+        logger.error("testing error level", RuntimeException("test exc"))
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.ERROR, event.level)
+                val exception = event.exceptions!!.first()
+                assertEquals(SentryAppender.MECHANISM_TYPE, exception.mechanism!!.type)
+                assertEquals("test exc", exception.value)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `converts fatal log level to Sentry level`() {
         val logger = fixture.getSut(minimumEventLevel = Level.FATAL)
         logger.fatal("testing fatal level")
