@@ -3,12 +3,17 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectSerializer;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryEnvelopeHeader;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +60,28 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.segment = user.segment;
     this.data = CollectionUtils.newConcurrentHashMap(user.data);
     this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
+  }
+
+  /**
+   * Creates user from a map.
+   *
+   * @param map - The user data as map
+   * @param options - the sentry options
+   * @return the user
+   */
+  public static @Nullable User fromMap(@NotNull Map<String, Object> map, @NotNull SentryOptions options) {
+    try {
+      String json = options.getSerializer().serialize(map);
+      StringReader reader = new StringReader(json);
+      return options.getSerializer().deserialize(reader, User.class);
+    } catch (Exception exception) {
+      options.getLogger().log(
+        SentryLevel.ERROR,
+        "Creating user form map failed.",
+        exception
+      );
+      return null;
+    }
   }
 
   /**
