@@ -58,7 +58,7 @@ class BreadcrumbSerializationTest {
                 "6607d106-d426-462b-af74-f29fce978e48" to "149bb94a-1387-4484-90be-2df15d1322ab"
             ),
             "category" to "b6eea851-5ae5-40ed-8fdd-5e1a655a879c",
-            "level" to "debug",
+            "level" to "debug"
         )
         val actual = Breadcrumb.fromMap(map, SentryOptions())
         val expected = fixture.getSut()

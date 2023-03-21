@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -68,17 +67,14 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * @param options - the sentry options
    * @return the breadcrumb
    */
-  public static @Nullable Breadcrumb fromMap(@NotNull Map<String, Object> map, @NotNull SentryOptions options) {
+  public static @Nullable Breadcrumb fromMap(
+      @NotNull Map<String, Object> map, @NotNull SentryOptions options) {
     try {
       String json = options.getSerializer().serialize(map);
       StringReader reader = new StringReader(json);
       return options.getSerializer().deserialize(reader, Breadcrumb.class);
     } catch (Exception exception) {
-      options.getLogger().log(
-        SentryLevel.ERROR,
-        "Creating breadcrumb form map failed.",
-        exception
-      );
+      options.getLogger().log(SentryLevel.ERROR, "Creating breadcrumb form map failed.", exception);
       return null;
     }
   }

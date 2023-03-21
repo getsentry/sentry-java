@@ -68,7 +68,7 @@ class UserSerializationTest {
             ),
             "data" to mapOf(
                 "dc2813d0-0f66-4a3f-a995-71268f61a8fa" to "991659ad-7c59-4dd3-bb89-0bd5c74014bd"
-            ),
+            )
         )
         val actual = User.fromMap(map, SentryOptions())
         val expected = fixture.getSut()
