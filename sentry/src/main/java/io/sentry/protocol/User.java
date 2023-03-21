@@ -3,11 +3,9 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectSerializer;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
-import io.sentry.SentryEnvelopeHeader;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
@@ -69,17 +67,14 @@ public final class User implements JsonUnknown, JsonSerializable {
    * @param options - the sentry options
    * @return the user
    */
-  public static @Nullable User fromMap(@NotNull Map<String, Object> map, @NotNull SentryOptions options) {
+  public static @Nullable User fromMap(
+      @NotNull Map<String, Object> map, @NotNull SentryOptions options) {
     try {
       String json = options.getSerializer().serialize(map);
       StringReader reader = new StringReader(json);
       return options.getSerializer().deserialize(reader, User.class);
     } catch (Exception exception) {
-      options.getLogger().log(
-        SentryLevel.ERROR,
-        "Creating user form map failed.",
-        exception
-      );
+      options.getLogger().log(SentryLevel.ERROR, "Creating user form map failed.", exception);
       return null;
     }
   }
