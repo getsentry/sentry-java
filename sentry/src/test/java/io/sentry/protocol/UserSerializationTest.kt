@@ -55,7 +55,7 @@ class UserSerializationTest {
 
     @Test
     fun deserializeFromMap() {
-        val map = mapOf(
+        val map: Map<String, Any?> = mapOf(
             "email" to "c4d61c1b-c144-431e-868f-37a46be5e5f2",
             "id" to "efb2084b-1871-4b59-8897-b4bd9f196a01",
             "username" to "60c05dff-7140-4d94-9a61-c9cdd9ca9b96",

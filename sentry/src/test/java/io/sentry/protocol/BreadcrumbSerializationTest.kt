@@ -50,7 +50,7 @@ class BreadcrumbSerializationTest {
 
     @Test
     fun deserializeFromMap() {
-        val map = mapOf(
+        val map: Map<String, Any?> = mapOf(
             "timestamp" to "2009-11-16T01:08:47.000Z",
             "message" to "46f233c0-7c2d-488a-b05a-7be559173e16",
             "type" to "ace57e2e-305e-4048-abf0-6c8538ea7bf4",
