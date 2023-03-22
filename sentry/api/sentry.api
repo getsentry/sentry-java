@@ -44,6 +44,7 @@ public final class io/sentry/Baggage {
 	public fun getThirdPartyHeader ()Ljava/lang/String;
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransaction ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
 	public fun getUserSegment ()Ljava/lang/String;
 	public fun isMutable ()Z
@@ -62,6 +63,7 @@ public final class io/sentry/Baggage {
 }
 
 public final class io/sentry/Baggage$DSCKeys {
+	public static final field ALL Ljava/util/List;
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
