@@ -28,6 +28,7 @@ import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
 import io.sentry.TransactionOptions
+import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
@@ -1126,7 +1127,7 @@ class ActivityLifecycleIntegrationTest {
         verify(fixture.hub).captureTransaction(
             check {
                 // ttfd timed out, so its measurement should not be set
-                val ttfdMeasurement = it.measurements["time-to-full-display"]
+                val ttfdMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]
                 assertNull(ttfdMeasurement)
             },
             any(),
@@ -1165,7 +1166,7 @@ class ActivityLifecycleIntegrationTest {
         verify(fixture.hub).captureTransaction(
             check {
                 // ttfd was finished successfully, so its measurement should be set
-                val ttfdMeasurement = it.measurements["time-to-full-display"]
+                val ttfdMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]
                 assertNotNull(ttfdMeasurement)
                 assertTrue(ttfdMeasurement.value.toLong() > 0)
             },
@@ -1235,7 +1236,7 @@ class ActivityLifecycleIntegrationTest {
         verify(fixture.hub).captureTransaction(
             check {
                 // ttid measurement should be set
-                val ttidMeasurement = it.measurements["time-to-initial-display"]
+                val ttidMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]
                 assertNotNull(ttidMeasurement)
                 assertTrue(ttidMeasurement.value.toLong() > 0)
             },
@@ -1281,8 +1282,8 @@ class ActivityLifecycleIntegrationTest {
         verify(fixture.hub).captureTransaction(
             check {
                 // ttid and ttfd measurements should be the same
-                val ttidMeasurement = it.measurements["time-to-initial-display"]
-                val ttfdMeasurement = it.measurements["time-to-full-display"]
+                val ttidMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]
+                val ttfdMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]
                 assertNotNull(ttidMeasurement)
                 assertNotNull(ttfdMeasurement)
                 assertEquals(ttidMeasurement.value, ttfdMeasurement.value)
