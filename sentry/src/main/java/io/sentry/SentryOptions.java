@@ -777,7 +777,7 @@ public class SentryOptions {
   /**
    * Returns the environment
    *
-   * @return the environment or null if not set
+   * @return the environment or 'production' if not set
    */
   public @Nullable String getEnvironment() {
     return environment != null ? environment : DEFAULT_ENVIRONMENT;
