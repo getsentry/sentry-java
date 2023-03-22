@@ -6,6 +6,10 @@
 
 - Add time-to-initial-display and time-to-full-display measurements to Activity transactions ([#2611](https://github.com/getsentry/sentry-java/pull/2611))
 
+### Fixes
+
+- Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
+
 ## 6.16.0
 
 ### Features
