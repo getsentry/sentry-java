@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Features
+- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
+
+## 6.16.0
+
+### Features
 
 - Improve versatility of exception resolver component for Spring with more flexible API for consumers. ([#2577](https://github.com/getsentry/sentry-java/pull/2577))
 - Automatic performance instrumentation for WebFlux ([#2597](https://github.com/getsentry/sentry-java/pull/2597))
@@ -10,7 +15,7 @@
 - The Spring Boot integration can now be configured to add the `SentryAppender` to specific loggers instead of the `ROOT` logger ([#2173](https://github.com/getsentry/sentry-java/pull/2173))
   - You can specify the loggers using `"sentry.logging.loggers[0]=foo.bar` and `"sentry.logging.loggers[1]=baz` in your `application.properties`
 - Add capabilities to track Jetpack Compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
-- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
+- Adapt span op and description for graphql to fit spec ([#2607](https://github.com/getsentry/sentry-java/pull/2607))
 
 ### Fixes
 
@@ -24,10 +29,17 @@
 - No longer send event / transaction to Sentry if `beforeSend` / `beforeSendTransaction` throws ([#2591](https://github.com/getsentry/sentry-java/pull/2591))
 - Add version to sentryClientName used in auth header ([#2596](https://github.com/getsentry/sentry-java/pull/2596))
 - Keep integration names from being obfuscated ([#2599](https://github.com/getsentry/sentry-java/pull/2599))
+- Change log level from INFO to WARN for error message indicating a failed Log4j2 Sentry.init ([#2606](https://github.com/getsentry/sentry-java/pull/2606))
+  - The log message was often not visible as our docs suggest a minimum log level of WARN
+- Fix session tracking on Android ([#2609](https://github.com/getsentry/sentry-java/pull/2609))
+  - Incorrect number of session has been sent. In addition, some of the sessions were not properly ended, messing up Session Health Metrics.
 
 ### Dependencies
 
 - Bump `opentelemetry-sdk` to `1.23.1` and `opentelemetry-javaagent` to `1.23.0` ([#2590](https://github.com/getsentry/sentry-java/pull/2590))
+- Bump Native SDK from v0.5.4 to v0.6.0 ([#2545](https://github.com/getsentry/sentry-java/pull/2545))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#060)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.4...0.6.0)
 
 ## 6.15.0
 

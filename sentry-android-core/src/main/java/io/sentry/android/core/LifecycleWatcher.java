@@ -79,23 +79,23 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
       final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
 
-      hub.withScope(
+      hub.configureScope(
           scope -> {
-            long lastUpdatedSession = this.lastUpdatedSession.get();
-            if (lastUpdatedSession == 0L) {
-              @Nullable Session currentSession = scope.getSession();
+            if (lastUpdatedSession.get() == 0L) {
+              final @Nullable Session currentSession = scope.getSession();
               if (currentSession != null && currentSession.getStarted() != null) {
-                lastUpdatedSession = currentSession.getStarted().getTime();
+                lastUpdatedSession.set(currentSession.getStarted().getTime());
               }
             }
-
-            if (lastUpdatedSession == 0L
-                || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
-              addSessionBreadcrumb("start");
-              hub.startSession();
-            }
-            this.lastUpdatedSession.set(currentTimeMillis);
           });
+
+      final long lastUpdatedSession = this.lastUpdatedSession.get();
+      if (lastUpdatedSession == 0L
+          || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+        addSessionBreadcrumb("start");
+        hub.startSession();
+      }
+      this.lastUpdatedSession.set(currentTimeMillis);
     }
   }
 
