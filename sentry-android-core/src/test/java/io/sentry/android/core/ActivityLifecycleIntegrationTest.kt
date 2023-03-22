@@ -46,6 +46,7 @@ import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -123,6 +124,11 @@ class ActivityLifecycleIntegrationTest {
     @BeforeTest
     fun `reset instance`() {
         AppStartState.getInstance().resetInstance()
+    }
+
+    @AfterTest
+    fun `clear instance`() {
+        fixture.transaction.finish()
     }
 
     @Test

@@ -1,6 +1,6 @@
 package io.sentry.android.core;
 
-import static io.sentry.MeasurementUnit.Duration.NANOSECOND;
+import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.annotation.SuppressLint;
@@ -28,6 +28,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -36,6 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -499,12 +501,15 @@ public final class ActivityLifecycleIntegration
     if (options != null && ttidSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
       final long durationNanos = endDate.diff(ttidSpan.getStartDate());
-      ttidSpan.setMeasurement("time-to-initial-display", durationNanos, NANOSECOND);
+      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+      ttidSpan.setMeasurement(
+          MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
 
       if (ttfdSpan != null && ttfdSpan.isFinished()) {
         ttfdSpan.updateEndDate(endDate);
         // If the ttfd span was finished before the first frame we adjust the measurement, too
-        ttidSpan.setMeasurement("time-to-full-display", durationNanos, NANOSECOND);
+        ttidSpan.setMeasurement(
+            MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
       }
       finishSpan(ttidSpan, endDate);
     } else {
@@ -516,7 +521,9 @@ public final class ActivityLifecycleIntegration
     if (options != null && ttfdSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
       final long durationNanos = endDate.diff(ttfdSpan.getStartDate());
-      ttfdSpan.setMeasurement("time-to-full-display", durationNanos, NANOSECOND);
+      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+      ttfdSpan.setMeasurement(
+          MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
       finishSpan(ttfdSpan, endDate);
     } else {
       finishSpan(ttfdSpan);

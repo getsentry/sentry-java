@@ -2912,6 +2912,13 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 }
 
 public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field KEY_APP_START_COLD Ljava/lang/String;
+	public static final field KEY_APP_START_WARM Ljava/lang/String;
+	public static final field KEY_FRAMES_FROZEN Ljava/lang/String;
+	public static final field KEY_FRAMES_SLOW Ljava/lang/String;
+	public static final field KEY_FRAMES_TOTAL Ljava/lang/String;
+	public static final field KEY_TIME_TO_FULL_DISPLAY Ljava/lang/String;
+	public static final field KEY_TIME_TO_INITIAL_DISPLAY Ljava/lang/String;
 	public fun <init> (Ljava/lang/Number;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/Number;Ljava/lang/String;Ljava/util/Map;)V
 	public fun getUnit ()Ljava/lang/String;
