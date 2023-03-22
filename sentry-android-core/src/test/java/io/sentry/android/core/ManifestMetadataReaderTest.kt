@@ -164,7 +164,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertNull(fixture.options.environment)
+        assertEquals("production", fixture.options.environment)
     }
 
     @Test

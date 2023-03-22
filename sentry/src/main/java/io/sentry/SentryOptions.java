@@ -45,6 +45,12 @@ public class SentryOptions {
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
   /**
+   * Default value for {@link SentryEvent#getEnvironment()} set when {@link SentryOptions} do not
+   * have the environment field set.
+   */
+  private static final String DEFAULT_ENVIRONMENT = "production";
+
+  /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
    * means just adding data OR return null in case the event will be dropped and not sent.
    */
@@ -771,10 +777,10 @@ public class SentryOptions {
   /**
    * Returns the environment
    *
-   * @return the environment or null if not set
+   * @return the environment or 'production' if not set
    */
   public @Nullable String getEnvironment() {
-    return environment;
+    return environment != null ? environment : DEFAULT_ENVIRONMENT;
   }
 
   /**
