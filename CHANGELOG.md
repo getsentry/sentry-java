@@ -1,6 +1,6 @@
 # Changelog
 
-### Features
+## Unreleased
 
 - Add Logcat adapter ([#2620](https://github.com/getsentry/sentry-java/pull/2620))
 
