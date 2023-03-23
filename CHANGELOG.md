@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
+
 ### Fixes
 
 - Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))

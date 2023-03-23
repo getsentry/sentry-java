@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
@@ -85,6 +86,8 @@ final class ManifestMetadataReader {
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
+
+  static final String SENTRY_GRADLE_PLUGIN_INTEGRATIONS = "io.sentry.gradle-plugin-integrations";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -320,6 +323,16 @@ final class ManifestMetadataReader {
 
         options.setSendDefaultPii(
             readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
+
+        // sdkInfo.addIntegration();
+
+        List<String> integrationsFromGradlePlugin =
+            readList(metadata, logger, SENTRY_GRADLE_PLUGIN_INTEGRATIONS);
+        if (integrationsFromGradlePlugin != null) {
+          for (String integration : integrationsFromGradlePlugin) {
+            SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
+          }
+        }
       }
 
       options

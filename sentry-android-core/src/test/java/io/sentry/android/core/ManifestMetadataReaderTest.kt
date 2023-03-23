@@ -15,6 +15,7 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -1201,5 +1202,20 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertFalse(fixture.options.isEnableTimeToFullDisplayTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads enabled integrations to SDK Version`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.SENTRY_GRADLE_PLUGIN_INTEGRATIONS to "Database Instrumentation,OkHttp Instrumentation")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        val resultingSet = fixture.options.sdkVersion?.integrationSet
+        assertNotNull(resultingSet)
+        assert(resultingSet.containsAll(listOf("Database Instrumentation", "OkHttp Instrumentation")))
     }
 }
