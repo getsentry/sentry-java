@@ -87,7 +87,7 @@ final class ManifestMetadataReader {
 
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
 
-  static final String SENTRY_GRADLE_PLUGIN_INTEGRATIONS = "io.sentry.integrations";
+  static final String SENTRY_GRADLE_PLUGIN_INTEGRATIONS = "io.sentry.gradle-plugin-integrations";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
