@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * set by the user on the Sentry Android Gradle Plugin.
  */
 @ApiStatus.Internal
-public class SentryLogcatAdapter {
+public final class SentryLogcatAdapter {
 
   private static void addAsBreadcrumb(@NotNull String tag, @NotNull SentryLevel level, String msg) {
     addAsBreadcrumb(tag, level, msg, null);
