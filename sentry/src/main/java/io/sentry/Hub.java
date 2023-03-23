@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.AllSessionsEndHint;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
@@ -319,7 +320,7 @@ public final class Hub implements IHub {
       final StackItem item = this.stack.peek();
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
-        final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
+        final Hint hint = HintUtils.createWithTypeCheckHint(new AllSessionsEndHint());
 
         item.getClient().captureSession(previousSession, hint);
       }

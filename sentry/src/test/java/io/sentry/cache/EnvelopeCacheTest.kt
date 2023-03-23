@@ -11,7 +11,7 @@ import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
-import io.sentry.cache.EnvelopeCache.SUFFIX_CURRENT_SESSION_FILE
+import io.sentry.cache.EnvelopeCache.SUFFIX_SESSION_FILE
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.User
@@ -96,7 +96,7 @@ class EnvelopeCacheTest {
         val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
         cache.store(envelope, hints)
 
-        val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
+        val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_SESSION_FILE")
         assertTrue(currentFile.exists())
 
         file.deleteRecursively()
@@ -113,7 +113,7 @@ class EnvelopeCacheTest {
         val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
         cache.store(envelope, hints)
 
-        val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
+        val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_SESSION_FILE")
         assertTrue(currentFile.exists())
 
         HintUtils.setTypeCheckHint(hints, SessionEndHint())
@@ -134,7 +134,7 @@ class EnvelopeCacheTest {
         val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
         cache.store(envelope, hints)
 
-        val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
+        val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_SESSION_FILE")
         assertTrue(currentFile.exists())
 
         val session = fixture.serializer.deserialize(currentFile.bufferedReader(Charsets.UTF_8), Session::class.java)

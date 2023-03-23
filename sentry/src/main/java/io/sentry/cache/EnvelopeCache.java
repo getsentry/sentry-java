@@ -9,6 +9,7 @@ import static java.lang.String.format;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
+import io.sentry.ISerializer;
 import io.sentry.SentryCrashLastRunState;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
@@ -17,6 +18,8 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.UncaughtExceptionHandlerIntegration;
+import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.PreviousSessionEnd;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -56,7 +59,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   public static final String SUFFIX_ENVELOPE_FILE = ".envelope";
 
   public static final String PREFIX_CURRENT_SESSION_FILE = "session";
-  static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
+
+  public static final String PREFIX_PREVIOUS_SESSION_FILE = "previous_session";
+  static final String SUFFIX_SESSION_FILE = ".json";
   public static final String CRASH_MARKER_FILE = "last_crash";
   public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
 
@@ -96,6 +101,14 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       }
     }
 
+    endPreviousSession(hint);
+
+    /**
+     * Common cases when previous session is not ended with a SessionStart hint for envelope:
+     *  - The previous session experienced Abnormal exit (ANR, OS kills app, User kills app)
+     *  - The previous session experienced native crash
+     *  - The previous session hasn't been ended properly (e.g. session was started in .init() and then in onForeground() after sessionTrackingIntervalMillis)
+     */
     if (HintUtils.hasType(hint, SessionStart.class)) {
       boolean crashedLastRun = false;
 
@@ -119,13 +132,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           } else {
             final File crashMarkerFile =
                 new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
-            Date timestamp = null;
             if (crashMarkerFile.exists()) {
               options
                   .getLogger()
                   .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
 
-              timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
+              final Date timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
 
               crashedLastRun = true;
               if (!crashMarkerFile.delete()) {
@@ -137,22 +149,24 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                         crashMarkerFile.getAbsolutePath());
               }
               session.update(Session.State.Crashed, null, true);
+              session.end(timestamp);
+              // if it was a native crash, we are safe to send session in an envelope, meaning
+              // there was no abnormal exit
+              saveSessionToEnvelope(session);
+            } else {
+              // if there was no native crash, the session has potentially experienced Abnormal exit
+              // so we end it with the current timestamp, but do not send it yet, as other envelopes
+              // may come later and change its attributes (status, etc.). We just save it as previous_session.json
+              session.end();
+              writeSessionToDisk(getPreviousSessionFile(), session);
             }
-
-            session.end(timestamp);
-            // if the App. has been upgraded and there's a new version of the SDK running,
-            // SdkVersion will be outdated.
-            final SentryEnvelope fromSession =
-                SentryEnvelope.from(serializer, session, options.getSdkVersion());
-            final File fileFromSession = getEnvelopeFile(fromSession);
-            writeEnvelopeToDisk(fileFromSession, fromSession);
           }
         } catch (Throwable e) {
           options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
         }
 
         // at this point the leftover session and its current session file already became a new
-        // envelope file to be sent
+        // envelope file to be sent or became a previous_session file
         // so deleting it as the new session will take place.
         if (!currentSessionFile.delete()) {
           options.getLogger().log(WARNING, "Failed to delete the current session file.");
@@ -207,6 +221,68 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
       writeCrashMarkerFile();
     }
+  }
+
+  /**
+   * Attempts to end previous session, relying on PreviousSessionEnd hint. If the hint is also
+   * AbnormalExit, marks session as abnormal with abnormal mechanism and takes its timestamp.
+   * <p>
+   * If there was no abnormal exit, the previous session will be captured with the current session
+   * at latest, preserving the original end timestamp.
+   * <p>
+   * Otherwise, callers might also call it directly when necessary.
+   *
+   * @param hint a hint coming with the envelope
+   */
+  public void endPreviousSession(final @NotNull Hint hint) {
+    if (HintUtils.hasType(hint, PreviousSessionEnd.class)) {
+      final File previousSessionFile = getPreviousSessionFile();
+      if (previousSessionFile.exists()) {
+        options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
+
+        final ISerializer serializer = options.getSerializer();
+        try (final Reader reader =
+               new BufferedReader(
+                 new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
+          final Session previousSession = serializer.deserialize(reader, Session.class);
+          if (previousSession != null) {
+            final Object sdkHint = HintUtils.getSentrySdkHint(hint);
+            if (sdkHint instanceof AbnormalExit) {
+              final Long abnormalExitTimestamp = ((AbnormalExit) sdkHint).timestamp();
+              if (abnormalExitTimestamp != null) {
+                final Date timestamp = DateUtils.getDateTime(abnormalExitTimestamp);
+                // sanity check if the abnormal exit actually happened when the session was alive
+                final Date sessionStart = previousSession.getStarted();
+                if (sessionStart == null || timestamp.before(sessionStart)) {
+                  options.getLogger().log(WARNING, "Abnormal exit happened before previous session start, not ending the session.");
+                  return;
+                }
+              }
+              final String abnormalMechanism = ((AbnormalExit) sdkHint).mechanism();
+              previousSession.update(Session.State.Abnormal, null, true, abnormalMechanism);
+            }
+            saveSessionToEnvelope(previousSession);
+
+            // at this point the previous session and its file already became a new envelope, so
+            // it's safe to delete it
+            if (!previousSessionFile.delete()) {
+              options.getLogger().log(WARNING, "Failed to delete the previous session file.");
+            }
+          }
+        } catch (Throwable e) {
+          options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
+        }
+      }
+    }
+  }
+
+  private void saveSessionToEnvelope(final @NotNull Session session) throws IOException {
+    // if the App. has been upgraded and there's a new version of the SDK running,
+    // SdkVersion will be outdated.
+    final SentryEnvelope fromSession =
+        SentryEnvelope.from(serializer, session, options.getSdkVersion());
+    final File fileFromSession = getEnvelopeFile(fromSession);
+    writeEnvelopeToDisk(fileFromSession, fromSession);
   }
 
   private void writeCrashMarkerFile() {
@@ -367,7 +443,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   private @NotNull File getCurrentSessionFile() {
     return new File(
-        directory.getAbsolutePath(), PREFIX_CURRENT_SESSION_FILE + SUFFIX_CURRENT_SESSION_FILE);
+        directory.getAbsolutePath(), PREFIX_CURRENT_SESSION_FILE + SUFFIX_SESSION_FILE);
+  }
+
+  private @NotNull File getPreviousSessionFile() {
+    return new File(
+        directory.getAbsolutePath(), PREFIX_PREVIOUS_SESSION_FILE + SUFFIX_SESSION_FILE);
   }
 
   @Override
