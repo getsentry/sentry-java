@@ -1,11 +1,20 @@
 package io.sentry.android.core;
 
 import android.util.Log;
+
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class replaces {@link android.util.Log} with its own implementations which creates a
+ * {@link io.sentry.Breadcrumb} for each log. It only replaces log functions that meet a minimum level
+ * set by the user, set through the Sentry Android Gradle Plugin.
+ */
+@ApiStatus.Internal
 public class SentryLogcatAdapter {
 
   private static void addAsBreadcrumb(@NotNull String tag, @NotNull SentryLevel level, String msg) {
@@ -13,12 +22,12 @@ public class SentryLogcatAdapter {
   }
 
   private static void addAsBreadcrumb(
-      @NotNull String tag, @NotNull SentryLevel level, Throwable tr) {
+    @NotNull String tag, @NotNull SentryLevel level, Throwable tr) {
     addAsBreadcrumb(tag, level, null, tr);
   }
 
   private static void addAsBreadcrumb(
-      @NotNull String tag, @NotNull SentryLevel level, String msg, Throwable tr) {
+    @NotNull String tag, @NotNull SentryLevel level, String msg, Throwable tr) {
     Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setCategory("log");
     breadcrumb.setMessage(msg);
