@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class UrlUtils {
 
+  public static final @NotNull String SENSITIVE_DATA_SUBSTITUTE = "[Filtered]";
   private static final @NotNull Pattern AUTH_REGEX = Pattern.compile("(.+://)(.*@)(.*)");
 
   public static @Nullable UrlDetails parseNullable(final @Nullable String url) {
@@ -108,7 +109,9 @@ public final class UrlUtils {
     if (userInfoMatcher.matches() && userInfoMatcher.groupCount() == 3) {
       final @NotNull String userInfoString = userInfoMatcher.group(2);
       final @NotNull String replacementString =
-          userInfoString.contains(":") ? "[Filtered]:[Filtered]@" : "[Filtered]@";
+          userInfoString.contains(":")
+              ? (SENSITIVE_DATA_SUBSTITUTE + ":" + SENSITIVE_DATA_SUBSTITUTE + "@")
+              : (SENSITIVE_DATA_SUBSTITUTE + "@");
       return userInfoMatcher.group(1) + replacementString + userInfoMatcher.group(3);
     } else {
       return url;

@@ -321,6 +321,20 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when environment is not set, falls back to default value`() {
+        val options = SentryOptions()
+        assertEquals("production", options.environment)
+    }
+
+    @Test
+    fun `when environment is set, correct value is returned`() {
+        val options = SentryOptions().apply {
+            environment = "debug"
+        }
+        assertEquals("debug", options.environment)
+    }
+
+    @Test
     fun `when adds options observer, observer list has it`() {
         val observer = mock<IOptionsObserver>()
         val options = SentryOptions().apply {

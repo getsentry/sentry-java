@@ -73,7 +73,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       final TracingState tracingState = parameters.getInstrumentationState();
       final ISpan transaction = tracingState.getTransaction();
       if (transaction != null) {
-        final ISpan span = transaction.startChild(findDataFetcherTag(parameters));
+        final ISpan span = createSpan(transaction, parameters);
         try {
           final Object result = dataFetcher.get(environment);
           if (result instanceof CompletableFuture) {
@@ -127,8 +127,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     finish(span, environment, null);
   }
 
-  private @NotNull String findDataFetcherTag(
-      final @NotNull InstrumentationFieldFetchParameters parameters) {
+  private @NotNull ISpan createSpan(
+      @NotNull ISpan transaction, @NotNull InstrumentationFieldFetchParameters parameters) {
     final GraphQLOutputType type = parameters.getExecutionStepInfo().getParent().getType();
     GraphQLObjectType parent;
     if (type instanceof GraphQLNonNull) {
@@ -137,7 +137,9 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       parent = (GraphQLObjectType) type;
     }
 
-    return parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName();
+    return transaction.startChild(
+        "graphql",
+        parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
   }
 
   static final class TracingState implements InstrumentationState {

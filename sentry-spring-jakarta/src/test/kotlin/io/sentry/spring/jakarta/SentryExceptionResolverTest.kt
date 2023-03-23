@@ -36,7 +36,7 @@ class SentryExceptionResolverTest {
         assertThat(eventCaptor.firstValue.throwableMechanism).isInstanceOf(ExceptionMechanismException::class.java)
         with(eventCaptor.firstValue.throwableMechanism as ExceptionMechanismException) {
             assertThat(exceptionMechanism.isHandled).isFalse
-            assertThat(exceptionMechanism.type).isEqualTo("HandlerExceptionResolver")
+            assertThat(exceptionMechanism.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
             assertThat(throwable).isEqualTo(expectedCause)
             assertThat(thread).isEqualTo(Thread.currentThread())
             assertThat(isSnapshot).isFalse

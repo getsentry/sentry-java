@@ -589,6 +589,8 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
@@ -860,6 +862,8 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -904,6 +908,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1339,6 +1345,8 @@ public abstract class io/sentry/SentryDate : java/lang/Comparable {
 	public fun compareTo (Lio/sentry/SentryDate;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
 	public fun diff (Lio/sentry/SentryDate;)J
+	public final fun isAfter (Lio/sentry/SentryDate;)Z
+	public final fun isBefore (Lio/sentry/SentryDate;)Z
 	public fun laterDateNanosTimestampByDiff (Lio/sentry/SentryDate;)J
 	public abstract fun nanoTimestamp ()J
 }
@@ -1802,7 +1810,7 @@ public final class io/sentry/SentryTraceHeader {
 
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;ZLio/sentry/TransactionFinishedCallback;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;Lio/sentry/TransactionOptions;Lio/sentry/TransactionFinishedCallback;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1843,6 +1851,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1920,7 +1930,7 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, ja
 }
 
 public final class io/sentry/Span : io/sentry/ISpan {
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IHub;Lio/sentry/SentryDate;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IHub;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1954,6 +1964,8 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -2026,6 +2038,16 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 	public fun <init> ()V
 	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanId;
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public class io/sentry/SpanOptions {
+	public fun <init> ()V
+	public fun isIdle ()Z
+	public fun isTrimEnd ()Z
+	public fun isTrimStart ()Z
+	public fun setIdle (Z)V
+	public fun setTrimEnd (Z)V
+	public fun setTrimStart (Z)V
 }
 
 public final class io/sentry/SpanStatus : java/lang/Enum, io/sentry/JsonSerializable {
@@ -2135,21 +2157,19 @@ public abstract interface class io/sentry/TransactionFinishedCallback {
 	public abstract fun execute (Lio/sentry/ITransaction;)V
 }
 
-public final class io/sentry/TransactionOptions {
+public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun <init> ()V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
 	public fun isBindToScope ()Z
-	public fun isTrimEnd ()Z
 	public fun isWaitForChildren ()Z
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
-	public fun setTrimEnd (Z)V
 	public fun setWaitForChildren (Z)V
 }
 
@@ -3869,8 +3889,13 @@ public abstract interface class io/sentry/util/HintUtils$SentryNullableConsumer 
 }
 
 public final class io/sentry/util/HttpUtils {
+	public static final field COOKIE_HEADER_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
+	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
+	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
 }
 
 public final class io/sentry/util/JsonSerializationUtils {
@@ -3929,6 +3954,7 @@ public final class io/sentry/util/StringUtils {
 }
 
 public final class io/sentry/util/UrlUtils {
+	public static final field SENSITIVE_DATA_SUBSTITUTE Ljava/lang/String;
 	public fun <init> ()V
 	public static fun parse (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
 	public static fun parseNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;

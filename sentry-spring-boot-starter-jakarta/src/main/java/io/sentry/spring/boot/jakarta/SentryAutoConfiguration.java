@@ -115,7 +115,8 @@ public class SentryAutoConfiguration {
             }
           });
 
-      options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME);
+      options.setSentryClientName(
+          BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       options.setSdkVersion(createSdkVersion(options));
       addPackageAndIntegrationInfo();
       if (options.getTracesSampleRate() == null && options.getEnableTracing() == null) {
