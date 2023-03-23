@@ -1,11 +1,9 @@
 package io.sentry.android.core;
 
 import android.util.Log;
-
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
-
 import org.jetbrains.annotations.NotNull;
 
 public class SentryLogcatAdapter {
@@ -14,11 +12,13 @@ public class SentryLogcatAdapter {
     addAsBreadcrumb(tag, level, msg, null);
   }
 
-  private static void addAsBreadcrumb(@NotNull String tag, @NotNull SentryLevel level, Throwable tr) {
+  private static void addAsBreadcrumb(
+      @NotNull String tag, @NotNull SentryLevel level, Throwable tr) {
     addAsBreadcrumb(tag, level, null, tr);
   }
 
-  private static void addAsBreadcrumb(@NotNull String tag, @NotNull SentryLevel level, String msg, Throwable tr) {
+  private static void addAsBreadcrumb(
+      @NotNull String tag, @NotNull SentryLevel level, String msg, Throwable tr) {
     Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setCategory("log");
     breadcrumb.setMessage(msg);
