@@ -13,7 +13,6 @@ import io.sentry.android.core.AppStartState;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.cache.EnvelopeCache;
-import io.sentry.hints.AbnormalExit;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;

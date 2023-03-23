@@ -82,12 +82,7 @@ public class AnrV2Integration implements Integration, Closeable {
     if (this.options.isAnrEnabled()) {
       options
           .getExecutorService()
-          .submit(
-              new AnrProcessor(
-                  context,
-                  hub,
-                  this.options,
-                  dateProvider));
+          .submit(new AnrProcessor(context, hub, this.options, dateProvider));
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
       addIntegrationToSdkVersion();
     }
@@ -122,10 +117,10 @@ public class AnrV2Integration implements Integration, Closeable {
     @Override
     public void run() {
       final ActivityManager activityManager =
-        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
       List<ApplicationExitInfo> applicationExitInfoList =
-        activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
       if (applicationExitInfoList.size() == 0) {
         endPreviousSession();
         options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");
@@ -164,7 +159,8 @@ public class AnrV2Integration implements Integration, Closeable {
         return;
       }
 
-      if (lastReportedAnrTimestamp != null && latestAnr.getTimestamp() <= lastReportedAnrTimestamp) {
+      if (lastReportedAnrTimestamp != null
+          && latestAnr.getTimestamp() <= lastReportedAnrTimestamp) {
         endPreviousSession();
         options
             .getLogger()
@@ -212,11 +208,15 @@ public class AnrV2Integration implements Integration, Closeable {
         final @NotNull ApplicationExitInfo exitInfo, final boolean shouldEnrich) {
       final long anrTimestamp = exitInfo.getTimestamp();
       final boolean isBackground =
-        exitInfo.getImportance() != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+          exitInfo.getImportance() != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
       final Throwable anrThrowable = buildAnrThrowable(exitInfo, isBackground);
       final AnrV2Hint anrHint =
           new AnrV2Hint(
-              options.getFlushTimeoutMillis(), options.getLogger(), anrTimestamp, shouldEnrich, isBackground);
+              options.getFlushTimeoutMillis(),
+              options.getLogger(),
+              anrTimestamp,
+              shouldEnrich,
+              isBackground);
 
       final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
 
@@ -240,9 +240,7 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     private @NotNull Throwable buildAnrThrowable(
-      final @NotNull ApplicationExitInfo exitInfo,
-      final boolean isBackground
-    ) {
+        final @NotNull ApplicationExitInfo exitInfo, final boolean isBackground) {
       String message = "ANR";
       if (isBackground) {
         message = "Background " + message;
@@ -267,8 +265,8 @@ public class AnrV2Integration implements Integration, Closeable {
   }
 
   @ApiStatus.Internal
-  public static final class AnrV2Hint extends BlockingFlushHint implements Backfillable,
-    AbnormalExit, PreviousSessionEnd {
+  public static final class AnrV2Hint extends BlockingFlushHint
+      implements Backfillable, AbnormalExit, PreviousSessionEnd {
 
     private final long timestamp;
 

@@ -136,7 +136,8 @@ class AndroidEnvelopeCacheTest {
                 0,
                 NoOpLogger.getInstance(),
                 12345678L,
-                false, false
+                false,
+                false
             )
         )
         cache.store(fixture.envelope, hints)
@@ -153,7 +154,8 @@ class AndroidEnvelopeCacheTest {
                 0,
                 NoOpLogger.getInstance(),
                 12345678L,
-                false, false
+                false,
+                false
             )
         )
         cache.store(fixture.envelope, hints)

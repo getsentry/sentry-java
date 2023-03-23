@@ -104,10 +104,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     endPreviousSession(hint);
 
     /**
-     * Common cases when previous session is not ended with a SessionStart hint for envelope:
-     *  - The previous session experienced Abnormal exit (ANR, OS kills app, User kills app)
-     *  - The previous session experienced native crash
-     *  - The previous session hasn't been ended properly (e.g. session was started in .init() and then in onForeground() after sessionTrackingIntervalMillis)
+     * Common cases when previous session is not ended with a SessionStart hint for envelope: - The
+     * previous session experienced Abnormal exit (ANR, OS kills app, User kills app) - The previous
+     * session experienced native crash - The previous session hasn't been ended properly (e.g.
+     * session was started in .init() and then in onForeground() after
+     * sessionTrackingIntervalMillis)
      */
     if (HintUtils.hasType(hint, SessionStart.class)) {
       boolean crashedLastRun = false;
@@ -156,7 +157,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
             } else {
               // if there was no native crash, the session has potentially experienced Abnormal exit
               // so we end it with the current timestamp, but do not send it yet, as other envelopes
-              // may come later and change its attributes (status, etc.). We just save it as previous_session.json
+              // may come later and change its attributes (status, etc.). We just save it as
+              // previous_session.json
               session.end();
               writeSessionToDisk(getPreviousSessionFile(), session);
             }
@@ -226,11 +228,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   /**
    * Attempts to end previous session, relying on PreviousSessionEnd hint. If the hint is also
    * AbnormalExit, marks session as abnormal with abnormal mechanism and takes its timestamp.
-   * <p>
-   * If there was no abnormal exit, the previous session will be captured with the current session
-   * at latest, preserving the original end timestamp.
-   * <p>
-   * Otherwise, callers might also call it directly when necessary.
+   *
+   * <p>If there was no abnormal exit, the previous session will be captured with the current
+   * session at latest, preserving the original end timestamp.
+   *
+   * <p>Otherwise, callers might also call it directly when necessary.
    *
    * @param hint a hint coming with the envelope
    */
@@ -243,8 +245,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
         final ISerializer serializer = options.getSerializer();
         try (final Reader reader =
-               new BufferedReader(
-                 new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
+            new BufferedReader(
+                new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
           final Session previousSession = serializer.deserialize(reader, Session.class);
           if (previousSession != null) {
             final Object sdkHint = HintUtils.getSentrySdkHint(hint);
@@ -255,7 +257,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                 // sanity check if the abnormal exit actually happened when the session was alive
                 final Date sessionStart = previousSession.getStarted();
                 if (sessionStart == null || timestamp.before(sessionStart)) {
-                  options.getLogger().log(WARNING, "Abnormal exit happened before previous session start, not ending the session.");
+                  options
+                      .getLogger()
+                      .log(
+                          WARNING,
+                          "Abnormal exit happened before previous session start, not ending the session.");
                   return;
                 }
               }
@@ -443,8 +449,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   private @NotNull File getCurrentSessionFile() {
-    return new File(
-        directory.getAbsolutePath(), PREFIX_CURRENT_SESSION_FILE + SUFFIX_SESSION_FILE);
+    return new File(directory.getAbsolutePath(), PREFIX_CURRENT_SESSION_FILE + SUFFIX_SESSION_FILE);
   }
 
   private @NotNull File getPreviousSessionFile() {
