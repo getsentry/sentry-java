@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This class replaces {@link android.util.Log} with its own implementations which creates a
  * {@link io.sentry.Breadcrumb} for each log. It only replaces log functions that meet a minimum level
- * set by the user, set through the Sentry Android Gradle Plugin.
+ * set by the user on the Sentry Android Gradle Plugin.
  */
 @ApiStatus.Internal
 public class SentryLogcatAdapter {
