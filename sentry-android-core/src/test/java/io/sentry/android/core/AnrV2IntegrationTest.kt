@@ -135,11 +135,11 @@ class AnrV2IntegrationTest {
 
     @Test
     fun `when historical exit list is empty, does not process historical exits`() {
-        val integration = fixture.getSut(tmpDir, useImmediateExecutorService = false)
+        val integration = fixture.getSut(tmpDir)
 
         integration.register(fixture.hub, fixture.options)
 
-        verify(fixture.options.executorService, never()).submit(any())
+        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test

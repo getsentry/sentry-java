@@ -1,4 +1,3 @@
 package io.sentry.hints;
 
-public class PreviousSessionEndHint implements PreviousSessionEnd {
-}
+public final class PreviousSessionEndHint implements PreviousSessionEnd {}

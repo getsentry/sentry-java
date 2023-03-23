@@ -234,6 +234,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    *
    * @param hint a hint coming with the envelope
    */
+  @SuppressWarnings("JavaUtilDate")
   public void endPreviousSession(final @NotNull Hint hint) {
     if (HintUtils.hasType(hint, PreviousSessionEnd.class)) {
       final File previousSessionFile = getPreviousSessionFile();

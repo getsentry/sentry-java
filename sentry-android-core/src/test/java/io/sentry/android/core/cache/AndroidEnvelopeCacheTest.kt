@@ -176,12 +176,12 @@ class AndroidEnvelopeCacheTest {
     }
 
     @Test
-    fun `when last reported anr file does not exist, returns 0 upon reading`() {
+    fun `when last reported anr file does not exist, returns null upon reading`() {
         fixture.getSut(tmpDir)
 
         val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
 
-        assertEquals(0L, lastReportedAnr)
+        assertEquals(null, lastReportedAnr)
     }
 
     @Test
