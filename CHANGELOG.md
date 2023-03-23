@@ -4,6 +4,7 @@
 
 ### Features
 
+- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
 - Add Logcat adapter ([#2620](https://github.com/getsentry/sentry-java/pull/2620))
 
 ### Fixes
