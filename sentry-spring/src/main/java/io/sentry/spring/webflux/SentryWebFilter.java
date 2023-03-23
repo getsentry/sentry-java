@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 /** Manages {@link io.sentry.Scope} in Webflux request processing. */
 @ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
+  public static final String SENTRY_HUB_KEY = "sentry-hub";
 
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
@@ -43,6 +44,7 @@ public final class SentryWebFilter implements WebFilter {
             })
         .doFirst(
             () -> {
+              serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
               Sentry.setCurrentHub(requestHub);
               requestHub.pushScope();
               final ServerHttpRequest request = serverWebExchange.getRequest();

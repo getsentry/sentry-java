@@ -15,6 +15,8 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -41,6 +43,8 @@ import org.jetbrains.annotations.Nullable;
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
 @Open
 public class SentryAppender extends AbstractAppender {
+  public static final String MECHANISM_TYPE = "Log4j2SentryAppender";
+
   private final @Nullable String dsn;
   private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
@@ -121,7 +125,8 @@ public class SentryAppender extends AbstractAppender {
               if (debug != null) {
                 options.setDebug(debug);
               }
-              options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
+              options.setSentryClientName(
+                  BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
               options.setSdkVersion(createSdkVersion(options));
               if (contextTags != null) {
                 for (final String contextTag : contextTags) {
@@ -131,7 +136,7 @@ public class SentryAppender extends AbstractAppender {
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
             });
       } catch (IllegalArgumentException e) {
-        LOGGER.info("Failed to init Sentry during appender initialization: " + e.getMessage());
+        LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
       }
     }
     addPackageAndIntegrationInfo();
@@ -174,7 +179,12 @@ public class SentryAppender extends AbstractAppender {
 
     final ThrowableProxy throwableInformation = loggingEvent.getThrownProxy();
     if (throwableInformation != null) {
-      event.setThrowable(throwableInformation.getThrowable());
+      final Mechanism mechanism = new Mechanism();
+      mechanism.setType(MECHANISM_TYPE);
+      final Throwable mechanismException =
+          new ExceptionMechanismException(
+              mechanism, throwableInformation.getThrowable(), Thread.currentThread());
+      event.setThrowable(mechanismException);
     }
 
     if (loggingEvent.getThreadName() != null) {

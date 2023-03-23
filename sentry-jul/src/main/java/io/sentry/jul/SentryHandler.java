@@ -12,6 +12,8 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -34,6 +36,7 @@ import org.slf4j.MDC;
 /** Logging handler in charge of sending the java.util.logging records to a Sentry server. */
 @Open
 public class SentryHandler extends Handler {
+  public static final String MECHANISM_TYPE = "JulSentryHandler";
   /** Name of the {@link SentryEvent} extra property containing the Thread id. */
   public static final String THREAD_ID = "thread_id";
   /**
@@ -196,7 +199,11 @@ public class SentryHandler extends Handler {
 
     final Throwable throwable = record.getThrown();
     if (throwable != null) {
-      event.setThrowable(throwable);
+      final Mechanism mechanism = new Mechanism();
+      mechanism.setType(MECHANISM_TYPE);
+      final Throwable mechanismException =
+          new ExceptionMechanismException(mechanism, throwable, Thread.currentThread());
+      event.setThrowable(mechanismException);
     }
     Map<String, String> mdcProperties = MDC.getMDCAdapter().getCopyOfContextMap();
     if (mdcProperties != null) {
