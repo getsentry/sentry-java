@@ -5,6 +5,7 @@
 ### Features
 
 - Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
+- Provide CPU count/frequency data as device context ([#2622](https://github.com/getsentry/sentry-java/pull/2622))
 
 ### Fixes
 
