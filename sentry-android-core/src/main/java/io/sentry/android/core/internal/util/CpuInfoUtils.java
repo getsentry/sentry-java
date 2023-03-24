@@ -71,6 +71,12 @@ public final class CpuInfoUtils {
   }
 
   @TestOnly
+  public void setCpuMaxFrequencies(List<Integer> frequencies) {
+    cpuMaxFrequenciesMhz.clear();
+    cpuMaxFrequenciesMhz.addAll(frequencies);
+  }
+
+  @TestOnly
   final void clear() {
     cpuMaxFrequenciesMhz.clear();
   }

@@ -28,6 +28,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.ConnectivityChecker;
+import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.App;
@@ -43,8 +44,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -353,6 +356,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
     if (device.getLocale() == null) {
       device.setLocale(locale.toString()); // eg en_US
+    }
+
+    final @NotNull List<Integer> cpuFrequencies = CpuInfoUtils.getInstance().readMaxFrequencies();
+    if (!cpuFrequencies.isEmpty()) {
+      device.setProcessorFrequency(Collections.max(cpuFrequencies).doubleValue());
+      device.setProcessorCount(cpuFrequencies.size());
     }
 
     return device;
