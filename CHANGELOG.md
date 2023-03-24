@@ -5,6 +5,7 @@
 ### Features
 
 - Add time-to-initial-display and time-to-full-display measurements to Activity transactions ([#2611](https://github.com/getsentry/sentry-java/pull/2611))
+- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
 
 ### Fixes
 
