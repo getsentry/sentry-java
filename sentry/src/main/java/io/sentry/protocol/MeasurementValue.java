@@ -19,6 +19,14 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class MeasurementValue implements JsonUnknown, JsonSerializable {
 
+  public static final String KEY_APP_START_COLD = "app_start_cold";
+  public static final String KEY_APP_START_WARM = "app_start_warm";
+  public static final String KEY_FRAMES_TOTAL = "frames_total";
+  public static final String KEY_FRAMES_SLOW = "frames_slow";
+  public static final String KEY_FRAMES_FROZEN = "frames_frozen";
+  public static final String KEY_TIME_TO_INITIAL_DISPLAY = "time_to_initial_display";
+  public static final String KEY_TIME_TO_FULL_DISPLAY = "time_to_full_display";
+
   @SuppressWarnings("UnusedVariable")
   private final @NotNull Number value;
 

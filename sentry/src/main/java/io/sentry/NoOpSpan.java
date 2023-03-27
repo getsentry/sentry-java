@@ -146,6 +146,11 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
+  public @NotNull SentryDate getStartDate() {
+    return new SentryNanotimeDate();
+  }
+
+  @Override
   public boolean isNoOp() {
     return true;
   }

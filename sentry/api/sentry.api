@@ -551,6 +551,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getOperation ()Ljava/lang/String;
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
+	public abstract fun getStartDate ()Lio/sentry/SentryDate;
 	public abstract fun getStatus ()Lio/sentry/SpanStatus;
 	public abstract fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun getThrowable ()Ljava/lang/Throwable;
@@ -822,6 +823,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
+	public fun getStartDate ()Lio/sentry/SentryDate;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
@@ -861,6 +863,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
+	public fun getStartDate ()Lio/sentry/SentryDate;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
@@ -2911,6 +2914,13 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 }
 
 public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field KEY_APP_START_COLD Ljava/lang/String;
+	public static final field KEY_APP_START_WARM Ljava/lang/String;
+	public static final field KEY_FRAMES_FROZEN Ljava/lang/String;
+	public static final field KEY_FRAMES_SLOW Ljava/lang/String;
+	public static final field KEY_FRAMES_TOTAL Ljava/lang/String;
+	public static final field KEY_TIME_TO_FULL_DISPLAY Ljava/lang/String;
+	public static final field KEY_TIME_TO_INITIAL_DISPLAY Ljava/lang/String;
 	public fun <init> (Ljava/lang/Number;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/Number;Ljava/lang/String;Ljava/util/Map;)V
 	public fun getUnit ()Ljava/lang/String;
