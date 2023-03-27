@@ -92,6 +92,7 @@ public final class Span implements ISpan {
     this.options = options;
   }
 
+  @Override
   public @NotNull SentryDate getStartDate() {
     return startTimestamp;
   }
