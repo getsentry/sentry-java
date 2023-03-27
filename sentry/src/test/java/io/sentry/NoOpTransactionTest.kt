@@ -3,6 +3,7 @@ package io.sentry
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -34,5 +35,10 @@ class NoOpTransactionTest {
     @Test
     fun `updateEndDate return false`() {
         assertFalse(transaction.updateEndDate(mock()))
+    }
+
+    @Test
+    fun `startDate return a NanotimeDate`() {
+        assertIs<SentryNanotimeDate>(transaction.startDate)
     }
 }

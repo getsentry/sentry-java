@@ -52,7 +52,7 @@ class PerformanceAndroidEventProcessorTest {
 
         tr = sut.process(tr, Hint())
 
-        assertTrue(tr.measurements.containsKey("app_start_cold"))
+        assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
     }
 
     @Test
@@ -64,7 +64,7 @@ class PerformanceAndroidEventProcessorTest {
 
         tr = sut.process(tr, Hint())
 
-        assertTrue(tr.measurements.containsKey("app_start_warm"))
+        assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
     }
 
     @Test
@@ -76,7 +76,7 @@ class PerformanceAndroidEventProcessorTest {
 
         tr = sut.process(tr, Hint())
 
-        val measurement = tr.measurements["app_start_cold"]
+        val measurement = tr.measurements[MeasurementValue.KEY_APP_START_COLD]
         assertEquals("millisecond", measurement?.unit)
     }
 
@@ -92,7 +92,7 @@ class PerformanceAndroidEventProcessorTest {
         var tr2 = getTransaction()
         tr2 = sut.process(tr2, Hint())
 
-        assertTrue(tr1.measurements.containsKey("app_start_warm"))
+        assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
         assertTrue(tr2.measurements.isEmpty())
     }
 
@@ -156,12 +156,12 @@ class PerformanceAndroidEventProcessorTest {
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
 
-        val metrics = mapOf("frames_total" to MeasurementValue(1f, MeasurementUnit.Duration.MILLISECOND.apiName()))
+        val metrics = mapOf(MeasurementValue.KEY_FRAMES_TOTAL to MeasurementValue(1f, MeasurementUnit.Duration.MILLISECOND.apiName()))
         whenever(fixture.activityFramesTracker.takeMetrics(any())).thenReturn(metrics)
 
         tr = sut.process(tr, Hint())
 
-        assertTrue(tr.measurements.containsKey("frames_total"))
+        assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_FRAMES_TOTAL))
     }
 
     private fun setAppStart(coldStart: Boolean = true) {

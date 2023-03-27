@@ -141,6 +141,7 @@ public final class SentryTracer implements ITransaction {
     return children;
   }
 
+  @Override
   public @NotNull SentryDate getStartDate() {
     return this.root.getStartDate();
   }
