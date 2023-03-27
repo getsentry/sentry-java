@@ -159,9 +159,9 @@ public final class ActivityFramesTracker {
     final MeasurementValue ffValues =
         new MeasurementValue(frameCounts.frozenFrames, MeasurementUnit.NONE);
     final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
-    measurements.put("frames_total", tfValues);
-    measurements.put("frames_slow", sfValues);
-    measurements.put("frames_frozen", ffValues);
+    measurements.put(MeasurementValue.KEY_FRAMES_TOTAL, tfValues);
+    measurements.put(MeasurementValue.KEY_FRAMES_SLOW, sfValues);
+    measurements.put(MeasurementValue.KEY_FRAMES_FROZEN, ffValues);
 
     activityMeasurements.put(transactionId, measurements);
   }
