@@ -15,7 +15,7 @@ import org.jetbrains.annotations.TestOnly;
 
 public final class AppLifecycleIntegration implements Integration, Closeable {
 
-  @TestOnly @Nullable LifecycleWatcher watcher;
+  @TestOnly @Nullable volatile LifecycleWatcher watcher;
 
   private @Nullable SentryAndroidOptions options;
 
@@ -110,23 +110,27 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   }
 
   private void removeObserver() {
-    ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcher);
+    final @Nullable LifecycleWatcher watcherRef = watcher;
+    if (watcherRef != null) {
+      ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcherRef);
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration removed.");
+      }
+    }
+    watcher = null;
   }
 
   @Override
   public void close() throws IOException {
-    if (watcher != null) {
-      if (AndroidMainThreadChecker.getInstance().isMainThread()) {
-        removeObserver();
-      } else {
-        // some versions of the androidx lifecycle-process require this to be executed on the main
-        // thread.
-        handler.post(() -> removeObserver());
-      }
-      watcher = null;
-      if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration removed.");
-      }
+    if (watcher == null) {
+      return;
+    }
+    if (AndroidMainThreadChecker.getInstance().isMainThread()) {
+      removeObserver();
+    } else {
+      // some versions of the androidx lifecycle-process require this to be executed on the main
+      // thread.
+      handler.post(this::removeObserver);
     }
   }
 }
