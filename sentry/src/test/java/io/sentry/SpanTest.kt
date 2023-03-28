@@ -8,6 +8,7 @@ import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -37,6 +38,10 @@ class SpanTest {
                 options,
                 null
             )
+        }
+
+        fun getRootSut(options: TransactionOptions = TransactionOptions()): Span {
+            return SentryTracer(TransactionContext("name", "op"), hub, options, null).root
         }
     }
 
@@ -312,7 +317,7 @@ class SpanTest {
     }
 
     @Test
-    fun `when span trimming is enabled, trim to child spans`() {
+    fun `when span trimming is enabled, trim to direct children spans only`() {
         // when a span with start+end trimming is enabled
         val span = fixture.getSut(
             SpanOptions().apply {
@@ -327,15 +332,56 @@ class SpanTest {
         child1.finish()
 
         val child2 = span.startChild("op2") as Span
+
+        // and another child is started from a child
+        val subChild = child2.startChild("op3") as Span
+
         Thread.sleep(1)
         child2.finish()
+        Thread.sleep(1)
+        subChild.finish()
 
         span.finish(SpanStatus.OK)
         assertTrue(span.isFinished)
 
-        // then the span should match start/finish should match it's children
+        // then the span start/finish should match its direct children only
         assertEquals(child1.startDate, span.startDate)
         assertEquals(child2.finishDate, span.finishDate)
+        assertNotEquals(subChild.finishDate, span.finishDate)
+    }
+
+    @Test
+    fun `when span trimming is enabled, root span trim to all children spans`() {
+        // when a root span with start+end trimming is enabled
+        val span = fixture.getRootSut(
+            TransactionOptions().apply {
+                isTrimStart = true
+                isTrimEnd = true
+            }
+        )
+
+        // and two child spans are started
+        val child1 = span.startChild("op1") as Span
+        Thread.sleep(1)
+        child1.finish()
+
+        val child2 = span.startChild("op2") as Span
+
+        // and another child is started from a child
+        val subChild = child2.startChild("op3") as Span
+
+        Thread.sleep(1)
+        child2.finish()
+        Thread.sleep(1)
+        subChild.finish()
+
+        span.finish(SpanStatus.OK)
+        assertTrue(span.isFinished)
+
+        // then the root span start/finish should match first/last of its direct and indirect children
+        assertEquals(child1.startDate, span.startDate)
+        assertNotEquals(child2.finishDate, span.finishDate)
+        assertEquals(subChild.finishDate, span.finishDate)
     }
 
     @Test

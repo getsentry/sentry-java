@@ -208,17 +208,23 @@ public final class ActivityLifecycleIntegration
             }
           });
 
+      // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
+      final @NotNull SentryDate ttidStartTime;
+
       if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-        transactionOptions.setStartTimestamp(appStartTime);
+        // The first activity ttid/ttfd spans should start at the app start time
+        ttidStartTime = appStartTime;
+      } else {
+        // The ttid/ttfd spans should start when the previous activity called its onPause method
+        ttidStartTime = lastPausedTime;
       }
+      transactionOptions.setStartTimestamp(ttidStartTime);
 
       // we can only bind to the scope if there's no running transaction
       ITransaction transaction =
           hub.startTransaction(
               new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
               transactionOptions);
-
-      final @NotNull SentryDate ttidStartTime;
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
@@ -233,12 +239,6 @@ public final class ActivityLifecycleIntegration
         // in case there's already an end time (e.g. due to deferred SDK init)
         // we can finish the app-start span
         finishAppStartSpan();
-
-        // The first activity ttid/ttfd spans should start at the app start time
-        ttidStartTime = appStartTime;
-      } else {
-        // The ttid/ttfd spans should start when the previous activity called its onPause method
-        ttidStartTime = lastPausedTime;
       }
       ttidSpanMap.put(
           activity,
