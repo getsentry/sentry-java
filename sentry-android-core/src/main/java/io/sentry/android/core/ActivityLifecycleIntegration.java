@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.annotation.SuppressLint;
@@ -27,6 +28,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -35,6 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -205,17 +208,23 @@ public final class ActivityLifecycleIntegration
             }
           });
 
+      // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
+      final @NotNull SentryDate ttidStartTime;
+
       if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-        transactionOptions.setStartTimestamp(appStartTime);
+        // The first activity ttid/ttfd spans should start at the app start time
+        ttidStartTime = appStartTime;
+      } else {
+        // The ttid/ttfd spans should start when the previous activity called its onPause method
+        ttidStartTime = lastPausedTime;
       }
+      transactionOptions.setStartTimestamp(ttidStartTime);
 
       // we can only bind to the scope if there's no running transaction
       ITransaction transaction =
           hub.startTransaction(
               new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
               transactionOptions);
-
-      final @NotNull SentryDate ttidStartTime;
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
@@ -230,12 +239,6 @@ public final class ActivityLifecycleIntegration
         // in case there's already an end time (e.g. due to deferred SDK init)
         // we can finish the app-start span
         finishAppStartSpan();
-
-        // The first activity ttid/ttfd spans should start at the app start time
-        ttidStartTime = appStartTime;
-      } else {
-        // The ttid/ttfd spans should start when the previous activity called its onPause method
-        ttidStartTime = lastPausedTime;
       }
       ttidSpanMap.put(
           activity,
@@ -348,11 +351,7 @@ public final class ActivityLifecycleIntegration
     firstActivityCreated = true;
 
     if (fullyDisplayedReporter != null) {
-      fullyDisplayedReporter.registerFullyDrawnListener(
-          () -> {
-            finishSpan(ttfdSpan);
-            cancelTtfdAutoClose();
-          });
+      fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn());
     }
   }
 
@@ -499,13 +498,37 @@ public final class ActivityLifecycleIntegration
   }
 
   private void onFirstFrameDrawn(final @Nullable ISpan ttidSpan) {
-    if (options != null && ttfdSpan != null && ttfdSpan.isFinished()) {
+    if (options != null && ttidSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
-      ttfdSpan.updateEndDate(endDate);
+      final long durationNanos = endDate.diff(ttidSpan.getStartDate());
+      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+      ttidSpan.setMeasurement(
+          MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
+
+      if (ttfdSpan != null && ttfdSpan.isFinished()) {
+        ttfdSpan.updateEndDate(endDate);
+        // If the ttfd span was finished before the first frame we adjust the measurement, too
+        ttidSpan.setMeasurement(
+            MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+      }
       finishSpan(ttidSpan, endDate);
     } else {
       finishSpan(ttidSpan);
     }
+  }
+
+  private void onFullFrameDrawn() {
+    if (options != null && ttfdSpan != null) {
+      final SentryDate endDate = options.getDateProvider().now();
+      final long durationNanos = endDate.diff(ttfdSpan.getStartDate());
+      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+      ttfdSpan.setMeasurement(
+          MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+      finishSpan(ttfdSpan, endDate);
+    } else {
+      finishSpan(ttfdSpan);
+    }
+    cancelTtfdAutoClose();
   }
 
   @TestOnly

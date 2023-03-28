@@ -5,6 +5,13 @@
 ### Features
 
 - Add breadcrumbs on network changes ([#2608](https://github.com/getsentry/sentry-java/pull/2608))
+- Add time-to-initial-display and time-to-full-display measurements to Activity transactions ([#2611](https://github.com/getsentry/sentry-java/pull/2611))
+- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
+
+### Fixes
+
+- Fix Automatic UI transactions having wrong durations ([#2623](https://github.com/getsentry/sentry-java/pull/2623))
+- Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
 
 ## 6.16.0
 

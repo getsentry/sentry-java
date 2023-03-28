@@ -92,6 +92,7 @@ public final class Span implements ISpan {
     this.options = options;
   }
 
+  @Override
   public @NotNull SentryDate getStartDate() {
     return startTimestamp;
   }
@@ -192,7 +193,12 @@ public final class Span implements ISpan {
       @Nullable SentryDate minChildStart = null;
       @Nullable SentryDate maxChildEnd = null;
 
-      final @NotNull List<Span> children = getChildren();
+      // The root span should be trimmed based on all children, but the other spans, like the
+      // jetpack composition should be trimmed based on its direct children only
+      final @NotNull List<Span> children =
+          transaction.getRoot().getSpanId().equals(getSpanId())
+              ? transaction.getChildren()
+              : getDirectChildren();
       for (final Span child : children) {
         if (minChildStart == null || child.getStartDate().isBefore(minChildStart)) {
           minChildStart = child.getStartDate();
@@ -388,7 +394,7 @@ public final class Span implements ISpan {
   }
 
   @NotNull
-  private List<Span> getChildren() {
+  private List<Span> getDirectChildren() {
     final List<Span> children = new ArrayList<>();
     final Iterator<Span> iterator = transaction.getSpans().iterator();
 
