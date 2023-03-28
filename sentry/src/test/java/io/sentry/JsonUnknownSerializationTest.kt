@@ -5,6 +5,7 @@ import io.sentry.protocol.Browser
 import io.sentry.protocol.DebugImage
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.Device
+import io.sentry.protocol.Geo
 import io.sentry.protocol.Gpu
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Message
@@ -81,6 +82,7 @@ class JsonUnknownSerializationTest(
             val traceContext = givenJsonUnknown(TraceContextSerializationTest.Fixture().getSut())
             val user = givenJsonUnknown(User())
             val userFeedback = givenJsonUnknown(UserFeedback(SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")))
+            val geo = givenJsonUnknown(Geo())
 
             // Same instance for first and second param, so we cann access both JsonUnknown and
             // JsonSerializable in the test method. Third param is the method reference, so we
@@ -114,7 +116,8 @@ class JsonUnknownSerializationTest(
                 arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
                 arrayOf(traceContext, traceContext, TraceContext.Deserializer()::deserialize),
                 arrayOf(user, user, User.Deserializer()::deserialize),
-                arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize)
+                arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize),
+                arrayOf(geo, geo, Geo.Deserializer()::deserialize)
             )
         }
 
