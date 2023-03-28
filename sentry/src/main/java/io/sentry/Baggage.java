@@ -11,12 +11,14 @@ import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -313,6 +315,23 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @NotNull Map<String, Object> getUnknown() {
+    final @NotNull Map<String, Object> unknown = new ConcurrentHashMap<>();
+    for (Map.Entry<String, String> keyValue : this.keyValues.entrySet()) {
+      final @NotNull String key = keyValue.getKey();
+      final @Nullable String value = keyValue.getValue();
+      if (!DSCKeys.ALL.contains(key)) {
+        if (value != null) {
+          final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
+          unknown.put(unknownKey, value);
+        }
+      }
+    }
+
+    return unknown;
+  }
+
+  @ApiStatus.Internal
   public void setValuesFromTransaction(
       final @NotNull ITransaction transaction,
       final @Nullable User user,
@@ -390,15 +409,18 @@ public final class Baggage {
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
-      return new TraceContext(
-          new SentryId(traceIdString),
-          publicKey,
-          getRelease(),
-          getEnvironment(),
-          getUserId(),
-          getUserSegment(),
-          getTransaction(),
-          getSampleRate());
+      final @NotNull TraceContext traceContext =
+          new TraceContext(
+              new SentryId(traceIdString),
+              publicKey,
+              getRelease(),
+              getEnvironment(),
+              getUserId(),
+              getUserSegment(),
+              getTransaction(),
+              getSampleRate());
+      traceContext.setUnknown(getUnknown());
+      return traceContext;
     } else {
       return null;
     }
@@ -414,5 +436,16 @@ public final class Baggage {
     public static final String USER_SEGMENT = "sentry-user_segment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
+
+    public static final List<String> ALL =
+        Arrays.asList(
+            TRACE_ID,
+            PUBLIC_KEY,
+            RELEASE,
+            USER_ID,
+            ENVIRONMENT,
+            USER_SEGMENT,
+            TRANSACTION,
+            SAMPLE_RATE);
   }
 }
