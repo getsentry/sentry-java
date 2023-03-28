@@ -34,7 +34,7 @@ public final class CpuInfoUtils {
    *
    * @return A list with the frequency of each core of the cpu in Mhz
    */
-  public @NotNull List<Integer> readMaxFrequencies() {
+  public synchronized @NotNull List<Integer> readMaxFrequencies() {
     if (!cpuMaxFrequenciesMhz.isEmpty()) {
       return cpuMaxFrequenciesMhz;
     }
