@@ -4,7 +4,6 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
@@ -67,16 +66,80 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * @param options - the sentry options
    * @return the breadcrumb
    */
-  public static @Nullable Breadcrumb fromMap(
+  @SuppressWarnings("unchecked")
+  public static Breadcrumb fromMap(
       @NotNull Map<String, Object> map, @NotNull SentryOptions options) {
-    try {
-      String json = options.getSerializer().serialize(map);
-      StringReader reader = new StringReader(json);
-      return options.getSerializer().deserialize(reader, Breadcrumb.class);
-    } catch (Exception exception) {
-      options.getLogger().log(SentryLevel.ERROR, "Creating breadcrumb form map failed.", exception);
-      return null;
+
+    @NotNull Date timestamp = DateUtils.getCurrentDateTime();
+    String message = null;
+    String type = null;
+    @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+    String category = null;
+    SentryLevel level = null;
+    Map<String, Object> unknown = null;
+
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      Object value = entry.getValue();
+      switch (entry.getKey()) {
+        case JsonKeys.TIMESTAMP:
+          if (value instanceof String) {
+            Date deserializedDate =
+                JsonObjectReader.dateOrNull((String) value, options.getLogger());
+            if (deserializedDate != null) {
+              timestamp = deserializedDate;
+            }
+          }
+          break;
+        case JsonKeys.MESSAGE:
+          message = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.TYPE:
+          type = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.DATA:
+          final Map<Object, Object> untypedData =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
+          if (untypedData != null) {
+            for (Map.Entry<Object, Object> dataEntry : untypedData.entrySet()) {
+              if ((dataEntry.getKey() instanceof String)) {
+                data.put((String) dataEntry.getKey(), dataEntry.getValue());
+              } else {
+                options.getLogger().log(SentryLevel.WARNING, "Invalid type in data map.");
+              }
+            }
+          }
+          break;
+        case JsonKeys.CATEGORY:
+          category = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.LEVEL:
+          String levelString = (value instanceof String) ? (String) value : null;
+          if (levelString != null) {
+            try {
+              level = SentryLevel.valueOf(levelString.toUpperCase(Locale.ROOT));
+            } catch (Exception exception) {
+              // Stub
+            }
+          }
+          break;
+        default:
+          if (unknown == null) {
+            unknown = new ConcurrentHashMap<>();
+          }
+          unknown.put(entry.getKey(), entry.getValue());
+          break;
+      }
     }
+
+    final Breadcrumb breadcrumb = new Breadcrumb(timestamp);
+    breadcrumb.message = message;
+    breadcrumb.type = type;
+    breadcrumb.data = data;
+    breadcrumb.category = category;
+    breadcrumb.level = level;
+
+    breadcrumb.setUnknown(unknown);
+    return breadcrumb;
   }
 
   /**

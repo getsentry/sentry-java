@@ -6,6 +6,8 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -64,9 +66,10 @@ public final class User implements JsonUnknown, JsonSerializable {
    * @return the user
    */
   @SuppressWarnings("unchecked")
-  public static User fromMap(@NotNull Map<String, Object> map) {
+  public static User fromMap(@NotNull Map<String, Object> map, @NotNull SentryOptions options) {
+    final User user = new User();
     Map<String, Object> unknown = null;
-    User user = new User();
+
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       Object value = entry.getValue();
       switch (entry.getKey()) {
@@ -86,25 +89,33 @@ public final class User implements JsonUnknown, JsonSerializable {
           user.ipAddress = (value instanceof String) ? (String) value : null;
           break;
         case JsonKeys.DATA:
-          Map<Object, Object> data = (value instanceof Map) ? (Map<Object, Object>) value : null;
+          final Map<Object, Object> data =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
           if (data != null) {
-            ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
+            final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
             for (Map.Entry<Object, Object> dataEntry : data.entrySet()) {
-              if ((dataEntry.getKey() instanceof String) && (dataEntry.getValue() instanceof String)) {
+              if ((dataEntry.getKey() instanceof String)
+                  && (dataEntry.getValue() instanceof String)) {
                 userData.put((String) dataEntry.getKey(), (String) dataEntry.getValue());
+              } else {
+                options.getLogger().log(SentryLevel.WARNING, "Invalid type in data map.");
               }
             }
             user.data = userData;
           }
           break;
         case JsonKeys.OTHER:
-          Map<Object, Object> other = (value instanceof Map) ? (Map<Object, Object>) value : null;
+          final Map<Object, Object> other =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
           // restore `other` from legacy JSON
           if (other != null && (user.data == null || user.data.isEmpty())) {
-            ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
+            final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
             for (Map.Entry<Object, Object> otherEntry : other.entrySet()) {
-              if ((otherEntry.getKey() instanceof String) && (otherEntry.getValue() instanceof String)) {
+              if ((otherEntry.getKey() instanceof String)
+                  && (otherEntry.getValue() instanceof String)) {
                 userData.put((String) otherEntry.getKey(), (String) otherEntry.getValue());
+              } else {
+                options.getLogger().log(SentryLevel.WARNING, "Invalid type in other map.");
               }
             }
             user.data = userData;

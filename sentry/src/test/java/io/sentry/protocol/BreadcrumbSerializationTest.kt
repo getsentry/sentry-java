@@ -14,6 +14,7 @@ import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class BreadcrumbSerializationTest {
 
@@ -69,6 +70,17 @@ class BreadcrumbSerializationTest {
         assertEquals(expected.data, actual?.data)
         assertEquals(expected.category, actual?.category)
         assertEquals(expected.level, actual?.level)
+    }
+
+    @Test
+    fun deserializeFromMapInvalidData() {
+        val map: Map<String, Any?> = mapOf(
+            "data" to mapOf(
+                123 to 456 // Invalid key type
+            )
+        )
+        val actual = Breadcrumb.fromMap(map, SentryOptions())
+        assertTrue(actual.data.isEmpty())
     }
 
     // Helper
