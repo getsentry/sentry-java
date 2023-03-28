@@ -99,6 +99,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // don't ref. to method reference, theres a bug on it
     //noinspection Convert2MethodRef
     contextData = executorService.submit(() -> loadContextData());
+    // reading CPU info performs disk I/O, but it's result is cached, let's pre-cache it
+    executorService.submit(() -> CpuInfoUtils.getInstance().readMaxFrequencies());
 
     executorService.shutdown();
   }
