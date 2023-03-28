@@ -424,7 +424,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     return processorCount;
   }
 
-  public void setProcessorCount(@Nullable Integer processorCount) {
+  public void setProcessorCount(@Nullable final Integer processorCount) {
     this.processorCount = processorCount;
   }
 
@@ -432,7 +432,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     return processorFrequency;
   }
 
-  public void setProcessorFrequency(@Nullable Double processorFrequency) {
+  public void setProcessorFrequency(@Nullable final Double processorFrequency) {
     this.processorFrequency = processorFrequency;
   }
 
@@ -440,7 +440,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     return cpuDescription;
   }
 
-  public void setCpuDescription(@Nullable String cpuDescription) {
+  public void setCpuDescription(@Nullable final String cpuDescription) {
     this.cpuDescription = cpuDescription;
   }
 
