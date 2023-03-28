@@ -32,9 +32,9 @@ import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -73,7 +73,9 @@ class ActivityLifecycleIntegrationTest {
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
-        lateinit var transaction: SentryTracer
+
+        // we init the transaction with a mock to avoid errors when finishing it after tests that don't start it
+        var transaction: SentryTracer = mock()
         val buildInfo = mock<BuildInfoProvider>()
 
         fun getSut(
@@ -85,15 +87,13 @@ class ActivityLifecycleIntegrationTest {
 
             whenever(hub.options).thenReturn(options)
 
-            // TODO: we should let the ActivityLifecycleIntegration create the proper transaction here
-            val transactionOptions = TransactionOptions().apply {
-                isWaitForChildren = true
-                if (options.isEnableActivityLifecycleTracingAutoFinish) {
-                    idleTimeout = options.idleTimeout
-                }
+            // We let the ActivityLifecycleIntegration create the proper transaction here
+            val argumentCaptor = argumentCaptor<TransactionOptions>()
+            whenever(hub.startTransaction(any(), argumentCaptor.capture())).thenAnswer {
+                val t = SentryTracer(context, hub, argumentCaptor.lastValue, transactionFinishedCallback)
+                transaction = t
+                return@thenAnswer t
             }
-            transaction = SentryTracer(context, hub, transactionOptions, transactionFinishedCallback)
-            whenever(hub.startTransaction(any(), any<TransactionOptions>())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
 
             whenever(application.getSystemService(any())).thenReturn(am)
@@ -842,7 +842,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertNull(it.startTimestamp) })
+        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) })
     }
 
     @Test
@@ -1024,8 +1024,6 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        // Using ArgumentCaptor because multiple verify() throws an assertionError, even if the test passes
-        val parameters: ArgumentCaptor<TransactionOptions> = ArgumentCaptor.forClass(TransactionOptions::class.java)
         val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime()
 
@@ -1033,17 +1031,12 @@ class ActivityLifecycleIntegrationTest {
         // First invocation: we expect to start a transaction with the appStartTime
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
+        assertEquals(date.nanoTimestamp(), fixture.transaction.startDate.nanoTimestamp())
 
         val newActivity = mock<Activity>()
-        // Second invocation: we expect the transaction start timestamp not to be set
+        // Second invocation: we expect to start a transaction with a different start timestamp
         sut.onActivityCreated(newActivity, fixture.bundle)
-
-        verify(fixture.hub, times(2)).startTransaction(any(), parameters.capture())
-        val capturedValues = parameters.allValues
-        // The first invocation contains the appStartTime
-        assertEquals(date.nanoTimestamp(), capturedValues[0].startTimestamp!!.nanoTimestamp())
-        // The second invocation contains no start timestamp
-        assertNull(capturedValues[1].startTimestamp)
+        assertNotEquals(date.nanoTimestamp(), fixture.transaction.startDate.nanoTimestamp())
     }
 
     @Test
@@ -1292,6 +1285,24 @@ class ActivityLifecycleIntegrationTest {
             anyOrNull(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `transaction has same start timestamp of ttid and ttfd`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        // The ttid span should be running
+        val ttidSpan = sut.ttidSpanMap[activity]
+        assertNotNull(ttidSpan)
+
+        assertEquals(ttidSpan.startDate, fixture.transaction.startDate)
+        assertEquals(sut.ttfdSpan?.startDate, fixture.transaction.startDate)
     }
 
     private fun runFirstDraw(view: View) {
