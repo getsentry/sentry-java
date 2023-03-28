@@ -130,7 +130,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     } else {
       // some versions of the androidx lifecycle-process require this to be executed on the main
       // thread.
-      handler.post(this::removeObserver);
+      handler.post(() -> removeObserver());
     }
   }
 }
