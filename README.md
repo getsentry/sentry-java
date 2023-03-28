@@ -96,7 +96,9 @@ This directory is also included in `.gitignore` not to be shown as pending chang
 
 # Sentry Self Hosted Compatibility
 
-Since version 3.0.0 of this SDK, Sentry version >= v20.6.0 is required. This only applies to on-premise Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.
+Since version 3.0.0 of this SDK, Sentry version >= v20.6.0 is required. This only applies to self-hosted Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.
+
+Since version 6.0.0 of this SDK, Sentry version >= v21.9.0 is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.
 
 # Resources
 
