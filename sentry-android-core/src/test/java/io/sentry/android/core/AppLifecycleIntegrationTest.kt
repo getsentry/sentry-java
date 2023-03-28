@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.sentry.IHub
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -16,10 +17,11 @@ class AppLifecycleIntegrationTest {
 
     private class Fixture {
         val hub = mock<IHub>()
-        val handler = mock<MainLooperHandler>()
+        lateinit var handler: MainLooperHandler
         val options = SentryAndroidOptions()
 
-        fun getSut(): AppLifecycleIntegration {
+        fun getSut(mockHandler: Boolean = true): AppLifecycleIntegration {
+            handler = if (mockHandler) mock() else MainLooperHandler()
             return AppLifecycleIntegration(handler)
         }
     }
@@ -93,5 +95,24 @@ class AppLifecycleIntegrationTest {
         latch.await()
 
         verify(fixture.handler).post(any())
+    }
+
+    @Test
+    fun `When AppLifecycleIntegration is closed from a background thread, watcher is set to null`() {
+        val sut = fixture.getSut(mockHandler = false)
+        val latch = CountDownLatch(1)
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.watcher)
+
+        Thread {
+            sut.close()
+            latch.countDown()
+        }.start()
+
+        latch.await()
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        assertNull(sut.watcher)
     }
 }
