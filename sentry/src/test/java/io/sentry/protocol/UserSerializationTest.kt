@@ -5,7 +5,6 @@ import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
-import io.sentry.SentryOptions
 import org.junit.Test
 import org.mockito.kotlin.mock
 import java.io.StringReader
@@ -70,7 +69,7 @@ class UserSerializationTest {
                 "dc2813d0-0f66-4a3f-a995-71268f61a8fa" to "991659ad-7c59-4dd3-bb89-0bd5c74014bd"
             )
         )
-        val actual = User.fromMap(map, SentryOptions())
+        val actual = User.fromMap(map)
         val expected = fixture.getSut()
 
         assertEquals(expected.email, actual?.email)
@@ -78,6 +77,28 @@ class UserSerializationTest {
         assertEquals(expected.username, actual?.username)
         assertEquals(expected.ipAddress, actual?.ipAddress)
         assertEquals(expected.data, actual?.data)
+    }
+
+    @Test
+    fun deserializeFromMapInvalidData() {
+        val map: Map<String, Any?> = mapOf(
+            "data" to mapOf(
+                "string-key" to 123
+            )
+        )
+        val actual = User.fromMap(map)
+        assertEquals(null, actual?.data?.get("string-key"))
+    }
+
+    @Test
+    fun deserializeFromMapInvalidOther() {
+        val map: Map<String, Any?> = mapOf(
+            "other" to mapOf(
+                "string-key" to 123
+            )
+        )
+        val actual = User.fromMap(map)
+        assertEquals(null, actual?.data?.get("string-key"))
     }
 
     // Helper

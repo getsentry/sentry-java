@@ -6,12 +6,9 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
-import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -64,19 +61,65 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Creates user from a map.
    *
    * @param map - The user data as map
-   * @param options - the sentry options
    * @return the user
    */
-  public static @Nullable User fromMap(
-      @NotNull Map<String, Object> map, @NotNull SentryOptions options) {
-    try {
-      String json = options.getSerializer().serialize(map);
-      StringReader reader = new StringReader(json);
-      return options.getSerializer().deserialize(reader, User.class);
-    } catch (Exception exception) {
-      options.getLogger().log(SentryLevel.ERROR, "Creating user form map failed.", exception);
-      return null;
+  @SuppressWarnings("unchecked")
+  public static User fromMap(@NotNull Map<String, Object> map) {
+    Map<String, Object> unknown = null;
+    User user = new User();
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      Object value = entry.getValue();
+      switch (entry.getKey()) {
+        case JsonKeys.EMAIL:
+          user.email = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.ID:
+          user.id = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.USERNAME:
+          user.username = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.SEGMENT:
+          user.segment = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.IP_ADDRESS:
+          user.ipAddress = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.DATA:
+          Map<Object, Object> data = (value instanceof Map) ? (Map<Object, Object>) value : null;
+          if (data != null) {
+            ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
+            for (Map.Entry<Object, Object> dataEntry : data.entrySet()) {
+              if ((dataEntry.getKey() instanceof String) && (dataEntry.getValue() instanceof String)) {
+                userData.put((String) dataEntry.getKey(), (String) dataEntry.getValue());
+              }
+            }
+            user.data = userData;
+          }
+          break;
+        case JsonKeys.OTHER:
+          Map<Object, Object> other = (value instanceof Map) ? (Map<Object, Object>) value : null;
+          // restore `other` from legacy JSON
+          if (other != null && (user.data == null || user.data.isEmpty())) {
+            ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
+            for (Map.Entry<Object, Object> otherEntry : other.entrySet()) {
+              if ((otherEntry.getKey() instanceof String) && (otherEntry.getValue() instanceof String)) {
+                userData.put((String) otherEntry.getKey(), (String) otherEntry.getValue());
+              }
+            }
+            user.data = userData;
+          }
+          break;
+        default:
+          if (unknown == null) {
+            unknown = new ConcurrentHashMap<>();
+          }
+          unknown.put(entry.getKey(), entry.getValue());
+          break;
+      }
     }
+    user.unknown = unknown;
+    return user;
   }
 
   /**
