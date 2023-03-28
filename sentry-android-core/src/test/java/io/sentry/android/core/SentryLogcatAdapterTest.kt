@@ -3,13 +3,13 @@ package io.sentry.android.core
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import org.junit.runner.RunWith
 import java.lang.RuntimeException
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
@@ -176,8 +176,11 @@ class SentryLogcatAdapterTest {
 
     @Test
     fun `logs add correct number of breadcrumb`() {
-        assertEquals(6, breadcrumbs.filter {
-            it.message?.contains("SentryLogcatAdapter") ?: false
-        }.size)
+        assertEquals(
+            6,
+            breadcrumbs.filter {
+                it.message?.contains("SentryLogcatAdapter") ?: false
+            }.size
+        )
     }
 }
