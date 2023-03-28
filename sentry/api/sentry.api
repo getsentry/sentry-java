@@ -637,6 +637,7 @@ public final class io/sentry/JsonObjectDeserializer {
 
 public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/JsonReader {
 	public fun <init> (Ljava/io/Reader;)V
+	public static fun dateOrNull (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextBooleanOrNull ()Ljava/lang/Boolean;
 	public fun nextDateOrNull (Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextDoubleOrNull ()Ljava/lang/Double;
