@@ -90,7 +90,8 @@ public final class User implements JsonUnknown, JsonSerializable {
           if (data != null) {
             ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
             for (Map.Entry<Object, Object> dataEntry : data.entrySet()) {
-              if ((dataEntry.getKey() instanceof String) && (dataEntry.getValue() instanceof String)) {
+              if ((dataEntry.getKey() instanceof String)
+                  && (dataEntry.getValue() instanceof String)) {
                 userData.put((String) dataEntry.getKey(), (String) dataEntry.getValue());
               }
             }
@@ -103,7 +104,8 @@ public final class User implements JsonUnknown, JsonSerializable {
           if (other != null && (user.data == null || user.data.isEmpty())) {
             ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
             for (Map.Entry<Object, Object> otherEntry : other.entrySet()) {
-              if ((otherEntry.getKey() instanceof String) && (otherEntry.getValue() instanceof String)) {
+              if ((otherEntry.getKey() instanceof String)
+                  && (otherEntry.getValue() instanceof String)) {
                 userData.put((String) otherEntry.getKey(), (String) otherEntry.getValue());
               }
             }
