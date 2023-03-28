@@ -22,12 +22,10 @@ class SentryLogcatAdapterTest {
     class Fixture {
 
         fun initSut(
-            autoInit: Boolean = false,
             options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null
         ) {
             val metadata = Bundle().apply {
                 putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-                putBoolean(ManifestMetadataReader.AUTO_INIT, autoInit)
             }
             val mockContext = ContextUtilsTest.mockMetaData(metaData = metadata)
             when {
