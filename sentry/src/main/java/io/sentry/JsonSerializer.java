@@ -9,6 +9,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.Geo;
 import io.sentry.protocol.Gpu;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.Mechanism;
@@ -108,6 +109,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanId.class, new SpanId.Deserializer());
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
+    deserializersByClass.put(Geo.class, new Geo.Deserializer());
     deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
     deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
     deserializersByClass.put(ViewHierarchyNode.class, new ViewHierarchyNode.Deserializer());

@@ -2866,6 +2866,33 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/protocol/Geo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/Geo;)V
+	public fun getCity ()Ljava/lang/String;
+	public fun getCountryCode ()Ljava/lang/String;
+	public fun getRegion ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setCity (Ljava/lang/String;)V
+	public fun setCountryCode (Ljava/lang/String;)V
+	public fun setRegion (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/Geo$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Geo;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Geo$JsonKeys {
+	public static final field CITY Ljava/lang/String;
+	public static final field COUNTRY_CODE Ljava/lang/String;
+	public static final field REGION Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/protocol/Gpu : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -3536,8 +3563,10 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun <init> (Lio/sentry/protocol/User;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getEmail ()Ljava/lang/String;
+	public fun getGeo ()Lio/sentry/protocol/Geo;
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
 	public fun getSegment ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -3545,8 +3574,10 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setEmail (Ljava/lang/String;)V
+	public fun setGeo (Lio/sentry/protocol/Geo;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setIpAddress (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
 	public fun setSegment (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3562,8 +3593,10 @@ public final class io/sentry/protocol/User$Deserializer : io/sentry/JsonDeserial
 public final class io/sentry/protocol/User$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field EMAIL Ljava/lang/String;
+	public static final field GEO Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
 	public static final field OTHER Ljava/lang/String;
 	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;
