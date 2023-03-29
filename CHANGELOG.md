@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- Trim time-to-full-display span if reportFullyDisplayed API is never called ([#2631](https://github.com/getsentry/sentry-java/pull/2631))
 - Fix Automatic UI transactions having wrong durations ([#2623](https://github.com/getsentry/sentry-java/pull/2623))
 - Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
 - Pass through unknown sentry baggage keys into SentryEnvelopeHeader ([#2618](https://github.com/getsentry/sentry-java/pull/2618))
