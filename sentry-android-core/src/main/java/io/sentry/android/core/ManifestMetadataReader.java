@@ -48,6 +48,7 @@ final class ManifestMetadataReader {
       "io.sentry.breadcrumbs.activity-lifecycle";
   static final String BREADCRUMBS_APP_LIFECYCLE_ENABLE = "io.sentry.breadcrumbs.app-lifecycle";
   static final String BREADCRUMBS_SYSTEM_EVENTS_ENABLE = "io.sentry.breadcrumbs.system-events";
+  static final String BREADCRUMBS_NETWORK_EVENTS_ENABLE = "io.sentry.breadcrumbs.network-events";
   static final String BREADCRUMBS_APP_COMPONENTS_ENABLE = "io.sentry.breadcrumbs.app-components";
   static final String BREADCRUMBS_USER_INTERACTION_ENABLE =
       "io.sentry.breadcrumbs.user-interaction";
@@ -191,7 +192,7 @@ final class ManifestMetadataReader {
                 metadata,
                 logger,
                 BREADCRUMBS_APP_LIFECYCLE_ENABLE,
-                options.isEnableAppComponentBreadcrumbs()));
+                options.isEnableAppLifecycleBreadcrumbs()));
 
         options.setEnableSystemEventBreadcrumbs(
             readBool(
@@ -213,6 +214,13 @@ final class ManifestMetadataReader {
                 logger,
                 BREADCRUMBS_USER_INTERACTION_ENABLE,
                 options.isEnableUserInteractionBreadcrumbs()));
+
+        options.setEnableNetworkEventBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_NETWORK_EVENTS_ENABLE,
+                options.isEnableNetworkEventBreadcrumbs()));
 
         options.setEnableUncaughtExceptionHandler(
             readBool(
