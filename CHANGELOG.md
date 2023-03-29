@@ -15,6 +15,7 @@
 - Fix Automatic UI transactions having wrong durations ([#2623](https://github.com/getsentry/sentry-java/pull/2623))
 - Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
 - Pass through unknown sentry baggage keys into SentryEnvelopeHeader ([#2618](https://github.com/getsentry/sentry-java/pull/2618))
+- Fix missing null check when removing lifecycle observer ([#2625](https://github.com/getsentry/sentry-java/pull/2625))
 
 ## 6.16.0
 
