@@ -228,6 +228,24 @@ public final class io/sentry/android/core/SentryInitProvider {
 	public fun shutdown ()V
 }
 
+public final class io/sentry/android/core/SentryLogcatAdapter {
+	public fun <init> ()V
+	public static fun d (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun d (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun e (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun e (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun i (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun i (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun v (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun v (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun w (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun w (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun w (Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun wtf (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun wtf (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun wtf (Ljava/lang/String;Ljava/lang/Throwable;)I
+}
+
 public final class io/sentry/android/core/SentryPerformanceProvider : android/app/Application$ActivityLifecycleCallbacks {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
