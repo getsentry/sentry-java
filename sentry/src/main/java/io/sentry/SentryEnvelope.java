@@ -3,9 +3,11 @@ package io.sentry;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -91,5 +93,9 @@ public final class SentryEnvelope {
         new SentryId(profilingTraceData.getProfileId()),
         sdkVersion,
         SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, maxTraceFileSize, serializer));
+  }
+
+  public static @NotNull SentryEnvelope empty() {
+    return new SentryEnvelope(new SentryEnvelopeHeader(SentryId.EMPTY_ID), Collections.emptyList());
   }
 }

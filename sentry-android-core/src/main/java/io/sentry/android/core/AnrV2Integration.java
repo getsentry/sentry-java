@@ -5,11 +5,13 @@ import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Looper;
+import android.util.Log;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
+import io.sentry.SentryEnvelope;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -29,6 +31,7 @@ import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -261,7 +264,13 @@ public class AnrV2Integration implements Integration, Closeable {
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       if (envelopeCache instanceof EnvelopeCache) {
         final Hint hint = HintUtils.createWithTypeCheckHint(new PreviousSessionEndHint());
-        ((EnvelopeCache) envelopeCache).endPreviousSession(hint);
+        final SentryEnvelope sessionEnvelope =
+          ((EnvelopeCache) envelopeCache).endPreviousSession(SentryEnvelope.empty(), hint);
+
+        // if there was no ANRs, we just capture the previous session asap, so it's not delayed for long
+        if (sessionEnvelope.getHeader().getEventId() != SentryId.EMPTY_ID) {
+          hub.captureEnvelope(sessionEnvelope);
+        }
       }
     }
   }

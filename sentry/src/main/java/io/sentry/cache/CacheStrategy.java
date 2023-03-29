@@ -276,7 +276,7 @@ abstract class CacheStrategy {
     }
   }
 
-  private @NotNull SentryEnvelope buildNewEnvelope(
+  protected @NotNull SentryEnvelope buildNewEnvelope(
       final @NotNull SentryEnvelope envelope, final @NotNull SentryEnvelopeItem sessionItem) {
     final List<SentryEnvelopeItem> newEnvelopeItems = new ArrayList<>();
 

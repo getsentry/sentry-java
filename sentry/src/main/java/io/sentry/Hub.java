@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.hints.AllSessionsEndHint;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
@@ -318,12 +317,16 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
     } else {
       final StackItem item = this.stack.peek();
-      final Session previousSession = item.getScope().endSession();
-      if (previousSession != null) {
-        final Hint hint = HintUtils.createWithTypeCheckHint(new AllSessionsEndHint());
+      endSessionInternal(item);
+    }
+  }
 
-        item.getClient().captureSession(previousSession, hint);
-      }
+  private void endSessionInternal(final @NotNull StackItem item) {
+    final Session previousSession = item.getScope().endSession();
+    if (previousSession != null) {
+      final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
+
+      item.getClient().captureSession(previousSession, hint);
     }
   }
 
@@ -344,7 +347,9 @@ public final class Hub implements IHub {
 
         // Close the top-most client
         final StackItem item = stack.peek();
-        // TODO: should we end session before closing client?
+
+        // end session before closing the client, close() of the client will wait for it to be flushed
+        endSessionInternal(item);
         item.getClient().close();
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
