@@ -2752,6 +2752,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getBootTime ()Ljava/util/Date;
 	public fun getBrand ()Ljava/lang/String;
 	public fun getConnectionType ()Ljava/lang/String;
+	public fun getCpuDescription ()Ljava/lang/String;
 	public fun getExternalFreeStorage ()Ljava/lang/Long;
 	public fun getExternalStorageSize ()Ljava/lang/Long;
 	public fun getFamily ()Ljava/lang/String;
@@ -2766,6 +2767,8 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getModelId ()Ljava/lang/String;
 	public fun getName ()Ljava/lang/String;
 	public fun getOrientation ()Lio/sentry/protocol/Device$DeviceOrientation;
+	public fun getProcessorCount ()Ljava/lang/Integer;
+	public fun getProcessorFrequency ()Ljava/lang/Double;
 	public fun getScreenDensity ()Ljava/lang/Float;
 	public fun getScreenDpi ()Ljava/lang/Integer;
 	public fun getScreenHeightPixels ()Ljava/lang/Integer;
@@ -2786,6 +2789,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setBrand (Ljava/lang/String;)V
 	public fun setCharging (Ljava/lang/Boolean;)V
 	public fun setConnectionType (Ljava/lang/String;)V
+	public fun setCpuDescription (Ljava/lang/String;)V
 	public fun setExternalFreeStorage (Ljava/lang/Long;)V
 	public fun setExternalStorageSize (Ljava/lang/Long;)V
 	public fun setFamily (Ljava/lang/String;)V
@@ -2802,6 +2806,8 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setName (Ljava/lang/String;)V
 	public fun setOnline (Ljava/lang/Boolean;)V
 	public fun setOrientation (Lio/sentry/protocol/Device$DeviceOrientation;)V
+	public fun setProcessorCount (Ljava/lang/Integer;)V
+	public fun setProcessorFrequency (Ljava/lang/Double;)V
 	public fun setScreenDensity (Ljava/lang/Float;)V
 	public fun setScreenDpi (Ljava/lang/Integer;)V
 	public fun setScreenHeightPixels (Ljava/lang/Integer;)V
@@ -2841,6 +2847,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field BRAND Ljava/lang/String;
 	public static final field CHARGING Ljava/lang/String;
 	public static final field CONNECTION_TYPE Ljava/lang/String;
+	public static final field CPU_DESCRIPTION Ljava/lang/String;
 	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;
 	public static final field EXTERNAL_STORAGE_SIZE Ljava/lang/String;
 	public static final field FAMILY Ljava/lang/String;
@@ -2857,6 +2864,8 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field NAME Ljava/lang/String;
 	public static final field ONLINE Ljava/lang/String;
 	public static final field ORIENTATION Ljava/lang/String;
+	public static final field PROCESSOR_COUNT Ljava/lang/String;
+	public static final field PROCESSOR_FREQUENCY Ljava/lang/String;
 	public static final field SCREEN_DENSITY Ljava/lang/String;
 	public static final field SCREEN_DPI Ljava/lang/String;
 	public static final field SCREEN_HEIGHT_PIXELS Ljava/lang/String;

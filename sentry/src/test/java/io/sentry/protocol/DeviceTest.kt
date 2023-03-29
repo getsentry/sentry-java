@@ -62,6 +62,9 @@ class DeviceTest {
         device.connectionType = "connection type"
         device.batteryTemperature = 30f
         device.locale = "en-US"
+        device.cpuDescription = "cpu0"
+        device.processorCount = 4
+        device.processorFrequency = 800.0
         val unknown = mapOf(Pair("unknown", "unknown"))
         device.setUnknown(unknown)
 
@@ -99,7 +102,10 @@ class DeviceTest {
         assertEquals("language", clone.language)
         assertEquals("connection type", clone.connectionType)
         assertEquals(30f, clone.batteryTemperature)
-        assertEquals("en-US", clone.locale)
+        assertEquals("cpu0", clone.cpuDescription)
+        assertEquals(4, clone.processorCount)
+        assertEquals(800.0, clone.processorFrequency)
+        device.processorFrequency = 800.0
         assertNotNull(clone.unknown) {
             assertEquals("unknown", it["unknown"])
         }

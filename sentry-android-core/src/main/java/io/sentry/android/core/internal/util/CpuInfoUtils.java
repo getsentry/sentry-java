@@ -34,7 +34,7 @@ public final class CpuInfoUtils {
    *
    * @return A list with the frequency of each core of the cpu in Mhz
    */
-  public @NotNull List<Integer> readMaxFrequencies() {
+  public synchronized @NotNull List<Integer> readMaxFrequencies() {
     if (!cpuMaxFrequenciesMhz.isEmpty()) {
       return cpuMaxFrequenciesMhz;
     }
@@ -68,6 +68,12 @@ public final class CpuInfoUtils {
   @NotNull
   String getSystemCpuPath() {
     return SYSTEM_CPU_PATH;
+  }
+
+  @TestOnly
+  public void setCpuMaxFrequencies(List<Integer> frequencies) {
+    cpuMaxFrequenciesMhz.clear();
+    cpuMaxFrequenciesMhz.addAll(frequencies);
   }
 
   @TestOnly
