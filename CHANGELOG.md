@@ -17,6 +17,12 @@
 - Pass through unknown sentry baggage keys into SentryEnvelopeHeader ([#2618](https://github.com/getsentry/sentry-java/pull/2618))
 - Fix missing null check when removing lifecycle observer ([#2625](https://github.com/getsentry/sentry-java/pull/2625))
 
+### Dependencies
+
+- Bump Native SDK from v0.5.4 to v0.6.1 ([#2629](https://github.com/getsentry/sentry-java/pull/2629))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#061)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.4...0.6.1)
+
 ## 6.16.0
 
 ### Features
