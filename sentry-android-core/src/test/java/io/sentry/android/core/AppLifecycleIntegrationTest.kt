@@ -1,12 +1,13 @@
 package io.sentry.android.core
 
+import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import io.sentry.IHub
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -112,7 +113,10 @@ class AppLifecycleIntegrationTest {
         }.start()
 
         latch.await()
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+        // ensure all messages on main looper got processed
+        shadowOf(Looper.getMainLooper()).idle()
+
         assertNull(sut.watcher)
     }
 }
