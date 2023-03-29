@@ -9,6 +9,7 @@ import android.os.Build
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
+import io.sentry.TypeCheckHint
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbConnectionDetail
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -120,7 +121,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
-                assertEquals("networkAvailable", it.data["action"])
+                assertEquals("NETWORK_AVAILABLE", it.data["action"])
             }
         )
     }
@@ -155,7 +156,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
-                assertEquals("networkLost", it.data["action"])
+                assertEquals("NETWORK_LOST", it.data["action"])
             }
         )
     }
@@ -198,7 +199,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
-                assertEquals("networkCapabilitiesChanged", it.data["action"])
+                assertEquals("NETWORK_CAPABILITIES_CHANGED", it.data["action"])
                 assertEquals(1000, it.data["download_bandwidth"])
                 assertEquals(500, it.data["upload_bandwidth"])
                 assertTrue(it.data["vpn_active"] as Boolean)
@@ -239,14 +240,14 @@ class NetworkBreadcrumbsIntegrationTest {
             verify(fixture.hub).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(false, connectionDetail.isVpn)
                 }
             )
             verify(fixture.hub).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(true, connectionDetail.isVpn)
                 }
             )
@@ -273,14 +274,14 @@ class NetworkBreadcrumbsIntegrationTest {
             verify(fixture.hub).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals("wifi", connectionDetail.type)
                 }
             )
             verify(fixture.hub).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals("cellular", connectionDetail.type)
                 }
             )
@@ -309,14 +310,14 @@ class NetworkBreadcrumbsIntegrationTest {
             verify(fixture.hub, times(1)).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(50, connectionDetail.signalStrength)
                 }
             )
             verify(fixture.hub, times(1)).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(56, connectionDetail.signalStrength)
                 }
             )
@@ -345,14 +346,14 @@ class NetworkBreadcrumbsIntegrationTest {
             verify(fixture.hub, times(1)).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(1000, connectionDetail.downBandwidth)
                 }
             )
             verify(fixture.hub, times(1)).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(2001, connectionDetail.downBandwidth)
                 }
             )
@@ -381,14 +382,14 @@ class NetworkBreadcrumbsIntegrationTest {
             verify(fixture.hub, times(1)).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(1000, connectionDetail.upBandwidth)
                 }
             )
             verify(fixture.hub, times(1)).addBreadcrumb(
                 any<Breadcrumb>(),
                 check {
-                    val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                    val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                     assertEquals(2001, connectionDetail.upBandwidth)
                 }
             )
@@ -409,7 +410,7 @@ class NetworkBreadcrumbsIntegrationTest {
         verify(fixture.hub).addBreadcrumb(
             any<Breadcrumb>(),
             check {
-                val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                 assertEquals(0, connectionDetail.signalStrength)
             }
         )
@@ -430,7 +431,7 @@ class NetworkBreadcrumbsIntegrationTest {
         verify(fixture.hub).addBreadcrumb(
             any<Breadcrumb>(),
             check {
-                val connectionDetail = it["data"] as NetworkBreadcrumbConnectionDetail
+                val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                 assertEquals(0, connectionDetail.signalStrength)
             }
         )

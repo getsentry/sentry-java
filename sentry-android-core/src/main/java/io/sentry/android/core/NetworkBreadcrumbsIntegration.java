@@ -15,6 +15,7 @@ import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.TypeCheckHint;
 import io.sentry.android.core.internal.util.ConnectivityChecker;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public class NetworkBreadcrumbsIntegration implements Integration, Closeable {
+public final class NetworkBreadcrumbsIntegration implements Integration, Closeable {
 
   private final @NotNull Context context;
 
@@ -114,7 +115,7 @@ public class NetworkBreadcrumbsIntegration implements Integration, Closeable {
       if (network.equals(currentNetwork)) {
         return;
       }
-      final Breadcrumb breadcrumb = createBreadcrumb("networkAvailable");
+      final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_AVAILABLE");
       hub.addBreadcrumb(breadcrumb);
       currentNetwork = network;
       lastCapabilities = null;
@@ -132,7 +133,7 @@ public class NetworkBreadcrumbsIntegration implements Integration, Closeable {
         return;
       }
       lastCapabilities = networkCapabilities;
-      final Breadcrumb breadcrumb = createBreadcrumb("networkCapabilitiesChanged");
+      final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_CAPABILITIES_CHANGED");
       breadcrumb.setData("download_bandwidth", connectionDetail.downBandwidth);
       breadcrumb.setData("upload_bandwidth", connectionDetail.upBandwidth);
       breadcrumb.setData("vpn_active", connectionDetail.isVpn);
@@ -141,7 +142,7 @@ public class NetworkBreadcrumbsIntegration implements Integration, Closeable {
         breadcrumb.setData("signal_strength", connectionDetail.signalStrength);
       }
       Hint hint = new Hint();
-      hint.set("data", connectionDetail);
+      hint.set(TypeCheckHint.ANDROID_NETWORK_CAPABILITIES, connectionDetail);
       hub.addBreadcrumb(breadcrumb, hint);
     }
 
@@ -150,7 +151,7 @@ public class NetworkBreadcrumbsIntegration implements Integration, Closeable {
       if (!network.equals(currentNetwork)) {
         return;
       }
-      final Breadcrumb breadcrumb = createBreadcrumb("networkLost");
+      final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_LOST");
       hub.addBreadcrumb(breadcrumb);
       currentNetwork = null;
       lastCapabilities = null;

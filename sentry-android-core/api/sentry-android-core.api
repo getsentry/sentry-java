@@ -151,7 +151,7 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
+public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
 	public fun close ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
