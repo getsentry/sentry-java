@@ -547,7 +547,8 @@ public final class ActivityLifecycleIntegration
     ttfdSpan.setDescription(getExceededTtfdDesc(ttfdSpan));
     // We set the end timestamp of the ttfd span to be equal to the ttid span. This way,
     final @Nullable SentryDate ttidEndDate = ttidSpan != null ? ttidSpan.getFinishDate() : null;
-    final @NotNull SentryDate ttfdEndDate = ttidEndDate != null ? ttidEndDate : ttfdSpan.getStartDate();
+    final @NotNull SentryDate ttfdEndDate =
+        ttidEndDate != null ? ttidEndDate : ttfdSpan.getStartDate();
     finishSpan(ttfdSpan, ttfdEndDate, SpanStatus.DEADLINE_EXCEEDED);
   }
 
