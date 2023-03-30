@@ -1349,7 +1349,7 @@ class ActivityLifecycleIntegrationTest {
         // the ttfd span should be trimmed to be equal to the ttid span, and the description should end with "-exceeded"
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
         assertEquals(ttidSpan.finishDate, ttfdSpan.finishDate)
-        assertEquals(ttfdSpan.description, "Activity full display-exceeded")
+        assertEquals(ttfdSpan.description, "Activity full display - Deadline Exceeded")
     }
 
     private fun runFirstDraw(view: View) {
