@@ -546,8 +546,8 @@ public final class ActivityLifecycleIntegration
     }
     ttfdSpan.setDescription(getExceededTtfdDesc(ttfdSpan));
     // We set the end timestamp of the ttfd span to be equal to the ttid span. This way,
-    SentryDate ttidEndDate = ttidSpan != null ? ttidSpan.getFinishDate() : null;
-    SentryDate ttfdEndDate = ttidEndDate != null ? ttidEndDate : ttfdSpan.getStartDate();
+    final @Nullable SentryDate ttidEndDate = ttidSpan != null ? ttidSpan.getFinishDate() : null;
+    final @NotNull SentryDate ttfdEndDate = ttidEndDate != null ? ttidEndDate : ttfdSpan.getStartDate();
     finishSpan(ttfdSpan, ttfdEndDate, SpanStatus.DEADLINE_EXCEEDED);
   }
 
@@ -598,7 +598,10 @@ public final class ActivityLifecycleIntegration
   }
 
   private @NotNull String getExceededTtfdDesc(final @NotNull ISpan ttfdSpan) {
-    return ttfdSpan.getDescription() + "-exceeded";
+    final @Nullable String ttfdCurrentDescription = ttfdSpan.getDescription();
+    if (ttfdCurrentDescription != null && ttfdCurrentDescription.endsWith(" - Deadline Exceeded"))
+      return ttfdCurrentDescription;
+    return ttfdSpan.getDescription() + " - Deadline Exceeded";
   }
 
   private @NotNull String getAppStartDesc(final boolean coldStart) {
