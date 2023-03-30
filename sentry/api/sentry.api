@@ -2151,6 +2151,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field ANDROID_INTENT Ljava/lang/String;
 	public static final field ANDROID_MOTION_EVENT Ljava/lang/String;
 	public static final field ANDROID_NAV_DESTINATION Ljava/lang/String;
+	public static final field ANDROID_NETWORK_CAPABILITIES Ljava/lang/String;
 	public static final field ANDROID_SENSOR_EVENT Ljava/lang/String;
 	public static final field ANDROID_VIEW Ljava/lang/String;
 	public static final field APOLLO_REQUEST Ljava/lang/String;

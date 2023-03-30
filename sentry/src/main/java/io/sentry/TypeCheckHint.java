@@ -36,6 +36,9 @@ public final class TypeCheckHint {
   /** Used for Navigation breadrcrumbs. */
   public static final String ANDROID_NAV_DESTINATION = "android:navigationDestination";
 
+  /** Used for Network breadrcrumbs. */
+  public static final String ANDROID_NETWORK_CAPABILITIES = "android:networkCapabilities";
+
   /** Used for OkHttp response breadcrumbs. */
   public static final String OKHTTP_RESPONSE = "okHttp:response";
   /** Used for OkHttp Request breadcrumbs. */
