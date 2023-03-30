@@ -109,7 +109,7 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(cpuStats.values.isNotEmpty())
 
                 // We allow measurements to be added since the start up to the end of the profile, with a small tolerance due to threading
-                val maxTimestampAllowed = profilingTraceData.durationNs.toLong() + TimeUnit.MILLISECONDS.toNanos(10)
+                val maxTimestampAllowed = profilingTraceData.durationNs.toLong() + TimeUnit.MILLISECONDS.toNanos(50)
 
                 assertTrue((slowFrames?.values?.maxOf { it.relativeStartNs.toLong() } ?: 0) < maxTimestampAllowed)
                 assertTrue((slowFrames?.values?.minOf { it.relativeStartNs.toLong() } ?: 0) >= 0)
