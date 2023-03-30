@@ -515,9 +515,9 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void reportFullDisplayed() {
+  public void reportFullyDisplayed() {
     if (options.isEnableTimeToFullDisplayTracing()) {
-      options.getFullDisplayedReporter().reportFullyDrawn();
+      options.getFullyDisplayedReporter().reportFullyDrawn();
     }
   }
 
@@ -670,15 +670,7 @@ public final class Hub implements IHub {
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
-    return createTransaction(
-        transactionContext,
-        transactionOptions.getCustomSamplingContext(),
-        transactionOptions.isBindToScope(),
-        transactionOptions.getStartTimestamp(),
-        transactionOptions.isWaitForChildren(),
-        transactionOptions.getIdleTimeout(),
-        transactionOptions.isTrimEnd(),
-        transactionOptions.getTransactionFinishedCallback());
+    return createTransaction(transactionContext, transactionOptions);
   }
 
   @Override
@@ -686,19 +678,17 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
-    return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
+
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setCustomSamplingContext(customSamplingContext);
+    transactionOptions.setBindToScope(bindToScope);
+
+    return createTransaction(transactionContext, transactionOptions);
   }
 
   private @NotNull ITransaction createTransaction(
       final @NotNull TransactionContext transactionContext,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable SentryDate startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
+      final @NotNull TransactionOptions transactionOptions) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -726,20 +716,13 @@ public final class Hub implements IHub {
       transaction = NoOpTransaction.getInstance();
     } else {
       final SamplingContext samplingContext =
-          new SamplingContext(transactionContext, customSamplingContext);
+          new SamplingContext(transactionContext, transactionOptions.getCustomSamplingContext());
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
 
       transaction =
           new SentryTracer(
-              transactionContext,
-              this,
-              startTimestamp,
-              waitForChildren,
-              idleTimeout,
-              trimEnd,
-              transactionFinishedCallback,
-              transactionPerformanceCollector);
+              transactionContext, this, transactionOptions, null, transactionPerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
@@ -748,7 +731,7 @@ public final class Hub implements IHub {
         transactionProfiler.onTransactionStart(transaction);
       }
     }
-    if (bindToScope) {
+    if (transactionOptions.isBindToScope()) {
       configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;

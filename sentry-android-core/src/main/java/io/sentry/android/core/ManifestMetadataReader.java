@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
@@ -47,6 +48,7 @@ final class ManifestMetadataReader {
       "io.sentry.breadcrumbs.activity-lifecycle";
   static final String BREADCRUMBS_APP_LIFECYCLE_ENABLE = "io.sentry.breadcrumbs.app-lifecycle";
   static final String BREADCRUMBS_SYSTEM_EVENTS_ENABLE = "io.sentry.breadcrumbs.system-events";
+  static final String BREADCRUMBS_NETWORK_EVENTS_ENABLE = "io.sentry.breadcrumbs.network-events";
   static final String BREADCRUMBS_APP_COMPONENTS_ENABLE = "io.sentry.breadcrumbs.app-components";
   static final String BREADCRUMBS_USER_INTERACTION_ENABLE =
       "io.sentry.breadcrumbs.user-interaction";
@@ -85,6 +87,8 @@ final class ManifestMetadataReader {
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
+
+  static final String SENTRY_GRADLE_PLUGIN_INTEGRATIONS = "io.sentry.gradle-plugin-integrations";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -188,7 +192,7 @@ final class ManifestMetadataReader {
                 metadata,
                 logger,
                 BREADCRUMBS_APP_LIFECYCLE_ENABLE,
-                options.isEnableAppComponentBreadcrumbs()));
+                options.isEnableAppLifecycleBreadcrumbs()));
 
         options.setEnableSystemEventBreadcrumbs(
             readBool(
@@ -210,6 +214,13 @@ final class ManifestMetadataReader {
                 logger,
                 BREADCRUMBS_USER_INTERACTION_ENABLE,
                 options.isEnableUserInteractionBreadcrumbs()));
+
+        options.setEnableNetworkEventBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_NETWORK_EVENTS_ENABLE,
+                options.isEnableNetworkEventBreadcrumbs()));
 
         options.setEnableUncaughtExceptionHandler(
             readBool(
@@ -320,6 +331,16 @@ final class ManifestMetadataReader {
 
         options.setSendDefaultPii(
             readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
+
+        // sdkInfo.addIntegration();
+
+        List<String> integrationsFromGradlePlugin =
+            readList(metadata, logger, SENTRY_GRADLE_PLUGIN_INTEGRATIONS);
+        if (integrationsFromGradlePlugin != null) {
+          for (String integration : integrationsFromGradlePlugin) {
+            SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
+          }
+        }
       }
 
       options

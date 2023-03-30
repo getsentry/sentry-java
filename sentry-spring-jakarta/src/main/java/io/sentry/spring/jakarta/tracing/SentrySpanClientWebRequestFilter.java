@@ -43,8 +43,9 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
-    if (!span.isNoOp() && PropagationTargetsUtils.contain(
-        hub.getOptions().getTracePropagationTargets(), request.url())) {
+    if (!span.isNoOp()
+        && PropagationTargetsUtils.contain(
+            hub.getOptions().getTracePropagationTargets(), request.url())) {
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
       requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
 

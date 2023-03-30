@@ -258,7 +258,7 @@ class SentryApollo3InterceptorTest {
     private fun assertTransactionDetails(it: SentryTransaction) {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
-        assertEquals("LaunchDetails", httpClientSpan.op)
+        assertEquals("http.graphql", httpClientSpan.op)
         assertTrue { httpClientSpan.description?.startsWith("Post LaunchDetails") == true }
         assertNotNull(httpClientSpan.data) {
             assertNotNull(it["operationId"])

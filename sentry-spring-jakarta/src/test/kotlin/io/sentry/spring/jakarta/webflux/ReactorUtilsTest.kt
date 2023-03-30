@@ -3,19 +3,19 @@ package io.sentry.spring.jakarta.webflux
 import io.sentry.IHub
 import io.sentry.NoOpHub
 import io.sentry.Sentry
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Hooks
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Hooks
 
 class ReactorUtilsTest {
 
@@ -26,7 +26,7 @@ class ReactorUtilsTest {
 
     @AfterTest
     fun teardown() {
-        Sentry.setCurrentHub(NoOpHub.getInstance());
+        Sentry.setCurrentHub(NoOpHub.getInstance())
     }
 
     @Test
@@ -46,6 +46,7 @@ class ReactorUtilsTest {
         assertEquals("hello", mono.block())
         assertSame(hubToUse, hubInside)
     }
+
     @Test
     fun `propagates hub inside flux`() {
         val hubToUse = mock<IHub>()
@@ -69,11 +70,11 @@ class ReactorUtilsTest {
         val hubToUse = mock<IHub>()
         var hubInside: IHub? = null
         val mono = Mono.just("hello")
-                .publishOn(Schedulers.boundedElastic())
-                .map { it ->
-                    hubInside = Sentry.getCurrentHub()
-                    it
-                }
+            .publishOn(Schedulers.boundedElastic())
+            .map { it ->
+                hubInside = Sentry.getCurrentHub()
+                it
+            }
 
         assertEquals("hello", mono.block())
         assertNotSame(hubToUse, hubInside)
@@ -84,11 +85,11 @@ class ReactorUtilsTest {
         val hubToUse = mock<IHub>()
         var hubInside: IHub? = null
         val flux = Flux.just("hello")
-                .publishOn(Schedulers.boundedElastic())
-                .map { it ->
-                    hubInside = Sentry.getCurrentHub()
-                    it
-                }
+            .publishOn(Schedulers.boundedElastic())
+            .map { it ->
+                hubInside = Sentry.getCurrentHub()
+                it
+            }
 
         assertEquals("hello", flux.blockFirst())
         assertNotSame(hubToUse, hubInside)

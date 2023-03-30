@@ -4,7 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
+import android.view.Choreographer
+import android.view.Display
+import android.view.FrameMetrics
 import android.view.Window
+import android.view.WindowManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
@@ -12,11 +17,14 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
+import io.sentry.test.injectForField
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows
 import java.lang.ref.WeakReference
+import java.lang.reflect.Field
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -73,12 +81,7 @@ class SentryFrameMetricsCollectorTest {
             whenever(activity2.window).thenReturn(window2)
             addOnFrameMetricsAvailableListenerCounter = 0
             removeOnFrameMetricsAvailableListenerCounter = 0
-            return SentryFrameMetricsCollector(
-                context,
-                options,
-                buildInfoProvider,
-                windowFrameMetricsManager
-            )
+            return SentryFrameMetricsCollector(context, options, buildInfoProvider, windowFrameMetricsManager)
         }
     }
 
@@ -250,5 +253,129 @@ class SentryFrameMetricsCollectorTest {
         // Stopping last activity clears current tracked window reference
         collector.onActivityStopped(fixture.activity2)
         assertNull(collector.getProperty<WeakReference<Window>?>("currentWindow"))
+    }
+
+    @Test
+    fun `collector accesses choreographer instance on creation on main thread`() {
+        val collector = fixture.getSut(context)
+        val field: Field? = collector.getProperty("choreographerLastFrameTimeField")
+        var choreographer: Choreographer? = collector.getProperty("choreographer")
+        // Choreographer instance is accessed on main thread, but the field accessor happens in whatever thread created the collector
+        assertNotNull(field)
+        assertNull(choreographer)
+        // Execute all posted tasks
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        choreographer = collector.getProperty("choreographer")
+        assertNotNull(choreographer)
+    }
+
+    @Test
+    fun `collector reads frame start from choreographer field under version O`() {
+        val collector = fixture.getSut(context)
+        // Execute all posted tasks
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        val listener = collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+        val choreographer = collector.getProperty<Choreographer>("choreographer")
+        choreographer.injectForField("mLastFrameTimeNanos", 100)
+        val frameMetrics = createMockFrameMetrics()
+
+        var timesCalled = 0
+        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+            // The frame end is 100 (Choreographer.mLastFrameTimeNanos) plus frame duration
+            assertEquals(100 + durationNanos, frameEndNanos)
+            timesCalled++
+        }
+        listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
+        // Assert the callback was called
+        assertEquals(1, timesCalled)
+    }
+
+    @Test
+    fun `collector reads frame start from frameMetrics object on version O+`() {
+        val buildInfo = mock<BuildInfoProvider> {
+            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+        }
+        val collector = fixture.getSut(context, buildInfo)
+        val listener = collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+        // FrameMetrics with cpu time of 21 nanoseconds and INTENDED_VSYNC_TIMESTAMP of 50 nanoseconds
+        val frameMetrics = createMockFrameMetrics()
+        // We don't inject the choreographer field
+
+        var timesCalled = 0
+        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+            assertEquals(50 + durationNanos, frameEndNanos)
+            timesCalled++
+        }
+        listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
+        // Assert the callback was called
+        assertEquals(1, timesCalled)
+    }
+
+    @Test
+    fun `collector reads only cpu main thread frame duration`() {
+        val buildInfo = mock<BuildInfoProvider> {
+            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+        }
+        val collector = fixture.getSut(context, buildInfo)
+        val listener = collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+        // FrameMetrics with cpu time of 21 nanoseconds and TOTAL_DURATION of 60 nanoseconds
+        val frameMetrics = createMockFrameMetrics()
+
+        var timesCalled = 0
+        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+            assertEquals(21, durationNanos)
+            timesCalled++
+        }
+        listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
+        // Assert the callback was called
+        assertEquals(1, timesCalled)
+    }
+
+    @Test
+    fun `collector adjusts frames start with previous end`() {
+        val buildInfo = mock<BuildInfoProvider> {
+            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+        }
+        val collector = fixture.getSut(context, buildInfo)
+        val listener = collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+        val frameMetrics = createMockFrameMetrics()
+        whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(50)
+        var previousEnd = 0L
+        var timesCalled = 0
+        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+            // The second time the listener is called, the frame start is shifted to be equal to the previous frame end
+            if (timesCalled > 0) {
+                assertEquals(previousEnd + durationNanos, frameEndNanos)
+            }
+            previousEnd = frameEndNanos
+            timesCalled++
+        }
+        listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
+        listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
+        // Assert the callback was called two times
+        assertEquals(2, timesCalled)
+    }
+
+    private fun createMockWindow(): Window {
+        val mockWindow = mock<Window>()
+        val mockDisplay = mock<Display>()
+        val mockWindowManager = mock<WindowManager>()
+        whenever(mockWindow.windowManager).thenReturn(mockWindowManager)
+        whenever(mockWindowManager.defaultDisplay).thenReturn(mockDisplay)
+        whenever(mockDisplay.refreshRate).thenReturn(60F)
+        return mockWindow
+    }
+
+    private fun createMockFrameMetrics(): FrameMetrics {
+        val frameMetrics = mock<FrameMetrics>()
+        whenever(frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION)).thenReturn(1)
+        whenever(frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION)).thenReturn(2)
+        whenever(frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION)).thenReturn(3)
+        whenever(frameMetrics.getMetric(FrameMetrics.LAYOUT_MEASURE_DURATION)).thenReturn(4)
+        whenever(frameMetrics.getMetric(FrameMetrics.DRAW_DURATION)).thenReturn(5)
+        whenever(frameMetrics.getMetric(FrameMetrics.SYNC_DURATION)).thenReturn(6)
+        whenever(frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)).thenReturn(60)
+        whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(50)
+        return frameMetrics
     }
 }

@@ -445,7 +445,6 @@ class ExceptionHandlers {
     fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
 }
 
-
 @Configuration
 open class SecurityConfiguration {
 

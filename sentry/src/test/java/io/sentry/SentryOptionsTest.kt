@@ -321,6 +321,20 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when environment is not set, falls back to default value`() {
+        val options = SentryOptions()
+        assertEquals("production", options.environment)
+    }
+
+    @Test
+    fun `when environment is set, correct value is returned`() {
+        val options = SentryOptions().apply {
+            environment = "debug"
+        }
+        assertEquals("debug", options.environment)
+    }
+
+    @Test
     fun `copies options from another SentryOptions instance`() {
         val externalOptions = ExternalOptions()
         externalOptions.dsn = "http://key@localhost/proj"
@@ -455,6 +469,6 @@ class SentryOptionsTest {
 
     @Test
     fun `when options are initialized, FullyDrawnReporter is set`() {
-        assertEquals(FullDisplayedReporter.getInstance(), SentryOptions().fullDisplayedReporter)
+        assertEquals(FullyDisplayedReporter.getInstance(), SentryOptions().fullyDisplayedReporter)
     }
 }

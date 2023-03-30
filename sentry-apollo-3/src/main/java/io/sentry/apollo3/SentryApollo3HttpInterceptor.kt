@@ -96,11 +96,11 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         val method = request.method
 
         val operationName = operationNameFromHeaders(request)
-        val operation = operationName ?: "apollo.client"
-        val operationType = request.valueForHeader(SENTRY_APOLLO_3_OPERATION_TYPE) ?: method
+        val operationType = request.valueForHeader(SENTRY_APOLLO_3_OPERATION_TYPE)
+        val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
         val operationId = request.valueForHeader("X-APOLLO-OPERATION-ID")
         val variables = request.valueForHeader(SENTRY_APOLLO_3_VARIABLES)
-        val description = "$operationType ${operationName ?: urlDetails.urlOrFallback}"
+        val description = "${operationType ?: method} ${operationName ?: urlDetails.urlOrFallback}"
 
         return activeSpan.startChild(operation, description).apply {
             urlDetails.applyToSpan(this)

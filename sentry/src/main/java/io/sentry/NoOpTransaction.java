@@ -43,10 +43,26 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull Instrumenter instrumenter,
+      @NotNull SpanOptions spanOptions) {
     return NoOpSpan.getInstance();
   }
 
@@ -191,6 +207,16 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public boolean updateEndDate(final @NotNull SentryDate date) {
     return false;
+  }
+
+  @Override
+  public @NotNull SentryDate getStartDate() {
+    return new SentryNanotimeDate();
+  }
+
+  @Override
+  public @NotNull SentryDate getFinishDate() {
+    return new SentryNanotimeDate();
   }
 
   @Override
