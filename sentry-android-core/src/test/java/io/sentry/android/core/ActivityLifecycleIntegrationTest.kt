@@ -1307,6 +1307,51 @@ class ActivityLifecycleIntegrationTest {
         assertEquals(sut.ttfdSpan?.startDate, fixture.transaction.startDate)
     }
 
+    @Test
+    fun `ttfd span is trimmed if reportFullyDisplayed is never called`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        val view = fixture.createView()
+        var lastScheduledRunnable: Runnable? = null
+        val mockExecutorService = object : ISentryExecutorService {
+            override fun submit(runnable: Runnable): Future<*> = mock()
+            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
+            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+                lastScheduledRunnable = runnable
+                return FutureTask {}
+            }
+            override fun close(timeoutMillis: Long) {}
+        }
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        fixture.options.executorService = mockExecutorService
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+
+        runFirstDraw(view)
+        val ttidSpan = sut.ttidSpanMap[activity]
+        val ttfdSpan = sut.ttfdSpan
+
+        // The ttid should be finished
+        assertNotNull(ttidSpan)
+        assertTrue(ttidSpan.isFinished)
+
+        // Assert the ttfd span is still running
+        assertNotNull(ttfdSpan)
+        assertFalse(ttfdSpan.isFinished)
+
+        // Run the autoClose task 1 ms after finishing the ttid span and assert the ttfd span is finished
+        Thread.sleep(1)
+        lastScheduledRunnable!!.run()
+        assertTrue(ttfdSpan.isFinished)
+
+        // the ttfd span should be trimmed to be equal to the ttid span, and the description should end with "-exceeded"
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
+        assertEquals(ttidSpan.finishDate, ttfdSpan.finishDate)
+        assertEquals(ttfdSpan.description, "Activity full display - Deadline Exceeded")
+    }
+
     private fun runFirstDraw(view: View) {
         // Removes OnDrawListener in the next OnGlobalLayout after onDraw
         view.viewTreeObserver.dispatchOnDraw()
