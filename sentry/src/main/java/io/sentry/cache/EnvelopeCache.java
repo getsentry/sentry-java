@@ -111,8 +111,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
 
         try (final Reader reader =
-               new BufferedReader(
-                 new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
+            new BufferedReader(
+                new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
           final Session session = serializer.deserialize(reader, Session.class);
           if (session != null) {
             writeSessionToDisk(previousSessionFile, session);
@@ -126,8 +126,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       updateCurrentSession(currentSessionFile, envelope);
 
       boolean crashedLastRun = false;
-      final File crashMarkerFile =
-        new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
+      final File crashMarkerFile = new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
       if (crashMarkerFile.exists()) {
         crashedLastRun = true;
       }
@@ -184,19 +183,18 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   /**
    * Attempts to end previous session, relying on AbnormalExit hint, marks session as abnormal with
    * abnormal mechanism and takes its timestamp.
-   * <p>
-   * If there was no abnormal exit, the previous session will be captured by PreviousSessionFinalizer.
+   *
+   * <p>If there was no abnormal exit, the previous session will be captured by
+   * PreviousSessionFinalizer.
    *
    * @param hint a hint coming with the envelope
    * @param envelope an original envelope that is being stored
    * @return SentryEnvelope returns either a new envelope containing previous session in it, or an
-   * old one, if the previous session should not be sent with the current envelope.
+   *     old one, if the previous session should not be sent with the current envelope.
    */
   @SuppressWarnings("JavaUtilDate")
   public @NotNull SentryEnvelope endPreviousSessionForAbnormalExit(
-    final @NotNull SentryEnvelope envelope,
-    final @NotNull Hint hint
-  ) {
+      final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
     if (sdkHint instanceof AbnormalExit) {
       final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
@@ -205,8 +203,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
 
         try (final Reader reader =
-               new BufferedReader(
-                 new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
+            new BufferedReader(
+                new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
           final Session session = serializer.deserialize(reader, Session.class);
           if (session != null) {
             final AbnormalExit abnormalHint = (AbnormalExit) sdkHint;
@@ -218,9 +216,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
               // sanity check if the abnormal exit actually happened when the session was alive
               final Date sessionStart = session.getStarted();
               if (sessionStart == null || timestamp.before(sessionStart)) {
-                options.getLogger()
-                  .log(WARNING,
-                    "Abnormal exit happened before previous session start, not ending the session.");
+                options
+                    .getLogger()
+                    .log(
+                        WARNING,
+                        "Abnormal exit happened before previous session start, not ending the session.");
                 return envelope;
               }
             }
@@ -232,7 +232,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
             session.end(timestamp);
 
             final SentryEnvelopeItem sessionItem =
-              SentryEnvelopeItem.fromSession(serializer, session);
+                SentryEnvelopeItem.fromSession(serializer, session);
             // send session in the same envelope as abnormal exit event
             final SentryEnvelope newEnvelope = buildNewEnvelope(envelope, sessionItem);
 
@@ -390,13 +390,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   public static @NotNull File getCurrentSessionFile(final @NotNull String cacheDirPath) {
-    return new File(
-        cacheDirPath, PREFIX_CURRENT_SESSION_FILE + SUFFIX_SESSION_FILE);
+    return new File(cacheDirPath, PREFIX_CURRENT_SESSION_FILE + SUFFIX_SESSION_FILE);
   }
 
   public static @NotNull File getPreviousSessionFile(final @NotNull String cacheDirPath) {
-    return new File(
-        cacheDirPath, PREFIX_PREVIOUS_SESSION_FILE + SUFFIX_SESSION_FILE);
+    return new File(cacheDirPath, PREFIX_PREVIOUS_SESSION_FILE + SUFFIX_SESSION_FILE);
   }
 
   @Override
@@ -441,9 +439,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return new File[] {};
   }
 
-  /**
-   * Awaits until the previous session (if any) is flushed to its own file.
-   */
+  /** Awaits until the previous session (if any) is flushed to its own file. */
   public static boolean waitPreviousSessionFlush() {
     try {
       return previousSessionLatch.await(30, TimeUnit.SECONDS);

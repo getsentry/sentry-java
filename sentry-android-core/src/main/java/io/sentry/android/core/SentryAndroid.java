@@ -125,10 +125,10 @@ public final class SentryAndroid {
       final @NotNull IHub hub = Sentry.getCurrentHub();
       if (hub.getOptions().isEnableAutoSessionTracking()
           && ContextUtils.isForegroundImportance(context)) {
-        //hub.getOptions().getExecutorService().submit(() -> {
-          hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-          hub.startSession();
-        //});
+        // hub.getOptions().getExecutorService().submit(() -> {
+        hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+        hub.startSession();
+        // });
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);

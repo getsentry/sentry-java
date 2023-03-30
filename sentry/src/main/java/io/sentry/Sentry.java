@@ -17,7 +17,6 @@ import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -231,16 +230,12 @@ public final class Sentry {
   }
 
   private static void finalizePreviousSession(
-    final @NotNull SentryOptions options,
-    final @NotNull IHub hub
-  ) {
+      final @NotNull SentryOptions options, final @NotNull IHub hub) {
     // enqueue a task to finalize previous session. Since the executor
     // is single-threaded, this task will be enqueued sequentially after all integrations that have
     // to modify the previous session have done their work, even if they do that async.
     try {
-      options
-        .getExecutorService()
-        .submit(new PreviousSessionFinalizer(options, hub));
+      options.getExecutorService().submit(new PreviousSessionFinalizer(options, hub));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
     }

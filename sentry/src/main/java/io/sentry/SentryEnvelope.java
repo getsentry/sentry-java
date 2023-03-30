@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.ArrayList;
