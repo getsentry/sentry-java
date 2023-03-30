@@ -5,25 +5,20 @@ import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Looper;
-import android.util.Log;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
-import io.sentry.SentryEnvelope;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.cache.EnvelopeCache;
-import io.sentry.cache.IEnvelopeCache;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
-import io.sentry.hints.PreviousSessionEnd;
-import io.sentry.hints.PreviousSessionEndHint;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.CurrentDateProvider;
@@ -31,7 +26,6 @@ import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -130,9 +124,16 @@ public class AnrV2Integration implements Integration, Closeable {
       List<ApplicationExitInfo> applicationExitInfoList =
         activityManager.getHistoricalProcessExitReasons(null, 0, 0);
       if (applicationExitInfoList.size() == 0) {
-        endPreviousSession();
         options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");
         return;
+      }
+
+      if (!EnvelopeCache.waitPreviousSessionFlush()) {
+        options
+          .getLogger()
+          .log(
+            SentryLevel.WARNING,
+            "Timed out waiting to flush previous session to its own file.");
       }
 
       // making a deep copy as we're modifying the list
@@ -152,7 +153,6 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       if (latestAnr == null) {
-        endPreviousSession();
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "No ANRs have been found in the historical exit reasons list.");
@@ -160,7 +160,6 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       if (latestAnr.getTimestamp() < threshold) {
-        endPreviousSession();
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Latest ANR happened too long ago, returning early.");
@@ -168,7 +167,6 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       if (lastReportedAnrTimestamp != null && latestAnr.getTimestamp() <= lastReportedAnrTimestamp) {
-        endPreviousSession();
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Latest ANR has already been reported, returning early.");
@@ -259,25 +257,11 @@ public class AnrV2Integration implements Integration, Closeable {
       mechanism.setType("ANRv2");
       return new ExceptionMechanismException(mechanism, error, error.getThread(), true);
     }
-
-    private void endPreviousSession() {
-      final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
-      if (envelopeCache instanceof EnvelopeCache) {
-        final Hint hint = HintUtils.createWithTypeCheckHint(new PreviousSessionEndHint());
-        final SentryEnvelope sessionEnvelope =
-          ((EnvelopeCache) envelopeCache).endPreviousSession(SentryEnvelope.empty(), hint);
-
-        // if there was no ANRs, we just capture the previous session asap, so it's not delayed for long
-        if (sessionEnvelope.getHeader().getEventId() != SentryId.EMPTY_ID) {
-          hub.captureEnvelope(sessionEnvelope);
-        }
-      }
-    }
   }
 
   @ApiStatus.Internal
   public static final class AnrV2Hint extends BlockingFlushHint implements Backfillable,
-    AbnormalExit, PreviousSessionEnd {
+    AbnormalExit {
 
     private final long timestamp;
 

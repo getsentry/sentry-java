@@ -44,6 +44,15 @@ final class PreviousSessionFinalizer implements Runnable {
       return;
     }
 
+    if (!EnvelopeCache.waitPreviousSessionFlush()) {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "Timed out waiting to flush previous session to its own file in session finalizer.");
+      return;
+    }
+
     final File previousSessionFile = EnvelopeCache.getPreviousSessionFile(cacheDirPath);
     final ISerializer serializer = options.getSerializer();
 
@@ -63,6 +72,7 @@ final class PreviousSessionFinalizer implements Runnable {
               "Stream from path %s resulted in a null envelope.",
               previousSessionFile.getAbsolutePath());
         } else {
+          Date timestamp = null;
           final File crashMarkerFile =
             new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
           if (crashMarkerFile.exists()) {
@@ -70,7 +80,7 @@ final class PreviousSessionFinalizer implements Runnable {
               .getLogger()
               .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
 
-            final Date timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
+            timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
 
             if (!crashMarkerFile.delete()) {
               options
@@ -81,27 +91,21 @@ final class PreviousSessionFinalizer implements Runnable {
                   crashMarkerFile.getAbsolutePath());
             }
             session.update(Session.State.Crashed, null, true);
-            session.end(timestamp);
-            // if the App. has been upgraded and there's a new version of the SDK running,
-            // SdkVersion will be outdated.
-            final SentryEnvelope fromSession =
-              SentryEnvelope.from(serializer, session, options.getSdkVersion());
-            hub.captureEnvelope(fromSession);
-          } else {
-            // if there was no native crash, the session has potentially experienced Abnormal exit
-            // so we end it with the current timestamp, but do not send it yet, as other envelopes
-            // may come later and change its attributes (status, etc.). We just save it as previous_session.json
-            session.end();
-            writeSessionToDisk(getPreviousSessionFile(), session);
           }
+          session.end(timestamp);
+
+          // if the App. has been upgraded and there's a new version of the SDK running,
+          // SdkVersion will be outdated.
+          final SentryEnvelope fromSession =
+            SentryEnvelope.from(serializer, session, options.getSdkVersion());
+          hub.captureEnvelope(fromSession);
         }
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
       }
 
-      // at this point the leftover session and its current session file already became a new
-      // envelope file to be sent or became a previous_session file
-      // so deleting it as the new session will take place.
+      // at this point the previous session and its session file already became a new envelope file
+      // to be sent, so deleting it
       if (!previousSessionFile.delete()) {
         options.getLogger().log(WARNING, "Failed to delete the previous session file.");
       }
