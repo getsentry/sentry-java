@@ -9,7 +9,6 @@ import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
@@ -104,14 +103,7 @@ public final class AnrIntegration implements Integration, Closeable {
         scope -> {
           @Nullable ITransaction transaction = scope.getTransaction();
           if (transaction != null) {
-
-            for (Span span : transaction.getSpans()) {
-              span.finish(SpanStatus.ABORTED);
-            }
-            if (!transaction.isFinished()) {
-              transaction.finish(SpanStatus.ABORTED);
-            }
-
+            transaction.forceFinish(SpanStatus.ABORTED, true);
             event.setTransaction(transaction.getName());
             event.getContexts().setTrace(transaction.getSpanContext());
           }

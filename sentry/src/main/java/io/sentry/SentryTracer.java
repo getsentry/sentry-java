@@ -9,6 +9,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -124,6 +125,114 @@ public final class SentryTracer implements ITransaction {
 
         timer.schedule(timerTask, transactionOptions.getIdleTimeout());
       }
+    }
+  }
+
+  @Override
+  public @NotNull void forceFinish(@NotNull SpanStatus status, boolean forceKeep) {
+    if (isFinished()) {
+      return;
+    }
+
+    final @NotNull SentryDate finishTimestamp = hub.getOptions().getDateProvider().now();
+
+    // abort all child-spans first, this ensures the transaction can be finished,
+    // even if waitForChildren is true
+    // iterate in reverse order to ensure leaf spans are processed before their parents
+    @NotNull final ListIterator<Span> iterator = children.listIterator(children.size());
+    while (iterator.hasPrevious()) {
+      @NotNull final Span span = iterator.previous();
+      span.setSpanFinishedCallback(null);
+      span.finish(status, finishTimestamp);
+    }
+    finish(status, finishTimestamp, forceKeep);
+  }
+
+  @Override
+  public void finish(
+      @Nullable SpanStatus status, @Nullable SentryDate finishDate, boolean forceKeep) {
+    // try to get the high precision timestamp from the root span
+    SentryDate finishTimestamp = root.getFinishDate();
+
+    // if a finishDate was passed in, use that instead
+    if (finishDate != null) {
+      finishTimestamp = finishDate;
+    }
+
+    // if it's not set -> fallback to the current time
+    if (finishTimestamp == null) {
+      finishTimestamp = hub.getOptions().getDateProvider().now();
+    }
+
+    // auto-finish any idle spans first
+    for (final Span span : children) {
+      if (span.getOptions().isIdle()) {
+        span.finish((status != null) ? status : getSpanContext().status, finishTimestamp);
+      }
+    }
+
+    this.finishStatus = FinishStatus.finishing(status);
+    if (!root.isFinished()
+        && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
+      List<PerformanceCollectionData> performanceCollectionData = null;
+      if (transactionPerformanceCollector != null) {
+        performanceCollectionData = transactionPerformanceCollector.stop(this);
+      }
+
+      ProfilingTraceData profilingTraceData = null;
+      if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
+        profilingTraceData =
+            hub.getOptions()
+                .getTransactionProfiler()
+                .onTransactionFinish(this, performanceCollectionData);
+      }
+      if (performanceCollectionData != null) {
+        performanceCollectionData.clear();
+      }
+
+      // finish unfinished children
+      for (final Span child : children) {
+        if (!child.isFinished()) {
+          child.setSpanFinishedCallback(
+              null); // reset the callback, as we're already in the finish method
+          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
+        }
+      }
+      root.finish(finishStatus.spanStatus, finishTimestamp);
+
+      hub.configureScope(
+          scope -> {
+            scope.withTransaction(
+                transaction -> {
+                  if (transaction == this) {
+                    scope.clearTransaction();
+                  }
+                });
+          });
+      final SentryTransaction transaction = new SentryTransaction(this);
+      if (transactionFinishedCallback != null) {
+        transactionFinishedCallback.execute(this);
+      }
+
+      if (timer != null) {
+        synchronized (timerLock) {
+          if (timer != null) {
+            timer.cancel();
+            timer = null;
+          }
+        }
+      }
+
+      if (!forceKeep && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
+        // if it's an idle transaction which has no children, we drop it to save user's quota
+        hub.getOptions()
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Dropping idle transaction because it has no child spans");
+        return;
+      }
+
+      transaction.getMeasurements().putAll(measurements);
+      hub.captureTransaction(transaction, traceContext(), null, profilingTraceData);
     }
   }
 
@@ -354,90 +463,7 @@ public final class SentryTracer implements ITransaction {
   @Override
   @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
-
-    // try to get the high precision timestamp from the root span
-    SentryDate finishTimestamp = root.getFinishDate();
-
-    // if a finishDate was passed in, use that instead
-    if (finishDate != null) {
-      finishTimestamp = finishDate;
-    }
-
-    // if it's not set -> fallback to the current time
-    if (finishTimestamp == null) {
-      finishTimestamp = hub.getOptions().getDateProvider().now();
-    }
-
-    // auto-finish any idle spans first
-    for (final Span span : children) {
-      if (span.getOptions().isIdle()) {
-        span.finish((status != null) ? status : getSpanContext().status, finishTimestamp);
-      }
-    }
-
-    this.finishStatus = FinishStatus.finishing(status);
-    if (!root.isFinished()
-        && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
-      List<PerformanceCollectionData> performanceCollectionData = null;
-      if (transactionPerformanceCollector != null) {
-        performanceCollectionData = transactionPerformanceCollector.stop(this);
-      }
-
-      ProfilingTraceData profilingTraceData = null;
-      if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
-        profilingTraceData =
-            hub.getOptions()
-                .getTransactionProfiler()
-                .onTransactionFinish(this, performanceCollectionData);
-      }
-      if (performanceCollectionData != null) {
-        performanceCollectionData.clear();
-      }
-
-      // finish unfinished children
-      for (final Span child : children) {
-        if (!child.isFinished()) {
-          child.setSpanFinishedCallback(
-              null); // reset the callback, as we're already in the finish method
-          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
-        }
-      }
-      root.finish(finishStatus.spanStatus, finishTimestamp);
-
-      hub.configureScope(
-          scope -> {
-            scope.withTransaction(
-                transaction -> {
-                  if (transaction == this) {
-                    scope.clearTransaction();
-                  }
-                });
-          });
-      final SentryTransaction transaction = new SentryTransaction(this);
-      if (transactionFinishedCallback != null) {
-        transactionFinishedCallback.execute(this);
-      }
-
-      if (timer != null) {
-        synchronized (timerLock) {
-          if (timer != null) {
-            timer.cancel();
-            timer = null;
-          }
-        }
-      }
-
-      if (children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
-        // if it's an idle transaction which has no children, we drop it to save user's quota
-        hub.getOptions()
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Dropping idle transaction because it has no child spans");
-        return;
-      }
-
-      transaction.getMeasurements().putAll(measurements);
-      hub.captureTransaction(transaction, traceContext(), null, profilingTraceData);
-    }
+    finish(status, finishDate, false);
   }
 
   @Override
