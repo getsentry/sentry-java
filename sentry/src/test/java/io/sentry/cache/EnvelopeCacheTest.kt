@@ -16,7 +16,6 @@ import io.sentry.cache.EnvelopeCache.SUFFIX_SESSION_FILE
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
-import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.mock
 import java.io.File

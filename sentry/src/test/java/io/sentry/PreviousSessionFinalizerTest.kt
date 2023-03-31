@@ -99,11 +99,13 @@ class PreviousSessionFinalizerTest {
         )
         finalizer.run()
 
-        verify(fixture.hub).captureEnvelope(argThat {
-            val session = fixture.sessionFromEnvelope(this)
-            session.release == "io.sentry.sample@1.0" &&
-                session.timestamp!!.time - DateUtils.getCurrentDateTime().time < 1000
-        })
+        verify(fixture.hub).captureEnvelope(
+            argThat {
+                val session = fixture.sessionFromEnvelope(this)
+                session.release == "io.sentry.sample@1.0" &&
+                    session.timestamp!!.time - DateUtils.getCurrentDateTime().time < 1000
+            }
+        )
     }
 
     @Test
@@ -123,11 +125,13 @@ class PreviousSessionFinalizerTest {
         )
         finalizer.run()
 
-        verify(fixture.hub).captureEnvelope(argThat {
-            val session = fixture.sessionFromEnvelope(this)
-            session.release == "io.sentry.sample@1.0" &&
-                session.timestamp!! == abnormalEndDate
-        })
+        verify(fixture.hub).captureEnvelope(
+            argThat {
+                val session = fixture.sessionFromEnvelope(this)
+                session.release == "io.sentry.sample@1.0" &&
+                    session.timestamp!! == abnormalEndDate
+            }
+        )
     }
 
     @Test
@@ -144,11 +148,13 @@ class PreviousSessionFinalizerTest {
         )
         finalizer.run()
 
-        verify(fixture.hub).captureEnvelope(argThat {
-            val session = fixture.sessionFromEnvelope(this)
-            session.release == "io.sentry.sample@1.0" &&
-                session.status == Crashed
-        })
+        verify(fixture.hub).captureEnvelope(
+            argThat {
+                val session = fixture.sessionFromEnvelope(this)
+                session.release == "io.sentry.sample@1.0" &&
+                    session.status == Crashed
+            }
+        )
     }
 
     @Test

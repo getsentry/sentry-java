@@ -606,7 +606,6 @@ class SentryTest {
             }
         }
 
-
         assertFalse(previousSessionFile.exists())
     }
 
