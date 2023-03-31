@@ -128,10 +128,10 @@ public class AnrV2Integration implements Integration, Closeable {
       if (cache instanceof EnvelopeCache) {
         if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
           options
-            .getLogger()
-            .log(
-              SentryLevel.WARNING,
-              "Timed out waiting to flush previous session to its own file.");
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Timed out waiting to flush previous session to its own file.");
         }
       }
 

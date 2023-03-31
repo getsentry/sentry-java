@@ -21,8 +21,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Common cases when previous session is not ended properly (app background or crash):
- * <p> - The previous session experienced Abnormal exit (ANR, OS kills app, User kills app)
- * <p> - The previous session experienced native crash
+ *
+ * <p>- The previous session experienced Abnormal exit (ANR, OS kills app, User kills app)
+ *
+ * <p>- The previous session experienced native crash
  */
 final class PreviousSessionFinalizer implements Runnable {
 
@@ -50,10 +52,10 @@ final class PreviousSessionFinalizer implements Runnable {
     if (cache instanceof EnvelopeCache) {
       if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
         options
-          .getLogger()
-          .log(
-            SentryLevel.WARNING,
-            "Timed out waiting to flush previous session to its own file in session finalizer.");
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Timed out waiting to flush previous session to its own file in session finalizer.");
         return;
       }
     }
