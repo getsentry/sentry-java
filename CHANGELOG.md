@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+## Features
+
+- Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
+
 ## 6.17.0
 
 ### Features
