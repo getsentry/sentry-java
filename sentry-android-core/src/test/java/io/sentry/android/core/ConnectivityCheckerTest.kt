@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_DENIED
 import android.net.ConnectivityManager
+import android.net.ConnectivityManager.NetworkCallback
 import android.net.ConnectivityManager.TYPE_ETHERNET
 import android.net.ConnectivityManager.TYPE_MOBILE
 import android.net.ConnectivityManager.TYPE_WIFI
@@ -17,11 +18,15 @@ import io.sentry.android.core.internal.util.ConnectivityChecker
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ConnectivityCheckerTest {
 
@@ -168,5 +173,55 @@ class ConnectivityCheckerTest {
         whenever(networkInfo.type).thenReturn(TYPE_MOBILE)
 
         assertEquals("cellular", ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+    }
+
+    @Test
+    fun `When there's no permission, do not register any NetworkCallback`() {
+        val buildInfo = mock<BuildInfoProvider>()
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+        whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+        whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
+        val registered = ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
+
+        assertFalse(registered)
+        verify(connectivityManager, never()).registerDefaultNetworkCallback(any())
+    }
+
+    @Test
+    fun `When sdkInfoVersion is not min N, do not register any NetworkCallback`() {
+        whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+        val registered = ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
+
+        assertFalse(registered)
+        verify(connectivityManager, never()).registerDefaultNetworkCallback(any())
+    }
+
+    @Test
+    fun `registerNetworkCallback calls connectivityManager registerDefaultNetworkCallback`() {
+        val buildInfo = mock<BuildInfoProvider>()
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+        whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+        val registered = ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
+
+        assertTrue(registered)
+        verify(connectivityManager).registerDefaultNetworkCallback(any())
+    }
+
+    @Test
+    fun `When sdkInfoVersion is not min Lollipop, do not unregister any NetworkCallback`() {
+        val buildInfo = mock<BuildInfoProvider>()
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
+        whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+        ConnectivityChecker.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
+
+        verify(connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
+    }
+
+    @Test
+    fun `unregisterNetworkCallback calls connectivityManager unregisterDefaultNetworkCallback`() {
+        whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+        ConnectivityChecker.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
+
+        verify(connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
     }
 }
