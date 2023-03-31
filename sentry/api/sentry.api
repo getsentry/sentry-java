@@ -2265,14 +2265,18 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field NATIVE_CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field PREFIX_CURRENT_SESSION_FILE Ljava/lang/String;
+	public static final field PREFIX_PREVIOUS_SESSION_FILE Ljava/lang/String;
 	public static final field STARTUP_CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
 	protected static final field UTF_8 Ljava/nio/charset/Charset;
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/lang/String;I)V
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
+	public static fun getCurrentSessionFile (Ljava/lang/String;)Ljava/io/File;
+	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun waitPreviousSessionFlush ()Z
 }
 
 public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Iterable {
@@ -2454,6 +2458,7 @@ public final class io/sentry/exception/SentryHttpClientException : java/lang/Exc
 public abstract interface class io/sentry/hints/AbnormalExit {
 	public fun ignoreCurrentThread ()Z
 	public abstract fun mechanism ()Ljava/lang/String;
+	public fun timestamp ()Ljava/lang/Long;
 }
 
 public abstract interface class io/sentry/hints/ApplyScopeData {

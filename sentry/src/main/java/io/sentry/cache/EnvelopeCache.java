@@ -191,7 +191,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * @param hint a hint coming with the envelope
    */
   @SuppressWarnings("JavaUtilDate")
-  public void endPreviousSessionForAbnormalExit(final @NotNull Hint hint) {
+  private void endPreviousSessionForAbnormalExit(final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
     if (sdkHint instanceof AbnormalExit) {
       final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
