@@ -8,11 +8,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.cache.EnvelopeCache
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.hints.DiskFlushNotification
+import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.HintUtils
@@ -73,6 +76,7 @@ class AnrV2IntegrationTest {
                     if (useImmediateExecutorService) ImmediateExecutorService() else mock()
                 this.isAnrEnabled = isAnrEnabled
                 this.flushTimeoutMillis = flushTimeoutMillis
+                setEnvelopeDiskCache(EnvelopeCache.create(this))
             }
             options.cacheDirPath?.let { cacheDir ->
                 lastReportedAnrFile = File(cacheDir, AndroidEnvelopeCache.LAST_ANR_REPORT)
@@ -176,6 +180,16 @@ class AnrV2IntegrationTest {
     }
 
     @Test
+    fun `when no ANRs have ever been reported, captures events`() {
+        val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = null)
+        fixture.addAppExitInfo(timestamp = oldTimestamp)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
+    }
+
+    @Test
     fun `when latest ANR has not been reported, captures event with enriching`() {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp)
@@ -244,7 +258,7 @@ class AnrV2IntegrationTest {
         // shouldn't fall into timed out state, because we marked event as flushed on another thread
         verify(fixture.logger, never()).log(
             any(),
-            argThat { startsWith("Timed out") },
+            argThat { startsWith("Timed out waiting to flush ANR event to disk.") },
             any<Any>()
         )
     }
@@ -265,7 +279,7 @@ class AnrV2IntegrationTest {
         // we drop the event, it should not even come to this if-check
         verify(fixture.logger, never()).log(
             any(),
-            argThat { startsWith("Timed out") },
+            argThat { startsWith("Timed out waiting to flush ANR event to disk.") },
             any<Any>()
         )
     }
@@ -329,6 +343,51 @@ class AnrV2IntegrationTest {
                 val hint = HintUtils.getSentrySdkHint(this)
                 (hint as AnrV2Hint).timestamp() == newTimestamp
             }
+        )
+    }
+
+    @Test
+    fun `abnormal mechanism is passed with the hint`() {
+        val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
+        fixture.addAppExitInfo(timestamp = newTimestamp)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.hub).captureEvent(
+            any(),
+            argThat<Hint> {
+                val hint = HintUtils.getSentrySdkHint(this)
+                (hint as AnrV2Hint).mechanism() == "anr_background"
+            }
+        )
+    }
+
+    @Test
+    fun `awaits for previous session flush if cache is EnvelopeCache`() {
+        val integration = fixture.getSut(
+            tmpDir,
+            lastReportedAnrTimestamp = oldTimestamp,
+            flushTimeoutMillis = 3000L
+        )
+        fixture.addAppExitInfo(timestamp = newTimestamp)
+
+        thread {
+            Thread.sleep(1000L)
+            val sessionHint = HintUtils.createWithTypeCheckHint(SessionStartHint())
+            fixture.options.envelopeDiskCache.store(
+                SentryEnvelope(SentryId.EMPTY_ID, null, emptyList()),
+                sessionHint
+            )
+        }
+
+        integration.register(fixture.hub, fixture.options)
+
+        // we store envelope with StartSessionHint on different thread after some delay, which
+        // triggers the previous session flush, so no timeout
+        verify(fixture.logger, never()).log(
+            any(),
+            argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
+            any<Any>()
         )
     }
 }

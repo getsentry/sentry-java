@@ -224,9 +224,9 @@ public final class Sentry {
       integration.register(HubAdapter.getInstance(), options);
     }
 
-    finalizePreviousSession(options, HubAdapter.getInstance());
-
     notifyOptionsObservers(options);
+
+    finalizePreviousSession(options, HubAdapter.getInstance());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

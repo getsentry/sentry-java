@@ -10,6 +10,7 @@ import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
+import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
@@ -32,6 +33,9 @@ import kotlin.test.assertTrue
 class SentryTest {
 
     private val dsn = "http://key@localhost/proj"
+
+    @get:Rule
+    val tmpDir = TemporaryFolder()
 
     @BeforeTest
     @AfterTest
@@ -569,6 +573,80 @@ class SentryTest {
         await.untilTrue(triggered)
         assertEquals("io.sentry.sample@1.1.0+220", optionsObserver.release)
         assertEquals("debug", optionsObserver.environment)
+    }
+
+    @Test
+    fun `init finalizes previous session`() {
+        lateinit var previousSessionFile: File
+
+        Sentry.init {
+            it.dsn = dsn
+
+            it.release = "io.sentry.sample@2.0"
+            it.cacheDirPath = tmpDir.newFolder().absolutePath
+
+            it.executorService = ImmediateExecutorService()
+
+            previousSessionFile = EnvelopeCache.getPreviousSessionFile(it.cacheDirPath!!)
+            previousSessionFile.parentFile.mkdirs()
+            it.serializer.serialize(
+                Session(null, null, "release", "io.sentry.samples@2.0"),
+                previousSessionFile.bufferedWriter()
+            )
+            assertEquals(
+                "release",
+                it.serializer.deserialize(previousSessionFile.bufferedReader(), Session::class.java)!!.environment
+            )
+
+            it.addIntegration { hub, _ ->
+                // this is just a hack to trigger the previousSessionFlush latch, so the finalizer
+                // does not time out waiting. We have to do it as integration, because this is where
+                // the hub is already initialized
+                hub.startSession()
+            }
+        }
+
+
+        assertFalse(previousSessionFile.exists())
+    }
+
+    @Test
+    fun `if there is work enqueued, init finalizes previous session after that work is done`() {
+        lateinit var previousSessionFile: File
+        val triggered = AtomicBoolean(false)
+
+        Sentry.init {
+            it.dsn = dsn
+
+            it.release = "io.sentry.sample@2.0"
+            it.cacheDirPath = tmpDir.newFolder().absolutePath
+
+            previousSessionFile = EnvelopeCache.getPreviousSessionFile(it.cacheDirPath!!)
+            previousSessionFile.parentFile.mkdirs()
+            it.serializer.serialize(
+                Session(null, null, "release", "io.sentry.sample@1.0"),
+                previousSessionFile.bufferedWriter()
+            )
+
+            it.executorService.submit {
+                // here the previous session should still exist. Sentry.init will submit another runnable
+                // to finalize the previous session, but because the executor is single-threaded, the
+                // work will be enqueued and the previous session will be finalized after current work is
+                // finished, ensuring that even if something is using the previous session from a
+                // different thread, it will still be able to access it.
+                Thread.sleep(1000L)
+                val session = it.serializer.deserialize(previousSessionFile.bufferedReader(), Session::class.java)
+                assertEquals("io.sentry.sample@1.0", session!!.release)
+                assertEquals("release", session.environment)
+                triggered.set(true)
+            }
+        }
+
+        // to trigger previous session flush
+        Sentry.startSession()
+
+        await.untilTrue(triggered)
+        assertFalse(previousSessionFile.exists())
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

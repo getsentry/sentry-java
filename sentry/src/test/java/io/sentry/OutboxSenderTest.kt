@@ -323,6 +323,11 @@ class OutboxSenderTest {
     }
 
     @Test
+    fun `when file name is previous session file, should be ignored`() {
+        assertFalse(fixture.getSut().isRelevantFileName(EnvelopeCache.PREFIX_PREVIOUS_SESSION_FILE))
+    }
+
+    @Test
     fun `when file name is relevant, should return true`() {
         assertTrue(fixture.getSut().isRelevantFileName("123.envelope"))
     }

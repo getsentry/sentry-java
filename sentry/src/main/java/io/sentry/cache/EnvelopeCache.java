@@ -91,7 +91,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   @Override
-  public void store(@NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
+  public void store(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     rotateCacheIfNeeded(allEnvelopeFiles());
@@ -427,7 +427,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   /** Awaits until the previous session (if any) is flushed to its own file. */
   public boolean waitPreviousSessionFlush() {
     try {
-      return previousSessionLatch.await(60_000L, TimeUnit.MILLISECONDS);
+      return previousSessionLatch.await(options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       options.getLogger().log(DEBUG, "Timed out waiting for previous session to flush.");
