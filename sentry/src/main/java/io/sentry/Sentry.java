@@ -229,6 +229,7 @@ public final class Sentry {
     notifyOptionsObservers(options);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void finalizePreviousSession(
       final @NotNull SentryOptions options, final @NotNull IHub hub) {
     // enqueue a task to finalize previous session. Since the executor

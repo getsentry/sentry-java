@@ -67,7 +67,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
 
-  private static final CountDownLatch previousSessionLatch = new CountDownLatch(1);
+  private final CountDownLatch previousSessionLatch;
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
@@ -87,6 +87,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       final @NotNull String cacheDirPath,
       final int maxCacheItems) {
     super(options, cacheDirPath, maxCacheItems);
+    previousSessionLatch = new CountDownLatch(1);
   }
 
   @Override
@@ -104,7 +105,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       }
     }
 
-    envelope = endPreviousSessionForAbnormalExit(envelope, hint);
+    endPreviousSessionForAbnormalExit(hint);
 
     if (HintUtils.hasType(hint, SessionStart.class)) {
       if (currentSessionFile.exists()) {
@@ -121,8 +122,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
         }
       }
-      previousSessionLatch.countDown();
-
       updateCurrentSession(currentSessionFile, envelope);
 
       boolean crashedLastRun = false;
@@ -152,6 +151,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       }
 
       SentryCrashLastRunState.getInstance().setCrashedLastRun(crashedLastRun);
+
+      previousSessionLatch.countDown();
     }
 
     // TODO: probably we need to update the current session file for session updates to because of
@@ -188,13 +189,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * PreviousSessionFinalizer.
    *
    * @param hint a hint coming with the envelope
-   * @param envelope an original envelope that is being stored
-   * @return SentryEnvelope returns either a new envelope containing previous session in it, or an
-   *     old one, if the previous session should not be sent with the current envelope.
    */
   @SuppressWarnings("JavaUtilDate")
-  public @NotNull SentryEnvelope endPreviousSessionForAbnormalExit(
-      final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
+  public void endPreviousSessionForAbnormalExit(final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
     if (sdkHint instanceof AbnormalExit) {
       final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
@@ -221,7 +218,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                     .log(
                         WARNING,
                         "Abnormal exit happened before previous session start, not ending the session.");
-                return envelope;
+                return;
               }
             }
 
@@ -230,18 +227,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
             // we have to use the actual timestamp of the Abnormal Exit here to mark the session
             // as finished at the time it happened
             session.end(timestamp);
-
-            final SentryEnvelopeItem sessionItem =
-                SentryEnvelopeItem.fromSession(serializer, session);
-            // send session in the same envelope as abnormal exit event
-            final SentryEnvelope newEnvelope = buildNewEnvelope(envelope, sessionItem);
-
-            // at this point the session and its file already became a new envelope, so
-            // it's safe to delete it
-            if (!previousSessionFile.delete()) {
-              options.getLogger().log(WARNING, "Failed to delete the previous session file.");
-            }
-            return newEnvelope;
+            writeSessionToDisk(previousSessionFile, session);
           }
         } catch (Throwable e) {
           options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
@@ -250,7 +236,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         options.getLogger().log(DEBUG, "No previous session file to end.");
       }
     }
-    return envelope;
   }
 
   private void writeCrashMarkerFile() {
@@ -440,11 +425,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /** Awaits until the previous session (if any) is flushed to its own file. */
-  public static boolean waitPreviousSessionFlush() {
+  public boolean waitPreviousSessionFlush() {
     try {
-      return previousSessionLatch.await(30, TimeUnit.SECONDS);
+      return previousSessionLatch.await(60_000L, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+      options.getLogger().log(DEBUG, "Timed out waiting for previous session to flush.");
     }
     return false;
   }

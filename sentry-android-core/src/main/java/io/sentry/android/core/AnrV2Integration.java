@@ -15,6 +15,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
@@ -123,12 +124,15 @@ public class AnrV2Integration implements Integration, Closeable {
         return;
       }
 
-      if (!EnvelopeCache.waitPreviousSessionFlush()) {
-        options
+      final IEnvelopeCache cache = options.getEnvelopeDiskCache();
+      if (cache instanceof EnvelopeCache) {
+        if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
+          options
             .getLogger()
             .log(
-                SentryLevel.WARNING,
-                "Timed out waiting to flush previous session to its own file.");
+              SentryLevel.WARNING,
+              "Timed out waiting to flush previous session to its own file.");
+        }
       }
 
       // making a deep copy as we're modifying the list

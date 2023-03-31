@@ -7,6 +7,7 @@ import static io.sentry.SentryLevel.WARNING;
 import static io.sentry.cache.EnvelopeCache.NATIVE_CRASH_MARKER_FILE;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,9 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Common cases when previous session is not ended properly (app background or crash): - The
- * previous session experienced Abnormal exit (ANR, OS kills app, User kills app) - The previous
- * session experienced native crash
+ * Common cases when previous session is not ended properly (app background or crash):
+ * <p> - The previous session experienced Abnormal exit (ANR, OS kills app, User kills app)
+ * <p> - The previous session experienced native crash
  */
 final class PreviousSessionFinalizer implements Runnable {
 
@@ -45,13 +46,16 @@ final class PreviousSessionFinalizer implements Runnable {
       return;
     }
 
-    if (!EnvelopeCache.waitPreviousSessionFlush()) {
-      options
+    final IEnvelopeCache cache = options.getEnvelopeDiskCache();
+    if (cache instanceof EnvelopeCache) {
+      if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
+        options
           .getLogger()
           .log(
-              SentryLevel.WARNING,
-              "Timed out waiting to flush previous session to its own file in session finalizer.");
-      return;
+            SentryLevel.WARNING,
+            "Timed out waiting to flush previous session to its own file in session finalizer.");
+        return;
+      }
     }
 
     final File previousSessionFile = EnvelopeCache.getPreviousSessionFile(cacheDirPath);
@@ -93,7 +97,11 @@ final class PreviousSessionFinalizer implements Runnable {
             }
             session.update(Session.State.Crashed, null, true);
           }
-          session.end(timestamp);
+          // if the session has abnormal mechanism, we do not overwrite its end timestamp, because
+          // it's already set
+          if (session.getAbnormalMechanism() == null) {
+            session.end(timestamp);
+          }
 
           // if the App. has been upgraded and there's a new version of the SDK running,
           // SdkVersion will be outdated.
