@@ -50,10 +50,8 @@ final class PreviousSessionFinalizer implements Runnable {
 
     if (!options.isEnableAutoSessionTracking()) {
       options
-        .getLogger()
-        .log(
-          DEBUG,
-          "Session tracking is disabled, bailing from previous session finalizer.");
+          .getLogger()
+          .log(DEBUG, "Session tracking is disabled, bailing from previous session finalizer.");
       return;
     }
 
