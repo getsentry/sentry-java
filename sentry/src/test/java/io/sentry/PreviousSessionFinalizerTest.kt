@@ -30,13 +30,20 @@ class PreviousSessionFinalizerTest {
             flushTimeoutMillis: Long = 0L,
             sessionFileExists: Boolean = true,
             session: Session? = null,
-            nativeCrashTimestamp: Date? = null
+            nativeCrashTimestamp: Date? = null,
+            sessionTrackingEnabled: Boolean = true,
+            shouldAwait: Boolean = false
         ): PreviousSessionFinalizer {
             options.run {
                 setLogger(this@Fixture.logger)
                 isDebug = true
                 cacheDirPath = dir?.newFolder()?.absolutePath
                 this.flushTimeoutMillis = flushTimeoutMillis
+                isEnableAutoSessionTracking = sessionTrackingEnabled
+                setEnvelopeDiskCache(EnvelopeCache.create(this))
+                if (!shouldAwait) {
+                    (envelopeDiskCache as? EnvelopeCache)?.flushPreviousSession()
+                }
             }
             options.cacheDirPath?.let {
                 sessionFile = EnvelopeCache.getPreviousSessionFile(it)
@@ -164,5 +171,36 @@ class PreviousSessionFinalizerTest {
 
         verify(fixture.hub, never()).captureEnvelope(any())
         assertFalse(fixture.sessionFile.exists())
+    }
+
+    @Test
+    fun `if session tracking is disabled, does not wait for previous session flush`() {
+        val finalizer = fixture.getSut(
+            tmpDir,
+            flushTimeoutMillis = 500L,
+            sessionTrackingEnabled = false,
+            shouldAwait = true
+        )
+        finalizer.run()
+
+        verify(fixture.logger, never()).log(
+            any(),
+            argThat { startsWith("Timed out waiting to flush previous session to its own file in session finalizer.") },
+            any<Any>()
+        )
+        verify(fixture.hub, never()).captureEnvelope(any())
+    }
+
+    @Test
+    fun `awaits for previous session flush`() {
+        val finalizer = fixture.getSut(tmpDir, flushTimeoutMillis = 500L, shouldAwait = true)
+        finalizer.run()
+
+        verify(fixture.logger).log(
+            any(),
+            argThat { startsWith("Timed out waiting to flush previous session to its own file in session finalizer.") },
+            any<Any>()
+        )
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 }

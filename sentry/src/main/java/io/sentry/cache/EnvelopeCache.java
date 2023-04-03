@@ -434,4 +434,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
     return false;
   }
+
+  public void flushPreviousSession() {
+    previousSessionLatch.countDown();
+  }
 }

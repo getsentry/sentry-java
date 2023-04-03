@@ -36,6 +36,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 @SuppressLint("NewApi") // we check this in AnrIntegrationFactory
 public class AnrV2Integration implements Integration, Closeable {
 
@@ -126,12 +128,16 @@ public class AnrV2Integration implements Integration, Closeable {
 
       final IEnvelopeCache cache = options.getEnvelopeDiskCache();
       if (cache instanceof EnvelopeCache) {
-        if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
+        if (options.isEnableAutoSessionTracking() && !((EnvelopeCache) cache).waitPreviousSessionFlush()) {
           options
               .getLogger()
               .log(
                   SentryLevel.WARNING,
                   "Timed out waiting to flush previous session to its own file.");
+
+          // if we timed out waiting here, we can already flush the latch, because the timeout is big
+          // enough to wait for it only once and we don't have to wait again in PreviousSessionFinalizer
+          ((EnvelopeCache) cache).flushPreviousSession();
         }
       }
 

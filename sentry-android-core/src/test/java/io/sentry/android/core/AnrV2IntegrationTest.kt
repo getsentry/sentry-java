@@ -66,7 +66,8 @@ class AnrV2IntegrationTest {
             isAnrEnabled: Boolean = true,
             flushTimeoutMillis: Long = 0L,
             lastReportedAnrTimestamp: Long? = null,
-            lastEventId: SentryId = SentryId()
+            lastEventId: SentryId = SentryId(),
+            sessionTrackingEnabled: Boolean = true
         ): AnrV2Integration {
             options.run {
                 setLogger(this@Fixture.logger)
@@ -76,6 +77,7 @@ class AnrV2IntegrationTest {
                     if (useImmediateExecutorService) ImmediateExecutorService() else mock()
                 this.isAnrEnabled = isAnrEnabled
                 this.flushTimeoutMillis = flushTimeoutMillis
+                this.isEnableAutoSessionTracking = sessionTrackingEnabled
                 setEnvelopeDiskCache(EnvelopeCache.create(this))
             }
             options.cacheDirPath?.let { cacheDir ->
@@ -238,7 +240,7 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(
             tmpDir,
             lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 3000L
+            flushTimeoutMillis = 1000L
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
@@ -246,7 +248,7 @@ class AnrV2IntegrationTest {
             val hint = HintUtils.getSentrySdkHint(invocation.getArgument(1))
                 as DiskFlushNotification
             thread {
-                Thread.sleep(1000L)
+                Thread.sleep(500L)
                 hint.markFlushed()
             }
             SentryId()
@@ -367,12 +369,12 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(
             tmpDir,
             lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 3000L
+            flushTimeoutMillis = 1000L
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         thread {
-            Thread.sleep(1000L)
+            Thread.sleep(500L)
             val sessionHint = HintUtils.createWithTypeCheckHint(SessionStartHint())
             fixture.options.envelopeDiskCache.store(
                 SentryEnvelope(SentryId.EMPTY_ID, null, emptyList()),
@@ -389,5 +391,45 @@ class AnrV2IntegrationTest {
             argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
             any<Any>()
         )
+    }
+
+    @Test
+    fun `does not await for previous session flush, if session tracking is disabled`() {
+        val integration = fixture.getSut(
+            tmpDir,
+            lastReportedAnrTimestamp = oldTimestamp,
+            flushTimeoutMillis = 500L,
+            sessionTrackingEnabled = false
+        )
+        fixture.addAppExitInfo(timestamp = newTimestamp)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.logger, never()).log(
+            any(),
+            argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
+            any<Any>()
+        )
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
+    }
+
+    @Test
+    fun `flushes previous session latch, if timed out waiting`() {
+        val integration = fixture.getSut(
+            tmpDir,
+            lastReportedAnrTimestamp = oldTimestamp,
+            flushTimeoutMillis = 500L
+        )
+        fixture.addAppExitInfo(timestamp = newTimestamp)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.logger).log(
+            any(),
+            argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
+            any<Any>()
+        )
+        // should return true, because latch is 0 now
+        assertTrue((fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush())
     }
 }
