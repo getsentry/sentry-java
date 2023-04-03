@@ -17,6 +17,7 @@ import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
 import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
+import io.sentry.android.core.internal.util.CpuInfoUtils
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryThread
@@ -523,6 +524,29 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(SentryEvent(), Hint())) {
             val app = it.contexts.app!!
             assertFalse(app.inForeground!!)
+        }
+    }
+
+    @Test
+    fun `Event sets no device cpu info when there is none provided`() {
+        val sut = fixture.getSut(context)
+        CpuInfoUtils.getInstance().setCpuMaxFrequencies(emptyList())
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
+            val device = it.contexts.device!!
+            assertNull(device.processorCount)
+            assertNull(device.processorFrequency)
+        }
+    }
+
+    @Test
+    fun `Event sets rights device cpu info when there is one provided`() {
+        val sut = fixture.getSut(context)
+        CpuInfoUtils.getInstance().setCpuMaxFrequencies(listOf(800, 900))
+
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
+            val device = it.contexts.device!!
+            assertEquals(2, device.processorCount)
+            assertEquals(900.0, device.processorFrequency)
         }
     }
 

@@ -252,6 +252,22 @@ class SentryAppenderTest {
     }
 
     @Test
+    fun `converts error log level to Sentry level with exception`() {
+        fixture = Fixture(minimumEventLevel = Level.ERROR)
+        fixture.logger.error("testing error level", RuntimeException("test exc"))
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.ERROR, event.level)
+                val exception = event.exceptions!!.first()
+                assertEquals(SentryAppender.MECHANISM_TYPE, exception.mechanism!!.type)
+                assertEquals("test exc", exception.value)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `attaches thread information`() {
         fixture = Fixture(minimumEventLevel = Level.WARN)
         fixture.logger.warn("testing thread information")

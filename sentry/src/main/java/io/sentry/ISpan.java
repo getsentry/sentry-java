@@ -19,10 +19,24 @@ public interface ISpan {
   @ApiStatus.Internal
   @NotNull
   ISpan startChild(
+      @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions);
+
+  @ApiStatus.Internal
+  @NotNull
+  ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter);
+
+  @ApiStatus.Internal
+  @NotNull
+  ISpan startChild(
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull Instrumenter instrumenter,
+      @NotNull SpanOptions spanOptions);
 
   /**
    * Starts a child Span.
@@ -214,6 +228,24 @@ public interface ISpan {
    */
   @ApiStatus.Internal
   boolean updateEndDate(@NotNull SentryDate date);
+
+  /**
+   * Returns the start date of this span or transaction.
+   *
+   * @return the start date
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryDate getStartDate();
+
+  /**
+   * Returns the end date of this span or transaction.
+   *
+   * @return the end date
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SentryDate getFinishDate();
 
   /**
    * Whether this span instance is a NOOP that doesn't collect information

@@ -197,6 +197,22 @@ class SentryHandlerTest {
     }
 
     @Test
+    fun `converts severe log level to Sentry level with exception`() {
+        fixture = Fixture(minimumEventLevel = Level.SEVERE)
+        fixture.logger.log(Level.SEVERE, "testing error level", RuntimeException("test exc"))
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.ERROR, event.level)
+                val exception = event.exceptions!!.first()
+                assertEquals(SentryHandler.MECHANISM_TYPE, exception.mechanism!!.type)
+                assertEquals("test exc", exception.value)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `attaches thread information`() {
         fixture = Fixture(minimumEventLevel = Level.WARNING)
         fixture.logger.warning("testing thread information")
