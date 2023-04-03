@@ -97,6 +97,7 @@ public final class Span implements ISpan {
     return startTimestamp;
   }
 
+  @Override
   public @Nullable SentryDate getFinishDate() {
     return timestamp;
   }

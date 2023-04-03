@@ -146,6 +146,7 @@ public final class SentryTracer implements ITransaction {
     return this.root.getStartDate();
   }
 
+  @Override
   public @Nullable SentryDate getFinishDate() {
     return this.root.getFinishDate();
   }

@@ -35,4 +35,9 @@ class NoOpSpanTest {
     fun `startDate return a NanotimeDate`() {
         assertIs<SentryNanotimeDate>(span.startDate)
     }
+
+    @Test
+    fun `finishDate return a NanotimeDate`() {
+        assertIs<SentryNanotimeDate>(span.finishDate)
+    }
 }

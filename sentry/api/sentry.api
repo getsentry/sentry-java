@@ -44,6 +44,7 @@ public final class io/sentry/Baggage {
 	public fun getThirdPartyHeader ()Ljava/lang/String;
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransaction ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
 	public fun getUserSegment ()Ljava/lang/String;
 	public fun isMutable ()Z
@@ -62,6 +63,7 @@ public final class io/sentry/Baggage {
 }
 
 public final class io/sentry/Baggage$DSCKeys {
+	public static final field ALL Ljava/util/List;
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
@@ -548,6 +550,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
+	public abstract fun getFinishDate ()Lio/sentry/SentryDate;
 	public abstract fun getOperation ()Ljava/lang/String;
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
 	public abstract fun getStartDate ()Lio/sentry/SentryDate;
@@ -820,6 +823,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -856,6 +860,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
+	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/NoOpTransaction;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
@@ -2148,6 +2153,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field ANDROID_INTENT Ljava/lang/String;
 	public static final field ANDROID_MOTION_EVENT Ljava/lang/String;
 	public static final field ANDROID_NAV_DESTINATION Ljava/lang/String;
+	public static final field ANDROID_NETWORK_CAPABILITIES Ljava/lang/String;
 	public static final field ANDROID_SENSOR_EVENT Ljava/lang/String;
 	public static final field ANDROID_VIEW Ljava/lang/String;
 	public static final field APOLLO_REQUEST Ljava/lang/String;
@@ -2752,6 +2758,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getBootTime ()Ljava/util/Date;
 	public fun getBrand ()Ljava/lang/String;
 	public fun getConnectionType ()Ljava/lang/String;
+	public fun getCpuDescription ()Ljava/lang/String;
 	public fun getExternalFreeStorage ()Ljava/lang/Long;
 	public fun getExternalStorageSize ()Ljava/lang/Long;
 	public fun getFamily ()Ljava/lang/String;
@@ -2766,6 +2773,8 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getModelId ()Ljava/lang/String;
 	public fun getName ()Ljava/lang/String;
 	public fun getOrientation ()Lio/sentry/protocol/Device$DeviceOrientation;
+	public fun getProcessorCount ()Ljava/lang/Integer;
+	public fun getProcessorFrequency ()Ljava/lang/Double;
 	public fun getScreenDensity ()Ljava/lang/Float;
 	public fun getScreenDpi ()Ljava/lang/Integer;
 	public fun getScreenHeightPixels ()Ljava/lang/Integer;
@@ -2786,6 +2795,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setBrand (Ljava/lang/String;)V
 	public fun setCharging (Ljava/lang/Boolean;)V
 	public fun setConnectionType (Ljava/lang/String;)V
+	public fun setCpuDescription (Ljava/lang/String;)V
 	public fun setExternalFreeStorage (Ljava/lang/Long;)V
 	public fun setExternalStorageSize (Ljava/lang/Long;)V
 	public fun setFamily (Ljava/lang/String;)V
@@ -2802,6 +2812,8 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setName (Ljava/lang/String;)V
 	public fun setOnline (Ljava/lang/Boolean;)V
 	public fun setOrientation (Lio/sentry/protocol/Device$DeviceOrientation;)V
+	public fun setProcessorCount (Ljava/lang/Integer;)V
+	public fun setProcessorFrequency (Ljava/lang/Double;)V
 	public fun setScreenDensity (Ljava/lang/Float;)V
 	public fun setScreenDpi (Ljava/lang/Integer;)V
 	public fun setScreenHeightPixels (Ljava/lang/Integer;)V
@@ -2841,6 +2853,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field BRAND Ljava/lang/String;
 	public static final field CHARGING Ljava/lang/String;
 	public static final field CONNECTION_TYPE Ljava/lang/String;
+	public static final field CPU_DESCRIPTION Ljava/lang/String;
 	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;
 	public static final field EXTERNAL_STORAGE_SIZE Ljava/lang/String;
 	public static final field FAMILY Ljava/lang/String;
@@ -2857,6 +2870,8 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field NAME Ljava/lang/String;
 	public static final field ONLINE Ljava/lang/String;
 	public static final field ORIENTATION Ljava/lang/String;
+	public static final field PROCESSOR_COUNT Ljava/lang/String;
+	public static final field PROCESSOR_FREQUENCY Ljava/lang/String;
 	public static final field SCREEN_DENSITY Ljava/lang/String;
 	public static final field SCREEN_DPI Ljava/lang/String;
 	public static final field SCREEN_HEIGHT_PIXELS Ljava/lang/String;
@@ -2865,6 +2880,33 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field STORAGE_SIZE Ljava/lang/String;
 	public static final field TIMEZONE Ljava/lang/String;
 	public static final field USABLE_MEMORY Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/Geo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/Geo;)V
+	public fun getCity ()Ljava/lang/String;
+	public fun getCountryCode ()Ljava/lang/String;
+	public fun getRegion ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setCity (Ljava/lang/String;)V
+	public fun setCountryCode (Ljava/lang/String;)V
+	public fun setRegion (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/Geo$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Geo;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Geo$JsonKeys {
+	public static final field CITY Ljava/lang/String;
+	public static final field COUNTRY_CODE Ljava/lang/String;
+	public static final field REGION Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -3539,8 +3581,10 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public static fun fromMap (Ljava/util/Map;Lio/sentry/SentryOptions;)Lio/sentry/protocol/User;
 	public fun getData ()Ljava/util/Map;
 	public fun getEmail ()Ljava/lang/String;
+	public fun getGeo ()Lio/sentry/protocol/Geo;
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
 	public fun getSegment ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -3548,8 +3592,10 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setEmail (Ljava/lang/String;)V
+	public fun setGeo (Lio/sentry/protocol/Geo;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setIpAddress (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
 	public fun setSegment (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3565,8 +3611,10 @@ public final class io/sentry/protocol/User$Deserializer : io/sentry/JsonDeserial
 public final class io/sentry/protocol/User$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field EMAIL Ljava/lang/String;
+	public static final field GEO Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
 	public static final field OTHER Ljava/lang/String;
 	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;

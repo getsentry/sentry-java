@@ -5,13 +5,35 @@
 ### Features
 
 - Create `User` and `Breadcrumb` from map ([#2614](https://github.com/getsentry/sentry-java/pull/2614))
-- Add time-to-initial-display and time-to-full-display measurements to Activity transactions ([#2611](https://github.com/getsentry/sentry-java/pull/2611))
-- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
 
 ### Fixes
 
+- Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
+
+## 6.17.0
+
+### Features
+
+- Add `name` and `geo` to `User` ([#2556](https://github.com/getsentry/sentry-java/pull/2556)) 
+- Add breadcrumbs on network changes ([#2608](https://github.com/getsentry/sentry-java/pull/2608))
+- Add time-to-initial-display and time-to-full-display measurements to Activity transactions ([#2611](https://github.com/getsentry/sentry-java/pull/2611))
+- Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
+- Add Logcat adapter ([#2620](https://github.com/getsentry/sentry-java/pull/2620))
+- Provide CPU count/frequency data as device context ([#2622](https://github.com/getsentry/sentry-java/pull/2622))
+
+### Fixes
+
+- Trim time-to-full-display span if reportFullyDisplayed API is never called ([#2631](https://github.com/getsentry/sentry-java/pull/2631))
 - Fix Automatic UI transactions having wrong durations ([#2623](https://github.com/getsentry/sentry-java/pull/2623))
 - Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
+- Pass through unknown sentry baggage keys into SentryEnvelopeHeader ([#2618](https://github.com/getsentry/sentry-java/pull/2618))
+- Fix missing null check when removing lifecycle observer ([#2625](https://github.com/getsentry/sentry-java/pull/2625))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.0 to v0.6.1 ([#2629](https://github.com/getsentry/sentry-java/pull/2629))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#061)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.0...0.6.1)
 
 ## 6.16.0
 

@@ -90,7 +90,8 @@ public fun SentryTraced(
                 drawContent()
                 firstRendered.item = true
                 renderSpan?.finish()
-            }
+            },
+        propagateMinConstraints = true
     ) {
         content()
     }
