@@ -92,6 +92,7 @@ class UserSerializationTest {
         assertEquals(expected.id, actual?.id)
         assertEquals(expected.username, actual?.username)
         assertEquals(expected.ipAddress, actual?.ipAddress)
+        assertEquals(expected.name, actual?.name)
         assertEquals(expected.data, actual?.data)
 
         assertEquals(expected.geo?.city, actual?.geo?.city)

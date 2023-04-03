@@ -96,6 +96,9 @@ public final class User implements JsonUnknown, JsonSerializable {
         case JsonKeys.IP_ADDRESS:
           user.ipAddress = (value instanceof String) ? (String) value : null;
           break;
+        case JsonKeys.NAME:
+          user.name = (value instanceof String) ? (String) value : null;
+          break;
         case JsonKeys.GEO:
           final Map<Object, Object> geo =
               (value instanceof Map) ? (Map<Object, Object>) value : null;
