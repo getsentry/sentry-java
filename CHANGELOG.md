@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
+- Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
+
+## 6.17.0
+
 ### Features
 
 - Add `name` and `geo` to `User` ([#2556](https://github.com/getsentry/sentry-java/pull/2556)) 
@@ -13,7 +20,7 @@
 
 ### Fixes
 
-- Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
+- Trim time-to-full-display span if reportFullyDisplayed API is never called ([#2631](https://github.com/getsentry/sentry-java/pull/2631))
 - Fix Automatic UI transactions having wrong durations ([#2623](https://github.com/getsentry/sentry-java/pull/2623))
 - Fix wrong default environment in Session ([#2610](https://github.com/getsentry/sentry-java/pull/2610))
 - Pass through unknown sentry baggage keys into SentryEnvelopeHeader ([#2618](https://github.com/getsentry/sentry-java/pull/2618))

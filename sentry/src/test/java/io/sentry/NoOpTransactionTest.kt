@@ -41,4 +41,9 @@ class NoOpTransactionTest {
     fun `startDate return a NanotimeDate`() {
         assertIs<SentryNanotimeDate>(transaction.startDate)
     }
+
+    @Test
+    fun `finishDate return a NanotimeDate`() {
+        assertIs<SentryNanotimeDate>(transaction.finishDate)
+    }
 }

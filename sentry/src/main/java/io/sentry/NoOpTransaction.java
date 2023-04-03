@@ -215,6 +215,11 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public @NotNull SentryDate getFinishDate() {
+    return new SentryNanotimeDate();
+  }
+
+  @Override
   public boolean isNoOp() {
     return true;
   }

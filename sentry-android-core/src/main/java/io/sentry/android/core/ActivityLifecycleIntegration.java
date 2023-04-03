@@ -253,7 +253,7 @@ public final class ActivityLifecycleIntegration
             options
                 .getExecutorService()
                 .schedule(
-                    () -> finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED), TTFD_TIMEOUT_MILLIS);
+                    () -> finishExceededTtfdSpan(ttidSpanMap.get(activity)), TTFD_TIMEOUT_MILLIS);
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -320,7 +320,7 @@ public final class ActivityLifecycleIntegration
       // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
       finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
       if (finishTtfd) {
-        finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED);
+        finishExceededTtfdSpan(ttidSpan);
       }
       cancelTtfdAutoClose();
 
@@ -449,8 +449,8 @@ public final class ActivityLifecycleIntegration
     final ISpan ttidSpan = ttidSpanMap.get(activity);
     finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
 
-    // we finish the ttfdSpan as cancelled in case it isn't completed yet
-    finishSpan(ttfdSpan, SpanStatus.DEADLINE_EXCEEDED);
+    // we finish the ttfdSpan as deadline_exceeded in case it isn't completed yet
+    finishExceededTtfdSpan(ttidSpan);
     cancelTtfdAutoClose();
 
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
@@ -477,9 +477,18 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishSpan(final @Nullable ISpan span, final @NotNull SentryDate endTimestamp) {
+    finishSpan(span, endTimestamp, null);
+  }
+
+  private void finishSpan(
+      final @Nullable ISpan span,
+      final @NotNull SentryDate endTimestamp,
+      final @Nullable SpanStatus spanStatus) {
     if (span != null && !span.isFinished()) {
       final @NotNull SpanStatus status =
-          span.getStatus() != null ? span.getStatus() : SpanStatus.OK;
+          spanStatus != null
+              ? spanStatus
+              : span.getStatus() != null ? span.getStatus() : SpanStatus.OK;
       span.finish(status, endTimestamp);
     }
   }
@@ -531,6 +540,18 @@ public final class ActivityLifecycleIntegration
     cancelTtfdAutoClose();
   }
 
+  private void finishExceededTtfdSpan(final @Nullable ISpan ttidSpan) {
+    if (ttfdSpan == null) {
+      return;
+    }
+    ttfdSpan.setDescription(getExceededTtfdDesc(ttfdSpan));
+    // We set the end timestamp of the ttfd span to be equal to the ttid span. This way,
+    final @Nullable SentryDate ttidEndDate = ttidSpan != null ? ttidSpan.getFinishDate() : null;
+    final @NotNull SentryDate ttfdEndDate =
+        ttidEndDate != null ? ttidEndDate : ttfdSpan.getStartDate();
+    finishSpan(ttfdSpan, ttfdEndDate, SpanStatus.DEADLINE_EXCEEDED);
+  }
+
   @TestOnly
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
@@ -575,6 +596,13 @@ public final class ActivityLifecycleIntegration
 
   private @NotNull String getTtfdDesc(final @NotNull String activityName) {
     return activityName + " full display";
+  }
+
+  private @NotNull String getExceededTtfdDesc(final @NotNull ISpan ttfdSpan) {
+    final @Nullable String ttfdCurrentDescription = ttfdSpan.getDescription();
+    if (ttfdCurrentDescription != null && ttfdCurrentDescription.endsWith(" - Deadline Exceeded"))
+      return ttfdCurrentDescription;
+    return ttfdSpan.getDescription() + " - Deadline Exceeded";
   }
 
   private @NotNull String getAppStartDesc(final boolean coldStart) {
