@@ -101,10 +101,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
               (value instanceof Map) ? (Map<Object, Object>) value : null;
           if (untypedData != null) {
             for (Map.Entry<Object, Object> dataEntry : untypedData.entrySet()) {
-              if ((dataEntry.getKey() instanceof String)) {
+              if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
                 data.put((String) dataEntry.getKey(), dataEntry.getValue());
               } else {
-                options.getLogger().log(SentryLevel.WARNING, "Invalid type in data map.");
+                options
+                    .getLogger()
+                    .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
               }
             }
           }

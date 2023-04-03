@@ -11,6 +11,7 @@ import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class UserSerializationTest {
 
@@ -92,28 +93,45 @@ class UserSerializationTest {
         assertEquals(expected.username, actual?.username)
         assertEquals(expected.ipAddress, actual?.ipAddress)
         assertEquals(expected.data, actual?.data)
+
+        assertEquals(expected.geo?.city, actual?.geo?.city)
+        assertEquals(expected.geo?.countryCode, actual?.geo?.countryCode)
+        assertEquals(expected.geo?.region, actual?.geo?.region)
     }
 
     @Test
-    fun deserializeFromMapInvalidData() {
+    fun deserializeDataWithInvalidKey() {
         val map: Map<String, Any?> = mapOf(
             "data" to mapOf(
-                "string-key" to 123 // Invalid value type
+                123 to 456 // Invalid key type
             )
         )
         val actual = User.fromMap(map, SentryOptions())
-        assertEquals(null, actual?.data?.get("string-key"))
+        assertTrue(actual?.data?.isEmpty() ?: false)
     }
 
     @Test
-    fun deserializeFromMapInvalidOther() {
+    fun deserializeDataWithPrimitiveValues() {
         val map: Map<String, Any?> = mapOf(
-            "other" to mapOf(
-                "string-key" to 123 // Invalid value type
+            "data" to mapOf(
+                "int" to 123,
+                "float" to 0.2f
             )
         )
         val actual = User.fromMap(map, SentryOptions())
-        assertEquals(null, actual?.data?.get("string-key"))
+        assertEquals("123", actual?.data?.get("int"))
+        assertEquals("0.2", actual?.data?.get("float"))
+    }
+
+    @Test
+    fun deserializeDataWithNullKey() {
+        val map: Map<String, Any?> = mapOf(
+            "data" to mapOf(
+                "null" to null
+            )
+        )
+        val actual = User.fromMap(map, SentryOptions())
+        assertEquals(null, actual?.data?.get("null"))
     }
 
     // Helper

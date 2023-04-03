@@ -91,6 +91,27 @@ public final class Geo implements JsonUnknown, JsonSerializable {
 
   // region json
 
+  public static Geo fromMap(@NotNull Map<String, Object> map) {
+    final Geo geo = new Geo();
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      Object value = entry.getValue();
+      switch (entry.getKey()) {
+        case JsonKeys.CITY:
+          geo.city = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.COUNTRY_CODE:
+          geo.countryCode = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.REGION:
+          geo.region = (value instanceof String) ? (String) value : null;
+          break;
+        default:
+          break;
+      }
+    }
+    return geo;
+  }
+
   public static final class JsonKeys {
     public static final String CITY = "city";
     public static final String COUNTRY_CODE = "country_code";

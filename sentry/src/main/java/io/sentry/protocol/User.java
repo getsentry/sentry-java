@@ -96,17 +96,33 @@ public final class User implements JsonUnknown, JsonSerializable {
         case JsonKeys.IP_ADDRESS:
           user.ipAddress = (value instanceof String) ? (String) value : null;
           break;
+        case JsonKeys.GEO:
+          final Map<Object, Object> geo =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
+          if (geo != null) {
+            final ConcurrentHashMap<String, Object> geoData = new ConcurrentHashMap<>();
+            for (Map.Entry<Object, Object> geoEntry : geo.entrySet()) {
+              if (geoEntry.getKey() instanceof String && geoEntry.getValue() != null) {
+                geoData.put((String) geoEntry.getKey(), geoEntry.getValue());
+              } else {
+                options.getLogger().log(SentryLevel.WARNING, "Invalid key type in gep map.");
+              }
+            }
+            user.geo = Geo.fromMap(geoData);
+          }
+          break;
         case JsonKeys.DATA:
           final Map<Object, Object> data =
               (value instanceof Map) ? (Map<Object, Object>) value : null;
           if (data != null) {
             final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
             for (Map.Entry<Object, Object> dataEntry : data.entrySet()) {
-              if ((dataEntry.getKey() instanceof String)
-                  && (dataEntry.getValue() instanceof String)) {
-                userData.put((String) dataEntry.getKey(), (String) dataEntry.getValue());
+              if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
+                userData.put((String) dataEntry.getKey(), dataEntry.getValue().toString());
               } else {
-                options.getLogger().log(SentryLevel.WARNING, "Invalid type in data map.");
+                options
+                    .getLogger()
+                    .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
               }
             }
             user.data = userData;
@@ -119,11 +135,12 @@ public final class User implements JsonUnknown, JsonSerializable {
           if (other != null && (user.data == null || user.data.isEmpty())) {
             final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
             for (Map.Entry<Object, Object> otherEntry : other.entrySet()) {
-              if ((otherEntry.getKey() instanceof String)
-                  && (otherEntry.getValue() instanceof String)) {
-                userData.put((String) otherEntry.getKey(), (String) otherEntry.getValue());
+              if (otherEntry.getKey() instanceof String && otherEntry.getValue() != null) {
+                userData.put((String) otherEntry.getKey(), otherEntry.getValue().toString());
               } else {
-                options.getLogger().log(SentryLevel.WARNING, "Invalid type in other map.");
+                options
+                    .getLogger()
+                    .log(SentryLevel.WARNING, "Invalid key or null value in other map.");
               }
             }
             user.data = userData;

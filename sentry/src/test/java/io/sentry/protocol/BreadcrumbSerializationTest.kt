@@ -73,7 +73,7 @@ class BreadcrumbSerializationTest {
     }
 
     @Test
-    fun deserializeFromMapInvalidData() {
+    fun deserializeDataWithInvalidKey() {
         val map: Map<String, Any?> = mapOf(
             "data" to mapOf(
                 123 to 456 // Invalid key type
@@ -81,6 +81,17 @@ class BreadcrumbSerializationTest {
         )
         val actual = Breadcrumb.fromMap(map, SentryOptions())
         assertTrue(actual.data.isEmpty())
+    }
+
+    @Test
+    fun deserializeDataWithNullKey() {
+        val map: Map<String, Any?> = mapOf(
+            "data" to mapOf(
+                "null" to null
+            )
+        )
+        val actual = Breadcrumb.fromMap(map, SentryOptions())
+        assertEquals(null, actual?.data?.get("null"))
     }
 
     // Helper
