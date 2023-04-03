@@ -6,6 +6,11 @@
 
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
 
+### Dependencies
+- Bump Gradle from v7.6.0 to v8.0.2 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+    - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v802)
+    - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.2)
+
 ## 6.17.0
 
 ### Features
