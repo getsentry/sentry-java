@@ -48,8 +48,3 @@ tasks.withType<KotlinCompile> {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
-
-tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun>().configureEach {
-    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
-    setExecutable(javaLauncher.get().executablePath.asFile.absolutePath)
-}

@@ -210,3 +210,10 @@ gradle.projectsEvaluated {
             }
     }
 }
+
+gradle.taskGraph.whenReady {
+    val task = this.allTasks.find { it.name.endsWith(".main()") } as? JavaExec
+    task?.let {
+        it.setExecutable(it.javaLauncher.get().executablePath.asFile.absolutePath)
+    }
+}
