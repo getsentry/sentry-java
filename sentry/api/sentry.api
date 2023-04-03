@@ -2272,6 +2272,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/lang/String;I)V
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
+	public fun flushPreviousSession ()V
 	public static fun getCurrentSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
