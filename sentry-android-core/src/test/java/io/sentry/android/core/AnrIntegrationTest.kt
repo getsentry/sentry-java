@@ -3,12 +3,7 @@ package io.sentry.android.core
 import android.content.Context
 import io.sentry.Hint
 import io.sentry.IHub
-import io.sentry.ITransaction
-import io.sentry.Scope
-import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
-import io.sentry.SpanContext
-import io.sentry.SpanStatus
 import io.sentry.android.core.AnrIntegration.AnrHint
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.util.HintUtils
@@ -16,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -130,35 +124,6 @@ class AnrIntegrationTest {
                 val hint = HintUtils.getSentrySdkHint(it) as AnrHint
                 assertEquals("anr_background", hint.mechanism())
             }
-        )
-    }
-
-    @Test
-    fun `When ANR watch dog is triggered, and a transaction is running it should be finished`() {
-        val sut = fixture.getSut()
-
-        // build up a running transaction
-        val spanContext = SpanContext("op.load")
-        val transaction = mock<ITransaction>()
-        whenever(transaction.name).thenReturn("transaction")
-        whenever(transaction.spanContext).thenReturn(spanContext)
-
-        val scope = mock<Scope>()
-        whenever(scope.transaction).thenReturn(transaction)
-
-        whenever(fixture.hub.configureScope(any())).then {
-            it.getArgument<ScopeCallback>(0).run(scope)
-        }
-
-        sut.reportANR(fixture.hub, fixture.options, getApplicationNotResponding())
-
-        verify(transaction).forceFinish(SpanStatus.ABORTED, true)
-        verify(fixture.hub).captureEvent(
-            check {
-                assertEquals("transaction", it.transaction)
-                assertEquals(spanContext, it.contexts.trace)
-            },
-            any<Hint>()
         )
     }
 

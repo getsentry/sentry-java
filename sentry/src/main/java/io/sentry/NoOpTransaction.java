@@ -96,11 +96,11 @@ public final class NoOpTransaction implements ITransaction {
   public void scheduleFinish() {}
 
   @Override
-  public void forceFinish(@NotNull SpanStatus status, boolean forceKeep) {}
+  public void forceFinish(@NotNull SpanStatus status, boolean dropIfNoChildren) {}
 
   @Override
   public void finish(
-      @Nullable SpanStatus status, @Nullable SentryDate timestamp, boolean forceKeep) {}
+      @Nullable SpanStatus status, @Nullable SentryDate timestamp, boolean dropIfNoChildren) {}
 
   @Override
   public boolean isFinished() {

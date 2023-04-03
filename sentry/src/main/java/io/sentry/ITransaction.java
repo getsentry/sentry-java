@@ -84,14 +84,16 @@ public interface ITransaction extends ISpan {
    * transaction is already finished this is a no-op.
    *
    * @param status The status to set the unfinished child spans / transaction to.
-   * @param forceKeep Ensures the transaction is kept even when it e.g. contains no child spans.
-   *     Useful for situations were the transaction and profile provide crucial context (e.g. ANRs)
+   * @param dropIfNoChildren true, if the transaction should be dropped when it e.g. contains no
+   *     child spans. Usually true, but can be set to falseS for situations were the transaction and
+   *     profile provide crucial context (e.g. ANRs)
    */
   @ApiStatus.Internal
-  void forceFinish(@NotNull final SpanStatus status, boolean forceKeep);
+  void forceFinish(@NotNull final SpanStatus status, boolean dropIfNoChildren);
 
   @ApiStatus.Internal
-  void finish(@Nullable SpanStatus status, @Nullable SentryDate timestamp, boolean forceKeep);
+  void finish(
+      @Nullable SpanStatus status, @Nullable SentryDate timestamp, boolean dropIfNoChildren);
 
   @ApiStatus.Internal
   void setContext(@NotNull String key, @NotNull Object context);

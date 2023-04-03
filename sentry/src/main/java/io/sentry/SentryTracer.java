@@ -129,7 +129,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull void forceFinish(@NotNull SpanStatus status, boolean forceKeep) {
+  public @NotNull void forceFinish(@NotNull SpanStatus status, boolean dropIfNoChildren) {
     if (isFinished()) {
       return;
     }
@@ -145,12 +145,12 @@ public final class SentryTracer implements ITransaction {
       span.setSpanFinishedCallback(null);
       span.finish(status, finishTimestamp);
     }
-    finish(status, finishTimestamp, forceKeep);
+    finish(status, finishTimestamp, dropIfNoChildren);
   }
 
   @Override
   public void finish(
-      @Nullable SpanStatus status, @Nullable SentryDate finishDate, boolean forceKeep) {
+      @Nullable SpanStatus status, @Nullable SentryDate finishDate, boolean dropIfNoChildren) {
     // try to get the high precision timestamp from the root span
     SentryDate finishTimestamp = root.getFinishDate();
 
@@ -223,7 +223,7 @@ public final class SentryTracer implements ITransaction {
         }
       }
 
-      if (!forceKeep && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
+      if (dropIfNoChildren && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         hub.getOptions()
             .getLogger()
@@ -463,7 +463,7 @@ public final class SentryTracer implements ITransaction {
   @Override
   @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
-    finish(status, finishDate, false);
+    finish(status, finishDate, true);
   }
 
   @Override

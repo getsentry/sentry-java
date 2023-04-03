@@ -4,12 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import io.sentry.Hint;
 import io.sentry.IHub;
-import io.sentry.ITransaction;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.SpanStatus;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.protocol.Mechanism;
@@ -96,18 +94,6 @@ public final class AnrIntegration implements Integration, Closeable {
 
     final SentryEvent event = new SentryEvent(anrThrowable);
     event.setLevel(SentryLevel.ERROR);
-
-    // In case there's an ongoing transaction we want to finish it
-    // and assign the trace span context to the event
-    hub.configureScope(
-        scope -> {
-          @Nullable ITransaction transaction = scope.getTransaction();
-          if (transaction != null) {
-            transaction.forceFinish(SpanStatus.ABORTED, true);
-            event.setTransaction(transaction.getName());
-            event.getContexts().setTrace(transaction.getSpanContext());
-          }
-        });
 
     final AnrHint anrHint = new AnrHint(isAppInBackground);
     final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);

@@ -1152,7 +1152,7 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when a transaction with no childs is force-finished with force-keep it should be captured`() {
+    fun `when a transaction with no childs is force-finished with dropIfNoChild set to false it should still be captured`() {
         // when a transaction is created
         val transaction = fixture.getSut(
             waitForChildren = true,
@@ -1160,10 +1160,10 @@ class SentryTracerTest {
             samplingDecision = TracesSamplingDecision(true)
         )
 
-        // and force-finish with force-keep is called
-        transaction.forceFinish(SpanStatus.ABORTED, true)
+        // and force-finished but dropping is disabled
+        transaction.forceFinish(SpanStatus.ABORTED, false)
 
-        // then the transaction should be captured with 0 spans
+        // then a transaction should be captured with 0 spans
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(0, it.spans.size)
@@ -1175,7 +1175,7 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when a transaction with no childs is force-finished without force-keep it should be dropped`() {
+    fun `when a transaction with no childs is force-finished but dropIfNoChildren is true, it should be dropped`() {
         // when a transaction is created
         val transaction = fixture.getSut(
             waitForChildren = true,
@@ -1183,8 +1183,8 @@ class SentryTracerTest {
             samplingDecision = TracesSamplingDecision(true)
         )
 
-        // and force-finish with force-keep is called
-        transaction.forceFinish(SpanStatus.ABORTED, false)
+        // and force-finish with dropping enabled
+        transaction.forceFinish(SpanStatus.ABORTED, true)
 
         // then the transaction should be captured with 0 spans
         verify(fixture.hub, never()).captureTransaction(
