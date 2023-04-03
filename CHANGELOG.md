@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
+
 ### Fixes
 
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
@@ -16,7 +20,6 @@
 - Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
 - Add Logcat adapter ([#2620](https://github.com/getsentry/sentry-java/pull/2620))
 - Provide CPU count/frequency data as device context ([#2622](https://github.com/getsentry/sentry-java/pull/2622))
-- Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
 
 ### Fixes
 
