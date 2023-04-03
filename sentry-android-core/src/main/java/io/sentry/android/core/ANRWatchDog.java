@@ -10,6 +10,7 @@ import android.os.Debug;
 import android.os.SystemClock;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.transport.ICurrentDateProvider;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +23,7 @@ final class ANRWatchDog extends Thread {
   private final boolean reportInDebug;
   private final ANRListener anrListener;
   private final MainLooperHandler uiHandler;
-  private final TimeProvider timeProvider;
+  private final ICurrentDateProvider timeProvider;
   /** the interval in which we check if there's an ANR, in ms */
   private long pollingIntervalMs;
 
@@ -56,7 +57,7 @@ final class ANRWatchDog extends Thread {
 
   @TestOnly
   ANRWatchDog(
-      @NotNull final TimeProvider timeProvider,
+      @NotNull final ICurrentDateProvider timeProvider,
       long timeoutIntervalMillis,
       long pollingIntervalMillis,
       boolean reportInDebug,
@@ -164,11 +165,6 @@ final class ANRWatchDog extends Thread {
       return false;
     }
     return true;
-  }
-
-  @FunctionalInterface
-  interface TimeProvider {
-    long getCurrentTimeMillis();
   }
 
   public interface ANRListener {

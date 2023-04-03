@@ -4,7 +4,7 @@ import android.app.ActivityManager
 import android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING
 import android.app.ActivityManager.ProcessErrorStateInfo.NO_ERROR
 import android.content.Context
-import io.sentry.android.core.ANRWatchDog.TimeProvider
+import io.sentry.transport.ICurrentDateProvider
 import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 class ANRWatchDogTest {
 
     private var currentTimeMs = 0L
-    private val timeProvider = TimeProvider { currentTimeMs }
+    private val timeProvider = ICurrentDateProvider { currentTimeMs }
 
     @Before
     fun `setup`() {
