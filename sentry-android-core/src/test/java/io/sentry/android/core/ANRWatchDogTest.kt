@@ -4,6 +4,8 @@ import android.app.ActivityManager
 import android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING
 import android.app.ActivityManager.ProcessErrorStateInfo.NO_ERROR
 import android.content.Context
+import io.sentry.android.core.ANRWatchDog.TimeProvider
+import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -18,6 +20,15 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ANRWatchDogTest {
+
+    private var currentTimeMs = 0L
+    private val timeProvider = TimeProvider { currentTimeMs }
+
+    @Before
+    fun `setup`() {
+        currentTimeMs = 12341234
+    }
+
     @Test
     fun `when ANR is detected, callback is invoked with threads stacktrace`() {
         var anr: ApplicationNotResponding? = null
@@ -30,15 +41,32 @@ class ANRWatchDogTest {
         val latch = CountDownLatch(1)
         whenever(handler.post(any())).then { latch.countDown() }
         whenever(handler.thread).thenReturn(thread)
-        val interval = 1L
-        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, mock())
+        val interval = 10L
+
+        val sut =
+            ANRWatchDog(
+                timeProvider,
+                interval,
+                1L,
+                true,
+                { a -> anr = a },
+                mock(),
+                handler,
+                mock()
+            )
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
 
-            assertTrue(latch.await(10L, TimeUnit.SECONDS)) // Wait until worker posts the job for the "UI thread"
+            assertTrue(
+                latch.await(
+                    10L,
+                    TimeUnit.SECONDS
+                )
+            ) // Wait until worker posts the job for the "UI thread"
             var waitCount = 0
             do {
+                currentTimeMs += 100L
                 Thread.sleep(100) // Let worker realize this is ANR
             } while (anr == null && waitCount++ < 100)
 
@@ -62,14 +90,26 @@ class ANRWatchDogTest {
             (i.getArgument(0) as Runnable).run()
         }
         whenever(handler.thread).thenReturn(thread)
-        val interval = 1L
-        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, mock())
+        val interval = 10L
+
+        val sut =
+            ANRWatchDog(
+                timeProvider,
+                interval,
+                1L,
+                true,
+                { a -> anr = a },
+                mock(),
+                handler,
+                mock()
+            )
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
 
             var waitCount = 0
             do {
+                currentTimeMs += 100L
                 Thread.sleep(100) // Let worker realize his runner always runs
             } while (!invoked && waitCount++ < 100)
 
@@ -93,7 +133,7 @@ class ANRWatchDogTest {
         val latch = CountDownLatch(1)
         whenever(handler.post(any())).then { latch.countDown() }
         whenever(handler.thread).thenReturn(thread)
-        val interval = 1L
+        val interval = 10L
         val context = mock<Context>()
         val am = mock<ActivityManager>()
 
@@ -102,14 +142,30 @@ class ANRWatchDogTest {
         stateInfo.condition = NOT_RESPONDING
         val anrs = listOf(stateInfo)
         whenever(am.processesInErrorState).thenReturn(anrs)
-        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, context)
+
+        val sut = ANRWatchDog(
+            timeProvider,
+            interval,
+            1L,
+            true,
+            { a -> anr = a },
+            mock(),
+            handler,
+            context
+        )
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
 
-            assertTrue(latch.await(10L, TimeUnit.SECONDS)) // Wait until worker posts the job for the "UI thread"
+            assertTrue(
+                latch.await(
+                    10L,
+                    TimeUnit.SECONDS
+                )
+            ) // Wait until worker posts the job for the "UI thread"
             var waitCount = 0
             do {
+                currentTimeMs += 100L
                 Thread.sleep(100) // Let worker realize this is ANR
             } while (anr == null && waitCount++ < 100)
 
@@ -134,7 +190,7 @@ class ANRWatchDogTest {
         val latch = CountDownLatch(1)
         whenever(handler.post(any())).then { latch.countDown() }
         whenever(handler.thread).thenReturn(thread)
-        val interval = 1L
+        val interval = 10L
         val context = mock<Context>()
         val am = mock<ActivityManager>()
 
@@ -143,15 +199,31 @@ class ANRWatchDogTest {
         stateInfo.condition = NO_ERROR
         val anrs = listOf(stateInfo)
         whenever(am.processesInErrorState).thenReturn(anrs)
-        val sut = ANRWatchDog(interval, true, { a -> anr = a }, mock(), handler, context)
+
+        val sut = ANRWatchDog(
+            timeProvider,
+            interval,
+            1L,
+            true,
+            { a -> anr = a },
+            mock(),
+            handler,
+            context
+        )
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
 
-            assertTrue(latch.await(10L, TimeUnit.SECONDS)) // Wait until worker posts the job for the "UI thread"
+            assertTrue(
+                latch.await(
+                    10L,
+                    TimeUnit.SECONDS
+                )
+            ) // Wait until worker posts the job for the "UI thread"
             var waitCount = 0
             do {
-                Thread.sleep(100) // Let worker realize this is ANR
+                currentTimeMs += 100L
+                Thread.sleep(100L) // Let worker realize this is ANR
             } while (anr == null && waitCount++ < 100)
             assertNull(anr) // callback never ran
         } finally {

@@ -1115,7 +1115,8 @@ class SentryTracerTest {
     fun `when a transaction is force-finished all spans get finished as well`() {
         val transaction = fixture.getSut(
             waitForChildren = true,
-            idleTimeout = 50
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
         )
 
         // when two spans are created
@@ -1155,7 +1156,8 @@ class SentryTracerTest {
         // when a transaction is created
         val transaction = fixture.getSut(
             waitForChildren = true,
-            idleTimeout = 50
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
         )
 
         // and force-finish with force-keep is called
@@ -1177,7 +1179,8 @@ class SentryTracerTest {
         // when a transaction is created
         val transaction = fixture.getSut(
             waitForChildren = true,
-            idleTimeout = 50
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
         )
 
         // and force-finish with force-keep is called

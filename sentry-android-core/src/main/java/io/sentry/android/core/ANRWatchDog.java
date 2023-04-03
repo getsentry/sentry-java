@@ -22,8 +22,9 @@ final class ANRWatchDog extends Thread {
   private final boolean reportInDebug;
   private final ANRListener anrListener;
   private final MainLooperHandler uiHandler;
+  private final TimeProvider timeProvider;
   /** the interval in which we check if there's an ANR, in ms */
-  private final long pollingIntervalMs = 500;
+  private long pollingIntervalMs;
 
   private final long timeoutIntervalMillis;
   private final @NotNull ILogger logger;
@@ -34,11 +35,7 @@ final class ANRWatchDog extends Thread {
   private final @NotNull Context context;
 
   @SuppressWarnings("UnnecessaryLambda")
-  private final Runnable ticker =
-      () -> {
-        lastKnownActiveUiTimestampMs = SystemClock.uptimeMillis();
-        reported.set(false);
-      };
+  private final Runnable ticker;
 
   ANRWatchDog(
       long timeoutIntervalMillis,
@@ -46,25 +43,43 @@ final class ANRWatchDog extends Thread {
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
       final @NotNull Context context) {
-    this(timeoutIntervalMillis, reportInDebug, listener, logger, new MainLooperHandler(), context);
+    this(
+        () -> SystemClock.uptimeMillis(),
+        timeoutIntervalMillis,
+        500,
+        reportInDebug,
+        listener,
+        logger,
+        new MainLooperHandler(),
+        context);
   }
 
   @TestOnly
   ANRWatchDog(
+      @NotNull final TimeProvider timeProvider,
       long timeoutIntervalMillis,
+      long pollingIntervalMillis,
       boolean reportInDebug,
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
       @NotNull MainLooperHandler uiHandler,
       final @NotNull Context context) {
+
     super("|ANR-WatchDog|");
 
+    this.timeProvider = timeProvider;
+    this.timeoutIntervalMillis = timeoutIntervalMillis;
+    this.pollingIntervalMs = pollingIntervalMillis;
     this.reportInDebug = reportInDebug;
     this.anrListener = listener;
-    this.timeoutIntervalMillis = timeoutIntervalMillis;
     this.logger = logger;
     this.uiHandler = uiHandler;
     this.context = context;
+    this.ticker =
+        () -> {
+          lastKnownActiveUiTimestampMs = timeProvider.getCurrentTimeMillis();
+          reported.set(false);
+        };
 
     if (timeoutIntervalMillis < (pollingIntervalMs * 2)) {
       throw new IllegalArgumentException(
@@ -76,7 +91,7 @@ final class ANRWatchDog extends Thread {
 
   @Override
   public void run() {
-    // when the watchdog gets started, let's assume there's no ANR
+    // right when the watchdog gets started, let's assume there's no ANR
     ticker.run();
 
     while (!isInterrupted()) {
@@ -98,7 +113,8 @@ final class ANRWatchDog extends Thread {
         return;
       }
 
-      final long unresponsiveDurationMs = SystemClock.uptimeMillis() - lastKnownActiveUiTimestampMs;
+      final long unresponsiveDurationMs =
+          timeProvider.getCurrentTimeMillis() - lastKnownActiveUiTimestampMs;
 
       // If the main thread has not handled ticker, it is blocked. ANR.
       if (unresponsiveDurationMs > timeoutIntervalMillis) {
@@ -136,16 +152,23 @@ final class ANRWatchDog extends Thread {
         logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
       }
       // if list is null, there's no process in ANR state.
-      if (processesInErrorState == null) {
-        return false;
-      }
-      for (ActivityManager.ProcessErrorStateInfo item : processesInErrorState) {
-        if (item.condition == NOT_RESPONDING) {
-          return true;
+      if (processesInErrorState != null) {
+        for (ActivityManager.ProcessErrorStateInfo item : processesInErrorState) {
+          if (item.condition == NOT_RESPONDING) {
+            return true;
+          }
         }
       }
+      // when list is empty, or there's no element NOT_RESPONDING, we can assume the app is not
+      // blocked
+      return false;
     }
-    return false;
+    return true;
+  }
+
+  @FunctionalInterface
+  interface TimeProvider {
+    long getCurrentTimeMillis();
   }
 
   public interface ANRListener {
