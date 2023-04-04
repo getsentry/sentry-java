@@ -302,7 +302,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       } catch (Throwable e) {
         options
             .getLogger()
-            .log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
+            .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
       }
     }
 
@@ -363,7 +363,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         } catch (Throwable e) {
           options
               .getLogger()
-              .log(SentryLevel.ERROR, "Failed to parse release from scope cache: %s", release);
+              .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
         }
       }
     }

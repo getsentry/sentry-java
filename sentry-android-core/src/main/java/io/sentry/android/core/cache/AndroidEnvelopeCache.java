@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
@@ -70,7 +71,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         hint,
         AnrV2Integration.AnrV2Hint.class,
         (anrHint) -> {
-          final long timestamp = anrHint.timestamp();
+          final @Nullable Long timestamp = anrHint.timestamp();
           options
               .getLogger()
               .log(
@@ -78,7 +79,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
                   "Writing last reported ANR marker with timestamp %d",
                   timestamp);
 
-          writeLastReportedAnrMarker(anrHint.timestamp());
+          writeLastReportedAnrMarker(timestamp);
         });
   }
 
@@ -136,7 +137,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return false;
   }
 
-  public static long lastReportedAnr(final @NotNull SentryOptions options) {
+  public static @Nullable Long lastReportedAnr(final @NotNull SentryOptions options) {
     final String cacheDirPath =
         Objects.requireNonNull(
             options.getCacheDirPath(), "Cache dir path should be set for getting ANRs reported");
@@ -147,7 +148,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         final String content = FileUtils.readText(lastAnrMarker);
         // we wrapped into try-catch already
         //noinspection ConstantConditions
-        return Long.parseLong(content.trim());
+        return content.equals("null") ? null : Long.parseLong(content.trim());
       } else {
         options
             .getLogger()
@@ -156,10 +157,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     } catch (Throwable e) {
       options.getLogger().log(ERROR, "Error reading last ANR marker", e);
     }
-    return 0L;
+    return null;
   }
 
-  private void writeLastReportedAnrMarker(final long timestamp) {
+  private void writeLastReportedAnrMarker(final @Nullable Long timestamp) {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
       options.getLogger().log(DEBUG, "Cache dir path is null, the ANR marker will not be written");

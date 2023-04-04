@@ -71,10 +71,11 @@ public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, ja
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AnrV2Integration$AnrV2Hint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/Backfillable {
-	public fun <init> (JLio/sentry/ILogger;JZ)V
+public final class io/sentry/android/core/AnrV2Integration$AnrV2Hint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/AbnormalExit, io/sentry/hints/Backfillable {
+	public fun <init> (JLio/sentry/ILogger;JZZ)V
+	public fun mechanism ()Ljava/lang/String;
 	public fun shouldEnrich ()Z
-	public fun timestamp ()J
+	public fun timestamp ()Ljava/lang/Long;
 }
 
 public final class io/sentry/android/core/AppComponentsBreadcrumbsIntegration : android/content/ComponentCallbacks2, io/sentry/Integration, java/io/Closeable {
@@ -323,7 +324,7 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
-	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)J
+	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 

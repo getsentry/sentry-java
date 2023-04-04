@@ -225,6 +225,21 @@ public final class Sentry {
     }
 
     notifyOptionsObservers(options);
+
+    finalizePreviousSession(options, HubAdapter.getInstance());
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void finalizePreviousSession(
+      final @NotNull SentryOptions options, final @NotNull IHub hub) {
+    // enqueue a task to finalize previous session. Since the executor
+    // is single-threaded, this task will be enqueued sequentially after all integrations that have
+    // to modify the previous session have done their work, even if they do that async.
+    try {
+      options.getExecutorService().submit(new PreviousSessionFinalizer(options, hub));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
+    }
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
