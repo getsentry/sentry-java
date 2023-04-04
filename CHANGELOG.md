@@ -5,6 +5,7 @@
 ## Features
 
 - Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
+	- Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
 
 ## 6.17.0
 
