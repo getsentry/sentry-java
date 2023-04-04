@@ -5,6 +5,7 @@
 ### Features
 
 - Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
+- Add `sent_at` to envelope header item ([#2638](https://github.com/getsentry/sentry-java/pull/2638))
 
 ### Fixes
 
