@@ -127,10 +127,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
             traceContext = reader.nextOrNull(logger, new TraceContext.Deserializer());
             break;
           case JsonKeys.SENT_AT:
-            String dateValue = reader.nextStringOrNull();
-            if (dateValue != null) {
-              sentAt = DateUtils.getDateTime(dateValue);
-            }
+            sentAt = reader.nextDateOrNull(logger);
             break;
           default:
             if (unknown == null) {
