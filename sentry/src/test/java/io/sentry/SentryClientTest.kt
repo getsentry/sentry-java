@@ -44,6 +44,7 @@ import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.Arrays
+import java.util.Date
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1993,6 +1994,59 @@ class SentryClientTest {
         sut.captureException(IllegalStateException(), scope)
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 0)
+    }
+
+    @Test
+    fun `capturing event sets envelope headers sent_at to current date`() {
+        val now = Date(9001)
+        val sut = fixture.getSut { options ->
+            options.dateProvider = mock()
+            whenever(options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+        }
+
+        sut.captureEvent(SentryEvent())
+
+        val argumentCaptor = argumentCaptor<SentryEnvelope>()
+        verify(fixture.transport, times(1)).send(argumentCaptor.capture(), anyOrNull())
+
+        val envelope = argumentCaptor.firstValue
+        assertEquals(envelope.header.sentAt?.time, 9001)
+    }
+
+    @Test
+    fun `capturing transaction sets envelope headers sent_at to current date`() {
+        val now = Date(9001)
+        val sut = fixture.getSut { options ->
+            options.dateProvider = mock()
+            whenever(options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+        }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        sut.captureTransaction(transaction)
+
+        val argumentCaptor = argumentCaptor<SentryEnvelope>()
+        verify(fixture.transport, times(1)).send(argumentCaptor.capture(), anyOrNull())
+
+        val envelope = argumentCaptor.firstValue
+        assertEquals(envelope.header.sentAt?.time, 9001)
+    }
+
+    @Test
+    fun `capturing envelope sets envelope headers sent_at to current date`() {
+        val now = Date(9001)
+        val sut = fixture.getSut { options ->
+            options.dateProvider = mock()
+            whenever(options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+        }
+
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), emptyList())
+        sut.captureEnvelope(envelope)
+
+        val argumentCaptor = argumentCaptor<SentryEnvelope>()
+        verify(fixture.transport, times(1)).send(argumentCaptor.capture(), anyOrNull())
+
+        val capturedEnvelope = argumentCaptor.firstValue
+        assertEquals(capturedEnvelope.header.sentAt?.time, 9001)
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {

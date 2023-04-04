@@ -1354,9 +1354,11 @@ public final class io/sentry/SentryEnvelopeHeader : io/sentry/JsonSerializable, 
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SdkVersion;Lio/sentry/TraceContext;)V
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
+	public fun getSentAt ()Ljava/util/Date;
 	public fun getTraceContext ()Lio/sentry/TraceContext;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setSentAt (Ljava/util/Date;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -1369,6 +1371,7 @@ public final class io/sentry/SentryEnvelopeHeader$Deserializer : io/sentry/JsonD
 public final class io/sentry/SentryEnvelopeHeader$JsonKeys {
 	public static final field EVENT_ID Ljava/lang/String;
 	public static final field SDK Ljava/lang/String;
+	public static final field SENT_AT Ljava/lang/String;
 	public static final field TRACE Ljava/lang/String;
 	public fun <init> ()V
 }
