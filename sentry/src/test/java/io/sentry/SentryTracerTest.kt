@@ -1096,4 +1096,102 @@ class SentryTracerTest {
         assertTrue(transaction.updateEndDate(endDate))
         assertEquals(endDate, transaction.finishDate)
     }
+
+    @Test
+    fun `when a finished transaction is force-finished it's a no-op`() {
+        // when a transaction is created
+        val transaction = fixture.getSut()
+
+        // and it's finished
+        transaction.finish(SpanStatus.OK)
+        // but forceFinish is called as well
+        transaction.forceFinish(SpanStatus.ABORTED, false)
+
+        // then it should keep it's original status
+        assertEquals(SpanStatus.OK, transaction.status)
+    }
+
+    @Test
+    fun `when a transaction is force-finished all spans get finished as well`() {
+        val transaction = fixture.getSut(
+            waitForChildren = true,
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
+        )
+
+        // when two spans are created
+        val spanOptions = SpanOptions()
+        val span0 = transaction.startChild("load", null, spanOptions) as Span
+        val span1 = transaction.startChild("load", null, spanOptions) as Span
+
+        // and one span is finished but not the other, and the transaction is force-finished
+        span0.finish(SpanStatus.OK)
+        val span0FinishDate = span0.finishDate
+
+        transaction.forceFinish(SpanStatus.ABORTED, false)
+
+        // then the first span should keep it's status
+        assertTrue(span0.isFinished)
+        assertEquals(SpanStatus.OK, span0.status)
+        assertEquals(span0FinishDate, span0.finishDate)
+
+        // and the second span should have the same status as the transaction
+        assertTrue(span1.isFinished)
+        assertEquals(SpanStatus.ABORTED, span1.status)
+        assertEquals(transaction.finishDate, span1.finishDate)
+
+        // and the transaction should be captured with both spans
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(2, it.spans.size)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when a transaction with no childs is force-finished with dropIfNoChild set to false it should still be captured`() {
+        // when a transaction is created
+        val transaction = fixture.getSut(
+            waitForChildren = true,
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
+        )
+
+        // and force-finished but dropping is disabled
+        transaction.forceFinish(SpanStatus.ABORTED, false)
+
+        // then a transaction should be captured with 0 spans
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(0, it.spans.size)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when a transaction with no childs is force-finished but dropIfNoChildren is true, it should be dropped`() {
+        // when a transaction is created
+        val transaction = fixture.getSut(
+            waitForChildren = true,
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
+        )
+
+        // and force-finish with dropping enabled
+        transaction.forceFinish(SpanStatus.ABORTED, true)
+
+        // then the transaction should be captured with 0 spans
+        verify(fixture.hub, never()).captureTransaction(
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
 }

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
+
 ### Fixes
 
 - Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))

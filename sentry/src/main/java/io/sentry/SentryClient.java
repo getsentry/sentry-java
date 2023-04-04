@@ -190,6 +190,18 @@ public final class SentryClient implements ISentryClient {
       sentryId = SentryId.EMPTY_ID;
     }
 
+    // if we encountered an abnormal exit finish tracing in order to persist and send
+    // any running transaction / profiling data
+    if (scope != null) {
+      @Nullable ITransaction transaction = scope.getTransaction();
+      if (transaction != null) {
+        // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
+        if (HintUtils.hasType(hint, AbnormalExit.class)) {
+          transaction.forceFinish(SpanStatus.ABORTED, false);
+        }
+      }
+    }
+
     return sentryId;
   }
 
