@@ -116,7 +116,7 @@ class PreviousSessionFinalizerTest {
     }
 
     @Test
-    fun `if previous session exists with abnormal mechanism, sends session update without chaging end timestamp`() {
+    fun `if previous session exists with abnormal mechanism, sends session update without changing end timestamp`() {
         val abnormalEndDate = Date(2023, 10, 1)
         val finalizer = fixture.getSut(
             tmpDir,

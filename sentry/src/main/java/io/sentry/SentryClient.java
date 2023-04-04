@@ -4,6 +4,7 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -196,7 +197,7 @@ public final class SentryClient implements ISentryClient {
       @Nullable ITransaction transaction = scope.getTransaction();
       if (transaction != null) {
         // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
-        if (HintUtils.hasType(hint, AbnormalExit.class)) {
+        if (HintUtils.hasType(hint, TransactionEnd.class)) {
           transaction.forceFinish(SpanStatus.ABORTED, false);
         }
       }

@@ -117,7 +117,7 @@ public class AnrV2Integration implements Integration, Closeable {
       final ActivityManager activityManager =
           (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
-      List<ApplicationExitInfo> applicationExitInfoList =
+      final List<ApplicationExitInfo> applicationExitInfoList =
           activityManager.getHistoricalProcessExitReasons(null, 0, 0);
       if (applicationExitInfoList.size() == 0) {
         options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");

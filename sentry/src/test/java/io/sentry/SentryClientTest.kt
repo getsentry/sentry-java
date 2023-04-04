@@ -9,6 +9,7 @@ import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
+import io.sentry.hints.TransactionEnd
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
@@ -2043,7 +2044,7 @@ class SentryClientTest {
     }
 
     @Test
-    fun `AbnormalExits automatically trigger force-stop of any running transaction`() {
+    fun `TransactionEnds automatically trigger force-stop of any running transaction`() {
         val sut = fixture.getSut()
 
         // build up a running transaction
@@ -2059,10 +2060,10 @@ class SentryClientTest {
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
 
-        val abnormalExit = AbnormalExit { "ANR" }
-        val abnormalExitHint = HintUtils.createWithTypeCheckHint(abnormalExit)
+        val transactionEnd = object : TransactionEnd {}
+        val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
 
-        sut.captureEvent(SentryEvent(), scope, abnormalExitHint)
+        sut.captureEvent(SentryEvent(), scope, transactionEndHint)
 
         verify(transaction).forceFinish(SpanStatus.ABORTED, false)
         verify(fixture.transport).send(
