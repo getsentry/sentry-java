@@ -480,7 +480,10 @@ public final class Device implements JsonUnknown, JsonSerializable {
         && Objects.equals(language, device.language)
         && Objects.equals(locale, device.locale)
         && Objects.equals(connectionType, device.connectionType)
-        && Objects.equals(batteryTemperature, device.batteryTemperature);
+        && Objects.equals(batteryTemperature, device.batteryTemperature)
+        && Objects.equals(processorCount, device.processorCount)
+        && Objects.equals(processorFrequency, device.processorFrequency)
+        && Objects.equals(cpuDescription, device.cpuDescription);
   }
 
   @Override
@@ -516,7 +519,10 @@ public final class Device implements JsonUnknown, JsonSerializable {
             language,
             locale,
             connectionType,
-            batteryTemperature);
+            batteryTemperature,
+            processorCount,
+            processorFrequency,
+            cpuDescription);
     result = 31 * result + Arrays.hashCode(archs);
     return result;
   }
