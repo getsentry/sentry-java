@@ -35,6 +35,10 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     return value;
   }
 
+  public @NotNull String getRelativeStartNs() {
+    return relativeStartNs;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

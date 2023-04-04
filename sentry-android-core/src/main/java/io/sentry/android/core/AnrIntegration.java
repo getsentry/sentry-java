@@ -97,7 +97,6 @@ public final class AnrIntegration implements Integration, Closeable {
 
     final AnrHint anrHint = new AnrHint(isAppInBackground);
     final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
-
     hub.captureEvent(event, hint);
   }
 

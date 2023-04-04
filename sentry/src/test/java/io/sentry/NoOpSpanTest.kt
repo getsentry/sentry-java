@@ -3,6 +3,7 @@ package io.sentry
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 class NoOpSpanTest {
@@ -28,5 +29,15 @@ class NoOpSpanTest {
     @Test
     fun `updateEndDate return false`() {
         assertFalse(span.updateEndDate(mock()))
+    }
+
+    @Test
+    fun `startDate return a NanotimeDate`() {
+        assertIs<SentryNanotimeDate>(span.startDate)
+    }
+
+    @Test
+    fun `finishDate return a NanotimeDate`() {
+        assertIs<SentryNanotimeDate>(span.finishDate)
     }
 }

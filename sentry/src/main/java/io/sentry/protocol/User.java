@@ -37,6 +37,12 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
+  /** Human readable name. */
+  private @Nullable String name;
+
+  /** User geo location. */
+  private @Nullable Geo geo;
+
   /**
    * Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). All
    * data from `self.other` should end up here after store normalization.
@@ -54,6 +60,8 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.id = user.id;
     this.ipAddress = user.ipAddress;
     this.segment = user.segment;
+    this.name = user.name;
+    this.geo = user.geo;
     this.data = CollectionUtils.newConcurrentHashMap(user.data);
     this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
   }
@@ -164,12 +172,48 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Sets other user related data.
    *
    * @deprecated use {{@link User#setData(Map)}} instead
-   * @param other the other user related data..
+   * @param other the other user related data.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public void setOthers(final @Nullable Map<String, @NotNull String> other) {
     this.setData(other);
+  }
+
+  /**
+   * Get human readable name.
+   *
+   * @return Human readable name
+   */
+  public @Nullable String getName() {
+    return name;
+  }
+
+  /**
+   * Set human readable name.
+   *
+   * @param name Human readable name
+   */
+  public void setName(final @Nullable String name) {
+    this.name = name;
+  }
+
+  /**
+   * Get user geo location.
+   *
+   * @return User geo location
+   */
+  public @Nullable Geo getGeo() {
+    return geo;
+  }
+
+  /**
+   * Set user geo location.
+   *
+   * @param geo User geo location
+   */
+  public void setGeo(final @Nullable Geo geo) {
+    this.geo = geo;
   }
 
   /**
@@ -184,7 +228,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   /**
    * Sets additional arbitrary fields of the user.
    *
-   * @param data the other user related data..
+   * @param data the other user related data.
    */
   public void setData(final @Nullable Map<String, @NotNull String> data) {
     this.data = CollectionUtils.newConcurrentHashMap(data);
@@ -226,6 +270,8 @@ public final class User implements JsonUnknown, JsonSerializable {
     public static final String USERNAME = "username";
     public static final String SEGMENT = "segment";
     public static final String IP_ADDRESS = "ip_address";
+    public static final String NAME = "name";
+    public static final String GEO = "geo";
     public static final String OTHER = "other";
     public static final String DATA = "data";
   }
@@ -248,6 +294,13 @@ public final class User implements JsonUnknown, JsonSerializable {
     }
     if (ipAddress != null) {
       writer.name(JsonKeys.IP_ADDRESS).value(ipAddress);
+    }
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
+    }
+    if (geo != null) {
+      writer.name(JsonKeys.GEO);
+      geo.serialize(writer, logger);
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
@@ -287,6 +340,12 @@ public final class User implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.IP_ADDRESS:
             user.ipAddress = reader.nextStringOrNull();
+            break;
+          case JsonKeys.NAME:
+            user.name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.GEO:
+            user.geo = new Geo.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.DATA:
             user.data =
