@@ -2568,6 +2568,7 @@ public final class io/sentry/profilemeasurements/ProfileMeasurementValue : io/se
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;)V
 	public fun equals (Ljava/lang/Object;)Z
+	public fun getRelativeStartNs ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()D
 	public fun hashCode ()I
