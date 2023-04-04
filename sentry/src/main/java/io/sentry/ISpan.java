@@ -230,6 +230,24 @@ public interface ISpan {
   boolean updateEndDate(@NotNull SentryDate date);
 
   /**
+   * Returns the start date of this span or transaction.
+   *
+   * @return the start date
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryDate getStartDate();
+
+  /**
+   * Returns the end date of this span or transaction.
+   *
+   * @return the end date
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SentryDate getFinishDate();
+
+  /**
    * Whether this span instance is a NOOP that doesn't collect information
    *
    * @return true if NOOP

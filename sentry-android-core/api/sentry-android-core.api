@@ -174,6 +174,12 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
 public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
@@ -216,6 +222,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableFramesTracking ()Z
+	public fun isEnableNetworkEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
@@ -230,6 +237,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableFramesTracking (Z)V
+	public fun setEnableNetworkEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
@@ -241,6 +249,24 @@ public final class io/sentry/android/core/SentryInitProvider {
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
 	public fun shutdown ()V
+}
+
+public final class io/sentry/android/core/SentryLogcatAdapter {
+	public fun <init> ()V
+	public static fun d (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun d (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun e (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun e (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun i (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun i (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun v (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun v (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun w (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun w (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun w (Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun wtf (Ljava/lang/String;Ljava/lang/String;)I
+	public static fun wtf (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+	public static fun wtf (Ljava/lang/String;Ljava/lang/Throwable;)I
 }
 
 public final class io/sentry/android/core/SentryPerformanceProvider : android/app/Application$ActivityLifecycleCallbacks {

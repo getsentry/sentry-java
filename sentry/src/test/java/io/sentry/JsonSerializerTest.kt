@@ -814,6 +814,7 @@ class JsonSerializerTest {
         val expected = ProfileMeasurementValue(1, 60.1)
         assertEquals(expected, profileMeasurementValue)
         assertEquals(60.1, profileMeasurementValue?.value)
+        assertEquals("1", profileMeasurementValue?.relativeStartNs)
     }
 
     @Test

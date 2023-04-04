@@ -33,6 +33,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
+import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.hints.Backfillable;
@@ -47,6 +48,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -512,6 +514,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     if (device.getId() == null) {
       device.setId(getDeviceId());
+    }
+
+    final @NotNull List<Integer> cpuFrequencies = CpuInfoUtils.getInstance().readMaxFrequencies();
+    if (!cpuFrequencies.isEmpty()) {
+      device.setProcessorFrequency(Collections.max(cpuFrequencies).doubleValue());
+      device.setProcessorCount(cpuFrequencies.size());
     }
 
     return device;

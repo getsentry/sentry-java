@@ -119,6 +119,19 @@ public final class Device implements JsonUnknown, JsonSerializable {
   /** battery's temperature in celsius */
   private @Nullable Float batteryTemperature;
 
+  /** Optional. Number of "logical processors". For example, 8. */
+  private @Nullable Integer processorCount;
+
+  /**
+   * Optional. Processor frequency in MHz. Note that the actual CPU frequency might vary depending
+   * on current load and power conditions, especially on low-powered devices like phones and
+   * laptops.
+   */
+  private @Nullable Double processorFrequency;
+
+  /** Optional. CPU description. For example, Intel(R) Core(TM)2 Quad CPU Q6600 @ 2.40GHz. */
+  private @Nullable String cpuDescription;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
@@ -159,6 +172,10 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
     final TimeZone timezoneRef = device.timezone;
     this.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
+
+    this.processorCount = device.processorCount;
+    this.processorFrequency = device.processorFrequency;
+    this.cpuDescription = device.cpuDescription;
 
     this.unknown = CollectionUtils.newConcurrentHashMap(device.unknown);
   }
@@ -405,6 +422,30 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.batteryTemperature = batteryTemperature;
   }
 
+  public @Nullable Integer getProcessorCount() {
+    return processorCount;
+  }
+
+  public void setProcessorCount(@Nullable final Integer processorCount) {
+    this.processorCount = processorCount;
+  }
+
+  public @Nullable Double getProcessorFrequency() {
+    return processorFrequency;
+  }
+
+  public void setProcessorFrequency(@Nullable final Double processorFrequency) {
+    this.processorFrequency = processorFrequency;
+  }
+
+  public @Nullable String getCpuDescription() {
+    return cpuDescription;
+  }
+
+  public void setCpuDescription(@Nullable final String cpuDescription) {
+    this.cpuDescription = cpuDescription;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -439,7 +480,10 @@ public final class Device implements JsonUnknown, JsonSerializable {
         && Objects.equals(language, device.language)
         && Objects.equals(locale, device.locale)
         && Objects.equals(connectionType, device.connectionType)
-        && Objects.equals(batteryTemperature, device.batteryTemperature);
+        && Objects.equals(batteryTemperature, device.batteryTemperature)
+        && Objects.equals(processorCount, device.processorCount)
+        && Objects.equals(processorFrequency, device.processorFrequency)
+        && Objects.equals(cpuDescription, device.cpuDescription);
   }
 
   @Override
@@ -475,7 +519,10 @@ public final class Device implements JsonUnknown, JsonSerializable {
             language,
             locale,
             connectionType,
-            batteryTemperature);
+            batteryTemperature,
+            processorCount,
+            processorFrequency,
+            cpuDescription);
     result = 31 * result + Arrays.hashCode(archs);
     return result;
   }
@@ -537,6 +584,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String CONNECTION_TYPE = "connection_type";
     public static final String BATTERY_TEMPERATURE = "battery_temperature";
     public static final String LOCALE = "locale";
+    public static final String PROCESSOR_COUNT = "processor_count";
+    public static final String CPU_DESCRIPTION = "cpu_description";
+    public static final String PROCESSOR_FREQUENCY = "processor_frequency";
   }
 
   @Override
@@ -635,6 +685,15 @@ public final class Device implements JsonUnknown, JsonSerializable {
     }
     if (locale != null) {
       writer.name(JsonKeys.LOCALE).value(locale);
+    }
+    if (processorCount != null) {
+      writer.name(JsonKeys.PROCESSOR_COUNT).value(processorCount);
+    }
+    if (processorFrequency != null) {
+      writer.name(JsonKeys.PROCESSOR_FREQUENCY).value(processorFrequency);
+    }
+    if (cpuDescription != null) {
+      writer.name(JsonKeys.CPU_DESCRIPTION).value(cpuDescription);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -774,6 +833,15 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.LOCALE:
             device.locale = reader.nextStringOrNull();
+            break;
+          case JsonKeys.PROCESSOR_COUNT:
+            device.processorCount = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.PROCESSOR_FREQUENCY:
+            device.processorFrequency = reader.nextDoubleOrNull();
+            break;
+          case JsonKeys.CPU_DESCRIPTION:
+            device.cpuDescription = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {

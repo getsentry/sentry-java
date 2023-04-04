@@ -9,6 +9,7 @@ import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
+import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
@@ -44,6 +45,7 @@ import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.Arrays
+import java.util.LinkedList
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -2038,6 +2040,37 @@ class SentryClientTest {
         sut.captureException(IllegalStateException(), scope)
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 0)
+    }
+
+    @Test
+    fun `AbnormalExits automatically trigger force-stop of any running transaction`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+
+        val abnormalExit = AbnormalExit { "ANR" }
+        val abnormalExitHint = HintUtils.createWithTypeCheckHint(abnormalExit)
+
+        sut.captureEvent(SentryEvent(), scope, abnormalExitHint)
+
+        verify(transaction).forceFinish(SpanStatus.ABORTED, false)
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {

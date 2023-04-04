@@ -15,6 +15,7 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -317,6 +318,31 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertTrue(fixture.options.isEnableSystemEventBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads network events breadcrumbs to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_NETWORK_EVENTS_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableNetworkEventBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads network events breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableNetworkEventBreadcrumbs)
     }
 
     @Test
@@ -1201,5 +1227,20 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertFalse(fixture.options.isEnableTimeToFullDisplayTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads enabled integrations to SDK Version`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.SENTRY_GRADLE_PLUGIN_INTEGRATIONS to "Database Instrumentation,OkHttp Instrumentation")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        val resultingSet = fixture.options.sdkVersion?.integrationSet
+        assertNotNull(resultingSet)
+        assert(resultingSet.containsAll(listOf("Database Instrumentation", "OkHttp Instrumentation")))
     }
 }
