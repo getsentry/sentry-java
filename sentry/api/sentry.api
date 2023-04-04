@@ -2529,6 +2529,9 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 	public abstract fun setResult (Z)V
 }
 
+public abstract interface class io/sentry/hints/TransactionEnd {
+}
+
 public final class io/sentry/instrumentation/file/SentryFileInputStream : java/io/FileInputStream {
 	public fun <init> (Ljava/io/File;)V
 	public fun <init> (Ljava/io/FileDescriptor;)V
