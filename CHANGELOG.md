@@ -2,10 +2,16 @@
 
 ## Unreleased
 
-## Features
+### Features
 
+- Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
 - Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
-	- Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
+    - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
+
+### Fixes
+
+- Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
+- Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
 
 ## 6.17.0
 
