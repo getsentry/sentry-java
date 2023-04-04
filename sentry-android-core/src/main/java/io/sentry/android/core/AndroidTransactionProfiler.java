@@ -419,8 +419,21 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         measurementsMap);
   }
 
+  @SuppressLint("NewApi")
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
+
+    // onTransactionStart() is only available since Lollipop
+    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
+
+    // This difference is required, since the PerformanceCollectionData timestamps are expressed in
+    // terms of System.currentTimeMillis() and measurements timestamps require the nanoseconds since
+    // the beginning, expressed with SystemClock.elapsedRealtimeNanos()
+    long timestampDiff =
+        SystemClock.elapsedRealtimeNanos() - transactionStartNanos - System.currentTimeMillis();
     if (performanceCollectionData != null) {
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
           new ArrayDeque<>(performanceCollectionData.size());
@@ -434,22 +447,17 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         if (cpuData != null) {
           cpuUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis())
-                      - transactionStartNanos,
-                  cpuData.getCpuUsagePercentage()));
+                  cpuData.getTimestampMillis() + timestampDiff, cpuData.getCpuUsagePercentage()));
         }
         if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
           memoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
-                      - transactionStartNanos,
-                  memoryData.getUsedHeapMemory()));
+                  memoryData.getTimestampMillis() + timestampDiff, memoryData.getUsedHeapMemory()));
         }
         if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
           nativeMemoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
-                      - transactionStartNanos,
+                  memoryData.getTimestampMillis() + timestampDiff,
                   memoryData.getUsedNativeMemory()));
         }
       }

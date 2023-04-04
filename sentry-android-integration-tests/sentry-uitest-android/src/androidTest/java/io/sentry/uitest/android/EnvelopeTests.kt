@@ -88,9 +88,9 @@ class EnvelopeTests : BaseUiTest() {
                 val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]
                 val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]
                 val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
-//                val memoryStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!
-//                val memoryNativeStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!
-//                val cpuStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!
+                val memoryStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!
+                val memoryNativeStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!
+                val cpuStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!
                 // Slow and frozen frames can be null (in case there were none)
                 if (slowFrames != null) {
                     assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
@@ -101,12 +101,28 @@ class EnvelopeTests : BaseUiTest() {
                 // There could be no slow/frozen frames, but we expect at least one frame rate
                 assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
                 assertTrue(frameRates.values.isNotEmpty())
-//                assertEquals(ProfileMeasurement.UNIT_BYTES, memoryStats.unit)
-//                assertTrue(memoryStats.values.isNotEmpty())
-//                assertEquals(ProfileMeasurement.UNIT_BYTES, memoryNativeStats.unit)
-//                assertTrue(memoryNativeStats.values.isNotEmpty())
-//                assertEquals(ProfileMeasurement.UNIT_PERCENT, cpuStats.unit)
-//                assertTrue(cpuStats.values.isNotEmpty())
+                assertEquals(ProfileMeasurement.UNIT_BYTES, memoryStats.unit)
+                assertTrue(memoryStats.values.isNotEmpty())
+                assertEquals(ProfileMeasurement.UNIT_BYTES, memoryNativeStats.unit)
+                assertTrue(memoryNativeStats.values.isNotEmpty())
+                assertEquals(ProfileMeasurement.UNIT_PERCENT, cpuStats.unit)
+                assertTrue(cpuStats.values.isNotEmpty())
+
+                // We allow measurements to be added since the start up to the end of the profile, with a small tolerance due to threading
+                val maxTimestampAllowed = profilingTraceData.durationNs.toLong() + TimeUnit.SECONDS.toNanos(1)
+
+                assertTrue((slowFrames?.values?.maxOf { it.relativeStartNs.toLong() } ?: 0) < maxTimestampAllowed)
+                assertTrue((slowFrames?.values?.minOf { it.relativeStartNs.toLong() } ?: 0) >= 0)
+                assertTrue((frozenFrames?.values?.maxOf { it.relativeStartNs.toLong() } ?: 0) < maxTimestampAllowed)
+                assertTrue((frozenFrames?.values?.minOf { it.relativeStartNs.toLong() } ?: 0) >= 0)
+                assertTrue(frameRates.values.maxOf { it.relativeStartNs.toLong() } < maxTimestampAllowed)
+                assertTrue(frameRates.values.minOf { it.relativeStartNs.toLong() } > 0)
+                assertTrue(memoryStats.values.maxOf { it.relativeStartNs.toLong() } < maxTimestampAllowed)
+                assertTrue(memoryStats.values.minOf { it.relativeStartNs.toLong() } > 0)
+                assertTrue(memoryNativeStats.values.maxOf { it.relativeStartNs.toLong() } < maxTimestampAllowed)
+                assertTrue(memoryNativeStats.values.minOf { it.relativeStartNs.toLong() } > 0)
+                assertTrue(cpuStats.values.maxOf { it.relativeStartNs.toLong() } < maxTimestampAllowed)
+                assertTrue(cpuStats.values.minOf { it.relativeStartNs.toLong() } > 0)
 
                 // We should find the transaction id that started the profiling in the list of transactions
                 val transactionData = profilingTraceData.transactions
