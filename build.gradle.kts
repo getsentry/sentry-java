@@ -1,6 +1,8 @@
 import com.diffplug.spotless.LineEnding
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
+import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -94,6 +96,16 @@ allprojects {
     }
 }
 
+val androidLibs = setOf(
+    "sentry-android-core",
+    "sentry-android-ndk",
+    "sentry-android-fragment",
+    "sentry-android-navigation",
+    "sentry-android-okhttp",
+    "sentry-android-timber",
+    "sentry-compose-android"
+)
+
 subprojects {
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
@@ -140,6 +152,30 @@ subprojects {
                 // signing is done when uploading files to MC
                 // via gpg:sign-and-deploy-file (release.kts)
                 releaseSigningEnabled = false
+            }
+
+            @Suppress("UnstableApiUsage")
+            configure<MavenPublishBaseExtension> {
+                pom {
+                    withXml {
+                        // workaround for https://github.com/gradle/gradle/issues/3170
+                        val dependencies = asNode().children().find {
+                            it is Node && it.name().toString().endsWith("dependencies")
+                        } as Node?
+
+                        dependencies?.children()?.forEach { dep ->
+                            if (dep !is Node) {
+                                return@forEach
+                            }
+                            val artifactId = dep.children().first {
+                                it is Node && it.name().toString().endsWith("artifactId")
+                            } as Node
+                            if ((artifactId.children()[0] as String) in androidLibs) {
+                                dep.appendNode("type", "aar")
+                            }
+                        }
+                    }
+                }
             }
 
             // maven central info go to:
