@@ -12,6 +12,7 @@
 
 - Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
+- Fix aar artifacts publication for Maven ([#2641](https://github.com/getsentry/sentry-java/pull/2641))
 
 ## 6.17.0
 
