@@ -14,6 +14,9 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.threaddump.Line;
+import io.sentry.android.core.internal.threaddump.Lines;
+import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.exception.ExceptionMechanismException;
@@ -22,12 +25,15 @@ import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -256,6 +262,16 @@ public class AnrV2Integration implements Integration, Closeable {
       String message = "ANR";
       if (isBackground) {
         message = "Background " + message;
+      }
+
+      try (final BufferedReader reader = new BufferedReader(
+        new InputStreamReader(exitInfo.getTraceInputStream()))) {
+        final Lines<Line> lines = Lines.readLines(reader);
+
+        final ThreadDumpParser threadDumpParser = new ThreadDumpParser();
+        final List<SentryThread> threads = threadDumpParser.parse(lines);
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
       }
 
       // TODO: here we should actually parse the trace file and extract the thread dump from there
