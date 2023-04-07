@@ -1,4 +1,3 @@
-import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -11,14 +10,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
-}
-
-the<DependencyManagementExtension>().apply {
-    imports {
-        mavenBom(SpringBootPlugin.BOM_COORDINATES)
-        mavenBom(Config.Libs.okhttpBom)
-    }
 }
 
 configure<JavaPluginExtension> {
@@ -37,6 +28,7 @@ dependencies {
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
     implementation(Config.Libs.springBootStarter)
+    compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApi)
@@ -45,6 +37,7 @@ dependencies {
     compileOnly(Config.Libs.reactorCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
+    annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 

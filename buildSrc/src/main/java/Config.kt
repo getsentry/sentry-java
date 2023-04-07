@@ -2,14 +2,15 @@ import java.math.BigDecimal
 
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "7.3.0"
-    val kotlinVersion = "1.6.10"
+    val kotlinVersion = "1.8.0"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
     val springBoot3Version = "3.0.3"
     val kotlinCompatibleLanguageVersion = "1.4"
 
-    val composeVersion = "1.1.1"
+    val composeVersion = "1.3.0"
+    val androidComposeCompilerVersion = "1.4.0"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
@@ -22,7 +23,7 @@ object Config {
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
     }
@@ -48,8 +49,7 @@ object Config {
         val okHttpVersion = "4.9.2"
         val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
-        val okhttp = "com.squareup.okhttp3:okhttp"
+        val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
         val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
@@ -178,7 +178,6 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
-        val mockWebserver4 = "com.squareup.okhttp3:mockwebserver:4.9.3"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
@@ -198,7 +197,7 @@ object Config {
         val detekt = "io.gitlab.arturbosch.detekt"
         val detektVersion = "1.19.0"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.8.0"
+        val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }
