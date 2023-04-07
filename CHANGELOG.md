@@ -14,8 +14,9 @@
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
 
 ### Dependencies
-- Bump compile Kotlin version to 1.8.0
-- Bump compile Compose version to 1.3.0
+- Bump Kotlin compile version from v1.6.10 to 1.8.0 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+- Bump Compose compile version from v1.1.1 to v1.3.0 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+- Bump AGP version from v7.3.0 to v7.4.2 ([#2574](https://github.com/getsentry/sentry-java/pull/2574))
 - Bump Gradle from v7.6.0 to v8.0.2 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
     - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v802)
     - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.2)

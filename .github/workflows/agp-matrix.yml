@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: ['7.3.0','7.4.0-rc01','8.0.0-alpha09']
+        agp: ['8.0.0-rc01','8.1.0-alpha11']
 
     name: AGP Matrix Sample Release - AGP ${{ matrix.agp }}
     env:
