@@ -56,6 +56,9 @@ class DeviceSerializationTest {
             language = "6dd45f60-111d-42d8-9204-0452cc836ad8"
             connectionType = "9ceb3a6c-5292-4ed9-8665-5732495e8ed4"
             batteryTemperature = 0.14775127f
+            cpuDescription = "cpu0"
+            processorCount = 4
+            processorFrequency = 800.0
         }
     }
     private val fixture = Fixture()

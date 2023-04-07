@@ -49,7 +49,13 @@ class SentryTracerTest {
             performanceCollector: TransactionPerformanceCollector? = transactionPerformanceCollector
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, performanceCollector)
+
+            val transactionOptions = TransactionOptions()
+            transactionOptions.startTimestamp = startTimestamp
+            transactionOptions.isWaitForChildren = waitForChildren
+            transactionOptions.idleTimeout = idleTimeout
+            transactionOptions.isTrimEnd = trimEnd
+            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, transactionOptions, transactionFinishedCallback, performanceCollector)
         }
     }
 
@@ -920,6 +926,144 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when spans have auto-finish enabled, finish them on transaction finish`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+
+        // when a span is created with auto-finish
+        val spanOptions = SpanOptions().apply {
+            isIdle = true
+        }
+        val span = transaction.startChild("composition", null, spanOptions) as Span
+
+        // and the transaction is finished
+        transaction.finish()
+
+        // then the span should be finished as well
+        assertTrue(span.isFinished)
+
+        // and the transaction should be captured
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1, it.spans.size)
+                assertEquals(transaction.root.finishDate!!.nanoTimestamp(), span.finishDate!!.nanoTimestamp())
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when spans have auto-finish enabled, finish them on transaction finish using the transaction finish date`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+
+        // when a span is created with auto-finish
+        val spanOptions = SpanOptions().apply {
+            isIdle = true
+        }
+        val span = transaction.startChild("composition", null, spanOptions) as Span
+
+        // and the transaction is finished
+        Thread.sleep(1)
+        val transactionFinishDate = SentryAutoDateProvider().now()
+        transaction.finish(SpanStatus.OK, transactionFinishDate)
+
+        // then the span should be finished as well
+        assertTrue(span.isFinished)
+
+        // and the transaction should be captured
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1, it.spans.size)
+                assertEquals(transactionFinishDate, span.finishDate)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when spans have trim-start enabled, trim them on transaction finish`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+
+        // when a parent span is created
+        val spanOptions = SpanOptions().apply {
+            isTrimStart = true
+        }
+        val parentSpan = transaction.startChild("composition", null, spanOptions) as Span
+
+        // with a child which starts later
+        Thread.sleep(5)
+        val child1 = parentSpan.startChild("child1") as Span
+        child1.finish()
+
+        val child2 = parentSpan.startChild("child2") as Span
+        Thread.sleep(5)
+        child2.finish()
+
+        parentSpan.finish()
+
+        val expectedParentStartDate = child1.startDate
+        val expectedParentEndDate = parentSpan.finishDate
+
+        transaction.finish()
+
+        assertTrue(parentSpan.isFinished)
+        assertEquals(expectedParentStartDate, parentSpan.startDate)
+        assertEquals(expectedParentEndDate, parentSpan.finishDate)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(3, it.spans.size)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when spans have trim-end enabled, trim them on transaction finish`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+
+        // when a parent span is created
+        val spanOptions = SpanOptions().apply {
+            isTrimEnd = true
+        }
+        val parentSpan = transaction.startChild("composition", null, spanOptions) as Span
+
+        // with a child which starts later
+        Thread.sleep(5)
+        val child1 = parentSpan.startChild("child1") as Span
+        child1.finish()
+
+        val child2 = parentSpan.startChild("child2") as Span
+        Thread.sleep(5)
+        child2.finish()
+
+        parentSpan.finish()
+
+        val expectedParentStartDate = parentSpan.startDate
+        val expectedParentEndDate = child2.finishDate
+
+        transaction.finish()
+
+        assertTrue(parentSpan.isFinished)
+        assertEquals(expectedParentStartDate, parentSpan.startDate)
+        assertEquals(expectedParentEndDate, parentSpan.finishDate)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(3, it.spans.size)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `when transaction is finished, collected performance data is cleared`() {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
         val mockPerformanceCollector = object : TransactionPerformanceCollector {
@@ -951,5 +1095,103 @@ class SentryTracerTest {
         assertNotNull(transaction.finishDate)
         assertTrue(transaction.updateEndDate(endDate))
         assertEquals(endDate, transaction.finishDate)
+    }
+
+    @Test
+    fun `when a finished transaction is force-finished it's a no-op`() {
+        // when a transaction is created
+        val transaction = fixture.getSut()
+
+        // and it's finished
+        transaction.finish(SpanStatus.OK)
+        // but forceFinish is called as well
+        transaction.forceFinish(SpanStatus.ABORTED, false)
+
+        // then it should keep it's original status
+        assertEquals(SpanStatus.OK, transaction.status)
+    }
+
+    @Test
+    fun `when a transaction is force-finished all spans get finished as well`() {
+        val transaction = fixture.getSut(
+            waitForChildren = true,
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
+        )
+
+        // when two spans are created
+        val spanOptions = SpanOptions()
+        val span0 = transaction.startChild("load", null, spanOptions) as Span
+        val span1 = transaction.startChild("load", null, spanOptions) as Span
+
+        // and one span is finished but not the other, and the transaction is force-finished
+        span0.finish(SpanStatus.OK)
+        val span0FinishDate = span0.finishDate
+
+        transaction.forceFinish(SpanStatus.ABORTED, false)
+
+        // then the first span should keep it's status
+        assertTrue(span0.isFinished)
+        assertEquals(SpanStatus.OK, span0.status)
+        assertEquals(span0FinishDate, span0.finishDate)
+
+        // and the second span should have the same status as the transaction
+        assertTrue(span1.isFinished)
+        assertEquals(SpanStatus.ABORTED, span1.status)
+        assertEquals(transaction.finishDate, span1.finishDate)
+
+        // and the transaction should be captured with both spans
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(2, it.spans.size)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when a transaction with no childs is force-finished with dropIfNoChild set to false it should still be captured`() {
+        // when a transaction is created
+        val transaction = fixture.getSut(
+            waitForChildren = true,
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
+        )
+
+        // and force-finished but dropping is disabled
+        transaction.forceFinish(SpanStatus.ABORTED, false)
+
+        // then a transaction should be captured with 0 spans
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(0, it.spans.size)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when a transaction with no childs is force-finished but dropIfNoChildren is true, it should be dropped`() {
+        // when a transaction is created
+        val transaction = fixture.getSut(
+            waitForChildren = true,
+            idleTimeout = 50,
+            samplingDecision = TracesSamplingDecision(true)
+        )
+
+        // and force-finish with dropping enabled
+        transaction.forceFinish(SpanStatus.ABORTED, true)
+
+        // then the transaction should be captured with 0 spans
+        verify(fixture.hub, never()).captureTransaction(
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 }

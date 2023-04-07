@@ -210,3 +210,11 @@ gradle.projectsEvaluated {
             }
     }
 }
+
+// Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different
+gradle.taskGraph.whenReady {
+    val task = this.allTasks.find { it.name.endsWith(".main()") } as? JavaExec
+    task?.let {
+        it.setExecutable(it.javaLauncher.get().executablePath.asFile.absolutePath)
+    }
+}

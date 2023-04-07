@@ -39,6 +39,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
+  /** Enable or disable automatic breadcrumbs for Network Events Using NetworkCallback */
+  private boolean enableNetworkEventBreadcrumbs = true;
+
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -238,6 +241,14 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAppComponentBreadcrumbs = enableAppComponentBreadcrumbs;
   }
 
+  public boolean isEnableNetworkEventBreadcrumbs() {
+    return enableNetworkEventBreadcrumbs;
+  }
+
+  public void setEnableNetworkEventBreadcrumbs(boolean enableNetworkEventBreadcrumbs) {
+    this.enableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs;
+  }
+
   /**
    * Enable or disable all the automatic breadcrumbs
    *
@@ -248,6 +259,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
+    enableNetworkEventBreadcrumbs = enable;
     setEnableUserInteractionBreadcrumbs(enable);
   }
 

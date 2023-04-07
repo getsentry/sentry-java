@@ -65,7 +65,7 @@ object Config {
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
 
-        val log4j2Version = "2.17.0"
+        val log4j2Version = "2.20.0"
         val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
 

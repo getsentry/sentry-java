@@ -171,6 +171,35 @@ public final class ConnectivityChecker {
     return null;
   }
 
+  /**
+   * Check the connection type of the active network
+   *
+   * @param networkCapabilities the NetworkCapabilities to check the transport type
+   * @return the connection type wifi, ethernet, cellular or null
+   */
+  @SuppressLint("NewApi")
+  public static @Nullable String getConnectionType(
+      final @NotNull NetworkCapabilities networkCapabilities,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
+      return null;
+    }
+    // TODO: change the protocol to be a list of transports as a device may have the capability of
+    // multiple
+
+    if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+      return "ethernet";
+    }
+    if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+      return "wifi";
+    }
+    if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+      return "cellular";
+    }
+
+    return null;
+  }
+
   private static @Nullable ConnectivityManager getConnectivityManager(
       final @NotNull Context context, final @NotNull ILogger logger) {
     final ConnectivityManager connectivityManager =
@@ -179,5 +208,43 @@ public final class ConnectivityChecker {
       logger.log(SentryLevel.INFO, "ConnectivityManager is null and cannot check network status");
     }
     return connectivityManager;
+  }
+
+  @SuppressLint({"MissingPermission", "NewApi"})
+  public static boolean registerNetworkCallback(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull ConnectivityManager.NetworkCallback networkCallback) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
+      logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
+      return false;
+    }
+    final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
+    if (connectivityManager == null) {
+      return false;
+    }
+    if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
+      logger.log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
+      return false;
+    }
+    connectivityManager.registerDefaultNetworkCallback(networkCallback);
+    return true;
+  }
+
+  @SuppressLint("NewApi")
+  public static void unregisterNetworkCallback(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull ConnectivityManager.NetworkCallback networkCallback) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
+    final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
+    if (connectivityManager == null) {
+      return;
+    }
+    connectivityManager.unregisterNetworkCallback(networkCallback);
   }
 }
