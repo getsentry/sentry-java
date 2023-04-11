@@ -10,6 +10,7 @@
 
 ### Fixes
 
+- Fix timestamp intervals of PerformanceCollectionData in profiles ([#2648](https://github.com/getsentry/sentry-java/pull/2648))
 - Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
 
