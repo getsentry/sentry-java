@@ -67,7 +67,16 @@ class SentryOkHttpInterceptor(
         val method = request.method
 
         // read transaction from the bound scope
-        val span = hub.span?.startChild("http.client", "$method $url")
+        val span: ISpan?
+        val isFromEventListener: Boolean
+
+        if (SentryNetworkCallEventListener.eventMap.containsKey(chain.call())) {
+            span = SentryNetworkCallEventListener.eventMap[chain.call()]?.rootSpan
+            isFromEventListener = true
+        } else {
+            span = hub.span?.startChild("http.client", "$method $url")
+            isFromEventListener = false
+        }
         urlDetails.applyToSpan(span)
 
         var response: Response? = null
@@ -105,28 +114,31 @@ class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            finishSpan(span, request, response)
+            finishSpan(span, request, response, isFromEventListener)
 
-            val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
-            request.body?.contentLength().ifHasValidLength {
-                breadcrumb.setData("request_body_size", it)
-            }
-
-            val hint = Hint()
-                .also { it.set(OKHTTP_REQUEST, request) }
-            response?.let {
-                it.body?.contentLength().ifHasValidLength { responseBodySize ->
-                    breadcrumb.setData("response_body_size", responseBodySize)
+            // The SentryNetworkCallEventListener will send the breadcrumb itself if used for this call
+            if (!isFromEventListener) {
+                val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
+                request.body?.contentLength().ifHasValidLength {
+                    breadcrumb.setData("request_body_size", it)
                 }
 
-                hint[OKHTTP_RESPONSE] = it
-            }
+                val hint = Hint()
+                    .also { it.set(OKHTTP_REQUEST, request) }
+                response?.let {
+                    it.body?.contentLength().ifHasValidLength { responseBodySize ->
+                        breadcrumb.setData("response_body_size", responseBodySize)
+                    }
 
-            hub.addBreadcrumb(breadcrumb, hint)
+                    hint[OKHTTP_RESPONSE] = it
+                }
+
+                hub.addBreadcrumb(breadcrumb, hint)
+            }
         }
     }
 
-    private fun finishSpan(span: ISpan?, request: Request, response: Response?) {
+    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean) {
         if (span != null) {
             if (beforeSpan != null) {
                 val result = beforeSpan.execute(span, request, response)
@@ -134,10 +146,14 @@ class SentryOkHttpInterceptor(
                     // span is dropped
                     span.spanContext.sampled = false
                 } else {
-                    span.finish()
+                    if (!isFromEventListener) {
+                        span.finish()
+                    }
                 }
             } else {
-                span.finish()
+                if (!isFromEventListener) {
+                    span.finish()
+                }
             }
         }
     }
