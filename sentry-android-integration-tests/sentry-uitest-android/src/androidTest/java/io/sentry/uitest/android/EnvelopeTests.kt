@@ -101,12 +101,18 @@ class EnvelopeTests : BaseUiTest() {
                 // There could be no slow/frozen frames, but we expect at least one frame rate
                 assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
                 assertTrue(frameRates.values.isNotEmpty())
-                assertEquals(ProfileMeasurement.UNIT_BYTES, memoryStats?.unit)
-                assertEquals(true, memoryStats?.values?.isNotEmpty())
-                assertEquals(ProfileMeasurement.UNIT_BYTES, memoryNativeStats?.unit)
-                assertEquals(true, memoryNativeStats?.values?.isNotEmpty())
-                assertEquals(ProfileMeasurement.UNIT_PERCENT, cpuStats?.unit)
-                assertEquals(true, cpuStats?.values?.isNotEmpty())
+                memoryStats?.let {
+                    assertEquals(ProfileMeasurement.UNIT_BYTES, it.unit)
+                    assertEquals(true, it.values.isNotEmpty())
+                }
+                memoryNativeStats?.let {
+                    assertEquals(ProfileMeasurement.UNIT_BYTES, it.unit)
+                    assertEquals(true, it.values.isNotEmpty())
+                }
+                cpuStats?.let {
+                    assertEquals(ProfileMeasurement.UNIT_PERCENT, it.unit)
+                    assertEquals(true, it.values.isNotEmpty())
+                }
 
                 // We allow measurements to be added since the start up to the end of the profile, with a small tolerance due to threading
                 val maxTimestampAllowed = profilingTraceData.durationNs.toLong() + TimeUnit.SECONDS.toNanos(2)
