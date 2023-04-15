@@ -276,7 +276,7 @@ class ConnectivityCheckerTest {
     }
 
     @Test
-    fun `When connectivityManager unregisterDefaultCallback throws an exception, false is returned`() {
+    fun `When connectivityManager unregisterDefaultCallback throws an exception, it gets swallowed`() {
         whenever(connectivityManager.registerDefaultNetworkCallback(any())).thenThrow(
             SecurityException("Android OS Bug")
         )
