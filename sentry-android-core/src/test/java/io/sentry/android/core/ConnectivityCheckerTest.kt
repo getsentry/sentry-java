@@ -59,7 +59,10 @@ class ConnectivityCheckerTest {
     @Test
     fun `When network is active and connected with permission, return CONNECTED for isConnected`() {
         whenever(networkInfo.isConnected).thenReturn(true)
-        assertEquals(ConnectivityChecker.Status.CONNECTED, ConnectivityChecker.getConnectionStatus(contextMock, mock()))
+        assertEquals(
+            ConnectivityChecker.Status.CONNECTED,
+            ConnectivityChecker.getConnectionStatus(contextMock, mock())
+        )
     }
 
     @Test
@@ -149,7 +152,10 @@ class ConnectivityCheckerTest {
     fun `When network capabilities has TRANSPORT_ETHERNET, return ethernet`() {
         whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(true)
 
-        assertEquals("ethernet", ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+        assertEquals(
+            "ethernet",
+            ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo)
+        )
     }
 
     @Test
@@ -157,14 +163,20 @@ class ConnectivityCheckerTest {
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         whenever(networkInfo.type).thenReturn(TYPE_ETHERNET)
 
-        assertEquals("ethernet", ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+        assertEquals(
+            "ethernet",
+            ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo)
+        )
     }
 
     @Test
     fun `When network capabilities has TRANSPORT_CELLULAR, return cellular`() {
         whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
 
-        assertEquals("cellular", ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+        assertEquals(
+            "cellular",
+            ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo)
+        )
     }
 
     @Test
@@ -172,7 +184,10 @@ class ConnectivityCheckerTest {
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         whenever(networkInfo.type).thenReturn(TYPE_MOBILE)
 
-        assertEquals("cellular", ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+        assertEquals(
+            "cellular",
+            ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo)
+        )
     }
 
     @Test
@@ -181,7 +196,8 @@ class ConnectivityCheckerTest {
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
         whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
         whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
-        val registered = ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
+        val registered =
+            ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
 
         assertFalse(registered)
         verify(connectivityManager, never()).registerDefaultNetworkCallback(any())
@@ -190,7 +206,8 @@ class ConnectivityCheckerTest {
     @Test
     fun `When sdkInfoVersion is not min N, do not register any NetworkCallback`() {
         whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
-        val registered = ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
+        val registered =
+            ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
 
         assertFalse(registered)
         verify(connectivityManager, never()).registerDefaultNetworkCallback(any())
@@ -201,7 +218,8 @@ class ConnectivityCheckerTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
         whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
-        val registered = ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
+        val registered =
+            ConnectivityChecker.registerNetworkCallback(contextMock, mock(), buildInfo, mock())
 
         assertTrue(registered)
         verify(connectivityManager).registerDefaultNetworkCallback(any())
@@ -223,5 +241,52 @@ class ConnectivityCheckerTest {
         ConnectivityChecker.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
 
         verify(connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
+    }
+
+    @Test
+    fun `When connectivityManager getActiveNetwork throws an exception, getConnectionType returns null`() {
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
+        whenever(connectivityManager.activeNetwork).thenThrow(SecurityException("Android OS Bug"))
+
+        assertNull(ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+    }
+
+    @Test
+    fun `When connectivityManager getActiveNetworkInfo throws an exception, getConnectionType returns null`() {
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
+        whenever(connectivityManager.activeNetworkInfo).thenThrow(SecurityException("Android OS Bug"))
+
+        assertNull(ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
+        assertEquals(ConnectivityChecker.Status.UNKNOWN, ConnectivityChecker.getConnectionStatus(contextMock, mock()))
+    }
+
+    @Test
+    fun `When connectivityManager registerDefaultCallback throws an exception, false is returned`() {
+        whenever(connectivityManager.registerDefaultNetworkCallback(any())).thenThrow(
+            SecurityException("Android OS Bug")
+        )
+        assertFalse(
+            ConnectivityChecker.registerNetworkCallback(
+                contextMock,
+                mock(),
+                buildInfo,
+                mock()
+            )
+        )
+    }
+
+    @Test
+    fun `When connectivityManager unregisterDefaultCallback throws an exception, false is returned`() {
+        whenever(connectivityManager.registerDefaultNetworkCallback(any())).thenThrow(
+            SecurityException("Android OS Bug")
+        )
+
+        var failed = false
+        try {
+            ConnectivityChecker.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
+        } catch (t: Throwable) {
+            failed = true
+        }
+        assertFalse(failed)
     }
 }
