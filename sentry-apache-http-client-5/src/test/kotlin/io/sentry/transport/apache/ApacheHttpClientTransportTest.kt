@@ -1,10 +1,12 @@
 package io.sentry.transport.apache
 
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.clientreport.NoOpClientReportRecorder
@@ -23,6 +25,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.Date
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import kotlin.test.AfterTest
@@ -181,5 +184,31 @@ class ApacheHttpClientTransportTest {
 
         verify(fixture.logger).log(SentryLevel.WARNING, "Failed to flush all events within %s ms", 200L)
         verify(fixture.currentlyRunning, times(1)).decrement()
+    }
+
+    @Test
+    fun `sets current date to sent_at in envelope header`() {
+        val now = Date(9001)
+        val sut = fixture.getSut()
+        fixture.options.dateProvider = mock()
+        whenever(fixture.options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+
+        val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+        sut.send(envelope)
+
+        assertEquals(envelope.header.sentAt, now)
+    }
+
+    @Test
+    fun `sets current date to sent_at in envelope header when sent with hint`() {
+        val now = Date(9001)
+        val sut = fixture.getSut()
+        fixture.options.dateProvider = mock()
+        whenever(fixture.options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+
+        val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+        sut.send(envelope, Hint())
+
+        assertEquals(envelope.header.sentAt, now)
     }
 }

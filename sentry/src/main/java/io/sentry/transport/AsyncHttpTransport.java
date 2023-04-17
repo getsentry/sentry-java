@@ -1,8 +1,10 @@
 package io.sentry.transport;
 
+import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.RequestDetails;
+import io.sentry.SentryDate;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -219,6 +221,7 @@ public final class AsyncHttpTransport implements ITransport {
     private @NotNull TransportResult flush() {
       TransportResult result = this.failedResult;
 
+      envelope.getHeader().setSentAt(null);
       envelopeCache.store(envelope, hint);
 
       HintUtils.runIfHasType(
@@ -233,6 +236,12 @@ public final class AsyncHttpTransport implements ITransport {
         final SentryEnvelope envelopeWithClientReport =
             options.getClientReportRecorder().attachReportToEnvelope(envelope);
         try {
+
+          @NotNull SentryDate now = options.getDateProvider().now();
+          envelopeWithClientReport
+              .getHeader()
+              .setSentAt(DateUtils.nanosToDate(now.nanoTimestamp()));
+
           result = connection.send(envelopeWithClientReport);
           if (result.isSuccess()) {
             envelopeCache.discard(envelope);

@@ -304,9 +304,6 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelopeHeader envelopeHeader =
           new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
 
-      @NotNull SentryDate now = options.getDateProvider().now();
-      envelopeHeader.setSentAt(DateUtils.nanosToDate(now.nanoTimestamp()));
-
       return new SentryEnvelope(envelopeHeader, envelopeItems);
     }
 
@@ -518,8 +515,6 @@ public final class SentryClient implements ISentryClient {
 
     try {
       hint.clear();
-      @NotNull SentryDate now = options.getDateProvider().now();
-      envelope.getHeader().setSentAt(DateUtils.nanosToDate(now.nanoTimestamp()));
       transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);

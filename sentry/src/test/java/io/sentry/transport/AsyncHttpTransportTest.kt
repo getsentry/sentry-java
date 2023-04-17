@@ -1,10 +1,12 @@
 package io.sentry.transport
 
 import io.sentry.CachedEvent
+import io.sentry.Hint
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
@@ -22,6 +24,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.IOException
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -228,7 +231,7 @@ class AsyncHttpTransportTest {
         whenever(fixture.connection.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
         fixture.getSUT().send(envelope)
         verify(fixture.connection).send(
-            check<SentryEnvelope> {
+            check {
                 assertEquals(1, it.items.count())
             }
         )
@@ -268,6 +271,54 @@ class AsyncHttpTransportTest {
         val sut = fixture.getSUT()
         sut.flush(500)
         verify(fixture.executor).waitTillIdle(500)
+    }
+
+    @Test
+    fun `sets current date to sent_at in envelope header before send`() {
+        // given
+        val now = Date(9001)
+        fixture.sentryOptions.dateProvider = mock()
+        whenever(fixture.sentryOptions.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+        whenever(fixture.connection.send(any())).thenReturn(TransportResult.success())
+
+        // when
+        val sut = fixture.getSUT()
+        sut.send(envelope)
+
+        // then
+        verify(fixture.connection).send(
+            check {
+                assertEquals(it.header.sentAt, now)
+            }
+        )
+    }
+
+    @Test
+    fun `sets current date to sent_at in envelope header before send when sent with hint`() {
+        // given
+        val now = Date(9001)
+        fixture.sentryOptions.dateProvider = mock()
+        whenever(fixture.sentryOptions.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+        whenever(fixture.connection.send(any())).thenReturn(TransportResult.success())
+
+        // when
+        val sut = fixture.getSUT()
+        sut.send(envelope, Hint())
+
+        // then
+        verify(fixture.connection).send(
+            check {
+                assertEquals(it.header.sentAt, now)
+            }
+        )
     }
 
     private fun createSession(): Session {
