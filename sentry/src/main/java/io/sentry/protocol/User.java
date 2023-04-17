@@ -70,8 +70,8 @@ public final class User implements JsonUnknown, JsonSerializable {
   /**
    * Creates user from a map.
    *
-   * <p>The values `data` and `value` expect a Map<String, String> type. If other object types are
-   * in the map `toString()` will be called on them.
+   * <p>The values `data` and `value` expect a {@code Map<String, String>} type. If other object
+   * types are in the map `toString()` will be called on them.
    *
    * @param map - The user data as map
    * @param options - the sentry options
