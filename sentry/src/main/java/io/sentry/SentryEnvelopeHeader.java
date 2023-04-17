@@ -59,10 +59,22 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
     return traceContext;
   }
 
+  /**
+   * Get the timestamp when the event was sent from the SDK as string in RFC 3339 format. Used
+   * for clock drift correction of the event timestamp. The time zone must be UTC.
+   */
   public @Nullable Date getSentAt() {
     return sentAt;
   }
 
+  /**
+   * Set he timestamp when the event was sent from the SDK as string in RFC 3339 format. Used
+   *    * for clock drift correction of the event timestamp. The time zone must be UTC.
+   *
+   * @param sentAt The timestamp should be generated as close as possible to the transmission of the
+   *               event, so that the delay between sending the envelope and receiving it on the
+   *               server-side is minimized.
+   */
   public void setSentAt(@Nullable Date sentAt) {
     this.sentAt = sentAt;
   }
