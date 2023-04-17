@@ -12,6 +12,8 @@
     <!-- Just some random permissions to showcase the permission context sent to Sentry -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!-- Needed by leakcanary.NotificationEventListener -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
     <uses-sdk

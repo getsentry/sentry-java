@@ -5,12 +5,24 @@
 ### Features
 
 - Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
+- Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
+    - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
 - Add `sent_at` to envelope header item ([#2638](https://github.com/getsentry/sentry-java/pull/2638))
 
 ### Fixes
 
+- Fix timestamp intervals of PerformanceCollectionData in profiles ([#2648](https://github.com/getsentry/sentry-java/pull/2648))
 - Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
+- Fix potential SecurityException thrown by ConnectivityManager on Android 11 ([#2653](https://github.com/getsentry/sentry-java/pull/2653))
+
+### Dependencies
+- Bump Kotlin compile version from v1.6.10 to 1.8.0 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+- Bump Compose compile version from v1.1.1 to v1.3.0 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+- Bump AGP version from v7.3.0 to v7.4.2 ([#2574](https://github.com/getsentry/sentry-java/pull/2574))
+- Bump Gradle from v7.6.0 to v8.0.2 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
+    - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v802)
+    - [diff](https://github.com/gradle/gradle/compare/v7.6.0...v8.0.2)
 
 ## 6.17.0
 

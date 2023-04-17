@@ -23,6 +23,7 @@ dependencies {
     api(projects.sentry)
     implementation(Config.Libs.log4j2Api)
     implementation(Config.Libs.log4j2Core)
+    annotationProcessor(Config.Libs.log4j2Core)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
