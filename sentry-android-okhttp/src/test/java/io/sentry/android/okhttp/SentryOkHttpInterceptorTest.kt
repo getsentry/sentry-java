@@ -510,4 +510,15 @@ class SentryOkHttpInterceptorTest {
         }
         verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
+
+    @Test
+    fun `when a call is captured by SentryOkHttpEventListener no span nor breadcrumb is created`() {
+        val sut = fixture.getSut(responseBody = "response body")
+        val call = sut.newCall(postRequest())
+        SentryOkHttpEventListener.eventMap[call] = mock()
+        call.execute()
+        val httpClientSpan = fixture.sentryTracer.children.firstOrNull()
+        assertNull(httpClientSpan)
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    }
 }
