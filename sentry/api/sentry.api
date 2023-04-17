@@ -579,6 +579,8 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
+	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;Z)V
+	public abstract fun forceFinish (Lio/sentry/SpanStatus;Z)V
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
@@ -856,6 +858,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;Z)V
+	public fun forceFinish (Lio/sentry/SpanStatus;Z)V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -1784,6 +1788,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;Z)V
+	public fun forceFinish (Lio/sentry/SpanStatus;Z)V
 	public fun getChildren ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData ()Ljava/util/Map;

@@ -1,3 +1,4 @@
+
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
@@ -117,8 +118,18 @@ subprojects {
                     from("build${sep}libs")
                     from("build${sep}publications${sep}maven")
                     // android modules
-                    from("build${sep}outputs${sep}aar")
+                    from("build${sep}outputs${sep}aar") {
+                        include("*-release*")
+                    }
                     from("build${sep}publications${sep}release")
+                }
+            }
+            // craft only uses zip archives
+            this.forEach { dist ->
+                if (dist.name == DistributionPlugin.MAIN_DISTRIBUTION_NAME) {
+                    tasks.getByName("distTar").enabled = false
+                } else {
+                    tasks.getByName(dist.name + "DistTar").enabled = false
                 }
             }
         }
@@ -126,7 +137,8 @@ subprojects {
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
-                val distributionFilePath = "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
+                val distributionFilePath =
+                    "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
@@ -160,14 +172,15 @@ spotless {
         googleJavaFormat()
         targetExclude("**/generated/**", "**/vendor/**")
     }
-
     kotlin {
         target("**/*.kt")
         ktlint()
+        targetExclude("**/sentry-native/**")
     }
     kotlinGradle {
         target("**/*.kts")
         ktlint()
+        targetExclude("**/sentry-native/**")
     }
 }
 
@@ -195,5 +208,13 @@ gradle.projectsEvaluated {
                     includes += javadocTask.includes
                 }
             }
+    }
+}
+
+// Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different
+gradle.taskGraph.whenReady {
+    val task = this.allTasks.find { it.name.endsWith(".main()") } as? JavaExec
+    task?.let {
+        it.setExecutable(it.javaLauncher.get().executablePath.asFile.absolutePath)
     }
 }

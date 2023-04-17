@@ -41,7 +41,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.composeVersion
+        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
     }
 
     dependenciesInfo {
