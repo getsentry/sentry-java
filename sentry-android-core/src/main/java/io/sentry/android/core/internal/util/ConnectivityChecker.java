@@ -14,6 +14,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Note: ConnectivityManager sometimes throws SecurityExceptions on Android 11. Hence all relevant
+ * calls are guarded with try/catch. see https://issuetracker.google.com/issues/175055271 for more
+ * details
+ */
 @ApiStatus.Internal
 public final class ConnectivityChecker {
 
@@ -62,13 +67,18 @@ public final class ConnectivityChecker {
       logger.log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
       return Status.NO_PERMISSION;
     }
-    final android.net.NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
 
-    if (activeNetworkInfo == null) {
-      logger.log(SentryLevel.INFO, "NetworkInfo is null, there's no active network.");
-      return Status.NOT_CONNECTED;
+    try {
+      final android.net.NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+      if (activeNetworkInfo == null) {
+        logger.log(SentryLevel.INFO, "NetworkInfo is null, there's no active network.");
+        return Status.NOT_CONNECTED;
+      }
+      return activeNetworkInfo.isConnected() ? Status.CONNECTED : Status.NOT_CONNECTED;
+    } catch (Throwable t) {
+      logger.log(SentryLevel.ERROR, "Could not retrieve Connection Status", t);
+      return Status.UNKNOWN;
     }
-    return activeNetworkInfo.isConnected() ? Status.CONNECTED : Status.NOT_CONNECTED;
   }
 
   /**
@@ -93,79 +103,86 @@ public final class ConnectivityChecker {
       return null;
     }
 
-    boolean ethernet = false;
-    boolean wifi = false;
-    boolean cellular = false;
+    try {
+      boolean ethernet = false;
+      boolean wifi = false;
+      boolean cellular = false;
 
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
-      final Network activeNetwork = connectivityManager.getActiveNetwork();
-      if (activeNetwork == null) {
-        logger.log(SentryLevel.INFO, "Network is null and cannot check network status");
-        return null;
-      }
-      final NetworkCapabilities networkCapabilities =
-          connectivityManager.getNetworkCapabilities(activeNetwork);
-      if (networkCapabilities == null) {
-        logger.log(SentryLevel.INFO, "NetworkCapabilities is null and cannot check network type");
-        return null;
-      }
-      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-        ethernet = true;
-      }
-      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-        wifi = true;
-      }
-      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-        cellular = true;
-      }
-    } else {
-      // ideally using connectivityManager.getAllNetworks(), but its >= Android L only
+      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
 
-      // for some reason linting didn't allow a single @SuppressWarnings("deprecation") on method
-      // signature
-      @SuppressWarnings("deprecation")
-      final android.net.NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-
-      if (activeNetworkInfo == null) {
-        logger.log(SentryLevel.INFO, "NetworkInfo is null, there's no active network.");
-        return null;
-      }
-
-      @SuppressWarnings("deprecation")
-      final int type = activeNetworkInfo.getType();
-
-      @SuppressWarnings("deprecation")
-      final int TYPE_ETHERNET = ConnectivityManager.TYPE_ETHERNET;
-
-      @SuppressWarnings("deprecation")
-      final int TYPE_WIFI = ConnectivityManager.TYPE_WIFI;
-
-      @SuppressWarnings("deprecation")
-      final int TYPE_MOBILE = ConnectivityManager.TYPE_MOBILE;
-
-      switch (type) {
-        case TYPE_ETHERNET:
+        final Network activeNetwork = connectivityManager.getActiveNetwork();
+        if (activeNetwork == null) {
+          logger.log(SentryLevel.INFO, "Network is null and cannot check network status");
+          return null;
+        }
+        final NetworkCapabilities networkCapabilities =
+            connectivityManager.getNetworkCapabilities(activeNetwork);
+        if (networkCapabilities == null) {
+          logger.log(SentryLevel.INFO, "NetworkCapabilities is null and cannot check network type");
+          return null;
+        }
+        if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
           ethernet = true;
-          break;
-        case TYPE_WIFI:
+        }
+        if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
           wifi = true;
-          break;
-        case TYPE_MOBILE:
+        }
+        if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
           cellular = true;
-          break;
-      }
-    }
+        }
+      } else {
+        // ideally using connectivityManager.getAllNetworks(), but its >= Android L only
 
-    // TODO: change the protocol to be a list of transports as a device may have the capability of
-    // multiple
-    if (ethernet) {
-      return "ethernet";
-    }
-    if (wifi) {
-      return "wifi";
-    }
-    if (cellular) {
-      return "cellular";
+        // for some reason linting didn't allow a single @SuppressWarnings("deprecation") on method
+        // signature
+        @SuppressWarnings("deprecation")
+        final android.net.NetworkInfo activeNetworkInfo =
+            connectivityManager.getActiveNetworkInfo();
+
+        if (activeNetworkInfo == null) {
+          logger.log(SentryLevel.INFO, "NetworkInfo is null, there's no active network.");
+          return null;
+        }
+
+        @SuppressWarnings("deprecation")
+        final int type = activeNetworkInfo.getType();
+
+        @SuppressWarnings("deprecation")
+        final int TYPE_ETHERNET = ConnectivityManager.TYPE_ETHERNET;
+
+        @SuppressWarnings("deprecation")
+        final int TYPE_WIFI = ConnectivityManager.TYPE_WIFI;
+
+        @SuppressWarnings("deprecation")
+        final int TYPE_MOBILE = ConnectivityManager.TYPE_MOBILE;
+
+        switch (type) {
+          case TYPE_ETHERNET:
+            ethernet = true;
+            break;
+          case TYPE_WIFI:
+            wifi = true;
+            break;
+          case TYPE_MOBILE:
+            cellular = true;
+            break;
+        }
+      }
+
+      // TODO: change the protocol to be a list of transports as a device may have the capability of
+      // multiple
+      if (ethernet) {
+        return "ethernet";
+      }
+      if (wifi) {
+        return "wifi";
+      }
+      if (cellular) {
+        return "cellular";
+      }
+
+    } catch (Throwable exception) {
+      logger.log(SentryLevel.ERROR, "Failed to retrieve network info", exception);
     }
 
     return null;
@@ -228,7 +245,12 @@ public final class ConnectivityChecker {
       logger.log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
       return false;
     }
-    connectivityManager.registerDefaultNetworkCallback(networkCallback);
+    try {
+      connectivityManager.registerDefaultNetworkCallback(networkCallback);
+    } catch (Throwable t) {
+      logger.log(SentryLevel.ERROR, "registerDefaultNetworkCallback failed", t);
+      return false;
+    }
     return true;
   }
 
@@ -245,6 +267,10 @@ public final class ConnectivityChecker {
     if (connectivityManager == null) {
       return;
     }
-    connectivityManager.unregisterNetworkCallback(networkCallback);
+    try {
+      connectivityManager.unregisterNetworkCallback(networkCallback);
+    } catch (Throwable t) {
+      logger.log(SentryLevel.ERROR, "unregisterNetworkCallback failed", t);
+    }
   }
 }
