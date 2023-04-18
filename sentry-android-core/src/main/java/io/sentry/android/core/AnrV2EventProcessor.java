@@ -42,9 +42,11 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import java.util.ArrayList;
@@ -410,10 +412,27 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
+  @Nullable
+  private SentryThread findMainThread(final @Nullable List<SentryThread> threads) {
+    if (threads != null) {
+      for (SentryThread thread : threads) {
+        final String name = thread.getName();
+        if (name != null && name.equals("main")) {
+          return thread;
+        }
+      }
+    }
+    return null;
+  }
+
   private void setExceptions(final @NotNull SentryEvent event) {
-    final Throwable throwable = event.getThrowableMechanism();
-    if (throwable != null) {
-      event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
+    final SentryThread mainThread = findMainThread(event.getThreads());
+    if (mainThread != null) {
+      final Mechanism mechanism = new Mechanism();
+      mechanism.setType("ANRv2");
+      event.setExceptions(
+        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, true)
+      );
     }
   }
 

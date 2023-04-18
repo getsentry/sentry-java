@@ -5,6 +5,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
+import io.sentry.protocol.SentryThread;
 import io.sentry.util.Objects;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -32,6 +33,30 @@ public final class SentryExceptionFactory {
   public SentryExceptionFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
+  }
+
+  @NotNull
+  public List<SentryException> getSentryExceptionsFromThread(
+    final @NotNull SentryThread thread,
+    final @NotNull Mechanism mechanism,
+    final boolean snapshot
+  ) {
+    final ArrayList<SentryException> exceptions = new ArrayList<>();
+    final SentryException exception = new SentryException();
+
+    final SentryStackTrace threadStacktrace = thread.getStacktrace();
+    if (threadStacktrace != null) {
+      final SentryStackTrace stacktrace = new SentryStackTrace(threadStacktrace.getFrames());
+      if (snapshot) {
+        stacktrace.setSnapshot(true);
+      }
+      exception.setStacktrace(stacktrace);
+    }
+    exception.setThreadId(thread.getId());
+    exception.setMechanism(mechanism);
+
+    exceptions.add(exception);
+    return exceptions;
   }
 
   /**
