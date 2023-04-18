@@ -6,8 +6,12 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryLockReason;
+import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -37,6 +41,8 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
   private @Nullable Boolean daemon;
   private @Nullable Boolean main;
   private @Nullable SentryStackTrace stacktrace;
+
+  private @Nullable Map<String, SentryLockReason> heldLocks;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -208,6 +214,24 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     this.state = state;
   }
 
+  /**
+   * Gets locks held by this thread.
+   *
+   * @return locks held by this thread
+   */
+  public @Nullable Map<String, SentryLockReason> getHeldLocks() {
+    return heldLocks;
+  }
+
+  /**
+   * Sets locks held by this thread.
+   *
+   * @param heldLocks list of locks held by this thread
+   */
+  public void setHeldLocks(final @Nullable Map<String, SentryLockReason> heldLocks) {
+    this.heldLocks = heldLocks;
+  }
+
   // region json
 
   @Nullable
@@ -231,6 +255,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     public static final String DAEMON = "daemon";
     public static final String MAIN = "main";
     public static final String STACKTRACE = "stacktrace";
+    public static final String HELD_LOCKS = "held_locks";
   }
 
   @Override
@@ -263,6 +288,9 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     }
     if (stacktrace != null) {
       writer.name(JsonKeys.STACKTRACE).value(logger, stacktrace);
+    }
+    if (heldLocks != null) {
+      writer.name(JsonKeys.HELD_LOCKS).value(logger, heldLocks);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -313,6 +341,12 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
             sentryThread.stacktrace =
                 reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
             break;
+          case JsonKeys.HELD_LOCKS:
+            final Map<String, SentryLockReason> heldLocks =
+              reader.nextMapOrNull(logger, new SentryLockReason.Deserializer());
+            if (heldLocks != null) {
+              sentryThread.heldLocks = new HashMap<>(heldLocks);
+            }
           default:
             if (unknown == null) {
               unknown = new ConcurrentHashMap<>();

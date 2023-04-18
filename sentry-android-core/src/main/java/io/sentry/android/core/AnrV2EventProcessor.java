@@ -88,8 +88,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     this.buildInfoProvider = buildInfoProvider;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
-        new SentryStackTraceFactory(
-            this.options.getInAppExcludes(), this.options.getInAppIncludes());
+        new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
   }

@@ -15,7 +15,11 @@ import kotlin.test.assertTrue
 class SentryExceptionFactoryTest {
     private class Fixture {
 
-        fun getSut(stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), listOf())): SentryExceptionFactory {
+        fun getSut(
+            stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(
+                SentryOptions().apply { addInAppExclude("io.sentry") }
+            )
+        ): SentryExceptionFactory {
             return SentryExceptionFactory(stackTraceFactory)
         }
     }
@@ -88,7 +92,8 @@ class SentryExceptionFactoryTest {
     fun `When ExceptionMechanismException has threads snapshot, stack trace should set snapshot flag`() {
         val error = Exception("Exception")
 
-        val throwable = ExceptionMechanismException(Mechanism(), error, Thread.currentThread(), true)
+        val throwable =
+            ExceptionMechanismException(Mechanism(), error, Thread.currentThread(), true)
         val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
 
         assertTrue(sentryExceptions[0].stacktrace?.snapshot!!)

@@ -14,16 +14,10 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class SentryStackTraceFactory {
 
-  /** list of inApp excludes */
-  private final @Nullable List<String> inAppExcludes;
+  private final @NotNull SentryOptions options;
 
-  /** list of inApp includes */
-  private final @Nullable List<String> inAppIncludes;
-
-  public SentryStackTraceFactory(
-      @Nullable final List<String> inAppExcludes, @Nullable List<String> inAppIncludes) {
-    this.inAppExcludes = inAppExcludes;
-    this.inAppIncludes = inAppIncludes;
+  public SentryStackTraceFactory(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   /**
@@ -76,27 +70,26 @@ public final class SentryStackTraceFactory {
    * @param className the className
    * @return true if it is or false otherwise
    */
-  @TestOnly
   @Nullable
-  Boolean isInApp(final @Nullable String className) {
+  public Boolean isInApp(final @Nullable String className) {
     if (className == null || className.isEmpty()) {
       return true;
     }
 
-    if (inAppIncludes != null) {
-      for (String include : inAppIncludes) {
-        if (className.startsWith(include)) {
-          return true;
-        }
+    final List<String> inAppIncludes = options.getInAppIncludes();
+    for (String include : inAppIncludes) {
+      if (className.startsWith(include)) {
+        return true;
       }
     }
-    if (inAppExcludes != null) {
-      for (String exclude : inAppExcludes) {
-        if (className.startsWith(exclude)) {
-          return false;
-        }
+
+    final List<String> inAppExcludes = options.getInAppExcludes();
+    for (String exclude : inAppExcludes) {
+      if (className.startsWith(exclude)) {
+        return false;
       }
     }
+
     return null;
   }
 
