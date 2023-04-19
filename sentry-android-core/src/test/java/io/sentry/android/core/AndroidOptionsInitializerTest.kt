@@ -270,7 +270,7 @@ class AndroidOptionsInitializerTest {
     fun `init should set bundle IDs id on start`() {
         fixture.initSut(
             Bundle().apply {
-                putString(ManifestMetadataReader.SOURCE_BUNDLE_IDS, "12ea7a02-46ac-44c0-a5bb-6d1fd9586411, faa3ab42-b1bd-4659-af8e-1682324aa744")
+                putString("io.sentry.bundle-ids", "12ea7a02-46ac-44c0-a5bb-6d1fd9586411, faa3ab42-b1bd-4659-af8e-1682324aa744")
             },
             hasAppContext = false
         )

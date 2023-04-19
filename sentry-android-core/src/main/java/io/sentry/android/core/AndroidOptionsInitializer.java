@@ -280,9 +280,6 @@ final class AndroidOptionsInitializer {
     }
 
     // TODO when to parse, when not?
-    // TODO parse bundle IDs as well; extract proguard parsing to parser; also parse bundleIds;
-    // return data class containing both properties
-    // TODO on SAGP side, add bundleIds to sentry-debug-meta.properties file
     final @Nullable Properties debugMetaProperties =
         loadDebugMetaProperties(context, options.getLogger());
 
