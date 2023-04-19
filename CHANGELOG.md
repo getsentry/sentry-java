@@ -7,11 +7,14 @@
 - Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
 - Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
     - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
+- Create `User` and `Breadcrumb` from map ([#2614](https://github.com/getsentry/sentry-java/pull/2614))
 
 ### Fixes
 
+- Fix timestamp intervals of PerformanceCollectionData in profiles ([#2648](https://github.com/getsentry/sentry-java/pull/2648))
 - Fix timestamps of PerformanceCollectionData in profiles ([#2632](https://github.com/getsentry/sentry-java/pull/2632))
 - Fix missing propagateMinConstraints flag for SentryTraced ([#2637](https://github.com/getsentry/sentry-java/pull/2637))
+- Fix potential SecurityException thrown by ConnectivityManager on Android 11 ([#2653](https://github.com/getsentry/sentry-java/pull/2653))
 
 ### Dependencies
 - Bump Kotlin compile version from v1.6.10 to 1.8.0 ([#2563](https://github.com/getsentry/sentry-java/pull/2563))
