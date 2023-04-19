@@ -41,7 +41,7 @@ public final class ExternalOptions {
       new CopyOnWriteArraySet<>();
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
-  private @NotNull List<String> bundleIds = new CopyOnWriteArrayList<>();
+  private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -340,7 +340,7 @@ public final class ExternalOptions {
     this.sendClientReports = sendClientReports;
   }
 
-  public @NotNull List<String> getBundleIds() {
+  public @NotNull Set<String> getBundleIds() {
     return bundleIds;
   }
 
