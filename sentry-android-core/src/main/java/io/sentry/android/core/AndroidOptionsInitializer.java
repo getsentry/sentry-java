@@ -279,9 +279,58 @@ final class AndroidOptionsInitializer {
       }
     }
 
-    if (options.getProguardUuid() == null) {
-      options.setProguardUuid(getProguardUUID(context, options.getLogger()));
+    // TODO when to parse, when not?
+    // TODO parse bundle IDs as well; extract proguard parsing to parser; also parse bundleIds;
+    // return data class containing both properties
+    // TODO on SAGP side, add bundleIds to sentry-debug-meta.properties file
+    final @Nullable Properties debugMetaProperties =
+        loadDebugMetaProperties(context, options.getLogger());
+
+    if (debugMetaProperties != null) {
+      if (options.getProguardUuid() == null) {
+        final @Nullable String proguardUuid =
+            debugMetaProperties.getProperty("io.sentry.ProguardUuids");
+        options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
+        options.setProguardUuid(proguardUuid);
+      }
+
+      if (options.getBundleIds().isEmpty()) {
+        final @Nullable String bundleIdStrings =
+            debugMetaProperties.getProperty("io.sentry.bundle-ids");
+        options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
+        if (bundleIdStrings != null) {
+          // TODO really nullable?
+          final @Nullable String[] bundleIds = bundleIdStrings.split(",", -1);
+          if (bundleIds != null) {
+            for (final String bundleId : bundleIds) {
+              options.addBundleId(bundleId);
+            }
+          }
+        }
+      }
     }
+  }
+
+  private static @Nullable Properties loadDebugMetaProperties(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    final AssetManager assets = context.getAssets();
+    // one may have thousands of asset files and looking up this list might slow down the SDK init.
+    // quite a bit, for this reason, we try to open the file directly and take care of errors
+    // like FileNotFoundException
+    try (final InputStream is =
+        new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
+      final Properties properties = new Properties();
+      properties.load(is);
+      return properties;
+    } catch (FileNotFoundException e) {
+      logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
+    } catch (RuntimeException e) {
+      logger.log(SentryLevel.ERROR, "sentry-debug-meta.properties file is malformed.", e);
+    }
+
+    return null;
   }
 
   private static @Nullable String getProguardUUID(

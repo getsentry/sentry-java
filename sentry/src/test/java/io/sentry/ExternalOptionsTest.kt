@@ -216,6 +216,37 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with single bundle ID using external properties`() {
+        withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
+            assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))
+        }
+    }
+
+    @Test
+    fun `creates options with multiple bundle IDs using external properties`() {
+        withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411,faa3ab42-b1bd-4659-af8e-1682324aa744") { options ->
+            assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")))
+        }
+    }
+
+    @Test
+    fun `creates options with empty bundle IDs using external properties`() {
+        withPropertiesFile("bundle-ids=") { options ->
+            assertTrue(options.bundleIds.size == 1)
+            // trimming is tested in SentryOptionsTest so even though there's an empty string here
+            // it will be filtered when being merged with SentryOptions
+            assertTrue(options.bundleIds.containsAll(listOf("")))
+        }
+    }
+
+    @Test
+    fun `creates options with missing bundle IDs using external properties`() {
+        withPropertiesFile("") { options ->
+            assertTrue(options.bundleIds.isEmpty())
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

@@ -77,6 +77,8 @@ final class ManifestMetadataReader {
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
+
+  static final String SOURCE_BUNDLE_IDS = "io.sentry.bundle-ids";
   static final String IDLE_TIMEOUT = "io.sentry.traces.idle-timeout";
 
   static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
@@ -339,6 +341,13 @@ final class ManifestMetadataReader {
         if (integrationsFromGradlePlugin != null) {
           for (String integration : integrationsFromGradlePlugin) {
             SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
+          }
+        }
+
+        List<String> sourceBundleIds = readList(metadata, logger, SOURCE_BUNDLE_IDS);
+        if (sourceBundleIds != null) {
+          for (String bundleId : sourceBundleIds) {
+            options.addBundleId(bundleId);
           }
         }
       }
