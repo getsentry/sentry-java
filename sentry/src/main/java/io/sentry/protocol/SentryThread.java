@@ -345,6 +345,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
             if (heldLocks != null) {
               sentryThread.heldLocks = new HashMap<>(heldLocks);
             }
+            break;
           default:
             if (unknown == null) {
               unknown = new ConcurrentHashMap<>();

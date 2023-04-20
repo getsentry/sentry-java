@@ -127,7 +127,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     backfillScope(event);
 
-    backfillOptions(event);
+    backfillOptions(event, unwrappedHint);
 
     setStaticValues(event);
 
@@ -266,22 +266,26 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   // endregion
 
   // region options persisted values
-  private void backfillOptions(final @NotNull SentryEvent event) {
+  private void backfillOptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
     setRelease(event);
     setEnvironment(event);
     setDist(event);
     setDebugMeta(event);
     setSdk(event);
-    setApp(event);
+    setApp(event, hint);
     setOptionsTags(event);
   }
 
-  private void setApp(final @NotNull SentryBaseEvent event) {
+  private void setApp(final @NotNull SentryBaseEvent event, final @NotNull Object hint) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    // TODO: not entirely correct, because we define background ANRs as not the ones of
+    //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR happened
+    //  but it's our best effort for now. We could serialize AppState in theory.
+    app.setInForeground(!isBackgroundAnr(hint));
 
     final PackageInfo packageInfo =
         ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
@@ -428,6 +432,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     return null;
   }
 
+  // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
   private boolean isBackgroundAnr(final @NotNull Object hint) {
     if (hint instanceof AbnormalExit) {
       final String abnormalMechanism = ((AbnormalExit) hint).mechanism();

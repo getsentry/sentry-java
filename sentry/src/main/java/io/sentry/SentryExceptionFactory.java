@@ -43,7 +43,7 @@ public final class SentryExceptionFactory {
       final @NotNull Throwable throwable) {
     final SentryStackTrace threadStacktrace = thread.getStacktrace();
     if (threadStacktrace == null) {
-      return Collections.emptyList();
+      return new ArrayList<>(0);
     }
     final List<SentryException> exceptions = new ArrayList<>(1);
     exceptions.add(
@@ -83,7 +83,7 @@ public final class SentryExceptionFactory {
    *     none exist.
    * @param threadId The optional id of a {@link Thread} which the exception originated. Or null if
    *     not known.
-   * @param frames
+   * @param frames stack frames that should be assigned to the stacktrace of this exception.
    * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot, See {@link
    *     SentryStackTrace#getSnapshot()}
    */

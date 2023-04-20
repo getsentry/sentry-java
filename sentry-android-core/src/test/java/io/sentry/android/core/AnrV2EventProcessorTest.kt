@@ -32,6 +32,7 @@ import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.PersistingScopeObserver.USER_FILENAME
+import io.sentry.hints.AbnormalExit
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.Browser
 import io.sentry.protocol.Contexts
@@ -42,6 +43,9 @@ import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryStackFrame
+import io.sentry.protocol.SentryStackTrace
+import io.sentry.protocol.SentryThread
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.junit.Rule
@@ -61,6 +65,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AnrV2EventProcessorTest {
@@ -301,6 +306,7 @@ class AnrV2EventProcessorTest {
         assertEquals("io.sentry.android.core.test", processed.contexts.app!!.appName)
         assertEquals("1.2.0", processed.contexts.app!!.appVersion)
         assertEquals("232", processed.contexts.app!!.appBuild)
+        assertEquals(true, processed.contexts.app!!.inForeground)
         // tags
         assertEquals("tag", processed.tags!!["option"])
     }
@@ -316,8 +322,8 @@ class AnrV2EventProcessorTest {
         val processed = processor.process(original, hint)
 
         assertEquals("io.sentry.samples", processed!!.release)
-        assertNull(processed!!.contexts.app!!.appVersion)
-        assertNull(processed!!.contexts.app!!.appBuild)
+        assertNull(processed.contexts.app!!.appVersion)
+        assertNull(processed.contexts.app!!.appBuild)
     }
 
     @Test
@@ -412,6 +418,89 @@ class AnrV2EventProcessorTest {
         assertEquals("uuid", processed.debugMeta!!.images!![1].uuid)
     }
 
+    @Test
+    fun `when proguard uuid is not persisted, does not add to debug meta`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+        val processed = processEvent(hint, populateOptionsCache = false)
+
+        // proguard uuid
+        assertTrue(processed.debugMeta!!.images!!.isEmpty())
+    }
+
+    @Test
+    fun `populates exception from main thread`() {
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+        val stacktrace = SentryStackTrace().apply {
+            frames = listOf(SentryStackFrame().apply {
+                lineno = 777
+                module = "io.sentry.samples.MainActivity"
+                function = "run"
+            })
+        }
+
+        val processed = processEvent(hint) {
+            threads = listOf(SentryThread().apply {
+                name = "main"
+                id = 13
+                this.stacktrace = stacktrace
+            })
+        }
+
+        val exception = processed.exceptions!!.first()
+        assertEquals(13, exception.threadId)
+        assertEquals("ANRv2", exception.mechanism!!.type)
+        assertEquals("ANR", exception.value)
+        assertEquals("ApplicationNotResponding", exception.type)
+        assertEquals("io.sentry.android.core", exception.module)
+        assertEquals(true, exception.stacktrace!!.snapshot)
+        val frame = exception.stacktrace!!.frames!!.first()
+        assertEquals(777, frame.lineno)
+        assertEquals("run", frame.function)
+        assertEquals("io.sentry.samples.MainActivity", frame.module)
+    }
+
+    @Test
+    fun `does not populate exception when there is no main thread in threads`() {
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+        val processed = processEvent(hint) {
+            threads = listOf(SentryThread())
+        }
+
+        assertNull(processed.exceptions)
+    }
+
+    @Test
+    fun `adds Background to the message when mechanism is anr_background`() {
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
+
+        val processed = processEvent(hint) {
+            threads = listOf(SentryThread().apply {
+                name = "main"
+                stacktrace = SentryStackTrace()
+            })
+        }
+
+        val exception = processed.exceptions!!.first()
+        assertEquals("Background ANR", exception.value)
+    }
+
+    @Test
+    fun `does not add Background to the message when mechanism is anr_foreground`() {
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+
+        val processed = processEvent(hint) {
+            threads = listOf(SentryThread().apply {
+                name = "main"
+                stacktrace = SentryStackTrace()
+            })
+        }
+
+        val exception = processed.exceptions!!.first()
+        assertEquals("ANR", exception.value)
+    }
+
     private fun processEvent(
         hint: Hint,
         populateScopeCache: Boolean = false,
@@ -426,6 +515,11 @@ class AnrV2EventProcessorTest {
             populateOptionsCache = populateOptionsCache
         )
         return processor.process(original, hint)!!
+    }
+
+    internal class AbnormalExitHint(val mechanism: String? = null) : AbnormalExit, Backfillable {
+        override fun mechanism(): String? = mechanism
+        override fun shouldEnrich(): Boolean = true
     }
 
     internal class BackfillableHint(private val shouldEnrich: Boolean = true) : Backfillable {

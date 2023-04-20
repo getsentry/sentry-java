@@ -125,7 +125,16 @@ public class ThreadDumpParser {
       }
       sentryThread.setId(tid);
       sentryThread.setName(beginManagedThreadRe.group(1));
-      sentryThread.setState(beginManagedThreadRe.group(5));
+      final String state = beginManagedThreadRe.group(5);
+      // sanitizing thread that have more details after their actual state, e.g.
+      // "Native (still starting up)" <- we just need "Native" here
+      if (state != null) {
+        if (state.contains(" ")) {
+          sentryThread.setState(state.substring(0, state.indexOf(' ')));
+        } else {
+          sentryThread.setState(state);
+        }
+      }
       final String threadName = sentryThread.getName();
       if (threadName != null) {
         final boolean isMain = threadName.equals("main");

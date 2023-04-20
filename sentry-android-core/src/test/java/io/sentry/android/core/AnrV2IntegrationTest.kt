@@ -29,6 +29,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -78,6 +79,7 @@ class AnrV2IntegrationTest {
                 this.isAnrEnabled = isAnrEnabled
                 this.flushTimeoutMillis = flushTimeoutMillis
                 this.isEnableAutoSessionTracking = sessionTrackingEnabled
+                addInAppInclude("io.sentry.samples")
                 setEnvelopeDiskCache(EnvelopeCache.create(this))
             }
             options.cacheDirPath?.let { cacheDir ->
@@ -104,7 +106,39 @@ class AnrV2IntegrationTest {
             if (importance != null) {
                 builder.setImportance(importance)
             }
-            shadowActivityManager.addApplicationExitInfo(builder.build())
+            val exitInfo = spy(builder.build()) {
+                whenever(mock.traceInputStream).thenReturn("""
+"main" prio=5 tid=1 Blocked
+  | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
+  | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+  | state=S schedstat=( 324804784 183300334 997 ) utm=23 stm=8 core=3 HZ=100
+  | stack=0x7ff93a9000-0x7ff93ab000 stackSize=8188KB
+  | held mutexes=
+  at io.sentry.samples.android.MainActivity${'$'}2.run(MainActivity.java:177)
+  - waiting to lock <0x0d3a2f0a> (a java.lang.Object) held by thread 5
+  at android.os.Handler.handleCallback(Handler.java:942)
+  at android.os.Handler.dispatchMessage(Handler.java:99)
+  at android.os.Looper.loopOnce(Looper.java:201)
+  at android.os.Looper.loop(Looper.java:288)
+  at android.app.ActivityThread.main(ActivityThread.java:7872)
+  at java.lang.reflect.Method.invoke(Native method)
+  at com.android.internal.os.RuntimeInit${'$'}MethodAndArgsCaller.run(RuntimeInit.java:548)
+  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
+
+"perfetto_hprof_listener" prio=10 tid=7 Native (still starting up)
+  | group="" sCount=1 ucsCount=0 flags=1 obj=0x0 self=0xb400007cabc5ab20
+  | sysTid=28959 nice=-20 cgrp=top-app sched=0/0 handle=0x7b2021bcb0
+  | state=S schedstat=( 72750 1679167 1 ) utm=0 stm=0 core=3 HZ=100
+  | stack=0x7b20124000-0x7b20126000 stackSize=991KB
+  | held mutexes=
+  native: #00 pc 00000000000a20f4  /apex/com.android.runtime/lib64/bionic/libc.so (read+4) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+  native: #01 pc 000000000001d840  /apex/com.android.art/lib64/libperfetto_hprof.so (void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, ArtPlugin_Initialize::${'$'}_34> >(void*)+260) (BuildId: 525cc92a7dc49130157aeb74f6870364)
+  native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+  native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+  (no managed stack frames)
+                """.trimIndent().byteInputStream())
+            }
+            shadowActivityManager.addApplicationExitInfo(exitInfo)
         }
     }
 
@@ -202,13 +236,31 @@ class AnrV2IntegrationTest {
             check {
                 assertEquals(newTimestamp, it.timestamp.time)
                 assertEquals(SentryLevel.FATAL, it.level)
-                assertTrue {
-                    it.throwable is ApplicationNotResponding &&
-                        it.throwable!!.message == "Background ANR"
-                }
-                assertTrue {
-                    (it.throwableMechanism as ExceptionMechanismException).exceptionMechanism.type == "ANRv2"
-                }
+                val mainThread = it.threads!!.first()
+                assertEquals("main", mainThread.name)
+                assertEquals(1, mainThread.id)
+                assertEquals("Blocked", mainThread.state)
+                assertEquals(true, mainThread.isCrashed)
+                assertEquals(true, mainThread.isMain)
+                assertEquals("0x0d3a2f0a", mainThread.heldLocks!!.values.first().address)
+                assertEquals(5, mainThread.heldLocks!!.values.first().threadId)
+                val lastFrame = mainThread.stacktrace!!.frames!!.last()
+                assertEquals("io.sentry.samples.android.MainActivity$2", lastFrame.module)
+                assertEquals("MainActivity.java", lastFrame.filename)
+                assertEquals("run", lastFrame.function)
+                assertEquals(177, lastFrame.lineno)
+                assertEquals(true, lastFrame.isInApp)
+                val otherThread = it.threads!![1]
+                assertEquals("perfetto_hprof_listener", otherThread.name)
+                assertEquals(7, otherThread.id)
+                assertEquals("Native", otherThread.state)
+                assertEquals(false, otherThread.isCrashed)
+                assertEquals(false, otherThread.isMain)
+                val firstFrame = otherThread.stacktrace!!.frames!!.first()
+                assertEquals(
+                    "/apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)",
+                    firstFrame.`package`
+                )
             },
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -218,7 +270,7 @@ class AnrV2IntegrationTest {
     }
 
     @Test
-    fun `when latest ANR has foreground importance, does not add Background to the name`() {
+    fun `when latest ANR has foreground importance, sets abnormal mechanism to anr_foreground`() {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(
             timestamp = newTimestamp,
@@ -228,10 +280,11 @@ class AnrV2IntegrationTest {
         integration.register(fixture.hub, fixture.options)
 
         verify(fixture.hub).captureEvent(
-            argThat {
-                throwable is ApplicationNotResponding && throwable!!.message == "ANR"
-            },
-            anyOrNull<Hint>()
+            any(),
+            argThat<Hint> {
+                val hint = HintUtils.getSentrySdkHint(this)
+                (hint as AnrV2Hint).mechanism() == "anr_foreground"
+            }
         )
     }
 
