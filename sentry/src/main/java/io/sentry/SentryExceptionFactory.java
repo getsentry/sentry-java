@@ -38,16 +38,17 @@ public final class SentryExceptionFactory {
 
   @NotNull
   public List<SentryException> getSentryExceptionsFromThread(
-    final @NotNull SentryThread thread,
-    final @NotNull Mechanism mechanism,
-    final @NotNull Throwable throwable
-  ) {
+      final @NotNull SentryThread thread,
+      final @NotNull Mechanism mechanism,
+      final @NotNull Throwable throwable) {
     final SentryStackTrace threadStacktrace = thread.getStacktrace();
     if (threadStacktrace == null) {
       return Collections.emptyList();
     }
     final List<SentryException> exceptions = new ArrayList<>(1);
-    exceptions.add(getSentryException(throwable, mechanism, thread.getId(), threadStacktrace.getFrames(), true));
+    exceptions.add(
+        getSentryException(
+            throwable, mechanism, thread.getId(), threadStacktrace.getFrames(), true));
     return exceptions;
   }
 
@@ -80,7 +81,8 @@ public final class SentryExceptionFactory {
    * @param throwable Java exception to send to Sentry.
    * @param exceptionMechanism The optional {@link Mechanism} of the {@code throwable}. Or null if
    *     none exist.
-   * @param threadId The optional id of a {@link Thread} which the exception originated. Or null if not known.
+   * @param threadId The optional id of a {@link Thread} which the exception originated. Or null if
+   *     not known.
    * @param frames
    * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot, See {@link
    *     SentryStackTrace#getSnapshot()}
@@ -159,9 +161,10 @@ public final class SentryExceptionFactory {
       }
 
       final List<SentryStackFrame> frames =
-        sentryStackTraceFactory.getStackFrames(currentThrowable.getStackTrace());
+          sentryStackTraceFactory.getStackFrames(currentThrowable.getStackTrace());
       SentryException exception =
-          getSentryException(currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
+          getSentryException(
+              currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
       exceptions.addFirst(exception);
       currentThrowable = currentThrowable.getCause();
     }

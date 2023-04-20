@@ -458,10 +458,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         message = "Background " + message;
       }
       final ApplicationNotResponding anr =
-        new ApplicationNotResponding(message, Thread.currentThread());
+          new ApplicationNotResponding(message, Thread.currentThread());
       event.setExceptions(
-        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr)
-      );
+          sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
     }
   }
 

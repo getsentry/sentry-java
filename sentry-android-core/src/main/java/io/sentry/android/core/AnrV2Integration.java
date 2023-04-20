@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
-import android.os.Looper;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -18,11 +17,9 @@ import io.sentry.android.core.internal.threaddump.Lines;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
-import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
-import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
@@ -262,7 +259,7 @@ public class AnrV2Integration implements Integration, Closeable {
         final @NotNull ApplicationExitInfo exitInfo, final boolean isBackground) {
       List<SentryThread> threads = null;
       try (final BufferedReader reader =
-             new BufferedReader(new InputStreamReader(exitInfo.getTraceInputStream()))) {
+          new BufferedReader(new InputStreamReader(exitInfo.getTraceInputStream()))) {
         final Lines lines = Lines.readLines(reader);
 
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);

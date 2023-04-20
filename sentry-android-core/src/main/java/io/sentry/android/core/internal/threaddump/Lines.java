@@ -26,8 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A stream of parsed lines.  Can be rewound, and sub-regions cloned for
- * recursive descent parsing.
+ * A stream of parsed lines. Can be rewound, and sub-regions cloned for recursive descent parsing.
  */
 @ApiStatus.Internal
 public final class Lines {
@@ -35,23 +34,17 @@ public final class Lines {
   private final int mMin;
   private final int mMax;
 
-  /**
-   * The read position inside the list.
-   */
+  /** The read position inside the list. */
   public int pos;
 
-  /**
-   * Read the whole file into a Lines object.
-   */
+  /** Read the whole file into a Lines object. */
   public static Lines readLines(final @NotNull File file) throws IOException {
     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
       return Lines.readLines(reader);
     }
   }
 
-  /**
-   * Read the whole file into a Lines object.
-   */
+  /** Read the whole file into a Lines object. */
   public static Lines readLines(final @NotNull BufferedReader in) throws IOException {
     final ArrayList<Line> list = new ArrayList<>();
 
@@ -65,25 +58,21 @@ public final class Lines {
     return new Lines(list);
   }
 
-  /**
-   * Construct with a list of lines.
-   */
+  /** Construct with a list of lines. */
   public Lines(final @NotNull ArrayList<? extends Line> list) {
     this.mList = list;
     mMin = 0;
     mMax = mList.size();
   }
 
-  /**
-   * If there are more lines to read within the current range.
-   */
+  /** If there are more lines to read within the current range. */
   public boolean hasNext() {
     return pos < mMax;
   }
 
   /**
-   * Return the next line, or null if there are no more lines to read. Also
-   * returns null in the error condition where pos is before the beginning.
+   * Return the next line, or null if there are no more lines to read. Also returns null in the
+   * error condition where pos is before the beginning.
    */
   @Nullable
   public Line next() {
@@ -94,9 +83,7 @@ public final class Lines {
     }
   }
 
-  /**
-   * Move the read position back by one line.
-   */
+  /** Move the read position back by one line. */
   public void rewind() {
     pos--;
   }

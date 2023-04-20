@@ -7,11 +7,9 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.SentryLockReason;
-import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -343,7 +341,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.HELD_LOCKS:
             final Map<String, SentryLockReason> heldLocks =
-              reader.nextMapOrNull(logger, new SentryLockReason.Deserializer());
+                reader.nextMapOrNull(logger, new SentryLockReason.Deserializer());
             if (heldLocks != null) {
               sentryThread.heldLocks = new HashMap<>(heldLocks);
             }

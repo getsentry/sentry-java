@@ -95,9 +95,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
 
   /**
    * Potentially mangled name of the symbol as it appears in an executable.
-   * <p>
-   * This is different from a function name by generally being the mangled name that appears
-   * natively in the binary.  This is relevant for languages like Swift, C++ or Rust.
+   *
+   * <p>This is different from a function name by generally being the mangled name that appears
+   * natively in the binary. This is relevant for languages like Swift, C++ or Rust.
    */
   private @Nullable String symbol;
 
@@ -274,7 +274,6 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
   public void setRawFunction(final @Nullable String rawFunction) {
     this.rawFunction = rawFunction;
   }
-
 
   @Nullable
   public String getSymbol() {

@@ -9,9 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents an instance of a held lock (java monitor object) in a thread.
- */
+/** Represents an instance of a held lock (java monitor object) in a thread. */
 public final class SentryLockReason implements JsonUnknown, JsonSerializable {
 
   public static final int LOCKED = 1;
@@ -28,8 +26,7 @@ public final class SentryLockReason implements JsonUnknown, JsonSerializable {
   private @Nullable Long threadId;
   private @Nullable Map<String, Object> unknown;
 
-  public SentryLockReason() {
-  }
+  public SentryLockReason() {}
 
   public SentryLockReason(final @NotNull SentryLockReason other) {
     this.type = other.type;
@@ -41,7 +38,6 @@ public final class SentryLockReason implements JsonUnknown, JsonSerializable {
   }
 
   @SuppressWarnings("unused")
-
   public int getType() {
     return type;
   }
@@ -86,17 +82,18 @@ public final class SentryLockReason implements JsonUnknown, JsonSerializable {
     this.threadId = threadId;
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SentryLockReason that = (SentryLockReason) o;
     return Objects.equals(address, that.address);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(address);
   }
-
 
   // region json
 
@@ -119,8 +116,9 @@ public final class SentryLockReason implements JsonUnknown, JsonSerializable {
     public static final String THREAD_ID = "thread_id";
   }
 
-  @Override public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-    throws IOException {
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TYPE).value(type);
     if (address != null) {
@@ -147,8 +145,9 @@ public final class SentryLockReason implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<SentryLockReason> {
 
-    @Override public @NotNull SentryLockReason deserialize(@NotNull JsonObjectReader reader,
-      @NotNull ILogger logger) throws Exception {
+    @Override
+    public @NotNull SentryLockReason deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       final SentryLockReason sentryLockReason = new SentryLockReason();
       Map<String, Object> unknown = null;
       reader.beginObject();

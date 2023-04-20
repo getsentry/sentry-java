@@ -18,31 +18,32 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ThreadDumpParser {
-  private static final Pattern BEGIN_MANAGED_THREAD_RE = Pattern.compile(
-    "\"(.*)\" (.*) ?prio=(\\d+)\\s+tid=(\\d+)\\s*(.*)");
-  private static final Pattern NATIVE_RE = Pattern.compile(
-    "  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s+\\((.*)\\+(\\d+)\\)");
-  private static final Pattern NATIVE_NO_LOC_RE = Pattern.compile(
-    "  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?");
-  private static final Pattern JAVA_RE = Pattern.compile(
-    "  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
-  private static final Pattern JNI_RE = Pattern.compile(
-    "  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\(Native method\\)");
-  private static final Pattern LOCKED_RE = Pattern.compile(
-    "  - locked \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
-  private static final Pattern SLEEPING_ON_RE = Pattern.compile(
-    "  - sleeping on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
-  private static final Pattern WAITING_ON_RE = Pattern.compile(
-    "  - waiting on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
-  private static final Pattern WAITING_TO_LOCK_RE = Pattern.compile(
-    "  - waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
-  private static final Pattern WAITING_TO_LOCK_HELD_RE = Pattern.compile(
-    "  - waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)"
-      + "(?: held by thread (\\d+))");
-  private static final Pattern WAITING_TO_LOCK_UNKNOWN_RE = Pattern.compile(
-    "  - waiting to lock an unknown object");
-  private static final Pattern BLANK_RE
-    = Pattern.compile("\\s+");
+  private static final Pattern BEGIN_MANAGED_THREAD_RE =
+      Pattern.compile("\"(.*)\" (.*) ?prio=(\\d+)\\s+tid=(\\d+)\\s*(.*)");
+  private static final Pattern NATIVE_RE =
+      Pattern.compile("  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s+\\((.*)\\+(\\d+)\\)");
+  private static final Pattern NATIVE_NO_LOC_RE =
+      Pattern.compile("  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?");
+  private static final Pattern JAVA_RE =
+      Pattern.compile("  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
+  private static final Pattern JNI_RE =
+      Pattern.compile("  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\(Native method\\)");
+  private static final Pattern LOCKED_RE =
+      Pattern.compile("  - locked \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+  private static final Pattern SLEEPING_ON_RE =
+      Pattern.compile("  - sleeping on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+  private static final Pattern WAITING_ON_RE =
+      Pattern.compile("  - waiting on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+  private static final Pattern WAITING_TO_LOCK_RE =
+      Pattern.compile(
+          "  - waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+  private static final Pattern WAITING_TO_LOCK_HELD_RE =
+      Pattern.compile(
+          "  - waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)"
+              + "(?: held by thread (\\d+))");
+  private static final Pattern WAITING_TO_LOCK_UNKNOWN_RE =
+      Pattern.compile("  - waiting to lock an unknown object");
+  private static final Pattern BLANK_RE = Pattern.compile("\\s+");
 
   private final @NotNull SentryOptions options;
 
@@ -50,10 +51,7 @@ public class ThreadDumpParser {
 
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
-  public ThreadDumpParser(
-    final @NotNull SentryOptions options,
-    final boolean isBackground
-  ) {
+  public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
     this.options = options;
     this.isBackground = isBackground;
     this.stackTraceFactory = new SentryStackTraceFactory(options);
@@ -128,9 +126,7 @@ public class ThreadDumpParser {
 
   @NotNull
   private SentryStackTrace parseStacktrace(
-    final @NotNull Lines lines,
-    final @NotNull SentryThread thread
-  ) {
+      final @NotNull Lines lines, final @NotNull SentryThread thread) {
     final List<SentryStackFrame> frames = new ArrayList<>();
     boolean isLastFrameJava = false;
 
@@ -259,9 +255,7 @@ public class ThreadDumpParser {
   }
 
   private void combineThreadLocks(
-    final @NotNull SentryThread thread,
-    final @NotNull SentryLockReason lockReason
-  ) {
+      final @NotNull SentryThread thread, final @NotNull SentryLockReason lockReason) {
     Map<String, SentryLockReason> heldLocks = thread.getHeldLocks();
     if (heldLocks == null) {
       heldLocks = new HashMap<>();
@@ -277,8 +271,8 @@ public class ThreadDumpParser {
   }
 
   @Nullable
-  private Long getLong(final @NotNull Matcher matcher, final int group,
-    final @Nullable Long defaultValue) {
+  private Long getLong(
+      final @NotNull Matcher matcher, final int group, final @Nullable Long defaultValue) {
     final String str = matcher.group(group);
     if (str == null || str.length() == 0) {
       return defaultValue;
@@ -288,8 +282,8 @@ public class ThreadDumpParser {
   }
 
   @Nullable
-  private Integer getInteger(final @NotNull Matcher matcher, final int group,
-    final @Nullable Integer defaultValue) {
+  private Integer getInteger(
+      final @NotNull Matcher matcher, final int group, final @Nullable Integer defaultValue) {
     final String str = matcher.group(group);
     if (str == null || str.length() == 0) {
       return defaultValue;
@@ -299,8 +293,8 @@ public class ThreadDumpParser {
   }
 
   @Nullable
-  private Integer getUInteger(final @NotNull Matcher matcher, final int group,
-    final @Nullable Integer defaultValue) {
+  private Integer getUInteger(
+      final @NotNull Matcher matcher, final int group, final @Nullable Integer defaultValue) {
     final String str = matcher.group(group);
     if (str == null || str.length() == 0) {
       return defaultValue;
