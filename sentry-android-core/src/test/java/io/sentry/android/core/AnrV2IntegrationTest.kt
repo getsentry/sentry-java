@@ -13,7 +13,6 @@ import io.sentry.SentryLevel
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.cache.EnvelopeCache
-import io.sentry.exception.ExceptionMechanismException
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -107,7 +106,8 @@ class AnrV2IntegrationTest {
                 builder.setImportance(importance)
             }
             val exitInfo = spy(builder.build()) {
-                whenever(mock.traceInputStream).thenReturn("""
+                whenever(mock.traceInputStream).thenReturn(
+                    """
 "main" prio=5 tid=1 Blocked
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
   | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
@@ -136,7 +136,8 @@ class AnrV2IntegrationTest {
   native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   (no managed stack frames)
-                """.trimIndent().byteInputStream())
+                    """.trimIndent().byteInputStream()
+                )
             }
             shadowActivityManager.addApplicationExitInfo(exitInfo)
         }

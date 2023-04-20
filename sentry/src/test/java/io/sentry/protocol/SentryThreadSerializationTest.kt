@@ -51,13 +51,15 @@ class SentryThreadSerializationTest {
                     "e7a3db0b-8cad-4eab-8315-03d5dc2edcd9" to "8bba0819-ac58-4e5c-bec7-32e1033b7bdf"
                 )
                 snapshot = true
-                heldLocks = mapOf("0x0d3a2f0a" to SentryLockReason().apply {
-                    address = "0x0d3a2f0a"
-                    className = "Object"
-                    packageName = "java.lang"
-                    type = SentryLockReason.BLOCKED
-                    threadId = 11
-                })
+                heldLocks = mapOf(
+                    "0x0d3a2f0a" to SentryLockReason().apply {
+                        address = "0x0d3a2f0a"
+                        className = "Object"
+                        packageName = "java.lang"
+                        type = SentryLockReason.BLOCKED
+                        threadId = 11
+                    }
+                )
             }
         }
     }

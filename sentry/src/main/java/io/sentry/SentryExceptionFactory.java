@@ -9,7 +9,6 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.util.Objects;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;

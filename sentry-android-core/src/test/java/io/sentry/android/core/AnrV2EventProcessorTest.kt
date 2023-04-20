@@ -432,19 +432,23 @@ class AnrV2EventProcessorTest {
     fun `populates exception from main thread`() {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
         val stacktrace = SentryStackTrace().apply {
-            frames = listOf(SentryStackFrame().apply {
-                lineno = 777
-                module = "io.sentry.samples.MainActivity"
-                function = "run"
-            })
+            frames = listOf(
+                SentryStackFrame().apply {
+                    lineno = 777
+                    module = "io.sentry.samples.MainActivity"
+                    function = "run"
+                }
+            )
         }
 
         val processed = processEvent(hint) {
-            threads = listOf(SentryThread().apply {
-                name = "main"
-                id = 13
-                this.stacktrace = stacktrace
-            })
+            threads = listOf(
+                SentryThread().apply {
+                    name = "main"
+                    id = 13
+                    this.stacktrace = stacktrace
+                }
+            )
         }
 
         val exception = processed.exceptions!!.first()
@@ -476,10 +480,12 @@ class AnrV2EventProcessorTest {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
 
         val processed = processEvent(hint) {
-            threads = listOf(SentryThread().apply {
-                name = "main"
-                stacktrace = SentryStackTrace()
-            })
+            threads = listOf(
+                SentryThread().apply {
+                    name = "main"
+                    stacktrace = SentryStackTrace()
+                }
+            )
         }
 
         val exception = processed.exceptions!!.first()
@@ -491,10 +497,12 @@ class AnrV2EventProcessorTest {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
         val processed = processEvent(hint) {
-            threads = listOf(SentryThread().apply {
-                name = "main"
-                stacktrace = SentryStackTrace()
-            })
+            threads = listOf(
+                SentryThread().apply {
+                    name = "main"
+                    stacktrace = SentryStackTrace()
+                }
+            )
         }
 
         val exception = processed.exceptions!!.first()
