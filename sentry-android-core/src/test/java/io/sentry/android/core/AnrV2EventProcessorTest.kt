@@ -465,14 +465,19 @@ class AnrV2EventProcessorTest {
     }
 
     @Test
-    fun `does not populate exception when there is no main thread in threads`() {
+    fun `populates exception without stacktrace when there is no main thread in threads`() {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
 
         val processed = processEvent(hint) {
             threads = listOf(SentryThread())
         }
 
-        assertNull(processed.exceptions)
+        val exception = processed.exceptions!!.first()
+        assertEquals("ANRv2", exception.mechanism!!.type)
+        assertEquals("ANR", exception.value)
+        assertEquals("ApplicationNotResponding", exception.type)
+        assertEquals("io.sentry.android.core", exception.module)
+        assertNull(exception.stacktrace)
     }
 
     @Test

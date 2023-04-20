@@ -47,6 +47,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
@@ -452,21 +453,26 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setExceptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
     // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
     // and make an exception out of its stacktrace
-    final SentryThread mainThread = findMainThread(event.getThreads());
-    if (mainThread != null) {
-      final Mechanism mechanism = new Mechanism();
-      mechanism.setType("ANRv2");
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setType("ANRv2");
 
-      final boolean isBackgroundAnr = isBackgroundAnr(hint);
-      String message = "ANR";
-      if (isBackgroundAnr) {
-        message = "Background " + message;
-      }
-      final ApplicationNotResponding anr =
-          new ApplicationNotResponding(message, Thread.currentThread());
-      event.setExceptions(
-          sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
+    final boolean isBackgroundAnr = isBackgroundAnr(hint);
+    String message = "ANR";
+    if (isBackgroundAnr) {
+      message = "Background " + message;
     }
+    final ApplicationNotResponding anr =
+        new ApplicationNotResponding(message, Thread.currentThread());
+
+    SentryThread mainThread = findMainThread(event.getThreads());
+    if (mainThread == null) {
+      // if there's no main thread in the event threads, we just create a dummy thread so the
+      // exception is properly created as well, but without stacktrace
+      mainThread = new SentryThread();
+      mainThread.setStacktrace(new SentryStackTrace());
+    }
+    event.setExceptions(
+        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {
