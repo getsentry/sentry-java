@@ -8,6 +8,7 @@ import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,6 +245,8 @@ public class ThreadDumpParser {
       }
     }
 
+    // Sentry expects frames to be in reverse order
+    Collections.reverse(frames);
     final SentryStackTrace stackTrace = new SentryStackTrace(frames);
     // it's a thread dump
     stackTrace.setSnapshot(true);

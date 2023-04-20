@@ -36,6 +36,7 @@ import io.sentry.SpanContext;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
@@ -110,7 +111,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // we always set exception values, platform, os and device even if the ANR is not enrich-able
     // even though the OS context may change in the meantime (OS update), we consider this an
     // edge-case
-    setExceptions(event);
+    setExceptions(event, unwrappedHint);
     setPlatform(event);
     mergeOS(event);
     setDevice(event);
@@ -340,10 +341,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       final String proguardUuid =
           PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
 
-      final DebugImage debugImage = new DebugImage();
-      debugImage.setType(DebugImage.PROGUARD);
-      debugImage.setUuid(proguardUuid);
-      images.add(debugImage);
+      if (proguardUuid != null) {
+        final DebugImage debugImage = new DebugImage();
+        debugImage.setType(DebugImage.PROGUARD);
+        debugImage.setUuid(proguardUuid);
+        images.add(debugImage);
+      }
       event.setDebugMeta(debugMeta);
     }
   }
@@ -425,13 +428,39 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     return null;
   }
 
-  private void setExceptions(final @NotNull SentryEvent event) {
+  private boolean isBackgroundAnr(final @NotNull Object hint) {
+    if (hint instanceof AbnormalExit) {
+      final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
+      if (abnormalMechanism == null) {
+        return false;
+      }
+
+      if (abnormalMechanism.equals("anr_foreground")) {
+        return false;
+      }
+
+      return abnormalMechanism.equals("anr_background");
+    }
+    return false;
+  }
+
+  private void setExceptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
+    // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
+    // and make an exception out of its stacktrace
     final SentryThread mainThread = findMainThread(event.getThreads());
     if (mainThread != null) {
       final Mechanism mechanism = new Mechanism();
       mechanism.setType("ANRv2");
+
+      final boolean isBackgroundAnr = isBackgroundAnr(hint);
+      String message = "ANR";
+      if (isBackgroundAnr) {
+        message = "Background " + message;
+      }
+      final ApplicationNotResponding anr =
+        new ApplicationNotResponding(message, Thread.currentThread());
       event.setExceptions(
-        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, true)
+        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr)
       );
     }
   }
