@@ -1,5 +1,6 @@
 
 import com.diffplug.spotless.LineEnding
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
@@ -152,6 +153,11 @@ subprojects {
                 // signing is done when uploading files to MC
                 // via gpg:sign-and-deploy-file (release.kts)
                 releaseSigningEnabled = false
+            }
+
+            @Suppress("UnstableApiUsage")
+            configure<MavenPublishBaseExtension> {
+                assignAarTypes()
             }
 
             // maven central info go to:
