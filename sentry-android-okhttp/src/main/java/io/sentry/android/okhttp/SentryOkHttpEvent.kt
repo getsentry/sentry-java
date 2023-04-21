@@ -11,6 +11,8 @@ import okhttp3.Call
 import okhttp3.Response
 import java.net.URL
 
+private val uuidRegex by lazy { Regex("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}") }
+
 internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) {
     private val eventSpans: MutableMap<String, ISpan> = HashMap()
     private val breadcrumb: Breadcrumb
@@ -48,7 +50,6 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
 
     private fun trimUrl(url: String): String {
         // Remove any uuid from the url and replace it with a "*"
-        val uuidRegex = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
         val trimmedUrl = url.replace(uuidRegex, "*")
         if (URL(trimmedUrl).query == null) {
             return trimmedUrl
