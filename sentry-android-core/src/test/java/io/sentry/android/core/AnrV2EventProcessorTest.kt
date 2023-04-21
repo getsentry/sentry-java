@@ -453,7 +453,7 @@ class AnrV2EventProcessorTest {
 
         val exception = processed.exceptions!!.first()
         assertEquals(13, exception.threadId)
-        assertEquals("ANRv2", exception.mechanism!!.type)
+        assertEquals("AppExitInfo", exception.mechanism!!.type)
         assertEquals("ANR", exception.value)
         assertEquals("ApplicationNotResponding", exception.type)
         assertEquals("io.sentry.android.core", exception.module)
@@ -473,7 +473,7 @@ class AnrV2EventProcessorTest {
         }
 
         val exception = processed.exceptions!!.first()
-        assertEquals("ANRv2", exception.mechanism!!.type)
+        assertEquals("AppExitInfo", exception.mechanism!!.type)
         assertEquals("ANR", exception.value)
         assertEquals("ApplicationNotResponding", exception.type)
         assertEquals("io.sentry.android.core", exception.module)

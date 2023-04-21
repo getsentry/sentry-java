@@ -171,13 +171,13 @@ class SentryExceptionFactoryTest {
                 )
             }
         }
-        val mechanism = Mechanism().apply { type = "ANRv2" }
+        val mechanism = Mechanism().apply { type = "AppExitInfo" }
         val throwable = Exception("msg")
 
         val exceptions = fixture.getSut().getSentryExceptionsFromThread(thread, mechanism, throwable)
 
         val exception = exceptions.first()
-        assertEquals("ANRv2", exception.mechanism!!.type)
+        assertEquals("AppExitInfo", exception.mechanism!!.type)
         assertEquals("java.lang", exception.module)
         assertEquals("Exception", exception.type)
         assertEquals("msg", exception.value)

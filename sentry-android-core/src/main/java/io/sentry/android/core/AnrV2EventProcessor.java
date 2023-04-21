@@ -454,7 +454,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
     // and make an exception out of its stacktrace
     final Mechanism mechanism = new Mechanism();
-    mechanism.setType("ANRv2");
+    mechanism.setType("AppExitInfo");
 
     final boolean isBackgroundAnr = isBackgroundAnr(hint);
     String message = "ANR";
