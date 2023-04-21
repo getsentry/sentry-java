@@ -26,7 +26,7 @@ private val androidLibs = setOf(
     "sentry-android-navigation",
     "sentry-android-okhttp",
     "sentry-android-timber",
-    "sentry-compose-android",
+    "sentry-compose-android"
 )
 
 private val androidXLibs = listOf(
