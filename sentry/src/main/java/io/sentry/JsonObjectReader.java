@@ -135,7 +135,13 @@ public final class JsonObjectReader extends JsonReader {
       nextNull();
       return null;
     }
-    String dateString = nextString();
+    return JsonObjectReader.dateOrNull(nextString(), logger);
+  }
+
+  public static @Nullable Date dateOrNull(@Nullable String dateString, ILogger logger) {
+    if (dateString == null) {
+      return null;
+    }
     try {
       return DateUtils.getDateTime(dateString);
     } catch (Exception e) {

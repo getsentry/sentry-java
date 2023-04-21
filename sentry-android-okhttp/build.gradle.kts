@@ -69,13 +69,11 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.Libs.okhttpBom)
     compileOnly(Config.Libs.okhttp)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
-    testImplementation(Config.Libs.okhttpBom)
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxJunit)

@@ -5,20 +5,16 @@ package io.sentry.vendor.gson.internal.bind.util;
 // Commit Hash: 6a368d89da37917be7714c3072b8378f4120110a
 // Changes: --
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ISO8601UtilsTest {
-
-  @Rule
-  public final ExpectedException exception = ExpectedException.none();
 
   private static TimeZone utcTimeZone() {
     return TimeZone.getTimeZone("UTC");
@@ -91,10 +87,15 @@ public class ISO8601UtilsTest {
   }
 
   @Test
-  public void testDateParseInvalidTime() throws ParseException {
+  public void testDateParseInvalidTime() {
     String dateStr = "2018-06-25T61:60:62-03:00";
-    exception.expect(ParseException.class);
-    ISO8601Utils.parse(dateStr, new ParsePosition(0));
+    boolean thrown = false;
+    try {
+      ISO8601Utils.parse(dateStr, new ParsePosition(0));
+    } catch (ParseException e) {
+      thrown = true;
+    }
+    assertTrue("Expected to throw a ParseException, but failed.", thrown);
   }
 }
 

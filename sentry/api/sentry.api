@@ -89,6 +89,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun <init> (Ljava/util/Date;)V
 	public static fun debug (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun error (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun fromMap (Ljava/util/Map;Lio/sentry/SentryOptions;)Lio/sentry/Breadcrumb;
 	public fun getCategory ()Ljava/lang/String;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
@@ -641,6 +642,7 @@ public final class io/sentry/JsonObjectDeserializer {
 
 public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/JsonReader {
 	public fun <init> (Ljava/io/Reader;)V
+	public static fun dateOrNull (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextBooleanOrNull ()Ljava/lang/Boolean;
 	public fun nextDateOrNull (Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextDoubleOrNull ()Ljava/lang/Double;
@@ -2891,6 +2893,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 public final class io/sentry/protocol/Geo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Geo;)V
+	public static fun fromMap (Ljava/util/Map;)Lio/sentry/protocol/Geo;
 	public fun getCity ()Ljava/lang/String;
 	public fun getCountryCode ()Ljava/lang/String;
 	public fun getRegion ()Ljava/lang/String;
@@ -3583,6 +3586,7 @@ public final class io/sentry/protocol/TransactionNameSource : java/lang/Enum {
 public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/User;)V
+	public static fun fromMap (Ljava/util/Map;Lio/sentry/SentryOptions;)Lio/sentry/protocol/User;
 	public fun getData ()Ljava/util/Map;
 	public fun getEmail ()Ljava/lang/String;
 	public fun getGeo ()Lio/sentry/protocol/Geo;

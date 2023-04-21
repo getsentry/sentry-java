@@ -39,7 +39,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.mockWebserver4)
+    testImplementation(Config.TestLibs.mockWebserver)
 }
 
 configure<SourceSetContainer> {

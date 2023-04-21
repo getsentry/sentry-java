@@ -14,6 +14,7 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     this.maybeCreate("android").contents {
         from("build${sep}publications${sep}androidRelease")
         from("build${sep}outputs${sep}aar") {
+            include("*-release*")
             rename {
                 it.replace("-release", "-android-release")
             }
