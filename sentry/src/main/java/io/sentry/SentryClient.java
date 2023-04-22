@@ -303,6 +303,7 @@ public final class SentryClient implements ISentryClient {
     if (!envelopeItems.isEmpty()) {
       final SentryEnvelopeHeader envelopeHeader =
           new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
+
       return new SentryEnvelope(envelopeHeader, envelopeItems);
     }
 

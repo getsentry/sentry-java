@@ -4,6 +4,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,6 +20,8 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
   private final @Nullable SdkVersion sdkVersion;
 
   private final @Nullable TraceContext traceContext;
+
+  private @Nullable Date sentAt;
 
   private @Nullable Map<String, Object> unknown;
 
@@ -56,12 +59,33 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
     return traceContext;
   }
 
+  /**
+   * Get the timestamp when the event was sent from the SDK as string in RFC 3339 format. Used for
+   * clock drift correction of the event timestamp. The time zone must be UTC.
+   */
+  public @Nullable Date getSentAt() {
+    return sentAt;
+  }
+
+  /**
+   * Set he timestamp when the event was sent from the SDK as string in RFC 3339 format. Used * for
+   * clock drift correction of the event timestamp. The time zone must be UTC.
+   *
+   * @param sentAt The timestamp should be generated as close as possible to the transmission of the
+   *     event, so that the delay between sending the envelope and receiving it on the server-side
+   *     is minimized.
+   */
+  public void setSentAt(@Nullable Date sentAt) {
+    this.sentAt = sentAt;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {
     public static final String EVENT_ID = "event_id";
     public static final String SDK = "sdk";
     public static final String TRACE = "trace";
+    public static final String SENT_AT = "sent_at";
   }
 
   @Override
@@ -76,6 +100,9 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
     }
     if (traceContext != null) {
       writer.name(JsonKeys.TRACE).value(logger, traceContext);
+    }
+    if (sentAt != null) {
+      writer.name(JsonKeys.SENT_AT).value(logger, DateUtils.getTimestamp(sentAt));
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -96,6 +123,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
       SentryId eventId = null;
       SdkVersion sdkVersion = null;
       TraceContext traceContext = null;
+      Date sentAt = null;
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
@@ -110,6 +138,9 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
           case JsonKeys.TRACE:
             traceContext = reader.nextOrNull(logger, new TraceContext.Deserializer());
             break;
+          case JsonKeys.SENT_AT:
+            sentAt = reader.nextDateOrNull(logger);
+            break;
           default:
             if (unknown == null) {
               unknown = new HashMap<>();
@@ -120,6 +151,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
       }
       SentryEnvelopeHeader sentryEnvelopeHeader =
           new SentryEnvelopeHeader(eventId, sdkVersion, traceContext);
+      sentryEnvelopeHeader.setSentAt(sentAt);
       sentryEnvelopeHeader.setUnknown(unknown);
       reader.endObject();
       return sentryEnvelopeHeader;
