@@ -236,9 +236,7 @@ private val androidLibs = setOf(
 )
 
 private val androidXLibs = listOf(
-    "androidx.core:core",
-    "androidx.lifecycle:lifecycle-process",
-    "androidx.lifecycle:lifecycle-common-java8"
+    "androidx.core:core"
 )
 
 /*
