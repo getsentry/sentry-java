@@ -8,6 +8,7 @@
 - Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
     - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
 - Create `User` and `Breadcrumb` from map ([#2614](https://github.com/getsentry/sentry-java/pull/2614))
+- Add `sent_at` to envelope header item ([#2638](https://github.com/getsentry/sentry-java/pull/2638))
 
 ### Fixes
 
