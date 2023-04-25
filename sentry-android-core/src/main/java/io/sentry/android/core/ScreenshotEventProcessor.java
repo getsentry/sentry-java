@@ -48,7 +48,9 @@ public final class ScreenshotEventProcessor implements EventProcessor {
       return event;
     }
 
-    final byte[] screenshot = takeScreenshot(activity, options.getLogger(), buildInfoProvider);
+    final byte[] screenshot =
+        takeScreenshot(
+            activity, options.getMainThreadChecker(), options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }
