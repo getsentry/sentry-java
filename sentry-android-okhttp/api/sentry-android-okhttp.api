@@ -9,8 +9,12 @@ public final class io/sentry/android/okhttp/BuildConfig {
 public final class io/sentry/android/okhttp/SentryOkHttpEventListener : okhttp3/EventListener {
 	public static final field Companion Lio/sentry/android/okhttp/SentryOkHttpEventListener$Companion;
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener$Factory;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener$Factory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun callEnd (Lokhttp3/Call;)V
 	public fun callFailed (Lokhttp3/Call;Ljava/io/IOException;)V
 	public fun callStart (Lokhttp3/Call;)V

@@ -4,7 +4,14 @@
 
 ### Features
 
-- Add OkHttp event spans ([#2659](https://github.com/getsentry/sentry-java/pull/2659))
+- More granular http requests instrumentation with a new SentryOkHttpEventListener ([#2659](https://github.com/getsentry/sentry-java/pull/2659))
+    - Create spans for time spent on:
+        - Proxy selection
+        - DNS resolution
+        - HTTPS setup
+        - Connection
+        - Requesting headers
+        - Receiving response
 - Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
 - Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
     - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`

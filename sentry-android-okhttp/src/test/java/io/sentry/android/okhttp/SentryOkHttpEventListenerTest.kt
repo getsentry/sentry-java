@@ -7,13 +7,19 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import okhttp3.EventListener
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,17 +32,24 @@ class SentryOkHttpEventListenerTest {
     class Fixture {
         val hub = mock<IHub>()
         val server = MockWebServer()
+        val mockEventListener = mock<EventListener>()
+        val mockEventListenerFactory = mock<EventListener.Factory>()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
+        lateinit var sentryOkHttpEventListener: SentryOkHttpEventListener
+
+        init {
+            whenever(mockEventListenerFactory.create(any())).thenReturn(mockEventListener)
+        }
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
             isSpanActive: Boolean = true,
             useInterceptor: Boolean = false,
             httpStatusCode: Int = 201,
-            responseBody: String = "success",
-            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            sendDefaultPii: Boolean = false
+            sendDefaultPii: Boolean = false,
+            eventListener: EventListener? = null,
+            eventListenerFactory: EventListener.Factory? = null
         ): OkHttpClient {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
@@ -51,9 +64,9 @@ class SentryOkHttpEventListenerTest {
             }
             server.enqueue(
                 MockResponse()
-                    .setBody(responseBody)
+                    .setBody("responseBody")
                     .addHeader("myResponseHeader", "myValue")
-                    .setSocketPolicy(socketPolicy)
+                    .setSocketPolicy(SocketPolicy.KEEP_OPEN)
                     .setResponseCode(httpStatusCode)
             )
 
@@ -61,7 +74,12 @@ class SentryOkHttpEventListenerTest {
             if (useInterceptor) {
                 builder.addInterceptor(SentryOkHttpInterceptor(hub))
             }
-            return builder.eventListener(SentryOkHttpEventListener(hub)).build()
+            sentryOkHttpEventListener = when {
+                eventListenerFactory != null -> SentryOkHttpEventListener(hub, eventListenerFactory)
+                eventListener != null -> SentryOkHttpEventListener(hub, eventListener)
+                else -> SentryOkHttpEventListener(hub)
+            }
+            return builder.eventListener(sentryOkHttpEventListener).build()
         }
     }
 
@@ -218,5 +236,123 @@ class SentryOkHttpEventListenerTest {
         response.close()
         assertNotNull(callSpan)
         assertEquals(SpanStatus.fromHttpStatusCode(404), callSpan.status)
+    }
+
+    @Test
+    fun `propagate all calls to the event listener passed in the ctor`() {
+        val sut = fixture.getSut(eventListener = fixture.mockEventListener, httpStatusCode = 500)
+        val listener = fixture.sentryOkHttpEventListener
+        val request = postRequest(body = "requestBody")
+        val call = sut.newCall(request)
+        val response = mock<Response>()
+        whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
+
+        listener.callStart(call)
+        verify(fixture.mockEventListener).callStart(eq(call))
+        listener.proxySelectStart(call, mock())
+        verify(fixture.mockEventListener).proxySelectStart(eq(call), any())
+        listener.proxySelectEnd(call, mock(), listOf(mock()))
+        verify(fixture.mockEventListener).proxySelectEnd(eq(call), any(), any())
+        listener.dnsStart(call, "domainName")
+        verify(fixture.mockEventListener).dnsStart(eq(call), eq("domainName"))
+        listener.dnsEnd(call, "domainName", listOf(mock()))
+        verify(fixture.mockEventListener).dnsEnd(eq(call), eq("domainName"), any())
+        listener.connectStart(call, mock(), mock())
+        verify(fixture.mockEventListener).connectStart(eq(call), any(), any())
+        listener.secureConnectStart(call)
+        verify(fixture.mockEventListener).secureConnectStart(eq(call))
+        listener.secureConnectEnd(call, mock())
+        verify(fixture.mockEventListener).secureConnectEnd(eq(call), any())
+        listener.connectEnd(call, mock(), mock(), mock())
+        verify(fixture.mockEventListener).connectEnd(eq(call), any(), any(), any())
+        listener.connectFailed(call, mock(), mock(), mock(), mock())
+        verify(fixture.mockEventListener).connectFailed(eq(call), any(), any(), any(), any())
+        listener.connectionAcquired(call, mock())
+        verify(fixture.mockEventListener).connectionAcquired(eq(call), any())
+        listener.connectionReleased(call, mock())
+        verify(fixture.mockEventListener).connectionReleased(eq(call), any())
+        listener.requestHeadersStart(call)
+        verify(fixture.mockEventListener).requestHeadersStart(eq(call))
+        listener.requestHeadersEnd(call, mock())
+        verify(fixture.mockEventListener).requestHeadersEnd(eq(call), any())
+        listener.requestBodyStart(call)
+        verify(fixture.mockEventListener).requestBodyStart(eq(call))
+        listener.requestBodyEnd(call, 10)
+        verify(fixture.mockEventListener).requestBodyEnd(eq(call), eq(10))
+        listener.requestFailed(call, mock())
+        verify(fixture.mockEventListener).requestFailed(eq(call), any())
+        listener.responseHeadersStart(call)
+        verify(fixture.mockEventListener).responseHeadersStart(eq(call))
+        listener.responseHeadersEnd(call, response)
+        verify(fixture.mockEventListener).responseHeadersEnd(eq(call), any())
+        listener.responseBodyStart(call)
+        verify(fixture.mockEventListener).responseBodyStart(eq(call))
+        listener.responseBodyEnd(call, 10)
+        verify(fixture.mockEventListener).responseBodyEnd(eq(call), eq(10))
+        listener.responseFailed(call, mock())
+        verify(fixture.mockEventListener).responseFailed(eq(call), any())
+        listener.callEnd(call)
+        verify(fixture.mockEventListener).callEnd(eq(call))
+        listener.callFailed(call, mock())
+        verify(fixture.mockEventListener).callFailed(eq(call), any())
+    }
+
+    @Test
+    fun `propagate all calls to the event listener factory passed in the ctor`() {
+        val sut = fixture.getSut(eventListenerFactory = fixture.mockEventListenerFactory, httpStatusCode = 500)
+        val listener = fixture.sentryOkHttpEventListener
+        val request = postRequest(body = "requestBody")
+        val call = sut.newCall(request)
+        val response = mock<Response>()
+        whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
+
+        listener.callStart(call)
+        verify(fixture.mockEventListener).callStart(eq(call))
+        listener.proxySelectStart(call, mock())
+        verify(fixture.mockEventListener).proxySelectStart(eq(call), any())
+        listener.proxySelectEnd(call, mock(), listOf(mock()))
+        verify(fixture.mockEventListener).proxySelectEnd(eq(call), any(), any())
+        listener.dnsStart(call, "domainName")
+        verify(fixture.mockEventListener).dnsStart(eq(call), eq("domainName"))
+        listener.dnsEnd(call, "domainName", listOf(mock()))
+        verify(fixture.mockEventListener).dnsEnd(eq(call), eq("domainName"), any())
+        listener.connectStart(call, mock(), mock())
+        verify(fixture.mockEventListener).connectStart(eq(call), any(), any())
+        listener.secureConnectStart(call)
+        verify(fixture.mockEventListener).secureConnectStart(eq(call))
+        listener.secureConnectEnd(call, mock())
+        verify(fixture.mockEventListener).secureConnectEnd(eq(call), any())
+        listener.connectEnd(call, mock(), mock(), mock())
+        verify(fixture.mockEventListener).connectEnd(eq(call), any(), any(), any())
+        listener.connectFailed(call, mock(), mock(), mock(), mock())
+        verify(fixture.mockEventListener).connectFailed(eq(call), any(), any(), any(), any())
+        listener.connectionAcquired(call, mock())
+        verify(fixture.mockEventListener).connectionAcquired(eq(call), any())
+        listener.connectionReleased(call, mock())
+        verify(fixture.mockEventListener).connectionReleased(eq(call), any())
+        listener.requestHeadersStart(call)
+        verify(fixture.mockEventListener).requestHeadersStart(eq(call))
+        listener.requestHeadersEnd(call, mock())
+        verify(fixture.mockEventListener).requestHeadersEnd(eq(call), any())
+        listener.requestBodyStart(call)
+        verify(fixture.mockEventListener).requestBodyStart(eq(call))
+        listener.requestBodyEnd(call, 10)
+        verify(fixture.mockEventListener).requestBodyEnd(eq(call), eq(10))
+        listener.requestFailed(call, mock())
+        verify(fixture.mockEventListener).requestFailed(eq(call), any())
+        listener.responseHeadersStart(call)
+        verify(fixture.mockEventListener).responseHeadersStart(eq(call))
+        listener.responseHeadersEnd(call, response)
+        verify(fixture.mockEventListener).responseHeadersEnd(eq(call), any())
+        listener.responseBodyStart(call)
+        verify(fixture.mockEventListener).responseBodyStart(eq(call))
+        listener.responseBodyEnd(call, 10)
+        verify(fixture.mockEventListener).responseBodyEnd(eq(call), eq(10))
+        listener.responseFailed(call, mock())
+        verify(fixture.mockEventListener).responseFailed(eq(call), any())
+        listener.callEnd(call)
+        verify(fixture.mockEventListener).callEnd(eq(call))
+        listener.callFailed(call, mock())
+        verify(fixture.mockEventListener).callFailed(eq(call), any())
     }
 }
