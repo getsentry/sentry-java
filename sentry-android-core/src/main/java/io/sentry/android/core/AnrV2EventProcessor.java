@@ -36,15 +36,19 @@ import io.sentry.SpanContext;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryStackTrace;
+import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import java.util.ArrayList;
@@ -88,8 +92,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     this.buildInfoProvider = buildInfoProvider;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
-        new SentryStackTraceFactory(
-            this.options.getInAppExcludes(), this.options.getInAppIncludes());
+        new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
   }
@@ -109,7 +112,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // we always set exception values, platform, os and device even if the ANR is not enrich-able
     // even though the OS context may change in the meantime (OS update), we consider this an
     // edge-case
-    setExceptions(event);
+    setExceptions(event, unwrappedHint);
     setPlatform(event);
     mergeOS(event);
     setDevice(event);
@@ -125,7 +128,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     backfillScope(event);
 
-    backfillOptions(event);
+    backfillOptions(event, unwrappedHint);
 
     setStaticValues(event);
 
@@ -264,22 +267,26 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   // endregion
 
   // region options persisted values
-  private void backfillOptions(final @NotNull SentryEvent event) {
+  private void backfillOptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
     setRelease(event);
     setEnvironment(event);
     setDist(event);
     setDebugMeta(event);
     setSdk(event);
-    setApp(event);
+    setApp(event, hint);
     setOptionsTags(event);
   }
 
-  private void setApp(final @NotNull SentryBaseEvent event) {
+  private void setApp(final @NotNull SentryBaseEvent event, final @NotNull Object hint) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    // TODO: not entirely correct, because we define background ANRs as not the ones of
+    //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR happened
+    //  but it's our best effort for now. We could serialize AppState in theory.
+    app.setInForeground(!isBackgroundAnr(hint));
 
     final PackageInfo packageInfo =
         ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
@@ -339,10 +346,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       final String proguardUuid =
           PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
 
-      final DebugImage debugImage = new DebugImage();
-      debugImage.setType(DebugImage.PROGUARD);
-      debugImage.setUuid(proguardUuid);
-      images.add(debugImage);
+      if (proguardUuid != null) {
+        final DebugImage debugImage = new DebugImage();
+        debugImage.setType(DebugImage.PROGUARD);
+        debugImage.setUuid(proguardUuid);
+        images.add(debugImage);
+      }
       event.setDebugMeta(debugMeta);
     }
   }
@@ -411,11 +420,51 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
-  private void setExceptions(final @NotNull SentryEvent event) {
-    final Throwable throwable = event.getThrowableMechanism();
-    if (throwable != null) {
-      event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
+  @Nullable
+  private SentryThread findMainThread(final @Nullable List<SentryThread> threads) {
+    if (threads != null) {
+      for (SentryThread thread : threads) {
+        final String name = thread.getName();
+        if (name != null && name.equals("main")) {
+          return thread;
+        }
+      }
     }
+    return null;
+  }
+
+  // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
+  private boolean isBackgroundAnr(final @NotNull Object hint) {
+    if (hint instanceof AbnormalExit) {
+      final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
+      return "anr_background".equals(abnormalMechanism);
+    }
+    return false;
+  }
+
+  private void setExceptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
+    // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
+    // and make an exception out of its stacktrace
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setType("AppExitInfo");
+
+    final boolean isBackgroundAnr = isBackgroundAnr(hint);
+    String message = "ANR";
+    if (isBackgroundAnr) {
+      message = "Background " + message;
+    }
+    final ApplicationNotResponding anr =
+        new ApplicationNotResponding(message, Thread.currentThread());
+
+    SentryThread mainThread = findMainThread(event.getThreads());
+    if (mainThread == null) {
+      // if there's no main thread in the event threads, we just create a dummy thread so the
+      // exception is properly created as well, but without stacktrace
+      mainThread = new SentryThread();
+      mainThread.setStacktrace(new SentryStackTrace());
+    }
+    event.setExceptions(
+        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {

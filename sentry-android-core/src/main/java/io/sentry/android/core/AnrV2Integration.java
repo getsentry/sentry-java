@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
-import android.os.Looper;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -14,20 +13,23 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.threaddump.Lines;
+import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
-import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
-import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -221,7 +223,8 @@ public class AnrV2Integration implements Integration, Closeable {
       final long anrTimestamp = exitInfo.getTimestamp();
       final boolean isBackground =
           exitInfo.getImportance() != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
-      final Throwable anrThrowable = buildAnrThrowable(exitInfo, isBackground);
+
+      final List<SentryThread> threads = parseThreadDump(exitInfo, isBackground);
       final AnrV2Hint anrHint =
           new AnrV2Hint(
               options.getFlushTimeoutMillis(),
@@ -232,7 +235,8 @@ public class AnrV2Integration implements Integration, Closeable {
 
       final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
 
-      final SentryEvent event = new SentryEvent(anrThrowable);
+      final SentryEvent event = new SentryEvent();
+      event.setThreads(threads);
       event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
       event.setLevel(SentryLevel.FATAL);
 
@@ -251,20 +255,20 @@ public class AnrV2Integration implements Integration, Closeable {
       }
     }
 
-    private @NotNull Throwable buildAnrThrowable(
+    private @Nullable List<SentryThread> parseThreadDump(
         final @NotNull ApplicationExitInfo exitInfo, final boolean isBackground) {
-      String message = "ANR";
-      if (isBackground) {
-        message = "Background " + message;
+      List<SentryThread> threads = null;
+      try (final BufferedReader reader =
+          new BufferedReader(new InputStreamReader(exitInfo.getTraceInputStream()))) {
+        final Lines lines = Lines.readLines(reader);
+
+        final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
+        threads = threadDumpParser.parse(lines);
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
       }
 
-      // TODO: here we should actually parse the trace file and extract the thread dump from there
-      // and then we could properly get the main thread stracktrace and construct a proper exception
-      final ApplicationNotResponding error =
-          new ApplicationNotResponding(message, Looper.getMainLooper().getThread());
-      final Mechanism mechanism = new Mechanism();
-      mechanism.setType("ANRv2");
-      return new ExceptionMechanismException(mechanism, error, error.getThread(), true);
+      return threads;
     }
   }
 

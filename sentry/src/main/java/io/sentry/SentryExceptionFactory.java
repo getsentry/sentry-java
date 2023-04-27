@@ -5,6 +5,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
+import io.sentry.protocol.SentryThread;
 import io.sentry.util.Objects;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -32,6 +33,22 @@ public final class SentryExceptionFactory {
   public SentryExceptionFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
+  }
+
+  @NotNull
+  public List<SentryException> getSentryExceptionsFromThread(
+      final @NotNull SentryThread thread,
+      final @NotNull Mechanism mechanism,
+      final @NotNull Throwable throwable) {
+    final SentryStackTrace threadStacktrace = thread.getStacktrace();
+    if (threadStacktrace == null) {
+      return new ArrayList<>(0);
+    }
+    final List<SentryException> exceptions = new ArrayList<>(1);
+    exceptions.add(
+        getSentryException(
+            throwable, mechanism, thread.getId(), threadStacktrace.getFrames(), true));
+    return exceptions;
   }
 
   /**
@@ -63,14 +80,17 @@ public final class SentryExceptionFactory {
    * @param throwable Java exception to send to Sentry.
    * @param exceptionMechanism The optional {@link Mechanism} of the {@code throwable}. Or null if
    *     none exist.
-   * @param thread The optional {@link Thread} which the exception originated. Or null if not known.
+   * @param threadId The optional id of a {@link Thread} which the exception originated. Or null if
+   *     not known.
+   * @param frames stack frames that should be assigned to the stacktrace of this exception.
    * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot, See {@link
    *     SentryStackTrace#getSnapshot()}
    */
   private @NotNull SentryException getSentryException(
       @NotNull final Throwable throwable,
       @Nullable final Mechanism exceptionMechanism,
-      @Nullable final Thread thread,
+      @Nullable final Long threadId,
+      @Nullable final List<SentryStackFrame> frames,
       final boolean snapshot) {
 
     final Package exceptionPackage = throwable.getClass().getPackage();
@@ -88,8 +108,6 @@ public final class SentryExceptionFactory {
     final String exceptionPackageName =
         exceptionPackage != null ? exceptionPackage.getName() : null;
 
-    final List<SentryStackFrame> frames =
-        sentryStackTraceFactory.getStackFrames(throwable.getStackTrace());
     if (frames != null && !frames.isEmpty()) {
       final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);
       if (snapshot) {
@@ -98,9 +116,7 @@ public final class SentryExceptionFactory {
       exception.setStacktrace(sentryStackTrace);
     }
 
-    if (thread != null) {
-      exception.setThreadId(thread.getId());
-    }
+    exception.setThreadId(threadId);
     exception.setType(exceptionClassName);
     exception.setMechanism(exceptionMechanism);
     exception.setModule(exceptionPackageName);
@@ -143,8 +159,11 @@ public final class SentryExceptionFactory {
         thread = Thread.currentThread();
       }
 
+      final List<SentryStackFrame> frames =
+          sentryStackTraceFactory.getStackFrames(currentThrowable.getStackTrace());
       SentryException exception =
-          getSentryException(currentThrowable, exceptionMechanism, thread, snapshot);
+          getSentryException(
+              currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
       exceptions.addFirst(exception);
       currentThrowable = currentThrowable.getCause();
     }

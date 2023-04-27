@@ -39,8 +39,7 @@ final class FileIOSpanManager {
     this.currentSpan = currentSpan;
     this.file = file;
     this.options = options;
-    this.stackTraceFactory =
-        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
+    this.stackTraceFactory = new SentryStackTraceFactory(options);
     SentryIntegrationPackageStorage.getInstance().addIntegration("FileIO");
   }
 

@@ -1498,6 +1498,7 @@ public final class io/sentry/SentryEvent$JsonKeys {
 public final class io/sentry/SentryExceptionFactory {
 	public fun <init> (Lio/sentry/SentryStackTraceFactory;)V
 	public fun getSentryExceptions (Ljava/lang/Throwable;)Ljava/util/List;
+	public fun getSentryExceptionsFromThread (Lio/sentry/protocol/SentryThread;Lio/sentry/protocol/Mechanism;Ljava/lang/Throwable;)Ljava/util/List;
 }
 
 public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
@@ -1548,6 +1549,46 @@ public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSeriali
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryLevel;
 	public static fun values ()[Lio/sentry/SentryLevel;
+}
+
+public final class io/sentry/SentryLockReason : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field ANY I
+	public static final field BLOCKED I
+	public static final field LOCKED I
+	public static final field SLEEPING I
+	public static final field WAITING I
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryLockReason;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAddress ()Ljava/lang/String;
+	public fun getClassName ()Ljava/lang/String;
+	public fun getPackageName ()Ljava/lang/String;
+	public fun getThreadId ()Ljava/lang/Long;
+	public fun getType ()I
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setAddress (Ljava/lang/String;)V
+	public fun setClassName (Ljava/lang/String;)V
+	public fun setPackageName (Ljava/lang/String;)V
+	public fun setThreadId (Ljava/lang/Long;)V
+	public fun setType (I)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryLockReason$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryLockReason;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryLockReason$JsonKeys {
+	public static final field ADDRESS Ljava/lang/String;
+	public static final field CLASS_NAME Ljava/lang/String;
+	public static final field PACKAGE_NAME Ljava/lang/String;
+	public static final field THREAD_ID Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryLongDate : io/sentry/SentryDate {
@@ -1800,9 +1841,10 @@ public final class io/sentry/SentrySpanStorage {
 }
 
 public final class io/sentry/SentryStackTraceFactory {
-	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;)Ljava/util/List;
+	public fun isInApp (Ljava/lang/String;)Ljava/lang/Boolean;
 }
 
 public final class io/sentry/SentryThreadFactory {
@@ -3516,6 +3558,7 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializa
 	public fun getPostContext ()Ljava/util/List;
 	public fun getPreContext ()Ljava/util/List;
 	public fun getRawFunction ()Ljava/lang/String;
+	public fun getSymbol ()Ljava/lang/String;
 	public fun getSymbolAddr ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVars ()Ljava/util/Map;
@@ -3539,6 +3582,7 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializa
 	public fun setPostContext (Ljava/util/List;)V
 	public fun setPreContext (Ljava/util/List;)V
 	public fun setRawFunction (Ljava/lang/String;)V
+	public fun setSymbol (Ljava/lang/String;)V
 	public fun setSymbolAddr (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVars (Ljava/util/Map;)V
@@ -3565,6 +3609,7 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field PACKAGE Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
 	public static final field RAW_FUNCTION Ljava/lang/String;
+	public static final field SYMBOL Ljava/lang/String;
 	public static final field SYMBOL_ADDR Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -3598,6 +3643,7 @@ public final class io/sentry/protocol/SentryStackTrace$JsonKeys {
 
 public final class io/sentry/protocol/SentryThread : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun getHeldLocks ()Ljava/util/Map;
 	public fun getId ()Ljava/lang/Long;
 	public fun getName ()Ljava/lang/String;
 	public fun getPriority ()Ljava/lang/Integer;
@@ -3612,6 +3658,7 @@ public final class io/sentry/protocol/SentryThread : io/sentry/JsonSerializable,
 	public fun setCrashed (Ljava/lang/Boolean;)V
 	public fun setCurrent (Ljava/lang/Boolean;)V
 	public fun setDaemon (Ljava/lang/Boolean;)V
+	public fun setHeldLocks (Ljava/util/Map;)V
 	public fun setId (Ljava/lang/Long;)V
 	public fun setMain (Ljava/lang/Boolean;)V
 	public fun setName (Ljava/lang/String;)V
@@ -3631,6 +3678,7 @@ public final class io/sentry/protocol/SentryThread$JsonKeys {
 	public static final field CRASHED Ljava/lang/String;
 	public static final field CURRENT Ljava/lang/String;
 	public static final field DAEMON Ljava/lang/String;
+	public static final field HELD_LOCKS Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field MAIN Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
