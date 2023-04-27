@@ -2,8 +2,10 @@ package io.sentry.transport.apache;
 
 import static io.sentry.SentryLevel.*;
 
+import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.RequestDetails;
+import io.sentry.SentryDate;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -76,6 +78,12 @@ public final class ApacheHttpClientTransport implements ITransport {
             options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
 
         if (envelopeWithClientReport != null) {
+
+          @NotNull SentryDate now = options.getDateProvider().now();
+          envelopeWithClientReport
+              .getHeader()
+              .setSentAt(DateUtils.nanosToDate(now.nanoTimestamp()));
+
           currentlyRunning.increment();
 
           try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

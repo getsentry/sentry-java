@@ -10,6 +10,15 @@ jobs:
   enforce-license-compliance:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629 # pin@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: 'Enforce License Compliance'
         uses: getsentry/action-enforce-license-compliance@main
         with:

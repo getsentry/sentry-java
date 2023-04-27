@@ -6,6 +6,8 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -64,6 +66,104 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.geo = user.geo;
     this.data = CollectionUtils.newConcurrentHashMap(user.data);
     this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
+  }
+
+  /**
+   * Creates user from a map.
+   *
+   * <p>The values `data` and `value` expect a {@code Map<String, String>} type. If other object
+   * types are in the map `toString()` will be called on them.
+   *
+   * @param map - The user data as map
+   * @param options - the sentry options
+   * @return the user
+   */
+  @SuppressWarnings("unchecked")
+  public static User fromMap(@NotNull Map<String, Object> map, @NotNull SentryOptions options) {
+    final User user = new User();
+    Map<String, Object> unknown = null;
+
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      Object value = entry.getValue();
+      switch (entry.getKey()) {
+        case JsonKeys.EMAIL:
+          user.email = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.ID:
+          user.id = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.USERNAME:
+          user.username = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.SEGMENT:
+          user.segment = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.IP_ADDRESS:
+          user.ipAddress = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.NAME:
+          user.name = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.GEO:
+          final Map<Object, Object> geo =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
+          if (geo != null) {
+            final ConcurrentHashMap<String, Object> geoData = new ConcurrentHashMap<>();
+            for (Map.Entry<Object, Object> geoEntry : geo.entrySet()) {
+              if (geoEntry.getKey() instanceof String && geoEntry.getValue() != null) {
+                geoData.put((String) geoEntry.getKey(), geoEntry.getValue());
+              } else {
+                options.getLogger().log(SentryLevel.WARNING, "Invalid key type in gep map.");
+              }
+            }
+            user.geo = Geo.fromMap(geoData);
+          }
+          break;
+        case JsonKeys.DATA:
+          final Map<Object, Object> data =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
+          if (data != null) {
+            final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
+            for (Map.Entry<Object, Object> dataEntry : data.entrySet()) {
+              if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
+                userData.put((String) dataEntry.getKey(), dataEntry.getValue().toString());
+              } else {
+                options
+                    .getLogger()
+                    .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
+              }
+            }
+            user.data = userData;
+          }
+          break;
+        case JsonKeys.OTHER:
+          final Map<Object, Object> other =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
+          // restore `other` from legacy JSON
+          if (other != null && (user.data == null || user.data.isEmpty())) {
+            final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
+            for (Map.Entry<Object, Object> otherEntry : other.entrySet()) {
+              if (otherEntry.getKey() instanceof String && otherEntry.getValue() != null) {
+                userData.put((String) otherEntry.getKey(), otherEntry.getValue().toString());
+              } else {
+                options
+                    .getLogger()
+                    .log(SentryLevel.WARNING, "Invalid key or null value in other map.");
+              }
+            }
+            user.data = userData;
+          }
+          break;
+        default:
+          if (unknown == null) {
+            unknown = new ConcurrentHashMap<>();
+          }
+          unknown.put(entry.getKey(), entry.getValue());
+          break;
+      }
+    }
+    user.unknown = unknown;
+    return user;
   }
 
   /**

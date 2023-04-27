@@ -433,7 +433,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // terms of System.currentTimeMillis() and measurements timestamps require the nanoseconds since
     // the beginning, expressed with SystemClock.elapsedRealtimeNanos()
     long timestampDiff =
-        SystemClock.elapsedRealtimeNanos() - transactionStartNanos - System.currentTimeMillis();
+        SystemClock.elapsedRealtimeNanos()
+            - transactionStartNanos
+            - TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
     if (performanceCollectionData != null) {
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
           new ArrayDeque<>(performanceCollectionData.size());
@@ -447,17 +449,19 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         if (cpuData != null) {
           cpuUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  cpuData.getTimestampMillis() + timestampDiff, cpuData.getCpuUsagePercentage()));
+                  TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
+                  cpuData.getCpuUsagePercentage()));
         }
         if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
           memoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  memoryData.getTimestampMillis() + timestampDiff, memoryData.getUsedHeapMemory()));
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                  memoryData.getUsedHeapMemory()));
         }
         if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
           nativeMemoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  memoryData.getTimestampMillis() + timestampDiff,
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
                   memoryData.getUsedNativeMemory()));
         }
       }

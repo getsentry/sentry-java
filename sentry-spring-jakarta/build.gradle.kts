@@ -1,4 +1,3 @@
-import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -12,17 +11,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
-}
-
-repositories {
-    mavenCentral()
-}
-
-the<DependencyManagementExtension>().apply {
-    imports {
-        mavenBom(SpringBootPlugin.BOM_COORDINATES)
-    }
 }
 
 configure<JavaPluginExtension> {
@@ -37,6 +25,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
+    compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
