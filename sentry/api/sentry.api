@@ -188,6 +188,7 @@ public final class io/sentry/DateUtils {
 
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun close ()V
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
@@ -597,6 +598,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
+	public abstract fun close ()V
 	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
@@ -905,12 +907,14 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 }
 
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
+	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
+	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
 	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
@@ -2151,6 +2155,7 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 }
 
 public abstract interface class io/sentry/TransactionPerformanceCollector {
+	public abstract fun close ()V
 	public abstract fun start (Lio/sentry/ITransaction;)V
 	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }

@@ -280,17 +280,26 @@ public final class Sentry {
       profilingTracesDir.mkdirs();
       final File[] oldTracesDirContent = profilingTracesDir.listFiles();
 
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                if (oldTracesDirContent == null) return;
-                // Method trace files are normally deleted at the end of traces, but if that fails
-                // for some reason we try to clear any old files here.
-                for (File f : oldTracesDirContent) {
-                  FileUtils.deleteRecursively(f);
-                }
-              });
+      try {
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  if (oldTracesDirContent == null) return;
+                  // Method trace files are normally deleted at the end of traces, but if that fails
+                  // for some reason we try to clear any old files here.
+                  for (File f : oldTracesDirContent) {
+                    FileUtils.deleteRecursively(f);
+                  }
+                });
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. Old profiles will not be deleted",
+                e);
+      }
     }
 
     final @NotNull IModulesLoader modulesLoader = options.getModulesLoader();

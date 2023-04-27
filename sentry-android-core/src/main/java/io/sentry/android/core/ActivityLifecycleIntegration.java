@@ -249,11 +249,20 @@ public final class ActivityLifecycleIntegration
         ttfdSpan =
             transaction.startChild(
                 TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-        ttfdAutoCloseFuture =
-            options
-                .getExecutorService()
-                .schedule(
-                    () -> finishExceededTtfdSpan(ttidSpanMap.get(activity)), TTFD_TIMEOUT_MILLIS);
+        try {
+          ttfdAutoCloseFuture =
+              options
+                  .getExecutorService()
+                  .schedule(
+                      () -> finishExceededTtfdSpan(ttidSpanMap.get(activity)), TTFD_TIMEOUT_MILLIS);
+        } catch (Throwable e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Failed to call the executor. Time to full display span will not be finished automatically.",
+                  e);
+        }
       }
 
       // lets bind to the scope so other integrations can pick it up

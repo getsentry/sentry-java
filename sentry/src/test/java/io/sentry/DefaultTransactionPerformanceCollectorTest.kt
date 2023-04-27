@@ -226,6 +226,20 @@ class DefaultTransactionPerformanceCollectorTest {
         verify(threadCheckerCollector, atLeast(1)).collect(any())
     }
 
+    @Test
+    fun `when close, timer is stopped and data is cleared`() {
+        val collector = fixture.getSut()
+        collector.start(fixture.transaction1)
+        collector.close()
+
+        // Timer was canceled
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer)!!.cancel()
+
+        // Data was cleared
+        assertNull(collector.stop(fixture.transaction1))
+    }
+
     inner class ThreadCheckerCollector : ICollector {
         override fun setup() {
             if (mainThreadChecker.isMainThread) {

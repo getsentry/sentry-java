@@ -339,6 +339,21 @@ public final class Hub implements IHub {
             ((Closeable) integration).close();
           }
         }
+
+        withScope(
+            scope -> {
+              ITransaction transaction = scope.getTransaction();
+              if (transaction != null) {
+                for (Span span : transaction.getSpans()) {
+                  span.setSpanFinishedCallback(null);
+                  span.finish(SpanStatus.CANCELLED);
+                }
+                transaction.finish(SpanStatus.CANCELLED);
+              }
+              scope.clear();
+            });
+        options.getTransactionProfiler().close();
+        options.getTransactionPerformanceCollector().close();
         options.getExecutorService().close(options.getShutdownTimeoutMillis());
 
         // Close the top-most client
