@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.18.0
 
 ### Features
 
