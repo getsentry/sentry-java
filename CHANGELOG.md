@@ -1,5 +1,11 @@
 # Changelog
 
+### Unreleased
+
+## Fixes
+
+- Fix crash on double SDK init ([#2679](https://github.com/getsentry/sentry-java/pull/2679))
+
 ## 6.18.0
 
 ### Features
