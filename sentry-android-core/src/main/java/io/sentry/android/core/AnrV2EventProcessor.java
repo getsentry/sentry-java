@@ -437,15 +437,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private boolean isBackgroundAnr(final @NotNull Object hint) {
     if (hint instanceof AbnormalExit) {
       final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
-      if (abnormalMechanism == null) {
-        return false;
-      }
-
-      if (abnormalMechanism.equals("anr_foreground")) {
-        return false;
-      }
-
-      return abnormalMechanism.equals("anr_background");
+      return "anr_background".equals(abnormalMechanism);
     }
     return false;
   }
