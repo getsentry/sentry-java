@@ -217,6 +217,14 @@ public final class Sentry {
 
     hub.close();
 
+    // If the executorService passed in the init is the same that was previously closed, we have to
+    // set a new one
+    final ISentryExecutorService sentryExecutorService = options.getExecutorService();
+    // If the passed executor service was previously called we set a new one
+    if (sentryExecutorService.isClosed()) {
+      options.setExecutorService(new SentryExecutorService());
+    }
+
     // when integrations are registered on Hub ctor and async integrations are fired,
     // it might and actually happened that integrations called captureSomething
     // and hub was still NoOp.

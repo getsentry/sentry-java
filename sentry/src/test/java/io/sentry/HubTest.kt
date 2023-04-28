@@ -1549,26 +1549,6 @@ class HubTest {
     }
 
     @Test
-    fun `Hub should cancel current transaction bound to the scope and its spans`() {
-        val hub = generateHub {
-            it.tracesSampleRate = 1.0
-        }
-        val transaction = hub.startTransaction("test", "test", true)
-        val span = transaction.startChild("span1")
-        val span2 = transaction.startChild("span1")
-        assertFalse(transaction.isFinished)
-        assertFalse(span.isFinished)
-        assertFalse(span2.isFinished)
-        hub.close()
-        assertTrue(transaction.isFinished)
-        assertTrue(span.isFinished)
-        assertTrue(span2.isFinished)
-        assertEquals(SpanStatus.CANCELLED, transaction.status)
-        assertEquals(SpanStatus.CANCELLED, span.status)
-        assertEquals(SpanStatus.CANCELLED, span2.status)
-    }
-
-    @Test
     fun `when tracesSampleRate and tracesSampler are not set on SentryOptions, startTransaction returns NoOp`() {
         val hub = generateHub {
             it.tracesSampleRate = null

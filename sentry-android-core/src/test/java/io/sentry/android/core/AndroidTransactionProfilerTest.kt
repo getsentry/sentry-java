@@ -76,6 +76,7 @@ class AndroidTransactionProfilerTest {
                 return FutureTask {}
             }
             override fun close(timeoutMillis: Long) {}
+            override fun isClosed() = false
         }
 
         val options = spy(SentryAndroidOptions()).apply {

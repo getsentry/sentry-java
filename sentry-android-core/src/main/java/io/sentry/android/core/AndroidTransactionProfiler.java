@@ -285,10 +285,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           .getExecutorService()
           .submit(() -> onTransactionFinish(transaction, false, performanceCollectionData))
           .get();
-    } catch (ExecutionException e) {
+    } catch (ExecutionException | InterruptedException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
-    } catch (InterruptedException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
+      // We stop profiling even on exceptions, so profiles don't run indefinitely
+      onTransactionFinish(transaction, false, null);
     } catch (RejectedExecutionException e) {
       options
           .getLogger()
@@ -296,6 +296,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               SentryLevel.ERROR,
               "Failed to call the executor. Profiling could not be finished. Did you call Sentry.close()?",
               e);
+      // We stop profiling even on exceptions, so profiles don't run indefinitely
+      onTransactionFinish(transaction, false, null);
     }
     return null;
   }

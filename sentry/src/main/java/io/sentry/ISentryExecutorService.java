@@ -38,4 +38,11 @@ public interface ISentryExecutorService {
    * @param timeoutMillis the timeout in millis
    */
   void close(long timeoutMillis);
+
+  /**
+   * Check if there was a previous call to the close() method.
+   *
+   * @return If the executorService was previously closed
+   */
+  boolean isClosed();
 }

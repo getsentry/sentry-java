@@ -1097,6 +1097,7 @@ class ActivityLifecycleIntegrationTest {
                 return FutureTask {}
             }
             override fun close(timeoutMillis: Long) {}
+            override fun isClosed() = false
         }
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
@@ -1321,6 +1322,7 @@ class ActivityLifecycleIntegrationTest {
                 return FutureTask {}
             }
             override fun close(timeoutMillis: Long) {}
+            override fun isClosed() = false
         }
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true

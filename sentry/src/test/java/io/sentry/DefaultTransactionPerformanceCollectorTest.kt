@@ -47,6 +47,7 @@ class DefaultTransactionPerformanceCollectorTest {
                 return FutureTask {}
             }
             override fun close(timeoutMillis: Long) {}
+            override fun isClosed() = false
         }
 
         val mockCpuCollector: ICollector = object : ICollector {
