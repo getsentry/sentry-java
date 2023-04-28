@@ -19,6 +19,7 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -292,12 +293,12 @@ public final class Sentry {
                     FileUtils.deleteRecursively(f);
                   }
                 });
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "Failed to call the executor. Old profiles will not be deleted",
+                "Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?",
                 e);
       }
     }

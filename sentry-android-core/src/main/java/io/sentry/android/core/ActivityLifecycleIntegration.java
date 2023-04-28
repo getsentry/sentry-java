@@ -37,6 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -255,12 +256,12 @@ public final class ActivityLifecycleIntegration
                   .getExecutorService()
                   .schedule(
                       () -> finishExceededTtfdSpan(ttidSpanMap.get(activity)), TTFD_TIMEOUT_MILLIS);
-        } catch (Throwable e) {
+        } catch (RejectedExecutionException e) {
           options
               .getLogger()
               .log(
                   SentryLevel.ERROR,
-                  "Failed to call the executor. Time to full display span will not be finished automatically.",
+                  "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
                   e);
         }
       }

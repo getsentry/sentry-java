@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -49,12 +50,12 @@ public final class DefaultTransactionPerformanceCollector
         options
             .getExecutorService()
             .schedule(() -> stop(transaction), TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "Failed to call the executor. Performance collector will not be automatically finished",
+                "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?",
                 e);
       }
     }

@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -145,10 +146,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
     try {
       options.getExecutorService().submit(() -> onTransactionStartSafe(transaction));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
-          .log(SentryLevel.ERROR, "Failed to call the executor. Profiling will not be started", e);
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling will not be started. Did you call Sentry.close()?",
+              e);
     }
   }
 
@@ -254,12 +258,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               .schedule(
                   () -> timedOutProfilingData = onTransactionFinish(transaction, true, null),
                   PROFILING_TIMEOUT_MILLIS);
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
           .log(
               SentryLevel.ERROR,
-              "Failed to call the executor. Profiling will not be automatically finished",
+              "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
               e);
     }
 
@@ -285,11 +289,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
     } catch (InterruptedException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
           .log(
-              SentryLevel.ERROR, "Failed to call the executor. Profiling could not be finished", e);
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling could not be finished. Did you call Sentry.close()?",
+              e);
     }
     return null;
   }
