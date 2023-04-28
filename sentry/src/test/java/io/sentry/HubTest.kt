@@ -1530,16 +1530,22 @@ class HubTest {
     }
 
     @Test
-    fun `Hub should close the sentry executor processor on close call`() {
+    fun `Hub should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
+        val profiler = mock<ITransactionProfiler>()
+        val performanceCollector = mock<TransactionPerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
+            setTransactionProfiler(profiler)
+            transactionPerformanceCollector = performanceCollector
         }
         val sut = Hub(options)
         sut.close()
         verify(executor).close(any())
+        verify(profiler).close()
+        verify(performanceCollector).close()
     }
 
     @Test

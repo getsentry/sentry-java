@@ -115,5 +115,7 @@ class SentryAndroidOptionsTest {
             transaction: ITransaction,
             performanceCollectionData: List<PerformanceCollectionData>?
         ): ProfilingTraceData? = null
+
+        override fun close() {}
     }
 }
