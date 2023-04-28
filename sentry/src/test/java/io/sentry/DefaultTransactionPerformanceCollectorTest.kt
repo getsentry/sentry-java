@@ -16,6 +16,7 @@ import java.util.Timer
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
+import java.util.concurrent.RejectedExecutionException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -61,9 +62,9 @@ class DefaultTransactionPerformanceCollectorTest {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector, executorService: ISentryExecutorService = mockExecutorService): TransactionPerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
-            options.executorService = mockExecutorService
+            options.executorService = executorService
             if (cpuCollector != null) {
                 options.addCollector(cpuCollector)
             }
@@ -239,6 +240,18 @@ class DefaultTransactionPerformanceCollectorTest {
 
         // Data was cleared
         assertNull(collector.stop(fixture.transaction1))
+    }
+
+    @Test
+    fun `start does not throw on executor shut down`() {
+        val executorService = mock<ISentryExecutorService>()
+        whenever(executorService.schedule(any(), any())).thenThrow(RejectedExecutionException())
+        val logger = mock<ILogger>()
+        fixture.options.setLogger(logger)
+        fixture.options.isDebug = true
+        val sut = fixture.getSut(executorService = executorService)
+        sut.start(fixture.transaction1)
+        verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?"), any())
     }
 
     inner class ThreadCheckerCollector : ICollector {

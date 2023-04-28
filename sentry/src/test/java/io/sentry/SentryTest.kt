@@ -481,6 +481,21 @@ class SentryTest {
     }
 
     @Test
+    fun `init does not throw on executor shut down`() {
+        val logger = mock<ILogger>()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.profilesSampleRate = 1.0
+            it.cacheDirPath = getTempPath()
+            it.setLogger(logger)
+            it.executorService.close(0)
+            it.isDebug = true
+        }
+        verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?"), any())
+    }
+
+    @Test
     fun `reportFullyDisplayed calls hub reportFullyDisplayed`() {
         val hub = mock<IHub>()
         Sentry.init {
