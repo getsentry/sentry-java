@@ -452,7 +452,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         sut.ttidSpanMap.values.first().finish()
-        sut.ttfdSpan?.finish()
+        sut.ttfdSpanMap.values.first().finish()
 
         // then transaction should not be immediatelly finished
         verify(fixture.hub, never())
@@ -678,10 +678,10 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
-        assertNotNull(sut.ttfdSpan)
+        assertNotNull(sut.ttfdSpanMap[activity])
 
         sut.onActivityDestroyed(activity)
-        assertNull(sut.ttfdSpan)
+        assertNull(sut.ttfdSpanMap[activity])
     }
 
     @Test
@@ -719,7 +719,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
         sut.ttidSpanMap.values.first().finish()
-        sut.ttfdSpan?.finish()
+        sut.ttfdSpanMap.values.first().finish()
         sut.onActivityResumed(activity)
 
         verify(fixture.hub, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
@@ -748,7 +748,7 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
-        val ttfd = sut.ttfdSpan
+        val ttfd = sut.ttfdSpanMap[activity]
         sut.ttidSpanMap.values.first().finish()
         sut.onActivityResumed(activity)
         sut.onActivityPostResumed(activity)
@@ -766,10 +766,11 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
+        val ttfdSpan = sut.ttfdSpanMap[activity]
         sut.ttidSpanMap.values.first().finish()
         fixture.fullyDisplayedReporter.reportFullyDrawn()
-        assertTrue(sut.ttfdSpan!!.isFinished)
-        assertNotEquals(SpanStatus.CANCELLED, sut.ttfdSpan?.status)
+        assertTrue(ttfdSpan!!.isFinished)
+        assertNotEquals(SpanStatus.CANCELLED, ttfdSpan.status)
     }
 
     @Test
@@ -1070,7 +1071,8 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
-        assertNull(sut.ttfdSpan)
+        val ttfdSpan = sut.ttfdSpanMap[activity]
+        assertNull(ttfdSpan)
     }
 
     @Test
@@ -1082,7 +1084,8 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
-        assertNotNull(sut.ttfdSpan)
+        val ttfdSpan = sut.ttfdSpanMap[activity]
+        assertNotNull(ttfdSpan)
     }
 
     @Test
@@ -1105,7 +1108,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
-        val ttfdSpan = sut.ttfdSpan
+        val ttfdSpan = sut.ttfdSpanMap[activity]
 
         // Assert the ttfd span is running and a timeout autoCancel task has been scheduled
         assertNotNull(ttfdSpan)
@@ -1138,7 +1141,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
-        val ttfdSpan = sut.ttfdSpan
+        val ttfdSpan = sut.ttfdSpanMap[activity]
         var autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
 
         // Assert the ttfd span is running and a timeout autoCancel future has been scheduled
@@ -1181,7 +1184,7 @@ class ActivityLifecycleIntegrationTest {
         val activity2 = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
-        val ttfdSpan = sut.ttfdSpan
+        val ttfdSpan = sut.ttfdSpanMap[activity]
         val autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
 
         // Assert the ttfd span is running and a timeout autoCancel future has been scheduled
@@ -1197,7 +1200,7 @@ class ActivityLifecycleIntegrationTest {
 
         // Another autoClose future and ttfd span should be started after the second activity starts
         val autoCloseFuture2 = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
-        val ttfdSpan2 = sut.ttfdSpan
+        val ttfdSpan2 = sut.ttfdSpanMap[activity2]
         assertNotNull(ttfdSpan2)
         assertFalse(ttfdSpan2.isFinished)
         assertNotNull(autoCloseFuture2)
@@ -1258,7 +1261,7 @@ class ActivityLifecycleIntegrationTest {
 
         // The ttid and ttfd spans should be running
         val ttidSpan = sut.ttidSpanMap[activity] as Span
-        val ttfdSpan = sut.ttfdSpan as Span
+        val ttfdSpan = sut.ttfdSpanMap[activity] as Span
         assertFalse(ttidSpan.isFinished)
         assertFalse(ttfdSpan.isFinished)
 
@@ -1302,10 +1305,12 @@ class ActivityLifecycleIntegrationTest {
 
         // The ttid span should be running
         val ttidSpan = sut.ttidSpanMap[activity]
+        val ttfdSpan = sut.ttfdSpanMap[activity]
         assertNotNull(ttidSpan)
+        assertNotNull(ttfdSpan)
 
         assertEquals(ttidSpan.startDate, fixture.transaction.startDate)
-        assertEquals(sut.ttfdSpan?.startDate, fixture.transaction.startDate)
+        assertEquals(ttfdSpan.startDate, fixture.transaction.startDate)
     }
 
     @Test
@@ -1333,7 +1338,7 @@ class ActivityLifecycleIntegrationTest {
 
         runFirstDraw(view)
         val ttidSpan = sut.ttidSpanMap[activity]
-        val ttfdSpan = sut.ttfdSpan
+        val ttfdSpan = sut.ttfdSpanMap[activity]
 
         // The ttid should be finished
         assertNotNull(ttidSpan)
@@ -1352,6 +1357,31 @@ class ActivityLifecycleIntegrationTest {
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
         assertEquals(ttidSpan.finishDate, ttfdSpan.finishDate)
         assertEquals(ttfdSpan.description, "Activity full display - Deadline Exceeded")
+    }
+
+    @Test
+    fun `ttfd span is running on new activity when previous finishes`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        val activity2 = mock<Activity>()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        val ttfdSpan = sut.ttfdSpanMap[activity]
+        assertNotNull(ttfdSpan)
+        assertFalse(ttfdSpan.isFinished)
+        sut.onActivityPaused(activity)
+        sut.onActivityCreated(activity2, fixture.bundle)
+        val ttfdSpan2 = sut.ttfdSpanMap[activity2]
+        sut.onActivityResumed(activity2)
+        sut.onActivityStopped(activity)
+        sut.onActivityDestroyed(activity)
+        assertNotNull(ttfdSpan2)
+        // The old ttfd is finished and the new one is running
+        assertTrue(ttfdSpan.isFinished)
+        assertFalse(ttfdSpan2.isFinished)
     }
 
     private fun runFirstDraw(view: View) {
