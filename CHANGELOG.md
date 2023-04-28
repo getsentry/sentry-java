@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Track a ttfd span per Activity ([#2673](https://github.com/getsentry/sentry-java/pull/2673))
+
 ## 6.18.0
 
 ### Features
