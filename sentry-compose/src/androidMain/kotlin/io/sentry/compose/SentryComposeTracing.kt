@@ -9,10 +9,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.platform.testTag
 import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SpanOptions
+import io.sentry.compose.SentryModifier.sentryTag
 
 private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
 private const val OP_COMPOSE = "ui.compose"
@@ -74,7 +74,7 @@ public fun SentryTraced(
     val compositionSpan = parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)
     val firstRendered = remember { ImmutableHolder(false) }
 
-    val baseModifier = if (enableUserInteractionTracing) modifier.testTag(tag) else modifier
+    val baseModifier = if (enableUserInteractionTracing) Modifier.sentryTag(tag) else modifier
 
     Box(
         modifier = baseModifier

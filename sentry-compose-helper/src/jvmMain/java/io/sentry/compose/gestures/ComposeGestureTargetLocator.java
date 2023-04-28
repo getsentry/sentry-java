@@ -63,7 +63,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
                 isScrollable = true;
               } else if ("OnClick".equals(key)) {
                 isClickable = true;
-              } else if ("TestTag".equals(key)) {
+              } else if ("SentryTag".equals(key) || "TestTag".equals(key)) {
                 if (entry.getValue() instanceof String) {
                   testTag = (String) entry.getValue();
                 }
