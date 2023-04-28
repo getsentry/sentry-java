@@ -1,10 +1,10 @@
 # Changelog
 
-### Unreleased
+## Unreleased
 
-## Fixes
+### Fixes
 
-- Fix crash on double SDK init ([#2679](https://github.com/getsentry/sentry-java/pull/2679))
+- Fix crash when Sentry SDK is initialized more than once ([#2679](https://github.com/getsentry/sentry-java/pull/2679))
 - Track a ttfd span per Activity ([#2673](https://github.com/getsentry/sentry-java/pull/2673))
 
 ## 6.18.0
