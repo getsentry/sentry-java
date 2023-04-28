@@ -1,6 +1,8 @@
 # Changelog
 
-### Unreleased
+## Unreleased
+
+### Fixes
 
 - Track a ttfd span per Activity ([#2673](https://github.com/getsentry/sentry-java/pull/2673))
 
