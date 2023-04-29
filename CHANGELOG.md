@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Gradle from v8.1.0 to v8.1.1 ([#2666](https://github.com/getsentry/sentry-java/pull/2666))
+  - [changelog](https://github.com/gradle/gradle/blob/master release-test/CHANGELOG.md#v811)
+  - [diff](https://github.com/gradle/gradle/compare/v8.1.0...v8.1.1)
+
 ## 6.18.1
 
 ### Fixes
