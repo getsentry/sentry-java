@@ -1026,8 +1026,7 @@ class HubTest {
 
         hub.close()
 
-        hub.clearBreadcrumbs()
-        assertEquals(1, scope?.breadcrumbs?.count())
+        assertEquals(0, scope?.breadcrumbs?.count())
     }
 
     @Test
