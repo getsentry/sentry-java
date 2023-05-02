@@ -340,7 +340,7 @@ public final class Hub implements IHub {
           }
         }
 
-        withScope(scope -> scope.clear());
+        configureScope(scope -> scope.clear());
         options.getTransactionProfiler().close();
         options.getTransactionPerformanceCollector().close();
         options.getExecutorService().close(options.getShutdownTimeoutMillis());

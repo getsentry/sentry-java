@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Use `configureScope` instead of `withScope` in `Hub.close()`. This ensures that the main scope releases the in-memory data when closing a hub instance. ([#2688](https://github.com/getsentry/sentry-java/pull/2688))
+
 ### Dependencies
 
 - Bump Gradle from v8.1.0 to v8.1.1 ([#2666](https://github.com/getsentry/sentry-java/pull/2666))
