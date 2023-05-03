@@ -313,7 +313,7 @@ class AndroidTransactionProfilerTest {
         profiler.onTransactionFinish(fixture.transaction1, null)
         // We assert that no trace files are written
         assertTrue(File(fixture.options.profilingTracesDirPath!!).list()!!.isEmpty())
-        verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Unable to write the profile to file: "), any())
+        verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Error while stopping profiling: "), any())
     }
 
     @Test
