@@ -20,6 +20,7 @@ import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
@@ -39,6 +40,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AndroidTransactionProfilerTest {
@@ -291,16 +293,27 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler uses background threads`() {
+    fun `profiler never use background threads`() {
         val profiler = fixture.getSut(context)
         val mockExecutorService: ISentryExecutorService = mock()
         fixture.options.executorService = mockExecutorService
         whenever(mockExecutorService.submit(any<Callable<*>>())).thenReturn(mock())
         profiler.onTransactionStart(fixture.transaction1)
-        verify(mockExecutorService).submit(any<Runnable>())
+        verify(mockExecutorService, never()).submit(any<Runnable>())
         val profilingTraceData: ProfilingTraceData? = profiler.onTransactionFinish(fixture.transaction1, null)
-        assertNull(profilingTraceData)
-        verify(mockExecutorService).submit(any<Callable<*>>())
+        assertNotNull(profilingTraceData)
+        verify(mockExecutorService, never()).submit(any<Callable<*>>())
+    }
+
+    @Test
+    fun `profiler does not throw if traces cannot be written to disk`() {
+        File(fixture.options.profilingTracesDirPath!!).setWritable(false)
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionFinish(fixture.transaction1, null)
+        // We assert that no trace files are written
+        assertTrue(File(fixture.options.profilingTracesDirPath!!).list()!!.isEmpty())
+        verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Unable to write the profile to file: "), any())
     }
 
     @Test
