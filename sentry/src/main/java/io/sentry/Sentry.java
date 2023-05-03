@@ -247,7 +247,7 @@ public final class Sentry {
     try {
       options.getExecutorService().submit(new PreviousSessionFinalizer(options, hub));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
     }
   }
 
