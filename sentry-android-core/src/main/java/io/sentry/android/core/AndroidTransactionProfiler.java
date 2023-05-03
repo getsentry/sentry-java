@@ -34,9 +34,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 final class AndroidTransactionProfiler implements ITransactionProfiler {
 
@@ -76,6 +78,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
+
+  private @Nullable ITransaction currentTransaction = null;
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
@@ -140,7 +144,16 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
-    options.getExecutorService().submit(() -> onTransactionStartSafe(transaction));
+    try {
+      options.getExecutorService().submit(() -> onTransactionStartSafe(transaction));
+    } catch (RejectedExecutionException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling will not be started. Did you call Sentry.close()?",
+              e);
+    }
   }
 
   @SuppressLint("NewApi")
@@ -235,13 +248,24 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               }
             });
 
+    currentTransaction = transaction;
+
     // We stop profiling after a timeout to avoid huge profiles to be sent
-    scheduledFinish =
-        options
-            .getExecutorService()
-            .schedule(
-                () -> timedOutProfilingData = onTransactionFinish(transaction, true, null),
-                PROFILING_TIMEOUT_MILLIS);
+    try {
+      scheduledFinish =
+          options
+              .getExecutorService()
+              .schedule(
+                  () -> timedOutProfilingData = onTransactionFinish(transaction, true, null),
+                  PROFILING_TIMEOUT_MILLIS);
+    } catch (RejectedExecutionException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
+              e);
+    }
 
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();
     profileStartCpuMillis = Process.getElapsedCpuTime();
@@ -261,10 +285,19 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           .getExecutorService()
           .submit(() -> onTransactionFinish(transaction, false, performanceCollectionData))
           .get();
-    } catch (ExecutionException e) {
+    } catch (ExecutionException | InterruptedException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
-    } catch (InterruptedException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
+      // We stop profiling even on exceptions, so profiles don't run indefinitely
+      onTransactionFinish(transaction, false, null);
+    } catch (RejectedExecutionException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling could not be finished. Did you call Sentry.close()?",
+              e);
+      // We stop profiling even on exceptions, so profiles don't run indefinitely
+      onTransactionFinish(transaction, false, null);
     }
     return null;
   }
@@ -349,6 +382,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     currentProfilingTransactionData = null;
     // We clear the counter in case of a timeout
     transactionsCounter = 0;
+    currentTransaction = null;
 
     if (scheduledFinish != null) {
       scheduledFinish.cancel(true);
@@ -483,6 +517,19 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
   }
 
+  @Override
+  public void close() {
+    // we cancel any scheduled work
+    if (scheduledFinish != null) {
+      scheduledFinish.cancel(true);
+      scheduledFinish = null;
+    }
+    // we stop profiling
+    if (currentTransaction != null) {
+      onTransactionFinish(currentTransaction, true, null);
+    }
+  }
+
   /**
    * Get MemoryInfo object representing the memory state of the application.
    *
@@ -502,5 +549,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       options.getLogger().log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
     }
+  }
+
+  @TestOnly
+  @Nullable
+  ITransaction getCurrentTransaction() {
+    return currentTransaction;
   }
 }

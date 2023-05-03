@@ -17,6 +17,7 @@ import io.sentry.TransactionContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
+import io.sentry.test.getProperty
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -75,6 +76,7 @@ class AndroidTransactionProfilerTest {
                 return FutureTask {}
             }
             override fun close(timeoutMillis: Long) {}
+            override fun isClosed() = false
         }
 
         val options = spy(SentryAndroidOptions()).apply {
@@ -150,8 +152,11 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler profiles current transaction`() {
         val profiler = fixture.getSut(context)
+        assertNull(profiler.currentTransaction)
         profiler.onTransactionStart(fixture.transaction1)
+        assertNotNull(profiler.currentTransaction)
         val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null)
+        assertNull(profiler.currentTransaction)
 
         assertNotNull(profilingTraceData)
         assertEquals(profilingTraceData.transactionId, fixture.transaction1.eventId.toString())
@@ -400,5 +405,23 @@ class AndroidTransactionProfilerTest {
             listOf(3.0, 4.0),
             data.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!.values.map { it.value }
         )
+    }
+
+    @Test
+    fun `profiler stops profiling, clear current transaction and scheduled job on close`() {
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        assertNotNull(profiler.currentTransaction)
+
+        profiler.close()
+        assertNull(profiler.currentTransaction)
+
+        // The timeout scheduled job should be cleared
+        val scheduledJob = profiler.getProperty<Future<*>?>("scheduledFinish")
+        assertNull(scheduledJob)
+
+        // Calling transaction finish returns null, as the profiler was stopped
+        val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null)
+        assertNull(profilingTraceData)
     }
 }

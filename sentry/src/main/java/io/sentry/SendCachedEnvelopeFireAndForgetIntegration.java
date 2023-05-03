@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.io.File;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -88,6 +89,13 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
       addIntegrationToSdkVersion();
+    } catch (RejectedExecutionException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
+              e);
     } catch (Throwable e) {
       options
           .getLogger()
