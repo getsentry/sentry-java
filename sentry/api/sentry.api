@@ -193,6 +193,7 @@ public final class io/sentry/DateUtils {
 
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun close ()V
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
@@ -554,6 +555,7 @@ public abstract interface class io/sentry/ISentryClient {
 
 public abstract interface class io/sentry/ISentryExecutorService {
 	public abstract fun close (J)V
+	public abstract fun isClosed ()Z
 	public abstract fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -621,6 +623,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
+	public abstract fun close ()V
 	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
@@ -931,12 +934,14 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 }
 
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
+	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
+	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
 	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
@@ -2235,6 +2240,7 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 }
 
 public abstract interface class io/sentry/TransactionPerformanceCollector {
+	public abstract fun close ()V
 	public abstract fun start (Lio/sentry/ITransaction;)V
 	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }

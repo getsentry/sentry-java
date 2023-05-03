@@ -1069,6 +1069,7 @@ class SentryTracerTest {
         val mockPerformanceCollector = object : TransactionPerformanceCollector {
             override fun start(transaction: ITransaction) {}
             override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+            override fun close() {}
         }
         val transaction = fixture.getSut(optionsConfiguration = {
             it.profilesSampleRate = 1.0

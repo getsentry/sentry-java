@@ -17,6 +17,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
@@ -26,6 +27,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -493,6 +495,21 @@ class SentryTest {
     }
 
     @Test
+    fun `init does not throw on executor shut down`() {
+        val logger = mock<ILogger>()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.profilesSampleRate = 1.0
+            it.cacheDirPath = getTempPath()
+            it.setLogger(logger)
+            it.executorService.close(0)
+            it.isDebug = true
+        }
+        verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?"), any())
+    }
+
+    @Test
     fun `reportFullyDisplayed calls hub reportFullyDisplayed`() {
         val hub = mock<IHub>()
         Sentry.init {
@@ -512,6 +529,36 @@ class SentryTest {
         Sentry.setCurrentHub(hub)
         Sentry.reportFullDisplayed()
         verify(hub).reportFullyDisplayed()
+    }
+
+    @Test
+    fun `ignores executorService if it is closed`() {
+        var sentryOptions: SentryOptions? = null
+        val executorService = mock<ISentryExecutorService>()
+        whenever(executorService.isClosed).thenReturn(true)
+
+        Sentry.init {
+            it.dsn = dsn
+            it.executorService = executorService
+            sentryOptions = it
+        }
+
+        assertNotEquals(executorService, sentryOptions!!.executorService)
+    }
+
+    @Test
+    fun `accept executorService if it is not closed`() {
+        var sentryOptions: SentryOptions? = null
+        val executorService = mock<ISentryExecutorService>()
+        whenever(executorService.isClosed).thenReturn(false)
+
+        Sentry.init {
+            it.dsn = dsn
+            it.executorService = executorService
+            sentryOptions = it
+        }
+
+        assertEquals(executorService, sentryOptions!!.executorService)
     }
 
     @Test

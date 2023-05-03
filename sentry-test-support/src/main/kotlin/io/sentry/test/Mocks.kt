@@ -15,4 +15,5 @@ class ImmediateExecutorService : ISentryExecutorService {
     override fun <T> submit(callable: Callable<T>): Future<T> = mock()
     override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = mock()
     override fun close(timeoutMillis: Long) {}
+    override fun isClosed(): Boolean = false
 }
