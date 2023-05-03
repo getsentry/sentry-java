@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import io.sentry.ISpan;
 import io.sentry.Scope;
 import io.sentry.Sentry;
-import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
@@ -13,9 +12,6 @@ import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
-
-  private static final String VIEW_HIERARCHY_INTEGRATION = "AttachViewHierarchy";
-  private static final String SCREENSHOT_INTEGRATION = "AttachScreenshot";
 
   /**
    * Enable or disable ANR (Application Not Responding) Default is enabled Used by AnrIntegration
@@ -345,12 +341,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAttachScreenshot(boolean attachScreenshot) {
-    SentryIntegrationPackageStorage storage = SentryIntegrationPackageStorage.getInstance();
-    if (attachScreenshot) {
-      storage.addIntegration(SCREENSHOT_INTEGRATION);
-    } else {
-      storage.removeIntegration(SCREENSHOT_INTEGRATION);
-    }
     this.attachScreenshot = attachScreenshot;
   }
 
@@ -359,12 +349,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAttachViewHierarchy(boolean attachViewHierarchy) {
-    SentryIntegrationPackageStorage storage = SentryIntegrationPackageStorage.getInstance();
-    if (attachViewHierarchy) {
-      storage.addIntegration(VIEW_HIERARCHY_INTEGRATION);
-    } else {
-      storage.removeIntegration(VIEW_HIERARCHY_INTEGRATION);
-    }
     this.attachViewHierarchy = attachViewHierarchy;
   }
 

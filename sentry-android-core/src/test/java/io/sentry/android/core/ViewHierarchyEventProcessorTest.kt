@@ -9,6 +9,7 @@ import io.sentry.Hint
 import io.sentry.JsonSerializable
 import io.sentry.JsonSerializer
 import io.sentry.SentryEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.SentryException
 import org.junit.runner.RunWith
@@ -23,6 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class ViewHierarchyEventProcessorTest {
@@ -261,6 +263,30 @@ class ViewHierarchyEventProcessorTest {
             assertEquals("invisible", visibility)
             assertEquals(null, children)
         }
+    }
+
+    @Test
+    fun `when enabled, the feature is added to the integration list`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        val (event, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchyEventProcessor"))
+    }
+
+    @Test
+    fun `when not enabled, the feature is not added to the integration list`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        val (event, hint) = fixture.process(
+            false,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchyEventProcessor"))
     }
 
     private fun mockedView(

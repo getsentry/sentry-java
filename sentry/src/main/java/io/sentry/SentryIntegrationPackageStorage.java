@@ -51,11 +51,6 @@ public final class SentryIntegrationPackageStorage {
     integrations.add(integration);
   }
 
-  public void removeIntegration(final @NotNull String integration) {
-    Objects.requireNonNull(integration, "integration is required.");
-    integrations.remove(integration);
-  }
-
   public @NotNull Set<String> getIntegrations() {
     return integrations;
   }

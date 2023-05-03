@@ -8,6 +8,7 @@ import io.sentry.Attachment
 import io.sentry.Hint
 import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -15,6 +16,7 @@ import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -151,6 +153,26 @@ class ScreenshotEventProcessorTest {
         sut.process(event, hint)
 
         assertNull(hint.screenshot)
+    }
+
+    @Test
+    fun `when enabled, the feature is added to the integration list`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        val hint = Hint()
+        val sut = fixture.getSut(true)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
+        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("ScreenshotEventProcessor"))
+    }
+
+    @Test
+    fun `when not enabled, the feature is not added to the integration list`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        val hint = Hint()
+        val sut = fixture.getSut(false)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
+        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ScreenshotEventProcessor"))
     }
 
     private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
