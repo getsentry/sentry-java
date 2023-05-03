@@ -1026,8 +1026,7 @@ class HubTest {
 
         hub.close()
 
-        hub.clearBreadcrumbs()
-        assertEquals(1, scope?.breadcrumbs?.count())
+        assertEquals(0, scope?.breadcrumbs?.count())
     }
 
     @Test
@@ -1546,6 +1545,26 @@ class HubTest {
         verify(executor).close(any())
         verify(profiler).close()
         verify(performanceCollector).close()
+    }
+
+    @Test
+    fun `Hub close should clear the scope`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+        }
+
+        val sut = Hub(options)
+        sut.addBreadcrumb("Test")
+        sut.startTransaction("test", "test.op", true)
+        sut.close()
+
+        // we have to clone the scope, so its isEnabled returns true, but it's still built up from
+        // the old scope preserving its data
+        val clone = sut.clone()
+        var oldScope: Scope? = null
+        clone.configureScope { scope -> oldScope = scope }
+        assertNull(oldScope!!.transaction)
+        assertTrue(oldScope!!.breadcrumbs.isEmpty())
     }
 
     @Test
