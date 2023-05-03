@@ -82,8 +82,8 @@ public class AnrV2Integration implements Integration, Closeable {
     if (this.options.isAnrEnabled()) {
       try {
         options
-          .getExecutorService()
-          .submit(new AnrProcessor(context, hub, this.options, dateProvider));
+            .getExecutorService()
+            .submit(new AnrProcessor(context, hub, this.options, dateProvider));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start AnrProcessor.", e);
       }

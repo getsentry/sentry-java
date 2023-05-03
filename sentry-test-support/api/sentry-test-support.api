@@ -10,6 +10,7 @@ public final class io/sentry/SkipError : java/lang/Error {
 public final class io/sentry/test/ImmediateExecutorService : io/sentry/ISentryExecutorService {
 	public fun <init> ()V
 	public fun close (J)V
+	public fun isClosed ()Z
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
