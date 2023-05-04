@@ -2,6 +2,8 @@
 
 # The Android SDK checks at runtime if these classes are available via Class.forName
 -keep class io.sentry.compose.gestures.ComposeGestureTargetLocator { <init>(...); }
+-keep class io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter { <init>(...); }
+
 -keepnames interface androidx.compose.ui.node.Owner
 
 # R8 will warn about missing classes if people don't have androidx.compose-navigation on their
