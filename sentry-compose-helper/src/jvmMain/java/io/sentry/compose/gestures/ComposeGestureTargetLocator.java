@@ -1,6 +1,5 @@
 package io.sentry.compose.gestures;
 
-import androidx.compose.ui.layout.LayoutCoordinatesKt;
 import androidx.compose.ui.layout.ModifierInfo;
 import androidx.compose.ui.node.LayoutNode;
 import androidx.compose.ui.node.Owner;
@@ -8,6 +7,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.compose.SentryComposeUtil;
 import io.sentry.compose.helper.BuildConfig;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
@@ -96,11 +96,9 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
     final int nodeHeight = node.getHeight();
     final int nodeWidth = node.getWidth();
 
-    // Offset is a Kotlin value class, packing x/y into a long
-    // TODO find a way to use the existing APIs
-    final long nodePosition = LayoutCoordinatesKt.positionInWindow(node.getCoordinates());
-    final int nodeX = (int) Float.intBitsToFloat((int) (nodePosition >> 32));
-    final int nodeY = (int) Float.intBitsToFloat((int) (nodePosition));
+    final int[] xy = SentryComposeUtil.getLayoutNodeXY(node);
+    final int nodeX = xy[0];
+    final int nodeY = xy[1];
 
     return x >= nodeX && x <= (nodeX + nodeWidth) && y >= nodeY && y <= (nodeY + nodeHeight);
   }

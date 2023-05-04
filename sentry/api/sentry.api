@@ -1619,6 +1619,7 @@ public class io/sentry/SentryOptions {
 	public fun getTransactionProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
+	public final fun getViewHierarchyExporters ()Ljava/util/List;
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
@@ -1716,6 +1717,7 @@ public class io/sentry/SentryOptions {
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
+	public fun setViewHierarchyExporters (Ljava/util/List;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback {
@@ -2529,6 +2531,10 @@ public final class io/sentry/internal/modules/NoOpModulesLoader : io/sentry/inte
 
 public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry/internal/modules/ModulesLoader {
 	public fun <init> (Lio/sentry/ILogger;)V
+}
+
+public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
+	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {

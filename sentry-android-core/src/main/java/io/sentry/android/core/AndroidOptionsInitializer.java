@@ -20,7 +20,9 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
+import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -42,8 +44,11 @@ import org.jetbrains.annotations.TestOnly;
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
-  static final String SENTRY_COMPOSE_INTEGRATION_CLASS_NAME =
+  static final String SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME =
       "io.sentry.compose.gestures.ComposeGestureTargetLocator";
+
+  static final String SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME =
+      "io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter";
 
   static final String COMPOSE_CLASS_NAME = "androidx.compose.ui.node.Owner";
 
@@ -148,22 +153,34 @@ final class AndroidOptionsInitializer {
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+    final boolean isComposeUpstreamAvailable =
+        loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
 
     if (options.getGestureTargetLocators().isEmpty()) {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
 
-      final boolean isComposeUpstreamAvailable =
-          loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
       final boolean isComposeAvailable =
           (isComposeUpstreamAvailable
-              && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
+              && loadClass.isClassAvailable(
+                  SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
 
       if (isComposeAvailable) {
         gestureTargetLocators.add(new ComposeGestureTargetLocator());
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
+
+    if (options.getViewHierarchyExporters().isEmpty()
+        && isComposeUpstreamAvailable
+        && loadClass.isClassAvailable(
+            SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
+
+      final List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>(1);
+      viewHierarchyExporters.add(new ComposeViewHierarchyExporter());
+      options.setViewHierarchyExporters(viewHierarchyExporters);
+    }
+
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
     if (options.getCollectors().isEmpty()) {
       options.addCollector(new AndroidMemoryCollector());
