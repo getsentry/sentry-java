@@ -5,9 +5,7 @@ import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.PerformanceCollectionData
 import io.sentry.ProfilingTraceData
-import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.protocol.DebugImage
-import org.junit.Before
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,11 +13,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryAndroidOptionsTest {
-
-    @Before
-    fun clearIntegrationPackageStorage() {
-        SentryIntegrationPackageStorage.getInstance().clearStorage()
-    }
 
     @Test
     fun `init should set clientName`() {
@@ -116,42 +109,6 @@ class SentryAndroidOptionsTest {
         val sentryOptions = SentryAndroidOptions()
 
         assertFalse(sentryOptions.isAttachViewHierarchy)
-    }
-
-    @Test
-    fun `attach screenshot is not added to the IntegrationList by default`() {
-        val sentryOptions = SentryAndroidOptions()
-
-        assertFalse(sentryOptions.isAttachScreenshot)
-        assertFalse(sentryOptions.sdkVersion!!.integrationSet.contains("AttachScreenshot"))
-    }
-
-    @Test
-    fun `attach screenshot is added to the IntegrationList if enabled`() {
-        val sentryOptions = SentryAndroidOptions()
-
-        sentryOptions.isAttachScreenshot = true
-
-        assertTrue(sentryOptions.isAttachScreenshot)
-        assertTrue(sentryOptions.sdkVersion!!.integrationSet.contains("AttachScreenshot"))
-    }
-
-    @Test
-    fun `view hierarchy integration is not added to the IntegrationList by default`() {
-        val sentryOptions = SentryAndroidOptions()
-
-        assertFalse(sentryOptions.isAttachViewHierarchy)
-        assertFalse(sentryOptions.sdkVersion!!.integrationSet.contains("AttachViewHierarchy"))
-    }
-
-    @Test
-    fun `view hierarchy integration is added to the IntegrationList if enabled`() {
-        val sentryOptions = SentryAndroidOptions()
-
-        sentryOptions.isAttachViewHierarchy = true
-
-        assertTrue(sentryOptions.isAttachViewHierarchy)
-        assertTrue(sentryOptions.sdkVersion!!.integrationSet.contains("AttachViewHierarchy"))
     }
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {
