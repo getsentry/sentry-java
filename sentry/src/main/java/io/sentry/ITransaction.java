@@ -41,6 +41,10 @@ public interface ITransaction extends ISpan {
   @TestOnly
   List<Span> getSpans();
 
+  @NotNull
+  ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp);
+
   /**
    * Returns if transaction is sampled.
    *

@@ -494,7 +494,6 @@ public interface IHub {
     return startTransaction(name, operation, null);
   }
 
-  @ApiStatus.Internal
   @NotNull
   ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
