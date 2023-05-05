@@ -14,6 +14,7 @@
         - Auxiliary information (such as current memory load) at the time of ANR event.
       - If you would like us to provide support for the old approach working alongside the new one on Android 11 and above (e.g. for raising events for slow code on main thread), consider upvoting [this issue](https://github.com/getsentry/sentry-java/issues/2693).
     - The old watchdog implementation will continue working for older API versions (Android < 11)
+- Open up transaction methods ([#2701](https://github.com/getsentry/sentry-java/pull/2701))
 
 ### Fixes
 
