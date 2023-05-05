@@ -1,20 +1,45 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
+import io.sentry.protocol.Request;
 import io.sentry.protocol.User;
+import java.util.Collection;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Observer for the sync. of Scopes across SDKs */
+/**
+ * A Scope observer that tracks changes on Scope. All methods are "default", so implementors can
+ * subscribe to only those properties, that they are interested in.
+ */
 public interface IScopeObserver {
-  void setUser(@Nullable User user);
+  default void setUser(@Nullable User user) {}
 
-  void addBreadcrumb(@NotNull Breadcrumb crumb);
+  default void addBreadcrumb(@NotNull Breadcrumb crumb) {}
 
-  void setTag(@NotNull String key, @NotNull String value);
+  default void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {}
 
-  void removeTag(@NotNull String key);
+  default void setTag(@NotNull String key, @NotNull String value) {}
 
-  void setExtra(@NotNull String key, @NotNull String value);
+  default void removeTag(@NotNull String key) {}
 
-  void removeExtra(@NotNull String key);
+  default void setTags(@NotNull Map<String, @NotNull String> tags) {}
+
+  default void setExtra(@NotNull String key, @NotNull String value) {}
+
+  default void removeExtra(@NotNull String key) {}
+
+  default void setExtras(@NotNull Map<String, @NotNull Object> extras) {}
+
+  default void setRequest(@Nullable Request request) {}
+
+  default void setFingerprint(@NotNull Collection<String> fingerprint) {}
+
+  default void setLevel(@Nullable SentryLevel level) {}
+
+  default void setContexts(@NotNull Contexts contexts) {}
+
+  default void setTransaction(@Nullable String transaction) {}
+
+  default void setTrace(@Nullable SpanContext spanContext) {}
 }

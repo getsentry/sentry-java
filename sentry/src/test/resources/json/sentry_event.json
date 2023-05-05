@@ -52,6 +52,17 @@
                         "e7a3db0b-8cad-4eab-8315-03d5dc2edcd9": "8bba0819-ac58-4e5c-bec7-32e1033b7bdf"
                     },
                     "snapshot": true
+                },
+                "held_locks":
+                {
+                  "0x0d3a2f0a":
+                  {
+                    "type": 8,
+                    "address": "0x0d3a2f0a",
+                    "package_name": "java.lang",
+                    "class_name": "Object",
+                    "thread_id": 11
+                  }
                 }
             }
         ]

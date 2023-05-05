@@ -2,9 +2,18 @@
 
 ## Unreleased
 
-## Features
+### Features
 
 - Add Screenshot and ViewHierarchy to integrations list ([#2698](https://github.com/getsentry/sentry-java/pull/2698))
+- New ANR detection based on [ApplicationExitInfo API](https://developer.android.com/reference/android/app/ApplicationExitInfo) ([#2697](https://github.com/getsentry/sentry-java/pull/2697))
+    - This implementation completely replaces the old one (based on a watchdog) on devices running Android 11 and above:
+      - New implementation provides more precise ANR events/ANR rate detection as well as system thread dump information. The new implementation reports ANRs exactly as Google Play Console, without producing false positives or missing important background ANR events.
+      - However, despite producing many false positives, the old implementation is capable of better enriching ANR errors (which is not available with the new implementation), for example:
+        - Capturing screenshots at the time of ANR event;
+        - Capturing transactions and profiling data corresponding to the ANR event;
+        - Auxiliary information (such as current memory load) at the time of ANR event.
+      - If you would like us to provide support for the old approach working alongside the new one on Android 11 and above (e.g. for raising events for slow code on main thread), consider upvoting [this issue](https://github.com/getsentry/sentry-java/issues/2693).
+    - The old watchdog implementation will continue working for older API versions (Android < 11)
 
 ### Fixes
 

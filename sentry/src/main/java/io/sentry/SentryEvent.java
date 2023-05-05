@@ -112,6 +112,10 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     return (Date) timestamp.clone();
   }
 
+  public void setTimestamp(final @NotNull Date timestamp) {
+    this.timestamp = timestamp;
+  }
+
   public @Nullable Message getMessage() {
     return message;
   }

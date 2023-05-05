@@ -1,17 +1,20 @@
 package io.sentry
 
+import io.sentry.SentryLevel.WARNING
 import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import org.junit.Assert.assertArrayEquals
-import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
@@ -107,7 +110,8 @@ class ScopeTest {
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
 
-        val transaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+        val transaction =
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
 
         val attachment = Attachment("path/log.txt")
@@ -177,7 +181,12 @@ class ScopeTest {
         user.id = "456"
         request.method = "post"
 
-        scope.setTransaction(SentryTracer(TransactionContext("newTransaction", "op"), NoOpHub.getInstance()))
+        scope.setTransaction(
+            SentryTracer(
+                TransactionContext("newTransaction", "op"),
+                NoOpHub.getInstance()
+            )
+        )
 
         // because you can only set a new list to scope
         val newFingerprints = mutableListOf("def", "ghf")
@@ -564,10 +573,9 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope set user sync scopes if enabled`() {
+    fun `Scope set user sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
-            isEnableScopeSync = true
             addScopeObserver(observer)
         }
         val scope = Scope(options)
@@ -578,58 +586,62 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope set user wont sync scopes if disabled`() {
+    fun `Scope add breadcrumb sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
         val scope = Scope(options)
 
-        scope.user = User()
-        verify(observer, never()).setUser(any())
+        val breadcrumb = Breadcrumb()
+        scope.addBreadcrumb(breadcrumb)
+        verify(observer).addBreadcrumb(eq(breadcrumb))
+        verify(observer).setBreadcrumbs(argThat { elementAt(0) == breadcrumb })
+
+        scope.addBreadcrumb(Breadcrumb.debug("test"))
+        verify(observer).addBreadcrumb(argThat { message == "test" })
+        verify(observer, times(2)).setBreadcrumbs(
+            argThat {
+                elementAt(0) == breadcrumb && elementAt(1).message == "test"
+            }
+        )
     }
 
     @Test
-    fun `Scope add breadcrumb sync scopes if enabled`() {
-        val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            isEnableScopeSync = true
-            addScopeObserver(observer)
-        }
-        val scope = Scope(options)
-
-        val breadrumb = Breadcrumb()
-        scope.addBreadcrumb(breadrumb)
-        verify(observer).addBreadcrumb(eq(breadrumb))
-    }
-
-    @Test
-    fun `Scope add breadcrumb wont sync scopes if disabled`() {
+    fun `Scope clear breadcrumbs sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
         val scope = Scope(options)
 
-        scope.addBreadcrumb(Breadcrumb())
-        verify(observer, never()).addBreadcrumb(any())
+        val breadcrumb = Breadcrumb()
+        scope.addBreadcrumb(breadcrumb)
+        assertFalse(scope.breadcrumbs.isEmpty())
+
+        scope.clearBreadcrumbs()
+        verify(observer, times(2)).setBreadcrumbs(argThat { isEmpty() })
     }
 
     @Test
-    fun `Scope set tag sync scopes if enabled`() {
+    fun `Scope set tag sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
-            isEnableScopeSync = true
             addScopeObserver(observer)
         }
         val scope = Scope(options)
 
         scope.setTag("a", "b")
         verify(observer).setTag(eq("a"), eq("b"))
+        verify(observer).setTags(argThat { get("a") == "b" })
+
+        scope.setTag("one", "two")
+        verify(observer).setTag(eq("one"), eq("two"))
+        verify(observer, times(2)).setTags(argThat { get("a") == "b" && get("one") == "two" })
     }
 
     @Test
-    fun `Scope set tag wont sync scopes if disabled`() {
+    fun `Scope remove tag sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             addScopeObserver(observer)
@@ -637,49 +649,32 @@ class ScopeTest {
         val scope = Scope(options)
 
         scope.setTag("a", "b")
-        verify(observer, never()).setTag(any(), any())
-    }
-
-    @Test
-    fun `Scope remove tag sync scopes if enabled`() {
-        val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            isEnableScopeSync = true
-            addScopeObserver(observer)
-        }
-        val scope = Scope(options)
+        assertFalse(scope.tags.isEmpty())
 
         scope.removeTag("a")
         verify(observer).removeTag(eq("a"))
+        verify(observer, times(2)).setTags(emptyMap())
     }
 
     @Test
-    fun `Scope remove tag wont sync scopes if disabled`() {
+    fun `Scope set extra sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
-        val scope = Scope(options)
-
-        scope.removeTag("a")
-        verify(observer, never()).removeTag(any())
-    }
-
-    @Test
-    fun `Scope set extra sync scopes if enabled`() {
-        val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            isEnableScopeSync = true
             addScopeObserver(observer)
         }
         val scope = Scope(options)
 
         scope.setExtra("a", "b")
         verify(observer).setExtra(eq("a"), eq("b"))
+        verify(observer).setExtras(argThat { get("a") == "b" })
+
+        scope.setExtra("one", "two")
+        verify(observer).setExtra(eq("one"), eq("two"))
+        verify(observer, times(2)).setExtras(argThat { get("a") == "b" && get("one") == "two" })
     }
 
     @Test
-    fun `Scope set extra wont sync scopes if disabled`() {
+    fun `Scope remove extra sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             addScopeObserver(observer)
@@ -687,32 +682,129 @@ class ScopeTest {
         val scope = Scope(options)
 
         scope.setExtra("a", "b")
-        verify(observer, never()).setExtra(any(), any())
-    }
-
-    @Test
-    fun `Scope remove extra sync scopes if enabled`() {
-        val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            isEnableScopeSync = true
-            addScopeObserver(observer)
-        }
-        val scope = Scope(options)
+        assertFalse(scope.extras.isEmpty())
 
         scope.removeExtra("a")
         verify(observer).removeExtra(eq("a"))
+        verify(observer, times(2)).setExtras(emptyMap())
     }
 
     @Test
-    fun `Scope remove extra wont sync scopes if enabled`() {
+    fun `Scope set level sync scopes`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
         val scope = Scope(options)
 
-        scope.removeExtra("a")
-        verify(observer, never()).removeExtra(any())
+        scope.level = WARNING
+        verify(observer).setLevel(eq(WARNING))
+    }
+
+    @Test
+    fun `Scope set transaction name sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.setTransaction("main")
+        verify(observer).setTransaction(eq("main"))
+    }
+
+    @Test
+    fun `Scope set transaction sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.transaction = mock {
+            whenever(mock.name).thenReturn("main")
+            whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
+        }
+        verify(observer).setTransaction(eq("main"))
+        verify(observer).setTrace(argThat { operation == "ui.load" })
+    }
+
+    @Test
+    fun `Scope set transaction null sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.transaction = null
+        verify(observer).setTransaction(null)
+        verify(observer).setTrace(null)
+    }
+
+    @Test
+    fun `Scope clear transaction sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.transaction = mock {
+            whenever(mock.name).thenReturn("main")
+            whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
+        }
+        verify(observer).setTransaction(eq("main"))
+        verify(observer).setTrace(argThat { operation == "ui.load" })
+
+        scope.clearTransaction()
+        verify(observer).setTransaction(null)
+        verify(observer).setTrace(null)
+    }
+
+    @Test
+    fun `Scope set request sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.request = Request().apply { url = "https://google.com" }
+        verify(observer).setRequest(argThat { url == "https://google.com" })
+    }
+
+    @Test
+    fun `Scope set fingerprint sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.fingerprint = listOf("finger", "print")
+        verify(observer).setFingerprint(
+            argThat {
+                elementAt(0) == "finger" && elementAt(1) == "print"
+            }
+        )
+    }
+
+    @Test
+    fun `Scope set contexts sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        data class Obj(val stuff: Int)
+        scope.setContexts("test", Obj(3))
+        verify(observer).setContexts(
+            argThat {
+                (get("test") as Obj).stuff == 3
+            }
+        )
     }
 
     @Test
@@ -831,7 +923,8 @@ class ScopeTest {
     @Test
     fun `when transaction is started, sets transaction name on the transaction object`() {
         val scope = Scope(SentryOptions())
-        val sentryTransaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+        val sentryTransaction =
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
         scope.transaction = sentryTransaction
         assertEquals("transaction-name", scope.transactionName)
         scope.setTransaction("new-name")
@@ -844,7 +937,8 @@ class ScopeTest {
     fun `when transaction is set after transaction name is set, clearing transaction does not bring back old transaction name`() {
         val scope = Scope(SentryOptions())
         scope.setTransaction("transaction-a")
-        val sentryTransaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+        val sentryTransaction =
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
         scope.setTransaction(sentryTransaction)
         assertEquals("transaction-name", scope.transactionName)
         scope.clearTransaction()
@@ -854,7 +948,8 @@ class ScopeTest {
     @Test
     fun `withTransaction returns the current Transaction bound to the Scope`() {
         val scope = Scope(SentryOptions())
-        val sentryTransaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+        val sentryTransaction =
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
         scope.setTransaction(sentryTransaction)
 
         scope.withTransaction {
