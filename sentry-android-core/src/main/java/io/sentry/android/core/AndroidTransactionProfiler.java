@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -144,21 +143,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
-    try {
-      options.getExecutorService().submit(() -> onTransactionStartSafe(transaction));
-    } catch (RejectedExecutionException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. Profiling will not be started. Did you call Sentry.close()?",
-              e);
-    }
-  }
-
-  @SuppressLint("NewApi")
-  private void onTransactionStartSafe(final @NotNull ITransaction transaction) {
-
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
 
@@ -167,21 +151,22 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     // traceFilesDir is null or intervalUs is 0 only if there was a problem in the init, but
     // we already logged that
-    if (traceFilesDir == null || intervalUs == 0 || !traceFilesDir.canWrite()) {
+    if (traceFilesDir == null || intervalUs == 0) {
       return;
     }
 
     transactionsCounter++;
     // When the first transaction is starting, we can start profiling
     if (transactionsCounter == 1) {
-      onFirstTransactionStarted(transaction);
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction %s (%s) started and being profiled.",
-              transaction.getName(),
-              transaction.getSpanContext().getTraceId().toString());
+      if (onFirstTransactionStarted(transaction)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction %s (%s) started and being profiled.",
+                transaction.getName(),
+                transaction.getSpanContext().getTraceId().toString());
+      }
     } else {
       transactionsCounter--;
       options
@@ -195,7 +180,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onFirstTransactionStarted(final @NotNull ITransaction transaction) {
+  private boolean onFirstTransactionStarted(final @NotNull ITransaction transaction) {
     // We create a file with a uuid name, so no need to check if it already exists
     traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
 
@@ -273,33 +258,28 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     currentProfilingTransactionData =
         new ProfilingTransactionData(transaction, transactionStartNanos, profileStartCpuMillis);
 
-    Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
+    // We don't make any check on the file existence or writeable state, because we don't want to
+    // make file IO in the main thread.
+    // We cannot offload the work to the executorService, as if that's very busy, profiles could
+    // start/stop with a lot of delay and even cause ANRs.
+    try {
+      // If there is any problem with the file this method will throw (but it will not throw in
+      // tests)
+      Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
+      return true;
+    } catch (Throwable e) {
+      onTransactionFinish(transaction, null);
+      options.getLogger().log(SentryLevel.ERROR, "Unable to start a profile: ", e);
+      return false;
+    }
   }
 
   @Override
   public @Nullable synchronized ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
-    try {
-      return options
-          .getExecutorService()
-          .submit(() -> onTransactionFinish(transaction, false, performanceCollectionData))
-          .get();
-    } catch (ExecutionException | InterruptedException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
-      // We stop profiling even on exceptions, so profiles don't run indefinitely
-      onTransactionFinish(transaction, false, null);
-    } catch (RejectedExecutionException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. Profiling could not be finished. Did you call Sentry.close()?",
-              e);
-      // We stop profiling even on exceptions, so profiles don't run indefinitely
-      onTransactionFinish(transaction, false, null);
-    }
-    return null;
+
+    return onTransactionFinish(transaction, false, performanceCollectionData);
   }
 
   @SuppressLint("NewApi")
@@ -370,7 +350,14 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    Debug.stopMethodTracing();
+    try {
+      // If there is any problem with the file this method could throw, but the start is also
+      // wrapped, so this should never happen (except for tests, where this is the only method that
+      // throws)
+      Debug.stopMethodTracing();
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
+    }
     frameMetricsCollector.stopCollection(frameMetricsCollectorId);
 
     long transactionEndNanos = SystemClock.elapsedRealtimeNanos();
