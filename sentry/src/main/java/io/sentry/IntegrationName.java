@@ -6,7 +6,8 @@ public interface IntegrationName {
         .getSimpleName()
         .replace("Sentry", "")
         .replace("Integration", "")
-        .replace("Interceptor", "");
+        .replace("Interceptor", "")
+        .replace("EventProcessor", "");
   }
 
   default void addIntegrationToSdkVersion() {

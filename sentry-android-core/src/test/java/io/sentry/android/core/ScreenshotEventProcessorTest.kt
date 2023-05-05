@@ -162,7 +162,7 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(true)
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
-        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("ScreenshotEventProcessor"))
+        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("Screenshot"))
     }
 
     @Test
@@ -172,7 +172,7 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(false)
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
-        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ScreenshotEventProcessor"))
+        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("Screenshot"))
     }
 
     private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))

@@ -274,7 +274,7 @@ class ViewHierarchyEventProcessorTest {
                 exceptions = listOf(SentryException())
             }
         )
-        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchyEventProcessor"))
+        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchy"))
     }
 
     @Test
@@ -286,7 +286,7 @@ class ViewHierarchyEventProcessorTest {
                 exceptions = listOf(SentryException())
             }
         )
-        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchyEventProcessor"))
+        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchy"))
     }
 
     private fun mockedView(
