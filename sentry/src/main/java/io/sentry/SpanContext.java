@@ -200,6 +200,24 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.samplingDecision = samplingDecision;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SpanContext)) return false;
+    SpanContext that = (SpanContext) o;
+    return traceId.equals(that.traceId)
+        && spanId.equals(that.spanId)
+        && Objects.equals(parentSpanId, that.parentSpanId)
+        && op.equals(that.op)
+        && Objects.equals(description, that.description)
+        && status == that.status;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(traceId, spanId, parentSpanId, op, description, status);
+  }
+
   // region JsonSerializable
 
   public static final class JsonKeys {

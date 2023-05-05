@@ -13,4 +13,10 @@ public interface AbnormalExit {
   default boolean ignoreCurrentThread() {
     return false;
   }
+
+  /** When exactly the abnormal exit happened */
+  @Nullable
+  default Long timestamp() {
+    return null;
+  }
 }
