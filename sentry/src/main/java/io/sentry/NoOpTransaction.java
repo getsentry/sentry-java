@@ -83,7 +83,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull ISpan startChild(@NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
     return NoOpSpan.getInstance();
   }
 
