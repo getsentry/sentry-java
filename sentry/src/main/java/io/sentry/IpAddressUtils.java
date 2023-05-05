@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class IpAddressUtils {
-  static final String DEFAULT_IP_ADDRESS = "{{auto}}";
+  public static final String DEFAULT_IP_ADDRESS = "{{auto}}";
   private static final List<String> DEFAULT_IP_ADDRESS_VALID_VALUES =
       Arrays.asList(DEFAULT_IP_ADDRESS, "{{ auto }}");
 

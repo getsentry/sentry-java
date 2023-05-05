@@ -104,6 +104,13 @@ class SentryAndroidOptionsTest {
         assertFalse(sentryOptions.isEnableUserInteractionTracing)
     }
 
+    @Test
+    fun `attach view hierarchy is disabled by default for Android`() {
+        val sentryOptions = SentryAndroidOptions()
+
+        assertFalse(sentryOptions.isAttachViewHierarchy)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}

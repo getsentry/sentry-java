@@ -7,8 +7,10 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -442,6 +444,87 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   public void setCpuDescription(@Nullable final String cpuDescription) {
     this.cpuDescription = cpuDescription;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Device device = (Device) o;
+    return Objects.equals(name, device.name)
+        && Objects.equals(manufacturer, device.manufacturer)
+        && Objects.equals(brand, device.brand)
+        && Objects.equals(family, device.family)
+        && Objects.equals(model, device.model)
+        && Objects.equals(modelId, device.modelId)
+        && Arrays.equals(archs, device.archs)
+        && Objects.equals(batteryLevel, device.batteryLevel)
+        && Objects.equals(charging, device.charging)
+        && Objects.equals(online, device.online)
+        && orientation == device.orientation
+        && Objects.equals(simulator, device.simulator)
+        && Objects.equals(memorySize, device.memorySize)
+        && Objects.equals(freeMemory, device.freeMemory)
+        && Objects.equals(usableMemory, device.usableMemory)
+        && Objects.equals(lowMemory, device.lowMemory)
+        && Objects.equals(storageSize, device.storageSize)
+        && Objects.equals(freeStorage, device.freeStorage)
+        && Objects.equals(externalStorageSize, device.externalStorageSize)
+        && Objects.equals(externalFreeStorage, device.externalFreeStorage)
+        && Objects.equals(screenWidthPixels, device.screenWidthPixels)
+        && Objects.equals(screenHeightPixels, device.screenHeightPixels)
+        && Objects.equals(screenDensity, device.screenDensity)
+        && Objects.equals(screenDpi, device.screenDpi)
+        && Objects.equals(bootTime, device.bootTime)
+        && Objects.equals(id, device.id)
+        && Objects.equals(language, device.language)
+        && Objects.equals(locale, device.locale)
+        && Objects.equals(connectionType, device.connectionType)
+        && Objects.equals(batteryTemperature, device.batteryTemperature)
+        && Objects.equals(processorCount, device.processorCount)
+        && Objects.equals(processorFrequency, device.processorFrequency)
+        && Objects.equals(cpuDescription, device.cpuDescription);
+  }
+
+  @Override
+  public int hashCode() {
+    int result =
+        Objects.hash(
+            name,
+            manufacturer,
+            brand,
+            family,
+            model,
+            modelId,
+            batteryLevel,
+            charging,
+            online,
+            orientation,
+            simulator,
+            memorySize,
+            freeMemory,
+            usableMemory,
+            lowMemory,
+            storageSize,
+            freeStorage,
+            externalStorageSize,
+            externalFreeStorage,
+            screenWidthPixels,
+            screenHeightPixels,
+            screenDensity,
+            screenDpi,
+            bootTime,
+            timezone,
+            id,
+            language,
+            locale,
+            connectionType,
+            batteryTemperature,
+            processorCount,
+            processorFrequency,
+            cpuDescription);
+    result = 31 * result + Arrays.hashCode(archs);
+    return result;
   }
 
   public enum DeviceOrientation implements JsonSerializable {

@@ -40,7 +40,7 @@ public final class Scope {
   private @NotNull List<String> fingerprint = new ArrayList<>();
 
   /** Scope's breadcrumb queue */
-  private @NotNull Queue<Breadcrumb> breadcrumbs;
+  private final @NotNull Queue<Breadcrumb> breadcrumbs;
 
   /** Scope's tags */
   private @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
@@ -152,6 +152,10 @@ public final class Scope {
    */
   public void setLevel(final @Nullable SentryLevel level) {
     this.level = level;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setLevel(level);
+    }
   }
 
   /**
@@ -176,6 +180,10 @@ public final class Scope {
         tx.setName(transaction, TransactionNameSource.CUSTOM);
       }
       this.transactionName = transaction;
+
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        observer.setTransaction(transaction);
+      }
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
@@ -207,6 +215,16 @@ public final class Scope {
   public void setTransaction(final @Nullable ITransaction transaction) {
     synchronized (transactionLock) {
       this.transaction = transaction;
+
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        if (transaction != null) {
+          observer.setTransaction(transaction.getName());
+          observer.setTrace(transaction.getSpanContext());
+        } else {
+          observer.setTransaction(null);
+          observer.setTrace(null);
+        }
+      }
     }
   }
 
@@ -227,10 +245,8 @@ public final class Scope {
   public void setUser(final @Nullable User user) {
     this.user = user;
 
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        observer.setUser(user);
-      }
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setUser(user);
     }
   }
 
@@ -250,6 +266,10 @@ public final class Scope {
    */
   public void setRequest(final @Nullable Request request) {
     this.request = request;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setRequest(request);
+    }
   }
 
   /**
@@ -272,6 +292,10 @@ public final class Scope {
       return;
     }
     this.fingerprint = new ArrayList<>(fingerprint);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setFingerprint(fingerprint);
+    }
   }
 
   /**
@@ -335,10 +359,9 @@ public final class Scope {
     if (breadcrumb != null) {
       this.breadcrumbs.add(breadcrumb);
 
-      if (options.isEnableScopeSync()) {
-        for (final IScopeObserver observer : options.getScopeObservers()) {
-          observer.addBreadcrumb(breadcrumb);
-        }
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        observer.addBreadcrumb(breadcrumb);
+        observer.setBreadcrumbs(breadcrumbs);
       }
     } else {
       options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
@@ -358,6 +381,10 @@ public final class Scope {
   /** Clear all the breadcrumbs */
   public void clearBreadcrumbs() {
     breadcrumbs.clear();
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setBreadcrumbs(breadcrumbs);
+    }
   }
 
   /** Clears the transaction. */
@@ -366,6 +393,11 @@ public final class Scope {
       transaction = null;
     }
     transactionName = null;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTransaction(null);
+      observer.setTrace(null);
+    }
   }
 
   /**
@@ -412,10 +444,9 @@ public final class Scope {
   public void setTag(final @NotNull String key, final @NotNull String value) {
     this.tags.put(key, value);
 
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        observer.setTag(key, value);
-      }
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTag(key, value);
+      observer.setTags(tags);
     }
   }
 
@@ -427,10 +458,9 @@ public final class Scope {
   public void removeTag(final @NotNull String key) {
     this.tags.remove(key);
 
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        observer.removeTag(key);
-      }
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.removeTag(key);
+      observer.setTags(tags);
     }
   }
 
@@ -453,10 +483,9 @@ public final class Scope {
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     this.extra.put(key, value);
 
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        observer.setExtra(key, value);
-      }
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setExtra(key, value);
+      observer.setExtras(extra);
     }
   }
 
@@ -468,10 +497,9 @@ public final class Scope {
   public void removeExtra(final @NotNull String key) {
     this.extra.remove(key);
 
-    if (options.isEnableScopeSync()) {
-      for (final IScopeObserver observer : options.getScopeObservers()) {
-        observer.removeExtra(key);
-      }
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.removeExtra(key);
+      observer.setExtras(extra);
     }
   }
 
@@ -492,6 +520,10 @@ public final class Scope {
    */
   public void setContexts(final @NotNull String key, final @NotNull Object value) {
     this.contexts.put(key, value);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
   }
 
   /**
