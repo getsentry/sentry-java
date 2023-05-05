@@ -163,7 +163,7 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor, io/sentry/IntegrationName {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
@@ -288,7 +288,7 @@ public final class io/sentry/android/core/UserInteractionIntegration : android/a
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor, io/sentry/IntegrationName {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public static fun snapshotViewHierarchy (Landroid/app/Activity;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
