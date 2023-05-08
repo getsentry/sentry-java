@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -57,6 +58,91 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     }
     this.unknown = CollectionUtils.newConcurrentHashMap(breadcrumb.unknown);
     this.level = breadcrumb.level;
+  }
+
+  /**
+   * Creates breadcrumb from a map.
+   *
+   * @param map - The breadcrumb data as map
+   * @param options - the sentry options
+   * @return the breadcrumb
+   */
+  @SuppressWarnings("unchecked")
+  public static Breadcrumb fromMap(
+      @NotNull Map<String, Object> map, @NotNull SentryOptions options) {
+
+    @NotNull Date timestamp = DateUtils.getCurrentDateTime();
+    String message = null;
+    String type = null;
+    @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+    String category = null;
+    SentryLevel level = null;
+    Map<String, Object> unknown = null;
+
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      Object value = entry.getValue();
+      switch (entry.getKey()) {
+        case JsonKeys.TIMESTAMP:
+          if (value instanceof String) {
+            Date deserializedDate =
+                JsonObjectReader.dateOrNull((String) value, options.getLogger());
+            if (deserializedDate != null) {
+              timestamp = deserializedDate;
+            }
+          }
+          break;
+        case JsonKeys.MESSAGE:
+          message = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.TYPE:
+          type = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.DATA:
+          final Map<Object, Object> untypedData =
+              (value instanceof Map) ? (Map<Object, Object>) value : null;
+          if (untypedData != null) {
+            for (Map.Entry<Object, Object> dataEntry : untypedData.entrySet()) {
+              if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
+                data.put((String) dataEntry.getKey(), dataEntry.getValue());
+              } else {
+                options
+                    .getLogger()
+                    .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
+              }
+            }
+          }
+          break;
+        case JsonKeys.CATEGORY:
+          category = (value instanceof String) ? (String) value : null;
+          break;
+        case JsonKeys.LEVEL:
+          String levelString = (value instanceof String) ? (String) value : null;
+          if (levelString != null) {
+            try {
+              level = SentryLevel.valueOf(levelString.toUpperCase(Locale.ROOT));
+            } catch (Exception exception) {
+              // Stub
+            }
+          }
+          break;
+        default:
+          if (unknown == null) {
+            unknown = new ConcurrentHashMap<>();
+          }
+          unknown.put(entry.getKey(), entry.getValue());
+          break;
+      }
+    }
+
+    final Breadcrumb breadcrumb = new Breadcrumb(timestamp);
+    breadcrumb.message = message;
+    breadcrumb.type = type;
+    breadcrumb.data = data;
+    breadcrumb.category = category;
+    breadcrumb.level = level;
+
+    breadcrumb.setUnknown(unknown);
+    return breadcrumb;
   }
 
   /**
@@ -432,6 +518,24 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    */
   public void setLevel(@Nullable SentryLevel level) {
     this.level = level;
+  }
+
+  @SuppressWarnings("JavaUtilDate")
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Breadcrumb that = (Breadcrumb) o;
+    return timestamp.getTime() == that.timestamp.getTime()
+        && Objects.equals(message, that.message)
+        && Objects.equals(type, that.type)
+        && Objects.equals(category, that.category)
+        && level == that.level;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(timestamp, message, type, category, level);
   }
 
   // region json

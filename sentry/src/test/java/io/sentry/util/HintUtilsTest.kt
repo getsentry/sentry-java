@@ -3,6 +3,7 @@ package io.sentry.util
 import io.sentry.CustomCachedApplyScopeDataHint
 import io.sentry.Hint
 import io.sentry.hints.ApplyScopeData
+import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import org.mockito.kotlin.mock
 import kotlin.test.Test
@@ -32,5 +33,11 @@ class HintUtilsTest {
     fun `if event is Cached but also ApplyScopeData, it should apply scopes data`() {
         val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
         assertTrue(HintUtils.shouldApplyScopeData(hints))
+    }
+
+    @Test
+    fun `if event is Backfillable, it should not apply scopes data`() {
+        val hints = HintUtils.createWithTypeCheckHint(mock<Backfillable>())
+        assertFalse(HintUtils.shouldApplyScopeData(hints))
     }
 }

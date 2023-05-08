@@ -10,6 +10,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface ISerializer {
+
+  <T, R> @Nullable T deserializeCollection(
+      @NotNull Reader reader,
+      @NotNull Class<T> clazz,
+      @Nullable JsonDeserializer<R> elementDeserializer);
+
   <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz);
 
   @Nullable

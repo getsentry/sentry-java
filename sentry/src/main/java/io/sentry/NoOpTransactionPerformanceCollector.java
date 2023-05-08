@@ -22,4 +22,7 @@ public final class NoOpTransactionPerformanceCollector implements TransactionPer
   public @Nullable List<PerformanceCollectionData> stop(@NotNull ITransaction transaction) {
     return null;
   }
+
+  @Override
+  public void close() {}
 }

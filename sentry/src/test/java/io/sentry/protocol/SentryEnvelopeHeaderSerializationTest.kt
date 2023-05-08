@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import io.sentry.DateUtils
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
@@ -22,7 +23,9 @@ class SentryEnvelopeHeaderSerializationTest {
             SentryIdSerializationTest.Fixture().getSut(),
             SdkVersionSerializationTest.Fixture().getSut(),
             TraceContextSerializationTest.Fixture().getSut()
-        )
+        ).apply {
+            sentAt = DateUtils.getDateTime("2020-02-07T14:16:00.000Z")
+        }
     }
     private val fixture = Fixture()
 
