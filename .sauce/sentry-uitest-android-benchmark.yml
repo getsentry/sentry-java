@@ -2,7 +2,7 @@ apiVersion: v1alpha
 kind: espresso
 sauce:
   region: us-west-1
-  concurrency: 2
+  concurrency: 3
   metadata:
     name: Android benchmarks with Espresso
     tags:
