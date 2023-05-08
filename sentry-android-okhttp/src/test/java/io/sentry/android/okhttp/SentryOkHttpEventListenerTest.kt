@@ -200,8 +200,8 @@ class SentryOkHttpEventListenerTest {
         assertEquals(9, fixture.sentryTracer.children.size)
         val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.description == "requestBody" }
         assertNotNull(requestBodySpan)
-        assertEquals(requestBody.toByteArray().size.toLong(), requestBodySpan.data["request_body_size"])
-        assertEquals(requestBody.toByteArray().size.toLong(), callSpan?.getData("request_body_size"))
+        assertEquals(requestBody.toByteArray().size.toLong(), requestBodySpan.data["http.request_content_length"])
+        assertEquals(requestBody.toByteArray().size.toLong(), callSpan?.getData("http.request_content_length"))
     }
 
     @Test
@@ -221,8 +221,8 @@ class SentryOkHttpEventListenerTest {
         response.close()
         val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.description == "responseBody" }
         assertNotNull(requestBodySpan)
-        assertEquals(responseBytes.size.toLong(), requestBodySpan.data["response_body_size"])
-        assertEquals(responseBytes.size.toLong(), callSpan?.getData("response_body_size"))
+        assertEquals(responseBytes.size.toLong(), requestBodySpan.data["http.response_content_length"])
+        assertEquals(responseBytes.size.toLong(), callSpan?.getData("http.response_content_length"))
     }
 
     @Test

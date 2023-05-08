@@ -127,13 +127,13 @@ class SentryOkHttpInterceptor(
     private fun sendBreadcrumb(request: Request, code: Int?, response: Response?) {
         val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
         request.body?.contentLength().ifHasValidLength {
-            breadcrumb.setData("request_body_size", it)
+            breadcrumb.setData("http.request_content_length", it)
         }
 
         val hint = Hint().also { it.set(OKHTTP_REQUEST, request) }
         response?.let {
             it.body?.contentLength().ifHasValidLength { responseBodySize ->
-                breadcrumb.setData("response_body_size", responseBodySize)
+                breadcrumb.setData("http.response_content_length", responseBodySize)
             }
 
             hint[OKHTTP_RESPONSE] = it

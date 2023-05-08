@@ -6,6 +6,13 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.CONNECTION_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.CONNECT_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_BODY_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEADERS_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.util.UrlUtils
 import okhttp3.Call
 import okhttp3.Response
@@ -30,13 +37,15 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
         // We start the call span that will contain all the others
         callRootSpan = hub.span?.startChild("http.client", "$method $url")
 
+        urlDetails.applyToSpan(callRootSpan)
+
         // We setup a breadcrumb with all meaningful data
         breadcrumb = Breadcrumb.http(url, method)
         breadcrumb.setData("url", url)
         breadcrumb.setData("filtered_url", trimmedUrl)
         breadcrumb.setData("host", host)
         breadcrumb.setData("path", encodedPath)
-        breadcrumb.setData("method", method)
+        breadcrumb.setData("http.method", method)
         breadcrumb.setData("success", true)
 
         // We add the same data to the root call span
@@ -44,7 +53,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
         callRootSpan?.setData("filtered_url", trimmedUrl)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
-        callRootSpan?.setData("method", method)
+        callRootSpan?.setData("http.method", method)
         callRootSpan?.setData("success", true)
     }
 
@@ -80,15 +89,15 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
 
     fun setRequestBodySize(byteCount: Long) {
         if (byteCount > -1) {
-            breadcrumb.setData("request_body_size", byteCount)
-            callRootSpan?.setData("request_body_size", byteCount)
+            breadcrumb.setData("http.request_content_length", byteCount)
+            callRootSpan?.setData("http.request_content_length", byteCount)
         }
     }
 
     fun setResponseBodySize(byteCount: Long) {
         if (byteCount > -1) {
-            breadcrumb.setData("response_body_size", byteCount)
-            callRootSpan?.setData("response_body_size", byteCount)
+            breadcrumb.setData("http.response_content_length", byteCount)
+            callRootSpan?.setData("http.response_content_length", byteCount)
         }
     }
 
@@ -107,7 +116,17 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
 
     /** Starts a span, if the callRootSpan is not null. */
     fun startSpan(event: String) {
-        val span = callRootSpan?.startChild("http.client", event) ?: return
+        // Find the parent of the span being created. E.g. secureConnect is child of connect
+        val parentSpan = when (event) {
+            // PROXY_SELECT, DNS, CONNECT and CONNECTION are not children of one another
+            SECURE_CONNECT_EVENT -> eventSpans[CONNECT_EVENT]
+            REQUEST_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
+            REQUEST_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
+            RESPONSE_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
+            RESPONSE_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
+            else -> callRootSpan
+        } ?: callRootSpan
+        val span = parentSpan?.startChild("http.client", event) ?: return
         eventSpans[event] = span
     }
 

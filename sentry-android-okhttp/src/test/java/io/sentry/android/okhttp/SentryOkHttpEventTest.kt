@@ -10,6 +10,13 @@ import io.sentry.SpanOptions
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.CONNECTION_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.CONNECT_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_BODY_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEADERS_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
+import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.test.getProperty
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -105,7 +112,7 @@ class SentryOkHttpEventTest {
         assertEquals(fixture.request.url.toString(), callSpan.getData("filtered_url"))
         assertEquals(fixture.request.url.host, callSpan.getData("host"))
         assertEquals(fixture.request.url.encodedPath, callSpan.getData("path"))
-        assertEquals(fixture.request.method, callSpan.getData("method"))
+        assertEquals(fixture.request.method, callSpan.getData("http.method"))
         assertTrue(callSpan.getData("success") as Boolean)
     }
 
@@ -240,7 +247,7 @@ class SentryOkHttpEventTest {
                 assertEquals(fixture.request.url.toString(), it.data["filtered_url"])
                 assertEquals(fixture.request.url.host, it.data["host"])
                 assertEquals(fixture.request.url.encodedPath, it.data["path"])
-                assertEquals(fixture.request.method, it.data["method"])
+                assertEquals(fixture.request.method, it.data["http.method"])
                 assertTrue(it.data["success"] as Boolean)
             },
             check {
@@ -301,11 +308,11 @@ class SentryOkHttpEventTest {
     fun `setRequestBodySize set RequestBodySize in the breadcrumb and in the root span`() {
         val sut = fixture.getSut()
         sut.setRequestBodySize(10)
-        assertEquals(10L, sut.callRootSpan?.getData("request_body_size"))
+        assertEquals(10L, sut.callRootSpan?.getData("http.request_content_length"))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertEquals(10L, it.data["request_body_size"])
+                assertEquals(10L, it.data["http.request_content_length"])
             },
             any()
         )
@@ -315,11 +322,11 @@ class SentryOkHttpEventTest {
     fun `setRequestBodySize is ignored if RequestBodySize is negative`() {
         val sut = fixture.getSut()
         sut.setRequestBodySize(-1)
-        assertNull(sut.callRootSpan?.getData("request_body_size"))
+        assertNull(sut.callRootSpan?.getData("http.request_content_length"))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertNull(it.data["request_body_size"])
+                assertNull(it.data["http.request_content_length"])
             },
             any()
         )
@@ -329,11 +336,11 @@ class SentryOkHttpEventTest {
     fun `setResponseBodySize set ResponseBodySize in the breadcrumb and in the root span`() {
         val sut = fixture.getSut()
         sut.setResponseBodySize(10)
-        assertEquals(10L, sut.callRootSpan?.getData("response_body_size"))
+        assertEquals(10L, sut.callRootSpan?.getData("http.response_content_length"))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertEquals(10L, it.data["response_body_size"])
+                assertEquals(10L, it.data["http.response_content_length"])
             },
             any()
         )
@@ -343,11 +350,11 @@ class SentryOkHttpEventTest {
     fun `setResponseBodySize is ignored if ResponseBodySize is negative`() {
         val sut = fixture.getSut()
         sut.setResponseBodySize(-1)
-        assertNull(sut.callRootSpan?.getData("response_body_size"))
+        assertNull(sut.callRootSpan?.getData("http.response_content_length"))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertNull(it.data["response_body_size"])
+                assertNull(it.data["http.response_content_length"])
             },
             any()
         )
@@ -383,6 +390,74 @@ class SentryOkHttpEventTest {
             },
             any()
         )
+    }
+
+    @Test
+    fun `secureConnect span is child of connect span`() {
+        val sut = fixture.getSut()
+        sut.startSpan(CONNECT_EVENT)
+        sut.startSpan(SECURE_CONNECT_EVENT)
+        val spans = sut.getEventSpans()
+        val secureConnectSpan = spans[SECURE_CONNECT_EVENT] as Span?
+        val connectSpan = spans[CONNECT_EVENT] as Span?
+        assertNotNull(secureConnectSpan)
+        assertNotNull(connectSpan)
+        assertEquals(connectSpan.spanId, secureConnectSpan.parentSpanId)
+    }
+
+    @Test
+    fun `secureConnect span is child of root span if connect span is not available`() {
+        val sut = fixture.getSut()
+        sut.startSpan(SECURE_CONNECT_EVENT)
+        val spans = sut.getEventSpans()
+        val rootSpan = sut.callRootSpan as Span?
+        val secureConnectSpan = spans[SECURE_CONNECT_EVENT] as Span?
+        assertNotNull(secureConnectSpan)
+        assertNotNull(rootSpan)
+        assertEquals(rootSpan.spanId, secureConnectSpan.parentSpanId)
+    }
+
+    @Test
+    fun `request and response spans are children of connection span`() {
+        val sut = fixture.getSut()
+        sut.startSpan(CONNECTION_EVENT)
+        sut.startSpan(REQUEST_HEADERS_EVENT)
+        sut.startSpan(REQUEST_BODY_EVENT)
+        sut.startSpan(RESPONSE_HEADERS_EVENT)
+        sut.startSpan(RESPONSE_BODY_EVENT)
+        val spans = sut.getEventSpans()
+        val connectionSpan = spans[CONNECTION_EVENT] as Span?
+        val requestHeadersSpan = spans[REQUEST_HEADERS_EVENT] as Span?
+        val requestBodySpan = spans[REQUEST_BODY_EVENT] as Span?
+        val responseHeadersSpan = spans[RESPONSE_HEADERS_EVENT] as Span?
+        val responseBodySpan = spans[RESPONSE_BODY_EVENT] as Span?
+        assertNotNull(connectionSpan)
+        assertEquals(connectionSpan.spanId, requestHeadersSpan?.parentSpanId)
+        assertEquals(connectionSpan.spanId, requestBodySpan?.parentSpanId)
+        assertEquals(connectionSpan.spanId, responseHeadersSpan?.parentSpanId)
+        assertEquals(connectionSpan.spanId, responseBodySpan?.parentSpanId)
+    }
+
+    @Test
+    fun `request and response spans are children of root span if connection span is not available`() {
+        val sut = fixture.getSut()
+        sut.startSpan(REQUEST_HEADERS_EVENT)
+        sut.startSpan(REQUEST_BODY_EVENT)
+        sut.startSpan(RESPONSE_HEADERS_EVENT)
+        sut.startSpan(RESPONSE_BODY_EVENT)
+        val spans = sut.getEventSpans()
+        val connectionSpan = spans[CONNECTION_EVENT] as Span?
+        val requestHeadersSpan = spans[REQUEST_HEADERS_EVENT] as Span?
+        val requestBodySpan = spans[REQUEST_BODY_EVENT] as Span?
+        val responseHeadersSpan = spans[RESPONSE_HEADERS_EVENT] as Span?
+        val responseBodySpan = spans[RESPONSE_BODY_EVENT] as Span?
+        val rootSpan = sut.callRootSpan as Span?
+        assertNotNull(rootSpan)
+        assertNull(connectionSpan)
+        assertEquals(rootSpan.spanId, requestHeadersSpan?.parentSpanId)
+        assertEquals(rootSpan.spanId, requestBodySpan?.parentSpanId)
+        assertEquals(rootSpan.spanId, responseHeadersSpan?.parentSpanId)
+        assertEquals(rootSpan.spanId, responseBodySpan?.parentSpanId)
     }
 
     /** Retrieve all the spans started in the event using reflection. */

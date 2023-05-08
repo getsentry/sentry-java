@@ -46,15 +46,15 @@ class SentryOkHttpEventListener(
     private var originalEventListener: EventListener? = null
 
     companion object {
-        private const val PROXY_SELECT_EVENT = "proxySelect"
-        private const val DNS_EVENT = "dns"
-        private const val SECURE_CONNECT_EVENT = "secureConnect"
-        private const val CONNECT_EVENT = "connect"
-        private const val CONNECTION_EVENT = "connection"
-        private const val REQUEST_HEADERS_EVENT = "requestHeaders"
-        private const val REQUEST_BODY_EVENT = "requestBody"
-        private const val RESPONSE_HEADERS_EVENT = "responseHeaders"
-        private const val RESPONSE_BODY_EVENT = "responseBody"
+        internal const val PROXY_SELECT_EVENT = "proxySelect"
+        internal const val DNS_EVENT = "dns"
+        internal const val SECURE_CONNECT_EVENT = "secureConnect"
+        internal const val CONNECT_EVENT = "connect"
+        internal const val CONNECTION_EVENT = "connection"
+        internal const val REQUEST_HEADERS_EVENT = "requestHeaders"
+        internal const val REQUEST_BODY_EVENT = "requestBody"
+        internal const val RESPONSE_HEADERS_EVENT = "responseHeaders"
+        internal const val RESPONSE_BODY_EVENT = "responseBody"
 
         internal val eventMap: MutableMap<Call, SentryOkHttpEvent> = HashMap()
     }
@@ -202,7 +202,7 @@ class SentryOkHttpEventListener(
         val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
         okHttpEvent.finishSpan(REQUEST_BODY_EVENT) {
             if (byteCount > 0) {
-                it.setData("request_body_size", byteCount)
+                it.setData("http.request_content_length", byteCount)
             }
         }
         okHttpEvent.setRequestBodySize(byteCount)
@@ -254,7 +254,7 @@ class SentryOkHttpEventListener(
         okHttpEvent.setResponseBodySize(byteCount)
         okHttpEvent.finishSpan(RESPONSE_BODY_EVENT) {
             if (byteCount > 0) {
-                it.setData("response_body_size", byteCount)
+                it.setData("http.response_content_length", byteCount)
             }
         }
     }

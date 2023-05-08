@@ -12,6 +12,8 @@
         - Connection
         - Requesting headers
         - Receiving response
+    - You can attach the event listener to your OkHttpClient through `client.eventListener(new SentryOkHttpEventListener()).addInterceptor(new SentryOkHttpInterceptor()).build();`
+    - In case you already have an event listener you can use the SentryOkHttpEventListener as well through `client.eventListener(new SentryOkHttpEventListener(myListener)).addInterceptor(new SentryOkHttpInterceptor()).build();`
 - Attach Trace Context when an ANR is detected (ANRv1) ([#2583](https://github.com/getsentry/sentry-java/pull/2583))
 - Make log4j2 integration compatible with log4j 3.0 ([#2634](https://github.com/getsentry/sentry-java/pull/2634))
     - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
