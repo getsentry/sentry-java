@@ -252,7 +252,7 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
                                                     "()Ljava/lang/String;");
     jmethodID dist_mid = (*env)->GetMethodID(env, options_cls, "getDist", "()Ljava/lang/String;");
     jmethodID max_crumbs_mid = (*env)->GetMethodID(env, options_cls, "getMaxBreadcrumbs", "()I");
-    jmethodID native_sdk_name_mid = (*env)->GetMethodID(env, options_cls, "getNdkSdkName",
+    jmethodID native_sdk_name_mid = (*env)->GetMethodID(env, options_cls, "getNativeSdkName",
                                                     "()Ljava/lang/String;");
 
     (*env)->DeleteLocalRef(env, options_cls);
