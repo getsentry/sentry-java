@@ -2,7 +2,6 @@
 
 # The Android SDK checks at runtime if this class is available via Class.forName
 -keep class io.sentry.android.ndk.SentryNdk { *; }
--keep class * extends io.sentry.SentryOptions { *; }
 
 # The JNI layer uses this class through reflection
 -keep class io.sentry.protocol.DebugImage { *; }

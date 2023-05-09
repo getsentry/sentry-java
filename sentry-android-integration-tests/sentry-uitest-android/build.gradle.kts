@@ -92,7 +92,7 @@ dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    implementation(projects.sentryAndroid)
+    implementation(projects.sentryAndroidCore)
     implementation(projects.sentryCompose)
 //    implementation(projects.sentryAndroidOkhttp)
 //    implementation(projects.sentryAndroidFragment)
