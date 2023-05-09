@@ -7,6 +7,7 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
+    id("com.slack.keeper")
 }
 
 android {

@@ -38,6 +38,7 @@ buildscript {
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
         classpath(Config.BuildPlugins.composeGradlePlugin)
+        classpath(Config.BuildPlugins.keeper)
     }
 }
 
