@@ -160,6 +160,15 @@ subprojects {
                 assignAarTypes()
             }
 
+            configure<PublishingExtension> {
+                repositories {
+                    maven {
+                        name = "unityMaven"
+                        url = file("${rootProject.buildDir}/unityMaven").toURI()
+                    }
+                }
+            }
+
             // maven central info go to:
             // ~/.gradle/gradle.properties
 
