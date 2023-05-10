@@ -14,6 +14,7 @@
         - Auxiliary information (such as current memory load) at the time of ANR event.
       - If you would like us to provide support for the old approach working alongside the new one on Android 11 and above (e.g. for raising events for slow code on main thread), consider upvoting [this issue](https://github.com/getsentry/sentry-java/issues/2693).
     - The old watchdog implementation will continue working for older API versions (Android < 11)
+- Add support for Sentry Kotlin Compiler Plugin ([#2695](https://github.com/getsentry/sentry-java/pull/2695))
 
 ### Fixes
 
@@ -42,7 +43,6 @@
     - Instead of relying on package scanning, we now use an annotation processor to generate `Log4j2Plugins.dat`
 - Create `User` and `Breadcrumb` from map ([#2614](https://github.com/getsentry/sentry-java/pull/2614))
 - Add `sent_at` to envelope header item ([#2638](https://github.com/getsentry/sentry-java/pull/2638))
-- Add support for Sentry Kotlin Plugin ([#2695](https://github.com/getsentry/sentry-java/pull/2695))
 
 ### Fixes
 
