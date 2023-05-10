@@ -169,7 +169,7 @@ final class AndroidOptionsInitializer {
                   SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
 
       if (isComposeAvailable) {
-        gestureTargetLocators.add(new ComposeGestureTargetLocator());
+        gestureTargetLocators.add(new ComposeGestureTargetLocator(options.getLogger()));
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
@@ -180,7 +180,7 @@ final class AndroidOptionsInitializer {
             SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
 
       final List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>(1);
-      viewHierarchyExporters.add(new ComposeViewHierarchyExporter());
+      viewHierarchyExporters.add(new ComposeViewHierarchyExporter(options.getLogger()));
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 

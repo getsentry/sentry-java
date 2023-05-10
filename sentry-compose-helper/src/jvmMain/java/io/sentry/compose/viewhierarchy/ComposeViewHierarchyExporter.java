@@ -1,13 +1,15 @@
 package io.sentry.compose.viewhierarchy;
 
 import androidx.compose.runtime.collection.MutableVector;
+import androidx.compose.ui.geometry.Rect;
 import androidx.compose.ui.layout.ModifierInfo;
 import androidx.compose.ui.node.LayoutNode;
 import androidx.compose.ui.node.Owner;
 import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
-import io.sentry.compose.SentryComposeUtil;
+import io.sentry.ILogger;
+import io.sentry.compose.SentryComposeHelper;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchyNode;
 import java.util.ArrayList;
@@ -19,6 +21,12 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("KotlinInternalInJava")
 public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter {
 
+  @NotNull private final ILogger logger;
+
+  public ComposeViewHierarchyExporter(@NotNull final ILogger logger) {
+    this.logger = logger;
+  }
+
   @Override
   public boolean export(@NotNull final ViewHierarchyNode parent, @NotNull final Object element) {
 
@@ -26,17 +34,29 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
       return false;
     }
 
+    final SentryComposeHelper composeHelper = new SentryComposeHelper(logger);
+
     final @NotNull LayoutNode rootNode = ((Owner) element).getRoot();
-    addChild(parent, rootNode);
+    addChild(composeHelper, parent, null, rootNode);
     return true;
   }
 
   private static void addChild(
-      @NotNull final ViewHierarchyNode parent, @NotNull final LayoutNode node) {
+      @NotNull final SentryComposeHelper composeHelper,
+      @NotNull final ViewHierarchyNode parent,
+      @Nullable final LayoutNode parentNode,
+      @NotNull final LayoutNode node) {
     if (node.isPlaced()) {
       final ViewHierarchyNode vhNode = new ViewHierarchyNode();
-      setBounds(node, vhNode);
       setTag(node, vhNode);
+      setBounds(composeHelper, node, parentNode, vhNode);
+
+      if (vhNode.getTag() != null) {
+        vhNode.setType(vhNode.getTag());
+      } else {
+        vhNode.setType("@Composable");
+      }
+
       if (parent.getChildren() == null) {
         parent.setChildren(new ArrayList<>());
       }
@@ -46,13 +66,13 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
       final int childrenCount = children.getSize();
       for (int i = 0; i < childrenCount; i++) {
         final LayoutNode child = children.get(i);
-        addChild(vhNode, child);
+        addChild(composeHelper, vhNode, node, child);
       }
     }
   }
 
   private static void setTag(
-      @NotNull final LayoutNode node, @NotNull final ViewHierarchyNode vhNode) {
+      final @NotNull LayoutNode node, final @NotNull ViewHierarchyNode vhNode) {
     final List<ModifierInfo> modifiers = node.getModifierInfo();
     for (ModifierInfo modifierInfo : modifiers) {
       if (modifierInfo.getModifier() instanceof SemanticsModifier) {
@@ -72,15 +92,33 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
     }
   }
 
-  private static void setBounds(@NotNull LayoutNode node, @NotNull ViewHierarchyNode vhNode) {
+  private static void setBounds(
+      final @NotNull SentryComposeHelper composeHelper,
+      final @NotNull LayoutNode node,
+      final @Nullable LayoutNode parentNode,
+      final @NotNull ViewHierarchyNode vhNode) {
+
     final int nodeHeight = node.getHeight();
     final int nodeWidth = node.getWidth();
 
-    final int[] xy = SentryComposeUtil.getLayoutNodeXY(node);
+    vhNode.setHeight((double) nodeHeight);
+    vhNode.setWidth((double) nodeWidth);
 
-    vhNode.setHeight(Double.valueOf(nodeHeight));
-    vhNode.setWidth(Double.valueOf(nodeWidth));
-    vhNode.setX(Double.valueOf(xy[0]));
-    vhNode.setY(Double.valueOf(xy[1]));
+    final Rect bounds = composeHelper.getLayoutNodeBoundsInWindow(node);
+    if (bounds != null) {
+      double x = bounds.getLeft();
+      double y = bounds.getTop();
+      // layout coordinates for view hierarchy are relative to the parent node
+      if (parentNode != null) {
+        final @Nullable Rect parentBounds = composeHelper.getLayoutNodeBoundsInWindow(parentNode);
+        if (parentBounds != null) {
+          x -= parentBounds.getLeft();
+          y -= parentBounds.getTop();
+        }
+      }
+
+      vhNode.setX(x);
+      vhNode.setY(y);
+    }
   }
 }

@@ -13,6 +13,7 @@ import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
+import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
@@ -54,7 +55,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     final @Nullable ViewHierarchy viewHierarchy =
-        snapshotViewHierarchy(activity, options.getLogger());
+        snapshotViewHierarchy(activity, options.getLogger(), options.getViewHierarchyExporters());
 
     if (viewHierarchy != null) {
       hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
@@ -65,8 +66,11 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
   @Nullable
   public static byte[] snapshotViewHierarchyAsData(
-      @Nullable Activity activity, @NotNull ISerializer serializer, @NotNull ILogger logger) {
-    @Nullable ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, logger);
+      final @Nullable Activity activity,
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger) {
+    @Nullable
+    ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, logger, new ArrayList<>(0));
 
     if (viewHierarchy == null) {
       logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
@@ -89,7 +93,9 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
   @Nullable
   public static ViewHierarchy snapshotViewHierarchy(
-      @Nullable Activity activity, @NotNull ILogger logger) {
+      final @Nullable Activity activity,
+      final @NotNull ILogger logger,
+      final @NotNull List<ViewHierarchyExporter> exporters) {
     if (activity == null) {
       logger.log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
       return null;
@@ -108,7 +114,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
     }
 
     try {
-      final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView);
+      final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView, exporters);
       return viewHierarchy;
     } catch (Throwable t) {
       logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
@@ -117,21 +123,32 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
   }
 
   @NotNull
-  public static ViewHierarchy snapshotViewHierarchy(@NotNull final View view) {
+  public static ViewHierarchy snapshotViewHierarchy(
+      final @NotNull View view, final @NotNull List<ViewHierarchyExporter> exporters) {
     final List<ViewHierarchyNode> windows = new ArrayList<>(1);
     final ViewHierarchy viewHierarchy = new ViewHierarchy("android_view_system", windows);
 
     final @NotNull ViewHierarchyNode node = viewToNode(view);
     windows.add(node);
-    addChildren(view, node);
+    addChildren(view, node, exporters);
 
     return viewHierarchy;
   }
 
   private static void addChildren(
-      @NotNull final View view, @NotNull final ViewHierarchyNode parentNode) {
+      final @NotNull View view,
+      final @NotNull ViewHierarchyNode parentNode,
+      final @NotNull List<ViewHierarchyExporter> exporters) {
     if (!(view instanceof ViewGroup)) {
       return;
+    }
+
+    // In case any external exporter recognizes it's own widget (e.g. AndroidComposeView)
+    // we can immediately return
+    for (ViewHierarchyExporter exporter : exporters) {
+      if (exporter.export(parentNode, view)) {
+        return;
+      }
     }
 
     final @NotNull ViewGroup viewGroup = ((ViewGroup) view);
@@ -146,7 +163,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
       if (child != null) {
         final @NotNull ViewHierarchyNode childNode = viewToNode(child);
         childNodes.add(childNode);
-        addChildren(child, childNode);
+        addChildren(child, childNode, exporters);
       }
     }
     parentNode.setChildren(childNodes);
