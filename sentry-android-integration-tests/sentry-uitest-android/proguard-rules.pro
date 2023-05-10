@@ -20,9 +20,6 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-#Shrinking removes annotations and "unused classes" from test apk, so we don't shrink
--dontshrink
-
 -dontwarn com.google.errorprone.**
 -dontwarn com.sun.jna.**
 -dontwarn edu.umd.cs.findbugs.**
@@ -32,10 +29,12 @@
 -dontwarn okhttp3.Headers$Companion
 -dontwarn okhttp3.HttpUrl$Companion
 -dontwarn okhttp3.Protocol$Companion
--dontwarn okhttp3.internal.platform.**
+-dontwarn okhttp3.internal.**
+-dontwarn okio.ByteString$Companion
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 -dontwarn org.opentest4j.AssertionFailedError
 -dontwarn org.mockito.internal.**
+-dontwarn org.jetbrains.annotations.**
 

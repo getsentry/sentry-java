@@ -1,3 +1,4 @@
+import com.slack.keeper.optInToKeeper
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
 
@@ -7,6 +8,7 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
+    id("com.slack.keeper")
 }
 
 android {
@@ -88,15 +90,26 @@ android {
     }
 }
 
+androidComponents {
+    beforeVariants {
+        if (it.buildType == "release") {
+            it.optInToKeeper()
+        }
+    }
+}
+
+val applyNdk = System.getenv("APPLY_NDK")?.toBoolean() ?: false
+
 dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    implementation(projects.sentryAndroidCore)
+    if (applyNdk) {
+        implementation(projects.sentryAndroid)
+    } else {
+        implementation(projects.sentryAndroidCore)
+    }
     implementation(projects.sentryCompose)
-//    implementation(projects.sentryAndroidOkhttp)
-//    implementation(projects.sentryAndroidFragment)
-//    implementation(projects.sentryAndroidTimber)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
     implementation(Config.Libs.composeActivity)
@@ -105,8 +118,6 @@ dependencies {
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.constraintLayout)
     implementation(Config.TestLibs.espressoIdlingResource)
-//    implementation(Config.Libs.timber)
-//    implementation(Config.Libs.retrofit2)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

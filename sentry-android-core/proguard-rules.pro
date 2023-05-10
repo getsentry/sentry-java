@@ -34,6 +34,6 @@
 
 # Keep any custom option classes like SentryAndroidOptions, as they're loaded via reflection
 # Also keep method names, as they're e.g. used by native via JNI calls
-#-keep class * extends io.sentry.SentryOptions { *; }
+-keep class * extends io.sentry.SentryOptions { *; }
 
 ##---------------End: proguard configuration for android-core  ----------

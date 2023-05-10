@@ -26,6 +26,7 @@ object Config {
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
+        val keeper = "com.slack.keeper:keeper:0.14.0"
     }
 
     object Android {
