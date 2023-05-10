@@ -19,6 +19,7 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -216,12 +217,62 @@ public final class Sentry {
 
     hub.close();
 
+    // If the executorService passed in the init is the same that was previously closed, we have to
+    // set a new one
+    final ISentryExecutorService sentryExecutorService = options.getExecutorService();
+    // If the passed executor service was previously called we set a new one
+    if (sentryExecutorService.isClosed()) {
+      options.setExecutorService(new SentryExecutorService());
+    }
+
     // when integrations are registered on Hub ctor and async integrations are fired,
     // it might and actually happened that integrations called captureSomething
     // and hub was still NoOp.
     // Registering integrations here make sure that Hub is already created.
     for (final Integration integration : options.getIntegrations()) {
       integration.register(HubAdapter.getInstance(), options);
+    }
+
+    notifyOptionsObservers(options);
+
+    finalizePreviousSession(options, HubAdapter.getInstance());
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void finalizePreviousSession(
+      final @NotNull SentryOptions options, final @NotNull IHub hub) {
+    // enqueue a task to finalize previous session. Since the executor
+    // is single-threaded, this task will be enqueued sequentially after all integrations that have
+    // to modify the previous session have done their work, even if they do that async.
+    try {
+      options.getExecutorService().submit(new PreviousSessionFinalizer(options, hub));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
+    }
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void notifyOptionsObservers(final @NotNull SentryOptions options) {
+    // enqueue a task to trigger the static options change for the observers. Since the executor
+    // is single-threaded, this task will be enqueued sequentially after all integrations that rely
+    // on the observers have done their work, even if they do that async.
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                // for static things like sentry options we can immediately trigger observers
+                for (final IOptionsObserver observer : options.getOptionsObservers()) {
+                  observer.setRelease(options.getRelease());
+                  observer.setProguardUuid(options.getProguardUuid());
+                  observer.setSdkVersion(options.getSdkVersion());
+                  observer.setDist(options.getDist());
+                  observer.setEnvironment(options.getEnvironment());
+                  observer.setTags(options.getTags());
+                }
+              });
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
     }
   }
 
@@ -280,17 +331,26 @@ public final class Sentry {
       profilingTracesDir.mkdirs();
       final File[] oldTracesDirContent = profilingTracesDir.listFiles();
 
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                if (oldTracesDirContent == null) return;
-                // Method trace files are normally deleted at the end of traces, but if that fails
-                // for some reason we try to clear any old files here.
-                for (File f : oldTracesDirContent) {
-                  FileUtils.deleteRecursively(f);
-                }
-              });
+      try {
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  if (oldTracesDirContent == null) return;
+                  // Method trace files are normally deleted at the end of traces, but if that fails
+                  // for some reason we try to clear any old files here.
+                  for (File f : oldTracesDirContent) {
+                    FileUtils.deleteRecursively(f);
+                  }
+                });
+      } catch (RejectedExecutionException e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?",
+                e);
+      }
     }
 
     final @NotNull IModulesLoader modulesLoader = options.getModulesLoader();

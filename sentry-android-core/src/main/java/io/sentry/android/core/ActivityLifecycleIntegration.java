@@ -37,6 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -70,9 +71,9 @@ public final class ActivityLifecycleIntegration
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
+  private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
   private @NotNull SentryDate lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
   private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
-  private @Nullable ISpan ttfdSpan = null;
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -168,7 +169,8 @@ public final class ActivityLifecycleIntegration
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
       final ISpan ttidSpan = ttidSpanMap.get(entry.getKey());
-      finishTransaction(transaction, ttidSpan, true);
+      final ISpan ttfdSpan = ttfdSpanMap.get(entry.getKey());
+      finishTransaction(transaction, ttidSpan, ttfdSpan);
     }
   }
 
@@ -240,20 +242,29 @@ public final class ActivityLifecycleIntegration
         // we can finish the app-start span
         finishAppStartSpan();
       }
-      ttidSpanMap.put(
-          activity,
+      final @NotNull ISpan ttidSpan =
           transaction.startChild(
-              TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY));
+              TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
+      ttidSpanMap.put(activity, ttidSpan);
 
       if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
-        ttfdSpan =
+        final @NotNull ISpan ttfdSpan =
             transaction.startChild(
                 TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-        ttfdAutoCloseFuture =
-            options
-                .getExecutorService()
-                .schedule(
-                    () -> finishExceededTtfdSpan(ttidSpanMap.get(activity)), TTFD_TIMEOUT_MILLIS);
+        try {
+          ttfdSpanMap.put(activity, ttfdSpan);
+          ttfdAutoCloseFuture =
+              options
+                  .getExecutorService()
+                  .schedule(() -> finishExceededTtfdSpan(ttfdSpan, ttidSpan), TTFD_TIMEOUT_MILLIS);
+        } catch (RejectedExecutionException e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
+                  e);
+        }
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -302,14 +313,14 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction, null, false);
+      finishTransaction(transaction, null, null);
     }
   }
 
   private void finishTransaction(
       final @Nullable ITransaction transaction,
       final @Nullable ISpan ttidSpan,
-      final boolean finishTtfd) {
+      final @Nullable ISpan ttfdSpan) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
@@ -319,9 +330,7 @@ public final class ActivityLifecycleIntegration
 
       // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
       finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
-      if (finishTtfd) {
-        finishExceededTtfdSpan(ttidSpan);
-      }
+      finishExceededTtfdSpan(ttfdSpan, ttidSpan);
       cancelTtfdAutoClose();
 
       SpanStatus status = transaction.getStatus();
@@ -347,11 +356,12 @@ public final class ActivityLifecycleIntegration
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
+    final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
 
     firstActivityCreated = true;
 
     if (fullyDisplayedReporter != null) {
-      fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn());
+      fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn(ttfdSpan));
     }
   }
 
@@ -382,16 +392,17 @@ public final class ActivityLifecycleIntegration
     }
     finishAppStartSpan();
 
-    final ISpan ttidSpan = ttidSpanMap.get(activity);
+    final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
+    final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
     final View rootView = activity.findViewById(android.R.id.content);
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
         && rootView != null) {
       FirstDrawDoneListener.registerForNextDraw(
-          rootView, () -> onFirstFrameDrawn(ttidSpan), buildInfoProvider);
+          rootView, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
     } else {
       // Posting a task to the main thread's handler will make it executed after it finished
       // its current job. That is, right after the activity draws the layout.
-      mainHandler.post(() -> onFirstFrameDrawn(ttidSpan));
+      mainHandler.post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
     }
     addBreadcrumb(activity, "resumed");
   }
@@ -447,10 +458,11 @@ public final class ActivityLifecycleIntegration
 
     // we finish the ttidSpan as cancelled in case it isn't completed yet
     final ISpan ttidSpan = ttidSpanMap.get(activity);
+    final ISpan ttfdSpan = ttfdSpanMap.get(activity);
     finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
 
     // we finish the ttfdSpan as deadline_exceeded in case it isn't completed yet
-    finishExceededTtfdSpan(ttidSpan);
+    finishExceededTtfdSpan(ttfdSpan, ttidSpan);
     cancelTtfdAutoClose();
 
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
@@ -460,7 +472,7 @@ public final class ActivityLifecycleIntegration
     // set it to null in case its been just finished as cancelled
     appStartSpan = null;
     ttidSpanMap.remove(activity);
-    ttfdSpan = null;
+    ttfdSpanMap.remove(activity);
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
     // stack still.
@@ -506,7 +518,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void onFirstFrameDrawn(final @Nullable ISpan ttidSpan) {
+  private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
     if (options != null && ttidSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
       final long durationNanos = endDate.diff(ttidSpan.getStartDate());
@@ -526,7 +538,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void onFullFrameDrawn() {
+  private void onFullFrameDrawn(final @Nullable ISpan ttfdSpan) {
     if (options != null && ttfdSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
       final long durationNanos = endDate.diff(ttfdSpan.getStartDate());
@@ -540,12 +552,13 @@ public final class ActivityLifecycleIntegration
     cancelTtfdAutoClose();
   }
 
-  private void finishExceededTtfdSpan(final @Nullable ISpan ttidSpan) {
-    if (ttfdSpan == null) {
+  private void finishExceededTtfdSpan(
+      final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
+    if (ttfdSpan == null || ttfdSpan.isFinished()) {
       return;
     }
     ttfdSpan.setDescription(getExceededTtfdDesc(ttfdSpan));
-    // We set the end timestamp of the ttfd span to be equal to the ttid span. This way,
+    // We set the end timestamp of the ttfd span to be equal to the ttid span.
     final @Nullable SentryDate ttidEndDate = ttidSpan != null ? ttidSpan.getFinishDate() : null;
     final @NotNull SentryDate ttfdEndDate =
         ttidEndDate != null ? ttidEndDate : ttfdSpan.getStartDate();
@@ -577,9 +590,9 @@ public final class ActivityLifecycleIntegration
   }
 
   @TestOnly
-  @Nullable
-  ISpan getTtfdSpan() {
-    return ttfdSpan;
+  @NotNull
+  WeakHashMap<Activity, ISpan> getTtfdSpanMap() {
+    return ttfdSpanMap;
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {

@@ -8,6 +8,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
@@ -86,7 +87,8 @@ public final class AsyncHttpTransport implements ITransport {
       }
     } else {
       SentryEnvelope envelopeThatMayIncludeClientReport;
-      if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
+      if (HintUtils.hasType(
+          hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
         envelopeThatMayIncludeClientReport =
             options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
       } else {
