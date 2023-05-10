@@ -1,4 +1,4 @@
-name: 'Integration Tests - Ui tests'
+name: 'Integration Tests'
 on:
   push:
     branches:
@@ -7,6 +7,14 @@ on:
   pull_request:
 
 jobs:
+  cancel-previous-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # pin@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
   test:
     name: Ui tests
     runs-on: ubuntu-latest
@@ -24,6 +32,50 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      # Clean, build and release a test apk
+      - name: Make assembleUiTests
+        run: make assembleUiTests
+
+      # We stop gradle at the end to make sure the cache folders
+      # don't contain any lock files and are free to be cached.
+      - name: Make stop
+        run: make stop
+
+      - name: Run Tests in SauceLab
+        uses: saucelabs/saucectl-run-action@f401339df4c4b84945783f16b45fd545ac52a2eb # pin@v3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          sauce-username: ${{ secrets.SAUCE_USERNAME }}
+          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
+          config-file: .sauce/sentry-uitest-android-ui.yml
+        if: env.SAUCE_USERNAME != null
+
+  agp-matrix-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agp: [ '8.0.0','8.1.0-alpha11' ]
+
+    name: AGP Matrix Sample Release - AGP ${{ matrix.agp }}
+    env:
+      VERSION_AGP: ${{ matrix.agp }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629 # pin@v2
+
+      - name: Setup Java Version
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       # Clean, build and release a test apk
       - name: Make assembleUiTests
