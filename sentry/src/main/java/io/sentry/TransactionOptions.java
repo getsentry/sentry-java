@@ -1,9 +1,8 @@
 package io.sentry;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
+/** Sentry Transaction options */
 public final class TransactionOptions extends SpanOptions {
 
   private @Nullable CustomSamplingContext customSamplingContext = null;
