@@ -32,7 +32,7 @@ suites:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10 Plus - api 30 (11) - high end
+      - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10+ - api 30 (11) - high end
       - id: Samsung_Galaxy_A71_5G_real_us # Samsung Galaxy A71 5G - api 30 (11) - mid end
       - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11) - low end
 

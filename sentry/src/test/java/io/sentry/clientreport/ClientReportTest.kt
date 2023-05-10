@@ -13,9 +13,9 @@ import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
-import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -196,8 +196,8 @@ class ClientReportTestHelper(val options: SentryOptions) {
 
     companion object {
         fun retryableHint() = HintUtils.createWithTypeCheckHint(TestRetryable())
-        fun diskFlushNotificationHint() = HintUtils.createWithTypeCheckHint(TestDiskFlushNotification())
-        fun retryableDiskFlushNotificationHint() = HintUtils.createWithTypeCheckHint(TestRetryableDiskFlushNotification())
+        fun uncaughtExceptionHint() = HintUtils.createWithTypeCheckHint(TestUncaughtExceptionHint())
+        fun retryableUncaughtExceptionHint() = HintUtils.createWithTypeCheckHint(TestRetryableUncaughtException())
 
         fun assertClientReport(clientReportRecorder: IClientReportRecorder, expectedEvents: List<DiscardedEvent>) {
             val recorder = clientReportRecorder as ClientReportRecorder
@@ -229,7 +229,7 @@ class TestRetryable : Retryable {
     }
 }
 
-class TestRetryableDiskFlushNotification : Retryable, DiskFlushNotification {
+class TestRetryableUncaughtException : UncaughtExceptionHint(0, NoOpLogger.getInstance()), Retryable {
     private var retry = false
     var flushed = false
 
@@ -246,7 +246,7 @@ class TestRetryableDiskFlushNotification : Retryable, DiskFlushNotification {
     }
 }
 
-class TestDiskFlushNotification : DiskFlushNotification {
+class TestUncaughtExceptionHint : UncaughtExceptionHint(0, NoOpLogger.getInstance()) {
     var flushed = false
 
     override fun markFlushed() {

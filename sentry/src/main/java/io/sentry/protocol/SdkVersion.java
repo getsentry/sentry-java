@@ -160,6 +160,19 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     return sdk;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SdkVersion that = (SdkVersion) o;
+    return name.equals(that.name) && version.equals(that.version);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, version);
+  }
+
   // JsonKeys
 
   public static final class JsonKeys {

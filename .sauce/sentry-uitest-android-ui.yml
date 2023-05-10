@@ -37,7 +37,7 @@ suites:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10 Plus - api 30 (11)
+      - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10+ - api 30 (11)
 
   - name: "Android 10 Ui test (api 29)"
     testOptions:
