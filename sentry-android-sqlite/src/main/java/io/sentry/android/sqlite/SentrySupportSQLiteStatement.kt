@@ -5,10 +5,7 @@ import androidx.sqlite.db.SupportSQLiteStatement
 import io.sentry.Sentry
 import io.sentry.SpanStatus
 
-class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement): SupportSQLiteStatement by delegate {
-
-    private val sqLiteSpanManager = SQLiteSpanManager()
-
+class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement, private val sqLiteSpanManager: SQLiteSpanManager, private val sql: String): SupportSQLiteStatement by delegate {
 
     /**
      * Execute this SQL statement, if it is not a SELECT / INSERT / DELETE / UPDATE, for example
@@ -18,7 +15,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement)
      * some reason
      */
     override fun execute() {
-        return sqLiteSpanManager.performSql {
+        return sqLiteSpanManager.performSql("execute", sql) {
             delegate.execute()
         }
     }
@@ -32,7 +29,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement)
      * some reason
      */
     override fun executeUpdateDelete(): Int {
-        return sqLiteSpanManager.performSql {
+        return sqLiteSpanManager.performSql("executeUpdateDelete", sql) {
             delegate.executeUpdateDelete()
         }
     }
@@ -47,7 +44,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement)
      * some reason
      */
     override fun executeInsert(): Long {
-        return sqLiteSpanManager.performSql {
+        return sqLiteSpanManager.performSql("executeInsert", sql) {
             delegate.executeInsert()
         }
     }
@@ -61,7 +58,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement)
      * @throws [android.database.sqlite.SQLiteDoneException] if the query returns zero rows
      */
     override fun simpleQueryForLong(): Long {
-        return sqLiteSpanManager.performSql {
+        return sqLiteSpanManager.performSql("simpleQueryForLong", sql) {
             delegate.simpleQueryForLong()
         }
     }
@@ -75,7 +72,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement)
      * @throws [android.database.sqlite.SQLiteDoneException] if the query returns zero rows
      */
     override fun simpleQueryForString(): String? {
-        return sqLiteSpanManager.performSql {
+        return sqLiteSpanManager.performSql("simpleQueryForString", sql) {
             delegate.simpleQueryForString()
         }
     }

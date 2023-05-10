@@ -6,21 +6,17 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration
 
 class SentrySupportSQLiteOpenHelper(private val delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper by delegate {
 
-    override val writableDatabase: SupportSQLiteDatabase
-        get() = SentrySupportSQLiteDatabase(delegate.writableDatabase)
+    private val sqLiteSpanManager = SQLiteSpanManager()
 
-    /**
-     * Factory class to create instances of [SupportSQLiteOpenHelper] using
-     * [Configuration].
-     */
-    fun interface Factory {
-        /**
-         * Creates an instance of [SupportSQLiteOpenHelper] using the given configuration.
-         *
-         * @param configuration The configuration to use while creating the open helper.
-         *
-         * @return A SupportSQLiteOpenHelper which can be used to open a database.
-         */
-        fun create(configuration: Configuration): SupportSQLiteOpenHelper
+    private val sentryDatabase: SupportSQLiteDatabase = SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)
+
+    override val writableDatabase: SupportSQLiteDatabase
+        get() = sentryDatabase
+
+    companion object {
+
+        fun create(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper {
+            return SentrySupportSQLiteOpenHelper(delegate)
+        }
     }
 }
