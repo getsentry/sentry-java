@@ -65,6 +65,7 @@ android {
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
+            testProguardFiles("proguard-rules.pro")
         }
     }
 
