@@ -36,4 +36,6 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+-dontwarn org.opentest4j.AssertionFailedError
+-dontwarn org.mockito.internal.**
 
