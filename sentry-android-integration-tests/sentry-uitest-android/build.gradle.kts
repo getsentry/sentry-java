@@ -8,7 +8,6 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
-    id("com.slack.keeper")
 }
 
 android {
@@ -86,14 +85,6 @@ android {
     variantFilter {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
-        }
-    }
-}
-
-androidComponents {
-    beforeVariants {
-        if (it.buildType == "release") {
-            it.optInToKeeper()
         }
     }
 }

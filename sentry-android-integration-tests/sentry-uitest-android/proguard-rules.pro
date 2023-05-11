@@ -20,6 +20,8 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+-dontshrink
+
 -dontwarn com.google.errorprone.**
 -dontwarn com.sun.jna.**
 -dontwarn edu.umd.cs.findbugs.**
