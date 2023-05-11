@@ -3,7 +3,7 @@ kind: espresso
 sauce:
   region: us-west-1
   # Controls how many suites are executed at the same time (sauce test env only).
-  concurrency: 4
+  concurrency: 1
   metadata:
     name: Android end2end tests with Espresso
     tags:
