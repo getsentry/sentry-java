@@ -1,4 +1,3 @@
-import com.slack.keeper.optInToKeeper
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
 
