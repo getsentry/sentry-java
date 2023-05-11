@@ -32,6 +32,7 @@ class SentryStackFrameSerializationTest {
             symbolAddr = "180e12cd-1fa8-405d-8dd8-e87b33fa2eb0"
             instructionAddr = "19864a78-2466-461f-9f0b-93a5c9ae7622"
             rawFunction = "f33035a4-0cf0-453d-b6f4-d7c27e9af924"
+            symbol = "d9807ffe-d517-11ed-afa1-0242ac120002"
         }
     }
     private val fixture = Fixture()

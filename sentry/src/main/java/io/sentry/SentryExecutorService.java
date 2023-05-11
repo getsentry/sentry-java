@@ -52,4 +52,11 @@ final class SentryExecutorService implements ISentryExecutorService {
       }
     }
   }
+
+  @Override
+  public boolean isClosed() {
+    synchronized (executorService) {
+      return executorService.isShutdown();
+    }
+  }
 }

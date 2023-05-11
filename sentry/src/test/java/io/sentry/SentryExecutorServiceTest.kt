@@ -10,6 +10,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryExecutorServiceTest {
@@ -86,5 +87,21 @@ class SentryExecutorServiceTest {
         }
         await.untilFalse(atomicBoolean)
         sentryExecutor.close(15000)
+    }
+
+    @Test
+    fun `SentryExecutorService isClosed returns true if executor is shutdown`() {
+        val executor = mock<ScheduledExecutorService>()
+        val sentryExecutor = SentryExecutorService(executor)
+        whenever(executor.isShutdown).thenReturn(true)
+        assertTrue(sentryExecutor.isClosed)
+    }
+
+    @Test
+    fun `SentryExecutorService isClosed returns false if executor is not shutdown`() {
+        val executor = mock<ScheduledExecutorService>()
+        val sentryExecutor = SentryExecutorService(executor)
+        whenever(executor.isShutdown).thenReturn(false)
+        assertFalse(sentryExecutor.isClosed)
     }
 }

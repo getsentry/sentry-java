@@ -2,6 +2,9 @@ package io.sentry
 
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
+import io.sentry.protocol.SentryStackFrame
+import io.sentry.protocol.SentryStackTrace
+import io.sentry.protocol.SentryThread
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -15,7 +18,11 @@ import kotlin.test.assertTrue
 class SentryExceptionFactoryTest {
     private class Fixture {
 
-        fun getSut(stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(listOf("io.sentry"), listOf())): SentryExceptionFactory {
+        fun getSut(
+            stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(
+                SentryOptions().apply { addInAppExclude("io.sentry") }
+            )
+        ): SentryExceptionFactory {
             return SentryExceptionFactory(stackTraceFactory)
         }
     }
@@ -88,7 +95,8 @@ class SentryExceptionFactoryTest {
     fun `When ExceptionMechanismException has threads snapshot, stack trace should set snapshot flag`() {
         val error = Exception("Exception")
 
-        val throwable = ExceptionMechanismException(Mechanism(), error, Thread.currentThread(), true)
+        val throwable =
+            ExceptionMechanismException(Mechanism(), error, Thread.currentThread(), true)
         val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
 
         assertTrue(sentryExceptions[0].stacktrace?.snapshot!!)
@@ -136,6 +144,49 @@ class SentryExceptionFactoryTest {
         val queue = fixture.getSut().extractExceptionQueue(throwable)
 
         assertEquals(thread.id, queue.first.threadId)
+    }
+
+    @Test
+    fun `returns empty list if stacktrace is not available for SentryThread`() {
+        val thread = SentryThread()
+        val mechanism = Mechanism()
+        val throwable = Exception("msg")
+
+        val exceptions = fixture.getSut().getSentryExceptionsFromThread(thread, mechanism, throwable)
+
+        assertTrue(exceptions.isEmpty())
+    }
+
+    @Test
+    fun `returns proper exception backfilled from SentryThread`() {
+        val thread = SentryThread().apply {
+            id = 121
+            stacktrace = SentryStackTrace().apply {
+                frames = listOf(
+                    SentryStackFrame().apply {
+                        lineno = 777
+                        module = "io.sentry.samples.MainActivity"
+                        function = "run"
+                    }
+                )
+            }
+        }
+        val mechanism = Mechanism().apply { type = "AppExitInfo" }
+        val throwable = Exception("msg")
+
+        val exceptions = fixture.getSut().getSentryExceptionsFromThread(thread, mechanism, throwable)
+
+        val exception = exceptions.first()
+        assertEquals("AppExitInfo", exception.mechanism!!.type)
+        assertEquals("java.lang", exception.module)
+        assertEquals("Exception", exception.type)
+        assertEquals("msg", exception.value)
+        assertEquals(121, exception.threadId)
+        assertEquals(true, exception.stacktrace!!.snapshot)
+        val frame = exception.stacktrace!!.frames!!.first()
+        assertEquals("io.sentry.samples.MainActivity", frame.module)
+        assertEquals("run", frame.function)
+        assertEquals(777, frame.lineno)
     }
 
     internal class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)

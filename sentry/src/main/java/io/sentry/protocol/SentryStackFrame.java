@@ -93,6 +93,14 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    */
   private @Nullable String instructionAddr;
 
+  /**
+   * Potentially mangled name of the symbol as it appears in an executable.
+   *
+   * <p>This is different from a function name by generally being the mangled name that appears
+   * natively in the binary. This is relevant for languages like Swift, C++ or Rust.
+   */
+  private @Nullable String symbol;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -267,6 +275,15 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     this.rawFunction = rawFunction;
   }
 
+  @Nullable
+  public String getSymbol() {
+    return symbol;
+  }
+
+  public void setSymbol(final @Nullable String symbol) {
+    this.symbol = symbol;
+  }
+
   // region json
 
   @Nullable
@@ -296,6 +313,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     public static final String SYMBOL_ADDR = "symbol_addr";
     public static final String INSTRUCTION_ADDR = "instruction_addr";
     public static final String RAW_FUNCTION = "raw_function";
+    public static final String SYMBOL = "symbol";
   }
 
   @Override
@@ -346,6 +364,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     }
     if (rawFunction != null) {
       writer.name(JsonKeys.RAW_FUNCTION).value(rawFunction);
+    }
+    if (symbol != null) {
+      writer.name(JsonKeys.SYMBOL).value(symbol);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -411,6 +432,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.RAW_FUNCTION:
             sentryStackFrame.rawFunction = reader.nextStringOrNull();
+            break;
+          case JsonKeys.SYMBOL:
+            sentryStackFrame.symbol = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {
