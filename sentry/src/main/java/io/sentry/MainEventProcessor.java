@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -66,7 +65,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
-    final @NotNull List<DebugImage> debugImages = new CopyOnWriteArrayList<>();
+    final @NotNull List<DebugImage> debugImages = new ArrayList<>();
 
     if (options.getProguardUuid() != null) {
       final DebugImage proguardMappingImage = new DebugImage();
