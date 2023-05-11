@@ -33,8 +33,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
 
     final SentryStackTraceFactory sentryStackTraceFactory =
-        new SentryStackTraceFactory(
-            this.options.getInAppExcludes(), this.options.getInAppIncludes());
+        new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
     sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory, this.options);

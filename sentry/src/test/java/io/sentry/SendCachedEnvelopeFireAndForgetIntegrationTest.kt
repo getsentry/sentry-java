@@ -82,6 +82,16 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         assert(fixture.options.sdkVersion!!.integrationSet.contains("SendCachedEnvelopeFireAndForget"))
     }
 
+    @Test
+    fun `register does not throw on executor shut down`() {
+        fixture.options.cacheDirPath = "cache"
+        fixture.options.executorService.close(0)
+        whenever(fixture.callback.create(any(), any())).thenReturn(mock())
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?"), any())
+    }
+
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
         override fun create(hub: IHub, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
             return null

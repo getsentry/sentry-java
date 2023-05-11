@@ -7,6 +7,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
@@ -74,6 +75,13 @@ final class SendCachedEnvelopeIntegration implements Integration {
         }
       }
       androidOptions.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
+    } catch (RejectedExecutionException e) {
+      androidOptions
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
+              e);
     } catch (Throwable e) {
       androidOptions
           .getLogger()
