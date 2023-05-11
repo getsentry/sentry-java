@@ -287,7 +287,6 @@ final class AndroidOptionsInitializer {
       }
     }
 
-    // TODO when to parse, when not?
     final @Nullable Properties debugMetaProperties =
         loadDebugMetaProperties(context, options.getLogger());
 
@@ -304,12 +303,9 @@ final class AndroidOptionsInitializer {
             debugMetaProperties.getProperty("io.sentry.bundle-ids");
         options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
         if (bundleIdStrings != null) {
-          // TODO really nullable?
-          final @Nullable String[] bundleIds = bundleIdStrings.split(",", -1);
-          if (bundleIds != null) {
-            for (final String bundleId : bundleIds) {
-              options.addBundleId(bundleId);
-            }
+          final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
+          for (final String bundleId : bundleIds) {
+            options.addBundleId(bundleId);
           }
         }
       }
