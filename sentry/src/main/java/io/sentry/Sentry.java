@@ -232,6 +232,48 @@ public final class Sentry {
     for (final Integration integration : options.getIntegrations()) {
       integration.register(HubAdapter.getInstance(), options);
     }
+
+    notifyOptionsObservers(options);
+
+    finalizePreviousSession(options, HubAdapter.getInstance());
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void finalizePreviousSession(
+      final @NotNull SentryOptions options, final @NotNull IHub hub) {
+    // enqueue a task to finalize previous session. Since the executor
+    // is single-threaded, this task will be enqueued sequentially after all integrations that have
+    // to modify the previous session have done their work, even if they do that async.
+    try {
+      options.getExecutorService().submit(new PreviousSessionFinalizer(options, hub));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
+    }
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void notifyOptionsObservers(final @NotNull SentryOptions options) {
+    // enqueue a task to trigger the static options change for the observers. Since the executor
+    // is single-threaded, this task will be enqueued sequentially after all integrations that rely
+    // on the observers have done their work, even if they do that async.
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                // for static things like sentry options we can immediately trigger observers
+                for (final IOptionsObserver observer : options.getOptionsObservers()) {
+                  observer.setRelease(options.getRelease());
+                  observer.setProguardUuid(options.getProguardUuid());
+                  observer.setSdkVersion(options.getSdkVersion());
+                  observer.setDist(options.getDist());
+                  observer.setEnvironment(options.getEnvironment());
+                  observer.setTags(options.getTags());
+                }
+              });
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
+    }
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -844,7 +886,6 @@ public final class Sentry {
    * @param transactionOptions options for the transaction
    * @return created transaction.
    */
-  @ApiStatus.Internal
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {

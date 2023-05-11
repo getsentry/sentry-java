@@ -26,7 +26,6 @@ class AutomaticSpansTest : BaseUiTest() {
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
             options.isEnableAutoActivityLifecycleTracing = true
-            options.beforeSendTransaction
             options.isEnableTimeToFullDisplayTracing = true
             options.beforeSendTransaction =
                 SentryOptions.BeforeSendTransactionCallback { transaction, _ ->

@@ -12,7 +12,7 @@ class SentryThreadFactoryTest {
 
     class Fixture {
         internal fun getSut(attachStacktrace: Boolean = true) = SentryThreadFactory(
-            SentryStackTraceFactory(listOf("io.sentry"), listOf()),
+            SentryStackTraceFactory(SentryOptions().apply { addInAppExclude("io.sentry") }),
             with(SentryOptions()) {
                 isAttachStacktrace = attachStacktrace
                 this

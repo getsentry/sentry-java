@@ -9,6 +9,7 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
+import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
@@ -25,12 +26,15 @@ import org.jetbrains.annotations.Nullable;
 
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
 @ApiStatus.Internal
-public final class ViewHierarchyEventProcessor implements EventProcessor {
+public final class ViewHierarchyEventProcessor implements EventProcessor, IntegrationName {
 
   private final @NotNull SentryAndroidOptions options;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
+    if (options.isAttachViewHierarchy()) {
+      addIntegrationToSdkVersion();
+    }
   }
 
   @Override
