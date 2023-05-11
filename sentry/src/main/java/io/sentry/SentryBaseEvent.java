@@ -11,6 +11,7 @@ import io.sentry.util.CollectionUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -444,6 +445,15 @@ public abstract class SentryBaseEvent {
           return true;
         case JsonKeys.EXTRA:
           Map<String, Object> deserializedExtra = (Map<String, Object>) reader.nextObjectOrNull();
+          if (deserializedExtra != null) {
+            Iterator<Map.Entry<String, Object>> iterator = deserializedExtra.entrySet().iterator();
+            while (iterator.hasNext()) {
+              Map.Entry<String, Object> entry = iterator.next();
+              if (entry.getKey() == null || entry.getValue() == null) {
+                iterator.remove();
+              }
+            }
+          }
           baseEvent.extra = CollectionUtils.newConcurrentHashMap(deserializedExtra);
           return true;
       }
