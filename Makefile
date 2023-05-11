@@ -48,5 +48,5 @@ assembleBenchmarkTestRelease:
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease -DtestBuildType=release
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease -DtestBuildType=release
