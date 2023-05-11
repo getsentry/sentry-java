@@ -20,6 +20,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.UrlUtils
+import io.sentry.vendor.Base64
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor, IntegrationName {
@@ -96,10 +97,14 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         val method = request.method
 
         val operationName = operationNameFromHeaders(request)
-        val operationType = request.valueForHeader(SENTRY_APOLLO_3_OPERATION_TYPE)
+        val operationType = request.valueForHeader(SENTRY_APOLLO_3_OPERATION_TYPE)?.let {
+            String(Base64.decode(it, Base64.DEFAULT))
+        }
         val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
         val operationId = request.valueForHeader("X-APOLLO-OPERATION-ID")
-        val variables = request.valueForHeader(SENTRY_APOLLO_3_VARIABLES)
+        val variables = request.valueForHeader(SENTRY_APOLLO_3_VARIABLES)?.let {
+            String(Base64.decode(it, Base64.DEFAULT))
+        }
         val description = "${operationType ?: method} ${operationName ?: urlDetails.urlOrFallback}"
 
         return activeSpan.startChild(operation, description).apply {
@@ -116,7 +121,9 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     }
 
     private fun operationNameFromHeaders(request: HttpRequest): String? {
-        return request.valueForHeader(SENTRY_APOLLO_3_OPERATION_NAME) ?: request.valueForHeader("X-APOLLO-OPERATION-NAME")
+        return request.valueForHeader(SENTRY_APOLLO_3_OPERATION_NAME)?.let {
+            String(Base64.decode(it, Base64.DEFAULT))
+        } ?: request.valueForHeader("X-APOLLO-OPERATION-NAME")
     }
 
     private fun HttpRequest.valueForHeader(key: String) = headers.firstOrNull { it.name == key }?.value
