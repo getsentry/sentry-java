@@ -886,7 +886,6 @@ public final class Sentry {
    * @param transactionOptions options for the transaction
    * @return created transaction.
    */
-  @ApiStatus.Internal
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
