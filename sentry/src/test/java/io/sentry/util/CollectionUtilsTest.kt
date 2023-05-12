@@ -25,4 +25,10 @@ class CollectionUtilsTest {
         assertEquals("key3", result[1])
         assertEquals(2, result.size)
     }
+
+    @Test
+    fun `concurrent hashmap creation with null returns null`() {
+        val result: Map<String, String>? = CollectionUtils.newConcurrentHashMap(null)
+        assertEquals(null, result)
+    }
 }
