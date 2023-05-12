@@ -118,16 +118,32 @@ class EnvelopeTests : BaseUiTest() {
                 val maxTimestampAllowed = profilingTraceData.durationNs.toLong() + TimeUnit.SECONDS.toNanos(2)
                 val allMeasurements = profilingTraceData.measurementsMap.values
 
-                allMeasurements.filter { it.values.isNotEmpty() }.forEach { measurement ->
+                profilingTraceData.measurementsMap.entries.filter {
+                    it.value.values.isNotEmpty()
+                }.forEach { entry ->
+                    val name = entry.key
+                    val measurement = entry.value
+
                     val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }
                     // There should be no measurement before the profile starts
-                    assertTrue(values.first().relativeStartNs.toLong() > 0)
+                    assertTrue(
+                        values.first().relativeStartNs.toLong() > 0,
+                        "First measurement value for '$name' is <=0"
+                    )
                     // There should be no measurement after the profile ends
-                    assertTrue(values.last().relativeStartNs.toLong() < maxTimestampAllowed)
+                    assertTrue(
+                        values.last().relativeStartNs.toLong() < maxTimestampAllowed,
+                        "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
+                    )
 
                     // Timestamps of measurements should differ at least 10 milliseconds from each other
                     (1 until values.size).forEach { i ->
-                        assertTrue(values[i].relativeStartNs.toLong() > values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(10))
+                        assertTrue(
+                            values[i].relativeStartNs.toLong() > values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(
+                                10
+                            ),
+                            "Measurement value timestamp for '$name' does not differ at least 10ms"
+                        )
                     }
                 }
 
