@@ -16,7 +16,7 @@
     - The old watchdog implementation will continue working for older API versions (Android < 11)
 - Open up `TransactionOptions`, `ITransaction` and `IHub` methods allowing consumers modify start/end timestamp of transactions and spans ([#2701](https://github.com/getsentry/sentry-java/pull/2701))
 - Send source bundle IDs to Sentry to enable source context ([#2663](https://github.com/getsentry/sentry-java/pull/2663))
-  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633)
+  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
 
 ### Fixes
 
