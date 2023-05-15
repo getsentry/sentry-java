@@ -236,7 +236,7 @@ class SentryTest {
 
     @Test
     fun `using sentry before calling init creates NoOpHub but after init Sentry uses a new clone`() {
-        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        // noop as not yet initialized, caches NoOpHub in hubMap
         Sentry.captureMessage("noop caused")
 
         assertTrue(Sentry.getCurrentHub() is NoOpHub)
@@ -260,7 +260,7 @@ class SentryTest {
 
     @Test
     fun `main hub can be cloned and does not share scope with current hub`() {
-        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        // noop as not yet initialized, caches NoOpHub in hubMap
         Sentry.addBreadcrumb("breadcrumbNoOp")
         Sentry.captureMessage("messageNoOp")
 
@@ -311,7 +311,7 @@ class SentryTest {
 
     @Test
     fun `main hub is not cloned in global hub mode and shares scope with current hub`() {
-        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        // noop as not yet initialized, caches NoOpHub in hubMap
         Sentry.addBreadcrumb("breadcrumbNoOp")
         Sentry.captureMessage("messageNoOp")
 
