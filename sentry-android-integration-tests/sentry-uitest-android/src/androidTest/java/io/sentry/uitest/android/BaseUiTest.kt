@@ -1,7 +1,6 @@
 package io.sentry.uitest.android
 
 import android.content.Context
-import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingPolicies
