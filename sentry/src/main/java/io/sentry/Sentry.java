@@ -19,6 +19,8 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +32,7 @@ public final class Sentry {
   private Sentry() {}
 
   /** Holds Hubs per thread or only mainHub if globalHubMode is enabled. */
-  private static final @NotNull ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+  private static final @NotNull Map<Long, IHub> hubMap = new ConcurrentHashMap<>();
 
   /** The Main Hub or NoOp if Sentry is disabled. */
   private static volatile @NotNull IHub mainHub = NoOpHub.getInstance();
@@ -51,10 +53,11 @@ public final class Sentry {
     if (globalHubMode) {
       return mainHub;
     }
-    IHub hub = currentHub.get();
+    Thread currentThread = Thread.currentThread();
+    IHub hub = hubMap.get(currentThread.getId());
     if (hub == null || hub instanceof NoOpHub) {
       hub = mainHub.clone();
-      currentHub.set(hub);
+      hubMap.put(currentThread.getId(), hub);
     }
     return hub;
   }
@@ -75,7 +78,7 @@ public final class Sentry {
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   public static void setCurrentHub(final @NotNull IHub hub) {
-    currentHub.set(hub);
+    hubMap.put(Thread.currentThread().getId(), hub);
   }
 
   /**
@@ -213,7 +216,7 @@ public final class Sentry {
     final IHub hub = getCurrentHub();
     mainHub = new Hub(options);
 
-    currentHub.set(mainHub);
+    hubMap.put(Thread.currentThread().getId(), mainHub);
 
     hub.close();
 
@@ -378,11 +381,16 @@ public final class Sentry {
 
   /** Close the SDK */
   public static synchronized void close() {
-    final IHub hub = getCurrentHub();
     mainHub = NoOpHub.getInstance();
-    // remove thread local to avoid memory leak
-    currentHub.remove();
-    hub.close();
+    // close the current threads hub
+    Thread currentThread = Thread.currentThread();
+    IHub hub = hubMap.get(currentThread.getId());
+    if (hub != null) {
+      hub.close();
+      // remove the current threads hub from the map
+      hubMap.remove(currentThread.getId());
+    }
+
   }
 
   /**
