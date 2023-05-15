@@ -8,6 +8,7 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options for Android */
@@ -132,6 +133,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   private final long startupCrashDurationThresholdMillis = 2000; // 2s
 
   private boolean enableFramesTracking = true;
+
+  private @Nullable String nativeSdkName = null;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -401,5 +404,26 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Internal
   public long getStartupCrashDurationThresholdMillis() {
     return startupCrashDurationThresholdMillis;
+  }
+
+  /**
+   * Sets the sdk name for the sentry-native ndk module. The value is used for the event->sdk
+   * attribute and the sentry_client auth header.
+   *
+   * @param nativeSdkName the native sdk name
+   */
+  @ApiStatus.Internal
+  public void setNativeSdkName(final @Nullable String nativeSdkName) {
+    this.nativeSdkName = nativeSdkName;
+  }
+
+  /**
+   * Returns the sdk name for the sentry native ndk module.
+   *
+   * @return the custom SDK name if set, otherwise null
+   */
+  @ApiStatus.Internal
+  public @Nullable String getNativeSdkName() {
+    return nativeSdkName;
   }
 }
