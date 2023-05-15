@@ -17,7 +17,8 @@ jobs:
           access_token: ${{ github.token }}
 
   agp-matrix-compatibility:
-    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
@@ -55,8 +56,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@d94c3fbe4fe6a29e4a5ba47c12fb47677c73656b # pin@v2
         with:
           api-level: 30
-          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          disk-size: 6000M
-          heap-size: 600M
+          disable-spellchecker: true
+          target: 'aosp_atd'
+          channel: canary # Necessary for ATDs
           script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedAndroidTest --daemon
