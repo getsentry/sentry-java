@@ -15,11 +15,14 @@
       - If you would like us to provide support for the old approach working alongside the new one on Android 11 and above (e.g. for raising events for slow code on main thread), consider upvoting [this issue](https://github.com/getsentry/sentry-java/issues/2693).
     - The old watchdog implementation will continue working for older API versions (Android < 11)
 - Open up `TransactionOptions`, `ITransaction` and `IHub` methods allowing consumers modify start/end timestamp of transactions and spans ([#2701](https://github.com/getsentry/sentry-java/pull/2701))
+- Send source bundle IDs to Sentry to enable source context ([#2663](https://github.com/getsentry/sentry-java/pull/2663))
+  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
 
 ### Fixes
 
 - Android Profiler on calling thread ([#2691](https://github.com/getsentry/sentry-java/pull/2691))
 - Use `configureScope` instead of `withScope` in `Hub.close()`. This ensures that the main scope releases the in-memory data when closing a hub instance. ([#2688](https://github.com/getsentry/sentry-java/pull/2688))
+- Remove null keys/values before creating concurrent hashmap in order to avoid NPE ([#2708](https://github.com/getsentry/sentry-java/pull/2708))
 - Exclude SentryOptions from R8/ProGuard obfuscation ([#2699](https://github.com/getsentry/sentry-java/pull/2699))
 
 ### Dependencies

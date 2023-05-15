@@ -87,9 +87,10 @@ class SentryBaseEventSerializationTest {
 
     @Test
     fun deserialize() {
+        val inputJson = SerializationUtils.sanitizedFile("json/sentry_base_event_with_null_extra.json")
         val expectedJson = SerializationUtils.sanitizedFile("json/sentry_base_event.json")
         val actual = SerializationUtils.deserializeJson(
-            expectedJson,
+            inputJson,
             Sut.Deserializer(),
             fixture.logger
         )
