@@ -62,4 +62,4 @@ jobs:
           disable-spellchecker: true
           target: 'aosp_atd'
           channel: canary # Necessary for ATDs
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedAndroidTest --daemon
+          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
