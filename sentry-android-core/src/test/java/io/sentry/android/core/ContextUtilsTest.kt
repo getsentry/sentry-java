@@ -12,17 +12,22 @@ import org.mockito.kotlin.whenever
 import java.io.FileNotFoundException
 
 object ContextUtilsTest {
-    fun mockMetaData(mockContext: Context = createMockContext(hasAppContext = false), metaData: Bundle): Context {
+    fun mockMetaData(mockContext: Context = createMockContext(hasAppContext = false), metaData: Bundle, assets: AssetManager? = null): Context {
         val mockPackageManager = mock<PackageManager>()
         val mockApplicationInfo = mock<ApplicationInfo>()
-        val assets = mock<AssetManager>()
 
         whenever(mockContext.packageName).thenReturn("io.sentry.sample.test")
         whenever(mockContext.packageManager).thenReturn(mockPackageManager)
         whenever(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA))
             .thenReturn(mockApplicationInfo)
-        whenever(assets.open(any())).thenThrow(FileNotFoundException())
-        whenever(mockContext.assets).thenReturn(assets)
+
+        if (assets == null) {
+            val mockAssets = mock<AssetManager>()
+            whenever(mockAssets.open(any())).thenThrow(FileNotFoundException())
+            whenever(mockContext.assets).thenReturn(mockAssets)
+        } else {
+            whenever(mockContext.assets).thenReturn(assets)
+        }
 
         mockApplicationInfo.metaData = metaData
         return mockContext

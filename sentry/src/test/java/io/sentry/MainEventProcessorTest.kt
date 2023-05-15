@@ -49,6 +49,7 @@ class MainEventProcessorTest {
             resolveHostDelay: Long? = null,
             hostnameCacheDuration: Long = 10,
             proguardUuid: String? = null,
+            bundleIds: List<String>? = null,
             modules: Map<String, String>? = null
         ): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
@@ -63,6 +64,7 @@ class MainEventProcessorTest {
             if (proguardUuid != null) {
                 sentryOptions.proguardUuid = proguardUuid
             }
+            bundleIds?.let { it.forEach { sentryOptions.addBundleId(it) } }
             tags.forEach { sentryOptions.setTag(it.key, it.value) }
             whenever(getLocalhost.canonicalHostName).thenAnswer {
                 if (resolveHostDelay != null) {
@@ -489,6 +491,23 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `when event does not have debug meta and bundle ids are set, attaches debug information`() {
+        val sut = fixture.getSut(bundleIds = listOf("id1", "id2"))
+
+        var event = SentryEvent()
+        event = sut.process(event, Hint())
+
+        assertNotNull(event.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].debugId)
+                assertEquals("jvm", images[0].type)
+                assertEquals("id2", images[1].debugId)
+                assertEquals("jvm", images[1].type)
+            }
+        }
+    }
+
+    @Test
     fun `when event has debug meta and proguard uuids are set, attaches debug information`() {
         val sut = fixture.getSut(proguardUuid = "id1")
 
@@ -500,6 +519,44 @@ class MainEventProcessorTest {
             assertNotNull(it.images) { images ->
                 assertEquals("id1", images[0].uuid)
                 assertEquals("proguard", images[0].type)
+            }
+        }
+    }
+
+    @Test
+    fun `when event has debug meta and bundle ids are set, attaches debug information`() {
+        val sut = fixture.getSut(bundleIds = listOf("id1", "id2"))
+
+        var event = SentryEvent()
+        event.debugMeta = DebugMeta()
+        event = sut.process(event, Hint())
+
+        assertNotNull(event.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].debugId)
+                assertEquals("jvm", images[0].type)
+                assertEquals("id2", images[1].debugId)
+                assertEquals("jvm", images[1].type)
+            }
+        }
+    }
+
+    @Test
+    fun `when event has debug meta as well as images and bundle ids are set, attaches debug information`() {
+        val sut = fixture.getSut(bundleIds = listOf("id1", "id2"))
+
+        var event = SentryEvent()
+        event.debugMeta = DebugMeta().also {
+            it.images = listOf()
+        }
+        event = sut.process(event, Hint())
+
+        assertNotNull(event.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].debugId)
+                assertEquals("jvm", images[0].type)
+                assertEquals("id2", images[1].debugId)
+                assertEquals("jvm", images[1].type)
             }
         }
     }
