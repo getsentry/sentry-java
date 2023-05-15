@@ -334,31 +334,6 @@ final class AndroidOptionsInitializer {
     return null;
   }
 
-  private static @Nullable String getProguardUUID(
-      final @NotNull Context context, final @NotNull ILogger logger) {
-    final AssetManager assets = context.getAssets();
-    // one may have thousands of asset files and looking up this list might slow down the SDK init.
-    // quite a bit, for this reason, we try to open the file directly and take care of errors
-    // like FileNotFoundException
-    try (final InputStream is =
-        new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
-      final Properties properties = new Properties();
-      properties.load(is);
-
-      final String uuid = properties.getProperty("io.sentry.ProguardUuids");
-      logger.log(SentryLevel.DEBUG, "Proguard UUID found: %s", uuid);
-      return uuid;
-    } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
-    } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
-    } catch (RuntimeException e) {
-      logger.log(SentryLevel.ERROR, "sentry-debug-meta.properties file is malformed.", e);
-    }
-
-    return null;
-  }
-
   /**
    * Returns the sentry release version (eg io.sentry.sample@1.0.0+10000) -
    * packageName@versionName+buildVersion
