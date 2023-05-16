@@ -41,6 +41,7 @@ public final class ExternalOptions {
       new CopyOnWriteArraySet<>();
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
+  private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -109,6 +110,9 @@ public final class ExternalOptions {
       options.addContextTag(contextTag);
     }
     options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
+    for (final String bundleId : propertiesProvider.getList("bundle-ids")) {
+      options.addBundleId(bundleId);
+    }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
     for (final String ignoredExceptionType :
@@ -334,5 +338,13 @@ public final class ExternalOptions {
 
   public void setSendClientReports(final @Nullable Boolean sendClientReports) {
     this.sendClientReports = sendClientReports;
+  }
+
+  public @NotNull Set<String> getBundleIds() {
+    return bundleIds;
+  }
+
+  public void addBundleId(final @NotNull String bundleId) {
+    bundleIds.add(bundleId);
   }
 }

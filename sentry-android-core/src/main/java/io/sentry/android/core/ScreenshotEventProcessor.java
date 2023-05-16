@@ -7,6 +7,7 @@ import android.app.Activity;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
+import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.util.HintUtils;
@@ -20,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * captured.
  */
 @ApiStatus.Internal
-public final class ScreenshotEventProcessor implements EventProcessor {
+public final class ScreenshotEventProcessor implements EventProcessor, IntegrationName {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -31,6 +32,9 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    if (options.isAttachScreenshot()) {
+      addIntegrationToSdkVersion();
+    }
   }
 
   @Override

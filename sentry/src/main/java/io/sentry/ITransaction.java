@@ -42,6 +42,18 @@ public interface ITransaction extends ISpan {
   List<Span> getSpans();
 
   /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - the span description
+   * @param timestamp - the start timestamp of the span
+   * @return a new transaction span
+   */
+  @NotNull
+  ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp);
+
+  /**
    * Returns if transaction is sampled.
    *
    * @return is sampled

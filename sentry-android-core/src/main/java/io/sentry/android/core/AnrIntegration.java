@@ -10,6 +10,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -141,7 +142,7 @@ public final class AnrIntegration implements Integration, Closeable {
    * href="https://develop.sentry.dev/sdk/sessions/#crashed-abnormal-vs-errored">Develop Docs</a>
    * because we don't know whether the app has recovered after it or not.
    */
-  static final class AnrHint implements AbnormalExit {
+  static final class AnrHint implements AbnormalExit, TransactionEnd {
 
     private final boolean isBackgroundAnr;
 

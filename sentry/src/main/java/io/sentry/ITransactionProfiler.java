@@ -14,4 +14,7 @@ public interface ITransactionProfiler {
   ProfilingTraceData onTransactionFinish(
       @NotNull ITransaction transaction,
       @Nullable List<PerformanceCollectionData> performanceCollectionData);
+
+  /** Cancel the profiler and stops it. Used on SDK close. */
+  void close();
 }

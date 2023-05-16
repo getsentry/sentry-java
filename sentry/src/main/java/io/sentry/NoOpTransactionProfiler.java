@@ -23,4 +23,7 @@ public final class NoOpTransactionProfiler implements ITransactionProfiler {
       @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     return null;
   }
+
+  @Override
+  public void close() {}
 }

@@ -31,4 +31,9 @@ final class NoOpSentryExecutorService implements ISentryExecutorService {
 
   @Override
   public void close(long timeoutMillis) {}
+
+  @Override
+  public boolean isClosed() {
+    return false;
+  }
 }

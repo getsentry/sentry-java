@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -45,9 +46,18 @@ public final class DefaultTransactionPerformanceCollector
     if (!performanceDataMap.containsKey(transaction.getEventId().toString())) {
       performanceDataMap.put(transaction.getEventId().toString(), new ArrayList<>());
       // We schedule deletion of collected performance data after a timeout
-      options
-          .getExecutorService()
-          .schedule(() -> stop(transaction), TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
+      try {
+        options
+            .getExecutorService()
+            .schedule(() -> stop(transaction), TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
+      } catch (RejectedExecutionException e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?",
+                e);
+      }
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
@@ -112,5 +122,21 @@ public final class DefaultTransactionPerformanceCollector
       }
     }
     return data;
+  }
+
+  @Override
+  public void close() {
+    performanceDataMap.clear();
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "stop collecting all performance info for transactions");
+    if (isStarted.getAndSet(false)) {
+      synchronized (timerLock) {
+        if (timer != null) {
+          timer.cancel();
+          timer = null;
+        }
+      }
+    }
   }
 }

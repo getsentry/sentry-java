@@ -3,7 +3,8 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
-import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.Backfillable;
+import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -196,7 +197,7 @@ public final class SentryClient implements ISentryClient {
       @Nullable ITransaction transaction = scope.getTransaction();
       if (transaction != null) {
         // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
-        if (HintUtils.hasType(hint, AbnormalExit.class)) {
+        if (HintUtils.hasType(hint, TransactionEnd.class)) {
           transaction.forceFinish(SpanStatus.ABORTED, false);
         }
       }
@@ -317,7 +318,15 @@ public final class SentryClient implements ISentryClient {
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
       try {
-        event = processor.process(event, hint);
+        // only wire backfillable events through the backfilling processors, skip from others, and
+        // the other way around
+        final boolean isBackfillingProcessor = processor instanceof BackfillingEventProcessor;
+        final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+        if (isBackfillable && isBackfillingProcessor) {
+          event = processor.process(event, hint);
+        } else if (!isBackfillable && !isBackfillingProcessor) {
+          event = processor.process(event, hint);
+        }
       } catch (Throwable e) {
         options
             .getLogger()
@@ -461,9 +470,9 @@ public final class SentryClient implements ISentryClient {
                     }
 
                     if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
-                      // if hint is DiskFlushNotification, it means we have an uncaughtException
-                      // and we can end the session.
-                      if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
+                      // if we have an uncaughtExceptionHint we can end the session.
+                      if (HintUtils.hasType(
+                          hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
                         session.end();
                       }
                     }
