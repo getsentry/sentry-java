@@ -8,7 +8,10 @@ class SentrySupportSQLiteOpenHelper(private val delegate: SupportSQLiteOpenHelpe
 
     private val sqLiteSpanManager = SQLiteSpanManager()
 
-    private val sentryDatabase: SupportSQLiteDatabase = SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)
+    private val sentryDatabase: SupportSQLiteDatabase by lazy {
+
+        SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)
+    }
 
     override val writableDatabase: SupportSQLiteDatabase
         get() = sentryDatabase
@@ -16,7 +19,11 @@ class SentrySupportSQLiteOpenHelper(private val delegate: SupportSQLiteOpenHelpe
     companion object {
 
         fun create(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper {
-            return SentrySupportSQLiteOpenHelper(delegate)
+            return if (delegate is SentrySupportSQLiteOpenHelper) {
+                delegate
+            } else {
+                SentrySupportSQLiteOpenHelper(delegate)
+            }
         }
     }
 }

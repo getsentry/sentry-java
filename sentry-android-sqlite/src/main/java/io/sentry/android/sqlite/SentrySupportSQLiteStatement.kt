@@ -15,7 +15,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement,
      * some reason
      */
     override fun execute() {
-        return sqLiteSpanManager.performSql("execute", sql) {
+        return sqLiteSpanManager.performSql(sql) {
             delegate.execute()
         }
     }
@@ -29,7 +29,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement,
      * some reason
      */
     override fun executeUpdateDelete(): Int {
-        return sqLiteSpanManager.performSql("executeUpdateDelete", sql) {
+        return sqLiteSpanManager.performSql(sql) {
             delegate.executeUpdateDelete()
         }
     }
@@ -44,7 +44,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement,
      * some reason
      */
     override fun executeInsert(): Long {
-        return sqLiteSpanManager.performSql("executeInsert", sql) {
+        return sqLiteSpanManager.performSql(sql) {
             delegate.executeInsert()
         }
     }
@@ -58,7 +58,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement,
      * @throws [android.database.sqlite.SQLiteDoneException] if the query returns zero rows
      */
     override fun simpleQueryForLong(): Long {
-        return sqLiteSpanManager.performSql("simpleQueryForLong", sql) {
+        return sqLiteSpanManager.performSql(sql) {
             delegate.simpleQueryForLong()
         }
     }
@@ -72,7 +72,7 @@ class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement,
      * @throws [android.database.sqlite.SQLiteDoneException] if the query returns zero rows
      */
     override fun simpleQueryForString(): String? {
-        return sqLiteSpanManager.performSql("simpleQueryForString", sql) {
+        return sqLiteSpanManager.performSql(sql) {
             delegate.simpleQueryForString()
         }
     }

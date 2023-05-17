@@ -11,11 +11,11 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
-    namespace = "io.sentry.android.okhttp"
+    namespace = "io.sentry.android.sqlite"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionOkHttp
+        minSdk = Config.Android.minSdkVersion
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -74,6 +74,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
+    testImplementation(Config.Libs.androidxSqlite)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

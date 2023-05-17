@@ -24,16 +24,14 @@ class SQLiteSpanManager(
     /**
      * Performs a sql operation, creates a span and handles exceptions in case of occurrence.
      *
-     * @param op A sql operation to execute (e.g. execute or execPerConnectionSQL)
      * @param sql The sql query
      * @param operation The sql operation to execute. In case of an error the surrounding span will have its status set to INTERNAL_ERROR
      */
     @Throws(SQLException::class)
-    fun <T> performSql(op: String, sql: String, operation: () -> T): T {
+    fun <T> performSql(sql: String, operation: () -> T): T {
         // If a transaction is running we create spans as children of that, otherwise we just create a span for the current transaction
         val parentSpan = transactionSpans.lastOrNull() ?: Sentry.getSpan()
-        val span = parentSpan?.startChild("SQLite", op)
-        span?.setData("query", sql)
+        val span = parentSpan?.startChild("db.sql.query", sql)
         return try {
             val result = operation()
             result
@@ -44,28 +42,6 @@ class SQLiteSpanManager(
         } finally {
             span?.finish()
         }
-    }
-
-    /**
-     * Creates a span and adds it to the list of current transactions. When a transaction is ended, it gets removed from the list.
-     * Multiple transactions can be started at the same time, nested into each other.
-     */
-    fun beginTransaction() {
-        val parentSpan = transactionSpans.lastOrNull() ?: Sentry.getSpan()
-        val span = parentSpan?.startChild("SQLite", "transaction") ?: return
-        // The span status is set to INTERNAL_ERROR and will be set to OK when transaction.setSuccessful will be called
-        span.status = SpanStatus.INTERNAL_ERROR
-        transactionSpans.add(span)
-    }
-
-    /** Removes the last span from the list of current transactions. */
-    fun endTransaction() {
-        transactionSpans.removeLastOrNull()?.finish()
-    }
-
-    /** Sets the status of the last span of current transactions to OK. */
-    fun setTransactionSuccessful() {
-        transactionSpans.lastOrNull()?.status = SpanStatus.OK
     }
 
 }

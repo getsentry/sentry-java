@@ -1,30 +1,41 @@
 package io.sentry.android.sqlite
 
-import android.annotation.SuppressLint
-import android.content.ContentValues
-import android.database.Cursor
-import android.database.SQLException
-import android.database.sqlite.SQLiteTransactionListener
-import android.os.Build
-import android.os.CancellationSignal
-import android.util.Pair
-import androidx.annotation.RequiresApi
-import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.SupportSQLiteQuery
-import androidx.sqlite.db.SupportSQLiteStatement
-import java.util.Locale
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+import kotlin.test.Test
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
-class SentrySupportSQLiteDatabase(private val delegate: SupportSQLiteDatabase, private val sqLiteSpanManager: SQLiteSpanManager): SupportSQLiteDatabase by delegate {
+class SentrySupportSQLiteDatabaseTest {
+
+    class Fixture {
+        val mockDatabase = mock<SupportSQLiteDatabase>()
+        val spanManager = mock<SQLiteSpanManager>()
+
+        init {
+            whenever(mockDatabase.compileStatement(any())).thenReturn(mock())
+        }
+
+        fun getSut(): SentrySupportSQLiteDatabase {
+            return SentrySupportSQLiteDatabase(mockDatabase, spanManager)
+        }
+    }
+
+    private val fixture = Fixture()
+
+    @Test
+    fun `when there is an active span and server is listed in tracing origins, adds sentry trace headers to the request`() {
+        val sut = fixture.getSut()
+        val compiled = sut.compileStatement("sql")
+        assertNotNull(compiled)
+        assertIs<SentrySupportSQLiteStatement>(compiled)
+    }
 
 
-    /**
-     * Compiles the given SQL statement. It will return Sentry's wrapper around SupportSQLiteStatement.
-     *
-     * @param sql The sql query.
-     * @return Compiled statement.
-     */
+    /*
+
     override fun compileStatement(sql: String): SupportSQLiteStatement {
         return SentrySupportSQLiteStatement(delegate.compileStatement(sql), sqLiteSpanManager, sql)
     }
@@ -80,7 +91,5 @@ class SentrySupportSQLiteDatabase(private val delegate: SupportSQLiteDatabase, p
             delegate.execSQL(sql, bindArgs)
         }
     }
-
+     */
 }
-
- //todo add tests for SQLiteSpanManager SentrySupportSQLiteStatement SentrySupportSQLiteOpenHelper SentrySupportSQLiteDatabase
