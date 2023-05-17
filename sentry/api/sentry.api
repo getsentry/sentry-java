@@ -235,6 +235,7 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExternalOptions {
 	public fun <init> ()V
+	public fun addBundleId (Ljava/lang/String;)V
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
@@ -242,6 +243,7 @@ public final class io/sentry/ExternalOptions {
 	public fun addTracePropagationTarget (Ljava/lang/String;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
 	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
+	public fun getBundleIds ()Ljava/util/Set;
 	public fun getContextTags ()Ljava/util/List;
 	public fun getDebug ()Ljava/lang/Boolean;
 	public fun getDist ()Ljava/lang/String;
@@ -1625,6 +1627,7 @@ public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDatePr
 
 public class io/sentry/SentryOptions {
 	public fun <init> ()V
+	public fun addBundleId (Ljava/lang/String;)V
 	public fun addCollector (Lio/sentry/ICollector;)V
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
@@ -1638,6 +1641,7 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
+	public fun getBundleIds ()Ljava/util/Set;
 	public fun getCacheDirPath ()Ljava/lang/String;
 	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
 	public fun getCollectors ()Ljava/util/List;
@@ -2857,6 +2861,7 @@ public final class io/sentry/protocol/Contexts$Deserializer : io/sentry/JsonDese
 }
 
 public final class io/sentry/protocol/DebugImage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field JVM Ljava/lang/String;
 	public static final field PROGUARD Ljava/lang/String;
 	public fun <init> ()V
 	public fun getArch ()Ljava/lang/String;

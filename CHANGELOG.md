@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
+
+## 6.19.0
+
 ### Features
 
 - Add Screenshot and ViewHierarchy to integrations list ([#2698](https://github.com/getsentry/sentry-java/pull/2698))
@@ -15,18 +21,25 @@
       - If you would like us to provide support for the old approach working alongside the new one on Android 11 and above (e.g. for raising events for slow code on main thread), consider upvoting [this issue](https://github.com/getsentry/sentry-java/issues/2693).
     - The old watchdog implementation will continue working for older API versions (Android < 11)
 - Open up `TransactionOptions`, `ITransaction` and `IHub` methods allowing consumers modify start/end timestamp of transactions and spans ([#2701](https://github.com/getsentry/sentry-java/pull/2701))
+- Send source bundle IDs to Sentry to enable source context ([#2663](https://github.com/getsentry/sentry-java/pull/2663))
+  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
 
 ### Fixes
 
 - Android Profiler on calling thread ([#2691](https://github.com/getsentry/sentry-java/pull/2691))
 - Use `configureScope` instead of `withScope` in `Hub.close()`. This ensures that the main scope releases the in-memory data when closing a hub instance. ([#2688](https://github.com/getsentry/sentry-java/pull/2688))
-- Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
+- Remove null keys/values before creating concurrent hashmap in order to avoid NPE ([#2708](https://github.com/getsentry/sentry-java/pull/2708))
+- Exclude SentryOptions from R8/ProGuard obfuscation ([#2699](https://github.com/getsentry/sentry-java/pull/2699))
+  - This fixes AGP 8.+ incompatibility, where full R8 mode is enforced
 
 ### Dependencies
 
 - Bump Gradle from v8.1.0 to v8.1.1 ([#2666](https://github.com/getsentry/sentry-java/pull/2666))
   - [changelog](https://github.com/gradle/gradle/blob/master release-test/CHANGELOG.md#v811)
   - [diff](https://github.com/gradle/gradle/compare/v8.1.0...v8.1.1)
+- Bump Native SDK from v0.6.1 to v0.6.2 ([#2689](https://github.com/getsentry/sentry-java/pull/2689))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#062)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.1...0.6.2)
 
 ## 6.18.1
 

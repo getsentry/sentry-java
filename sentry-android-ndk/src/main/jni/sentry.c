@@ -252,6 +252,8 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
                                                     "()Ljava/lang/String;");
     jmethodID dist_mid = (*env)->GetMethodID(env, options_cls, "getDist", "()Ljava/lang/String;");
     jmethodID max_crumbs_mid = (*env)->GetMethodID(env, options_cls, "getMaxBreadcrumbs", "()I");
+    jmethodID native_sdk_name_mid = (*env)->GetMethodID(env, options_cls, "getNativeSdkName",
+                                                    "()Ljava/lang/String;");
 
     (*env)->DeleteLocalRef(env, options_cls);
 
@@ -264,6 +266,7 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     char *release_str = NULL;
     char *environment_str = NULL;
     char *dist_str = NULL;
+    char *native_sdk_name_str = NULL;
 
     options = sentry_options_new();
     ENSURE_OR_FAIL(options);
@@ -326,6 +329,12 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     {
         sentry_options_set_dist(options, dist_str);
         sentry_free(dist_str);
+    }
+
+    native_sdk_name_str = call_get_string(env, sentry_sdk_options, native_sdk_name_mid);
+    if (native_sdk_name_str) {
+        sentry_options_set_sdk_name(options, native_sdk_name_str);
+        sentry_free(native_sdk_name_str);
     }
 
     sentry_init(options);

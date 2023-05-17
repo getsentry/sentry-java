@@ -50,6 +50,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class DebugImage implements JsonUnknown, JsonSerializable {
   public static final String PROGUARD = "proguard";
+  public static final String JVM = "jvm";
 
   /**
    * The unique UUID of the image.
