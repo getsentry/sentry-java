@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Ensure screenshots and view hierarchies are captured on the main thread ([#2712](https://github.com/getsentry/sentry-java/pull/2712))
+
 ## 6.19.0
 
 ### Features
@@ -25,7 +31,6 @@
 - Remove null keys/values before creating concurrent hashmap in order to avoid NPE ([#2708](https://github.com/getsentry/sentry-java/pull/2708))
 - Exclude SentryOptions from R8/ProGuard obfuscation ([#2699](https://github.com/getsentry/sentry-java/pull/2699))
   - This fixes AGP 8.+ incompatibility, where full R8 mode is enforced
-- Ensure screenshots and view hierarchies are captured on the main thread ([#2712](https://github.com/getsentry/sentry-java/pull/2712))
 
 ### Dependencies
 
