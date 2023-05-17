@@ -19,6 +19,17 @@ import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public class ScreenshotUtils {
+
+  private static final long CAPTURE_TIMEOUT_MS = 1000;
+
+  public static @Nullable byte[] takeScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    return takeScreenshot(
+        activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
+  }
+
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IMainThreadChecker mainThreadChecker,
@@ -58,7 +69,7 @@ public class ScreenshotUtils {
                 logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
               }
             });
-        if (!latch.await(1, TimeUnit.SECONDS)) {
+        if (!latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
           return null;
         }
       }

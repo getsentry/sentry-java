@@ -13,6 +13,7 @@ import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ViewHierarchyEventProcessor implements EventProcessor, IntegrationName {
 
   private final @NotNull SentryAndroidOptions options;
+  private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
@@ -96,6 +98,12 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
   @Nullable
   public static ViewHierarchy snapshotViewHierarchy(
+      @Nullable Activity activity, @NotNull ILogger logger) {
+    return snapshotViewHierarchy(activity, AndroidMainThreadChecker.getInstance(), logger);
+  }
+
+  @Nullable
+  public static ViewHierarchy snapshotViewHierarchy(
       @Nullable Activity activity,
       @NotNull IMainThreadChecker mainThreadChecker,
       @NotNull ILogger logger) {
@@ -131,7 +139,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
                 logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
               }
             });
-        if (latch.await(1, TimeUnit.SECONDS)) {
+        if (latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
           return viewHierarchy.get();
         }
       }
