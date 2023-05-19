@@ -1,31 +1,11 @@
 package io.sentry
 
-import io.sentry.cache.EnvelopeCache
-import io.sentry.cache.IEnvelopeCache
-import io.sentry.internal.modules.CompositeModulesLoader
-import io.sentry.internal.modules.IModulesLoader
-import io.sentry.protocol.SentryId
-import io.sentry.util.thread.IMainThreadChecker
-import io.sentry.util.thread.MainThreadChecker
-import org.junit.rules.TemporaryFolder
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import java.io.File
-import java.nio.file.Files
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class SentryWrapperTest {
 
@@ -48,7 +28,6 @@ class SentryWrapperTest {
                 capturedEvents.add(event)
                 event
             }
-
         }
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
@@ -56,32 +35,33 @@ class SentryWrapperTest {
         println("Hub before ${Sentry.getCurrentHub()}")
         println(Thread.currentThread().name)
         val callableFuture =
-            CompletableFuture.supplyAsync ( SentryWrapper.wrapSupplier {
-                println(Thread.currentThread().name)
-                try {
-                    TimeUnit.SECONDS.sleep(4)
-                } catch (e: InterruptedException) {
-                    throw IllegalStateException(e)
-                }
-                Sentry.addBreadcrumb("MyClonedBreadcrumb")
-                Sentry.captureMessage("ClonedMessage")
+            CompletableFuture.supplyAsync(
+                SentryWrapper.wrapSupplier {
+                    println(Thread.currentThread().name)
+                    try {
+                        TimeUnit.SECONDS.sleep(4)
+                    } catch (e: InterruptedException) {
+                        throw IllegalStateException(e)
+                    }
+                    Sentry.addBreadcrumb("MyClonedBreadcrumb")
+                    Sentry.captureMessage("ClonedMessage")
 
-                System.out.println("After Future")
-                "Result of the asynchronous computation"
-            }
+                    System.out.println("After Future")
+                    "Result of the asynchronous computation"
+                }
             )
 
 //        val callableFuture =
 //            SentryWrapper.wrapCallable {
 //            CompletableFuture.supplyAsync {
 //                println(Thread.currentThread().name)
-////                println("Hub in supply Async ${Sentry.getCurrentHub()}")
+// //                println("Hub in supply Async ${Sentry.getCurrentHub()}")
 //                    try {
 //                        TimeUnit.SECONDS.sleep(4)
 //                    } catch (e: InterruptedException) {
 //                        throw IllegalStateException(e)
 //                    }
-////                println("Hub in supply Async ${Sentry.getCurrentHub()}")
+// //                println("Hub in supply Async ${Sentry.getCurrentHub()}")
 //                Sentry.addBreadcrumb("MyClonedBreadcrumb")
 //                Sentry.captureMessage("ClonedMessage")
 //                println(Sentry.getCurrentHub())
@@ -106,8 +86,6 @@ class SentryWrapperTest {
         Callable {
             println("Callable Thread: " + Thread.currentThread().name)
         }.call()
-
-
 
         println("Hub after sleep ${Sentry.getCurrentHub()}")
         Sentry.addBreadcrumb("MyOriginalBreadcrumb")
