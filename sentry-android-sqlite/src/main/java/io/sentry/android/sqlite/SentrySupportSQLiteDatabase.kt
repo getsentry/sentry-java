@@ -1,23 +1,19 @@
 package io.sentry.android.sqlite
 
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.database.Cursor
 import android.database.SQLException
-import android.database.sqlite.SQLiteTransactionListener
 import android.os.Build
 import android.os.CancellationSignal
-import android.util.Pair
 import androidx.annotation.RequiresApi
-import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.SupportSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteStatement
-import java.util.Locale
 
-class SentrySupportSQLiteDatabase(private val delegate: SupportSQLiteDatabase, private val sqLiteSpanManager: SQLiteSpanManager): SupportSQLiteDatabase by delegate {
-
+class SentrySupportSQLiteDatabase(
+    private val delegate: SupportSQLiteDatabase,
+    private val sqLiteSpanManager: SQLiteSpanManager
+) : SupportSQLiteDatabase by delegate {
 
     /**
      * Compiles the given SQL statement. It will return Sentry's wrapper around SupportSQLiteStatement.
@@ -58,6 +54,7 @@ class SentrySupportSQLiteDatabase(private val delegate: SupportSQLiteDatabase, p
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     override fun query(
         query: SupportSQLiteQuery,
         cancellationSignal: CancellationSignal?
@@ -80,7 +77,4 @@ class SentrySupportSQLiteDatabase(private val delegate: SupportSQLiteDatabase, p
             delegate.execSQL(sql, bindArgs)
         }
     }
-
 }
-
- //todo add tests for SQLiteSpanManager SentrySupportSQLiteStatement SentrySupportSQLiteOpenHelper SentrySupportSQLiteDatabase

@@ -1,11 +1,12 @@
 package io.sentry.android.sqlite
 
-import android.database.SQLException
 import androidx.sqlite.db.SupportSQLiteStatement
-import io.sentry.Sentry
-import io.sentry.SpanStatus
 
-class SentrySupportSQLiteStatement(private val delegate: SupportSQLiteStatement, private val sqLiteSpanManager: SQLiteSpanManager, private val sql: String): SupportSQLiteStatement by delegate {
+class SentrySupportSQLiteStatement(
+    private val delegate: SupportSQLiteStatement,
+    private val sqLiteSpanManager: SQLiteSpanManager,
+    private val sql: String
+) : SupportSQLiteStatement by delegate {
 
     /**
      * Execute this SQL statement, if it is not a SELECT / INSERT / DELETE / UPDATE, for example
