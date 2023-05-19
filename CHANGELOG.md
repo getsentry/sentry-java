@@ -4,6 +4,7 @@
 
 ### Features
 
+- Refactor android sqlite instrumentation (SDK side) ([#2722](https://github.com/getsentry/sentry-java/pull/2722))
 - Add Screenshot and ViewHierarchy to integrations list ([#2698](https://github.com/getsentry/sentry-java/pull/2698))
 - New ANR detection based on [ApplicationExitInfo API](https://developer.android.com/reference/android/app/ApplicationExitInfo) ([#2697](https://github.com/getsentry/sentry-java/pull/2697))
     - This implementation completely replaces the old one (based on a watchdog) on devices running Android 11 and above:
