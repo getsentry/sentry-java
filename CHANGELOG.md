@@ -2,10 +2,19 @@
 
 ## Unreleased
 
+### Features
+
+- Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
+
+### Fixes
+
+- Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
+
+## 6.19.1
+
 ### Fixes
 
 - Ensure screenshots and view hierarchies are captured on the main thread ([#2712](https://github.com/getsentry/sentry-java/pull/2712))
-- Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
 
 ## 6.19.0
 
