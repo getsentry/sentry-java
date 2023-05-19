@@ -10,13 +10,17 @@ import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
+import io.sentry.util.thread.IMainThreadChecker
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -30,6 +34,7 @@ class ScreenshotEventProcessorTest {
         val window = mock<Window>()
         val view = mock<View>()
         val rootView = mock<View>()
+        val mainThreadChecker = mock<IMainThreadChecker>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
@@ -41,10 +46,16 @@ class ScreenshotEventProcessorTest {
             whenever(view.rootView).thenReturn(rootView)
             whenever(window.decorView).thenReturn(view)
             whenever(activity.window).thenReturn(window)
+            whenever(activity.runOnUiThread(any())).then {
+                it.getArgument<Runnable>(0).run()
+            }
+
+            whenever(mainThreadChecker.isMainThread).thenReturn(true)
         }
 
         fun getSut(attachScreenshot: Boolean = false): ScreenshotEventProcessor {
             options.isAttachScreenshot = attachScreenshot
+            options.mainThreadChecker = mainThreadChecker
 
             return ScreenshotEventProcessor(options, buildInfo)
         }
@@ -156,6 +167,20 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
+    fun `when screenshot event processor is called from background thread it executes on main thread`() {
+        val sut = fixture.getSut(true)
+        whenever(fixture.mainThreadChecker.isMainThread).thenReturn(false)
+
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+        val hint = Hint()
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
+
+        verify(fixture.activity).runOnUiThread(any())
+        assertNotNull(hint.screenshot)
+    }
+
     fun `when enabled, the feature is added to the integration list`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         val hint = Hint()

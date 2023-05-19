@@ -10,16 +10,32 @@ import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.util.thread.IMainThreadChecker;
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public class ScreenshotUtils {
+
+  private static final long CAPTURE_TIMEOUT_MS = 1000;
+
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
+    return takeScreenshot(
+        activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
+  }
+
+  public static @Nullable byte[] takeScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull IMainThreadChecker mainThreadChecker,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+
     if (!isActivityValid(activity, buildInfoProvider)
         || activity.getWindow() == null
         || activity.getWindow().getDecorView() == null
@@ -40,7 +56,23 @@ public class ScreenshotUtils {
           Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
 
       final Canvas canvas = new Canvas(bitmap);
-      view.draw(canvas);
+      if (mainThreadChecker.isMainThread()) {
+        view.draw(canvas);
+      } else {
+        final @NotNull CountDownLatch latch = new CountDownLatch(1);
+        activity.runOnUiThread(
+            () -> {
+              try {
+                view.draw(canvas);
+                latch.countDown();
+              } catch (Throwable e) {
+                logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
+              }
+            });
+        if (!latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+          return null;
+        }
+      }
 
       // 0 meaning compress for small size, 100 meaning compress for max quality.
       // Some formats, like PNG which is lossless, will ignore the quality setting.
