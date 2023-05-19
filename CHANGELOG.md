@@ -5,6 +5,7 @@
 ### Fixes
 
 - Ensure screenshots and view hierarchies are captured on the main thread ([#2712](https://github.com/getsentry/sentry-java/pull/2712))
+- Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
 
 ## 6.19.0
 
