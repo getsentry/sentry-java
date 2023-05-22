@@ -6,7 +6,6 @@ import io.sentry.spring.jakarta.webflux.SentryScheduleHook;
 import io.sentry.spring.jakarta.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.jakarta.webflux.SentryWebFilter;
 import io.sentry.spring.jakarta.webflux.SentryWebFilterWithThreadLocalAccessor;
-import io.sentry.spring.jakarta.webflux.SentryWebTracingFilter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.ApplicationRunner;
@@ -14,7 +13,6 @@ import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -75,14 +73,6 @@ public class SentryWebfluxAutoConfiguration {
     public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IHub hub) {
       return new SentryWebFilter(hub);
     }
-  }
-
-  @Bean
-  @Order(SENTRY_SPRING_FILTER_PRECEDENCE + 1)
-  @Conditional(SentryAutoConfiguration.SentryTracingCondition.class)
-  @ConditionalOnMissingBean(name = "sentryWebTracingFilter")
-  public @NotNull SentryWebTracingFilter sentryWebTracingFilter() {
-    return new SentryWebTracingFilter();
   }
 
   /** Configures exception handler that handles unhandled exceptions and sends them to Sentry. */
