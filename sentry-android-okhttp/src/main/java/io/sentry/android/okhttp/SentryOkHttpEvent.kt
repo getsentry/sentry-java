@@ -14,25 +14,21 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.util.UrlUtils
-import okhttp3.Call
+import okhttp3.Request
 import okhttp3.Response
-import java.net.URL
 
-private val uuidRegex by lazy { Regex("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}") }
-
-internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) {
+internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
     private val eventSpans: MutableMap<String, ISpan> = HashMap()
     private val breadcrumb: Breadcrumb
     internal val callRootSpan: ISpan?
     private var response: Response? = null
 
     init {
-        val urlDetails = UrlUtils.parse(call.request().url.toString())
+        val urlDetails = UrlUtils.parse(request.url.toString())
         val url = urlDetails.urlOrFallback
-        val trimmedUrl: String = trimUrl(url)
-        val host: String = call.request().url.host
-        val encodedPath: String = call.request().url.encodedPath
-        val method: String = call.request().method
+        val host: String = request.url.host
+        val encodedPath: String = request.url.encodedPath
+        val method: String = request.method
 
         // We start the call span that will contain all the others
         callRootSpan = hub.span?.startChild("http.client", "$method $url")
@@ -42,29 +38,17 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
         // We setup a breadcrumb with all meaningful data
         breadcrumb = Breadcrumb.http(url, method)
         breadcrumb.setData("url", url)
-        breadcrumb.setData("filtered_url", trimmedUrl)
         breadcrumb.setData("host", host)
         breadcrumb.setData("path", encodedPath)
-        breadcrumb.setData("http.method", method)
+        breadcrumb.setData("method", method)
         breadcrumb.setData("success", true)
 
         // We add the same data to the root call span
         callRootSpan?.setData("url", url)
-        callRootSpan?.setData("filtered_url", trimmedUrl)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
         callRootSpan?.setData("http.method", method)
         callRootSpan?.setData("success", true)
-    }
-
-    private fun trimUrl(url: String): String {
-        // Remove any uuid from the url and replace it with a "*"
-        val trimmedUrl = url.replace(uuidRegex, "*")
-        if (URL(trimmedUrl).query == null) {
-            return trimmedUrl
-        }
-        // Remove any parameter from the url
-        return trimmedUrl.replace(URL(trimmedUrl).query, "").replace("?", "")
     }
 
     /**
@@ -89,14 +73,14 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
 
     fun setRequestBodySize(byteCount: Long) {
         if (byteCount > -1) {
-            breadcrumb.setData("http.request_content_length", byteCount)
+            breadcrumb.setData("request_content_length", byteCount)
             callRootSpan?.setData("http.request_content_length", byteCount)
         }
     }
 
     fun setResponseBodySize(byteCount: Long) {
         if (byteCount > -1) {
-            breadcrumb.setData("http.response_content_length", byteCount)
+            breadcrumb.setData("response_content_length", byteCount)
             callRootSpan?.setData("http.response_content_length", byteCount)
         }
     }
@@ -126,7 +110,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
             RESPONSE_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
             else -> callRootSpan
         } ?: callRootSpan
-        val span = parentSpan?.startChild("http.client", event) ?: return
+        val span = parentSpan?.startChild("http.client.details", event) ?: return
         eventSpans[event] = span
     }
 
@@ -149,7 +133,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val call: Call) 
 
         // We put data in the hint and send a breadcrumb
         val hint = Hint()
-        hint.set(TypeCheckHint.OKHTTP_REQUEST, call.request())
+        hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
         response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
 
         hub.addBreadcrumb(breadcrumb, hint)

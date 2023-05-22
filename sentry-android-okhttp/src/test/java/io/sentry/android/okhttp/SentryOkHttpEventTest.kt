@@ -18,7 +18,6 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.test.getProperty
-import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -30,7 +29,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -43,7 +41,7 @@ class SentryOkHttpEventTest {
         val hub = mock<IHub>()
         val server = MockWebServer()
         val span: ISpan
-        val request: Request
+        val mockRequest: Request
         val response: Response
 
         init {
@@ -61,7 +59,7 @@ class SentryOkHttpEventTest {
                 SpanOptions()
             )
 
-            request = Request.Builder()
+            mockRequest = Request.Builder()
                 .addHeader("myHeader", "myValue")
                 .get()
                 .url(server.url("/hello"))
@@ -70,26 +68,23 @@ class SentryOkHttpEventTest {
             response = Response.Builder()
                 .code(200)
                 .message("message")
-                .request(request)
+                .request(mockRequest)
                 .protocol(Protocol.HTTP_1_1)
                 .build()
         }
 
         fun getSut(currentSpan: ISpan? = span, requestUrl: String ? = null): SentryOkHttpEvent {
             whenever(hub.span).thenReturn(currentSpan)
-            val okhttpClient = OkHttpClient.Builder().build()
-            val call = if (requestUrl == null) {
-                okhttpClient.newCall(request)
+            val request = if (requestUrl == null) {
+                mockRequest
             } else {
-                okhttpClient.newCall(
-                    Request.Builder()
-                        .addHeader("myHeader", "myValue")
-                        .get()
-                        .url(server.url(requestUrl))
-                        .build()
-                )
+                Request.Builder()
+                    .addHeader("myHeader", "myValue")
+                    .get()
+                    .url(server.url(requestUrl))
+                    .build()
             }
-            return SentryOkHttpEvent(hub, call)
+            return SentryOkHttpEvent(hub, request)
         }
     }
 
@@ -107,22 +102,12 @@ class SentryOkHttpEventTest {
         val callSpan = sut.callRootSpan
         assertNotNull(callSpan)
         assertEquals("http.client", callSpan.operation)
-        assertEquals("${fixture.request.method} ${fixture.request.url}", callSpan.description)
-        assertEquals(fixture.request.url.toString(), callSpan.getData("url"))
-        assertEquals(fixture.request.url.toString(), callSpan.getData("filtered_url"))
-        assertEquals(fixture.request.url.host, callSpan.getData("host"))
-        assertEquals(fixture.request.url.encodedPath, callSpan.getData("path"))
-        assertEquals(fixture.request.method, callSpan.getData("http.method"))
+        assertEquals("${fixture.mockRequest.method} ${fixture.mockRequest.url}", callSpan.description)
+        assertEquals(fixture.mockRequest.url.toString(), callSpan.getData("url"))
+        assertEquals(fixture.mockRequest.url.host, callSpan.getData("host"))
+        assertEquals(fixture.mockRequest.url.encodedPath, callSpan.getData("path"))
+        assertEquals(fixture.mockRequest.method, callSpan.getData("http.method"))
         assertTrue(callSpan.getData("success") as Boolean)
-    }
-
-    @Test
-    fun `filtered_url data in root span does not contain uids or parameters`() {
-        val sut = fixture.getSut(requestUrl = "/hello/${UUID.randomUUID()}/?param1=1&param2=2")
-        val callSpan = sut.callRootSpan
-        val filteredUrl = callSpan?.getData("filtered_url")
-        assertNotNull(filteredUrl)
-        assertEquals(fixture.server.url("/hello/*/").toString(), filteredUrl)
     }
 
     @Test
@@ -158,8 +143,11 @@ class SentryOkHttpEventTest {
         sut.startSpan("span")
         val spans = sut.getEventSpans()
         assertEquals(1, spans.size)
+        val span = spans["span"]
+        assertNotNull(span)
         assertTrue(spans.containsKey("span"))
-        assertFalse(spans["span"]!!.isFinished)
+        assertEquals("http.client.details", span.operation)
+        assertFalse(span.isFinished)
     }
 
     @Test
@@ -243,15 +231,14 @@ class SentryOkHttpEventTest {
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertEquals(fixture.request.url.toString(), it.data["url"])
-                assertEquals(fixture.request.url.toString(), it.data["filtered_url"])
-                assertEquals(fixture.request.url.host, it.data["host"])
-                assertEquals(fixture.request.url.encodedPath, it.data["path"])
-                assertEquals(fixture.request.method, it.data["http.method"])
+                assertEquals(fixture.mockRequest.url.toString(), it.data["url"])
+                assertEquals(fixture.mockRequest.url.host, it.data["host"])
+                assertEquals(fixture.mockRequest.url.encodedPath, it.data["path"])
+                assertEquals(fixture.mockRequest.method, it.data["method"])
                 assertTrue(it.data["success"] as Boolean)
             },
             check {
-                assertEquals(fixture.request, it[TypeCheckHint.OKHTTP_REQUEST])
+                assertEquals(fixture.mockRequest, it[TypeCheckHint.OKHTTP_REQUEST])
             }
         )
     }
@@ -312,7 +299,7 @@ class SentryOkHttpEventTest {
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertEquals(10L, it.data["http.request_content_length"])
+                assertEquals(10L, it.data["request_content_length"])
             },
             any()
         )
@@ -326,7 +313,7 @@ class SentryOkHttpEventTest {
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertNull(it.data["http.request_content_length"])
+                assertNull(it.data["request_content_length"])
             },
             any()
         )
@@ -340,7 +327,7 @@ class SentryOkHttpEventTest {
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertEquals(10L, it.data["http.response_content_length"])
+                assertEquals(10L, it.data["response_content_length"])
             },
             any()
         )
@@ -354,7 +341,7 @@ class SentryOkHttpEventTest {
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertNull(it.data["http.response_content_length"])
+                assertNull(it.data["response_content_length"])
             },
             any()
         )
