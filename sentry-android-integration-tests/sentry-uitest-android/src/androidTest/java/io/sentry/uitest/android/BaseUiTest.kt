@@ -12,6 +12,7 @@ import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.uitest.android.mockservers.MockRelay
+import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -39,6 +40,17 @@ abstract class BaseUiTest {
     /** Mock relay server that receives all envelopes sent during the test. */
     protected val relay = MockRelay(false, relayIdlingResource)
 
+    private fun disableDontKeepActivities() {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val pfd = automation.executeShellCommand("settings put global always_finish_activities 0")
+        try {
+            FileInputStream(pfd.fileDescriptor).readBytes()
+        } catch (e: Throwable) {
+            // ignored
+        }
+        pfd.close()
+    }
+
     @BeforeTest
     fun baseSetUp() {
         runner = InstrumentationRegistry.getInstrumentation() as AndroidJUnitRunner
@@ -47,6 +59,7 @@ abstract class BaseUiTest {
         context.cacheDir.deleteRecursively()
         relay.start()
         mockDsn = relay.createMockDsn()
+        disableDontKeepActivities()
     }
 
     @AfterTest

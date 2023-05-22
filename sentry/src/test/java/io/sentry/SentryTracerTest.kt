@@ -329,6 +329,27 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `starting child with operation, description and timestamp creates a new span`() {
+        val tracer = fixture.getSut()
+        val sentryDate = SentryNanotimeDate()
+        val span = tracer.startChild("op", "description", sentryDate) as Span
+        assertNotNull(span)
+        assertNotNull(span.spanId)
+        assertNotNull(span.startDate)
+        assertEquals("op", span.operation)
+        assertEquals("description", span.description)
+        assertEquals(sentryDate, span.startDate)
+    }
+
+    @Test
+    fun `sstarting child with operation, description and timestamp adds a span to transaction`() {
+        val tracer = fixture.getSut()
+        val span = tracer.startChild("op", "description", SentryNanotimeDate())
+        assertEquals(1, tracer.children.size)
+        assertEquals(span, tracer.children.first())
+    }
+
+    @Test
     fun `setting op sets op on TraceContext`() {
         val tracer = fixture.getSut()
         tracer.operation = "op"

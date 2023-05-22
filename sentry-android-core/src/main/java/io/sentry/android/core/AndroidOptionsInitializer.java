@@ -287,12 +287,32 @@ final class AndroidOptionsInitializer {
       }
     }
 
-    if (options.getProguardUuid() == null) {
-      options.setProguardUuid(getProguardUUID(context, options.getLogger()));
+    final @Nullable Properties debugMetaProperties =
+        loadDebugMetaProperties(context, options.getLogger());
+
+    if (debugMetaProperties != null) {
+      if (options.getProguardUuid() == null) {
+        final @Nullable String proguardUuid =
+            debugMetaProperties.getProperty("io.sentry.ProguardUuids");
+        options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
+        options.setProguardUuid(proguardUuid);
+      }
+
+      if (options.getBundleIds().isEmpty()) {
+        final @Nullable String bundleIdStrings =
+            debugMetaProperties.getProperty("io.sentry.bundle-ids");
+        options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
+        if (bundleIdStrings != null) {
+          final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
+          for (final String bundleId : bundleIds) {
+            options.addBundleId(bundleId);
+          }
+        }
+      }
     }
   }
 
-  private static @Nullable String getProguardUUID(
+  private static @Nullable Properties loadDebugMetaProperties(
       final @NotNull Context context, final @NotNull ILogger logger) {
     final AssetManager assets = context.getAssets();
     // one may have thousands of asset files and looking up this list might slow down the SDK init.
@@ -302,10 +322,7 @@ final class AndroidOptionsInitializer {
         new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
       final Properties properties = new Properties();
       properties.load(is);
-
-      final String uuid = properties.getProperty("io.sentry.ProguardUuids");
-      logger.log(SentryLevel.DEBUG, "Proguard UUID found: %s", uuid);
-      return uuid;
+      return properties;
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
     } catch (IOException e) {
