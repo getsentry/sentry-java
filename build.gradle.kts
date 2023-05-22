@@ -160,6 +160,7 @@ subprojects {
                 assignAarTypes()
             }
 
+// this is needed for sentry-unity to consume our artifacts locally as proper maven publication
             configure<PublishingExtension> {
                 repositories {
                     maven {
