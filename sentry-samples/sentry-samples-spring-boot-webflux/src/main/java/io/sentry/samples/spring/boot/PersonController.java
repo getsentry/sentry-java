@@ -1,5 +1,6 @@
 package io.sentry.samples.spring.boot;
 
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +22,8 @@ public class PersonController {
   }
 
   @GetMapping("{id}")
-  Person person(@PathVariable Long id) {
+  Person person(@PathVariable String id) {
+    Sentry.setExtra("my-project-extra-key", "project-" + id);
     LOGGER.info("Loading person with id={}", id);
     throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
   }
