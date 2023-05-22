@@ -62,24 +62,29 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     if (transaction != null) {
       finishTransaction(serverWebExchange, transaction);
     }
-    requestHub.popScope();
+    if (requestHub.isEnabled()) {
+      requestHub.popScope();
+    }
     Sentry.setCurrentHub(NoOpHub.getInstance());
   }
 
   protected void doFirst(
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull IHub requestHub) {
-    serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
-    requestHub.pushScope();
-    final ServerHttpRequest request = serverWebExchange.getRequest();
-    final ServerHttpResponse response = serverWebExchange.getResponse();
+    if (requestHub.isEnabled()) {
+      serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
+      requestHub.pushScope();
+      final ServerHttpRequest request = serverWebExchange.getRequest();
+      final ServerHttpResponse response = serverWebExchange.getResponse();
 
-    final Hint hint = new Hint();
-    hint.set(WEBFLUX_FILTER_REQUEST, request);
-    hint.set(WEBFLUX_FILTER_RESPONSE, response);
-    final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
-    requestHub.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
-    requestHub.configureScope(
-        scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
+      final Hint hint = new Hint();
+      hint.set(WEBFLUX_FILTER_REQUEST, request);
+      hint.set(WEBFLUX_FILTER_RESPONSE, response);
+      final String methodName =
+          request.getMethod() != null ? request.getMethod().name() : "unknown";
+      requestHub.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
+      requestHub.configureScope(
+          scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
+    }
   }
 
   protected void doOnError(final @Nullable ITransaction transaction, final @NotNull Throwable e) {

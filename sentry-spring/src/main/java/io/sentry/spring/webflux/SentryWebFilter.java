@@ -51,10 +51,14 @@ public final class SentryWebFilter implements WebFilter {
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
     @NotNull IHub requestHub = Sentry.cloneMainHub();
+    if (!requestHub.isEnabled()) {
+      return webFilterChain.filter(serverWebExchange);
+    }
+
     final boolean isTracingEnabled = requestHub.getOptions().isTracingEnabled();
     final @NotNull ServerHttpRequest request = serverWebExchange.getRequest();
     final @Nullable ITransaction transaction =
-        requestHub.isEnabled() && isTracingEnabled && shouldTraceRequest(requestHub, request)
+        isTracingEnabled && shouldTraceRequest(requestHub, request)
             ? startTransaction(requestHub, request)
             : null;
 

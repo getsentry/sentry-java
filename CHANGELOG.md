@@ -23,6 +23,7 @@
 - Android Profiler on calling thread ([#2691](https://github.com/getsentry/sentry-java/pull/2691))
 - Use `configureScope` instead of `withScope` in `Hub.close()`. This ensures that the main scope releases the in-memory data when closing a hub instance. ([#2688](https://github.com/getsentry/sentry-java/pull/2688))
 - Remove null keys/values before creating concurrent hashmap in order to avoid NPE ([#2708](https://github.com/getsentry/sentry-java/pull/2708))
+- Finish WebFlux transaction before popping scope ([#2724](https://github.com/getsentry/sentry-java/pull/2724))
 
 ### Dependencies
 
