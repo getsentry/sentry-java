@@ -16,9 +16,10 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNE
 import io.sentry.util.UrlUtils
 import okhttp3.Request
 import okhttp3.Response
+import java.util.concurrent.ConcurrentHashMap
 
 internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
-    private val eventSpans: MutableMap<String, ISpan> = HashMap()
+    private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()
     private val breadcrumb: Breadcrumb
     internal val callRootSpan: ISpan?
     private var response: Response? = null
@@ -37,18 +38,14 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
         // We setup a breadcrumb with all meaningful data
         breadcrumb = Breadcrumb.http(url, method)
-        breadcrumb.setData("url", url)
         breadcrumb.setData("host", host)
         breadcrumb.setData("path", encodedPath)
-        breadcrumb.setData("method", method)
-        breadcrumb.setData("success", true)
 
         // We add the same data to the root call span
         callRootSpan?.setData("url", url)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
         callRootSpan?.setData("http.method", method)
-        callRootSpan?.setData("success", true)
     }
 
     /**
@@ -60,7 +57,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         breadcrumb.setData("protocol", response.protocol.name)
         breadcrumb.setData("status_code", response.code)
         callRootSpan?.setData("protocol", response.protocol.name)
-        callRootSpan?.setData("status_code", response.code)
+        callRootSpan?.setData("http.status_code", response.code)
         callRootSpan?.status = SpanStatus.fromHttpStatusCode(response.code)
     }
 
@@ -85,13 +82,8 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         }
     }
 
-    /**
-     * Sets the success flag in the breadcrumb and the call root span to false.
-     * Also sets the [errorMessage] if not null.
-     */
+    /** Sets the [errorMessage] if not null. */
     fun setError(errorMessage: String?) {
-        breadcrumb.setData("success", false)
-        callRootSpan?.setData("success", false)
         if (errorMessage != null) {
             breadcrumb.setData("error_message", errorMessage)
             callRootSpan?.setData("error_message", errorMessage)
@@ -110,7 +102,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
             RESPONSE_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
             else -> callRootSpan
         } ?: callRootSpan
-        val span = parentSpan?.startChild("http.client.details", event) ?: return
+        val span = parentSpan?.startChild("http.client.$event") ?: return
         eventSpans[event] = span
     }
 

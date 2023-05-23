@@ -107,7 +107,6 @@ class SentryOkHttpEventTest {
         assertEquals(fixture.mockRequest.url.host, callSpan.getData("host"))
         assertEquals(fixture.mockRequest.url.encodedPath, callSpan.getData("path"))
         assertEquals(fixture.mockRequest.method, callSpan.getData("http.method"))
-        assertTrue(callSpan.getData("success") as Boolean)
     }
 
     @Test
@@ -146,7 +145,7 @@ class SentryOkHttpEventTest {
         val span = spans["span"]
         assertNotNull(span)
         assertTrue(spans.containsKey("span"))
-        assertEquals("http.client.details", span.operation)
+        assertEquals("http.client.span", span.operation)
         assertFalse(span.isFinished)
     }
 
@@ -184,7 +183,7 @@ class SentryOkHttpEventTest {
         sut.startSpan("span")
         sut.finishSpan("span") {
             if (called == 0) {
-                assertEquals("span", it.description)
+                assertEquals("http.client.span", it.operation)
             } else {
                 assertEquals(sut.callRootSpan, it)
             }
@@ -235,7 +234,6 @@ class SentryOkHttpEventTest {
                 assertEquals(fixture.mockRequest.url.host, it.data["host"])
                 assertEquals(fixture.mockRequest.url.encodedPath, it.data["path"])
                 assertEquals(fixture.mockRequest.method, it.data["method"])
-                assertTrue(it.data["success"] as Boolean)
             },
             check {
                 assertEquals(fixture.mockRequest, it[TypeCheckHint.OKHTTP_REQUEST])
@@ -249,7 +247,7 @@ class SentryOkHttpEventTest {
         sut.setResponse(fixture.response)
 
         assertEquals(fixture.response.protocol.name, sut.callRootSpan?.getData("protocol"))
-        assertEquals(fixture.response.code, sut.callRootSpan?.getData("status_code"))
+        assertEquals(fixture.response.code, sut.callRootSpan?.getData("http.status_code"))
         sut.finishEvent()
 
         verify(fixture.hub).addBreadcrumb(
@@ -351,12 +349,10 @@ class SentryOkHttpEventTest {
     fun `setError set success to false and errorMessage in the breadcrumb and in the root span`() {
         val sut = fixture.getSut()
         sut.setError("errorMessage")
-        assertFalse(sut.callRootSpan?.getData("success") as Boolean)
-        assertEquals("errorMessage", sut.callRootSpan.getData("error_message"))
+        assertEquals("errorMessage", sut.callRootSpan?.getData("error_message"))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertFalse(it.data["success"] as Boolean)
                 assertEquals("errorMessage", it.data["error_message"])
             },
             any()
@@ -367,12 +363,11 @@ class SentryOkHttpEventTest {
     fun `setError sets success to false in the breadcrumb and in the root span even if errorMessage is null`() {
         val sut = fixture.getSut()
         sut.setError(null)
-        assertFalse(sut.callRootSpan?.getData("success") as Boolean)
+        assertNotNull(sut.callRootSpan)
         assertNull(sut.callRootSpan.getData("error_message"))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertFalse(it.data["success"] as Boolean)
                 assertNull(it.data["error_message"])
             },
             any()
