@@ -117,15 +117,27 @@ public final class SentryTracer implements ITransaction {
             new TimerTask() {
               @Override
               public void run() {
-                final SpanStatus status = getStatus();
-                finish((status != null) ? status : SpanStatus.OK);
-                isFinishTimerRunning.set(false);
+                finishFromTimer();
               }
             };
 
-        timer.schedule(timerTask, transactionOptions.getIdleTimeout());
+        try {
+          timer.schedule(timerTask, transactionOptions.getIdleTimeout());
+        } catch (Throwable e) {
+          hub.getOptions()
+              .getLogger()
+              .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+          // if we failed to schedule the finish timer for some reason, we finish it here right away
+          finishFromTimer();
+        }
       }
     }
+  }
+
+  private void finishFromTimer() {
+    final SpanStatus status = getStatus();
+    finish((status != null) ? status : SpanStatus.OK);
+    isFinishTimerRunning.set(false);
   }
 
   @Override
@@ -227,7 +239,10 @@ public final class SentryTracer implements ITransaction {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         hub.getOptions()
             .getLogger()
-            .log(SentryLevel.DEBUG, "Dropping idle transaction because it has no child spans");
+            .log(
+                SentryLevel.DEBUG,
+                "Dropping idle transaction %s because it has no child spans",
+                name);
         return;
       }
 
