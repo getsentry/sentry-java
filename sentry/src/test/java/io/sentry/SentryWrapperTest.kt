@@ -1,15 +1,16 @@
 package io.sentry
 
-import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executors
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class SentryWrapperTest {
 
     private val dsn = "http://key@localhost/proj"
+    private val executor = Executors.newSingleThreadExecutor()
 
     @BeforeTest
     @AfterTest
@@ -19,7 +20,7 @@ class SentryWrapperTest {
     }
 
     @Test
-    fun `wrap callable`() {
+    fun `wrapped supply async isolates Hubs`() {
         val capturedEvents = mutableListOf<SentryEvent>()
 
         Sentry.init {
@@ -32,74 +33,86 @@ class SentryWrapperTest {
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
         Sentry.captureMessage("OriginalMessageBefore")
-        println("Hub before ${Sentry.getCurrentHub()}")
-        println(Thread.currentThread().name)
+
         val callableFuture =
             CompletableFuture.supplyAsync(
                 SentryWrapper.wrapSupplier {
-                    println(Thread.currentThread().name)
-                    try {
-                        TimeUnit.SECONDS.sleep(4)
-                    } catch (e: InterruptedException) {
-                        throw IllegalStateException(e)
-                    }
                     Sentry.addBreadcrumb("MyClonedBreadcrumb")
                     Sentry.captureMessage("ClonedMessage")
-
-                    System.out.println("After Future")
-                    "Result of the asynchronous computation"
-                }
+                    "Result 1"
+                },
+                executor
             )
 
-//        val callableFuture =
-//            SentryWrapper.wrapCallable {
-//            CompletableFuture.supplyAsync {
-//                println(Thread.currentThread().name)
-// //                println("Hub in supply Async ${Sentry.getCurrentHub()}")
-//                    try {
-//                        TimeUnit.SECONDS.sleep(4)
-//                    } catch (e: InterruptedException) {
-//                        throw IllegalStateException(e)
-//                    }
-// //                println("Hub in supply Async ${Sentry.getCurrentHub()}")
-//                Sentry.addBreadcrumb("MyClonedBreadcrumb")
-//                Sentry.captureMessage("ClonedMessage")
-//                println(Sentry.getCurrentHub())
-//
-//                System.out.println("After Future")
-//                "Result of the asynchronous computation"
-//            }
-//            }.call()
-//        System.out.println("Before Callable")
-//        val resultCallable = callableFuture.
-//        System.out.println("After Callable")
-//        try {
-//            System.out.println("Before Sleep")
-//            TimeUnit.SECONDS.sleep(4)
-//            System.out.println("After Sleep")
-//        } catch (e: InterruptedException) {
-//            throw IllegalStateException(e)
-//        }
+        val callableFuture2 =
+            CompletableFuture.supplyAsync(
+                SentryWrapper.wrapSupplier {
+                    Sentry.addBreadcrumb("MyClonedBreadcrumb2")
+                    Sentry.captureMessage("ClonedMessage2")
+                    "Result 2"
+                },
+                executor
+            )
 
-        println("MainThread: " + Thread.currentThread().name)
-
-        Callable {
-            println("Callable Thread: " + Thread.currentThread().name)
-        }.call()
-
-        println("Hub after sleep ${Sentry.getCurrentHub()}")
         Sentry.addBreadcrumb("MyOriginalBreadcrumb")
         Sentry.captureMessage("OriginalMessage")
 
-        val result = callableFuture.join()
+        callableFuture.join()
+        callableFuture2.join()
 
-        Sentry.addBreadcrumb("MyOriginalBreadcrumbAfterFutureCompletion")
-        Sentry.captureMessage("MyOriginalMessageAfterFutureCompletion")
+        val mainEvent = capturedEvents.firstOrNull { it.message?.formatted == "OriginalMessage" }
+        val clonedEvent = capturedEvents.firstOrNull { it.message?.formatted == "ClonedMessage" }
+        val clonedEvent2 = capturedEvents.firstOrNull { it.message?.formatted == "ClonedMessage2" }
 
-        println("Hub after get ${Sentry.getCurrentHub()}")
-        val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+        assertEquals(2, mainEvent?.breadcrumbs?.size)
+        assertEquals(2, clonedEvent?.breadcrumbs?.size)
+        assertEquals(2, clonedEvent2?.breadcrumbs?.size)
+    }
 
-        println(result)
+    @Test
+    fun `wrapped callable isolates Hubs`() {
+        val capturedEvents = mutableListOf<SentryEvent>()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+                capturedEvents.add(event)
+                event
+            }
+        }
+
+        Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
+        Sentry.captureMessage("OriginalMessageBefore")
+        println(Thread.currentThread().name)
+
+        val future1 = executor.submit(
+            SentryWrapper.wrapCallable {
+                Sentry.addBreadcrumb("MyClonedBreadcrumb")
+                Sentry.captureMessage("ClonedMessage")
+                "Result 1"
+            }
+        )
+
+        val future2 = executor.submit(
+            SentryWrapper.wrapCallable {
+                Sentry.addBreadcrumb("MyClonedBreadcrumb2")
+                Sentry.captureMessage("ClonedMessage2")
+                "Result 2"
+            }
+        )
+
+        Sentry.addBreadcrumb("MyOriginalBreadcrumb")
+        Sentry.captureMessage("OriginalMessage")
+
+        future1.get()
+        future2.get()
+
+        val mainEvent = capturedEvents.firstOrNull { it.message?.formatted == "OriginalMessage" }
+        val clonedEvent = capturedEvents.firstOrNull { it.message?.formatted == "ClonedMessage" }
+        val clonedEvent2 = capturedEvents.firstOrNull { it.message?.formatted == "ClonedMessage2" }
+
+        assertEquals(2, mainEvent?.breadcrumbs?.size)
+        assertEquals(2, clonedEvent?.breadcrumbs?.size)
+        assertEquals(2, clonedEvent2?.breadcrumbs?.size)
     }
 }
