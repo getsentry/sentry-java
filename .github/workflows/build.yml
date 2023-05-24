@@ -63,6 +63,6 @@ jobs:
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
         if: runner.os == 'Linux' && matrix.java == '17'
-        uses: codecov/codecov-action@894ff025c7b54547a9a2a1e9f228beae737ad3c2 # pin@v3
+        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@v3
         with:
           name: sentry-java
