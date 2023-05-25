@@ -23,10 +23,11 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("KotlinInternalInJava")
 public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
-  private final @NotNull SentryComposeHelper composeHelper;
+  private final @NotNull ILogger logger;
+  private volatile @Nullable SentryComposeHelper composeHelper;
 
   public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
-    this.composeHelper = new SentryComposeHelper(logger);
+    this.logger = logger;
     SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
@@ -35,6 +36,16 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
   @Override
   public @Nullable UiElement locate(
       @NotNull Object root, float x, float y, UiElement.Type targetType) {
+
+    // lazy init composeHelper as it's using some reflection under the hood
+    if (composeHelper == null) {
+      synchronized (this) {
+        if (composeHelper == null) {
+          composeHelper = new SentryComposeHelper(logger);
+        }
+      }
+    }
+
     @Nullable String targetTag = null;
 
     if (!(root instanceof Owner)) {

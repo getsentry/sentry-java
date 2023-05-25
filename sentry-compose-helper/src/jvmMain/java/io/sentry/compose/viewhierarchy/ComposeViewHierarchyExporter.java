@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter {
 
   @NotNull private final ILogger logger;
+  @Nullable private volatile SentryComposeHelper composeHelper;
 
   public ComposeViewHierarchyExporter(@NotNull final ILogger logger) {
     this.logger = logger;
@@ -34,7 +35,14 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
       return false;
     }
 
-    final SentryComposeHelper composeHelper = new SentryComposeHelper(logger);
+    // lazy init composeHelper as it's using some reflection under the hood
+    if (composeHelper == null) {
+      synchronized (this) {
+        if (composeHelper == null) {
+          composeHelper = new SentryComposeHelper(logger);
+        }
+      }
+    }
 
     final @NotNull LayoutNode rootNode = ((Owner) element).getRoot();
     addChild(composeHelper, parent, null, rootNode);
