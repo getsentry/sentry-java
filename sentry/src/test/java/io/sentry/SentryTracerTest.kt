@@ -1216,4 +1216,23 @@ class SentryTracerTest {
             anyOrNull()
         )
     }
+
+    @Test
+    fun `when timer is cancelled, schedule finish does not crash`() {
+        val tracer = fixture.getSut(idleTimeout = 50)
+        tracer.timer!!.cancel()
+        tracer.scheduleFinish()
+    }
+
+    @Test
+    fun `when timer is cancelled, schedule finish finishes the transaction immediately`() {
+        val tracer = fixture.getSut(idleTimeout = 50)
+        tracer.startChild("load").finish()
+
+        tracer.timer!!.cancel()
+        tracer.scheduleFinish()
+
+        assertTrue(tracer.isFinished)
+        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
 }
