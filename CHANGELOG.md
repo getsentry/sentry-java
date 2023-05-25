@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add a new option to disable `RootChecker` ([#2735](https://github.com/getsentry/sentry-java/pull/2735))
+
 ### Fixes
 
 - Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
