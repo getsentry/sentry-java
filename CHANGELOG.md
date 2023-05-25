@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- Load sentry-debug-meta.properties ([#2734](https://github.com/getsentry/sentry-java/pull/2734))
+  - This enables source context for Java
+  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
+
 ### Fixes
 
 - Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
