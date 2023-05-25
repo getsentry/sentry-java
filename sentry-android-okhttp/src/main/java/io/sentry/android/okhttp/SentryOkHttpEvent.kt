@@ -18,6 +18,9 @@ import okhttp3.Request
 import okhttp3.Response
 import java.util.concurrent.ConcurrentHashMap
 
+private const val PROTOCOL_KEY = "protocol"
+private const val ERROR_MESSAGE_KEY = "error_message"
+
 internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
     private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()
     private val breadcrumb: Breadcrumb
@@ -54,17 +57,17 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
      */
     fun setResponse(response: Response) {
         this.response = response
-        breadcrumb.setData("protocol", response.protocol.name)
+        breadcrumb.setData(PROTOCOL_KEY, response.protocol.name)
         breadcrumb.setData("status_code", response.code)
-        callRootSpan?.setData("protocol", response.protocol.name)
+        callRootSpan?.setData(PROTOCOL_KEY, response.protocol.name)
         callRootSpan?.setData("http.status_code", response.code)
         callRootSpan?.status = SpanStatus.fromHttpStatusCode(response.code)
     }
 
     fun setProtocol(protocolName: String?) {
         if (protocolName != null) {
-            breadcrumb.setData("protocol", protocolName)
-            callRootSpan?.setData("protocol", protocolName)
+            breadcrumb.setData(PROTOCOL_KEY, protocolName)
+            callRootSpan?.setData(PROTOCOL_KEY, protocolName)
         }
     }
 
@@ -85,8 +88,8 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     /** Sets the [errorMessage] if not null. */
     fun setError(errorMessage: String?) {
         if (errorMessage != null) {
-            breadcrumb.setData("error_message", errorMessage)
-            callRootSpan?.setData("error_message", errorMessage)
+            breadcrumb.setData(ERROR_MESSAGE_KEY, errorMessage)
+            callRootSpan?.setData(ERROR_MESSAGE_KEY, errorMessage)
         }
     }
 

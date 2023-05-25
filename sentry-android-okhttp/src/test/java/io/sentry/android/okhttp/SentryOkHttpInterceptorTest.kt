@@ -267,6 +267,7 @@ class SentryOkHttpInterceptorTest {
         fixture.getSut()
         val interceptor = SentryOkHttpInterceptor(fixture.hub)
         val chain = mock<Interceptor.Chain>()
+        whenever(chain.call()).thenReturn(mock())
         whenever(chain.proceed(any())).thenThrow(IOException())
         whenever(chain.request()).thenReturn(getRequest())
 
@@ -499,6 +500,7 @@ class SentryOkHttpInterceptorTest {
             captureFailedRequests = true
         )
         val chain = mock<Interceptor.Chain>()
+        whenever(chain.call()).thenReturn(mock())
         whenever(chain.proceed(any())).thenThrow(IOException())
         whenever(chain.request()).thenReturn(getRequest())
 

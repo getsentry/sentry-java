@@ -15,6 +15,7 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  *  Logs network performance event metrics to Sentry
@@ -56,8 +57,23 @@ class SentryOkHttpEventListener(
         internal const val RESPONSE_HEADERS_EVENT = "responseHeaders"
         internal const val RESPONSE_BODY_EVENT = "responseBody"
 
-        internal val eventMap: MutableMap<Call, SentryOkHttpEvent> = HashMap()
+        internal val eventMap: MutableMap<Call, SentryOkHttpEvent> = ConcurrentHashMap()
     }
+
+    constructor() : this(
+        HubAdapter.getInstance(),
+        originalEventListenerCreator = null
+    )
+
+    constructor(originalEventListener: EventListener) : this(
+        HubAdapter.getInstance(),
+        originalEventListenerCreator = { originalEventListener }
+    )
+
+    constructor(originalEventListenerFactory: Factory) : this(
+        HubAdapter.getInstance(),
+        originalEventListenerCreator = { originalEventListenerFactory.create(it) }
+    )
 
     constructor(hub: IHub = HubAdapter.getInstance(), originalEventListener: EventListener) : this(
         hub,
