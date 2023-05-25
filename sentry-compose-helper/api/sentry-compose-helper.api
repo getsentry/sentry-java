@@ -1,10 +1,10 @@
-public class io/sentry/compose/SentryComposeUtil {
-	public fun <init> ()V
-	public static final fun getLayoutNodeXY (Landroidx/compose/ui/node/LayoutNode;)[I
+public class io/sentry/compose/SentryComposeHelper {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun getLayoutNodeBoundsInWindow (Landroidx/compose/ui/node/LayoutNode;)Landroidx/compose/ui/geometry/Rect;
 }
 
 public final class io/sentry/compose/gestures/ComposeGestureTargetLocator : io/sentry/internal/gestures/GestureTargetLocator {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/ILogger;)V
 	public fun locate (Ljava/lang/Object;FFLio/sentry/internal/gestures/UiElement$Type;)Lio/sentry/internal/gestures/UiElement;
 }
 
@@ -16,7 +16,7 @@ public final class io/sentry/compose/helper/BuildConfig {
 }
 
 public final class io/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter : io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/ILogger;)V
 	public fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
 }
 

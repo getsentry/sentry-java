@@ -265,7 +265,7 @@ class SentryApollo3InterceptorTest {
         }
     }
 
-    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {
+    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.hub)
@@ -274,7 +274,7 @@ class SentryApollo3InterceptorTest {
 
         val coroutine = launch {
             try {
-                sut.query(LaunchDetailsQuery("83")).execute()
+                sut.query(LaunchDetailsQuery(id)).execute()
             } catch (e: ApolloException) {
                 return@launch
             }

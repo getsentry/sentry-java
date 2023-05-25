@@ -11,6 +11,7 @@ import androidx.compose.ui.node.Owner;
 import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
+import io.sentry.NoOpLogger;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchyNode;
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ public class ComposeViewHierarchyExporterTest {
     final Owner node = Mockito.mock(Owner.class);
     Mockito.when(node.getRoot()).thenReturn(parent);
 
-    final ViewHierarchyExporter exporter = new ComposeViewHierarchyExporter();
+    final ViewHierarchyExporter exporter =
+        new ComposeViewHierarchyExporter(NoOpLogger.getInstance());
     exporter.export(rootVhNode, node);
 
     assertEquals(1, rootVhNode.getChildren().size());

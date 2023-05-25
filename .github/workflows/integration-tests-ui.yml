@@ -1,4 +1,4 @@
-name: 'Integration Tests - Ui tests'
+name: 'Integration Tests'
 on:
   push:
     branches:
@@ -7,6 +7,14 @@ on:
   pull_request:
 
 jobs:
+  cancel-previous-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # pin@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
   test:
     name: Ui tests
     runs-on: ubuntu-latest
@@ -43,3 +51,4 @@ jobs:
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-ui.yml
         if: env.SAUCE_USERNAME != null
+

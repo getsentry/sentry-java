@@ -208,6 +208,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrTimeoutIntervalMillis ()J
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
+	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getProfilingTracesHz ()I
 	public fun getProfilingTracesIntervalMillis ()I
 	public fun getStartupCrashDurationThresholdMillis ()J
@@ -239,6 +240,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
+	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
 }
@@ -315,8 +317,10 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public static fun snapshotViewHierarchy (Landroid/app/Activity;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
+	public static fun snapshotViewHierarchy (Landroid/app/Activity;Ljava/util/List;Lio/sentry/util/thread/IMainThreadChecker;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchy (Landroid/view/View;)Lio/sentry/protocol/ViewHierarchy;
-	public static fun snapshotViewHierarchyAsData (Landroid/app/Activity;Lio/sentry/ISerializer;Lio/sentry/ILogger;)[B
+	public static fun snapshotViewHierarchy (Landroid/view/View;Ljava/util/List;)Lio/sentry/protocol/ViewHierarchy;
+	public static fun snapshotViewHierarchyAsData (Landroid/app/Activity;Lio/sentry/util/thread/IMainThreadChecker;Lio/sentry/ISerializer;Lio/sentry/ILogger;)[B
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {

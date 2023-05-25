@@ -406,6 +406,14 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp) {
+    return createChild(operation, description, timestamp, Instrumenter.SENTRY, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
     return startChild(operation, description, null, Instrumenter.SENTRY, new SpanOptions());
   }

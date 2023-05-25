@@ -65,23 +65,35 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
+    final @NotNull List<DebugImage> debugImages = new ArrayList<>();
+
     if (options.getProguardUuid() != null) {
+      final DebugImage proguardMappingImage = new DebugImage();
+      proguardMappingImage.setType(DebugImage.PROGUARD);
+      proguardMappingImage.setUuid(options.getProguardUuid());
+      debugImages.add(proguardMappingImage);
+    }
+
+    for (final @NotNull String bundleId : options.getBundleIds()) {
+      final DebugImage sourceBundleImage = new DebugImage();
+      sourceBundleImage.setType(DebugImage.JVM);
+      sourceBundleImage.setDebugId(bundleId);
+      debugImages.add(sourceBundleImage);
+    }
+
+    if (!debugImages.isEmpty()) {
       DebugMeta debugMeta = event.getDebugMeta();
 
       if (debugMeta == null) {
         debugMeta = new DebugMeta();
       }
       if (debugMeta.getImages() == null) {
-        debugMeta.setImages(new ArrayList<>());
+        debugMeta.setImages(debugImages);
+      } else {
+        debugMeta.getImages().addAll(debugImages);
       }
-      List<DebugImage> images = debugMeta.getImages();
-      if (images != null) {
-        final DebugImage debugImage = new DebugImage();
-        debugImage.setType(DebugImage.PROGUARD);
-        debugImage.setUuid(options.getProguardUuid());
-        images.add(debugImage);
-        event.setDebugMeta(debugMeta);
-      }
+
+      event.setDebugMeta(debugMeta);
     }
   }
 

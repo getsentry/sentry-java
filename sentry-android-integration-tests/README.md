@@ -5,4 +5,4 @@
 * [App metrics test specification (yaml)](./metrics-test.yml)
 * [Espresso-based benchmarks](./sentry-uitest-android-benchmark) - run within SauceLabs (see /.sauce/*.yml)
 * [Espresso-based UI tests](./sentry-uitest-android) - run within SauceLabs (see /.sauce/*.yml)
-* [Sample app for testing against AGP compatibility matrix](./sentry-test-agp)
+  * Also used for compatibility test matrix against new AGP versions

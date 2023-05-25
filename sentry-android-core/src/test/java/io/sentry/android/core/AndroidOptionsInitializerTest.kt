@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.content.res.AssetManager
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -46,12 +47,14 @@ class AndroidOptionsInitializerTest {
             hasAppContext: Boolean = true,
             useRealContext: Boolean = false,
             configureOptions: SentryAndroidOptions.() -> Unit = {},
-            configureContext: Context.() -> Unit = {}
+            configureContext: Context.() -> Unit = {},
+            assets: AssetManager? = null
         ) {
             mockContext = if (metadata != null) {
                 ContextUtilsTest.mockMetaData(
                     mockContext = ContextUtilsTest.createMockContext(hasAppContext),
-                    metaData = metadata
+                    metaData = metadata,
+                    assets = assets
                 )
             } else {
                 ContextUtilsTest.createMockContext(hasAppContext)
@@ -275,6 +278,46 @@ class AndroidOptionsInitializerTest {
         )
 
         assertEquals("proguard-uuid", fixture.sentryOptions.proguardUuid)
+    }
+
+    @Test
+    fun `init should set proguard uuid from properties id on start`() {
+        val assets = mock<AssetManager>()
+
+        whenever(assets.open("sentry-debug-meta.properties")).thenReturn(
+            """
+            io.sentry.ProguardUuids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411
+            """.trimIndent().byteInputStream()
+        )
+
+        fixture.initSut(
+            Bundle(),
+            hasAppContext = false,
+            assets = assets
+        )
+
+        assertNotNull(fixture.sentryOptions.proguardUuid)
+        assertEquals("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", fixture.sentryOptions.proguardUuid)
+    }
+
+    @Test
+    fun `init should set bundle IDs id on start`() {
+        val assets = mock<AssetManager>()
+
+        whenever(assets.open("sentry-debug-meta.properties")).thenReturn(
+            """
+            io.sentry.bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411, faa3ab42-b1bd-4659-af8e-1682324aa744
+            """.trimIndent().byteInputStream()
+        )
+
+        fixture.initSut(
+            Bundle(),
+            hasAppContext = false,
+            assets = assets
+        )
+
+        assertTrue(fixture.sentryOptions.bundleIds.size == 2)
+        assertTrue(fixture.sentryOptions.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")))
     }
 
     @Test
