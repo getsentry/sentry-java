@@ -283,7 +283,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private @Nullable ProfilingTraceData onTransactionFinish(
+  private @Nullable synchronized ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
@@ -365,7 +365,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     long transactionDurationNanos = transactionEndNanos - transactionStartNanos;
 
     List<ProfilingTransactionData> transactionList = new ArrayList<>(1);
-    transactionList.add(currentProfilingTransactionData);
+    final ProfilingTransactionData txData = currentProfilingTransactionData;
+    if (txData != null) {
+      transactionList.add(txData);
+    }
     currentProfilingTransactionData = null;
     // We clear the counter in case of a timeout
     transactionsCounter = 0;
