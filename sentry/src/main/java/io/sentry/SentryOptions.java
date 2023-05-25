@@ -5,6 +5,8 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.debugmeta.IDebugMetaLoader;
+import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
@@ -384,6 +386,9 @@ public class SentryOptions {
 
   /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
+
+  /** Loads sentry-debug-meta.properties containing ProGuard UUID, bundle IDs etc. */
+  private @NotNull IDebugMetaLoader debugMetaLoader = NoOpDebugMetaLoader.getInstance();
 
   /** Enables the Auto instrumentation for user interaction tracing. */
   private boolean enableUserInteractionTracing = false;
@@ -1946,6 +1951,23 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
     this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
+  }
+
+  /**
+   * Returns a DebugMetaLoader to load sentry-debug-meta.properties containing ProGuard UUID, source
+   * bundle IDs etc.
+   *
+   * @return a loader or no-op
+   */
+  @ApiStatus.Internal
+  public @NotNull IDebugMetaLoader getDebugMetaLoader() {
+    return debugMetaLoader;
+  }
+
+  @ApiStatus.Internal
+  public void setDebugMetaLoader(final @Nullable IDebugMetaLoader debugMetaLoader) {
+    this.debugMetaLoader =
+        debugMetaLoader != null ? debugMetaLoader : NoOpDebugMetaLoader.getInstance();
   }
 
   /**
