@@ -8,6 +8,7 @@ import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
+import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -394,8 +395,14 @@ public class SentryOptions {
   /** Which framework is responsible for instrumenting. */
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
-  /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking */
   private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
+
+  /**
+   * Contains a list of ViewHierarchyExporter instances used for extracting non Android system View
+   * Hierarchy elements
+   */
+  private final @NotNull List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>();
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
@@ -1967,6 +1974,27 @@ public class SentryOptions {
   public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
     gestureTargetLocators.clear();
     gestureTargetLocators.addAll(locators);
+  }
+
+  /**
+   * Returns a list of all {@link ViewHierarchyExporter} instances used to export view hierarchy
+   * information.
+   *
+   * @return a list of {@link ViewHierarchyExporter}
+   */
+  @NotNull
+  public final List<ViewHierarchyExporter> getViewHierarchyExporters() {
+    return viewHierarchyExporters;
+  }
+
+  /**
+   * Sets the list of {@link ViewHierarchyExporter} being used to export the view hierarchy.
+   *
+   * @param exporters a list of {@link ViewHierarchyExporter}
+   */
+  public void setViewHierarchyExporters(@NotNull final List<ViewHierarchyExporter> exporters) {
+    viewHierarchyExporters.clear();
+    viewHierarchyExporters.addAll(exporters);
   }
 
   public @NotNull IMainThreadChecker getMainThreadChecker() {

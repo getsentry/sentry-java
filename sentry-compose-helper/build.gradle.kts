@@ -22,6 +22,16 @@ kotlin {
                 compileOnly(compose.ui)
             }
         }
+        val jvmTest by getting {
+            dependencies {
+                implementation(compose.runtime)
+                implementation(compose.ui)
+
+                implementation(Config.TestLibs.kotlinTestJunit)
+                implementation(Config.TestLibs.mockitoKotlin)
+                implementation(Config.TestLibs.mockitoInline)
+            }
+        }
     }
 }
 
