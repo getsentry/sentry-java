@@ -14,6 +14,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
@@ -60,7 +61,11 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     final @Nullable ViewHierarchy viewHierarchy =
-        snapshotViewHierarchy(activity, options.getMainThreadChecker(), options.getLogger());
+        snapshotViewHierarchy(
+            activity,
+            options.getViewHierarchyExporters(),
+            options.getMainThreadChecker(),
+            options.getLogger());
 
     if (viewHierarchy != null) {
       hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
@@ -74,8 +79,10 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
       @NotNull IMainThreadChecker mainThreadChecker,
       @NotNull ISerializer serializer,
       @NotNull ILogger logger) {
+
     @Nullable
-    ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, mainThreadChecker, logger);
+    ViewHierarchy viewHierarchy =
+        snapshotViewHierarchy(activity, new ArrayList<>(0), mainThreadChecker, logger);
 
     if (viewHierarchy == null) {
       logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
@@ -98,15 +105,18 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
   @Nullable
   public static ViewHierarchy snapshotViewHierarchy(
-      @Nullable Activity activity, @NotNull ILogger logger) {
-    return snapshotViewHierarchy(activity, AndroidMainThreadChecker.getInstance(), logger);
+      final @Nullable Activity activity, final @NotNull ILogger logger) {
+    return snapshotViewHierarchy(
+        activity, new ArrayList<>(0), AndroidMainThreadChecker.getInstance(), logger);
   }
 
   @Nullable
   public static ViewHierarchy snapshotViewHierarchy(
-      @Nullable Activity activity,
-      @NotNull IMainThreadChecker mainThreadChecker,
-      @NotNull ILogger logger) {
+      final @Nullable Activity activity,
+      final @NotNull List<ViewHierarchyExporter> exporters,
+      final @NotNull IMainThreadChecker mainThreadChecker,
+      final @NotNull ILogger logger) {
+
     if (activity == null) {
       logger.log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
       return null;
@@ -126,14 +136,14 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
     try {
       if (mainThreadChecker.isMainThread()) {
-        return snapshotViewHierarchy(decorView);
+        return snapshotViewHierarchy(decorView, exporters);
       } else {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<ViewHierarchy> viewHierarchy = new AtomicReference<>(null);
         activity.runOnUiThread(
             () -> {
               try {
-                viewHierarchy.set(snapshotViewHierarchy(decorView));
+                viewHierarchy.set(snapshotViewHierarchy(decorView, exporters));
                 latch.countDown();
               } catch (Throwable t) {
                 logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
@@ -150,21 +160,37 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
   }
 
   @NotNull
-  public static ViewHierarchy snapshotViewHierarchy(@NotNull final View view) {
+  public static ViewHierarchy snapshotViewHierarchy(final @NotNull View view) {
+    return snapshotViewHierarchy(view, new ArrayList<>(0));
+  }
+
+  @NotNull
+  public static ViewHierarchy snapshotViewHierarchy(
+      final @NotNull View view, final @NotNull List<ViewHierarchyExporter> exporters) {
     final List<ViewHierarchyNode> windows = new ArrayList<>(1);
     final ViewHierarchy viewHierarchy = new ViewHierarchy("android_view_system", windows);
 
     final @NotNull ViewHierarchyNode node = viewToNode(view);
     windows.add(node);
-    addChildren(view, node);
+    addChildren(view, node, exporters);
 
     return viewHierarchy;
   }
 
   private static void addChildren(
-      @NotNull final View view, @NotNull final ViewHierarchyNode parentNode) {
+      final @NotNull View view,
+      final @NotNull ViewHierarchyNode parentNode,
+      final @NotNull List<ViewHierarchyExporter> exporters) {
     if (!(view instanceof ViewGroup)) {
       return;
+    }
+
+    // In case any external exporter recognizes it's own widget (e.g. AndroidComposeView)
+    // we can immediately return
+    for (ViewHierarchyExporter exporter : exporters) {
+      if (exporter.export(parentNode, view)) {
+        return;
+      }
     }
 
     final @NotNull ViewGroup viewGroup = ((ViewGroup) view);
@@ -179,7 +205,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
       if (child != null) {
         final @NotNull ViewHierarchyNode childNode = viewToNode(child);
         childNodes.add(childNode);
-        addChildren(child, childNode);
+        addChildren(child, childNode, exporters);
       }
     }
     parentNode.setChildren(childNodes);

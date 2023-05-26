@@ -559,7 +559,7 @@ class AndroidOptionsInitializerTest {
         fixture.initSutWithClassLoader(
             classesToLoad = listOf(
                 AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
-                AndroidOptionsInitializer.SENTRY_COMPOSE_INTEGRATION_CLASS_NAME
+                AndroidOptionsInitializer.SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME
             )
         )
 
