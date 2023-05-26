@@ -253,8 +253,8 @@ class SentryOkHttpInterceptorTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-                assertEquals(13L, it.data["response_body_size"])
-                assertEquals(12L, it.data["request_body_size"])
+                assertEquals(13L, it.data["http.response_content_length"])
+                assertEquals(12L, it.data["http.request_content_length"])
             },
             anyOrNull()
         )
@@ -267,6 +267,7 @@ class SentryOkHttpInterceptorTest {
         fixture.getSut()
         val interceptor = SentryOkHttpInterceptor(fixture.hub)
         val chain = mock<Interceptor.Chain>()
+        whenever(chain.call()).thenReturn(mock())
         whenever(chain.proceed(any())).thenThrow(IOException())
         whenever(chain.request()).thenReturn(getRequest())
 
@@ -499,6 +500,7 @@ class SentryOkHttpInterceptorTest {
             captureFailedRequests = true
         )
         val chain = mock<Interceptor.Chain>()
+        whenever(chain.call()).thenReturn(mock())
         whenever(chain.proceed(any())).thenThrow(IOException())
         whenever(chain.request()).thenReturn(getRequest())
 
@@ -509,5 +511,16 @@ class SentryOkHttpInterceptorTest {
             // ignore me
         }
         verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+    }
+
+    @Test
+    fun `when a call is captured by SentryOkHttpEventListener no span nor breadcrumb is created`() {
+        val sut = fixture.getSut(responseBody = "response body")
+        val call = sut.newCall(postRequest())
+        SentryOkHttpEventListener.eventMap[call] = mock()
+        call.execute()
+        val httpClientSpan = fixture.sentryTracer.children.firstOrNull()
+        assertNull(httpClientSpan)
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }

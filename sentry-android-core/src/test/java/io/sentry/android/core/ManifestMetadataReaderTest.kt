@@ -1243,4 +1243,29 @@ class ManifestMetadataReaderTest {
         assertNotNull(resultingSet)
         assert(resultingSet.containsAll(listOf("Database Instrumentation", "OkHttp Instrumentation")))
     }
+
+    @Test
+    fun `applyMetadata reads enable root checker to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_ROOT_CHECK to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableRootCheck)
+    }
+
+    @Test
+    fun `applyMetadata reads enable root check and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableRootCheck)
+    }
 }

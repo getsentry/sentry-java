@@ -1,13 +1,15 @@
 package io.sentry.compose.gestures;
 
-import androidx.compose.ui.layout.LayoutCoordinatesKt;
+import androidx.compose.ui.geometry.Rect;
 import androidx.compose.ui.layout.ModifierInfo;
 import androidx.compose.ui.node.LayoutNode;
 import androidx.compose.ui.node.Owner;
 import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
+import io.sentry.ILogger;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.compose.SentryComposeHelper;
 import io.sentry.compose.helper.BuildConfig;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
@@ -21,7 +23,11 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("KotlinInternalInJava")
 public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
-  public ComposeGestureTargetLocator() {
+  private final @NotNull ILogger logger;
+  private volatile @Nullable SentryComposeHelper composeHelper;
+
+  public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
+    this.logger = logger;
     SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
@@ -30,6 +36,16 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
   @Override
   public @Nullable UiElement locate(
       @NotNull Object root, float x, float y, UiElement.Type targetType) {
+
+    // lazy init composeHelper as it's using some reflection under the hood
+    if (composeHelper == null) {
+      synchronized (this) {
+        if (composeHelper == null) {
+          composeHelper = new SentryComposeHelper(logger);
+        }
+      }
+    }
+
     @Nullable String targetTag = null;
 
     if (!(root instanceof Owner)) {
@@ -45,7 +61,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
         continue;
       }
 
-      if (node.isPlaced() && layoutNodeBoundsContain(node, x, y)) {
+      if (node.isPlaced() && layoutNodeBoundsContain(composeHelper, node, x, y)) {
         boolean isClickable = false;
         boolean isScrollable = false;
         @Nullable String testTag = null;
@@ -63,7 +79,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
                 isScrollable = true;
               } else if ("OnClick".equals(key)) {
                 isClickable = true;
-              } else if ("TestTag".equals(key)) {
+              } else if ("SentryTag".equals(key) || "TestTag".equals(key)) {
                 if (entry.getValue() instanceof String) {
                   testTag = (String) entry.getValue();
                 }
@@ -92,16 +108,19 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
   }
 
   private static boolean layoutNodeBoundsContain(
-      @NotNull LayoutNode node, final float x, final float y) {
-    final int nodeHeight = node.getHeight();
-    final int nodeWidth = node.getWidth();
+      @NotNull SentryComposeHelper composeHelper,
+      @NotNull LayoutNode node,
+      final float x,
+      final float y) {
 
-    // Offset is a Kotlin value class, packing x/y into a long
-    // TODO find a way to use the existing APIs
-    final long nodePosition = LayoutCoordinatesKt.positionInWindow(node.getCoordinates());
-    final int nodeX = (int) Float.intBitsToFloat((int) (nodePosition >> 32));
-    final int nodeY = (int) Float.intBitsToFloat((int) (nodePosition));
-
-    return x >= nodeX && x <= (nodeX + nodeWidth) && y >= nodeY && y <= (nodeY + nodeHeight);
+    final @Nullable Rect bounds = composeHelper.getLayoutNodeBoundsInWindow(node);
+    if (bounds == null) {
+      return false;
+    } else {
+      return x >= bounds.getLeft()
+          && x <= bounds.getRight()
+          && y >= bounds.getTop()
+          && y <= bounds.getBottom();
+    }
   }
 }

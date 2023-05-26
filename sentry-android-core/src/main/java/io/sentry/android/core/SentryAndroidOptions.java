@@ -5,6 +5,7 @@ import io.sentry.Scope;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -135,6 +136,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enableFramesTracking = true;
 
   private @Nullable String nativeSdkName = null;
+
+  /**
+   * Controls whether to enable the {@link RootChecker}, which can potentially make apps to be
+   * flagged by some app stores as harmful.
+   */
+  private boolean enableRootCheck = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -425,5 +432,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Internal
   public @Nullable String getNativeSdkName() {
     return nativeSdkName;
+  }
+
+  public boolean isEnableRootCheck() {
+    return enableRootCheck;
+  }
+
+  public void setEnableRootCheck(final boolean enableRootCheck) {
+    this.enableRootCheck = enableRootCheck;
   }
 }

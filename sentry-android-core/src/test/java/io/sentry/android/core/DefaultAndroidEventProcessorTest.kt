@@ -576,4 +576,13 @@ class DefaultAndroidEventProcessorTest {
             assertNull(thread.isMain)
         }
     }
+
+    @Test
+    fun `does not perform root check if root checker is disabled`() {
+        fixture.options.isEnableRootCheck = false
+        val sut = fixture.getSut(context)
+
+        val contextData = sut.contextData.get()
+        assertNull(contextData[ROOTED])
+    }
 }
