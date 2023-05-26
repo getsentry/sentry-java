@@ -74,6 +74,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
+    testImplementation(projects.sentryTestSupport)
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxJunit)

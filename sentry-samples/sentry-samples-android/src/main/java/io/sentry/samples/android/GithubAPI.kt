@@ -1,6 +1,7 @@
 package io.sentry.samples.android
 
 import io.sentry.HttpStatusCodeRange
+import io.sentry.android.okhttp.SentryOkHttpEventListener
 import io.sentry.android.okhttp.SentryOkHttpInterceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -8,14 +9,15 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object GithubAPI {
 
-    private val client = OkHttpClient.Builder().addInterceptor(
-        SentryOkHttpInterceptor(
-            captureFailedRequests = true,
-            failedRequestStatusCodes = listOf(
-                HttpStatusCodeRange(400, 599)
+    private val client = OkHttpClient.Builder().eventListener(SentryOkHttpEventListener())
+        .addInterceptor(
+            SentryOkHttpInterceptor(
+                captureFailedRequests = true,
+                failedRequestStatusCodes = listOf(
+                    HttpStatusCodeRange(400, 599)
+                )
             )
-        )
-    ).build()
+        ).build()
 
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://api.github.com/")
