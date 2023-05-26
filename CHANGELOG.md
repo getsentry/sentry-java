@@ -3,10 +3,22 @@
 ## Unreleased
 
 ### Features
+
 - Add support for Sentry Kotlin Compiler Plugin ([#2695](https://github.com/getsentry/sentry-java/pull/2695))
   - In conjunction with our sentry-kotlin-compiler-plugin we improved Jetpack Compose support for
     - [View Hierarchy](https://docs.sentry.io/platforms/android/enriching-events/viewhierarchy/) support for Jetpack Compose screens
     - Automatic breadcrumbs for [user interactions](https://docs.sentry.io/platforms/android/performance/instrumentation/automatic-instrumentation/#user-interaction-instrumentation)
+- More granular http requests instrumentation with a new SentryOkHttpEventListener ([#2659](https://github.com/getsentry/sentry-java/pull/2659))
+    - Create spans for time spent on:
+        - Proxy selection
+        - DNS resolution
+        - HTTPS setup
+        - Connection
+        - Requesting headers
+        - Receiving response
+    - You can attach the event listener to your OkHttpClient through `client.eventListener(new SentryOkHttpEventListener()).addInterceptor(new SentryOkHttpInterceptor()).build();`
+    - In case you already have an event listener you can use the SentryOkHttpEventListener as well through `client.eventListener(new SentryOkHttpEventListener(myListener)).addInterceptor(new SentryOkHttpInterceptor()).build();`
+- Add a new option to disable `RootChecker` ([#2735](https://github.com/getsentry/sentry-java/pull/2735))
 
 ### Fixes
 
@@ -24,16 +36,6 @@
 
 ### Features
 
-- More granular http requests instrumentation with a new SentryOkHttpEventListener ([#2659](https://github.com/getsentry/sentry-java/pull/2659))
-    - Create spans for time spent on:
-        - Proxy selection
-        - DNS resolution
-        - HTTPS setup
-        - Connection
-        - Requesting headers
-        - Receiving response
-    - You can attach the event listener to your OkHttpClient through `client.eventListener(new SentryOkHttpEventListener()).addInterceptor(new SentryOkHttpInterceptor()).build();`
-    - In case you already have an event listener you can use the SentryOkHttpEventListener as well through `client.eventListener(new SentryOkHttpEventListener(myListener)).addInterceptor(new SentryOkHttpInterceptor()).build();`
 - Add Screenshot and ViewHierarchy to integrations list ([#2698](https://github.com/getsentry/sentry-java/pull/2698))
 - New ANR detection based on [ApplicationExitInfo API](https://developer.android.com/reference/android/app/ApplicationExitInfo) ([#2697](https://github.com/getsentry/sentry-java/pull/2697))
     - This implementation completely replaces the old one (based on a watchdog) on devices running Android 11 and above:
