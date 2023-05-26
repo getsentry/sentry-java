@@ -1,27 +1,27 @@
 package io.sentry;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Helper class that provides wrappers around:
+ *
  * <ul>
  *   <li>{@link Callable}
  *   <li>{@link Supplier}
  * </ul>
- * that clones the Hub before execution and restores it afterwards.
- * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
  *
+ * that clones the Hub before execution and restores it afterwards. This prevents reused threads
+ * (e.g. from thread-pools) from getting an incorrect state.
  */
 public final class SentryWrapper {
 
   /**
    * Helper method to wrap {@link Callable}
    *
-   * Clones the Hub before execution and restores it afterwards.
-   * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
+   * <p>Clones the Hub before execution and restores it afterwards. This prevents reused threads
+   * (e.g. from thread-pools) from getting an incorrect state.
    *
    * @param callable - the {@link Callable} to be wrapped
    * @return the wrapped {@link Callable}
@@ -44,8 +44,8 @@ public final class SentryWrapper {
   /**
    * Helper method to wrap {@link Supplier}
    *
-   * Clones the Hub before execution and restores it afterwards.
-   * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
+   * <p>Clones the Hub before execution and restores it afterwards. This prevents reused threads
+   * (e.g. from thread-pools) from getting an incorrect state.
    *
    * @param supplier - the {@link Supplier} to be wrapped
    * @return the wrapped {@link Supplier}
