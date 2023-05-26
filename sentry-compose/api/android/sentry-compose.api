@@ -10,6 +10,13 @@ public final class io/sentry/compose/SentryComposeTracingKt {
 	public static final fun SentryTraced (Ljava/lang/String;Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
+public final class io/sentry/compose/SentryModifier {
+	public static final field $stable I
+	public static final field INSTANCE Lio/sentry/compose/SentryModifier;
+	public static final field TAG Ljava/lang/String;
+	public static final fun sentryTag (Landroidx/compose/ui/Modifier;Ljava/lang/String;)Landroidx/compose/ui/Modifier;
+}
+
 public final class io/sentry/compose/SentryNavigationIntegrationKt {
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
 }

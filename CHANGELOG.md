@@ -2,9 +2,17 @@
 
 ## Unreleased
 
+### Features
+- Add support for Sentry Kotlin Compiler Plugin ([#2695](https://github.com/getsentry/sentry-java/pull/2695))
+  - In conjunction with our sentry-kotlin-compiler-plugin we improved Jetpack Compose support for
+    - [View Hierarchy](https://docs.sentry.io/platforms/android/enriching-events/viewhierarchy/) support for Jetpack Compose screens
+    - Automatic breadcrumbs for [user interactions](https://docs.sentry.io/platforms/android/performance/instrumentation/automatic-instrumentation/#user-interaction-instrumentation)
+
 ### Fixes
 
 - Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
+- Fix `SentryTracer` crash when scheduling auto-finish of a transaction, but the timer has already been cancelled ([#2731](https://github.com/getsentry/sentry-java/pull/2731))
+- Fix `AndroidTransactionProfiler` crash when finishing a profile that happened due to race condition ([#2731](https://github.com/getsentry/sentry-java/pull/2731))
 
 ## 6.19.1
 
