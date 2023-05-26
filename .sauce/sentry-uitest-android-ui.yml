@@ -5,7 +5,7 @@ sauce:
   # Controls how many suites are executed at the same time (sauce test env only).
   concurrency: 1
   metadata:
-    build: sentry-uitest-android
+    build: sentry-uitest-android-ui@$CI_COMMIT_SHORT_SHA
     tags:
       - e2e
       - android
