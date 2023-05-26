@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.content.res.AssetManager
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,12 +15,15 @@ import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
+import io.sentry.cache.PersistingOptionsObserver
+import io.sentry.cache.PersistingScopeObserver
 import io.sentry.compose.gestures.ComposeGestureTargetLocator
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -43,12 +47,14 @@ class AndroidOptionsInitializerTest {
             hasAppContext: Boolean = true,
             useRealContext: Boolean = false,
             configureOptions: SentryAndroidOptions.() -> Unit = {},
-            configureContext: Context.() -> Unit = {}
+            configureContext: Context.() -> Unit = {},
+            assets: AssetManager? = null
         ) {
             mockContext = if (metadata != null) {
                 ContextUtilsTest.mockMetaData(
                     mockContext = ContextUtilsTest.createMockContext(hasAppContext),
-                    metaData = metadata
+                    metaData = metadata,
+                    assets = assets
                 )
             } else {
                 ContextUtilsTest.createMockContext(hasAppContext)
@@ -141,7 +147,7 @@ class AndroidOptionsInitializerTest {
     fun `AndroidEventProcessor added to processors list`() {
         fixture.initSut()
         val actual =
-            fixture.sentryOptions.eventProcessors.any { it is DefaultAndroidEventProcessor }
+            fixture.sentryOptions.eventProcessors.firstOrNull { it is DefaultAndroidEventProcessor }
         assertNotNull(actual)
     }
 
@@ -149,7 +155,7 @@ class AndroidOptionsInitializerTest {
     fun `PerformanceAndroidEventProcessor added to processors list`() {
         fixture.initSut()
         val actual =
-            fixture.sentryOptions.eventProcessors.any { it is PerformanceAndroidEventProcessor }
+            fixture.sentryOptions.eventProcessors.firstOrNull { it is PerformanceAndroidEventProcessor }
         assertNotNull(actual)
     }
 
@@ -164,7 +170,7 @@ class AndroidOptionsInitializerTest {
     fun `ScreenshotEventProcessor added to processors list`() {
         fixture.initSut()
         val actual =
-            fixture.sentryOptions.eventProcessors.any { it is ScreenshotEventProcessor }
+            fixture.sentryOptions.eventProcessors.firstOrNull { it is ScreenshotEventProcessor }
         assertNotNull(actual)
     }
 
@@ -172,7 +178,15 @@ class AndroidOptionsInitializerTest {
     fun `ViewHierarchyEventProcessor added to processors list`() {
         fixture.initSut()
         val actual =
-            fixture.sentryOptions.eventProcessors.any { it is ViewHierarchyEventProcessor }
+            fixture.sentryOptions.eventProcessors.firstOrNull { it is ViewHierarchyEventProcessor }
+        assertNotNull(actual)
+    }
+
+    @Test
+    fun `AnrV2EventProcessor added to processors list`() {
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.firstOrNull { it is AnrV2EventProcessor }
         assertNotNull(actual)
     }
 
@@ -264,6 +278,46 @@ class AndroidOptionsInitializerTest {
         )
 
         assertEquals("proguard-uuid", fixture.sentryOptions.proguardUuid)
+    }
+
+    @Test
+    fun `init should set proguard uuid from properties id on start`() {
+        val assets = mock<AssetManager>()
+
+        whenever(assets.open("sentry-debug-meta.properties")).thenReturn(
+            """
+            io.sentry.ProguardUuids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411
+            """.trimIndent().byteInputStream()
+        )
+
+        fixture.initSut(
+            Bundle(),
+            hasAppContext = false,
+            assets = assets
+        )
+
+        assertNotNull(fixture.sentryOptions.proguardUuid)
+        assertEquals("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", fixture.sentryOptions.proguardUuid)
+    }
+
+    @Test
+    fun `init should set bundle IDs id on start`() {
+        val assets = mock<AssetManager>()
+
+        whenever(assets.open("sentry-debug-meta.properties")).thenReturn(
+            """
+            io.sentry.bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411, faa3ab42-b1bd-4659-af8e-1682324aa744
+            """.trimIndent().byteInputStream()
+        )
+
+        fixture.initSut(
+            Bundle(),
+            hasAppContext = false,
+            assets = assets
+        )
+
+        assertTrue(fixture.sentryOptions.bundleIds.size == 2)
+        assertTrue(fixture.sentryOptions.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")))
     }
 
     @Test
@@ -533,5 +587,41 @@ class AndroidOptionsInitializerTest {
         fixture.initSut()
 
         assertIs<DefaultTransactionPerformanceCollector>(fixture.sentryOptions.transactionPerformanceCollector)
+    }
+
+    @Test
+    fun `PersistingScopeObserver is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.scopeObservers.any { it is PersistingScopeObserver } }
+    }
+
+    @Test
+    fun `PersistingOptionsObserver is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.optionsObservers.any { it is PersistingOptionsObserver } }
+    }
+
+    @Test
+    fun `when cacheDir is not set, persisting observers are not set to options`() {
+        fixture.initSut(configureOptions = { cacheDirPath = null })
+
+        assertFalse(fixture.sentryOptions.optionsObservers.any { it is PersistingOptionsObserver })
+        assertFalse(fixture.sentryOptions.scopeObservers.any { it is PersistingScopeObserver })
+    }
+
+    @Config(sdk = [30])
+    @Test
+    fun `AnrV2Integration added to integrations list for API 30 and above`() {
+        fixture.initSut(useRealContext = true)
+
+        val anrv2Integration =
+            fixture.sentryOptions.integrations.firstOrNull { it is AnrV2Integration }
+        assertNotNull(anrv2Integration)
+
+        val anrv1Integration =
+            fixture.sentryOptions.integrations.firstOrNull { it is AnrIntegration }
+        assertNull(anrv1Integration)
     }
 }

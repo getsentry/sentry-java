@@ -9,28 +9,38 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
+import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.thread.IMainThreadChecker;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
 @ApiStatus.Internal
-public final class ViewHierarchyEventProcessor implements EventProcessor {
+public final class ViewHierarchyEventProcessor implements EventProcessor, IntegrationName {
 
   private final @NotNull SentryAndroidOptions options;
+  private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
+    if (options.isAttachViewHierarchy()) {
+      addIntegrationToSdkVersion();
+    }
   }
 
   @Override
@@ -50,7 +60,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     final @Nullable ViewHierarchy viewHierarchy =
-        snapshotViewHierarchy(activity, options.getLogger());
+        snapshotViewHierarchy(activity, options.getMainThreadChecker(), options.getLogger());
 
     if (viewHierarchy != null) {
       hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
@@ -59,10 +69,13 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     return event;
   }
 
-  @Nullable
   public static byte[] snapshotViewHierarchyAsData(
-      @Nullable Activity activity, @NotNull ISerializer serializer, @NotNull ILogger logger) {
-    @Nullable ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, logger);
+      @Nullable Activity activity,
+      @NotNull IMainThreadChecker mainThreadChecker,
+      @NotNull ISerializer serializer,
+      @NotNull ILogger logger) {
+    @Nullable
+    ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, mainThreadChecker, logger);
 
     if (viewHierarchy == null) {
       logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
@@ -86,6 +99,14 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   @Nullable
   public static ViewHierarchy snapshotViewHierarchy(
       @Nullable Activity activity, @NotNull ILogger logger) {
+    return snapshotViewHierarchy(activity, AndroidMainThreadChecker.getInstance(), logger);
+  }
+
+  @Nullable
+  public static ViewHierarchy snapshotViewHierarchy(
+      @Nullable Activity activity,
+      @NotNull IMainThreadChecker mainThreadChecker,
+      @NotNull ILogger logger) {
     if (activity == null) {
       logger.log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
       return null;
@@ -104,12 +125,28 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     try {
-      final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView);
-      return viewHierarchy;
+      if (mainThreadChecker.isMainThread()) {
+        return snapshotViewHierarchy(decorView);
+      } else {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<ViewHierarchy> viewHierarchy = new AtomicReference<>(null);
+        activity.runOnUiThread(
+            () -> {
+              try {
+                viewHierarchy.set(snapshotViewHierarchy(decorView));
+                latch.countDown();
+              } catch (Throwable t) {
+                logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+              }
+            });
+        if (latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+          return viewHierarchy.get();
+        }
+      }
     } catch (Throwable t) {
       logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
-      return null;
     }
+    return null;
   }
 
   @NotNull

@@ -2,6 +2,7 @@ package io.sentry.samples.android;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
@@ -30,7 +31,10 @@ public class MainActivity extends AppCompatActivity {
   private int crashCount = 0;
   private int screenLoadCount = 0;
 
+  final Object mutex = new Object();
+
   @Override
+  @SuppressWarnings("deprecation")
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
@@ -148,11 +152,35 @@ public class MainActivity extends AppCompatActivity {
           // Sentry.
           // NOTE: By default it doesn't raise if the debugger is attached. That can also be
           // configured.
-          try {
-            Thread.sleep(10000);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
+          new Thread(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        while (true) {
+                          try {
+                            Thread.sleep(10000);
+                          } catch (InterruptedException e) {
+                            e.printStackTrace();
+                          }
+                        }
+                      }
+                    }
+                  })
+              .start();
+
+          new Handler()
+              .postDelayed(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        // Shouldn't happen
+                        throw new IllegalStateException();
+                      }
+                    }
+                  },
+                  1000);
         });
 
     binding.openSecondActivity.setOnClickListener(

@@ -7,6 +7,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -101,6 +102,24 @@ public final class OperatingSystem implements JsonUnknown, JsonSerializable {
 
   public void setRooted(final @Nullable Boolean rooted) {
     this.rooted = rooted;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    OperatingSystem that = (OperatingSystem) o;
+    return Objects.equals(name, that.name)
+        && Objects.equals(version, that.version)
+        && Objects.equals(rawDescription, that.rawDescription)
+        && Objects.equals(build, that.build)
+        && Objects.equals(kernelVersion, that.kernelVersion)
+        && Objects.equals(rooted, that.rooted);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, version, rawDescription, build, kernelVersion, rooted);
   }
 
   // JsonSerializable
