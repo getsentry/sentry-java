@@ -161,7 +161,7 @@ class SentryOkHttpEventListenerTest {
                     assertEquals(201, span.data["status_code"])
                 }
                 1 -> {
-                    assertEquals("http.client.proxySelect", span.operation)
+                    assertEquals("http.client.proxy_select", span.operation)
                     assertNotNull(span.data["proxies"])
                 }
                 2 -> {
@@ -176,14 +176,14 @@ class SentryOkHttpEventListenerTest {
                     assertEquals("http.client.connection", span.operation)
                 }
                 5 -> {
-                    assertEquals("http.client.requestHeaders", span.operation)
+                    assertEquals("http.client.request_headers", span.operation)
                 }
                 6 -> {
-                    assertEquals("http.client.responseHeaders", span.operation)
+                    assertEquals("http.client.response_headers", span.operation)
                     assertEquals(201, span.data["status_code"])
                 }
                 7 -> {
-                    assertEquals("http.client.responseBody", span.operation)
+                    assertEquals("http.client.response_body", span.operation)
                 }
             }
         }
@@ -200,7 +200,7 @@ class SentryOkHttpEventListenerTest {
         val callSpan = okHttpEvent?.callRootSpan
         response.close()
         assertEquals(9, fixture.sentryTracer.children.size)
-        val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.requestBody" }
+        val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.request_body" }
         assertNotNull(requestBodySpan)
         assertEquals(requestBody.toByteArray().size.toLong(), requestBodySpan.data["http.request_content_length"])
         assertEquals(requestBody.toByteArray().size.toLong(), callSpan?.getData("http.request_content_length"))
@@ -221,7 +221,7 @@ class SentryOkHttpEventListenerTest {
         assertNotNull(responseBytes)
 
         response.close()
-        val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.responseBody" }
+        val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_body" }
         assertNotNull(requestBodySpan)
         assertEquals(responseBytes.size.toLong(), requestBodySpan.data["http.response_content_length"])
         assertEquals(responseBytes.size.toLong(), callSpan?.getData("http.response_content_length"))

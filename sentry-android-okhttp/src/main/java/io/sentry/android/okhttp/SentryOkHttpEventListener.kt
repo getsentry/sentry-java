@@ -47,15 +47,15 @@ class SentryOkHttpEventListener(
     private var originalEventListener: EventListener? = null
 
     companion object {
-        internal const val PROXY_SELECT_EVENT = "proxySelect"
+        internal const val PROXY_SELECT_EVENT = "proxy_select"
         internal const val DNS_EVENT = "dns"
-        internal const val SECURE_CONNECT_EVENT = "secureConnect"
+        internal const val SECURE_CONNECT_EVENT = "secure_connect"
         internal const val CONNECT_EVENT = "connect"
         internal const val CONNECTION_EVENT = "connection"
-        internal const val REQUEST_HEADERS_EVENT = "requestHeaders"
-        internal const val REQUEST_BODY_EVENT = "requestBody"
-        internal const val RESPONSE_HEADERS_EVENT = "responseHeaders"
-        internal const val RESPONSE_BODY_EVENT = "responseBody"
+        internal const val REQUEST_HEADERS_EVENT = "request_headers"
+        internal const val REQUEST_BODY_EVENT = "request_body"
+        internal const val RESPONSE_HEADERS_EVENT = "response_headers"
+        internal const val RESPONSE_BODY_EVENT = "response_body"
 
         internal val eventMap: MutableMap<Call, SentryOkHttpEvent> = ConcurrentHashMap()
     }
