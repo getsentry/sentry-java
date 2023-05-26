@@ -1,12 +1,35 @@
 package io.sentry;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+/**
+ * Helper class that provides wrappers around:
+ * <ul>
+ *   <li>{@link Callable}
+ *   <li>{@link Supplier}
+ * </ul>
+ * that clones the Hub before execution and restores it afterwards.
+ * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
+ *
+ */
 public final class SentryWrapper {
-  public static <U> Callable<U> wrapCallable(Callable<U> callable) {
+
+  /**
+   * Helper method to wrap {@link Callable}
+   *
+   * Clones the Hub before execution and restores it afterwards.
+   * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
+   *
+   * @param callable - the {@link Callable} to be wrapped
+   * @return the wrapped {@link Callable}
+   * @param <U> - the result type of the {@link Callable}
+   */
+  public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
     final IHub oldState = Sentry.getCurrentHub();
-    final IHub newHub = Sentry.getCurrentHub().clone();
+    final IHub newHub = oldState.clone();
 
     return () -> {
       Sentry.setCurrentHub(newHub);
@@ -18,9 +41,19 @@ public final class SentryWrapper {
     };
   }
 
-  public static <U> Supplier<U> wrapSupplier(Supplier<U> supplier) {
+  /**
+   * Helper method to wrap {@link Supplier}
+   *
+   * Clones the Hub before execution and restores it afterwards.
+   * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
+   *
+   * @param supplier - the {@link Supplier} to be wrapped
+   * @return the wrapped {@link Supplier}
+   * @param <U> - the result type of the {@link Supplier}
+   */
+  public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
     final IHub oldState = Sentry.getCurrentHub();
-    final IHub newHub = Sentry.getCurrentHub().clone();
+    final IHub newHub = oldState.clone();
 
     return () -> {
       Sentry.setCurrentHub(newHub);
