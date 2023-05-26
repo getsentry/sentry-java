@@ -7,6 +7,10 @@
 - Load sentry-debug-meta.properties ([#2734](https://github.com/getsentry/sentry-java/pull/2734))
   - This enables source context for Java
   - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
+- Add support for Sentry Kotlin Compiler Plugin ([#2695](https://github.com/getsentry/sentry-java/pull/2695))
+  - In conjunction with our sentry-kotlin-compiler-plugin we improved Jetpack Compose support for
+    - [View Hierarchy](https://docs.sentry.io/platforms/android/enriching-events/viewhierarchy/) support for Jetpack Compose screens
+    - Automatic breadcrumbs for [user interactions](https://docs.sentry.io/platforms/android/performance/instrumentation/automatic-instrumentation/#user-interaction-instrumentation)
 
 ### Fixes
 
