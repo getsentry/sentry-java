@@ -88,18 +88,18 @@ android {
     }
 }
 
-val applyNdk = System.getenv("APPLY_NDK")?.toBoolean() ?: false
+val applySentryIntegrations = System.getenv("APPLY_SENTRY_INTEGRATIONS")?.toBoolean() ?: false
 
 dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    if (applyNdk) {
+    if (applySentryIntegrations) {
         implementation(projects.sentryAndroid)
+        implementation(projects.sentryCompose)
     } else {
         implementation(projects.sentryAndroidCore)
     }
-    implementation(projects.sentryCompose)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
     implementation(Config.Libs.composeActivity)
