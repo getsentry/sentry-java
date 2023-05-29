@@ -65,6 +65,7 @@ android {
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
+            testProguardFiles("proguard-rules.pro")
         }
     }
 
@@ -87,11 +88,17 @@ android {
     }
 }
 
+val applyNdk = System.getenv("APPLY_NDK")?.toBoolean() ?: false
+
 dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    implementation(projects.sentryAndroid)
+    if (applyNdk) {
+        implementation(projects.sentryAndroid)
+    } else {
+        implementation(projects.sentryAndroidCore)
+    }
     implementation(projects.sentryCompose)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)

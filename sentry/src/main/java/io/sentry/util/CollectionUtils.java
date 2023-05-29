@@ -34,7 +34,8 @@ public final class CollectionUtils {
   }
 
   /**
-   * Creates a new {@link ConcurrentHashMap} as a shallow copy of map given by parameter.
+   * Creates a new {@link ConcurrentHashMap} as a shallow copy of map given by parameter. Also makes
+   * sure no null keys or values are put into the resulting {@link ConcurrentHashMap}.
    *
    * @param map the map to copy
    * @param <K> the type of map keys
@@ -44,7 +45,14 @@ public final class CollectionUtils {
   public static <K, V> @Nullable Map<K, @NotNull V> newConcurrentHashMap(
       @Nullable Map<K, @NotNull V> map) {
     if (map != null) {
-      return new ConcurrentHashMap<>(map);
+      Map<K, @NotNull V> concurrentMap = new ConcurrentHashMap<>();
+
+      for (Map.Entry<K, V> entry : map.entrySet()) {
+        if (entry.getKey() != null && entry.getValue() != null) {
+          concurrentMap.put(entry.getKey(), entry.getValue());
+        }
+      }
+      return concurrentMap;
     } else {
       return null;
     }

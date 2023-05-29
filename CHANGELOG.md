@@ -5,6 +5,44 @@
 ### Features
 
 - Refactor android sqlite instrumentation (SDK side) ([#2722](https://github.com/getsentry/sentry-java/pull/2722))
+- Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
+
+## 6.20.0
+
+### Features
+
+- Add support for Sentry Kotlin Compiler Plugin ([#2695](https://github.com/getsentry/sentry-java/pull/2695))
+  - In conjunction with our sentry-kotlin-compiler-plugin we improved Jetpack Compose support for
+    - [View Hierarchy](https://docs.sentry.io/platforms/android/enriching-events/viewhierarchy/) support for Jetpack Compose screens
+    - Automatic breadcrumbs for [user interactions](https://docs.sentry.io/platforms/android/performance/instrumentation/automatic-instrumentation/#user-interaction-instrumentation)
+- More granular http requests instrumentation with a new SentryOkHttpEventListener ([#2659](https://github.com/getsentry/sentry-java/pull/2659))
+    - Create spans for time spent on:
+        - Proxy selection
+        - DNS resolution
+        - HTTPS setup
+        - Connection
+        - Requesting headers
+        - Receiving response
+    - You can attach the event listener to your OkHttpClient through `client.eventListener(new SentryOkHttpEventListener()).addInterceptor(new SentryOkHttpInterceptor()).build();`
+    - In case you already have an event listener you can use the SentryOkHttpEventListener as well through `client.eventListener(new SentryOkHttpEventListener(myListener)).addInterceptor(new SentryOkHttpInterceptor()).build();`
+- Add a new option to disable `RootChecker` ([#2735](https://github.com/getsentry/sentry-java/pull/2735))
+
+### Fixes
+
+- Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
+- Fix `SentryTracer` crash when scheduling auto-finish of a transaction, but the timer has already been cancelled ([#2731](https://github.com/getsentry/sentry-java/pull/2731))
+- Fix `AndroidTransactionProfiler` crash when finishing a profile that happened due to race condition ([#2731](https://github.com/getsentry/sentry-java/pull/2731))
+
+## 6.19.1
+
+### Fixes
+
+- Ensure screenshots and view hierarchies are captured on the main thread ([#2712](https://github.com/getsentry/sentry-java/pull/2712))
+
+## 6.19.0
+
+### Features
+
 - Add Screenshot and ViewHierarchy to integrations list ([#2698](https://github.com/getsentry/sentry-java/pull/2698))
 - New ANR detection based on [ApplicationExitInfo API](https://developer.android.com/reference/android/app/ApplicationExitInfo) ([#2697](https://github.com/getsentry/sentry-java/pull/2697))
     - This implementation completely replaces the old one (based on a watchdog) on devices running Android 11 and above:
@@ -16,17 +54,25 @@
       - If you would like us to provide support for the old approach working alongside the new one on Android 11 and above (e.g. for raising events for slow code on main thread), consider upvoting [this issue](https://github.com/getsentry/sentry-java/issues/2693).
     - The old watchdog implementation will continue working for older API versions (Android < 11)
 - Open up `TransactionOptions`, `ITransaction` and `IHub` methods allowing consumers modify start/end timestamp of transactions and spans ([#2701](https://github.com/getsentry/sentry-java/pull/2701))
+- Send source bundle IDs to Sentry to enable source context ([#2663](https://github.com/getsentry/sentry-java/pull/2663))
+  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
 
 ### Fixes
 
 - Android Profiler on calling thread ([#2691](https://github.com/getsentry/sentry-java/pull/2691))
 - Use `configureScope` instead of `withScope` in `Hub.close()`. This ensures that the main scope releases the in-memory data when closing a hub instance. ([#2688](https://github.com/getsentry/sentry-java/pull/2688))
+- Remove null keys/values before creating concurrent hashmap in order to avoid NPE ([#2708](https://github.com/getsentry/sentry-java/pull/2708))
+- Exclude SentryOptions from R8/ProGuard obfuscation ([#2699](https://github.com/getsentry/sentry-java/pull/2699))
+  - This fixes AGP 8.+ incompatibility, where full R8 mode is enforced
 
 ### Dependencies
 
 - Bump Gradle from v8.1.0 to v8.1.1 ([#2666](https://github.com/getsentry/sentry-java/pull/2666))
   - [changelog](https://github.com/gradle/gradle/blob/master release-test/CHANGELOG.md#v811)
   - [diff](https://github.com/gradle/gradle/compare/v8.1.0...v8.1.1)
+- Bump Native SDK from v0.6.1 to v0.6.2 ([#2689](https://github.com/getsentry/sentry-java/pull/2689))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#062)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.1...0.6.2)
 
 ## 6.18.1
 

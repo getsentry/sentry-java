@@ -22,7 +22,9 @@ import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
+import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -44,8 +46,11 @@ import org.jetbrains.annotations.TestOnly;
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
-  static final String SENTRY_COMPOSE_INTEGRATION_CLASS_NAME =
+  static final String SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME =
       "io.sentry.compose.gestures.ComposeGestureTargetLocator";
+
+  static final String SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME =
+      "io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter";
 
   static final String COMPOSE_CLASS_NAME = "androidx.compose.ui.node.Owner";
 
@@ -151,22 +156,34 @@ final class AndroidOptionsInitializer {
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+    final boolean isComposeUpstreamAvailable =
+        loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
 
     if (options.getGestureTargetLocators().isEmpty()) {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
 
-      final boolean isComposeUpstreamAvailable =
-          loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
       final boolean isComposeAvailable =
           (isComposeUpstreamAvailable
-              && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
+              && loadClass.isClassAvailable(
+                  SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
 
       if (isComposeAvailable) {
-        gestureTargetLocators.add(new ComposeGestureTargetLocator());
+        gestureTargetLocators.add(new ComposeGestureTargetLocator(options.getLogger()));
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
+
+    if (options.getViewHierarchyExporters().isEmpty()
+        && isComposeUpstreamAvailable
+        && loadClass.isClassAvailable(
+            SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
+
+      final List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>(1);
+      viewHierarchyExporters.add(new ComposeViewHierarchyExporter(options.getLogger()));
+      options.setViewHierarchyExporters(viewHierarchyExporters);
+    }
+
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
     if (options.getCollectors().isEmpty()) {
       options.addCollector(new AndroidMemoryCollector());
@@ -287,12 +304,32 @@ final class AndroidOptionsInitializer {
       }
     }
 
-    if (options.getProguardUuid() == null) {
-      options.setProguardUuid(getProguardUUID(context, options.getLogger()));
+    final @Nullable Properties debugMetaProperties =
+        loadDebugMetaProperties(context, options.getLogger());
+
+    if (debugMetaProperties != null) {
+      if (options.getProguardUuid() == null) {
+        final @Nullable String proguardUuid =
+            debugMetaProperties.getProperty("io.sentry.ProguardUuids");
+        options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
+        options.setProguardUuid(proguardUuid);
+      }
+
+      if (options.getBundleIds().isEmpty()) {
+        final @Nullable String bundleIdStrings =
+            debugMetaProperties.getProperty("io.sentry.bundle-ids");
+        options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
+        if (bundleIdStrings != null) {
+          final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
+          for (final String bundleId : bundleIds) {
+            options.addBundleId(bundleId);
+          }
+        }
+      }
     }
   }
 
-  private static @Nullable String getProguardUUID(
+  private static @Nullable Properties loadDebugMetaProperties(
       final @NotNull Context context, final @NotNull ILogger logger) {
     final AssetManager assets = context.getAssets();
     // one may have thousands of asset files and looking up this list might slow down the SDK init.
@@ -302,10 +339,7 @@ final class AndroidOptionsInitializer {
         new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
       final Properties properties = new Properties();
       properties.load(is);
-
-      final String uuid = properties.getProperty("io.sentry.ProguardUuids");
-      logger.log(SentryLevel.DEBUG, "Proguard UUID found: %s", uuid);
-      return uuid;
+      return properties;
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
     } catch (IOException e) {

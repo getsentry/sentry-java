@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAndroidOptionsTest {
@@ -109,6 +110,27 @@ class SentryAndroidOptionsTest {
         val sentryOptions = SentryAndroidOptions()
 
         assertFalse(sentryOptions.isAttachViewHierarchy)
+    }
+
+    @Test
+    fun `native sdk name is null by default`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertNull(sentryOptions.nativeSdkName)
+    }
+
+    @Test
+    fun `native sdk name can be properly set`() {
+        val sentryOptions = SentryAndroidOptions()
+        sentryOptions.nativeSdkName = "test_ndk_name"
+        assertEquals("test_ndk_name", sentryOptions.nativeSdkName)
+    }
+
+    @Test
+    fun `native sdk name can be properly set to null`() {
+        val sentryOptions = SentryAndroidOptions()
+        sentryOptions.nativeSdkName = "test_ndk_name"
+        sentryOptions.nativeSdkName = null
+        assertNull(sentryOptions.nativeSdkName)
     }
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {
