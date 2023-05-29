@@ -24,6 +24,7 @@
 -dontwarn io.sentry.android.timber.SentryTimberIntegration
 -dontwarn io.sentry.android.fragment.FragmentLifecycleIntegration
 -dontwarn io.sentry.compose.gestures.ComposeGestureTargetLocator
+-dontwarn io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter
 
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
