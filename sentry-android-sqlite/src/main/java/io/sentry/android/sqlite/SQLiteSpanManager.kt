@@ -6,7 +6,7 @@ import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SpanStatus
 
-class SQLiteSpanManager(
+internal class SQLiteSpanManager(
     private val hub: IHub = HubAdapter.getInstance()
 ) {
 

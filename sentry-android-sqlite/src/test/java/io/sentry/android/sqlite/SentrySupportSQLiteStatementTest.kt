@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 
 class SentrySupportSQLiteStatementTest {
 
-    class Fixture {
+    private class Fixture {
         private val hub = mock<IHub>()
         private val spanManager = SQLiteSpanManager(hub)
         val mockStatement = mock<SupportSQLiteStatement>()
@@ -84,8 +84,10 @@ class SentrySupportSQLiteStatementTest {
     fun `executeUpdateDelete creates a span if a span is running`() {
         val sql = "executeUpdateDelete"
         val sut = fixture.getSut(sql)
+        whenever(fixture.mockStatement.executeUpdateDelete()).thenReturn(10)
         assertEquals(0, fixture.sentryTracer.children.size)
-        sut.executeUpdateDelete()
+        val result = sut.executeUpdateDelete()
+        assertEquals(10, result)
         val span = fixture.sentryTracer.children.firstOrNull()
         assertSqlSpanCreated(sql, span)
     }
@@ -93,7 +95,9 @@ class SentrySupportSQLiteStatementTest {
     @Test
     fun `executeUpdateDelete does not create a span if no span is running`() {
         val sut = fixture.getSut("executeUpdateDelete", isSpanActive = false)
-        sut.executeUpdateDelete()
+        whenever(fixture.mockStatement.executeUpdateDelete()).thenReturn(10)
+        val result = sut.executeUpdateDelete()
+        assertEquals(10, result)
         assertEquals(0, fixture.sentryTracer.children.size)
     }
 
@@ -101,8 +105,10 @@ class SentrySupportSQLiteStatementTest {
     fun `executeInsert creates a span if a span is running`() {
         val sql = "executeInsert"
         val sut = fixture.getSut(sql)
+        whenever(fixture.mockStatement.executeInsert()).thenReturn(10)
         assertEquals(0, fixture.sentryTracer.children.size)
-        sut.executeInsert()
+        val result = sut.executeInsert()
+        assertEquals(10, result)
         val span = fixture.sentryTracer.children.firstOrNull()
         assertSqlSpanCreated(sql, span)
     }
@@ -110,7 +116,9 @@ class SentrySupportSQLiteStatementTest {
     @Test
     fun `executeInsert does not create a span if no span is running`() {
         val sut = fixture.getSut("executeInsert", isSpanActive = false)
-        sut.executeInsert()
+        whenever(fixture.mockStatement.executeInsert()).thenReturn(10)
+        val result = sut.executeInsert()
+        assertEquals(10, result)
         assertEquals(0, fixture.sentryTracer.children.size)
     }
 
@@ -118,8 +126,10 @@ class SentrySupportSQLiteStatementTest {
     fun `simpleQueryForLong creates a span if a span is running`() {
         val sql = "simpleQueryForLong"
         val sut = fixture.getSut(sql)
+        whenever(fixture.mockStatement.simpleQueryForLong()).thenReturn(10)
         assertEquals(0, fixture.sentryTracer.children.size)
-        sut.simpleQueryForLong()
+        val result = sut.simpleQueryForLong()
+        assertEquals(10, result)
         val span = fixture.sentryTracer.children.firstOrNull()
         assertSqlSpanCreated(sql, span)
     }
@@ -127,7 +137,9 @@ class SentrySupportSQLiteStatementTest {
     @Test
     fun `simpleQueryForLong does not create a span if no span is running`() {
         val sut = fixture.getSut("simpleQueryForLong", isSpanActive = false)
-        sut.simpleQueryForLong()
+        whenever(fixture.mockStatement.simpleQueryForLong()).thenReturn(10)
+        val result = sut.simpleQueryForLong()
+        assertEquals(10, result)
         assertEquals(0, fixture.sentryTracer.children.size)
     }
 
@@ -135,8 +147,10 @@ class SentrySupportSQLiteStatementTest {
     fun `simpleQueryForString creates a span if a span is running`() {
         val sql = "simpleQueryForString"
         val sut = fixture.getSut(sql)
+        whenever(fixture.mockStatement.simpleQueryForString()).thenReturn("10")
         assertEquals(0, fixture.sentryTracer.children.size)
-        sut.simpleQueryForString()
+        val result = sut.simpleQueryForString()
+        assertEquals("10", result)
         val span = fixture.sentryTracer.children.firstOrNull()
         assertSqlSpanCreated(sql, span)
     }
@@ -144,7 +158,9 @@ class SentrySupportSQLiteStatementTest {
     @Test
     fun `simpleQueryForString does not create a span if no span is running`() {
         val sut = fixture.getSut("simpleQueryForString", isSpanActive = false)
-        sut.simpleQueryForString()
+        whenever(fixture.mockStatement.simpleQueryForString()).thenReturn("10")
+        val result = sut.simpleQueryForString()
+        assertEquals("10", result)
         assertEquals(0, fixture.sentryTracer.children.size)
     }
 

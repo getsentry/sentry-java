@@ -10,7 +10,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteStatement
 
-class SentrySupportSQLiteDatabase(
+/**
+ * The Sentry's [SentrySupportSQLiteDatabase], it will automatically add a span
+ *  out of the active span bound to the scope for each database query.
+ * It's a wrapper around [SupportSQLiteDatabase], and it's created automatically
+ *  by the [SentrySupportSQLiteOpenHelper].
+ *
+ * @param delegate The [SupportSQLiteDatabase] instance to delegate calls to.
+ * @param sqLiteSpanManager The [SQLiteSpanManager] responsible for the creation of the spans.
+ */
+internal class SentrySupportSQLiteDatabase(
     private val delegate: SupportSQLiteDatabase,
     private val sqLiteSpanManager: SQLiteSpanManager
 ) : SupportSQLiteDatabase by delegate {
@@ -25,7 +34,6 @@ class SentrySupportSQLiteDatabase(
         return SentrySupportSQLiteStatement(delegate.compileStatement(sql), sqLiteSpanManager, sql)
     }
 
-    /** Execute the given SQL statement on all connections to this database. */
     @Suppress("AcronymName") // To keep consistency with framework method name.
     override fun execPerConnectionSQL(
         sql: String,

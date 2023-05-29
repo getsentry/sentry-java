@@ -6,62 +6,11 @@ public final class io/sentry/android/sqlite/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/sqlite/SQLiteSpanManager {
-	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun performSql (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-}
-
-public final class io/sentry/android/sqlite/SentrySupportSQLiteDatabase : androidx/sqlite/db/SupportSQLiteDatabase {
-	public fun <init> (Landroidx/sqlite/db/SupportSQLiteDatabase;Lio/sentry/android/sqlite/SQLiteSpanManager;)V
-	public fun beginTransaction ()V
-	public fun beginTransactionNonExclusive ()V
-	public fun beginTransactionWithListener (Landroid/database/sqlite/SQLiteTransactionListener;)V
-	public fun beginTransactionWithListenerNonExclusive (Landroid/database/sqlite/SQLiteTransactionListener;)V
-	public fun close ()V
-	public fun compileStatement (Ljava/lang/String;)Landroidx/sqlite/db/SupportSQLiteStatement;
-	public fun delete (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)I
-	public fun disableWriteAheadLogging ()V
-	public fun enableWriteAheadLogging ()Z
-	public fun endTransaction ()V
-	public fun execPerConnectionSQL (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun execSQL (Ljava/lang/String;)V
-	public fun execSQL (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun getAttachedDbs ()Ljava/util/List;
-	public fun getMaximumSize ()J
-	public fun getPageSize ()J
-	public fun getPath ()Ljava/lang/String;
-	public fun getVersion ()I
-	public fun inTransaction ()Z
-	public fun insert (Ljava/lang/String;ILandroid/content/ContentValues;)J
-	public fun isDatabaseIntegrityOk ()Z
-	public fun isDbLockedByCurrentThread ()Z
-	public fun isExecPerConnectionSQLSupported ()Z
-	public fun isOpen ()Z
-	public fun isReadOnly ()Z
-	public fun isWriteAheadLoggingEnabled ()Z
-	public fun needUpgrade (I)Z
-	public fun query (Landroidx/sqlite/db/SupportSQLiteQuery;)Landroid/database/Cursor;
-	public fun query (Landroidx/sqlite/db/SupportSQLiteQuery;Landroid/os/CancellationSignal;)Landroid/database/Cursor;
-	public fun query (Ljava/lang/String;)Landroid/database/Cursor;
-	public fun query (Ljava/lang/String;[Ljava/lang/Object;)Landroid/database/Cursor;
-	public fun setForeignKeyConstraintsEnabled (Z)V
-	public fun setLocale (Ljava/util/Locale;)V
-	public fun setMaxSqlCacheSize (I)V
-	public fun setMaximumSize (J)J
-	public fun setPageSize (J)V
-	public fun setTransactionSuccessful ()V
-	public fun setVersion (I)V
-	public fun update (Ljava/lang/String;ILandroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/Object;)I
-	public fun yieldIfContendedSafely ()Z
-	public fun yieldIfContendedSafely (J)Z
-}
-
 public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper : androidx/sqlite/db/SupportSQLiteOpenHelper {
 	public static final field Companion Lio/sentry/android/sqlite/SentrySupportSQLiteOpenHelper$Companion;
 	public fun <init> (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)V
 	public fun close ()V
+	public static final fun create (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)Landroidx/sqlite/db/SupportSQLiteOpenHelper;
 	public fun getDatabaseName ()Ljava/lang/String;
 	public fun getReadableDatabase ()Landroidx/sqlite/db/SupportSQLiteDatabase;
 	public fun getWritableDatabase ()Landroidx/sqlite/db/SupportSQLiteDatabase;
@@ -70,21 +19,5 @@ public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper : andr
 
 public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper$Companion {
 	public final fun create (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)Landroidx/sqlite/db/SupportSQLiteOpenHelper;
-}
-
-public final class io/sentry/android/sqlite/SentrySupportSQLiteStatement : androidx/sqlite/db/SupportSQLiteStatement {
-	public fun <init> (Landroidx/sqlite/db/SupportSQLiteStatement;Lio/sentry/android/sqlite/SQLiteSpanManager;Ljava/lang/String;)V
-	public fun bindBlob (I[B)V
-	public fun bindDouble (ID)V
-	public fun bindLong (IJ)V
-	public fun bindNull (I)V
-	public fun bindString (ILjava/lang/String;)V
-	public fun clearBindings ()V
-	public fun close ()V
-	public fun execute ()V
-	public fun executeInsert ()J
-	public fun executeUpdateDelete ()I
-	public fun simpleQueryForLong ()J
-	public fun simpleQueryForString ()Ljava/lang/String;
 }
 

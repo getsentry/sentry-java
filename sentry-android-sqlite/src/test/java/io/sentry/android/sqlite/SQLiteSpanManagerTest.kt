@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 
 class SQLiteSpanManagerTest {
 
-    class Fixture {
+    private class Fixture {
         private val hub = mock<IHub>()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions

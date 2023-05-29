@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 
 class SentrySupportSQLiteDatabaseTest {
 
-    class Fixture {
+    private class Fixture {
         private val hub = mock<IHub>()
         private val spanManager = SQLiteSpanManager(hub)
         val mockDatabase = mock<SupportSQLiteDatabase>()

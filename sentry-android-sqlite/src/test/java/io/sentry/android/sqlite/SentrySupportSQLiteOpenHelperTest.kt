@@ -16,6 +16,7 @@ class SentrySupportSQLiteOpenHelperTest {
 
         init {
             whenever(mockOpenHelper.writableDatabase).thenReturn(mock())
+            whenever(mockOpenHelper.readableDatabase).thenReturn(mock())
         }
 
         fun getSut(): SentrySupportSQLiteOpenHelper {
