@@ -1,11 +1,9 @@
 package io.sentry.samples.logback;
 
 import java.util.Properties;
-import java.util.UUID;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 public class Main {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -24,21 +22,21 @@ public class Main {
 
   public static void main(String[] args) {
     new Main();
-    LOGGER.debug("Hello Sentry!");
-
-    // MDC tags listed in logback.xml are converted to Sentry Event tags
-    MDC.put("userId", UUID.randomUUID().toString());
-    MDC.put("requestId", UUID.randomUUID().toString());
-    // MDC tag not listed in logback.xml
-    MDC.put("context-tag", "context-tag-value");
-
-    // logging arguments are converted to Sentry Event parameters
-    LOGGER.info("User has made a purchase of product: {}", 445);
-
-    try {
-      throw new RuntimeException("Invalid productId=445");
-    } catch (Throwable e) {
-      LOGGER.error("Something went wrong", e);
-    }
+    //    LOGGER.debug("Hello Sentry!");
+    //
+    //    // MDC tags listed in logback.xml are converted to Sentry Event tags
+    //    MDC.put("userId", UUID.randomUUID().toString());
+    //    MDC.put("requestId", UUID.randomUUID().toString());
+    //    // MDC tag not listed in logback.xml
+    //    MDC.put("context-tag", "context-tag-value");
+    //
+    //    // logging arguments are converted to Sentry Event parameters
+    //    LOGGER.info("User has made a purchase of product: {}", 445);
+    //
+    //    try {
+    //      throw new RuntimeException("Invalid productId=445");
+    //    } catch (Throwable e) {
+    //      LOGGER.error("Something went wrong", e);
+    //    }
   }
 }

@@ -14,7 +14,8 @@ configure<JavaPluginExtension> {
 }
 
 dependencies {
-    implementation(projects.sentryLogback)
+//    implementation(projects.sentryLogback)
+    implementation("io.sentry:sentry-logback:6.18.1")
     implementation(Config.Libs.logbackClassic)
     implementation("org.apache.kafka:kafka-clients:3.4.0")
 }
