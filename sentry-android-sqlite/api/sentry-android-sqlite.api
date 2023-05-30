@@ -1,0 +1,23 @@
+public final class io/sentry/android/sqlite/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper : androidx/sqlite/db/SupportSQLiteOpenHelper {
+	public static final field Companion Lio/sentry/android/sqlite/SentrySupportSQLiteOpenHelper$Companion;
+	public synthetic fun <init> (Landroidx/sqlite/db/SupportSQLiteOpenHelper;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public static final fun create (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)Landroidx/sqlite/db/SupportSQLiteOpenHelper;
+	public fun getDatabaseName ()Ljava/lang/String;
+	public fun getReadableDatabase ()Landroidx/sqlite/db/SupportSQLiteDatabase;
+	public fun getWritableDatabase ()Landroidx/sqlite/db/SupportSQLiteDatabase;
+	public fun setWriteAheadLoggingEnabled (Z)V
+}
+
+public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper$Companion {
+	public final fun create (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)Landroidx/sqlite/db/SupportSQLiteOpenHelper;
+}
+

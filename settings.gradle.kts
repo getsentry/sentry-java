@@ -20,6 +20,7 @@ include(
     "sentry-android-okhttp",
     "sentry-android-fragment",
     "sentry-android-navigation",
+    "sentry-android-sqlite",
     "sentry-compose",
     "sentry-compose-helper",
     "sentry-apollo",

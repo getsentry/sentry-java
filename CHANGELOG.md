@@ -4,6 +4,10 @@
 
 ### Features
 
+- Introduce new `sentry-android-sqlite` integration ([#2722](https://github.com/getsentry/sentry-java/pull/2722))
+    - This integration replaces the old `androidx.sqlite` database instrumentation in the Sentry Android Gradle plugin
+    - A new capability to manually instrument your `androidx.sqlite` databases. 
+      - You can wrap your custom `SupportSQLiteOpenHelper` instance into `SentrySupportSQLiteOpenHelper(myHelper)` if you're not using the Sentry Android Gradle plugin and still benefit from performance auto-instrumentation.
 - Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
 - Load sentry-debug-meta.properties ([#2734](https://github.com/getsentry/sentry-java/pull/2734))
   - This enables source context for Java
