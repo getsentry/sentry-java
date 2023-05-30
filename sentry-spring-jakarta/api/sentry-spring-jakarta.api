@@ -163,8 +163,12 @@ public abstract interface class io/sentry/spring/jakarta/tracing/TransactionName
 public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter : org/springframework/web/server/WebFilter {
 	public static final field SENTRY_HUB_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
-	protected fun doFinally (Lio/sentry/IHub;)V
+	protected fun doFinally (Lorg/springframework/web/server/ServerWebExchange;Lio/sentry/IHub;Lio/sentry/ITransaction;)V
 	protected fun doFirst (Lorg/springframework/web/server/ServerWebExchange;Lio/sentry/IHub;)V
+	protected fun doOnError (Lio/sentry/ITransaction;Ljava/lang/Throwable;)V
+	protected fun maybeStartTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/ITransaction;
+	protected fun shouldTraceRequest (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Z
+	protected fun startTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/ITransaction;
 }
 
 public final class io/sentry/spring/jakarta/webflux/ReactorUtils {
@@ -212,11 +216,6 @@ public class io/sentry/spring/jakarta/webflux/SentryWebFilter : io/sentry/spring
 
 public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLocalAccessor : io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter {
 	public fun <init> (Lio/sentry/IHub;)V
-	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
-}
-
-public class io/sentry/spring/jakarta/webflux/SentryWebTracingFilter : org/springframework/web/server/WebFilter {
-	public fun <init> ()V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }
 

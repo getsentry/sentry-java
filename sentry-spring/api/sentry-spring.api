@@ -183,8 +183,3 @@ public final class io/sentry/spring/webflux/SentryWebFilter : org/springframewor
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }
 
-public class io/sentry/spring/webflux/SentryWebTracingFilter : org/springframework/web/server/WebFilter {
-	public fun <init> ()V
-	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
-}
-
