@@ -164,9 +164,6 @@ open class App {
     open fun sentryFilter(hub: IHub) = SentryWebFilter(hub)
 
     @Bean
-    open fun sentryTracingFilter(hub: IHub) = SentryWebTracingFilter()
-
-    @Bean
     open fun sentryWebExceptionHandler(hub: IHub) = SentryWebExceptionHandler(hub)
 
     @Bean

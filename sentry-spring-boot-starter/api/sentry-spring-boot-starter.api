@@ -47,6 +47,5 @@ public class io/sentry/spring/boot/SentryWebfluxAutoConfiguration {
 	public fun sentryScheduleHookApplicationRunner ()Lorg/springframework/boot/ApplicationRunner;
 	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
 	public fun sentryWebFilter (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebFilter;
-	public fun sentryWebTracingFilter ()Lio/sentry/spring/webflux/SentryWebTracingFilter;
 }
 

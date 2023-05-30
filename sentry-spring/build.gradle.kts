@@ -47,6 +47,7 @@ dependencies {
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterWebflux)
