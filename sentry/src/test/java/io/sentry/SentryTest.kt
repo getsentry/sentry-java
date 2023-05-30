@@ -2,6 +2,8 @@ package io.sentry
 
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
+import io.sentry.internal.debugmeta.IDebugMetaLoader
+import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.protocol.SdkVersion
@@ -20,6 +22,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
+import java.util.Properties
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
@@ -445,6 +448,31 @@ class SentryTest {
     }
 
     @Test
+    fun `overrides debug meta loader if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.debugMetaLoader is ResourcesDebugMetaLoader }
+    }
+
+    @Test
+    fun `does not override debug meta loader if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setDebugMetaLoader(CustomDebugMetaLoader())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.debugMetaLoader is CustomDebugMetaLoader }
+    }
+
+    @Test
     fun `overrides main thread checker if it's not set`() {
         var sentryOptions: SentryOptions? = null
 
@@ -745,6 +773,10 @@ class SentryTest {
 
     private class CustomModulesLoader : IModulesLoader {
         override fun getOrLoadModules(): MutableMap<String, String>? = null
+    }
+
+    private class CustomDebugMetaLoader : IDebugMetaLoader {
+        override fun loadDebugMeta(): Properties? = null
     }
 
     private class CustomEnvelopCache : IEnvelopeCache {

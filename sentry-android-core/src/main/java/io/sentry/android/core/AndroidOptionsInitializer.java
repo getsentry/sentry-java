@@ -5,7 +5,6 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.content.res.AssetManager;
 import android.os.Build;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
@@ -13,6 +12,7 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
@@ -27,16 +27,10 @@ import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -153,6 +147,7 @@ final class AndroidOptionsInitializer {
     options.setTransactionProfiler(
         new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+    options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
@@ -303,52 +298,6 @@ final class AndroidOptionsInitializer {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }
     }
-
-    final @Nullable Properties debugMetaProperties =
-        loadDebugMetaProperties(context, options.getLogger());
-
-    if (debugMetaProperties != null) {
-      if (options.getProguardUuid() == null) {
-        final @Nullable String proguardUuid =
-            debugMetaProperties.getProperty("io.sentry.ProguardUuids");
-        options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
-        options.setProguardUuid(proguardUuid);
-      }
-
-      if (options.getBundleIds().isEmpty()) {
-        final @Nullable String bundleIdStrings =
-            debugMetaProperties.getProperty("io.sentry.bundle-ids");
-        options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
-        if (bundleIdStrings != null) {
-          final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
-          for (final String bundleId : bundleIds) {
-            options.addBundleId(bundleId);
-          }
-        }
-      }
-    }
-  }
-
-  private static @Nullable Properties loadDebugMetaProperties(
-      final @NotNull Context context, final @NotNull ILogger logger) {
-    final AssetManager assets = context.getAssets();
-    // one may have thousands of asset files and looking up this list might slow down the SDK init.
-    // quite a bit, for this reason, we try to open the file directly and take care of errors
-    // like FileNotFoundException
-    try (final InputStream is =
-        new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
-      final Properties properties = new Properties();
-      properties.load(is);
-      return properties;
-    } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
-    } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
-    } catch (RuntimeException e) {
-      logger.log(SentryLevel.ERROR, "sentry-debug-meta.properties file is malformed.", e);
-    }
-
-    return null;
   }
 
   /**
