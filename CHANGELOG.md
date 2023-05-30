@@ -15,6 +15,7 @@
 
 ### Fixes
 
+- Use Base64.NO_WRAP to avoid unexpected char errors in Apollo ([#2745](https://github.com/getsentry/sentry-java/pull/2745))
 - Don't warn R8 on missing `ComposeViewHierarchyExporter` class ([#2743](https://github.com/getsentry/sentry-java/pull/2743))
 
 ## 6.20.0
