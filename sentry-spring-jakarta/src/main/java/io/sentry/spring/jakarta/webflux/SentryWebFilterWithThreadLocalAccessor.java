@@ -1,10 +1,11 @@
 package io.sentry.spring.jakarta.webflux;
 
 import io.sentry.IHub;
-import io.sentry.NoOpHub;
+import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
@@ -21,17 +22,26 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
+    final @NotNull TransactionContainer transactionContainer = new TransactionContainer();
     return ReactorUtils.withSentryNewMainHubClone(
         webFilterChain
             .filter(serverWebExchange)
             .doFinally(
-                __ -> {
-                  doFinally(Sentry.getCurrentHub());
-                  Sentry.setCurrentHub(NoOpHub.getInstance());
-                })
+                __ ->
+                    doFinally(
+                        serverWebExchange,
+                        Sentry.getCurrentHub(),
+                        transactionContainer.transaction))
+            .doOnError(e -> doOnError(transactionContainer.transaction, e))
             .doFirst(
                 () -> {
                   doFirst(serverWebExchange, Sentry.getCurrentHub());
+                  transactionContainer.transaction =
+                      maybeStartTransaction(Sentry.getCurrentHub(), serverWebExchange.getRequest());
                 }));
+  }
+
+  private static class TransactionContainer {
+    private volatile @Nullable ITransaction transaction;
   }
 }

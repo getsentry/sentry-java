@@ -102,7 +102,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private @NotNull Map<String, Object> loadContextData() {
     Map<String, Object> map = new HashMap<>();
 
-    map.put(ROOTED, rootChecker.isDeviceRooted());
+    if (options.isEnableRootCheck()) {
+      map.put(ROOTED, rootChecker.isDeviceRooted());
+    }
 
     final String kernelVersion = ContextUtils.getKernelVersion(options.getLogger());
     if (kernelVersion != null) {

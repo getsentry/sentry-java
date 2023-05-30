@@ -90,6 +90,8 @@ final class ManifestMetadataReader {
 
   static final String SENTRY_GRADLE_PLUGIN_INTEGRATIONS = "io.sentry.gradle-plugin-integrations";
 
+  static final String ENABLE_ROOT_CHECK = "io.sentry.enable-root-check";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -341,6 +343,9 @@ final class ManifestMetadataReader {
             SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
           }
         }
+
+        options.setEnableRootCheck(
+            readBool(metadata, logger, ENABLE_ROOT_CHECK, options.isEnableRootCheck()));
       }
 
       options
