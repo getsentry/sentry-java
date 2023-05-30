@@ -21,6 +21,7 @@ internal class SQLiteSpanManager(
      * @param operation The sql operation to execute.
      *  In case of an error the surrounding span will have its status set to INTERNAL_ERROR
      */
+    @Suppress("TooGenericExceptionCaught")
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
         val span = hub.span?.startChild("db.sql.query", sql)
@@ -28,11 +29,7 @@ internal class SQLiteSpanManager(
             val result = operation()
             span?.status = SpanStatus.OK
             result
-        } catch (e: SQLException) {
-            span?.status = SpanStatus.INTERNAL_ERROR
-            span?.throwable = e
-            throw e
-        } catch (e: UnsupportedOperationException) {
+        } catch (e: Throwable) {
             span?.status = SpanStatus.INTERNAL_ERROR
             span?.throwable = e
             throw e
