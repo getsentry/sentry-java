@@ -1,6 +1,8 @@
 package io.sentry.samples.logback;
 
+import java.util.Properties;
 import java.util.UUID;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -8,7 +10,20 @@ import org.slf4j.MDC;
 public class Main {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
+  private KafkaProducer<String, String> producer;
+
+  public Main() {
+    Properties props = new Properties();
+    props.put("bootstrap.servers", "localhost:9092");
+    props.put("acks", "all");
+    props.put("retries", 0);
+    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    producer = new KafkaProducer<String, String>(props);
+  }
+
   public static void main(String[] args) {
+    new Main();
     LOGGER.debug("Hello Sentry!");
 
     // MDC tags listed in logback.xml are converted to Sentry Event tags
