@@ -99,3 +99,13 @@ fun waitUntilIdle() {
     // We rely on Espresso's idling resources.
     Espresso.onIdle()
 }
+
+fun classExists(className: String): Boolean {
+    try {
+        Class.forName(className)
+        return true
+    } catch (exception: ClassNotFoundException) {
+        // no-op
+    }
+    return false
+}

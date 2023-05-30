@@ -15,12 +15,23 @@ import io.sentry.Breadcrumb
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions
+import org.hamcrest.CoreMatchers.`is`
+import org.junit.Assume.assumeThat
+import org.junit.Before
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class UserInteractionTests : BaseUiTest() {
+
+    @Before
+    fun setup() {
+        assumeThat(
+            classExists("io.sentry.compose.gestures.ComposeGestureTargetLocator"),
+            `is`(true)
+        )
+    }
 
     @Test
     fun composableClickGeneratesMatchingBreadcrumb() {

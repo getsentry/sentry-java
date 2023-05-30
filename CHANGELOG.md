@@ -6,6 +6,10 @@
 
 - Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
 
+### Fixes
+
+- Don't warn R8 on missing `ComposeViewHierarchyExporter` class ([#2743](https://github.com/getsentry/sentry-java/pull/2743))
+
 ## 6.20.0
 
 ### Features

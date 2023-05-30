@@ -23,12 +23,12 @@ jobs:
       fail-fast: false
       matrix:
         agp: [ '8.0.0','8.1.0-alpha11' ]
-        ndk: [ true, false ]
+        integrations: [ true, false ]
 
-    name: AGP Matrix Release - AGP ${{ matrix.agp }} - NDK ${{ matrix.ndk }}
+    name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
     env:
       VERSION_AGP: ${{ matrix.agp }}
-      APPLY_NDK: ${{ matrix.ndk }}
+      APPLY_SENTRY_INTEGRATIONS: ${{ matrix.integrations }}
 
     steps:
       - name: Checkout Repo
