@@ -6,6 +6,10 @@
 
 - Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
 
+### Fixes
+
+- Use Base64.NO_WRAP to avoid unexpected char errors in Apollo ([#2745](https://github.com/getsentry/sentry-java/pull/2745))
+
 ## 6.20.0
 
 ### Features
