@@ -125,7 +125,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     private fun decodeHeaderValue(request: HttpRequest, headerName: String): String? {
         return request.valueForHeader(headerName)?.let {
             try {
-                String(Base64.decode(it, Base64.DEFAULT))
+                String(Base64.decode(it, Base64.NO_WRAP))
             } catch (e: IllegalArgumentException) {
                 hub.options.logger.log(SentryLevel.ERROR, "Error decoding internal apolloHeader $headerName", e)
                 return null

@@ -23,11 +23,11 @@ class SentryApollo3Interceptor : ApolloInterceptor {
         chain: ApolloInterceptorChain
     ): Flow<ApolloResponse<D>> {
         val builder = request.newBuilder()
-            .addHttpHeader(SENTRY_APOLLO_3_OPERATION_TYPE, Base64.encodeToString(operationType(request).toByteArray(), Base64.DEFAULT))
-            .addHttpHeader(SENTRY_APOLLO_3_OPERATION_NAME, Base64.encodeToString(request.operation.name().toByteArray(), Base64.DEFAULT))
+            .addHttpHeader(SENTRY_APOLLO_3_OPERATION_TYPE, Base64.encodeToString(operationType(request).toByteArray(), Base64.NO_WRAP))
+            .addHttpHeader(SENTRY_APOLLO_3_OPERATION_NAME, Base64.encodeToString(request.operation.name().toByteArray(), Base64.NO_WRAP))
 
         request.scalarAdapters?.let {
-            builder.addHttpHeader(SENTRY_APOLLO_3_VARIABLES, Base64.encodeToString(request.operation.variables(it).valueMap.toString().toByteArray(), Base64.DEFAULT))
+            builder.addHttpHeader(SENTRY_APOLLO_3_VARIABLES, Base64.encodeToString(request.operation.variables(it).valueMap.toString().toByteArray(), Base64.NO_WRAP))
         }
         return chain.proceed(builder.build())
     }

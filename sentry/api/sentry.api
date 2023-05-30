@@ -1648,6 +1648,7 @@ public class io/sentry/SentryOptions {
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
+	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
@@ -1740,6 +1741,7 @@ public class io/sentry/SentryOptions {
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
+	public fun setDebugMetaLoader (Lio/sentry/internal/debugmeta/IDebugMetaLoader;)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
@@ -2651,6 +2653,20 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public abstract interface class io/sentry/internal/debugmeta/IDebugMetaLoader {
+	public abstract fun loadDebugMeta ()Ljava/util/Properties;
+}
+
+public final class io/sentry/internal/debugmeta/NoOpDebugMetaLoader : io/sentry/internal/debugmeta/IDebugMetaLoader {
+	public static fun getInstance ()Lio/sentry/internal/debugmeta/NoOpDebugMetaLoader;
+	public fun loadDebugMeta ()Ljava/util/Properties;
+}
+
+public final class io/sentry/internal/debugmeta/ResourcesDebugMetaLoader : io/sentry/internal/debugmeta/IDebugMetaLoader {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun loadDebugMeta ()Ljava/util/Properties;
 }
 
 public abstract interface class io/sentry/internal/gestures/GestureTargetLocator {
@@ -4004,6 +4020,12 @@ public abstract interface class io/sentry/util/CollectionUtils$Mapper {
 
 public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 	public abstract fun test (Ljava/lang/Object;)Z
+}
+
+public final class io/sentry/util/DebugMetaPropertiesApplier {
+	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
+	public fun <init> ()V
+	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/Properties;)V
 }
 
 public final class io/sentry/util/ExceptionUtils {

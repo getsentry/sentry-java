@@ -5,11 +5,16 @@
 ### Features
 
 - Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
+- Load sentry-debug-meta.properties ([#2734](https://github.com/getsentry/sentry-java/pull/2734))
+  - This enables source context for Java
+  - For more information on how to enable source context, please refer to [#633](https://github.com/getsentry/sentry-java/issues/633#issuecomment-1465599120)
 
 ### Fixes
 
+- Finish WebFlux transaction before popping scope ([#2724](https://github.com/getsentry/sentry-java/pull/2724))
 - Use daemon threads for SentryExecutorService ([#2747](https://github.com/getsentry/sentry-java/pull/2747))
   - We started using `SentryExecutorService` in `6.19.0` which caused the application to hang on shutdown unless `Sentry.close()` was called. By using daemon threads we no longer block shutdown.
+- Use Base64.NO_WRAP to avoid unexpected char errors in Apollo ([#2745](https://github.com/getsentry/sentry-java/pull/2745))
 - Don't warn R8 on missing `ComposeViewHierarchyExporter` class ([#2743](https://github.com/getsentry/sentry-java/pull/2743))
 
 ## 6.20.0
@@ -35,7 +40,6 @@
 ### Fixes
 
 - Base64 encode internal Apollo3 Headers ([#2707](https://github.com/getsentry/sentry-java/pull/2707))
-- Finish WebFlux transaction before popping scope ([#2724](https://github.com/getsentry/sentry-java/pull/2724))
 - Fix `SentryTracer` crash when scheduling auto-finish of a transaction, but the timer has already been cancelled ([#2731](https://github.com/getsentry/sentry-java/pull/2731))
 - Fix `AndroidTransactionProfiler` crash when finishing a profile that happened due to race condition ([#2731](https://github.com/getsentry/sentry-java/pull/2731))
 
