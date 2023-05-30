@@ -88,7 +88,7 @@ android {
     }
 }
 
-val applySentryIntegrations = System.getenv("APPLY_SENTRY_INTEGRATIONS")?.toBoolean() ?: false
+val applySentryIntegrations = System.getenv("APPLY_SENTRY_INTEGRATIONS")?.toBoolean() ?: true
 
 dependencies {
 
