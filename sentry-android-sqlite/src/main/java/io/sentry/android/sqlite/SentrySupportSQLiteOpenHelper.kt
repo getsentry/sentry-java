@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
  * Usage - wrap your custom [SupportSQLiteOpenHelper] instance in [SentrySupportSQLiteOpenHelper]
  *
  * ```
- * val openHelper = SentrySupportSQLiteOpenHelper(myOpenHelper)
+ * val openHelper = SentrySupportSQLiteOpenHelper.create(myOpenHelper)
  * ```
  *
  * If you use Room you can wrap the default [FrameworkSQLiteOpenHelperFactory]:
@@ -30,7 +30,7 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
  *
  * @param delegate The [SupportSQLiteOpenHelper] instance to delegate calls to.
  */
-class SentrySupportSQLiteOpenHelper(
+class SentrySupportSQLiteOpenHelper private constructor(
     private val delegate: SupportSQLiteOpenHelper
 ) : SupportSQLiteOpenHelper by delegate {
 

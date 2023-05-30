@@ -8,7 +8,7 @@ public final class io/sentry/android/sqlite/BuildConfig {
 
 public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper : androidx/sqlite/db/SupportSQLiteOpenHelper {
 	public static final field Companion Lio/sentry/android/sqlite/SentrySupportSQLiteOpenHelper$Companion;
-	public fun <init> (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)V
+	public synthetic fun <init> (Landroidx/sqlite/db/SupportSQLiteOpenHelper;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
 	public static final fun create (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)Landroidx/sqlite/db/SupportSQLiteOpenHelper;
 	public fun getDatabaseName ()Ljava/lang/String;

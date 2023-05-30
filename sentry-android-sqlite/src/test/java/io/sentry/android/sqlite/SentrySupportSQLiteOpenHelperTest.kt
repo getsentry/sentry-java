@@ -20,7 +20,7 @@ class SentrySupportSQLiteOpenHelperTest {
         }
 
         fun getSut(): SentrySupportSQLiteOpenHelper {
-            return SentrySupportSQLiteOpenHelper(mockOpenHelper)
+            return SentrySupportSQLiteOpenHelper.create(mockOpenHelper) as SentrySupportSQLiteOpenHelper
         }
     }
 
