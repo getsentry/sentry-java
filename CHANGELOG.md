@@ -6,6 +6,11 @@
 
 - Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
 
+### Fixes
+
+- Use daemon threads for SentryExecutorService ([#2747](https://github.com/getsentry/sentry-java/pull/2747))
+  - We started using `SentryExecutorService` in `6.19.0` which caused the application to hang on shutdown unless `Sentry.close()` was called. By using daemon threads we no longer block shutdown.
+
 ## 6.20.0
 
 ### Features
