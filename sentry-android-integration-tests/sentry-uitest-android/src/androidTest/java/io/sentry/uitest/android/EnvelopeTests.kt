@@ -15,6 +15,7 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeItem
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
+import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -91,6 +92,10 @@ class EnvelopeTests : BaseUiTest() {
                 val memoryStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]
                 val memoryNativeStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]
                 val cpuStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]
+
+                // Frame rate could be null in headless emulator tests (agp-matrix workflow)
+                assumeNotNull(frameRates)
+
                 // Slow and frozen frames can be null (in case there were none)
                 if (slowFrames != null) {
                     assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
@@ -99,10 +104,9 @@ class EnvelopeTests : BaseUiTest() {
                     assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
                 }
                 // Frame rate could be null in emulator tests without windows (agp-matrix workflow)
-                if (frameRates != null) {
-                    assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
-                    assertTrue(frameRates.values.isNotEmpty())
-                }
+                assertEquals(ProfileMeasurement.UNIT_HZ, frameRates!!.unit)
+                assertTrue(frameRates.values.isNotEmpty())
+
                 memoryStats?.let {
                     assertEquals(ProfileMeasurement.UNIT_BYTES, it.unit)
                     assertEquals(true, it.values.isNotEmpty())
