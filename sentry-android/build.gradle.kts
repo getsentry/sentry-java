@@ -18,6 +18,13 @@ android {
         buildConfig = false
     }
 
+    buildTypes {
+        getByName("debug")
+        getByName("release") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
+    }
+
     variantFilter {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
