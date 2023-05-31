@@ -18,7 +18,6 @@ import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.concurrent.TimeUnit
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -44,7 +43,6 @@ class EnvelopeTests : BaseUiTest() {
         }
     }
 
-    @Ignore("Something is wrong with measurements assertions, flaking almost every time")
     @Test
     fun checkEnvelopeProfiledTransaction() {
         initSentry(true) { options: SentryAndroidOptions ->
@@ -116,17 +114,21 @@ class EnvelopeTests : BaseUiTest() {
                     assertEquals(true, it.values.isNotEmpty())
                 }
 
-                // We allow measurements to be added since the start up to the end of the profile, with a small tolerance due to threading
-                val maxTimestampAllowed = profilingTraceData.durationNs.toLong() + TimeUnit.SECONDS.toNanos(2)
-                val allMeasurements = profilingTraceData.measurementsMap.values
+                // We allow measurements to be added since the start up to the end of the profile
+                val maxTimestampAllowed = profilingTraceData.durationNs.toLong()
 
                 profilingTraceData.measurementsMap.entries.filter {
-                    it.value.values.isNotEmpty()
+                    // We need at least two measurements, as one will be dropped by our tests
+                    it.value.values.size > 1
                 }.forEach { entry ->
                     val name = entry.key
                     val measurement = entry.value
 
-                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }
+                    // The last frame measurement could be outside the transaction duration,
+                    //  since when the transaction finishes the frame callback is removed from the activity,
+                    //  but internally it is already cached and will be called anyway in the next frame.
+                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }.dropLast(1)
+
                     // There should be no measurement before the profile starts
                     assertTrue(
                         values.first().relativeStartNs.toLong() > 0,
@@ -134,7 +136,7 @@ class EnvelopeTests : BaseUiTest() {
                     )
                     // There should be no measurement after the profile ends
                     assertTrue(
-                        values.last().relativeStartNs.toLong() < maxTimestampAllowed,
+                        values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
                         "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
                     )
 

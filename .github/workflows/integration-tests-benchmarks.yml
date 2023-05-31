@@ -30,8 +30,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Clean, build and release a test apk
+      # Clean, build and release a test apk, but only if we will run the benchmark
       - name: Make assembleBenchmarks
+        if: env.SAUCE_USERNAME != null
         run: make assembleBenchmarks
 
       # We stop gradle at the end to make sure the cache folders
