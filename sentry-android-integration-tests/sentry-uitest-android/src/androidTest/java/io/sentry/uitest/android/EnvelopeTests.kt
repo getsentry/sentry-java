@@ -87,7 +87,7 @@ class EnvelopeTests : BaseUiTest() {
                 // We check the measurements have been collected with expected units
                 val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]
                 val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]
-                val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
+                val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]
                 val memoryStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]
                 val memoryNativeStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]
                 val cpuStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]
@@ -98,9 +98,11 @@ class EnvelopeTests : BaseUiTest() {
                 if (frozenFrames != null) {
                     assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
                 }
-                // There could be no slow/frozen frames, but we expect at least one frame rate
-                assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
-                assertTrue(frameRates.values.isNotEmpty())
+                // Frame rate could be null in emulator tests without windows (agp-matrix workflow)
+                if (frameRates != null) {
+                    assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
+                    assertTrue(frameRates.values.isNotEmpty())
+                }
                 memoryStats?.let {
                     assertEquals(ProfileMeasurement.UNIT_BYTES, it.unit)
                     assertEquals(true, it.values.isNotEmpty())
