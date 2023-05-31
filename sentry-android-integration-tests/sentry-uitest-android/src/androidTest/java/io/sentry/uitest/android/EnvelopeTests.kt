@@ -103,7 +103,7 @@ class EnvelopeTests : BaseUiTest() {
                 if (frozenFrames != null) {
                     assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
                 }
-                // Frame rate could be null in emulator tests without windows (agp-matrix workflow)
+                // There could be no slow/frozen frames, but we expect at least one frame rate
                 assertEquals(ProfileMeasurement.UNIT_HZ, frameRates!!.unit)
                 assertTrue(frameRates.values.isNotEmpty())
 
