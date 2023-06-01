@@ -13,6 +13,7 @@ body:
         - sentry-android-okhttp
         - sentry-android-timber
         - sentry-android-fragment
+        - sentry-android-sqlite
         - sentry-apollo
         - sentry-compose
         - sentry-apollo-3
