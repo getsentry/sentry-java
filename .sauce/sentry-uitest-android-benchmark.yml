@@ -2,15 +2,15 @@ apiVersion: v1alpha
 kind: espresso
 sauce:
   region: us-west-1
-  concurrency: 2
+  concurrency: 3
   metadata:
-    build: sentry-uitest-android-benchmark-$CI_COMMIT_SHORT_SHA
+    build: sentry-uitest-android-benchmark-$GITHUB_REF-$GITHUB_SHA
     tags:
       - benchmarks
       - android
 
 defaults:
-  timeout: 30m
+  timeout: 90m
 
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android-benchmark/build/outputs/apk/release/sentry-uitest-android-benchmark-release.apk

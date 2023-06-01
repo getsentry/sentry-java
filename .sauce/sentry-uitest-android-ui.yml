@@ -3,15 +3,15 @@ kind: espresso
 sauce:
   region: us-west-1
   # Controls how many suites are executed at the same time (sauce test env only).
-  concurrency: 1
+  concurrency: 4
   metadata:
-    build: sentry-uitest-android-ui@$CI_COMMIT_SHORT_SHA
+    build: sentry-uitest-android-ui-$GITHUB_REF-$GITHUB_SHA
     tags:
       - e2e
       - android
 
 defaults:
-  timeout: 30m
+  timeout: 40m
 
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
