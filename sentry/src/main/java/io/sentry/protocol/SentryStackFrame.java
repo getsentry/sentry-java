@@ -124,9 +124,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    */
   private @Nullable String rawFunction;
 
-  /**
-   * Represents a lock (java monitor object) held by this frame.
-   */
+  /** Represents a lock (java monitor object) held by this frame. */
   private @Nullable SentryLockReason lock;
 
   public @Nullable List<String> getPreContext() {
