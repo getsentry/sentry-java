@@ -6,6 +6,7 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryLockReason;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.List;
@@ -122,6 +123,11 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    * original value can be stored.
    */
   private @Nullable String rawFunction;
+
+  /**
+   * Represents a lock (java monitor object) held by this frame.
+   */
+  private @Nullable SentryLockReason lock;
 
   public @Nullable List<String> getPreContext() {
     return preContext;
@@ -284,6 +290,15 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     this.symbol = symbol;
   }
 
+  @Nullable
+  public SentryLockReason getLock() {
+    return lock;
+  }
+
+  public void setLock(final @Nullable SentryLockReason lock) {
+    this.lock = lock;
+  }
+
   // region json
 
   @Nullable
@@ -314,6 +329,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     public static final String INSTRUCTION_ADDR = "instruction_addr";
     public static final String RAW_FUNCTION = "raw_function";
     public static final String SYMBOL = "symbol";
+    public static final String LOCK = "lock";
   }
 
   @Override
@@ -367,6 +383,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     }
     if (symbol != null) {
       writer.name(JsonKeys.SYMBOL).value(symbol);
+    }
+    if (lock != null) {
+      writer.name(JsonKeys.LOCK).value(logger, lock);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -435,6 +454,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.SYMBOL:
             sentryStackFrame.symbol = reader.nextStringOrNull();
+            break;
+          case JsonKeys.LOCK:
+            sentryStackFrame.lock = reader.nextOrNull(logger, new SentryLockReason.Deserializer());
             break;
           default:
             if (unknown == null) {
