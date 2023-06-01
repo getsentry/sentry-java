@@ -7,12 +7,15 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.util.thread.IMainThreadChecker
+import org.junit.Before
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SQLiteSpanManagerTest {
@@ -37,6 +40,11 @@ class SQLiteSpanManagerTest {
     }
 
     private val fixture = Fixture()
+
+    @Before
+    fun setup() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+    }
 
     @Test
     fun `add SQLite to the list of integrations`() {
@@ -80,5 +88,33 @@ class SQLiteSpanManagerTest {
         assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
         assertEquals(e, span.throwable)
         assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `when performSql runs in background blocked_main_thread is false and no stack trace is attached`() {
+        val sut = fixture.getSut()
+
+        fixture.options.mainThreadChecker = mock<IMainThreadChecker>()
+        whenever(fixture.options.mainThreadChecker.isMainThread).thenReturn(false)
+
+        sut.performSql("sql") {}
+        val span = fixture.sentryTracer.children.first()
+
+        assertFalse(span.getData("blocked_main_thread") as Boolean)
+        assertNull(span.getData("call_stack"))
+    }
+
+    @Test
+    fun `when performSql runs in foreground blocked_main_thread is true and a stack trace is attached`() {
+        val sut = fixture.getSut()
+
+        fixture.options.mainThreadChecker = mock<IMainThreadChecker>()
+        whenever(fixture.options.mainThreadChecker.isMainThread).thenReturn(true)
+
+        sut.performSql("sql") {}
+        val span = fixture.sentryTracer.children.first()
+
+        assertTrue(span.getData("blocked_main_thread") as Boolean)
+        assertNotNull(span.getData("call_stack"))
     }
 }
