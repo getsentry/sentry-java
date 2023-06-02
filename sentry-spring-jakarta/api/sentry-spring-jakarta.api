@@ -149,6 +149,18 @@ public class io/sentry/spring/jakarta/tracing/SentryTransactionPointcutConfigura
 	public fun sentryTransactionPointcut ()Lorg/springframework/aop/Pointcut;
 }
 
+public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryCaptureException : java/lang/annotation/Annotation {
+}
+
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionAdvice : org/aopalliance/intercept/MethodInterceptor {
+public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionPointcutConfiguration {
+public fun <init> ()V
+public fun sentryCaptureExceptionPointcut ()Lorg/springframework/aop/Pointcut;
+}
+
 public final class io/sentry/spring/jakarta/tracing/SpringMvcTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
 	public fun <init> ()V
 	public fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
