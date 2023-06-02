@@ -155,7 +155,7 @@ public class ThreadDumpParser {
   private SentryStackTrace parseStacktrace(
       final @NotNull Lines lines, final @NotNull SentryThread thread) {
     final List<SentryStackFrame> frames = new ArrayList<>();
-    boolean isLastFrameJava = false;
+    SentryStackFrame lastJavaFrame = null;
 
     final Matcher nativeRe = NATIVE_RE.matcher("");
     final Matcher nativeNoLocRe = NATIVE_NO_LOC_RE.matcher("");
@@ -182,13 +182,13 @@ public class ThreadDumpParser {
         frame.setSymbol(nativeRe.group(2));
         frame.setLineno(getInteger(nativeRe, 3, null));
         frames.add(frame);
-        isLastFrameJava = false;
+        lastJavaFrame = null;
       } else if (matches(nativeNoLocRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         frame.setPackage(nativeNoLocRe.group(1));
         frame.setSymbol(nativeNoLocRe.group(2));
         frames.add(frame);
-        isLastFrameJava = false;
+        lastJavaFrame = null;
       } else if (matches(javaRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = javaRe.group(1);
@@ -200,7 +200,7 @@ public class ThreadDumpParser {
         frame.setLineno(getUInteger(javaRe, 5, null));
         frame.setInApp(stackTraceFactory.isInApp(module));
         frames.add(frame);
-        isLastFrameJava = true;
+        lastJavaFrame = frame;
       } else if (matches(jniRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = jniRe.group(1);
@@ -210,57 +210,63 @@ public class ThreadDumpParser {
         frame.setFunction(jniRe.group(3));
         frame.setInApp(stackTraceFactory.isInApp(module));
         frames.add(frame);
-        isLastFrameJava = true;
+        lastJavaFrame = frame;
       } else if (matches(lockedRe, text)) {
-        if (isLastFrameJava) {
+        if (lastJavaFrame != null) {
           final SentryLockReason lock = new SentryLockReason();
           lock.setType(SentryLockReason.LOCKED);
           lock.setAddress(lockedRe.group(1));
           lock.setPackageName(lockedRe.group(2));
           lock.setClassName(lockedRe.group(3));
+          lastJavaFrame.setLock(lock);
           combineThreadLocks(thread, lock);
         }
       } else if (matches(waitingOnRe, text)) {
-        if (isLastFrameJava) {
+        if (lastJavaFrame != null) {
           final SentryLockReason lock = new SentryLockReason();
           lock.setType(SentryLockReason.WAITING);
           lock.setAddress(waitingOnRe.group(1));
           lock.setPackageName(waitingOnRe.group(2));
           lock.setClassName(waitingOnRe.group(3));
+          lastJavaFrame.setLock(lock);
           combineThreadLocks(thread, lock);
         }
       } else if (matches(sleepingOnRe, text)) {
-        if (isLastFrameJava) {
+        if (lastJavaFrame != null) {
           final SentryLockReason lock = new SentryLockReason();
           lock.setType(SentryLockReason.SLEEPING);
           lock.setAddress(sleepingOnRe.group(1));
           lock.setPackageName(sleepingOnRe.group(2));
           lock.setClassName(sleepingOnRe.group(3));
+          lastJavaFrame.setLock(lock);
           combineThreadLocks(thread, lock);
         }
       } else if (matches(waitingToLockHeldRe, text)) {
-        if (isLastFrameJava) {
+        if (lastJavaFrame != null) {
           final SentryLockReason lock = new SentryLockReason();
           lock.setType(SentryLockReason.BLOCKED);
           lock.setAddress(waitingToLockHeldRe.group(1));
           lock.setPackageName(waitingToLockHeldRe.group(2));
           lock.setClassName(waitingToLockHeldRe.group(3));
           lock.setThreadId(getLong(waitingToLockHeldRe, 4, null));
+          lastJavaFrame.setLock(lock);
           combineThreadLocks(thread, lock);
         }
       } else if (matches(waitingToLockRe, text)) {
-        if (isLastFrameJava) {
+        if (lastJavaFrame != null) {
           final SentryLockReason lock = new SentryLockReason();
           lock.setType(SentryLockReason.BLOCKED);
           lock.setAddress(waitingToLockRe.group(1));
           lock.setPackageName(waitingToLockRe.group(2));
           lock.setClassName(waitingToLockRe.group(3));
+          lastJavaFrame.setLock(lock);
           combineThreadLocks(thread, lock);
         }
       } else if (matches(waitingToLockUnknownRe, text)) {
-        if (isLastFrameJava) {
+        if (lastJavaFrame != null) {
           final SentryLockReason lock = new SentryLockReason();
           lock.setType(SentryLockReason.BLOCKED);
+          lastJavaFrame.setLock(lock);
           combineThreadLocks(thread, lock);
         }
       } else if (text.length() == 0 || matches(blankRe, text)) {

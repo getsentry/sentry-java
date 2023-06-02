@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add `lock` attribute to the `SentryStackFrame` protocol to better highlight offending frames in the UI ([#2761](https://github.com/getsentry/sentry-java/pull/2761))
 - Enrich database spans with blocked main thread info ([#2760](https://github.com/getsentry/sentry-java/pull/2760))
 
 ## 6.21.0

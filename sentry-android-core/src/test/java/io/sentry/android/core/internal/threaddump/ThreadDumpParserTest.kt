@@ -33,6 +33,12 @@ class ThreadDumpParserTest {
         assertEquals("run", lastFrame.function)
         assertEquals(177, lastFrame.lineno)
         assertEquals(true, lastFrame.isInApp)
+        val lock = lastFrame.lock
+        assertEquals("0x0d3a2f0a", lock!!.address)
+        assertEquals(SentryLockReason.BLOCKED, lock.type)
+        assertEquals("java.lang", lock.packageName)
+        assertEquals("Object", lock.className)
+        assertEquals(5, lock.threadId)
 
         val blockingThread = threads.find { it.name == "Thread-9" }
         assertEquals(5, blockingThread!!.id)
