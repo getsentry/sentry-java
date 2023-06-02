@@ -5,6 +5,7 @@ import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
+import io.sentry.SentryLockReason
 import org.junit.Test
 import org.mockito.kotlin.mock
 import java.io.StringReader
@@ -33,6 +34,13 @@ class SentryStackFrameSerializationTest {
             instructionAddr = "19864a78-2466-461f-9f0b-93a5c9ae7622"
             rawFunction = "f33035a4-0cf0-453d-b6f4-d7c27e9af924"
             symbol = "d9807ffe-d517-11ed-afa1-0242ac120002"
+            lock = SentryLockReason().apply {
+                address = "0x0d3a2f0a"
+                className = "Object"
+                packageName = "java.lang"
+                type = SentryLockReason.BLOCKED
+                threadId = 11
+            }
         }
     }
     private val fixture = Fixture()

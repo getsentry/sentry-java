@@ -3600,6 +3600,7 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializa
 	public fun getImageAddr ()Ljava/lang/String;
 	public fun getInstructionAddr ()Ljava/lang/String;
 	public fun getLineno ()Ljava/lang/Integer;
+	public fun getLock ()Lio/sentry/SentryLockReason;
 	public fun getModule ()Ljava/lang/String;
 	public fun getPackage ()Ljava/lang/String;
 	public fun getPlatform ()Ljava/lang/String;
@@ -3623,6 +3624,7 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializa
 	public fun setInApp (Ljava/lang/Boolean;)V
 	public fun setInstructionAddr (Ljava/lang/String;)V
 	public fun setLineno (Ljava/lang/Integer;)V
+	public fun setLock (Lio/sentry/SentryLockReason;)V
 	public fun setModule (Ljava/lang/String;)V
 	public fun setNative (Ljava/lang/Boolean;)V
 	public fun setPackage (Ljava/lang/String;)V
@@ -3652,6 +3654,7 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field INSTRUCTION_ADDR Ljava/lang/String;
 	public static final field IN_APP Ljava/lang/String;
 	public static final field LINENO Ljava/lang/String;
+	public static final field LOCK Ljava/lang/String;
 	public static final field MODULE Ljava/lang/String;
 	public static final field NATIVE Ljava/lang/String;
 	public static final field PACKAGE Ljava/lang/String;
