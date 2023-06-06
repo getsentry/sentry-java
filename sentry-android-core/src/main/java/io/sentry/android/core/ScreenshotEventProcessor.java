@@ -59,12 +59,15 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
       return event;
     }
 
+    // skip capturing in case of debouncing (=too many frequent capture requests)
+    // the BeforeCaptureCallback may overrules the debouncing decision
     final boolean shouldDebounce = debouncer.checkForDebounce();
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeScreenshotCaptureCallback();
-    if (beforeCaptureCallback != null
-        && !beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
-      return event;
+    if (beforeCaptureCallback != null) {
+      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+        return event;
+      }
     } else if (shouldDebounce) {
       return event;
     }

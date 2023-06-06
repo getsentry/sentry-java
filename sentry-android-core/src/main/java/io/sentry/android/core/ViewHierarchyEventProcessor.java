@@ -66,12 +66,15 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
       return event;
     }
 
+    // skip capturing in case of debouncing (=too many frequent capture requests)
+    // the BeforeCaptureCallback may overrules the debouncing decision
     final boolean shouldDebounce = debouncer.checkForDebounce();
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeViewHierarchyCaptureCallback();
-    if (beforeCaptureCallback != null
-        && !beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
-      return event;
+    if (beforeCaptureCallback != null) {
+      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+        return event;
+      }
     } else if (shouldDebounce) {
       return event;
     }

@@ -56,7 +56,7 @@ class DebouncerTest {
         val debouncer = fixture.getDebouncer(3000)
         assertFalse(debouncer.checkForDebounce())
 
-        fixture.currentTimeMs = 3001
-        assertTrue(debouncer.checkForDebounce())
+        fixture.currentTimeMs = 4000
+        assertFalse(debouncer.checkForDebounce())
     }
 }

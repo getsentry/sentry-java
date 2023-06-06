@@ -152,7 +152,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   public interface BeforeCaptureCallback {
 
     /**
-     * A callback which can be used to suppress capturing screenshots or view hierarchies.
+     * A callback which can be used to suppress capturing of screenshots or view hierarchies.
      *
      * @param event the event
      * @param hint the hints
@@ -465,6 +465,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     return beforeScreenshotCaptureCallback;
   }
 
+  /**
+   * Sets a callback which is executed before capturing screenshots. Only relevant if
+   * attachScreenshot is set to true.
+   *
+   * @param beforeScreenshotCaptureCallback the callback to execute
+   */
   public void setBeforeScreenshotCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeScreenshotCaptureCallback) {
     this.beforeScreenshotCaptureCallback = beforeScreenshotCaptureCallback;
@@ -474,6 +480,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     return beforeViewHierarchyCaptureCallback;
   }
 
+  /**
+   * Sets a callback which is executed before capturing view hierarchies. Only relevant if
+   * attachViewHierarchy is set to true.
+   *
+   * @param beforeViewHierarchyCaptureCallback the callback to execute
+   */
   public void setBeforeViewHierarchyCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
     this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
