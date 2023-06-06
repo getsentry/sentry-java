@@ -111,11 +111,12 @@ public final class Request implements JsonUnknown, JsonSerializable {
 
   /**
    * The API target/specification that made the request.
-   * <p>
-   * Values can be `graphql`, `rest`, etc.
-   * <p>
-   * The data field should contain the request and response bodies based on its target specification.
-   * */
+   *
+   * <p>Values can be `graphql`, `rest`, etc.
+   *
+   * <p>The data field should contain the request and response bodies based on its target
+   * specification.
+   */
   private @Nullable String apiTarget;
 
   @SuppressWarnings("unused")
@@ -236,7 +237,8 @@ public final class Request implements JsonUnknown, JsonSerializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(url, method, queryString, cookies, headers, env, bodySize, fragment, apiTarget);
+    return Objects.hash(
+        url, method, queryString, cookies, headers, env, bodySize, fragment, apiTarget);
   }
 
   // region json
