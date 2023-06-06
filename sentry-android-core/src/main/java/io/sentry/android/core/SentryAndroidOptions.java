@@ -1,8 +1,10 @@
 package io.sentry.android.core;
 
+import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.Scope;
 import io.sentry.Sentry;
+import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.RootChecker;
@@ -142,6 +144,23 @@ public final class SentryAndroidOptions extends SentryOptions {
    * flagged by some app stores as harmful.
    */
   private boolean enableRootCheck = true;
+
+  private @Nullable BeforeCaptureCallback beforeScreenshotCaptureCallback;
+
+  private @Nullable BeforeCaptureCallback beforeViewHierarchyCaptureCallback;
+
+  public interface BeforeCaptureCallback {
+
+    /**
+     * A callback which can be used to suppress capturing screenshots or view hierarchies.
+     *
+     * @param event the event
+     * @param hint the hints
+     * @param debounce true if capturing is marked for being debounced
+     * @return true if capturing should be performed, false otherwise
+     */
+    boolean execute(@NotNull SentryEvent event, @NotNull Hint hint, boolean debounce);
+  }
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -440,5 +459,23 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableRootCheck(final boolean enableRootCheck) {
     this.enableRootCheck = enableRootCheck;
+  }
+
+  public @Nullable BeforeCaptureCallback getBeforeScreenshotCaptureCallback() {
+    return beforeScreenshotCaptureCallback;
+  }
+
+  public void setBeforeScreenshotCaptureCallback(
+      final @NotNull BeforeCaptureCallback beforeScreenshotCaptureCallback) {
+    this.beforeScreenshotCaptureCallback = beforeScreenshotCaptureCallback;
+  }
+
+  public @Nullable BeforeCaptureCallback getBeforeViewHierarchyCaptureCallback() {
+    return beforeViewHierarchyCaptureCallback;
+  }
+
+  public void setBeforeViewHierarchyCaptureCallback(
+      final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
+    this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
   }
 }

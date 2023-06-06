@@ -10,6 +10,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
+import io.sentry.protocol.SentryException
 import io.sentry.util.thread.IMainThreadChecker
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -66,6 +67,7 @@ class ScreenshotEventProcessorTest {
     @BeforeTest
     fun `set up`() {
         fixture = Fixture()
+        CurrentActivityHolder.getInstance().clearActivity()
     }
 
     @Test
@@ -198,6 +200,82 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
         assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("Screenshot"))
+    }
+
+    @Test
+    fun `when screenshots are captured rapidly, capturing should be debounced`() {
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+        val processor = fixture.getSut(true)
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint0 = Hint()
+        processor.process(event, hint0)
+        assertNotNull(hint0.screenshot)
+
+        val hint1 = Hint()
+        processor.process(event, hint1)
+        assertNull(hint1.screenshot)
+    }
+
+    @Test
+    fun `when screenshots are captured rapidly, debounce flag should be propagated`() {
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+        var debounceFlag = false
+        fixture.options.setBeforeScreenshotCaptureCallback { _, _, debounce ->
+            debounceFlag = debounce
+            true
+        }
+
+        val processor = fixture.getSut(true)
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint0 = Hint()
+        processor.process(event, hint0)
+        assertFalse(debounceFlag)
+
+        val hint1 = Hint()
+        processor.process(event, hint1)
+        assertTrue(debounceFlag)
+    }
+
+    @Test
+    fun `when capture callback returns false, no screenshot should be captured`() {
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+        fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ ->
+            false
+        }
+        val processor = fixture.getSut(true)
+
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint = Hint()
+
+        processor.process(event, hint)
+        assertNull(hint.screenshot)
+    }
+
+    @Test
+    fun `when capture callback returns true, a screenshot should be captured`() {
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+        fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
+            true
+        }
+        val processor = fixture.getSut(true)
+
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint = Hint()
+
+        processor.process(event, hint)
+        assertNotNull(hint.screenshot)
     }
 
     private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))

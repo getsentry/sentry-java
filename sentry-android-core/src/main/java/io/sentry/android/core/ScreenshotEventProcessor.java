@@ -10,6 +10,8 @@ import io.sentry.Hint;
 import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,12 +28,17 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
 
+  private final @NotNull Debouncer debouncer;
+  private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
+
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
+
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion();
     }
@@ -49,6 +56,16 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
     }
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity == null || HintUtils.isFromHybridSdk(hint)) {
+      return event;
+    }
+
+    final boolean shouldDebounce = debouncer.checkForDebounce();
+    final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
+        options.getBeforeScreenshotCaptureCallback();
+    if (beforeCaptureCallback != null
+        && !beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+      return event;
+    } else if (shouldDebounce) {
       return event;
     }
 
