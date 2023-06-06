@@ -3305,6 +3305,7 @@ public final class io/sentry/protocol/Request : io/sentry/JsonSerializable, io/s
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Request;)V
 	public fun equals (Ljava/lang/Object;)Z
+	public fun getApiTarget ()Ljava/lang/String;
 	public fun getBodySize ()Ljava/lang/Long;
 	public fun getCookies ()Ljava/lang/String;
 	public fun getData ()Ljava/lang/Object;
@@ -3318,6 +3319,7 @@ public final class io/sentry/protocol/Request : io/sentry/JsonSerializable, io/s
 	public fun getUrl ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setApiTarget (Ljava/lang/String;)V
 	public fun setBodySize (Ljava/lang/Long;)V
 	public fun setCookies (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/Object;)V
@@ -3338,6 +3340,7 @@ public final class io/sentry/protocol/Request$Deserializer : io/sentry/JsonDeser
 }
 
 public final class io/sentry/protocol/Request$JsonKeys {
+	public static final field API_TARGET Ljava/lang/String;
 	public static final field BODY_SIZE Ljava/lang/String;
 	public static final field COOKIES Ljava/lang/String;
 	public static final field DATA Ljava/lang/String;
@@ -3357,12 +3360,14 @@ public final class io/sentry/protocol/Response : io/sentry/JsonSerializable, io/
 	public fun <init> (Lio/sentry/protocol/Response;)V
 	public fun getBodySize ()Ljava/lang/Long;
 	public fun getCookies ()Ljava/lang/String;
+	public fun getData ()Ljava/lang/Object;
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setBodySize (Ljava/lang/Long;)V
 	public fun setCookies (Ljava/lang/String;)V
+	public fun setData (Ljava/lang/Object;)V
 	public fun setHeaders (Ljava/util/Map;)V
 	public fun setStatusCode (Ljava/lang/Integer;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3377,6 +3382,7 @@ public final class io/sentry/protocol/Response$Deserializer : io/sentry/JsonDese
 public final class io/sentry/protocol/Response$JsonKeys {
 	public static final field BODY_SIZE Ljava/lang/String;
 	public static final field COOKIES Ljava/lang/String;
+	public static final field DATA Ljava/lang/String;
 	public static final field HEADERS Ljava/lang/String;
 	public static final field STATUS_CODE Ljava/lang/String;
 	public fun <init> ()V
