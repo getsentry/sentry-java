@@ -37,6 +37,14 @@ public final class Response implements JsonUnknown, JsonSerializable {
   /** The body size in bytes */
   private @Nullable Long bodySize;
 
+  /**
+   * Response data in any format that makes sense.
+   * <p>
+   * SDKs should discard large and binary bodies by default. Can be given as a string or
+   * structural data of any format.
+   */
+  private @Nullable Object data;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -48,6 +56,7 @@ public final class Response implements JsonUnknown, JsonSerializable {
     this.unknown = CollectionUtils.newConcurrentHashMap(response.unknown);
     this.statusCode = response.statusCode;
     this.bodySize = response.bodySize;
+    this.data = response.data;
   }
 
   public @Nullable String getCookies() {
@@ -93,6 +102,14 @@ public final class Response implements JsonUnknown, JsonSerializable {
     this.bodySize = bodySize;
   }
 
+  public @Nullable Object getData() {
+    return data;
+  }
+
+  public void setData(final @Nullable Object data) {
+    this.data = data;
+  }
+
   // region json
 
   public static final class JsonKeys {
@@ -100,6 +117,7 @@ public final class Response implements JsonUnknown, JsonSerializable {
     public static final String HEADERS = "headers";
     public static final String STATUS_CODE = "status_code";
     public static final String BODY_SIZE = "body_size";
+    public static final String DATA = "data";
   }
 
   @Override
@@ -119,7 +137,9 @@ public final class Response implements JsonUnknown, JsonSerializable {
     if (bodySize != null) {
       writer.name(JsonKeys.BODY_SIZE).value(logger, bodySize);
     }
-
+    if (data != null) {
+      writer.name(JsonKeys.DATA).value(logger, data);
+    }
     if (unknown != null) {
       for (final String key : unknown.keySet()) {
         final Object value = unknown.get(key);
@@ -156,6 +176,9 @@ public final class Response implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.BODY_SIZE:
             response.bodySize = reader.nextLongOrNull();
+            break;
+          case JsonKeys.DATA:
+            response.data = reader.nextObjectOrNull();
             break;
           default:
             if (unknown == null) {

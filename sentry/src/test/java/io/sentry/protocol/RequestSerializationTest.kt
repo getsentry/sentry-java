@@ -29,6 +29,7 @@ class RequestSerializationTest {
             )
             bodySize = 1000
             fragment = "fragment"
+            apiTarget = "graphql"
         }
     }
     private val fixture = Fixture()

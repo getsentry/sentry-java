@@ -35,6 +35,7 @@ class RequestTest {
         assertEquals("unknown", clone.unknown!!["unknown"])
         assertEquals(1000, clone.bodySize)
         assertEquals("fragment", clone.fragment)
+        assertEquals("graphql", clone.apiTarget)
     }
 
     @Test
@@ -52,6 +53,7 @@ class RequestTest {
         request.unknown = newUnknown
         request.bodySize = 1001
         request.fragment = "fragment2"
+        request.apiTarget = "graphql"
 
         assertEquals("get", clone.method)
         assertEquals("http://localhost:8080", clone.url)
@@ -64,6 +66,7 @@ class RequestTest {
         assertEquals(1, clone.unknown!!.size)
         assertEquals(1000, clone.bodySize)
         assertEquals("fragment", clone.fragment)
+        assertEquals("graphql", clone.apiTarget)
     }
 
     @Test
@@ -119,6 +122,7 @@ class RequestTest {
             setUnknown(unknown)
             bodySize = 1000
             fragment = "fragment"
+            apiTarget = "graphql"
         }
     }
 }
