@@ -39,8 +39,8 @@ public final class Response implements JsonUnknown, JsonSerializable {
 
   /**
    * Response data in any format that makes sense.
-   * <p>
-   * SDKs should discard large and binary bodies by default. Can be given as a string or
+   *
+   * <p>SDKs should discard large and binary bodies by default. Can be given as a string or
    * structural data of any format.
    */
   private @Nullable Object data;
