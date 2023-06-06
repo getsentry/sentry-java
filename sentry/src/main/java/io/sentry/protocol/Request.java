@@ -232,7 +232,7 @@ public final class Request implements JsonUnknown, JsonSerializable {
         && Objects.equals(env, request.env)
         && Objects.equals(bodySize, request.bodySize)
         && Objects.equals(fragment, request.fragment)
-        && Objects.equals(apiTarget, request.getApiTarget());
+        && Objects.equals(apiTarget, request.apiTarget);
   }
 
   @Override
