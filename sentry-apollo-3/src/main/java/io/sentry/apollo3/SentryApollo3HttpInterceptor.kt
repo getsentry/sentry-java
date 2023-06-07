@@ -309,7 +309,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         val body = response.body?.peek()?.readUtf8()
 
         // if there response body does not have the errors field, do not raise an issue
-        if (body?.contains("\"errors\"", ignoreCase = true) == false) {
+        if (body?.contains("\"errors\"", true) == false) {
             return
         }
 
