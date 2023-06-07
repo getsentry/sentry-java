@@ -8,6 +8,10 @@
 - Enrich database spans with blocked main thread info ([#2760](https://github.com/getsentry/sentry-java/pull/2760))
 - Add `api_target` to `Request` and `data` to `Response` Protocols ([#2775](https://github.com/getsentry/sentry-java/pull/2775))
 
+### Fixes
+
+- No longer use `String.join` in `Baggage` as it requires API level 26 ([#2778](https://github.com/getsentry/sentry-java/pull/2778))
+
 ## 6.21.0
 
 ### Features

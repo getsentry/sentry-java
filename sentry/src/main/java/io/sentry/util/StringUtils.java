@@ -158,6 +158,13 @@ public final class StringUtils {
     return uuidString;
   }
 
+  /**
+   * Returns a new String joining together given strings using the given delimiter.
+   *
+   * @param delimiter the delimiter that separates elements
+   * @param elements the elements that should be joined together
+   * @return a new String with elements joined using delimiter
+   */
   public static String join(
       final @NotNull CharSequence delimiter,
       final @NotNull Iterable<? extends CharSequence> elements) {
