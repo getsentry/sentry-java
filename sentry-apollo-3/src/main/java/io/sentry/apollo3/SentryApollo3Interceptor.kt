@@ -10,7 +10,6 @@ import com.apollographql.apollo3.api.Subscription
 import com.apollographql.apollo3.api.variables
 import com.apollographql.apollo3.interceptor.ApolloInterceptor
 import com.apollographql.apollo3.interceptor.ApolloInterceptorChain
-import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.SENTRY_APOLLO_3_OPERATION_NAME
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.SENTRY_APOLLO_3_OPERATION_TYPE
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.SENTRY_APOLLO_3_VARIABLES
 import io.sentry.vendor.Base64
@@ -24,7 +23,6 @@ class SentryApollo3Interceptor : ApolloInterceptor {
     ): Flow<ApolloResponse<D>> {
         val builder = request.newBuilder()
             .addHttpHeader(SENTRY_APOLLO_3_OPERATION_TYPE, Base64.encodeToString(operationType(request).toByteArray(), Base64.NO_WRAP))
-            .addHttpHeader(SENTRY_APOLLO_3_OPERATION_NAME, Base64.encodeToString(request.operation.name().toByteArray(), Base64.NO_WRAP))
 
         request.scalarAdapters?.let {
             builder.addHttpHeader(SENTRY_APOLLO_3_VARIABLES, Base64.encodeToString(request.operation.variables(it).valueMap.toString().toByteArray(), Base64.NO_WRAP))
