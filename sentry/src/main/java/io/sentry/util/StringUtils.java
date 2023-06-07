@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.Iterator;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -155,5 +156,29 @@ public final class StringUtils {
       return PROPER_NIL_UUID;
     }
     return uuidString;
+  }
+
+  /**
+   * Returns a new String joining together given strings using the given delimiter.
+   *
+   * @param delimiter the delimiter that separates elements
+   * @param elements the elements that should be joined together
+   * @return a new String with elements joined using delimiter
+   */
+  public static String join(
+      final @NotNull CharSequence delimiter,
+      final @NotNull Iterable<? extends CharSequence> elements) {
+    final @NotNull StringBuilder stringBuilder = new StringBuilder();
+    final @NotNull Iterator<? extends CharSequence> iterator = elements.iterator();
+
+    if (iterator.hasNext()) {
+      stringBuilder.append(iterator.next());
+      while (iterator.hasNext()) {
+        stringBuilder.append(delimiter);
+        stringBuilder.append(iterator.next());
+      }
+    }
+
+    return stringBuilder.toString();
   }
 }
