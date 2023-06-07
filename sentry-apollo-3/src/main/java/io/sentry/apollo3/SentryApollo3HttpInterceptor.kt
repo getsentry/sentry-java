@@ -71,12 +71,14 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                 )
             ) {
                 val sentryTraceHeader = span.toSentryTrace()
-                val baggageHeader = span.toBaggageHeader(cleanedHeaders.filter {
-                    it.name.equals(
-                        BAGGAGE_HEADER,
-                        true
-                    )
-                }.map { it.value })
+                val baggageHeader = span.toBaggageHeader(
+                    cleanedHeaders.filter {
+                        it.name.equals(
+                            BAGGAGE_HEADER,
+                            true
+                        )
+                    }.map { it.value }
+                )
                 cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
 
                 baggageHeader?.let { newHeader ->
@@ -166,6 +168,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             }
 
             variables?.let {
+                // TODO: this is PII but it is here, what do we do?
                 setData("variables", it)
             }
             setData("http.method", method)
@@ -231,8 +234,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         request.body?.contentLength.ifHasValidLength { contentLength ->
             breadcrumb.setData("request_body_size", contentLength)
         }
-
-        breadcrumb.setData("api_target", "graphql")
 
         operationName?.let {
             breadcrumb.setData("operation_name", it)
@@ -370,10 +371,14 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
         val sentryResponse = Response().apply {
             // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-            cookies = if (hub.options.isSendDefaultPii) getHeader(
-                "Set-Cookie",
-                response.headers
-            ) else null
+            cookies = if (hub.options.isSendDefaultPii) {
+                getHeader(
+                    "Set-Cookie",
+                    response.headers
+                )
+            } else {
+                null
+            }
             headers = getHeaders(response.headers)
             statusCode = response.statusCode
 
