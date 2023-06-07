@@ -129,4 +129,22 @@ class StringUtilsTest {
         val normalized = StringUtils.normalizeUUID(original)
         assertEquals(original, normalized)
     }
+
+    @Test
+    fun `joins strings with delimiter`() {
+        val result = StringUtils.join(",", listOf("a", "b"))
+        assertEquals("a,b", result)
+    }
+
+    @Test
+    fun `joins single string without delimiter`() {
+        val result = StringUtils.join(",", listOf("a"))
+        assertEquals("a", result)
+    }
+
+    @Test
+    fun `joins list string into empty string`() {
+        val result = StringUtils.join(",", emptyList())
+        assertEquals("", result)
+    }
 }
