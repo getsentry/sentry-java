@@ -83,6 +83,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       // at this stage we are not able to get real transaction name
       final ITransaction transaction =
           startTransaction(httpRequest, sentryTraceHeader, baggageHeader);
+      transaction.getSpanContext().setOrigin("auto.spring_jakarta");
       try {
         filterChain.doFilter(httpRequest, httpResponse);
       } catch (Throwable e) {

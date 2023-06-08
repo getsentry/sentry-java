@@ -107,6 +107,8 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         return activeSpan.startChild(operation, description).apply {
             urlDetails.applyToSpan(this)
 
+            spanContext.origin = "auto.apollo3"
+
             operationId?.let {
                 setData("operationId", it)
             }
