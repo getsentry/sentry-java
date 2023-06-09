@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add profile rate limiting ([#2782](https://github.com/getsentry/sentry-java/pull/2782))
+
 ## 6.22.0
 
 ### Features
