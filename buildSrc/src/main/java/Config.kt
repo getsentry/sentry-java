@@ -121,6 +121,8 @@ object Config {
 
         val p6spy = "p6spy:p6spy:3.9.1"
 
+        val asyncProfiler = "tools.profiler:async-profiler:2.9"
+
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
@@ -218,6 +220,7 @@ object Config {
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
+        val SENTRY_PROFILING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.profiling"
         val SENTRY_JDBC_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jdbc"
         val SENTRY_SERVLET_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet"
         val SENTRY_SERVLET_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet.jakarta"

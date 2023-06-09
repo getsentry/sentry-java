@@ -40,6 +40,7 @@ include(
     "sentry-openfeign",
     "sentry-graphql",
     "sentry-jdbc",
+    "sentry-profiling",
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
