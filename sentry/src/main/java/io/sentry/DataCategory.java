@@ -10,6 +10,7 @@ public enum DataCategory {
   Error("error"),
   Session("session"),
   Attachment("attachment"),
+  Profile("profile"),
   Transaction("transaction"),
   Security("security"),
   UserReport("user_report"),
