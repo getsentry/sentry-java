@@ -490,6 +490,23 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `creates AOP beans to support @SentryCaptureException`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).hasSentryExceptionAdviceBeans()
+            }
+    }
+
+    @Test
+    fun `does not create AOP beans to support @SentryCaptureException if AOP class is missing`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
+            .run {
+                assertThat(it).doesNotHaveSentryExceptionAdviceBeans()
+            }
+    }
+
+    @Test
     fun `when tracing is enabled creates AOP beans to support @SentryTransaction`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
@@ -917,6 +934,20 @@ class SentryAutoConfigurationTest {
         this.doesNotHaveBean("sentrySpanPointcut")
         this.doesNotHaveBean("sentrySpanAdvice")
         this.doesNotHaveBean("sentrySpanAdvisor")
+        return this
+    }
+
+    private fun <C : ApplicationContext> ApplicationContextAssert<C>.hasSentryExceptionAdviceBeans(): ApplicationContextAssert<C> {
+        this.hasBean("sentryCaptureExceptionPointcut")
+        this.hasBean("sentryCaptureExceptionAdvice")
+        this.hasBean("sentryCaptureExceptionAdvisor")
+        return this
+    }
+
+    private fun <C : ApplicationContext> ApplicationContextAssert<C>.doesNotHaveSentryExceptionAdviceBeans(): ApplicationContextAssert<C> {
+        this.doesNotHaveBean("sentryCaptureExceptionPointcut")
+        this.doesNotHaveBean("sentryCaptureExceptionAdvice")
+        this.doesNotHaveBean("sentryCaptureExceptionAdvisor")
         return this
     }
 

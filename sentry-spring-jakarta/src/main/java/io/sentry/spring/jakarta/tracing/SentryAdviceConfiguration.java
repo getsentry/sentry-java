@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Creates advice infrastructure for {@link SentrySpan} and {@link SentryTransaction} and {@link SentryCaptureException}. */
+/** Creates advice infrastructure for {@link SentrySpan} and {@link SentryTransaction}. */
 @Configuration(proxyBeanMethods = false)
 @Open
 public class SentryAdviceConfiguration {
@@ -38,17 +38,5 @@ public class SentryAdviceConfiguration {
       final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut,
       final @NotNull @Qualifier("sentrySpanAdvice") Advice sentrySpanAdvice) {
     return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice);
-  }
-
-  @Bean
-  public @NotNull Advice sentryCaptureExceptionAdvice() {
-    return new SentryCaptureExceptionAdvice();
-  }
-
-  @Bean
-  public @NotNull Advisor sentryCaptureExceptionAdvisor(
-      final @NotNull @Qualifier("sentryCaptureExceptionPointcut") Pointcut sentryCaptureExceptionPointcut,
-      final @NotNull @Qualifier("sentryCaptureExceptionAdvice") Advice sentryCaptureExceptionAdvice) {
-    return new DefaultPointcutAdvisor(sentryCaptureExceptionPointcut, sentryCaptureExceptionAdvice);
   }
 }

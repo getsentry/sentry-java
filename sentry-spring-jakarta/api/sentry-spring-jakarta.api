@@ -96,6 +96,29 @@ public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun sentryTransactionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
+public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryCaptureException : java/lang/annotation/Annotation {
+}
+
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionConfiguration {
+	public fun <init> ()V
+}
+
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionPointcutConfiguration {
+	public fun <init> ()V
+	public fun sentryCaptureExceptionPointcut ()Lorg/springframework/aop/Pointcut;
+}
+
+public class io/sentry/spring/jakarta/tracing/SentryExceptionAdviceConfiguration {
+	public fun <init> ()V
+	public fun sentryCaptureExceptionAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCaptureExceptionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
+}
+
 public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentrySpan : java/lang/annotation/Annotation {
 	public abstract fun description ()Ljava/lang/String;
 	public abstract fun operation ()Ljava/lang/String;
@@ -147,18 +170,6 @@ public class io/sentry/spring/jakarta/tracing/SentryTransactionAdvice : org/aopa
 public class io/sentry/spring/jakarta/tracing/SentryTransactionPointcutConfiguration {
 	public fun <init> ()V
 	public fun sentryTransactionPointcut ()Lorg/springframework/aop/Pointcut;
-}
-
-public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryCaptureException : java/lang/annotation/Annotation {
-}
-
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionAdvice : org/aopalliance/intercept/MethodInterceptor {
-public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
-}
-
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionPointcutConfiguration {
-public fun <init> ()V
-public fun sentryCaptureExceptionPointcut ()Lorg/springframework/aop/Pointcut;
 }
 
 public final class io/sentry/spring/jakarta/tracing/SpringMvcTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
