@@ -43,6 +43,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
     init {
         addIntegrationToSdkVersion()
+        if (captureFailedRequests) {
+            SentryIntegrationPackageStorage.getInstance()
+                .addIntegration("Apollo3ClientError")
+        }
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
@@ -337,7 +341,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             }
 
             val mechanism = Mechanism().apply {
-                type = "SentryApollo3HttpInterceptor"
+                type = "SentryApollo3Interceptor"
             }
 
             val builder = StringBuilder()
