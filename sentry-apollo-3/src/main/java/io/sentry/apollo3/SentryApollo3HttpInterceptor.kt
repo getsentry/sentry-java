@@ -6,7 +6,6 @@ import com.apollographql.apollo3.api.http.HttpHeader
 import com.apollographql.apollo3.api.http.HttpRequest
 import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloHttpException
-import com.apollographql.apollo3.exception.ApolloNetworkException
 import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader.BAGGAGE_HEADER
@@ -101,7 +100,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         try {
             httpResponse = chain.proceed(modifiedRequest)
             statusCode = httpResponse.statusCode
-            span?.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.UNKNOWN)
+            span?.status = SpanStatus.fromHttpStatusCode(statusCode)
 
             captureEvent(modifiedRequest, httpResponse, operationName, operationType)
 
@@ -115,8 +114,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                         SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.INTERNAL_ERROR)
                 }
 
-                is ApolloNetworkException -> span?.status = SpanStatus.INTERNAL_ERROR
-                else -> SpanStatus.INTERNAL_ERROR
+                else -> span?.status = SpanStatus.INTERNAL_ERROR
             }
             span?.throwable = e
             throw e
@@ -302,96 +300,126 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             return
         }
 
-        // we pay the price to read the response in the memory to check if there's any errors
-        // GraphQL does not throw status code 400+ for every type of error
-        val body = response.body?.peek()?.readUtf8()
-
-        // if there response body does not have the errors field, do not raise an issue
-        if (body?.contains("\"errors\"", true) == false) {
-            return
-        }
-
-        // not possible to get a parameterized url, but we remove at least the
-        // query string and the fragment.
-        // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
-        // url will be: https://api.github.com/users/getsentry/repos/
-        // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
-        // but that's not possible
-        val urlDetails = UrlUtils.parse(request.url)
-
-        // return if its not a target match
-        if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
-            return
-        }
-
-        val mechanism = Mechanism().apply {
-            type = "SentryApollo3HttpInterceptor"
-        }
-
-        val builder = StringBuilder()
-        builder.append("GraphQL Request failed")
-        operationName?.let {
-            builder.append(", name: $it")
-        }
-        operationType?.let {
-            builder.append(", type: $it")
-        }
-
-        val exception = SentryGraphQLClientException(builder.toString())
-        val mechanismException =
-            ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
-        val event = SentryEvent(mechanismException)
-
-        val hint = Hint()
-        hint.set(APOLLO_REQUEST, request)
-        hint.set(APOLLO_RESPONSE, response)
-
-        val sentryRequest = Request().apply {
-            urlDetails.applyToRequest(this)
-            // Cookie is only sent if isSendDefaultPii is enabled
-            cookies =
-                if (hub.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
-            method = request.method.name
-            headers = getHeaders(request.headers)
-            apiTarget = "graphql"
-
-            request.body?.let {
-                bodySize = it.contentLength
-
-                val buffer = Buffer()
-                it.writeTo(buffer)
-
-                data = buffer.readUtf8()
-
-                buffer.close()
-            }
-        }
-
-        val sentryResponse = Response().apply {
-            // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-            cookies = if (hub.options.isSendDefaultPii) {
-                getHeader(
-                    "Set-Cookie",
-                    response.headers
+        // wrap everything up in a try catch block so every exception is swallowed and degraded
+        // gracefully
+        try {
+            // we pay the price to read the response in the memory to check if there's any errors
+            // GraphQL does not throw status code 400+ for every type of error
+            val body: String?
+            try {
+                body = response.body?.peek()?.readUtf8()
+            } catch (e: Throwable) {
+                hub.options.logger.log(
+                    SentryLevel.ERROR,
+                    "Error reading the response body.",
+                    e
                 )
-            } else {
-                null
+                // bail out because the response body has the most important information
+                return
             }
-            headers = getHeaders(response.headers)
-            statusCode = response.statusCode
 
-            body?.let {
-                response.body?.buffer?.size?.ifHasValidLength { contentLength ->
-                    bodySize = contentLength
+            // if there response body does not have the errors field, do not raise an issue
+            if (body?.contains("\"errors\"", true) == false) {
+                return
+            }
+
+            // not possible to get a parameterized url, but we remove at least the
+            // query string and the fragment.
+            // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
+            // url will be: https://api.github.com/users/getsentry/repos/
+            // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
+            // but that's not possible
+            val urlDetails = UrlUtils.parse(request.url)
+
+            // return if its not a target match
+            if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
+                return
+            }
+
+            val mechanism = Mechanism().apply {
+                type = "SentryApollo3HttpInterceptor"
+            }
+
+            val builder = StringBuilder()
+            builder.append("GraphQL Request failed")
+            operationName?.let {
+                builder.append(", name: $it")
+            }
+            operationType?.let {
+                builder.append(", type: $it")
+            }
+
+            val exception = SentryGraphQLClientException(builder.toString())
+            val mechanismException =
+                ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
+            val event = SentryEvent(mechanismException)
+
+            val hint = Hint()
+            hint.set(APOLLO_REQUEST, request)
+            hint.set(APOLLO_RESPONSE, response)
+
+            val sentryRequest = Request().apply {
+                urlDetails.applyToRequest(this)
+                // Cookie is only sent if isSendDefaultPii is enabled
+                cookies =
+                    if (hub.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
+                method = request.method.name
+                headers = getHeaders(request.headers)
+                apiTarget = "graphql"
+
+                request.body?.let {
+                    bodySize = it.contentLength
+
+                    val buffer = Buffer()
+
+                    try {
+                        it.writeTo(buffer)
+                        data = buffer.readUtf8()
+                    } catch (e: Throwable) {
+                        hub.options.logger.log(
+                            SentryLevel.ERROR,
+                            "Error reading the request body.",
+                            e
+                        )
+                        // continue because the response body alone can already give some insights
+                    } finally {
+                        buffer.close()
+                    }
                 }
-                data = it
             }
+
+            val sentryResponse = Response().apply {
+                // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
+                cookies = if (hub.options.isSendDefaultPii) {
+                    getHeader(
+                        "Set-Cookie",
+                        response.headers
+                    )
+                } else {
+                    null
+                }
+                headers = getHeaders(response.headers)
+                statusCode = response.statusCode
+
+                body?.let {
+                    response.body?.buffer?.size?.ifHasValidLength { contentLength ->
+                        bodySize = contentLength
+                    }
+                    data = it
+                }
+            }
+
+            event.request = sentryRequest
+            event.contexts.setResponse(sentryResponse)
+
+            hub.captureEvent(event, hint)
+        } catch (e: Throwable) {
+            hub.options.logger.log(
+                SentryLevel.ERROR,
+                "Error capturing the GraphQL error.",
+                e
+            )
         }
-
-        event.request = sentryRequest
-        event.contexts.setResponse(sentryResponse)
-
-        hub.captureEvent(event, hint)
     }
 
     /**
