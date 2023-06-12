@@ -14,11 +14,14 @@ fun ApolloClient.Builder.sentryTracing(
     failedRequestTargets: List<String> = listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS)
 ): ApolloClient.Builder {
     addInterceptor(SentryApollo3Interceptor())
-    addHttpInterceptor(SentryApollo3HttpInterceptor(
-        hub = hub,
-        beforeSpan = beforeSpan,
-        captureFailedRequests = captureFailedRequests,
-        failedRequestTargets = failedRequestTargets))
+    addHttpInterceptor(
+        SentryApollo3HttpInterceptor(
+            hub = hub,
+            beforeSpan = beforeSpan,
+            captureFailedRequests = captureFailedRequests,
+            failedRequestTargets = failedRequestTargets
+        )
+    )
     return this
 }
 
