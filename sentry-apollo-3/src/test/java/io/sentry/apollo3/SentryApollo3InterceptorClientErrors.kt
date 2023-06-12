@@ -8,6 +8,7 @@ import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.TypeCheckHint
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.DEFAULT_CAPTURE_FAILED_REQUESTS
 import io.sentry.exception.ExceptionMechanismException
@@ -66,7 +67,7 @@ class SentryApollo3InterceptorClientErrors {
 
         fun getSut(
             captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
-            failedRequestTargets: List<String> = listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS),
+            failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
             httpStatusCode: Int = 200,
             responseBody: String = responseBodyOk,
             sendDefaultPii: Boolean = false,

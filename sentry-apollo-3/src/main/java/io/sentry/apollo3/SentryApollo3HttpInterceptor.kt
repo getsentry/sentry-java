@@ -18,7 +18,7 @@ import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
-import io.sentry.SentryOptions
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
@@ -37,7 +37,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
-    private val failedRequestTargets: List<String> = listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS)
+    private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : HttpInterceptor, IntegrationName {
 
     init {

@@ -7,6 +7,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
@@ -40,7 +41,7 @@ class SentryApollo3InterceptorTest {
             whenever(options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
-                    setTracePropagationTargets(listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS))
+                    setTracePropagationTargets(listOf(DEFAULT_PROPAGATION_TARGETS))
                     sdkVersion = SdkVersion("test", "1.2.3")
                 }
             )
