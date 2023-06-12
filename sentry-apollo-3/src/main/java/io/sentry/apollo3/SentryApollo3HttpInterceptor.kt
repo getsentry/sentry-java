@@ -40,8 +40,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = false,
     private val failedRequestTargets: List<String> = listOf(".*")
-) :
-    HttpInterceptor, IntegrationName {
+) : HttpInterceptor, IntegrationName {
 
     init {
         addIntegrationToSdkVersion()
@@ -164,11 +163,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             urlDetails.applyToSpan(this)
 
             operationId?.let {
-                setData("operation_id", it)
+                setData("operationId", it)
             }
 
             variables?.let {
-                // TODO: this is PII but it is here, what do we do?
                 setData("variables", it)
             }
             setData("http.method", method)
