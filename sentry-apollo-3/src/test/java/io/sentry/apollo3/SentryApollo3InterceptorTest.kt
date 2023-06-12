@@ -40,7 +40,7 @@ class SentryApollo3InterceptorTest {
             whenever(options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
-                    isTraceSampling = true
+                    setTracePropagationTargets(listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS))
                     sdkVersion = SdkVersion("test", "1.2.3")
                 }
             )
@@ -239,7 +239,8 @@ class SentryApollo3InterceptorTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-                assertEquals(280L, it.data["response_body_size"])
+                // response_body_size is added but mock webserver returns 0 always
+                assertEquals(0L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
             },
             anyOrNull()

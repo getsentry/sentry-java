@@ -141,7 +141,8 @@ class SentryApollo3InterceptorWithVariablesTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-                assertEquals(280L, it.data["response_body_size"])
+                // response_body_size is added but mock webserver returns 0 always
+                assertEquals(0L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
             },
             anyOrNull()
@@ -153,8 +154,7 @@ class SentryApollo3InterceptorWithVariablesTest {
         executeQuery(fixture.getSut())
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_VARIABLES])
-        assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_OPERATION_NAME])
-        assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_VARIABLES])
+        assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_OPERATION_TYPE])
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {

@@ -1783,7 +1783,7 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
     if (tracePropagationTargets == null) {
-      this.tracePropagationTargets = tracePropagationTargets;
+      this.tracePropagationTargets = null;
     } else {
       @NotNull final List<String> filteredTracePropagationTargets = new ArrayList<>();
       for (String target : tracePropagationTargets) {

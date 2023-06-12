@@ -252,7 +252,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
         response?.let { httpResponse ->
             responseContentLength?.let {
-                breadcrumb.setData("http.response_content_length", it)
+                breadcrumb.setData("response_body_size", it)
             }
 
             hint.set(APOLLO_RESPONSE, httpResponse)
