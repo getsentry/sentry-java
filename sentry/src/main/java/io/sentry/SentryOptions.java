@@ -44,6 +44,8 @@ import org.jetbrains.annotations.TestOnly;
 @Open
 public class SentryOptions {
 
+  @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
+
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
@@ -358,7 +360,7 @@ public class SentryOptions {
   private @Nullable List<String> tracePropagationTargets = null;
 
   private final @NotNull List<String> defaultTracePropagationTargets =
-      Collections.singletonList(".*");
+      Collections.singletonList(DEFAULT_PROPAGATION_TARGETS);
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;

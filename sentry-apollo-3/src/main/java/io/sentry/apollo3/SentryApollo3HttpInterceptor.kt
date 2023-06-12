@@ -18,6 +18,7 @@ import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
@@ -37,8 +38,8 @@ import org.jetbrains.annotations.ApiStatus
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
-    private val captureFailedRequests: Boolean = false,
-    private val failedRequestTargets: List<String> = listOf(".*")
+    private val captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
+    private val failedRequestTargets: List<String> = listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS)
 ) : HttpInterceptor, IntegrationName {
 
     init {
@@ -353,7 +354,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                 builder.append(", type: $it")
             }
 
-            val exception = SentryGraphQLClientException(builder.toString())
+            val exception = SentryApollo3ClientException(builder.toString())
             val mechanismException =
                 ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
             val event = SentryEvent(mechanismException)
@@ -443,5 +444,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     companion object {
         const val SENTRY_APOLLO_3_VARIABLES = "SENTRY-APOLLO-3-VARIABLES"
         const val SENTRY_APOLLO_3_OPERATION_TYPE = "SENTRY-APOLLO-3-OPERATION-TYPE"
+        const val DEFAULT_CAPTURE_FAILED_REQUESTS = false
     }
 }
