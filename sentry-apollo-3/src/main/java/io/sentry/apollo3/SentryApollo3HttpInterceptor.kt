@@ -33,8 +33,6 @@ import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
-// TODO: document about not reporting duplicates with ApolloHttpException
-
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
@@ -155,7 +153,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         operationId: String?
     ): ISpan {
         val urlDetails = UrlUtils.parse(request.url)
-        val method = request.method
+        val method = request.method.name
 
         val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
         val variables = decodeHeaderValue(request, SENTRY_APOLLO_3_VARIABLES)

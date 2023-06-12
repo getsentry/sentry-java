@@ -144,6 +144,7 @@ class SentryApollo3InterceptorWithVariablesTest {
                 // response_body_size is added but mock webserver returns 0 always
                 assertEquals(0L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
+                assertEquals("query", it.data["operation_type"])
             },
             anyOrNull()
         )
