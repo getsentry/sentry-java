@@ -8,6 +8,7 @@
 
 ```kotlin
 import com.apollographql.apollo3.ApolloClient
+import io.sentry.apollo3.sentryTracing
 
 val apolloClient = ApolloClient.Builder()
     .serverUrl("https://example.com/graphql")

@@ -9,9 +9,9 @@ import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.DEFAULT_CAPTURE_
 @JvmOverloads
 fun ApolloClient.Builder.sentryTracing(
     hub: IHub = HubAdapter.getInstance(),
-    beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null,
     captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
-    failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
+    failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
+    beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null
 ): ApolloClient.Builder {
     addInterceptor(SentryApollo3Interceptor())
     addHttpInterceptor(
@@ -26,9 +26,9 @@ fun ApolloClient.Builder.sentryTracing(
 }
 
 fun ApolloClient.Builder.sentryTracing(
-    beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null,
     captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
-    failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
+    failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
+    beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null
 ): ApolloClient.Builder {
     return sentryTracing(
         hub = HubAdapter.getInstance(),
