@@ -4,6 +4,7 @@
 
 ### Features
 
+- Align http.status to span data convention ([#2786](https://github.com/getsentry/sentry-java/pull/2786))
 - Support for automatically capturing Failed GraphQL (Apollo 3) Client errors ([#2781](https://github.com/getsentry/sentry-java/pull/2781))
 
 ```kotlin
