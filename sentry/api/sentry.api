@@ -1627,6 +1627,7 @@ public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDatePr
 }
 
 public class io/sentry/SentryOptions {
+	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	public fun <init> ()V
 	public fun addBundleId (Ljava/lang/String;)V
 	public fun addCollector (Lio/sentry/ICollector;)V

@@ -10,6 +10,7 @@ import io.sentry.ISpan
 import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
@@ -46,7 +47,7 @@ class SentryOkHttpInterceptor(
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
-    private val failedRequestTargets: List<String> = listOf(".*")
+    private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor, IntegrationName {
 
     constructor() : this(HubAdapter.getInstance())
