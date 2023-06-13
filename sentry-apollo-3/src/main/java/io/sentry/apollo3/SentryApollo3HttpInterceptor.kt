@@ -50,6 +50,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             .addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
 
+    private val regex: Regex by lazy {
+        "(?i)\"errors\"\\s*:\\s*\\[".toRegex()
+    }
+
     override suspend fun intercept(
         request: HttpRequest,
         chain: HttpInterceptorChain
@@ -308,9 +312,8 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         try {
             // we pay the price to read the response in the memory to check if there's any errors
             // GraphQL does not throw status code 400+ for every type of error
-            val body: String?
-            try {
-                body = response.body?.peek()?.readUtf8()
+            val body = try {
+                response.body?.peek()?.readUtf8() ?: ""
             } catch (e: Throwable) {
                 hub.options.logger.log(
                     SentryLevel.ERROR,
@@ -322,7 +325,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             }
 
             // if there response body does not have the errors field, do not raise an issue
-            if (body?.contains("\"errors\"", true) == false) {
+            if (body.isEmpty() || !regex.containsMatchIn(body)) {
                 return
             }
 
