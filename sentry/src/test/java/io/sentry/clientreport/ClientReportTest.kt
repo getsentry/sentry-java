@@ -5,14 +5,18 @@ import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
 import io.sentry.Hint
+import io.sentry.IHub
 import io.sentry.NoOpLogger
+import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryTracer
 import io.sentry.Session
+import io.sentry.TransactionContext
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
@@ -21,6 +25,9 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -38,6 +45,9 @@ class ClientReportTest {
     @Test
     fun `lost envelope can be recorded`() {
         givenClientReportRecorder()
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
 
         val lostClientReport = ClientReport(
             DateUtils.getCurrentDateTime(),
@@ -53,13 +63,14 @@ class ClientReportTest {
             SentryEnvelopeItem.fromEvent(opts.serializer, SentryEvent()),
             SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
             SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
-            SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+            SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
+            SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer)
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(10, clientReportAtEnd)
+        testHelper.assertTotalCount(11, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
@@ -67,6 +78,7 @@ class ClientReportTest {
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.UserReport, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Session, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Attachment, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Profile, 1, clientReportAtEnd)
     }
 
     @Test
@@ -89,7 +101,8 @@ class ClientReportTest {
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
                 DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1)
+                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Profile.category, 2)
             )
         )
 
@@ -98,10 +111,11 @@ class ClientReportTest {
         clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelopeItem)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(6, clientReportAtEnd)
+        testHelper.assertTotalCount(8, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Profile, 2, clientReportAtEnd)
     }
 
     @Test
@@ -112,16 +126,18 @@ class ClientReportTest {
         clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
         clientReportRecorder.recordLostEvent(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error)
         clientReportRecorder.recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error)
+        clientReportRecorder.recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile)
 
         val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
 
         testHelper.assertTotalCount(0, clientReportRecorder.resetCountsAndGenerateClientReport())
 
         val envelopeReport = envelope.items.first().getClientReport(opts.serializer)!!
-        assertEquals(3, envelopeReport.discardedEvents.size)
+        assertEquals(4, envelopeReport.discardedEvents.size)
         assertEquals(2, envelopeReport.discardedEvents.first { it.reason == DiscardReason.CACHE_OVERFLOW.reason && it.category == DataCategory.Attachment.category }.quantity)
         assertEquals(1, envelopeReport.discardedEvents.first { it.reason == DiscardReason.RATELIMIT_BACKOFF.reason && it.category == DataCategory.Error.category }.quantity)
         assertEquals(1, envelopeReport.discardedEvents.first { it.reason == DiscardReason.QUEUE_OVERFLOW.reason && it.category == DataCategory.Error.category }.quantity)
+        assertEquals(1, envelopeReport.discardedEvents.first { it.reason == DiscardReason.BEFORE_SEND.reason && it.category == DataCategory.Profile.category }.quantity)
         assertTrue(
             ChronoUnit.MILLIS.between(
                 LocalDateTime.now(),

@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add profile rate limiting ([#2782](https://github.com/getsentry/sentry-java/pull/2782))
 - Support for automatically capturing Failed GraphQL (Apollo 3) Client errors ([#2781](https://github.com/getsentry/sentry-java/pull/2781))
 
 ```kotlin
