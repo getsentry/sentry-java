@@ -1,5 +1,6 @@
 package io.sentry.instrumentation.file
 
+import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -57,7 +58,7 @@ class SentryFileReaderTest {
         assertEquals(fileIOSpan.data["file.size"], 4L)
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
-        assertEquals(fileIOSpan.data["blocked_main_thread"], true)
+        assertEquals(fileIOSpan.data[DataConvention.BLOCKED_MAIN_THREAD_KEY], true)
         assertEquals(fileIOSpan.status, OK)
     }
 }

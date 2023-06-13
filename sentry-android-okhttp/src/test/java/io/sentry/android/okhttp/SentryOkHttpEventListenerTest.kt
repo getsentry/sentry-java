@@ -1,6 +1,7 @@
 package io.sentry.android.okhttp
 
 import io.sentry.BaggageHeader
+import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -158,7 +159,7 @@ class SentryOkHttpEventListenerTest {
                     assertNotNull(span.data["proxies"])
                     assertNotNull(span.data["domain_name"])
                     assertNotNull(span.data["dns_addresses"])
-                    assertEquals(201, span.data["status_code"])
+                    assertEquals(201, span.data[DataConvention.HTTP_STATUS_CODE_KEY])
                 }
                 1 -> {
                     assertEquals("http.client.proxy_select", span.operation)
@@ -180,7 +181,7 @@ class SentryOkHttpEventListenerTest {
                 }
                 6 -> {
                     assertEquals("http.client.response_headers", span.operation)
-                    assertEquals(201, span.data["status_code"])
+                    assertEquals(201, span.data[DataConvention.HTTP_STATUS_CODE_KEY])
                 }
                 7 -> {
                     assertEquals("http.client.response_body", span.operation)
@@ -223,8 +224,8 @@ class SentryOkHttpEventListenerTest {
         response.close()
         val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_body" }
         assertNotNull(requestBodySpan)
-        assertEquals(responseBytes.size.toLong(), requestBodySpan.data["http.response_content_length"])
-        assertEquals(responseBytes.size.toLong(), callSpan?.getData("http.response_content_length"))
+        assertEquals(responseBytes.size.toLong(), requestBodySpan.data[DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
+        assertEquals(responseBytes.size.toLong(), callSpan?.getData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
     }
 
     @Test

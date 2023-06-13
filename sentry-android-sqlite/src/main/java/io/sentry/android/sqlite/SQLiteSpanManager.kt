@@ -1,6 +1,7 @@
 package io.sentry.android.sqlite
 
 import android.database.SQLException
+import io.sentry.DataConvention
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
@@ -38,9 +39,9 @@ internal class SQLiteSpanManager(
         } finally {
             span?.apply {
                 val isMainThread: Boolean = hub.options.mainThreadChecker.isMainThread
-                setData("blocked_main_thread", isMainThread)
+                setData(DataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
                 if (isMainThread) {
-                    setData("call_stack", stackTraceFactory.inAppCallStack)
+                    setData(DataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
                 }
                 finish()
             }

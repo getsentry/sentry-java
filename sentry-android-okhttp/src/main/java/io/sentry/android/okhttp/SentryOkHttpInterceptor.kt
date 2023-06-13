@@ -2,6 +2,7 @@ package io.sentry.android.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataConvention
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.HubAdapter
@@ -101,6 +102,7 @@ class SentryOkHttpInterceptor(
             request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code
+            span?.setData(DataConvention.HTTP_STATUS_CODE_KEY, code)
             span?.status = SpanStatus.fromHttpStatusCode(code)
 
             // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
@@ -134,7 +136,7 @@ class SentryOkHttpInterceptor(
         val hint = Hint().also { it.set(OKHTTP_REQUEST, request) }
         response?.let {
             it.body?.contentLength().ifHasValidLength { responseBodySize ->
-                breadcrumb.setData("http.response_content_length", responseBodySize)
+                breadcrumb.setData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, responseBodySize)
             }
 
             hint[OKHTTP_RESPONSE] = it

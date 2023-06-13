@@ -4,6 +4,7 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
@@ -101,7 +102,7 @@ class SentryApollo3InterceptorTest {
 
         verify(fixture.hub).captureTransaction(
             check {
-                assertTransactionDetails(it)
+                assertTransactionDetails(it, httpStatusCode = 200)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
@@ -268,10 +269,10 @@ class SentryApollo3InterceptorTest {
             assertNotNull(it["operationId"])
             assertEquals("Post", it["http.method"])
             httpStatusCode?.let { code ->
-                assertEquals(code, it["http.response.status_code"])
+                assertEquals(code, it[DataConvention.HTTP_STATUS_CODE_KEY])
             }
             contentLength?.let { contentLength ->
-                assertEquals(contentLength, it["http.response_content_length"])
+                assertEquals(contentLength, it[DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
             }
         }
     }

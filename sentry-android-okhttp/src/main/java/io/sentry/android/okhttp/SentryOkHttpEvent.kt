@@ -1,6 +1,7 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
+import io.sentry.DataConvention
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -48,7 +49,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         callRootSpan?.setData("url", url)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
-        callRootSpan?.setData("http.method", method)
+        callRootSpan?.setData(DataConvention.HTTP_METHOD_KEY, method)
     }
 
     /**
@@ -60,7 +61,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         breadcrumb.setData(PROTOCOL_KEY, response.protocol.name)
         breadcrumb.setData("status_code", response.code)
         callRootSpan?.setData(PROTOCOL_KEY, response.protocol.name)
-        callRootSpan?.setData("http.status_code", response.code)
+        callRootSpan?.setData(DataConvention.HTTP_STATUS_CODE_KEY, response.code)
         callRootSpan?.status = SpanStatus.fromHttpStatusCode(response.code)
     }
 
@@ -81,7 +82,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     fun setResponseBodySize(byteCount: Long) {
         if (byteCount > -1) {
             breadcrumb.setData("response_content_length", byteCount)
-            callRootSpan?.setData("http.response_content_length", byteCount)
+            callRootSpan?.setData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, byteCount)
         }
     }
 
