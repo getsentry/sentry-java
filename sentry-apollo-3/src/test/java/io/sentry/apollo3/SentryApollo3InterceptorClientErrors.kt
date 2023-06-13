@@ -313,6 +313,20 @@ class SentryApollo3InterceptorClientErrors {
         )
     }
 
+    @Test
+    fun `capture errors with specific fingerprints`() {
+        val sut =
+            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+        executeQuery(sut)
+
+        verify(fixture.hub).captureEvent(
+            check {
+                assertEquals(listOf("LaunchDetails", "query", "200"), it.fingerprints)
+            },
+            any<Hint>()
+        )
+    }
+
     // endregion
 
     // region errors

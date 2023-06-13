@@ -346,13 +346,17 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                 type = "SentryApollo3Interceptor"
             }
 
+            val fingerprints = mutableListOf<String>()
+
             val builder = StringBuilder()
             builder.append("GraphQL Request failed")
             operationName?.let {
                 builder.append(", name: $it")
+                fingerprints.add(operationName)
             }
             operationType?.let {
                 builder.append(", type: $it")
+                fingerprints.add(operationType)
             }
 
             val exception = SentryApollo3ClientException(builder.toString())
@@ -407,16 +411,17 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                 headers = getHeaders(response.headers)
                 statusCode = response.statusCode
 
-                body?.let {
-                    response.body?.buffer?.size?.ifHasValidLength { contentLength ->
-                        bodySize = contentLength
-                    }
-                    data = it
+                response.body?.buffer?.size?.ifHasValidLength { contentLength ->
+                    bodySize = contentLength
                 }
+                data = body
             }
+
+            fingerprints.add(response.statusCode.toString())
 
             event.request = sentryRequest
             event.contexts.setResponse(sentryResponse)
+            event.fingerprints = fingerprints
 
             hub.captureEvent(event, hint)
         } catch (e: Throwable) {
