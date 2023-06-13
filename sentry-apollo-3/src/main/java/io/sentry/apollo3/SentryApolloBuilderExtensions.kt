@@ -17,9 +17,9 @@ fun ApolloClient.Builder.sentryTracing(
     addHttpInterceptor(
         SentryApollo3HttpInterceptor(
             hub = hub,
-            beforeSpan = beforeSpan,
             captureFailedRequests = captureFailedRequests,
-            failedRequestTargets = failedRequestTargets
+            failedRequestTargets = failedRequestTargets,
+            beforeSpan = beforeSpan
         )
     )
     return this
@@ -32,8 +32,8 @@ fun ApolloClient.Builder.sentryTracing(
 ): ApolloClient.Builder {
     return sentryTracing(
         hub = HubAdapter.getInstance(),
-        beforeSpan = beforeSpan,
         captureFailedRequests = captureFailedRequests,
-        failedRequestTargets = failedRequestTargets
+        failedRequestTargets = failedRequestTargets,
+        beforeSpan = beforeSpan
     )
 }

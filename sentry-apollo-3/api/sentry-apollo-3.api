@@ -39,11 +39,11 @@ public final class io/sentry/apollo3/SentryApollo3Interceptor : com/apollographq
 public final class io/sentry/apollo3/SentryApolloBuilderExtensionsKt {
 	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;)Lcom/apollographql/apollo3/ApolloClient$Builder;
 	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;)Lcom/apollographql/apollo3/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo3/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;Z)Lcom/apollographql/apollo3/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;)Lcom/apollographql/apollo3/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;)Lcom/apollographql/apollo3/ApolloClient$Builder;
-	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;ILjava/lang/Object;)Lcom/apollographql/apollo3/ApolloClient$Builder;
-	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;ILjava/lang/Object;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Z)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;ZLjava/util/List;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;ZLjava/util/List;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;ZLjava/util/List;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo3/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo3/ApolloClient$Builder;
 }
 
