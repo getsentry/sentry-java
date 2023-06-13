@@ -38,3 +38,6 @@
 -keep class * extends io.sentry.SentryOptions { *; }
 
 ##---------------End: proguard configuration for android-core  ----------
+
+# sentry-apollo-3
+-keep class io.sentry.apollo3.SentryApollo3ClientException { <init>(...); }
