@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Features
+
+- Support for automatically capturing Failed GraphQL (Apollo 3) Client errors ([#2781](https://github.com/getsentry/sentry-java/pull/2781))
+
+```kotlin
+import com.apollographql.apollo3.ApolloClient
+import io.sentry.apollo3.sentryTracing
+
+val apolloClient = ApolloClient.Builder()
+    .serverUrl("https://example.com/graphql")
+    .sentryTracing(captureFailedRequests = true)    
+    .build()
+```
+
 ### Dependencies
 
 - Bump Native SDK from v0.6.2 to v0.6.3 ([#2746](https://github.com/getsentry/sentry-java/pull/2746))
