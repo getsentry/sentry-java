@@ -7,6 +7,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
@@ -40,7 +41,7 @@ class SentryApollo3InterceptorTest {
             whenever(options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
-                    isTraceSampling = true
+                    setTracePropagationTargets(listOf(DEFAULT_PROPAGATION_TARGETS))
                     sdkVersion = SdkVersion("test", "1.2.3")
                 }
             )
@@ -115,7 +116,7 @@ class SentryApollo3InterceptorTest {
 
         verify(fixture.hub).captureTransaction(
             check {
-                assertTransactionDetails(it)
+                assertTransactionDetails(it, httpStatusCode = 403)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
@@ -130,7 +131,7 @@ class SentryApollo3InterceptorTest {
 
         verify(fixture.hub).captureTransaction(
             check {
-                assertTransactionDetails(it)
+                assertTransactionDetails(it, httpStatusCode = null, contentLength = null)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
@@ -239,8 +240,11 @@ class SentryApollo3InterceptorTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-                assertEquals(280L, it.data["response_body_size"])
+                // response_body_size is added but mock webserver returns 0 always
+                assertEquals(0L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
+                assertEquals("LaunchDetails", it.data["operation_name"])
+                assertNotNull(it.data["operation_id"])
             },
             anyOrNull()
         )
@@ -255,13 +259,20 @@ class SentryApollo3InterceptorTest {
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
-    private fun assertTransactionDetails(it: SentryTransaction) {
+    private fun assertTransactionDetails(it: SentryTransaction, httpStatusCode: Int? = 200, contentLength: Long? = 0L) {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
         assertEquals("http.graphql", httpClientSpan.op)
         assertTrue { httpClientSpan.description?.startsWith("Post LaunchDetails") == true }
         assertNotNull(httpClientSpan.data) {
             assertNotNull(it["operationId"])
+            assertEquals("Post", it["http.method"])
+            httpStatusCode?.let { code ->
+                assertEquals(code, it["http.response.status_code"])
+            }
+            contentLength?.let { contentLength ->
+                assertEquals(contentLength, it["http.response_content_length"])
+            }
         }
     }
 
