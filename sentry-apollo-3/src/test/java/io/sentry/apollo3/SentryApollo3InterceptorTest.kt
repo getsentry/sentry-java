@@ -1,7 +1,12 @@
 package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.api.http.HttpRequest
+import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo3.exception.ApolloHttpException
+import com.apollographql.apollo3.network.http.HttpInterceptor
+import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.DataConvention
@@ -67,6 +72,7 @@ class SentryApollo3InterceptorTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+            interceptor: HttpInterceptor? = null,
             addThirdPartyBaggageHeader: Boolean = false,
             beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
@@ -84,6 +90,10 @@ class SentryApollo3InterceptorTest {
             val builder = ApolloClient.Builder()
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
+
+            interceptor?.let {
+                builder.addHttpInterceptor(interceptor)
+            }
 
             if (addThirdPartyBaggageHeader) {
                 builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
@@ -119,6 +129,27 @@ class SentryApollo3InterceptorTest {
             check {
                 assertTransactionDetails(it, httpStatusCode = 403)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `get http status from ApolloHttpException in failed request`() {
+        val failingInterceptor = object : HttpInterceptor {
+            override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
+                throw ApolloHttpException(404, mock(), mock(), "")
+            }
+        }
+        executeQuery(fixture.getSut(interceptor = failingInterceptor))
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
+                assertEquals(404, it.spans.first().data?.get(DataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(SpanStatus.NOT_FOUND, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
