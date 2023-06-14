@@ -174,6 +174,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
+  // TODO should we start a new trace here if performance is disabled?
   private void startTracing(final @NotNull Activity activity) {
     WeakReference<Activity> weakActivity = new WeakReference<>(activity);
     if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {

@@ -18,7 +18,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
-import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
 
@@ -42,14 +42,11 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
 
             var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
 
-            if (!span.isNoOp && PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url)) {
-                val sentryTraceHeader = span.toSentryTrace()
-                val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value })
-                cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
-
-                baggageHeader?.let { newHeader ->
+            TracingUtils.traceIfAllowed(hub, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span) {
+                cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
+                it.baggageHeader?.let { baggageHeader ->
                     cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
-                        add(HttpHeader(newHeader.name, newHeader.value))
+                        add(HttpHeader(baggageHeader.name, baggageHeader.value))
                     }
                 }
             }

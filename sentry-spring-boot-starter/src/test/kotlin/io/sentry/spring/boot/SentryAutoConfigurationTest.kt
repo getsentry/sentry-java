@@ -458,18 +458,10 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when tracing is set, does not create tracing filter`() {
+    fun `creates tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).doesNotHaveBean("sentryTracingFilter")
-            }
-    }
-
-    @Test
-    fun `when tracing is disabled, does not create tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .run {
-                assertThat(it).doesNotHaveBean("sentryTracingFilter")
+                assertThat(it).hasBean("sentryTracingFilter")
             }
     }
 

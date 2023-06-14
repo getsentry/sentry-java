@@ -184,6 +184,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         hint);
   }
 
+  // TODO should we start a new trace here if performance is disabled?
   private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
       return;

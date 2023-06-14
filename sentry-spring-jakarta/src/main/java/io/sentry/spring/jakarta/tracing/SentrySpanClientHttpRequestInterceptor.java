@@ -10,10 +10,9 @@ import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
-import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.TracingUtils;
 import io.sentry.util.UrlUtils;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +41,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     try {
       final ISpan activeSpan = hub.getSpan();
       if (activeSpan == null) {
+        maybeAddTracingHeaders(request, null);
         return execution.execute(request, body);
       }
 
@@ -52,18 +52,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       span.setDescription(methodName + " " + urlDetails.getUrlOrFallback());
       urlDetails.applyToSpan(span);
 
-      if (!span.isNoOp()
-          && PropagationTargetsUtils.contain(
-              hub.getOptions().getTracePropagationTargets(), request.getURI())) {
-        final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-        request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-        @Nullable
-        BaggageHeader baggage =
-            span.toBaggageHeader(request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER));
-        if (baggage != null) {
-          request.getHeaders().set(baggage.getName(), baggage.getValue());
-        }
-      }
+      maybeAddTracingHeaders(request, span);
 
       try {
         response = execution.execute(request, body);
@@ -82,6 +71,27 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     } finally {
       addBreadcrumb(request, body, responseStatusCode, response);
     }
+  }
+
+  private void maybeAddTracingHeaders(
+      final @NotNull HttpRequest request, final @Nullable ISpan span) {
+    TracingUtils.traceIfAllowed(
+        hub,
+        request.getURI().toString(),
+        request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER),
+        span,
+        tracingHeaders -> {
+          request
+              .getHeaders()
+              .add(
+                  tracingHeaders.getSentryTraceHeader().getName(),
+                  tracingHeaders.getSentryTraceHeader().getValue());
+
+          final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+          if (baggageHeader != null) {
+            request.getHeaders().set(baggageHeader.getName(), baggageHeader.getValue());
+          }
+        });
   }
 
   private void addBreadcrumb(

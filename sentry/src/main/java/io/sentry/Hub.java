@@ -11,12 +11,14 @@ import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
+import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -743,19 +745,22 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
-    SentryTraceHeader traceHeader = null;
+    AtomicReference<SentryTraceHeader> traceHeader = new AtomicReference<>();
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
-      final ISpan span = stack.peek().getScope().getSpan();
-      if (span != null && !span.isNoOp()) {
-        traceHeader = span.toSentryTrace();
-      }
+      TracingUtils.trace(
+          this,
+          null,
+          getSpan(),
+          tracingHeaders -> {
+            traceHeader.set(tracingHeaders.getSentryTraceHeader());
+          });
     }
-    return traceHeader;
+    return traceHeader.get();
   }
 
   @Override
@@ -817,5 +822,39 @@ public final class Hub implements IHub {
       }
     }
     return scope;
+  }
+
+  @Override
+  public @Nullable PropagationContext continueTrace(
+      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders) {
+    @NotNull
+    PropagationContext propagationContext =
+        PropagationContext.fromHeaders(getOptions().getLogger(), sentryTraceHeader, baggageHeaders);
+    configureScope(
+        (scope) -> {
+          scope.setPropagationContext(propagationContext);
+        });
+    return propagationContext;
+  }
+
+  @Override
+  public @Nullable BaggageHeader baggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    final @NotNull AtomicReference<BaggageHeader> baggageHeader = new AtomicReference<>();
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'baggageHeader' call is a no-op.");
+    } else {
+      TracingUtils.trace(
+          this,
+          thirdPartyBaggageHeaders,
+          getSpan(),
+          tracingHeaders -> {
+            baggageHeader.set(tracingHeaders.getBaggageHeader());
+          });
+    }
+    return baggageHeader.get();
   }
 }

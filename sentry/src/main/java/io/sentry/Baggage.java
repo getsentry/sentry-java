@@ -352,6 +352,21 @@ public final class Baggage {
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
   }
 
+  @ApiStatus.Internal
+  public void setValuesFromScope(final @NotNull Scope scope, final @NotNull SentryOptions options) {
+    final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
+    final @Nullable User user = scope.getUser();
+    setTraceId(propagationContext.getTraceId().toString());
+    setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    setRelease(options.getRelease());
+    setEnvironment(options.getEnvironment());
+    setUserSegment(user != null ? getSegment(user) : null);
+
+    // TODO vvv should we set null explicitly?
+    setTransaction(null);
+    setSampleRate(null);
+  }
+
   private static @Nullable String getSegment(final @NotNull User user) {
     if (user.getSegment() != null) {
       return user.getSegment();

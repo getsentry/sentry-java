@@ -1,18 +1,16 @@
 package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
-import io.sentry.SentryLevel;
+import io.sentry.PropagationContext;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
-import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.IOException;
@@ -79,10 +77,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final List<String> baggageHeader =
           Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
+      final @Nullable PropagationContext propagationContext =
+          hub.continueTrace(sentryTraceHeader, baggageHeader);
 
       // at this stage we are not able to get real transaction name
-      final ITransaction transaction =
-          startTransaction(httpRequest, sentryTraceHeader, baggageHeader);
+      final ITransaction transaction = startTransaction(httpRequest, propagationContext);
       try {
         filterChain.doFilter(httpRequest, httpResponse);
       } catch (Throwable e) {
@@ -119,37 +118,23 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private ITransaction startTransaction(
       final @NotNull HttpServletRequest request,
-      final @Nullable String sentryTraceHeader,
-      final @Nullable List<String> baggageHeader) {
+      final @Nullable PropagationContext propagationContext) {
 
     final String name = request.getMethod() + " " + request.getRequestURI();
 
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
 
-    final Baggage baggage = Baggage.fromHeader(baggageHeader, hub.getOptions().getLogger());
+    if (propagationContext != null) {
+      final TransactionContext contexts =
+          TransactionContext.fromPropagationContext(
+              name, TransactionNameSource.URL, "http.server", propagationContext);
 
-    if (sentryTraceHeader != null) {
-      try {
-        final TransactionContext contexts =
-            TransactionContext.fromSentryTrace(
-                name,
-                TransactionNameSource.URL,
-                "http.server",
-                new SentryTraceHeader(sentryTraceHeader),
-                baggage,
-                null);
+      final TransactionOptions transactionOptions = new TransactionOptions();
+      transactionOptions.setCustomSamplingContext(customSamplingContext);
+      transactionOptions.setBindToScope(true);
 
-        final TransactionOptions transactionOptions = new TransactionOptions();
-        transactionOptions.setCustomSamplingContext(customSamplingContext);
-        transactionOptions.setBindToScope(true);
-
-        return hub.startTransaction(contexts, transactionOptions);
-      } catch (InvalidSentryTraceHeaderException e) {
-        hub.getOptions()
-            .getLogger()
-            .log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
-      }
+      return hub.startTransaction(contexts, transactionOptions);
     }
 
     final TransactionOptions transactionOptions = new TransactionOptions();

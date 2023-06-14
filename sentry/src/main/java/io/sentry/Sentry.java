@@ -903,7 +903,7 @@ public final class Sentry {
   }
 
   /**
-   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   * TODO Returns trace header of active transaction or {@code null} if no transaction is active.
    *
    * @return trace header or null
    */
@@ -968,5 +968,22 @@ public final class Sentry {
      * @param options the options
      */
     void configure(@NotNull T options);
+  }
+
+  /**
+   * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
+   * trace ID and span ID is created.
+   *
+   * @param sentryTraceHeader "sentry-trace" header
+   * @param baggageHeaders "baggage" headers
+   */
+  public static @Nullable PropagationContext continueTrace(
+      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders) {
+    return getCurrentHub().continueTrace(sentryTraceHeader, baggageHeaders);
+  }
+
+  public static @Nullable BaggageHeader baggageHeader(
+      @Nullable List<String> thirdPartyBaggageHeaders) {
+    return getCurrentHub().baggageHeader(thirdPartyBaggageHeaders);
   }
 }

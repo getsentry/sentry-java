@@ -1,6 +1,8 @@
 package io.sentry.spring.tracing
 
 import io.sentry.IHub
+import io.sentry.ILogger
+import io.sentry.PropagationContext
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanId
@@ -41,6 +43,7 @@ class SentryTracingFilterTest {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
+        val logger = mock<ILogger>()
 
         init {
             whenever(hub.options).thenReturn(options)
@@ -59,6 +62,7 @@ class SentryTracingFilterTest {
             response.status = status
             whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
+            whenever(hub.continueTrace(any(), any())).thenAnswer { PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?) }
             return SentryTracingFilter(hub, transactionNameProvider)
         }
     }

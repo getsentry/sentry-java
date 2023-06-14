@@ -524,7 +524,7 @@ public interface IHub {
   }
 
   /**
-   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   * Returns trace header of active transaction, or scope if no transaction is active.
    *
    * @return trace header or null
    */
@@ -589,4 +589,18 @@ public interface IHub {
   default void reportFullDisplayed() {
     reportFullyDisplayed();
   }
+
+  /**
+   * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
+   * trace ID and span ID is created.
+   *
+   * @param sentryTraceHeader "sentry-trace" header
+   * @param baggageHeaders "baggage" headers
+   */
+  @Nullable
+  PropagationContext continueTrace(
+      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders);
+
+  @Nullable
+  BaggageHeader baggageHeader(@Nullable List<String> thirdPartyBaggageHeaders);
 }

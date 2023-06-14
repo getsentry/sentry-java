@@ -1,6 +1,8 @@
 package io.sentry.spring.jakarta.tracing
 
 import io.sentry.IHub
+import io.sentry.ILogger
+import io.sentry.PropagationContext
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanId
@@ -18,6 +20,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -40,7 +43,9 @@ class SentryTracingFilterTest {
         val transactionNameProvider = mock<TransactionNameProvider>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
+            enableTracing = true
         }
+        val logger = mock<ILogger>()
 
         init {
             whenever(hub.options).thenReturn(options)
@@ -59,6 +64,7 @@ class SentryTracingFilterTest {
             response.status = status
             whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
+            whenever(hub.continueTrace(any(), any())).thenAnswer { PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?) }
             return SentryTracingFilter(hub, transactionNameProvider)
         }
     }
@@ -205,7 +211,8 @@ class SentryTracingFilterTest {
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
         verify(fixture.hub).isEnabled
-        verify(fixture.hub).options
+        verify(fixture.hub).continueTrace(anyOrNull(), anyOrNull())
+        verify(fixture.hub, times(2)).options
         verifyNoMoreInteractions(fixture.hub)
         verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }

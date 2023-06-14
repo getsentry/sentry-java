@@ -90,6 +90,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         hub.addBreadcrumb(breadcrumb, hint)
     }
 
+    // TODO should we start a new trace here if performance is disabled?
     private fun startTracing(
         controller: NavController,
         destination: NavDestination,

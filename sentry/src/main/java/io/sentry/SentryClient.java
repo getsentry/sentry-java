@@ -11,6 +11,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -171,10 +172,16 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final TraceContext traceContext =
-          scope != null && scope.getTransaction() != null
-              ? scope.getTransaction().traceContext()
-              : null;
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        if (scope.getTransaction() != null) {
+          traceContext = scope.getTransaction().traceContext();
+        } else {
+          TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = scope.getPropagationContext().traceContext();
+        }
+      }
+
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
       final SentryEnvelope envelope =

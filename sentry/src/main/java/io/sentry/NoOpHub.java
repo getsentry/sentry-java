@@ -189,4 +189,16 @@ public final class NoOpHub implements IHub {
 
   @Override
   public void reportFullyDisplayed() {}
+
+  @Override
+  public @Nullable PropagationContext continueTrace(
+      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders) {
+    return null;
+  }
+
+  @Override
+  public @Nullable BaggageHeader baggageHeader(
+      final @Nullable List<String> thirdPartyBaggageHeaders) {
+    return null;
+  }
 }

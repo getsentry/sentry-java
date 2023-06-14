@@ -26,57 +26,31 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace) {
-    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace, null, null);
-  }
-
-  /**
-   * Creates {@link TransactionContext} from sentry-trace header.
-   *
-   * @param name - the transaction name
-   * @param transactionNameSource - source of the transaction name
-   * @param operation - the operation
-   * @param sentryTrace - the sentry-trace header
-   * @return the transaction contexts
-   */
-  @ApiStatus.Internal
-  public static @NotNull TransactionContext fromSentryTrace(
-      final @NotNull String name,
-      final @NotNull TransactionNameSource transactionNameSource,
-      final @NotNull String operation,
-      final @NotNull SentryTraceHeader sentryTrace) {
     @Nullable Boolean parentSampled = sentryTrace.isSampled();
+    TracesSamplingDecision samplingDecision =
+        parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
+
     return new TransactionContext(
         name,
         operation,
         sentryTrace.getTraceId(),
         new SpanId(),
-        transactionNameSource,
+        TransactionNameSource.CUSTOM,
         sentryTrace.getSpanId(),
-        parentSampled == null ? null : new TracesSamplingDecision(parentSampled),
+        samplingDecision,
         null);
   }
 
-  /**
-   * Creates {@link TransactionContext} from sentry-trace header.
-   *
-   * @param name - the transaction name
-   * @param transactionNameSource - source of the transaction name
-   * @param operation - the operation
-   * @param sentryTrace - the sentry-trace header
-   * @param baggage - the baggage header
-   * @return the transaction contexts
-   */
-  @ApiStatus.Internal
-  public static @NotNull TransactionContext fromSentryTrace(
+  public static TransactionContext fromPropagationContext(
       final @NotNull String name,
       final @NotNull TransactionNameSource transactionNameSource,
       final @NotNull String operation,
-      final @NotNull SentryTraceHeader sentryTrace,
-      final @Nullable Baggage baggage,
-      final @Nullable SpanId spanId) {
-    @Nullable Boolean parentSampled = sentryTrace.isSampled();
+      final @NotNull PropagationContext propagationContext) {
+    @Nullable Boolean parentSampled = propagationContext.isSampled();
     TracesSamplingDecision samplingDecision =
         parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
+
+    @Nullable Baggage baggage = propagationContext.getBaggage();
 
     if (baggage != null) {
       baggage.freeze();
@@ -90,15 +64,13 @@ public final class TransactionContext extends SpanContext {
       }
     }
 
-    final @NotNull SpanId spanIdToUse = spanId == null ? new SpanId() : spanId;
-
     return new TransactionContext(
         name,
         operation,
-        sentryTrace.getTraceId(),
-        spanIdToUse,
+        propagationContext.getTraceId(),
+        propagationContext.getSpanId(),
         transactionNameSource,
-        sentryTrace.getSpanId(),
+        propagationContext.getParentSpanId(),
         samplingDecision,
         baggage);
   }

@@ -11,6 +11,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.FetchSourceType
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
+import com.apollographql.apollo.request.RequestHeaders
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
@@ -23,6 +24,7 @@ import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
+import io.sentry.util.TracingUtils
 import java.util.concurrent.Executor
 
 class SentryApolloInterceptor(
@@ -41,25 +43,14 @@ class SentryApolloInterceptor(
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
         val activeSpan = hub.span
         if (activeSpan == null) {
-            chain.proceedAsync(request, dispatcher, callBack)
+            val headers = addTracingHeaders(request, null)
+            val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
+            chain.proceedAsync(modifiedRequest, dispatcher, callBack)
         } else {
             val span = startChild(request, activeSpan)
 
-            val requestWithHeader = if (span.isNoOp) {
-                request
-            } else {
-                val sentryTraceHeader = span.toSentryTrace()
-
-                // we have no access to URI, no way to verify tracing origins
-                val requestHeaderBuilder = request.requestHeaders.toBuilder()
-                requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
-                span.toBaggageHeader(listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)))
-                    ?.let {
-                        requestHeaderBuilder.addHeader(it.name, it.value)
-                    }
-                val headers = requestHeaderBuilder.build()
-                request.toBuilder().requestHeaders(headers).build()
-            }
+            val headers = addTracingHeaders(request, span)
+            val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
 
             span.setData("operationId", requestWithHeader.operation.operationId())
             span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
@@ -99,6 +90,29 @@ class SentryApolloInterceptor(
     }
 
     override fun dispose() {}
+
+    private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
+        val requestHeaderBuilder = request.requestHeaders.toBuilder()
+
+        if (hub.options.isTraceSampling) {
+            // we have no access to URI, no way to verify tracing origins
+            TracingUtils.trace(
+                hub,
+                listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
+                span
+            ) { tracingHeaders ->
+                requestHeaderBuilder.addHeader(
+                    tracingHeaders.sentryTraceHeader.name,
+                    tracingHeaders.sentryTraceHeader.value
+                )
+                tracingHeaders.baggageHeader?.let {
+                    requestHeaderBuilder.addHeader(it.name, it.value)
+                }
+            }
+        }
+
+        return requestHeaderBuilder.build()
+    }
 
     private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
         val operation = request.operation.name().name()

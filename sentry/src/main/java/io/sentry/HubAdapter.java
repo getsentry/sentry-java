@@ -234,4 +234,16 @@ public final class HubAdapter implements IHub {
   public void reportFullyDisplayed() {
     Sentry.reportFullyDisplayed();
   }
+
+  @Override
+  public @Nullable PropagationContext continueTrace(
+      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders) {
+    return Sentry.continueTrace(sentryTraceHeader, baggageHeaders);
+  }
+
+  @Override
+  public @Nullable BaggageHeader baggageHeader(
+      final @Nullable List<String> thirdPartyBaggageHeaders) {
+    return Sentry.baggageHeader(thirdPartyBaggageHeaders);
+  }
 }
