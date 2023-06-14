@@ -130,8 +130,9 @@ public final class SentryWebFilter implements WebFilter {
                 new SentryTraceHeader(sentryTraceHeaders.get(0)),
                 baggage,
                 null);
-
-        return hub.startTransaction(contexts, transactionOptions);
+        final ITransaction transaction = hub.startTransaction(contexts, transactionOptions);
+        transaction.getSpanContext().setOrigin("auto.webflux");
+        return transaction;
       } catch (InvalidSentryTraceHeaderException e) {
         hub.getOptions()
             .getLogger()
