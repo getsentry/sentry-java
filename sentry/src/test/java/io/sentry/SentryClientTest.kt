@@ -1340,12 +1340,14 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when scope does not have an active transaction, trace state is not set on the envelope`() {
+    fun `when scope does not have an active transaction, trace state is set on the envelope from scope`() {
         val sut = fixture.getSut()
-        sut.captureEvent(SentryEvent(), createScope())
+        val scope = createScope()
+        sut.captureEvent(SentryEvent(), scope)
         verify(fixture.transport).send(
             check {
-                assertNull(it.header.traceContext)
+                assertNotNull(it.header.traceContext)
+                assertEquals(scope.propagationContext.traceId, it.header.traceContext?.traceId)
             },
             anyOrNull()
         )

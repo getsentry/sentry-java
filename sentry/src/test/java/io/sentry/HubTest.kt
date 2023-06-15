@@ -1580,10 +1580,15 @@ class HubTest {
 
     //region startTransaction tests
     @Test
-    fun `when traceHeaders and no transaction is active, traceHeaders are null`() {
+    fun `when traceHeaders and no transaction is active, traceHeaders are generated from scope`() {
         val hub = generateHub()
 
-        assertNull(hub.traceHeaders())
+        var spanId: SpanId? = null
+        hub.configureScope { spanId = it.propagationContext.spanId }
+
+        val traceHeader = hub.traceHeaders()
+        assertNotNull(traceHeader)
+        assertEquals(spanId, traceHeader.spanId)
     }
 
     @Test

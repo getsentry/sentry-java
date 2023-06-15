@@ -89,12 +89,14 @@ public final class SentryFeignClient implements Client {
 
   private @NotNull Request maybeAddTracingHeaders(
       final @NotNull Request request, final @Nullable ISpan span) {
-    final RequestWrapper requestWrapper = new RequestWrapper(request);
+    final @NotNull RequestWrapper requestWrapper = new RequestWrapper(request);
+    final @Nullable Collection<String> requestBaggageHeaders =
+        request.headers().get(BaggageHeader.BAGGAGE_HEADER);
 
     TracingUtils.traceIfAllowed(
         hub,
         request.url(),
-        new ArrayList<>(request.headers().get(BaggageHeader.BAGGAGE_HEADER)),
+        (requestBaggageHeaders != null ? new ArrayList<>(requestBaggageHeaders) : null),
         span,
         tracingHeaders -> {
           requestWrapper.header(

@@ -3,6 +3,8 @@ package io.sentry.spring.webflux
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.ILogger
+import io.sentry.PropagationContext
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryOptions
@@ -50,6 +52,7 @@ class SentryWebFluxTracingFilterTest {
             dsn = "https://key@sentry.io/proj"
             enableTracing = true
         }
+        val logger = mock<ILogger>()
 
         init {
             whenever(hub.options).thenReturn(options)
@@ -69,6 +72,7 @@ class SentryWebFluxTracingFilterTest {
             whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             whenever(chain.filter(any())).thenReturn(Mono.create { s -> s.success() })
+            whenever(hub.continueTrace(anyOrNull(), anyOrNull())).thenAnswer { PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?) }
             return SentryWebFilter(hub)
         }
     }
@@ -236,6 +240,7 @@ class SentryWebFluxTracingFilterTest {
 
             verify(fixture.hub).isEnabled
             verify(fixture.hub, times(2)).options
+            verify(fixture.hub).continueTrace(anyOrNull(), anyOrNull())
             verify(fixture.hub).pushScope()
             verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), any<Hint>())
             verify(fixture.hub).configureScope(any<ScopeCallback>())

@@ -26,7 +26,7 @@ public final class PropagationContext {
 
     try {
       final @NotNull SentryTraceHeader traceHeader = new SentryTraceHeader(sentryTraceHeaderString);
-      final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings);
+      final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings, logger);
       return fromHeaders(traceHeader, baggage, null);
     } catch (InvalidSentryTraceHeaderException e) {
       logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
