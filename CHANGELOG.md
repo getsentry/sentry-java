@@ -23,6 +23,10 @@ val apolloClient = ApolloClient.Builder()
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#063)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.6.2...0.6.3)
 
+### Fixes
+
+- Align http.status with [span data conventions](https://develop.sentry.dev/sdk/performance/span-data-conventions/) ([#2786](https://github.com/getsentry/sentry-java/pull/2786))
+
 ## 6.22.0
 
 ### Features

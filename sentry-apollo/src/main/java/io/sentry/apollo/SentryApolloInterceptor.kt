@@ -20,6 +20,7 @@ import io.sentry.ISpan
 import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
@@ -70,8 +71,13 @@ class SentryApolloInterceptor(
                 object : CallBack {
                     override fun onResponse(response: InterceptorResponse) {
                         // onResponse is called only for statuses 2xx
-                        span.status = response.httpResponse.map { SpanStatus.fromHttpStatusCode(it.code(), SpanStatus.UNKNOWN) }
-                            .or(SpanStatus.UNKNOWN)
+                        val statusCode: Int? = response.httpResponse.map { it.code() }.orNull()
+                        if (statusCode != null) {
+                            span.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.UNKNOWN)
+                            span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
+                        } else {
+                            span.status = SpanStatus.UNKNOWN
+                        }
 
                         finish(span, requestWithHeader, response)
                         callBack.onResponse(response)
@@ -83,7 +89,12 @@ class SentryApolloInterceptor(
 
                     override fun onFailure(e: ApolloException) {
                         span.apply {
-                            status = if (e is ApolloHttpException) SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR) else SpanStatus.INTERNAL_ERROR
+                            status = if (e is ApolloHttpException) {
+                                setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, e.code())
+                                SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR)
+                            } else {
+                                SpanStatus.INTERNAL_ERROR
+                            }
                             throwable = e
                         }
                         finish(span, requestWithHeader)

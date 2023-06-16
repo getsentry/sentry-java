@@ -1,7 +1,12 @@
 package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.api.http.HttpRequest
+import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo3.exception.ApolloHttpException
+import com.apollographql.apollo3.network.http.HttpInterceptor
+import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
@@ -10,6 +15,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
@@ -66,6 +72,7 @@ class SentryApollo3InterceptorTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+            interceptor: HttpInterceptor? = null,
             addThirdPartyBaggageHeader: Boolean = false,
             beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
@@ -84,6 +91,10 @@ class SentryApollo3InterceptorTest {
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
 
+            interceptor?.let {
+                builder.addHttpInterceptor(interceptor)
+            }
+
             if (addThirdPartyBaggageHeader) {
                 builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
                     .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
@@ -101,7 +112,7 @@ class SentryApollo3InterceptorTest {
 
         verify(fixture.hub).captureTransaction(
             check {
-                assertTransactionDetails(it)
+                assertTransactionDetails(it, httpStatusCode = 200)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
@@ -118,6 +129,27 @@ class SentryApollo3InterceptorTest {
             check {
                 assertTransactionDetails(it, httpStatusCode = 403)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `get http status from ApolloHttpException in failed request`() {
+        val failingInterceptor = object : HttpInterceptor {
+            override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
+                throw ApolloHttpException(404, mock(), mock(), "")
+            }
+        }
+        executeQuery(fixture.getSut(interceptor = failingInterceptor))
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
+                assertEquals(404, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(SpanStatus.NOT_FOUND, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -268,10 +300,10 @@ class SentryApollo3InterceptorTest {
             assertNotNull(it["operationId"])
             assertEquals("Post", it["http.method"])
             httpStatusCode?.let { code ->
-                assertEquals(code, it["http.response.status_code"])
+                assertEquals(code, it[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             }
             contentLength?.let { contentLength ->
-                assertEquals(contentLength, it["http.response_content_length"])
+                assertEquals(contentLength, it[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
             }
         }
     }
