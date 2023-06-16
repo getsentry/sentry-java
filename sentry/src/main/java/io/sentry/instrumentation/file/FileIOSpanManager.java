@@ -1,11 +1,11 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.DataConvention;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Platform;
 import io.sentry.util.StringUtils;
@@ -103,9 +103,10 @@ final class FileIOSpanManager {
       }
       currentSpan.setData("file.size", byteCount);
       final boolean isMainThread = options.getMainThreadChecker().isMainThread();
-      currentSpan.setData(DataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread);
+      currentSpan.setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread);
       if (isMainThread) {
-        currentSpan.setData(DataConvention.CALL_STACK_KEY, stackTraceFactory.getInAppCallStack());
+        currentSpan.setData(
+            SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.getInAppCallStack());
       }
       currentSpan.finish(spanStatus);
     }

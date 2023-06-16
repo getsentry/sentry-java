@@ -1,12 +1,12 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.Span
+import io.sentry.SpanDataConvention
 import io.sentry.SpanOptions
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
@@ -107,7 +107,7 @@ class SentryOkHttpEventTest {
         assertEquals(fixture.mockRequest.url.toString(), callSpan.getData("url"))
         assertEquals(fixture.mockRequest.url.host, callSpan.getData("host"))
         assertEquals(fixture.mockRequest.url.encodedPath, callSpan.getData("path"))
-        assertEquals(fixture.mockRequest.method, callSpan.getData(DataConvention.HTTP_METHOD_KEY))
+        assertEquals(fixture.mockRequest.method, callSpan.getData(SpanDataConvention.HTTP_METHOD_KEY))
     }
 
     @Test
@@ -248,7 +248,7 @@ class SentryOkHttpEventTest {
         sut.setResponse(fixture.response)
 
         assertEquals(fixture.response.protocol.name, sut.callRootSpan?.getData("protocol"))
-        assertEquals(fixture.response.code, sut.callRootSpan?.getData(DataConvention.HTTP_STATUS_CODE_KEY))
+        assertEquals(fixture.response.code, sut.callRootSpan?.getData(SpanDataConvention.HTTP_STATUS_CODE_KEY))
         sut.finishEvent()
 
         verify(fixture.hub).addBreadcrumb(
@@ -322,7 +322,7 @@ class SentryOkHttpEventTest {
     fun `setResponseBodySize set ResponseBodySize in the breadcrumb and in the root span`() {
         val sut = fixture.getSut()
         sut.setResponseBodySize(10)
-        assertEquals(10L, sut.callRootSpan?.getData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
+        assertEquals(10L, sut.callRootSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
@@ -336,7 +336,7 @@ class SentryOkHttpEventTest {
     fun `setResponseBodySize is ignored if ResponseBodySize is negative`() {
         val sut = fixture.getSut()
         sut.setResponseBodySize(-1)
-        assertNull(sut.callRootSpan?.getData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
+        assertNull(sut.callRootSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
         sut.finishEvent()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {

@@ -1,11 +1,11 @@
 package io.sentry.android.sqlite
 
 import android.database.SQLException
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.util.thread.IMainThreadChecker
@@ -101,8 +101,8 @@ class SQLiteSpanManagerTest {
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
 
-        assertFalse(span.getData(DataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
-        assertNull(span.getData(DataConvention.CALL_STACK_KEY))
+        assertFalse(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
+        assertNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
     }
 
     @Test
@@ -115,7 +115,7 @@ class SQLiteSpanManagerTest {
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
 
-        assertTrue(span.getData(DataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
-        assertNotNull(span.getData(DataConvention.CALL_STACK_KEY))
+        assertTrue(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
+        assertNotNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
     }
 }

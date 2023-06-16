@@ -7,11 +7,11 @@ import feign.HeaderMap
 import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import okhttp3.mockwebserver.MockResponse
@@ -151,7 +151,7 @@ class SentryFeignClientTest {
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("http.client", httpClientSpan.operation)
         assertEquals("GET ${fixture.server.url("/status/200")}", httpClientSpan.description)
-        assertEquals(201, httpClientSpan.data[DataConvention.HTTP_STATUS_CODE_KEY])
+        assertEquals(201, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.OK, httpClientSpan.status)
         assertTrue(httpClientSpan.isFinished)
     }
@@ -163,7 +163,7 @@ class SentryFeignClientTest {
             sut.getOk()
         } catch (e: FeignException) {
             val httpClientSpan = fixture.sentryTracer.children.first()
-            assertEquals(400, httpClientSpan.data[DataConvention.HTTP_STATUS_CODE_KEY])
+            assertEquals(400, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             assertEquals(SpanStatus.INVALID_ARGUMENT, httpClientSpan.status)
         }
     }
@@ -175,7 +175,7 @@ class SentryFeignClientTest {
             sut.getOk()
         } catch (e: FeignException) {
             val httpClientSpan = fixture.sentryTracer.children.first()
-            assertEquals(502, httpClientSpan.data[DataConvention.HTTP_STATUS_CODE_KEY])
+            assertEquals(502, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             assertNull(httpClientSpan.status)
         }
     }
@@ -238,7 +238,7 @@ class SentryFeignClientTest {
             // ignore
         }
         val httpClientSpan = fixture.sentryTracer.children.first()
-        assertNull(httpClientSpan.data[DataConvention.HTTP_STATUS_CODE_KEY])
+        assertNull(httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
         assertTrue(httpClientSpan.throwable is Exception)
     }

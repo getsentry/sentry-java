@@ -7,11 +7,11 @@ import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_RESPONSE;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
-import io.sentry.DataConvention;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
@@ -69,7 +69,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       try {
         response = execution.execute(request, body);
         // handles both success and error responses
-        span.setData(DataConvention.HTTP_STATUS_CODE_KEY, response.getStatusCode().value());
+        span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.getStatusCode().value());
         span.setStatus(SpanStatus.fromHttpStatusCode(response.getStatusCode().value()));
         responseStatusCode = response.getStatusCode().value();
         return response;

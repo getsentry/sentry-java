@@ -6,11 +6,11 @@ import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_RESPONSE;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
-import io.sentry.DataConvention;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
@@ -67,7 +67,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     return next.exchange(clientRequestWithSentryTraceHeader)
         .flatMap(
             response -> {
-              span.setData(DataConvention.HTTP_STATUS_CODE_KEY, response.statusCode().value());
+              span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.statusCode().value());
               span.setStatus(SpanStatus.fromHttpStatusCode(response.statusCode().value()));
               addBreadcrumb(request, response);
               span.finish();

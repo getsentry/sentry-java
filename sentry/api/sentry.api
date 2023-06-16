@@ -173,16 +173,6 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static fun values ()[Lio/sentry/DataCategory;
 }
 
-public abstract interface class io/sentry/DataConvention {
-	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
-	public static final field CALL_STACK_KEY Ljava/lang/String;
-	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
-	public static final field HTTP_METHOD_KEY Ljava/lang/String;
-	public static final field HTTP_QUERY_KEY Ljava/lang/String;
-	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
-	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
-}
-
 public final class io/sentry/DateUtils {
 	public static fun dateToNanos (Ljava/util/Date;)J
 	public static fun dateToSeconds (Ljava/util/Date;)D
@@ -2116,6 +2106,16 @@ public final class io/sentry/SpanContext$JsonKeys {
 	public static final field TAGS Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public abstract interface class io/sentry/SpanDataConvention {
+	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
+	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
+	public static final field HTTP_METHOD_KEY Ljava/lang/String;
+	public static final field HTTP_QUERY_KEY Ljava/lang/String;
+	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
+	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
 }
 
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {

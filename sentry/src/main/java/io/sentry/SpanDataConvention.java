@@ -3,7 +3,7 @@ package io.sentry;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-public interface DataConvention {
+public interface SpanDataConvention {
   // Keys that should respect the span data conventions, as described in
   //  https://develop.sentry.dev/sdk/performance/span-data-conventions/
   String HTTP_QUERY_KEY = "http.query";

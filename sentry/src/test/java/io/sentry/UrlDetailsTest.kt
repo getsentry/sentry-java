@@ -23,8 +23,8 @@ class UrlDetailsTest {
         val span = mock<ISpan>()
         urlDetails.applyToSpan(span)
 
-        verify(span).setData(DataConvention.HTTP_QUERY_KEY, "q=1")
-        verify(span).setData(DataConvention.HTTP_FRAGMENT_KEY, "top")
+        verify(span).setData(SpanDataConvention.HTTP_QUERY_KEY, "q=1")
+        verify(span).setData(SpanDataConvention.HTTP_FRAGMENT_KEY, "top")
     }
 
     @Test
@@ -33,7 +33,7 @@ class UrlDetailsTest {
         val span = mock<ISpan>()
         urlDetails.applyToSpan(span)
 
-        verify(span).setData(DataConvention.HTTP_QUERY_KEY, "q=1")
+        verify(span).setData(SpanDataConvention.HTTP_QUERY_KEY, "q=1")
         verifyNoMoreInteractions(span)
     }
 
@@ -43,7 +43,7 @@ class UrlDetailsTest {
         val span = mock<ISpan>()
         urlDetails.applyToSpan(span)
 
-        verify(span).setData(DataConvention.HTTP_FRAGMENT_KEY, "top")
+        verify(span).setData(SpanDataConvention.HTTP_FRAGMENT_KEY, "top")
         verifyNoMoreInteractions(span)
     }
 

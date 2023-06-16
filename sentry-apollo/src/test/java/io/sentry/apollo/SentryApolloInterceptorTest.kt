@@ -4,12 +4,12 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
 import io.sentry.Breadcrumb
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
@@ -107,7 +107,7 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
-                assertEquals(403, it.spans.first().data?.get(DataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(403, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -123,7 +123,7 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
-                assertNull(it.spans.first().data?.get(DataConvention.HTTP_STATUS_CODE_KEY))
+                assertNull(it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

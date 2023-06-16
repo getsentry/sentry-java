@@ -24,7 +24,7 @@ val apolloClient = ApolloClient.Builder()
 
 ### Fixes
 
-- Align http.status to span data convention ([#2786](https://github.com/getsentry/sentry-java/pull/2786))
+- Align http.status with [span data conventions](https://develop.sentry.dev/sdk/performance/span-data-conventions/) ([#2786](https://github.com/getsentry/sentry-java/pull/2786))
 
 ## 6.22.0
 

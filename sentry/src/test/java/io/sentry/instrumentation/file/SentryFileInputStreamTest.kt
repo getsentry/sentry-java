@@ -1,9 +1,9 @@
 package io.sentry.instrumentation.file
 
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
@@ -218,10 +218,10 @@ class SentryFileInputStreamTest {
         fis.close()
 
         val fileIOSpan = fixture.sentryTracer.children.first()
-        assertEquals(true, fileIOSpan.data[DataConvention.BLOCKED_MAIN_THREAD_KEY])
+        assertEquals(true, fileIOSpan.data[SpanDataConvention.BLOCKED_MAIN_THREAD_KEY])
         // assuming our "in-app" is org.junit, we check that only org.junit frames are in the call stack
         assertTrue {
-            (fileIOSpan.data[DataConvention.CALL_STACK_KEY] as List<SentryStackFrame>).all {
+            (fileIOSpan.data[SpanDataConvention.CALL_STACK_KEY] as List<SentryStackFrame>).all {
                 it.module?.startsWith("org.junit") == true
             }
         }
@@ -239,8 +239,8 @@ class SentryFileInputStreamTest {
         await.untilTrue(finished)
 
         val fileIOSpan = fixture.sentryTracer.children.first()
-        assertEquals(false, fileIOSpan.data[DataConvention.BLOCKED_MAIN_THREAD_KEY])
-        assertNull(fileIOSpan.data[DataConvention.CALL_STACK_KEY])
+        assertEquals(false, fileIOSpan.data[SpanDataConvention.BLOCKED_MAIN_THREAD_KEY])
+        assertNull(fileIOSpan.data[SpanDataConvention.CALL_STACK_KEY])
     }
 }
 

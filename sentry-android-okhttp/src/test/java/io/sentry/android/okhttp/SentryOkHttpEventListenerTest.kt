@@ -1,11 +1,11 @@
 package io.sentry.android.okhttp
 
 import io.sentry.BaggageHeader
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import okhttp3.Call
@@ -159,7 +159,7 @@ class SentryOkHttpEventListenerTest {
                     assertNotNull(span.data["proxies"])
                     assertNotNull(span.data["domain_name"])
                     assertNotNull(span.data["dns_addresses"])
-                    assertEquals(201, span.data[DataConvention.HTTP_STATUS_CODE_KEY])
+                    assertEquals(201, span.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
                 }
                 1 -> {
                     assertEquals("http.client.proxy_select", span.operation)
@@ -181,7 +181,7 @@ class SentryOkHttpEventListenerTest {
                 }
                 6 -> {
                     assertEquals("http.client.response_headers", span.operation)
-                    assertEquals(201, span.data[DataConvention.HTTP_STATUS_CODE_KEY])
+                    assertEquals(201, span.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
                 }
                 7 -> {
                     assertEquals("http.client.response_body", span.operation)
@@ -224,8 +224,14 @@ class SentryOkHttpEventListenerTest {
         response.close()
         val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_body" }
         assertNotNull(requestBodySpan)
-        assertEquals(responseBytes.size.toLong(), requestBodySpan.data[DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
-        assertEquals(responseBytes.size.toLong(), callSpan?.getData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
+        assertEquals(
+            responseBytes.size.toLong(),
+            requestBodySpan.data[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY]
+        )
+        assertEquals(
+            responseBytes.size.toLong(),
+            callSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY)
+        )
     }
 
     @Test

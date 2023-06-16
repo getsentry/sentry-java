@@ -13,7 +13,6 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRespons
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.DataConvention
 import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
@@ -21,6 +20,7 @@ import io.sentry.ISpan
 import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
@@ -74,7 +74,7 @@ class SentryApolloInterceptor(
                         val statusCode: Int? = response.httpResponse.map { it.code() }.orNull()
                         if (statusCode != null) {
                             span.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.UNKNOWN)
-                            span.setData(DataConvention.HTTP_STATUS_CODE_KEY, statusCode)
+                            span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
                         } else {
                             span.status = SpanStatus.UNKNOWN
                         }
@@ -90,7 +90,7 @@ class SentryApolloInterceptor(
                     override fun onFailure(e: ApolloException) {
                         span.apply {
                             status = if (e is ApolloHttpException) {
-                                setData(DataConvention.HTTP_STATUS_CODE_KEY, e.code())
+                                setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, e.code())
                                 SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR)
                             } else {
                                 SpanStatus.INTERNAL_ERROR

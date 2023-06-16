@@ -1,8 +1,8 @@
 package io.sentry.android.okhttp
 
-import io.sentry.DataConvention
 import io.sentry.HubAdapter
 import io.sentry.IHub
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import okhttp3.Call
 import okhttp3.Connection
@@ -312,7 +312,7 @@ class SentryOkHttpEventListener(
         val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
         okHttpEvent.setResponse(response)
         okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
-            it.setData(DataConvention.HTTP_STATUS_CODE_KEY, response.code)
+            it.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.code)
             it.status = SpanStatus.fromHttpStatusCode(response.code)
         }
     }
@@ -335,7 +335,7 @@ class SentryOkHttpEventListener(
         okHttpEvent.setResponseBodySize(byteCount)
         okHttpEvent.finishSpan(RESPONSE_BODY_EVENT) {
             if (byteCount > 0) {
-                it.setData(DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, byteCount)
+                it.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, byteCount)
             }
         }
     }

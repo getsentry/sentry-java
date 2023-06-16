@@ -9,13 +9,13 @@ import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.DataConvention
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
@@ -148,7 +148,7 @@ class SentryApollo3InterceptorTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
-                assertEquals(404, it.spans.first().data?.get(DataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(404, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
                 assertEquals(SpanStatus.NOT_FOUND, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
@@ -300,10 +300,10 @@ class SentryApollo3InterceptorTest {
             assertNotNull(it["operationId"])
             assertEquals("Post", it["http.method"])
             httpStatusCode?.let { code ->
-                assertEquals(code, it[DataConvention.HTTP_STATUS_CODE_KEY])
+                assertEquals(code, it[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             }
             contentLength?.let { contentLength ->
-                assertEquals(contentLength, it[DataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
+                assertEquals(contentLength, it[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
             }
         }
     }
