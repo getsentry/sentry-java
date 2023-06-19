@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
+
 ## 6.23.0
 
 ### Features
@@ -34,7 +40,6 @@ val apolloClient = ApolloClient.Builder()
 - Add `lock` attribute to the `SentryStackFrame` protocol to better highlight offending frames in the UI ([#2761](https://github.com/getsentry/sentry-java/pull/2761))
 - Enrich database spans with blocked main thread info ([#2760](https://github.com/getsentry/sentry-java/pull/2760))
 - Add `api_target` to `Request` and `data` to `Response` Protocols ([#2775](https://github.com/getsentry/sentry-java/pull/2775))
-- Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
 
 ### Fixes
 
