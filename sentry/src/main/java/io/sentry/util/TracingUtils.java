@@ -9,6 +9,7 @@ import io.sentry.Scope;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,29 +22,30 @@ public final class TracingUtils {
         });
   }
 
-  public static void traceIfAllowed(
+  public static @Nullable TracingHeaders traceIfAllowed(
       final @NotNull IHub hub,
       final @NotNull String requestUrl,
       @Nullable List<String> thirdPartyBaggageHeaders,
-      final @Nullable ISpan span,
-      final @NotNull HintUtils.SentryConsumer<TracingHeaders> callback) {
+      final @Nullable ISpan span) {
     final @NotNull SentryOptions sentryOptions = hub.getOptions();
     if (sentryOptions.isTraceSampling() && isAllowedToSendTo(requestUrl, sentryOptions)) {
-      trace(hub, thirdPartyBaggageHeaders, span, callback);
+      return trace(hub, thirdPartyBaggageHeaders, span);
     }
+
+    return null;
   }
 
-  public static void trace(
+  public static @Nullable TracingHeaders trace(
       final @NotNull IHub hub,
       @Nullable List<String> thirdPartyBaggageHeaders,
-      final @Nullable ISpan span,
-      final @NotNull HintUtils.SentryConsumer<TracingHeaders> callback) {
+      final @Nullable ISpan span) {
     final @NotNull SentryOptions sentryOptions = hub.getOptions();
 
     if (span != null && !span.isNoOp()) {
-      callback.accept(
-          new TracingHeaders(span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders)));
+      return new TracingHeaders(
+          span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders));
     } else {
+      final @NotNull AtomicReference<TracingHeaders> returnValue = new AtomicReference<>();
       hub.configureScope(
           (scope) -> {
             maybeUpdateBaggage(scope, sentryOptions);
@@ -56,12 +58,13 @@ public final class TracingUtils {
                   BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
             }
 
-            callback.accept(
+            returnValue.set(
                 new TracingHeaders(
                     new SentryTraceHeader(
                         propagationContext.getTraceId(), propagationContext.getSpanId(), null),
                     baggageHeader));
           });
+      return returnValue.get();
     }
   }
 

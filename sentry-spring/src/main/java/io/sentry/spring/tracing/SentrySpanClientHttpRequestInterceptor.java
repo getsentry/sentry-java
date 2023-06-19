@@ -75,23 +75,25 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
 
   private void maybeAddTracingHeaders(
       final @NotNull HttpRequest request, final @Nullable ISpan span) {
-    TracingUtils.traceIfAllowed(
-        hub,
-        request.getURI().toString(),
-        request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER),
-        span,
-        tracingHeaders -> {
-          request
-              .getHeaders()
-              .add(
-                  tracingHeaders.getSentryTraceHeader().getName(),
-                  tracingHeaders.getSentryTraceHeader().getValue());
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.traceIfAllowed(
+            hub,
+            request.getURI().toString(),
+            request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER),
+            span);
 
-          final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
-          if (baggageHeader != null) {
-            request.getHeaders().set(baggageHeader.getName(), baggageHeader.getValue());
-          }
-        });
+    if (tracingHeaders != null) {
+      request
+          .getHeaders()
+          .add(
+              tracingHeaders.getSentryTraceHeader().getName(),
+              tracingHeaders.getSentryTraceHeader().getValue());
+
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        request.getHeaders().set(baggageHeader.getName(), baggageHeader.getValue());
+      }
+    }
   }
 
   private void addBreadcrumb(

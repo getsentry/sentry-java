@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -745,22 +744,20 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
-    AtomicReference<SentryTraceHeader> traceHeader = new AtomicReference<>();
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
-      TracingUtils.trace(
-          this,
-          null,
-          getSpan(),
-          tracingHeaders -> {
-            traceHeader.set(tracingHeaders.getSentryTraceHeader());
-          });
+      final @Nullable TracingUtils.TracingHeaders headers =
+          TracingUtils.trace(this, null, getSpan());
+      if (headers != null) {
+        return headers.getSentryTraceHeader();
+      }
     }
-    return traceHeader.get();
+
+    return null;
   }
 
   @Override
@@ -839,7 +836,6 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable BaggageHeader baggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    final @NotNull AtomicReference<BaggageHeader> baggageHeader = new AtomicReference<>();
     if (!isEnabled()) {
       options
           .getLogger()
@@ -847,14 +843,13 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'baggageHeader' call is a no-op.");
     } else {
-      TracingUtils.trace(
-          this,
-          thirdPartyBaggageHeaders,
-          getSpan(),
-          tracingHeaders -> {
-            baggageHeader.set(tracingHeaders.getBaggageHeader());
-          });
+      final @Nullable TracingUtils.TracingHeaders headers =
+          TracingUtils.trace(this, thirdPartyBaggageHeaders, getSpan());
+      if (headers != null) {
+        return headers.getBaggageHeader();
+      }
     }
-    return baggageHeader.get();
+
+    return null;
   }
 }

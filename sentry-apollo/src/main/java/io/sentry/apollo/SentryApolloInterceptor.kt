@@ -100,7 +100,7 @@ class SentryApolloInterceptor(
                 hub,
                 listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
                 span
-            ) { tracingHeaders ->
+            )?.let { tracingHeaders ->
                 requestHeaderBuilder.addHeader(
                     tracingHeaders.sentryTraceHeader.name,
                     tracingHeaders.sentryTraceHeader.value

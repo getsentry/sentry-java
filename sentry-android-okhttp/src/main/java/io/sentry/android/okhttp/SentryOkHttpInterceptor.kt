@@ -92,7 +92,7 @@ class SentryOkHttpInterceptor(
                 request.url.toString(),
                 request.headers(BaggageHeader.BAGGAGE_HEADER),
                 span
-            ) { tracingHeaders ->
+            )?.let { tracingHeaders ->
                 requestBuilder.addHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
                 tracingHeaders.baggageHeader?.let {
                     requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)

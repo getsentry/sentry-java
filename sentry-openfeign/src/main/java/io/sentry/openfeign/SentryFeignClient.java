@@ -93,22 +93,24 @@ public final class SentryFeignClient implements Client {
     final @Nullable Collection<String> requestBaggageHeaders =
         request.headers().get(BaggageHeader.BAGGAGE_HEADER);
 
-    TracingUtils.traceIfAllowed(
-        hub,
-        request.url(),
-        (requestBaggageHeaders != null ? new ArrayList<>(requestBaggageHeaders) : null),
-        span,
-        tracingHeaders -> {
-          requestWrapper.header(
-              tracingHeaders.getSentryTraceHeader().getName(),
-              tracingHeaders.getSentryTraceHeader().getValue());
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.traceIfAllowed(
+            hub,
+            request.url(),
+            (requestBaggageHeaders != null ? new ArrayList<>(requestBaggageHeaders) : null),
+            span);
 
-          final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
-          if (baggageHeader != null) {
-            requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
-            requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
-          }
-        });
+    if (tracingHeaders != null) {
+      requestWrapper.header(
+          tracingHeaders.getSentryTraceHeader().getName(),
+          tracingHeaders.getSentryTraceHeader().getValue());
+
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
+        requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
+      }
+    }
 
     return requestWrapper.build();
   }

@@ -4175,8 +4175,8 @@ public final class io/sentry/util/TracingUtils {
 	public fun <init> ()V
 	public static fun maybeUpdateBaggage (Lio/sentry/Scope;Lio/sentry/SentryOptions;)V
 	public static fun startNewTrace (Lio/sentry/IHub;)V
-	public static fun trace (Lio/sentry/IHub;Ljava/util/List;Lio/sentry/ISpan;Lio/sentry/util/HintUtils$SentryConsumer;)V
-	public static fun traceIfAllowed (Lio/sentry/IHub;Ljava/lang/String;Ljava/util/List;Lio/sentry/ISpan;Lio/sentry/util/HintUtils$SentryConsumer;)V
+	public static fun trace (Lio/sentry/IHub;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;
+	public static fun traceIfAllowed (Lio/sentry/IHub;Ljava/lang/String;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;
 }
 
 public final class io/sentry/util/TracingUtils$TracingHeaders {

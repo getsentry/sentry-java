@@ -65,25 +65,27 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
       final @NotNull ClientRequest request, final @Nullable ISpan span) {
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
-    TracingUtils.traceIfAllowed(
-        hub,
-        request.url().toString(),
-        request.headers().get(BaggageHeader.BAGGAGE_HEADER),
-        span,
-        tracingHeaders -> {
-          requestBuilder.header(
-              tracingHeaders.getSentryTraceHeader().getName(),
-              tracingHeaders.getSentryTraceHeader().getValue());
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.traceIfAllowed(
+            hub,
+            request.url().toString(),
+            request.headers().get(BaggageHeader.BAGGAGE_HEADER),
+            span);
 
-          final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
-          if (baggageHeader != null) {
-            requestBuilder.headers(
-                httpHeaders -> {
-                  httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
-                  httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
-                });
-          }
-        });
+    if (tracingHeaders != null) {
+      requestBuilder.header(
+          tracingHeaders.getSentryTraceHeader().getName(),
+          tracingHeaders.getSentryTraceHeader().getValue());
+
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        requestBuilder.headers(
+            httpHeaders -> {
+              httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
+              httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
+            });
+      }
+    }
 
     return requestBuilder.build();
   }
