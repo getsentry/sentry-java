@@ -10,6 +10,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -57,6 +58,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       try {
         response = execution.execute(request, body);
         // handles both success and error responses
+        span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.getStatusCode().value());
         span.setStatus(SpanStatus.fromHttpStatusCode(response.getStatusCode().value()));
         responseStatusCode = response.getStatusCode().value();
         return response;

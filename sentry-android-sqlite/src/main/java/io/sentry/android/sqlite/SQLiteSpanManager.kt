@@ -5,6 +5,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 
 internal class SQLiteSpanManager(
@@ -38,9 +39,9 @@ internal class SQLiteSpanManager(
         } finally {
             span?.apply {
                 val isMainThread: Boolean = hub.options.mainThreadChecker.isMainThread
-                setData("blocked_main_thread", isMainThread)
+                setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
                 if (isMainThread) {
-                    setData("call_stack", stackTraceFactory.inAppCallStack)
+                    setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
                 }
                 finish()
             }

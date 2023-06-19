@@ -10,6 +10,8 @@ import io.sentry.ISpan
 import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
@@ -47,7 +49,7 @@ class SentryOkHttpInterceptor(
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
-    private val failedRequestTargets: List<String> = listOf(".*")
+    private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor, IntegrationName {
 
     constructor() : this(HubAdapter.getInstance())
@@ -103,6 +105,7 @@ class SentryOkHttpInterceptor(
             request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code
+            span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, code)
             span?.status = SpanStatus.fromHttpStatusCode(code)
 
             // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
@@ -136,7 +139,7 @@ class SentryOkHttpInterceptor(
         val hint = Hint().also { it.set(OKHTTP_REQUEST, request) }
         response?.let {
             it.body?.contentLength().ifHasValidLength { responseBodySize ->
-                breadcrumb.setData("http.response_content_length", responseBodySize)
+                breadcrumb.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, responseBodySize)
             }
 
             hint[OKHTTP_RESPONSE] = it
