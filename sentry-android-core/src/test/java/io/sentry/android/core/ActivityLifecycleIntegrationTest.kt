@@ -141,13 +141,13 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb and tracing are disabled, it doesn't register callback`() {
+    fun `When activity lifecycle breadcrumb and tracing are disabled, it still registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -162,7 +162,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it does not register callback`() {
+    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it still registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
         fixture.options.tracesSampleRate = 1.0
@@ -170,7 +170,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -196,7 +196,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb and tracing activity flag are disabled, it doesn't register callback`() {
+    fun `When activity lifecycle breadcrumb and tracing activity flag are disabled, its still registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
         fixture.options.tracesSampleRate = 1.0
@@ -205,7 +205,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
