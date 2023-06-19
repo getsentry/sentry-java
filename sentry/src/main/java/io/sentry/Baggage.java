@@ -69,7 +69,8 @@ public final class Baggage {
       final @NotNull ILogger logger) {
 
     if (headerValues != null) {
-      return Baggage.fromHeader(String.join(",", headerValues), includeThirdPartyValues, logger);
+      return Baggage.fromHeader(
+          StringUtils.join(",", headerValues), includeThirdPartyValues, logger);
     } else {
       return Baggage.fromHeader((String) null, includeThirdPartyValues, logger);
     }
@@ -118,7 +119,9 @@ public final class Baggage {
       }
     }
     final String thirdPartyHeader =
-        thirdPartyKeyValueStrings.isEmpty() ? null : String.join(",", thirdPartyKeyValueStrings);
+        thirdPartyKeyValueStrings.isEmpty()
+            ? null
+            : StringUtils.join(",", thirdPartyKeyValueStrings);
     return new Baggage(keyValues, thirdPartyHeader, mutable, logger);
   }
 

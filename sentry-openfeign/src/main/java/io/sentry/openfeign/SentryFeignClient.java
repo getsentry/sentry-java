@@ -12,6 +12,7 @@ import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
@@ -76,6 +77,7 @@ public final class SentryFeignClient implements Client {
       try {
         response = delegate.execute(requestWrapper.build(), options);
         // handles both success and error responses
+        span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.status());
         span.setStatus(SpanStatus.fromHttpStatusCode(response.status()));
         return response;
       } catch (Throwable e) {

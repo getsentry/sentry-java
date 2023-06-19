@@ -163,6 +163,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Attachment Lio/sentry/DataCategory;
 	public static final field Default Lio/sentry/DataCategory;
 	public static final field Error Lio/sentry/DataCategory;
+	public static final field Profile Lio/sentry/DataCategory;
 	public static final field Security Lio/sentry/DataCategory;
 	public static final field Session Lio/sentry/DataCategory;
 	public static final field Transaction Lio/sentry/DataCategory;
@@ -1626,6 +1627,7 @@ public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDatePr
 }
 
 public class io/sentry/SentryOptions {
+	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	public fun <init> ()V
 	public fun addBundleId (Ljava/lang/String;)V
 	public fun addCollector (Lio/sentry/ICollector;)V
@@ -2105,6 +2107,16 @@ public final class io/sentry/SpanContext$JsonKeys {
 	public static final field TAGS Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public abstract interface class io/sentry/SpanDataConvention {
+	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
+	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
+	public static final field HTTP_METHOD_KEY Ljava/lang/String;
+	public static final field HTTP_QUERY_KEY Ljava/lang/String;
+	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
+	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
 }
 
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {
@@ -4135,6 +4147,7 @@ public final class io/sentry/util/StringUtils {
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun countOf (Ljava/lang/String;C)I
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
+	public static fun join (Ljava/lang/CharSequence;Ljava/lang/Iterable;)Ljava/lang/String;
 	public static fun normalizeUUID (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 }

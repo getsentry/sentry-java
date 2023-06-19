@@ -1,6 +1,33 @@
 # Changelog
 
-## Unreleased
+## 6.23.0
+
+### Features
+
+- Add profile rate limiting ([#2782](https://github.com/getsentry/sentry-java/pull/2782))
+- Support for automatically capturing Failed GraphQL (Apollo 3) Client errors ([#2781](https://github.com/getsentry/sentry-java/pull/2781))
+
+```kotlin
+import com.apollographql.apollo3.ApolloClient
+import io.sentry.apollo3.sentryTracing
+
+val apolloClient = ApolloClient.Builder()
+    .serverUrl("https://example.com/graphql")
+    .sentryTracing(captureFailedRequests = true)    
+    .build()
+```
+
+### Dependencies
+
+- Bump Native SDK from v0.6.2 to v0.6.3 ([#2746](https://github.com/getsentry/sentry-java/pull/2746))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#063)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.2...0.6.3)
+
+### Fixes
+
+- Align http.status with [span data conventions](https://develop.sentry.dev/sdk/performance/span-data-conventions/) ([#2786](https://github.com/getsentry/sentry-java/pull/2786))
+
+## 6.22.0
 
 ### Features
 
@@ -8,6 +35,10 @@
 - Enrich database spans with blocked main thread info ([#2760](https://github.com/getsentry/sentry-java/pull/2760))
 - Add `api_target` to `Request` and `data` to `Response` Protocols ([#2775](https://github.com/getsentry/sentry-java/pull/2775))
 - Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
+
+### Fixes
+
+- No longer use `String.join` in `Baggage` as it requires API level 26 ([#2778](https://github.com/getsentry/sentry-java/pull/2778))
 
 ## 6.21.0
 
