@@ -100,10 +100,18 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
-  /** Enables or disables the attach screenshot feature when an error happened. */
+  /**
+   * Enables or disables the attach screenshot feature when an error happened. Use {@link
+   * SentryAndroidOptions#setBeforeScreenshotCaptureCallback(BeforeCaptureCallback)} ()} to control
+   * when a screenshot should be captured.
+   */
   private boolean attachScreenshot;
 
-  /** Enables or disables the attach view hierarchy feature when an error happened. */
+  /**
+   * Enables or disables the attach view hierarchy feature when an error happened. Use {@link
+   * SentryAndroidOptions#setBeforeViewHierarchyCaptureCallback(BeforeCaptureCallback)} ()} to
+   * control when a view hierarchy should be captured.
+   */
   private boolean attachViewHierarchy;
 
   /**
@@ -152,7 +160,19 @@ public final class SentryAndroidOptions extends SentryOptions {
   public interface BeforeCaptureCallback {
 
     /**
-     * A callback which can be used to suppress capturing of screenshots or view hierarchies.
+     * A callback which can be used to suppress capturing of screenshots or view hierarchies. This
+     * gives more fine grained control when capturing should be performed. E.g. - only capture
+     * screenshots for fatal events - overrule any debouncing for important events <br>
+     * As capturing can be resource-intensive, the debounce parameter should be respected if
+     * possible.
+     *
+     * <pre>
+     *  if (debounce) {
+     *    return false;
+     *  } else {
+     *    // check event and hint
+     *  }
+     *  </pre>
      *
      * @param event the event
      * @param hint the hints
