@@ -1,8 +1,10 @@
 package io.sentry.spring.boot.jakarta
 
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -16,8 +18,10 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -33,6 +37,7 @@ import kotlin.test.assertNull
 class SentrySpanWebClientCustomizerTest {
     class Fixture {
         lateinit var sentryOptions: SentryOptions
+        lateinit var scope: Scope
         val hub = mock<IHub>()
         var mockServer = MockWebServer()
         lateinit var transaction: SentryTracer
@@ -47,7 +52,9 @@ class SentrySpanWebClientCustomizerTest {
                 }
                 dsn = "http://key@localhost/proj"
             }
+            scope = Scope(sentryOptions)
             whenever(hub.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
             val webClientBuilder = WebClient.builder()
             customizer.customize(webClientBuilder)
@@ -124,6 +131,33 @@ class SentrySpanWebClientCustomizerTest {
             .block()
         val recordedRequest = fixture.mockServer.takeRequest()
         assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when no transaction is active and server is not listed in tracing origins, does not add sentry trace header to the request`() {
+        fixture.getSut(isTransactionActive = false, includeMockServerInTracingOrigins = false)
+            .get()
+            .uri(fixture.mockServer.url("/test/123").toUri())
+            .retrieve()
+            .bodyToMono(String::class.java)
+            .block()
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when no transaction is active, adds sentry trace header to the request from scope`() {
+        fixture.getSut(isTransactionActive = false, includeMockServerInTracingOrigins = true)
+            .get()
+            .uri(fixture.mockServer.url("/test/123").toUri())
+            .retrieve()
+            .bodyToMono(String::class.java)
+            .block()
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -136,6 +170,7 @@ class SentrySpanWebClientCustomizerTest {
             .block()
         val recordedRequest = fixture.mockServer.takeRequest()
         assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test

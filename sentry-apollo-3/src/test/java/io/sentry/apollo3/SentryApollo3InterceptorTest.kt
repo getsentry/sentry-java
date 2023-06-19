@@ -6,6 +6,8 @@ import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -21,8 +23,10 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -36,14 +40,15 @@ class SentryApollo3InterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
-        val hub = mock<IHub>().apply {
-            whenever(options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "https://key@sentry.io/proj"
-                    isTraceSampling = true
-                    sdkVersion = SdkVersion("test", "1.2.3")
-                }
-            )
+        val options =
+            SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                sdkVersion = SdkVersion("test", "1.2.3")
+            }
+        val scope = Scope(options)
+        val hub = mock<IHub>().also {
+            whenever(it.options).thenReturn(options)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
         }
         private var httpInterceptor = SentryApollo3HttpInterceptor(hub)
 
@@ -140,12 +145,22 @@ class SentryApollo3InterceptorTest {
     }
 
     @Test
-    fun `when there is no active span, does not add sentry trace header to the request`() {
+    fun `does not add sentry trace header to the request if host is disallowed`() {
+        fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         executeQuery(isSpanActive = false)
 
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is no active span, does not add sentry trace header to the request`() {
+        executeQuery(isSpanActive = false)
+
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test

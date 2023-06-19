@@ -30,32 +30,37 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
 
+    private fun maybeAddTracingHeaders(hub: IHub, request: HttpRequest, span: ISpan?): HttpRequest {
+        var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
+
+        TracingUtils.traceIfAllowed(hub, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span) {
+            cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
+            it.baggageHeader?.let { baggageHeader ->
+                cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
+                    add(HttpHeader(baggageHeader.name, baggageHeader.value))
+                }
+            }
+        }
+
+        val requestBuilder = request.newBuilder().apply {
+            headers(cleanedHeaders)
+        }
+
+        return requestBuilder.build()
+    }
+
     override suspend fun intercept(
         request: HttpRequest,
         chain: HttpInterceptorChain
     ): HttpResponse {
         val activeSpan = hub.span
         return if (activeSpan == null) {
-            chain.proceed(request)
+            val modifiedRequest = maybeAddTracingHeaders(hub, request, null)
+            chain.proceed(modifiedRequest)
         } else {
             val span = startChild(request, activeSpan)
+            val modifiedRequest = maybeAddTracingHeaders(hub, request, span)
 
-            var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
-
-            TracingUtils.traceIfAllowed(hub, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span) {
-                cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
-                it.baggageHeader?.let { baggageHeader ->
-                    cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
-                        add(HttpHeader(baggageHeader.name, baggageHeader.value))
-                    }
-                }
-            }
-
-            val requestBuilder = request.newBuilder().apply {
-                headers(cleanedHeaders)
-            }
-
-            val modifiedRequest = requestBuilder.build()
             var httpResponse: HttpResponse? = null
             var statusCode: Int? = null
 
