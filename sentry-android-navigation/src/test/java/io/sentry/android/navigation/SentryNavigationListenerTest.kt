@@ -18,6 +18,7 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.TransactionNameSource
 import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
@@ -29,6 +30,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
@@ -43,6 +45,7 @@ class SentryNavigationListenerTest {
         val context = mock<Context>()
         val resources = mock<Resources>()
         val scope = mock<Scope>()
+        lateinit var options: SentryOptions
 
         lateinit var transaction: SentryTracer
 
@@ -56,14 +59,13 @@ class SentryNavigationListenerTest {
             hasViewIdInRes: Boolean = true,
             transaction: SentryTracer? = null
         ): SentryNavigationListener {
-            whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "http://key@localhost/proj"
-                    setTracesSampleRate(
-                        tracesSampleRate
-                    )
-                }
-            )
+            options = SentryOptions().apply {
+                dsn = "http://key@localhost/proj"
+                setTracesSampleRate(
+                    tracesSampleRate
+                )
+            }
+            whenever(hub.options).thenReturn(options)
 
             this.transaction = transaction ?: SentryTracer(
                 TransactionContext(
@@ -346,5 +348,22 @@ class SentryNavigationListenerTest {
         // 1st time - bind to scope, 2nd time - in SentryTracer when finish, 3rd time - in the nav listener
         captor.thirdValue.accept(fixture.transaction)
         verify(fixture.scope).clearTransaction()
+    }
+
+    @Test
+    fun `starts new trace if performance is disabled`() {
+        val sut = fixture.getSut(enableTracing = false)
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = Scope(fixture.options)
+        val propagationContextAtStart = scope.propagationContext
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.hub).configureScope(any())
+        assertNotSame(propagationContextAtStart, scope.propagationContext)
     }
 }
