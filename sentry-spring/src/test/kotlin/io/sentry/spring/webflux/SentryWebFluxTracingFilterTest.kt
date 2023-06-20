@@ -15,6 +15,7 @@ import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.spring.webflux.SentryWebFilter.SENTRY_HUB_KEY
 import org.assertj.core.api.Assertions.assertThat
@@ -22,7 +23,9 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -58,11 +61,14 @@ class SentryWebFluxTracingFilterTest {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(isEnabled: Boolean = true, status: HttpStatus = HttpStatus.OK, sentryTraceHeader: String? = null, method: HttpMethod = HttpMethod.POST): SentryWebFilter {
+        fun getSut(isEnabled: Boolean = true, status: HttpStatus = HttpStatus.OK, sentryTraceHeader: String? = null, baggageHeaders: List<String>? = null, method: HttpMethod = HttpMethod.POST): SentryWebFilter {
             var requestBuilder = MockServerHttpRequest.method(method, "/product/{id}", 12)
             if (sentryTraceHeader != null) {
                 requestBuilder = requestBuilder.header("sentry-trace", sentryTraceHeader)
                 whenever(hub.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
+            }
+            if (baggageHeaders != null) {
+                requestBuilder = requestBuilder.header("baggage", *baggageHeaders.toTypedArray())
             }
             request = requestBuilder.build()
             exchange = MockServerWebExchange.builder(request).build()
@@ -290,6 +296,30 @@ class SentryWebFluxTracingFilterTest {
                 anyOrNull(),
                 anyOrNull()
             )
+        }
+    }
+
+    @Test
+    fun `continues incoming trace even is performance is disabled`() {
+        val parentSpanId = SpanId()
+        val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
+        val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+        fixture.options.enableTracing = false
+        val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
+
+        withMockHub {
+            filter.filter(fixture.exchange, fixture.chain).block()
+
+            verify(fixture.chain).filter(fixture.exchange)
+
+            verify(fixture.hub, never()).captureTransaction(
+                anyOrNull<SentryTransaction>(),
+                anyOrNull<TraceContext>(),
+                anyOrNull(),
+                anyOrNull()
+            )
+
+            verify(fixture.hub).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
         }
     }
 }

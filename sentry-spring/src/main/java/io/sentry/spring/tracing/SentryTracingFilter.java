@@ -73,41 +73,55 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
-    if (hub.isEnabled() && shouldTraceRequest(httpRequest)) {
-      final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
-      final List<String> baggageHeader =
+    if (hub.isEnabled()) {
+      final @Nullable String sentryTraceHeader =
+          httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
+      final @Nullable List<String> baggageHeader =
           Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
       final @Nullable PropagationContext propagationContext =
           hub.continueTrace(sentryTraceHeader, baggageHeader);
 
-      // at this stage we are not able to get real transaction name
-      final ITransaction transaction = startTransaction(httpRequest, propagationContext);
-      try {
+      if (hub.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
+        doFilterWithTransaction(httpRequest, httpResponse, filterChain, propagationContext);
+      } else {
         filterChain.doFilter(httpRequest, httpResponse);
-      } catch (Throwable e) {
-        // exceptions that are not handled by Spring
-        transaction.setStatus(SpanStatus.INTERNAL_ERROR);
-        throw e;
-      } finally {
-        // after all filters run, templated path pattern is available in request attribute
-        final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
-        final TransactionNameSource transactionNameSource =
-            transactionNameProvider.provideTransactionSource();
-        // if transaction name is not resolved, the request has not been processed by a controller
-        // and we should not report it to Sentry
-        if (transactionName != null) {
-          transaction.setName(transactionName, transactionNameSource);
-          transaction.setOperation(TRANSACTION_OP);
-          // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
-          // httpResponse.getStatus() returns 200.
-          if (transaction.getStatus() == null) {
-            transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
-          }
-          transaction.finish();
-        }
       }
     } else {
       filterChain.doFilter(httpRequest, httpResponse);
+    }
+  }
+
+  private void doFilterWithTransaction(
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse,
+      FilterChain filterChain,
+      final @Nullable PropagationContext propagationContext)
+      throws IOException, ServletException {
+    // at this stage we are not able to get real transaction name
+    final ITransaction transaction = startTransaction(httpRequest, propagationContext);
+    try {
+      filterChain.doFilter(httpRequest, httpResponse);
+    } catch (Throwable e) {
+      // exceptions that are not handled by Spring
+      transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+      throw e;
+    } finally {
+      // after all filters run, templated path pattern is available in request attribute
+      final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
+      final TransactionNameSource transactionNameSource =
+          transactionNameProvider.provideTransactionSource();
+      // if transaction name is not resolved, the request has not been processed by a controller
+      // and we should not report it to Sentry
+      if (transactionName != null) {
+        transaction.setName(transactionName, transactionNameSource);
+        transaction.setOperation(TRANSACTION_OP);
+        // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
+        // httpResponse.getStatus() returns 200.
+        if (transaction.getStatus() == null) {
+          transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
+        }
+        transaction.finish();
+      }
     }
   }
 

@@ -11,13 +11,16 @@ import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.TransactionNameSource
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -42,6 +45,7 @@ class SentryTracingFilterTest {
         val transactionNameProvider = mock<TransactionNameProvider>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
+            enableTracing = true
         }
         val logger = mock<ILogger>()
 
@@ -49,7 +53,7 @@ class SentryTracingFilterTest {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null): SentryTracingFilter {
+        fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null, baggageHeaders: List<String>? = null): SentryTracingFilter {
             request.requestURI = "/product/12"
             request.method = "POST"
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
@@ -58,6 +62,9 @@ class SentryTracingFilterTest {
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
                 whenever(hub.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
+            }
+            if (baggageHeaders != null) {
+                request.addHeader("baggage", baggageHeaders)
             }
             response.status = status
             whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
@@ -209,7 +216,8 @@ class SentryTracingFilterTest {
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
         verify(fixture.hub).isEnabled
-        verify(fixture.hub).options
+        verify(fixture.hub, times(2)).options
+        verify(fixture.hub).continueTrace(anyOrNull(), anyOrNull())
         verifyNoMoreInteractions(fixture.hub)
         verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }
@@ -248,6 +256,28 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `continues incoming trace even is performance is disabled`() {
+        val parentSpanId = SpanId()
+        val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
+        val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+        fixture.options.enableTracing = false
+        val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.hub).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
+
+        verify(fixture.hub, never()).captureTransaction(
+            anyOrNull<SentryTransaction>(),
             anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
