@@ -2,9 +2,11 @@ package io.sentry.android.core;
 
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
+import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.Scope;
 import io.sentry.Sentry;
+import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.RootChecker;
@@ -101,10 +103,18 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
-  /** Enables or disables the attach screenshot feature when an error happened. */
+  /**
+   * Enables or disables the attach screenshot feature when an error happened. Use {@link
+   * SentryAndroidOptions#setBeforeScreenshotCaptureCallback(BeforeCaptureCallback)} ()} to control
+   * when a screenshot should be captured.
+   */
   private boolean attachScreenshot;
 
-  /** Enables or disables the attach view hierarchy feature when an error happened. */
+  /**
+   * Enables or disables the attach view hierarchy feature when an error happened. Use {@link
+   * SentryAndroidOptions#setBeforeViewHierarchyCaptureCallback(BeforeCaptureCallback)} ()} to
+   * control when a view hierarchy should be captured.
+   */
   private boolean attachViewHierarchy;
 
   /**
@@ -145,6 +155,35 @@ public final class SentryAndroidOptions extends SentryOptions {
    * flagged by some app stores as harmful.
    */
   private boolean enableRootCheck = true;
+
+  private @Nullable BeforeCaptureCallback beforeScreenshotCaptureCallback;
+
+  private @Nullable BeforeCaptureCallback beforeViewHierarchyCaptureCallback;
+
+  public interface BeforeCaptureCallback {
+
+    /**
+     * A callback which can be used to suppress capturing of screenshots or view hierarchies. This
+     * gives more fine grained control when capturing should be performed. E.g. - only capture
+     * screenshots for fatal events - overrule any debouncing for important events <br>
+     * As capturing can be resource-intensive, the debounce parameter should be respected if
+     * possible.
+     *
+     * <pre>
+     *  if (debounce) {
+     *    return false;
+     *  } else {
+     *    // check event and hint
+     *  }
+     *  </pre>
+     *
+     * @param event the event
+     * @param hint the hints
+     * @param debounce true if capturing is marked for being debounced
+     * @return true if capturing should be performed, false otherwise
+     */
+    boolean execute(@NotNull SentryEvent event, @NotNull Hint hint, boolean debounce);
+  }
 
   /**
    * Controls whether to report historical ANRs (v2) from the {@link ApplicationExitInfo} system
@@ -461,6 +500,36 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableRootCheck(final boolean enableRootCheck) {
     this.enableRootCheck = enableRootCheck;
+  }
+
+  public @Nullable BeforeCaptureCallback getBeforeScreenshotCaptureCallback() {
+    return beforeScreenshotCaptureCallback;
+  }
+
+  /**
+   * Sets a callback which is executed before capturing screenshots. Only relevant if
+   * attachScreenshot is set to true.
+   *
+   * @param beforeScreenshotCaptureCallback the callback to execute
+   */
+  public void setBeforeScreenshotCaptureCallback(
+      final @NotNull BeforeCaptureCallback beforeScreenshotCaptureCallback) {
+    this.beforeScreenshotCaptureCallback = beforeScreenshotCaptureCallback;
+  }
+
+  public @Nullable BeforeCaptureCallback getBeforeViewHierarchyCaptureCallback() {
+    return beforeViewHierarchyCaptureCallback;
+  }
+
+  /**
+   * Sets a callback which is executed before capturing view hierarchies. Only relevant if
+   * attachViewHierarchy is set to true.
+   *
+   * @param beforeViewHierarchyCaptureCallback the callback to execute
+   */
+  public void setBeforeViewHierarchyCaptureCallback(
+      final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
+    this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
   }
 
   public boolean isReportHistoricalAnrs() {

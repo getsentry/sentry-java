@@ -2112,6 +2112,16 @@ public final class io/sentry/SpanContext$JsonKeys {
 	public fun <init> ()V
 }
 
+public abstract interface class io/sentry/SpanDataConvention {
+	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
+	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
+	public static final field HTTP_METHOD_KEY Ljava/lang/String;
+	public static final field HTTP_QUERY_KEY Ljava/lang/String;
+	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
+	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
+}
+
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {
 	public static final field EMPTY_ID Lio/sentry/SpanId;
 	public fun <init> ()V

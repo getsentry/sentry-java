@@ -19,6 +19,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
@@ -107,6 +108,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         try {
             httpResponse = chain.proceed(modifiedRequest)
             statusCode = httpResponse.statusCode
+            span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
             span?.status = SpanStatus.fromHttpStatusCode(statusCode)
 
             captureEvent(modifiedRequest, httpResponse, operationName, operationType)
@@ -117,6 +119,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             when (e) {
                 is ApolloHttpException -> {
                     statusCode = e.statusCode
+                    span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
                     span?.status =
                         SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.INTERNAL_ERROR)
                 }
@@ -209,10 +212,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
         if (span != null) {
             statusCode?.let {
-                span.setData("http.response.status_code", statusCode)
+                span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
             }
             responseContentLength?.let {
-                span.setData("http.response_content_length", it)
+                span.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, it)
             }
             if (beforeSpan != null) {
                 try {
