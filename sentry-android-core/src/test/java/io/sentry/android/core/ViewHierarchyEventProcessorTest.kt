@@ -315,6 +315,91 @@ class ViewHierarchyEventProcessorTest {
         assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchy"))
     }
 
+    @Test
+    fun `when view hierarchies are captured rapidly, capturing should be debounced`() {
+        val processor = fixture.getSut(true)
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint0 = Hint()
+        processor.process(event, hint0)
+        assertNotNull(hint0.viewHierarchy)
+
+        val hint1 = Hint()
+        processor.process(event, hint1)
+        assertNull(hint1.viewHierarchy)
+    }
+
+    @Test
+    fun `when view hierarchies are captured rapidly, debounced flag should be propagated`() {
+        val processor = fixture.getSut(true)
+
+        var debounceFlag = false
+        fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, debounce ->
+            debounceFlag = debounce
+            true
+        }
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint0 = Hint()
+        processor.process(event, hint0)
+        assertFalse(debounceFlag)
+
+        val hint1 = Hint()
+        processor.process(event, hint1)
+        assertTrue(debounceFlag)
+    }
+
+    @Test
+    fun `when view hierarchies are captured rapidly, capture callback can still overrule debouncing`() {
+        val processor = fixture.getSut(true)
+
+        fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
+            true
+        }
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException())
+        }
+        val hint0 = Hint()
+        processor.process(event, hint0)
+        assertNotNull(hint0.viewHierarchy)
+
+        val hint1 = Hint()
+        processor.process(event, hint1)
+        assertNotNull(hint1.viewHierarchy)
+    }
+
+    @Test
+    fun `when capture callback returns false, no view hierarchy should be captured`() {
+        fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
+            false
+        }
+        val (_, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+
+        assertNull(hint.viewHierarchy)
+    }
+
+    @Test
+    fun `when capture callback returns true, a view hierarchy should be captured`() {
+        fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
+            true
+        }
+        val (_, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+
+        assertNotNull(hint.viewHierarchy)
+    }
+
     private fun mockedView(
         x: Float,
         y: Float,

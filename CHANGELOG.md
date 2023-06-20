@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
 - Tracing headers (`sentry-trace` and `baggage`) are now attached and passed through even if performance is disabled ([#2788](https://github.com/getsentry/sentry-java/pull/2788))
 
 ## 6.23.0
