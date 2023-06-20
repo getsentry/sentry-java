@@ -5,6 +5,16 @@
 ### Features
 
 - Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
+- Improve ANRv2 implementation ([#2792](https://github.com/getsentry/sentry-java/pull/2792))
+  - Add a proguard rule to keep `ApplicationNotResponding` class from obfuscation
+  - Add a new option `setReportHistoricalAnrs`; when enabled, it will report all of the ANRs from the [getHistoricalExitReasons](https://developer.android.com/reference/android/app/ActivityManager?hl=en#getHistoricalProcessExitReasons(java.lang.String,%20int,%20int)) list. 
+  By default, the SDK only reports and enriches the latest ANR and only this one counts towards ANR rate. 
+  Worth noting that once the SDK has been updated to the version with the ANRv2 implementation, this option is not necessary, because the SDK always reads the latest ANR on the next app restart.
+  These ANRs are reported with the `HistoricalAppExitInfo` mechanism.
+  - Add a new option `setAttachAnrThreadDump` to send ANR thread dump from the system as an attachment. 
+  This is only useful as additional information, because the SDK attempts to parse the thread dump into proper threads with stacktraces by default.
+  - If [ApplicationExitInfo#getTraceInputStream](https://developer.android.com/reference/android/app/ApplicationExitInfo#getTraceInputStream()) returns null, the SDK no longer reports an ANR event, as these events are not very useful without it.
+  - Enhance regex patterns for native stackframes
 
 ## 6.23.0
 
