@@ -158,4 +158,40 @@ class TracingUtilsTest {
         assertNotEquals(propagationContextBefore.traceId, fixture.scope.propagationContext.traceId)
         assertNotEquals(propagationContextBefore.spanId, fixture.scope.propagationContext.spanId)
     }
+
+    @Test
+    fun `creates new baggage if none present`() {
+        fixture.setup()
+        assertNull(fixture.scope.propagationContext.baggage)
+
+        TracingUtils.maybeUpdateBaggage(fixture.scope, fixture.options)
+
+        assertNotNull(fixture.scope.propagationContext.baggage)
+        assertEquals(fixture.scope.propagationContext.traceId.toString(), fixture.scope.propagationContext.baggage!!.traceId)
+        assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    }
+
+    @Test
+    fun `updates mutable baggage`() {
+        fixture.setup()
+        // not frozen because it doesn't contain sentry-* keys
+        fixture.scope.propagationContext.baggage = Baggage.fromHeader(fixture.preExistingBaggage)
+
+        TracingUtils.maybeUpdateBaggage(fixture.scope, fixture.options)
+
+        assertEquals(fixture.scope.propagationContext.traceId.toString(), fixture.scope.propagationContext.baggage!!.traceId)
+        assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    }
+
+    @Test
+    fun `does not change frozen baggage`() {
+        fixture.setup()
+        // frozen automatically because it contains sentry-* keys
+        fixture.scope.propagationContext.baggage = Baggage.fromHeader("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+
+        TracingUtils.maybeUpdateBaggage(fixture.scope, fixture.options)
+
+        assertEquals("2722d9f6ec019ade60c776169d9a8904", fixture.scope.propagationContext.baggage!!.traceId)
+        assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    }
 }
