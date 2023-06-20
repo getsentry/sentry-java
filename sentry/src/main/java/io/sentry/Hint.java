@@ -30,6 +30,8 @@ public final class Hint {
   private @Nullable Attachment screenshot = null;
   private @Nullable Attachment viewHierarchy = null;
 
+  private @Nullable Attachment threadDump = null;
+
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hint hint = new Hint();
     hint.addAttachment(attachment);
@@ -124,6 +126,14 @@ public final class Hint {
 
   public @Nullable Attachment getViewHierarchy() {
     return viewHierarchy;
+  }
+
+  public void setThreadDump(final @Nullable Attachment threadDump) {
+    this.threadDump = threadDump;
+  }
+
+  public @Nullable Attachment getThreadDump() {
+    return threadDump;
   }
 
   private boolean isCastablePrimitive(@Nullable Object hintValue, @NotNull Class<?> clazz) {

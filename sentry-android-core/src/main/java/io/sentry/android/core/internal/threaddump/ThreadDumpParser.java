@@ -39,9 +39,11 @@ public class ThreadDumpParser {
   private static final Pattern BEGIN_MANAGED_THREAD_RE =
       Pattern.compile("\"(.*)\" (.*) ?prio=(\\d+)\\s+tid=(\\d+)\\s*(.*)");
   private static final Pattern NATIVE_RE =
-      Pattern.compile("  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s+\\((.*)\\+(\\d+)\\)");
+      Pattern.compile(
+          "  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*?)\\s+\\((.*)\\+(\\d+)\\)(?: \\(.*\\))?");
   private static final Pattern NATIVE_NO_LOC_RE =
-      Pattern.compile("  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?");
+      Pattern.compile(
+          "  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?(?: \\(.*\\))?");
   private static final Pattern JAVA_RE =
       Pattern.compile("  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
   private static final Pattern JNI_RE =
@@ -179,14 +181,14 @@ public class ThreadDumpParser {
       if (matches(nativeRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         frame.setPackage(nativeRe.group(1));
-        frame.setSymbol(nativeRe.group(2));
+        frame.setFunction(nativeRe.group(2));
         frame.setLineno(getInteger(nativeRe, 3, null));
         frames.add(frame);
         lastJavaFrame = null;
       } else if (matches(nativeNoLocRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         frame.setPackage(nativeNoLocRe.group(1));
-        frame.setSymbol(nativeNoLocRe.group(2));
+        frame.setFunction(nativeNoLocRe.group(2));
         frames.add(frame);
         lastJavaFrame = null;
       } else if (matches(javaRe, text)) {
