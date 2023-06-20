@@ -16,6 +16,7 @@ public final class io/sentry/Attachment {
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
 	public static fun fromScreenshot ([B)Lio/sentry/Attachment;
+	public static fun fromThreadDump ([B)Lio/sentry/Attachment;
 	public static fun fromViewHierarchy (Lio/sentry/protocol/ViewHierarchy;)Lio/sentry/Attachment;
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
@@ -309,11 +310,13 @@ public final class io/sentry/Hint {
 	public fun getAs (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun getAttachments ()Ljava/util/List;
 	public fun getScreenshot ()Lio/sentry/Attachment;
+	public fun getThreadDump ()Lio/sentry/Attachment;
 	public fun getViewHierarchy ()Lio/sentry/Attachment;
 	public fun remove (Ljava/lang/String;)V
 	public fun replaceAttachments (Ljava/util/List;)V
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setScreenshot (Lio/sentry/Attachment;)V
+	public fun setThreadDump (Lio/sentry/Attachment;)V
 	public fun setViewHierarchy (Lio/sentry/Attachment;)V
 	public static fun withAttachment (Lio/sentry/Attachment;)Lio/sentry/Hint;
 	public static fun withAttachments (Ljava/util/List;)Lio/sentry/Hint;

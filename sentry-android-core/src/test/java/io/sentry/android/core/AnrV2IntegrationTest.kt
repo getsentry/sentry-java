@@ -533,9 +533,12 @@ class AnrV2IntegrationTest {
 
         integration.register(fixture.hub, fixture.options)
 
-        verify(fixture.hub).captureEvent(any(), check<Hint> {
-            assertNotNull(it.threadDump)
-        })
+        verify(fixture.hub).captureEvent(
+            any(),
+            check<Hint> {
+                assertNotNull(it.threadDump)
+            }
+        )
     }
 
     @Test
