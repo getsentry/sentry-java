@@ -9,6 +9,7 @@ import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
@@ -106,6 +107,7 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
+                assertEquals(403, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -121,6 +123,7 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
+                assertNull(it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

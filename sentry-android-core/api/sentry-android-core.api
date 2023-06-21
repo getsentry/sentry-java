@@ -207,6 +207,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun <init> ()V
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrTimeoutIntervalMillis ()J
+	public fun getBeforeScreenshotCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
+	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getProfilingTracesHz ()I
@@ -231,6 +233,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAnrTimeoutIntervalMillis (J)V
 	public fun setAttachScreenshot (Z)V
 	public fun setAttachViewHierarchy (Z)V
+	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
+	public fun setBeforeViewHierarchyCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setCollectAdditionalContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
@@ -245,6 +249,10 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
+}
+
+public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {
+	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;Z)Z
 }
 
 public final class io/sentry/android/core/SentryInitProvider {

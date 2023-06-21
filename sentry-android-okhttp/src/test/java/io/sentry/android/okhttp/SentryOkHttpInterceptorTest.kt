@@ -10,6 +10,7 @@ import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
@@ -226,6 +227,7 @@ class SentryOkHttpInterceptorTest {
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("http.client", httpClientSpan.operation)
         assertEquals("GET ${request.url}", httpClientSpan.description)
+        assertEquals(201, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.OK, httpClientSpan.status)
         assertTrue(httpClientSpan.isFinished)
     }
@@ -235,6 +237,7 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(httpStatusCode = 400)
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
+        assertEquals(400, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.INVALID_ARGUMENT, httpClientSpan.status)
     }
 
@@ -243,6 +246,7 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(httpStatusCode = 502)
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
+        assertEquals(502, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertNull(httpClientSpan.status)
     }
 
@@ -253,7 +257,7 @@ class SentryOkHttpInterceptorTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-                assertEquals(13L, it.data["http.response_content_length"])
+                assertEquals(13L, it.data[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
                 assertEquals(12L, it.data["http.request_content_length"])
             },
             anyOrNull()
@@ -296,6 +300,7 @@ class SentryOkHttpInterceptorTest {
             // ignore
         }
         val httpClientSpan = fixture.sentryTracer.children.first()
+        assertNull(httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
         assertTrue(httpClientSpan.throwable is IOException)
     }
