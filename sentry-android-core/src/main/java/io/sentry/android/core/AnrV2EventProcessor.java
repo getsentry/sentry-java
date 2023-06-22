@@ -152,8 +152,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setTrace(final @NotNull SentryEvent event) {
     final SpanContext spanContext =
         PersistingScopeObserver.read(options, TRACE_FILENAME, SpanContext.class);
-    if (event.getContexts().getTrace() == null && spanContext != null) {
-      event.getContexts().setTrace(spanContext);
+    if (event.getContexts().getTrace() == null) {
+      if (spanContext != null
+          && spanContext.getSpanId() != null
+          && spanContext.getTraceId() != null) {
+        event.getContexts().setTrace(spanContext);
+      }
     }
   }
 
@@ -190,8 +194,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
     final Contexts eventContexts = event.getContexts();
     for (Map.Entry<String, Object> entry : new Contexts(persistedContexts).entrySet()) {
+      final Object value = entry.getValue();
+      if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
+        // we fill it in setTrace later on
+        continue;
+      }
       if (!eventContexts.containsKey(entry.getKey())) {
-        eventContexts.put(entry.getKey(), entry.getValue());
+        eventContexts.put(entry.getKey(), value);
       }
     }
   }
@@ -446,7 +455,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
     // and make an exception out of its stacktrace
     final Mechanism mechanism = new Mechanism();
-    mechanism.setType("AppExitInfo");
+    if (!((Backfillable) hint).shouldEnrich()) {
+      // we only enrich the latest ANR in the list, so this is historical
+      mechanism.setType("HistoricalAppExitInfo");
+    } else {
+      mechanism.setType("AppExitInfo");
+    }
 
     final boolean isBackgroundAnr = isBackgroundAnr(hint);
     String message = "ANR";

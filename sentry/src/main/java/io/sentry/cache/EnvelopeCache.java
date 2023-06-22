@@ -154,7 +154,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
       SentryCrashLastRunState.getInstance().setCrashedLastRun(crashedLastRun);
 
-      previousSessionLatch.countDown();
+      flushPreviousSession();
     }
 
     // TODO: probably we need to update the current session file for session updates to because of

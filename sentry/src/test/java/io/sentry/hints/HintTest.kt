@@ -209,6 +209,7 @@ class HintTest {
         hint.addAttachment(newAttachment("test attachment"))
         hint.screenshot = newAttachment("2")
         hint.viewHierarchy = newAttachment("3")
+        hint.threadDump = newAttachment("4")
 
         hint.clear()
 
@@ -217,6 +218,7 @@ class HintTest {
         assertEquals(1, hint.attachments.size)
         assertNotNull(hint.screenshot)
         assertNotNull(hint.viewHierarchy)
+        assertNotNull(hint.threadDump)
     }
 
     @Test
@@ -235,6 +237,15 @@ class HintTest {
         hint.viewHierarchy = attachment
 
         assertNotNull(hint.viewHierarchy)
+    }
+
+    @Test
+    fun `can create hint with a thread dump`() {
+        val hint = Hint()
+        val attachment = newAttachment("thread-dump")
+        hint.threadDump = attachment
+
+        assertNotNull(hint.threadDump)
     }
 
     companion object {

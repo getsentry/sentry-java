@@ -1538,6 +1538,42 @@ class SentryClientTest {
     }
 
     @Test
+    fun `thread dump is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromThreadDump(byteArrayOf())
+        val hint = Hint().also { it.threadDump = attachment }
+
+        sut.captureEvent(SentryEvent(), hint)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val threadDump = envelope.items.last()
+                assertNotNull(threadDump) {
+                    assertEquals(attachment.filename, threadDump.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `thread dump is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromThreadDump(byteArrayOf())
+        val hint = Hint().also { it.threadDump = attachment }
+
+        sut.captureEvent(SentryEvent(), hint)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `capturing an error updates session and sends event + session`() {
         val sut = fixture.getSut()
         val scope = givenScopeWithStartedSession()
@@ -2127,6 +2163,7 @@ class SentryClientTest {
         override fun execute(event: SentryEvent, hint: Hint): SentryEvent? {
             hint.screenshot = null
             hint.viewHierarchy = null
+            hint.threadDump = null
             return event
         }
     }

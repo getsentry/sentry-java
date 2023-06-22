@@ -251,6 +251,11 @@ public final class SentryClient implements ISentryClient {
       attachments.add(viewHierarchy);
     }
 
+    @Nullable final Attachment threadDump = hint.getThreadDump();
+    if (threadDump != null) {
+      attachments.add(threadDump);
+    }
+
     return attachments;
   }
 
