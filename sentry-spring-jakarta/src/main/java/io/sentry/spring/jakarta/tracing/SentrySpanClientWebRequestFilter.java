@@ -40,6 +40,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     }
 
     final ISpan span = activeSpan.startChild("http.client");
+    span.getSpanContext().setOrigin("auto.spring_jakarta");
     span.setDescription(request.method().name() + " " + request.url());
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);

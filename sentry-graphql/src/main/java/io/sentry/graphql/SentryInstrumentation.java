@@ -137,9 +137,13 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       parent = (GraphQLObjectType) type;
     }
 
-    return transaction.startChild(
+    final @NotNull ISpan span =  transaction.startChild(
         "graphql",
         parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
+
+    span.getSpanContext().setOrigin("auto.db.graphql");
+
+    return span;
   }
 
   static final class TracingState implements InstrumentationState {

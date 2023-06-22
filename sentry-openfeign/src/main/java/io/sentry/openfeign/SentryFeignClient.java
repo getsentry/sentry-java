@@ -52,6 +52,7 @@ public final class SentryFeignClient implements Client {
       }
 
       ISpan span = activeSpan.startChild("http.client");
+      span.getSpanContext().setOrigin("auto.http.openfeign");
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
       span.setDescription(request.httpMethod().name() + " " + urlDetails.getUrlOrFallback());
       urlDetails.applyToSpan(span);

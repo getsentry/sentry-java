@@ -164,6 +164,7 @@ class SentryFragmentLifecycleCallbacks(
 
         span?.let {
             fragmentsWithOngoingTransactions[fragment] = it
+            it.spanContext.origin = "auto.ui.fragment.lifecycle"
         }
     }
 

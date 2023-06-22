@@ -36,8 +36,12 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
             .doFirst(
                 () -> {
                   doFirst(serverWebExchange, Sentry.getCurrentHub());
-                  transactionContainer.transaction =
+                  final ITransaction transaction =
                       maybeStartTransaction(Sentry.getCurrentHub(), serverWebExchange.getRequest());
+                  transactionContainer.transaction = transaction;
+                  if(transaction != null) {
+                    transaction.getSpanContext().setOrigin("auto.spring_jakarta.webflux");
+                  }
                 }));
   }
 

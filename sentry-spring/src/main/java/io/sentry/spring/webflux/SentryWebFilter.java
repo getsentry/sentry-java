@@ -62,6 +62,10 @@ public final class SentryWebFilter implements WebFilter {
             ? startTransaction(requestHub, request)
             : null;
 
+    if(transaction != null) {
+      transaction.getSpanContext().setOrigin("auto.spring.webflux");
+    }
+
     return webFilterChain
         .filter(serverWebExchange)
         .doFinally(

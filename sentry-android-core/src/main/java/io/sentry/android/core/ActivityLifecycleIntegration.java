@@ -227,6 +227,7 @@ public final class ActivityLifecycleIntegration
           hub.startTransaction(
               new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
               transactionOptions);
+      setSpanOrigin(transaction);
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
@@ -237,6 +238,7 @@ public final class ActivityLifecycleIntegration
                 getAppStartDesc(coldStart),
                 appStartTime,
                 Instrumenter.SENTRY);
+        setSpanOrigin(appStartSpan);
 
         // in case there's already an end time (e.g. due to deferred SDK init)
         // we can finish the app-start span
@@ -246,11 +248,13 @@ public final class ActivityLifecycleIntegration
           transaction.startChild(
               TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
       ttidSpanMap.put(activity, ttidSpan);
+      setSpanOrigin(ttidSpan);
 
       if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
         final @NotNull ISpan ttfdSpan =
             transaction.startChild(
                 TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
+        setSpanOrigin(ttfdSpan);
         try {
           ttfdSpanMap.put(activity, ttfdSpan);
           ttfdAutoCloseFuture =
@@ -274,6 +278,12 @@ public final class ActivityLifecycleIntegration
           });
 
       activitiesWithOngoingTransactions.put(activity, transaction);
+    }
+  }
+
+  private void setSpanOrigin(ISpan span) {
+    if(span != null) {
+      span.getSpanContext().setOrigin("auto.ui.activity");
     }
   }
 

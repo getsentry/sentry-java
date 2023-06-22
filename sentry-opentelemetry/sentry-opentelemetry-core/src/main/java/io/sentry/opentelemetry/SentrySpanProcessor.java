@@ -88,6 +88,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
+      sentryChildSpan.getSpanContext().setOrigin("auto.otel");
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
       hub.getOptions()
@@ -128,6 +129,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
 
       ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
+      sentryTransaction.getSpanContext().setOrigin("auto.otel");
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }

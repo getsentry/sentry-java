@@ -28,6 +28,7 @@ internal class SQLiteSpanManager(
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
         val span = hub.span?.startChild("db.sql.query", sql)
+        span?.spanContext?.origin = "auto.db.sqlite"
         return try {
             val result = operation()
             span?.status = SpanStatus.OK

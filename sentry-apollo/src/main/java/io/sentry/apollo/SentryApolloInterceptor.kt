@@ -45,7 +45,7 @@ class SentryApolloInterceptor(
             chain.proceedAsync(request, dispatcher, callBack)
         } else {
             val span = startChild(request, activeSpan)
-
+            span.spanContext.origin = "auto.apollo"
             val requestWithHeader = if (span.isNoOp) {
                 request
             } else {

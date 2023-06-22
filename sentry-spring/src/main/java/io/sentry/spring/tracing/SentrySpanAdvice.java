@@ -46,6 +46,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
       }
       final String operation = resolveSpanOperation(targetClass, mostSpecificMethod, sentrySpan);
       final ISpan span = activeSpan.startChild(operation);
+      span.getSpanContext().setOrigin("auto.spring");
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.description())) {
         span.setDescription(sentrySpan.description());
       }

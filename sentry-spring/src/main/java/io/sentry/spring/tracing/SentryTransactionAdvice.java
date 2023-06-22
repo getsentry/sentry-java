@@ -68,6 +68,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
           hub.startTransaction(
               new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
               transactionOptions);
+      transaction.getSpanContext().setOrigin("auto.spring");
       try {
         final Object result = invocation.proceed();
         transaction.setStatus(SpanStatus.OK);

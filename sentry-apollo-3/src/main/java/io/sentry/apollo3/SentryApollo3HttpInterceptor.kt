@@ -70,7 +70,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
         if (activeSpan != null) {
             span = startChild(request, activeSpan, operationName, operationType, operationId)
-
+            span.spanContext.origin = "auto.apollo3"
             if (!span.isNoOp && PropagationTargetsUtils.contain(
                     hub.options.tracePropagationTargets,
                     request.url

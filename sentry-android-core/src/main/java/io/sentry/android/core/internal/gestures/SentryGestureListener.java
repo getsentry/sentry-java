@@ -237,6 +237,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         hub.startTransaction(
             new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
 
+    transaction.getSpanContext().setOrigin("auto.ui.gesture_listener");
+
     hub.configureScope(
         scope -> {
           applyScope(scope, transaction);

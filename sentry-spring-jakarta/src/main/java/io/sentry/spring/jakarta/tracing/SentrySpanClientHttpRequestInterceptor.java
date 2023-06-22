@@ -47,6 +47,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       }
 
       final ISpan span = activeSpan.startChild("http.client");
+      span.getSpanContext().setOrigin("auto.spring_jakarta");
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());

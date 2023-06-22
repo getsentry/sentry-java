@@ -37,7 +37,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
         // We start the call span that will contain all the others
         callRootSpan = hub.span?.startChild("http.client", "$method $url")
-
+        callRootSpan?.spanContext?.origin = "auto.okhttp"
         urlDetails.applyToSpan(callRootSpan)
 
         // We setup a breadcrumb with all meaningful data
@@ -107,6 +107,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
             else -> callRootSpan
         } ?: callRootSpan
         val span = parentSpan?.startChild("http.client.$event") ?: return
+        span.spanContext.origin = "auto.okhttp"
         eventSpans[event] = span
     }
 

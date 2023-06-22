@@ -80,6 +80,9 @@ class SentryOkHttpInterceptor(
             span = hub.span?.startChild("http.client", "$method $url")
             isFromEventListener = false
         }
+
+        span?.spanContext?.origin = "auto.okhttp"
+
         urlDetails.applyToSpan(span)
 
         var response: Response? = null

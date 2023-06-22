@@ -138,6 +138,8 @@ class SentryNavigationListener @JvmOverloads constructor(
             transactonOptions
         )
 
+        transaction.spanContext.origin = "auto.navigation"
+
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)
         }
