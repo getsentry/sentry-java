@@ -106,21 +106,14 @@ public final class SentrySpanProcessor implements SpanProcessor {
       final @NotNull TransactionContext transactionContext =
           traceData.getSentryTraceHeader() == null
               ? new TransactionContext(
-                  transactionName,
-                  op,
-                  new SentryId(traceData.getTraceId()),
-                  spanId,
-                  transactionNameSource,
-                  null,
-                  null,
-                  null)
+                  new SentryId(traceData.getTraceId()), spanId, null, null, null)
               : TransactionContext.fromPropagationContext(
-                  transactionName,
-                  transactionNameSource,
-                  op,
                   PropagationContext.fromHeaders(
                       traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
       ;
+      transactionContext.setName(transactionName);
+      transactionContext.setTransactionNameSource(transactionNameSource);
+      transactionContext.setOperation(op);
       transactionContext.setInstrumenter(Instrumenter.OTEL);
 
       TransactionOptions transactionOptions = new TransactionOptions();

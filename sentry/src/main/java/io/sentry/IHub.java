@@ -524,10 +524,13 @@ public interface IHub {
   }
 
   /**
-   * Returns trace header of active transaction, or scope if no transaction is active.
+   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
    *
-   * @return trace header or null
+   * @deprecated please use {@link IHub#getTraceparent()} instead.
+   * @return sentry trace header or null
    */
+  @Deprecated
   @Nullable
   SentryTraceHeader traceHeaders();
 
@@ -594,13 +597,29 @@ public interface IHub {
    * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
    * trace ID and span ID is created.
    *
-   * @param sentryTraceHeader "sentry-trace" header
+   * @param sentryTrace "sentry-trace" header
    * @param baggageHeaders "baggage" headers
+   * @return a transaction context for starting a transaction or null if performance is disabled
    */
   @Nullable
-  PropagationContext continueTrace(
-      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders);
+  TransactionContext continueTrace(
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders);
 
+  /**
+   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
+   *
+   * @return sentry trace header or null
+   */
   @Nullable
-  BaggageHeader baggageHeader(@Nullable List<String> thirdPartyBaggageHeaders);
+  SentryTraceHeader getTraceparent();
+
+  /**
+   * Returns the "baggage" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link IHub#getTraceparent()}.
+   *
+   * @return baggage header or null
+   */
+  @Nullable
+  BaggageHeader getBaggage();
 }

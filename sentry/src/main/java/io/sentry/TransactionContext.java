@@ -3,13 +3,18 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class TransactionContext extends SpanContext {
-  private final @NotNull String name;
-  private final @NotNull TransactionNameSource transactionNameSource;
+  private static final @NotNull String DEFAULT_NAME = "<unlabeled transaction>";
+  private static final @NotNull TransactionNameSource DEFAULT_NAME_SOURCE =
+      TransactionNameSource.CUSTOM;
+  private static final @NotNull String DEFAULT_OPERATION = "default";
+  private @NotNull String name;
+  private @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private @Nullable Baggage baggage;
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
@@ -20,8 +25,11 @@ public final class TransactionContext extends SpanContext {
    * @param name - the transaction name
    * @param operation - the operation
    * @param sentryTrace - the sentry-trace header
+   * @deprecated use {@link Sentry#continueTrace(String, List)} and setters for name and operation
+   *     here instead.
    * @return the transaction contexts
    */
+  @Deprecated
   public static @NotNull TransactionContext fromSentryTrace(
       final @NotNull String name,
       final @NotNull String operation,
@@ -30,21 +38,23 @@ public final class TransactionContext extends SpanContext {
     TracesSamplingDecision samplingDecision =
         parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
 
-    return new TransactionContext(
-        name,
-        operation,
-        sentryTrace.getTraceId(),
-        new SpanId(),
-        TransactionNameSource.CUSTOM,
-        sentryTrace.getSpanId(),
-        samplingDecision,
-        null);
+    TransactionContext transactionContext =
+        new TransactionContext(
+            sentryTrace.getTraceId(),
+            new SpanId(),
+            sentryTrace.getSpanId(),
+            samplingDecision,
+            null);
+
+    transactionContext.setName(name);
+    transactionContext.setTransactionNameSource(TransactionNameSource.CUSTOM);
+    transactionContext.setOperation(operation);
+
+    return transactionContext;
   }
 
+  @ApiStatus.Internal
   public static TransactionContext fromPropagationContext(
-      final @NotNull String name,
-      final @NotNull TransactionNameSource transactionNameSource,
-      final @NotNull String operation,
       final @NotNull PropagationContext propagationContext) {
     @Nullable Boolean parentSampled = propagationContext.isSampled();
     TracesSamplingDecision samplingDecision =
@@ -65,11 +75,8 @@ public final class TransactionContext extends SpanContext {
     }
 
     return new TransactionContext(
-        name,
-        operation,
         propagationContext.getTraceId(),
         propagationContext.getSpanId(),
-        transactionNameSource,
         propagationContext.getParentSpanId(),
         samplingDecision,
         baggage);
@@ -122,18 +129,15 @@ public final class TransactionContext extends SpanContext {
 
   @ApiStatus.Internal
   public TransactionContext(
-      final @NotNull String name,
-      final @NotNull String operation,
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
-      final @NotNull TransactionNameSource transactionNameSource,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision parentSamplingDecision,
       final @Nullable Baggage baggage) {
-    super(traceId, spanId, operation, parentSpanId, null);
-    this.name = Objects.requireNonNull(name, "name is required");
+    super(traceId, spanId, DEFAULT_OPERATION, parentSpanId, null);
+    this.name = DEFAULT_NAME;
     this.parentSamplingDecision = parentSamplingDecision;
-    this.transactionNameSource = transactionNameSource;
+    this.transactionNameSource = DEFAULT_NAME_SOURCE;
     this.baggage = baggage;
   }
 
@@ -187,5 +191,13 @@ public final class TransactionContext extends SpanContext {
 
   public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
     this.instrumenter = instrumenter;
+  }
+
+  public void setName(final @NotNull String name) {
+    this.name = Objects.requireNonNull(name, "name is required");
+  }
+
+  public void setTransactionNameSource(final @NotNull TransactionNameSource transactionNameSource) {
+    this.transactionNameSource = transactionNameSource;
   }
 }

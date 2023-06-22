@@ -10,7 +10,6 @@ import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.NoOpHub;
-import io.sentry.PropagationContext;
 import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -59,12 +58,12 @@ public final class SentryWebFilter implements WebFilter {
     final @Nullable String sentryTraceHeader =
         headers.getFirst(SentryTraceHeader.SENTRY_TRACE_HEADER);
     final @Nullable List<String> baggageHeaders = headers.get(BaggageHeader.BAGGAGE_HEADER);
-    final @Nullable PropagationContext propagationContext =
+    final @Nullable TransactionContext transactionContext =
         requestHub.continueTrace(sentryTraceHeader, baggageHeaders);
 
     final @Nullable ITransaction transaction =
         isTracingEnabled && shouldTraceRequest(requestHub, request)
-            ? startTransaction(requestHub, request, propagationContext)
+            ? startTransaction(requestHub, request, transactionContext)
             : null;
 
     return webFilterChain
@@ -112,7 +111,7 @@ public final class SentryWebFilter implements WebFilter {
   private @NotNull ITransaction startTransaction(
       final @NotNull IHub hub,
       final @NotNull ServerHttpRequest request,
-      final @Nullable PropagationContext propagationContext) {
+      final @Nullable TransactionContext transactionContext) {
     final @NotNull String name = request.getMethod() + " " + request.getURI().getPath();
     final @NotNull CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
@@ -121,12 +120,12 @@ public final class SentryWebFilter implements WebFilter {
     transactionOptions.setCustomSamplingContext(customSamplingContext);
     transactionOptions.setBindToScope(true);
 
-    if (propagationContext != null) {
-      final @NotNull TransactionContext contexts =
-          TransactionContext.fromPropagationContext(
-              name, TransactionNameSource.URL, TRANSACTION_OP, propagationContext);
+    if (transactionContext != null) {
+      transactionContext.setName(name);
+      transactionContext.setTransactionNameSource(TransactionNameSource.URL);
+      transactionContext.setOperation(TRANSACTION_OP);
 
-      return hub.startTransaction(contexts, transactionOptions);
+      return hub.startTransaction(transactionContext, transactionOptions);
     }
 
     return hub.startTransaction(

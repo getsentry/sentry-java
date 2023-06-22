@@ -742,22 +742,11 @@ public final class Hub implements IHub {
     return transaction;
   }
 
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
-    if (!isEnabled()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
-    } else {
-      final @Nullable TracingUtils.TracingHeaders headers =
-          TracingUtils.trace(this, null, getSpan());
-      if (headers != null) {
-        return headers.getSentryTraceHeader();
-      }
-    }
-
-    return null;
+    return getTraceparent();
   }
 
   @Override
@@ -822,29 +811,50 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public @Nullable PropagationContext continueTrace(
-      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders) {
+  public @Nullable TransactionContext continueTrace(
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
     @NotNull
     PropagationContext propagationContext =
-        PropagationContext.fromHeaders(getOptions().getLogger(), sentryTraceHeader, baggageHeaders);
+        PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
         (scope) -> {
           scope.setPropagationContext(propagationContext);
         });
-    return propagationContext;
+    if (options.isTracingEnabled()) {
+      return TransactionContext.fromPropagationContext(propagationContext);
+    } else {
+      return null;
+    }
   }
 
   @Override
-  public @Nullable BaggageHeader baggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+  public @Nullable SentryTraceHeader getTraceparent() {
     if (!isEnabled()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Instance is disabled and this 'baggageHeader' call is a no-op.");
+              "Instance is disabled and this 'getTraceparent' call is a no-op.");
     } else {
       final @Nullable TracingUtils.TracingHeaders headers =
-          TracingUtils.trace(this, thirdPartyBaggageHeaders, getSpan());
+          TracingUtils.trace(this, null, getSpan());
+      if (headers != null) {
+        return headers.getSentryTraceHeader();
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public @Nullable BaggageHeader getBaggage() {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Instance is disabled and this 'getBaggage' call is a no-op.");
+    } else {
+      final @Nullable TracingUtils.TracingHeaders headers =
+          TracingUtils.trace(this, null, getSpan());
       if (headers != null) {
         return headers.getBaggageHeader();
       }

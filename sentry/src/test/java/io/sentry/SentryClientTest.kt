@@ -2061,6 +2061,7 @@ class SentryClientTest {
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
+        whenever(scope.propagationContext).thenReturn(PropagationContext())
 
         val transactionEnd = object : TransactionEnd {}
         val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
@@ -2071,6 +2072,168 @@ class SentryClientTest {
         verify(fixture.transport).send(
             check {
                 assertEquals(1, it.items.count())
+            },
+            any()
+        )
+    }
+
+    @Test
+    fun `attaches trace context from span if none present yet`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        whenever(scope.span).thenReturn(transaction)
+
+        val sentryEvent = SentryEvent()
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+
+        assertEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+        assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    }
+
+    @Test
+    fun `attaches trace context from scope if none present yet and no span on scope`() {
+        val sut = fixture.getSut()
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+
+        val sentryEvent = SentryEvent()
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+
+        assertEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    }
+
+    @Test
+    fun `keeps existing trace context if already present`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+
+        val preExistingSpanContext = SpanContext("op.load")
+
+        val sentryEvent = SentryEvent()
+        sentryEvent.contexts.trace = preExistingSpanContext
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+
+        assertEquals(preExistingSpanContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertEquals(preExistingSpanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+        assertNotEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertNotEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+        assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    }
+
+    @Test
+    fun `uses propagation context on scope for trace header if no transaction is on scope`() {
+        val sut = fixture.getSut()
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+
+        val sentryEvent = SentryEvent()
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertNotNull(it.header.traceContext)
+                assertEquals(scopePropagationContext.traceId, it.header.traceContext!!.traceId)
+            },
+            any()
+        )
+    }
+
+    @Test
+    fun `uses trace context on transaction for trace header if a transaction is on scope`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+        val transactionTraceContext = TraceContext(SentryId(), "pubkey")
+        whenever(transaction.traceContext()).thenReturn(transactionTraceContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+
+        val preExistingSpanContext = SpanContext("op.load")
+
+        val sentryEvent = SentryEvent()
+        sentryEvent.contexts.trace = preExistingSpanContext
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertNotNull(it.header.traceContext)
+                assertEquals(transactionTraceContext.traceId, it.header.traceContext!!.traceId)
             },
             any()
         )

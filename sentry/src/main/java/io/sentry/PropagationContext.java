@@ -60,6 +60,15 @@ public final class PropagationContext {
     this(new SentryId(), new SpanId(), null, null, null);
   }
 
+  public PropagationContext(final @NotNull PropagationContext propagationContext) {
+    this(
+        propagationContext.getTraceId(),
+        propagationContext.getSpanId(),
+        propagationContext.getParentSpanId(),
+        propagationContext.getBaggage(),
+        propagationContext.isSampled());
+  }
+
   public PropagationContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,

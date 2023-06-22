@@ -202,6 +202,7 @@ public final class HubAdapter implements IHub {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Deprecated
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
     return Sentry.traceHeaders();
@@ -236,14 +237,18 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @Nullable PropagationContext continueTrace(
-      final @Nullable String sentryTraceHeader, final @Nullable List<String> baggageHeaders) {
-    return Sentry.continueTrace(sentryTraceHeader, baggageHeaders);
+  public @Nullable TransactionContext continueTrace(
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
+    return Sentry.continueTrace(sentryTrace, baggageHeaders);
   }
 
   @Override
-  public @Nullable BaggageHeader baggageHeader(
-      final @Nullable List<String> thirdPartyBaggageHeaders) {
-    return Sentry.baggageHeader(thirdPartyBaggageHeaders);
+  public @Nullable SentryTraceHeader getTraceparent() {
+    return Sentry.getTraceparent();
+  }
+
+  @Override
+  public @Nullable BaggageHeader getBaggage() {
+    return Sentry.getBaggage();
   }
 }

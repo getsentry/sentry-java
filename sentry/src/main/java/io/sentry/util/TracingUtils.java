@@ -27,7 +27,7 @@ public final class TracingUtils {
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
     final @NotNull SentryOptions sentryOptions = hub.getOptions();
-    if (sentryOptions.isTraceSampling() && isAllowedToSendTo(requestUrl, sentryOptions)) {
+    if (sentryOptions.isTraceSampling() && shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
       return trace(hub, thirdPartyBaggageHeaders, span);
     }
 

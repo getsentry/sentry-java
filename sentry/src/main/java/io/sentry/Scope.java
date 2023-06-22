@@ -138,7 +138,7 @@ public final class Scope {
 
     this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
 
-    this.propagationContext = scope.propagationContext;
+    this.propagationContext = new PropagationContext(scope.propagationContext);
   }
 
   /**

@@ -361,8 +361,6 @@ public final class Baggage {
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
     setUserSegment(user != null ? getSegment(user) : null);
-
-    // TODO vvv should we set null explicitly?
     setTransaction(null);
     setSampleRate(null);
   }

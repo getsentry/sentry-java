@@ -6,7 +6,6 @@ import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
-import io.sentry.PropagationContext;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -78,11 +77,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
           httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final @Nullable List<String> baggageHeader =
           Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
-      final @Nullable PropagationContext propagationContext =
+      final @Nullable TransactionContext transactionContext =
           hub.continueTrace(sentryTraceHeader, baggageHeader);
 
       if (hub.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
-        doFilterWithTransaction(httpRequest, httpResponse, filterChain, propagationContext);
+        doFilterWithTransaction(httpRequest, httpResponse, filterChain, transactionContext);
       } else {
         filterChain.doFilter(httpRequest, httpResponse);
       }
@@ -95,10 +94,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       HttpServletRequest httpRequest,
       HttpServletResponse httpResponse,
       FilterChain filterChain,
-      final @Nullable PropagationContext propagationContext)
+      final @Nullable TransactionContext transactionContext)
       throws IOException, ServletException {
     // at this stage we are not able to get real transaction name
-    final ITransaction transaction = startTransaction(httpRequest, propagationContext);
+    final ITransaction transaction = startTransaction(httpRequest, transactionContext);
     try {
       filterChain.doFilter(httpRequest, httpResponse);
     } catch (Throwable e) {
@@ -132,23 +131,23 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private ITransaction startTransaction(
       final @NotNull HttpServletRequest request,
-      final @Nullable PropagationContext propagationContext) {
+      final @Nullable TransactionContext transactionContext) {
 
     final String name = request.getMethod() + " " + request.getRequestURI();
 
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
 
-    if (propagationContext != null) {
-      final TransactionContext contexts =
-          TransactionContext.fromPropagationContext(
-              name, TransactionNameSource.URL, "http.server", propagationContext);
+    if (transactionContext != null) {
+      transactionContext.setName(name);
+      transactionContext.setTransactionNameSource(TransactionNameSource.URL);
+      transactionContext.setOperation("http.server");
 
       final TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setCustomSamplingContext(customSamplingContext);
       transactionOptions.setBindToScope(true);
 
-      return hub.startTransaction(contexts, transactionOptions);
+      return hub.startTransaction(transactionContext, transactionOptions);
     }
 
     final TransactionOptions transactionOptions = new TransactionOptions();

@@ -78,7 +78,7 @@ class SentryWebFluxTracingFilterTest {
             whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             whenever(chain.filter(any())).thenReturn(Mono.create { s -> s.success() })
-            whenever(hub.continueTrace(anyOrNull(), anyOrNull())).thenAnswer { PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?) }
+            whenever(hub.continueTrace(anyOrNull(), anyOrNull())).thenAnswer { TransactionContext.fromPropagationContext(PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?)) }
             return SentryWebFilter(hub)
         }
     }

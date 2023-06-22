@@ -1,7 +1,6 @@
 package io.sentry
 
 import io.sentry.protocol.SentryId
-import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,7 +37,7 @@ class TransactionContextTest {
             SentryTraceHeader(SentryId(), SpanId(), false).value,
             "sentry-trace_id=a,sentry-transaction=sentryTransaction,sentry-sample_rate=0.3"
         )
-        val context = TransactionContext.fromPropagationContext("name", TransactionNameSource.CUSTOM, "op", propagationContext)
+        val context = TransactionContext.fromPropagationContext(propagationContext)
         assertNull(context.sampled)
         assertNull(context.profileSampled)
         assertFalse(context.parentSampled!!)
@@ -53,7 +52,7 @@ class TransactionContextTest {
             SentryTraceHeader(SentryId(), SpanId(), false).value,
             "sentry-trace_id=a,sentry-transaction=sentryTransaction"
         )
-        val context = TransactionContext.fromPropagationContext("name", TransactionNameSource.CUSTOM, "op", propagationContext)
+        val context = TransactionContext.fromPropagationContext(propagationContext)
         assertNull(context.sampled)
         assertNull(context.profileSampled)
         assertFalse(context.parentSampled!!)
@@ -68,7 +67,7 @@ class TransactionContextTest {
             SentryTraceHeader(SentryId(), SpanId(), true).value,
             "sentry-trace_id=a,sentry-transaction=sentryTransaction,sentry-sample_rate=0.3"
         )
-        val context = TransactionContext.fromPropagationContext("name", TransactionNameSource.CUSTOM, "op", propagationContext)
+        val context = TransactionContext.fromPropagationContext(propagationContext)
         assertNull(context.sampled)
         assertNull(context.profileSampled)
         assertTrue(context.parentSampled!!)
@@ -83,7 +82,7 @@ class TransactionContextTest {
             SentryTraceHeader(SentryId(), SpanId(), true).value,
             "sentry-trace_id=a,sentry-transaction=sentryTransaction"
         )
-        val context = TransactionContext.fromPropagationContext("name", TransactionNameSource.CUSTOM, "op", propagationContext)
+        val context = TransactionContext.fromPropagationContext(propagationContext)
         assertNull(context.sampled)
         assertNull(context.profileSampled)
         assertTrue(context.parentSampled!!)
