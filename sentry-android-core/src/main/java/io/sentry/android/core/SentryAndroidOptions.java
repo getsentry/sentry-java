@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.Scope;
@@ -8,6 +10,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.RootChecker;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -181,6 +184,24 @@ public final class SentryAndroidOptions extends SentryOptions {
      */
     boolean execute(@NotNull SentryEvent event, @NotNull Hint hint, boolean debounce);
   }
+
+  /**
+   * Controls whether to report historical ANRs (v2) from the {@link ApplicationExitInfo} system
+   * API. When enabled, reports all of the ANRs available in the {@link
+   * ActivityManager#getHistoricalProcessExitReasons(String, int, int)} list, as opposed to
+   * reporting only the latest one.
+   *
+   * <p>These events do not affect ANR rate nor are they enriched with additional information from
+   * {@link Scope} like breadcrumbs. The events are reported with 'HistoricalAppExitInfo' {@link
+   * Mechanism}.
+   */
+  private boolean reportHistoricalAnrs = false;
+
+  /**
+   * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
+   * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
+   */
+  private boolean attachAnrThreadDump = false;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -509,5 +530,21 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setBeforeViewHierarchyCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
     this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
+  }
+
+  public boolean isReportHistoricalAnrs() {
+    return reportHistoricalAnrs;
+  }
+
+  public void setReportHistoricalAnrs(final boolean reportHistoricalAnrs) {
+    this.reportHistoricalAnrs = reportHistoricalAnrs;
+  }
+
+  public boolean isAttachAnrThreadDump() {
+    return attachAnrThreadDump;
+  }
+
+  public void setAttachAnrThreadDump(final boolean attachAnrThreadDump) {
+    this.attachAnrThreadDump = attachAnrThreadDump;
   }
 }

@@ -107,6 +107,7 @@ class AnrV2EventProcessorTest {
                 persistScope(
                     CONTEXTS_FILENAME,
                     Contexts().apply {
+                        trace = SpanContext("test")
                         setResponse(Response().apply { bodySize = 1024 })
                         setBrowser(Browser().apply { name = "Google Chrome" })
                     }
@@ -167,6 +168,15 @@ class AnrV2EventProcessorTest {
         assertNull(processed.platform)
         assertNull(processed.exceptions)
         assertEquals(emptyMap(), processed.contexts)
+    }
+
+    @Test
+    fun `when backfillable event is not enrichable, sets different mechanism`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint(shouldEnrich = false))
+
+        val processed = processEvent(hint)
+
+        assertEquals("HistoricalAppExitInfo", processed.exceptions!![0].mechanism!!.type)
     }
 
     @Test

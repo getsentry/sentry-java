@@ -24,6 +24,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.atMost
 import org.mockito.kotlin.check
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -42,6 +43,7 @@ import kotlin.concurrent.thread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -67,7 +69,9 @@ class AnrV2IntegrationTest {
             flushTimeoutMillis: Long = 0L,
             lastReportedAnrTimestamp: Long? = null,
             lastEventId: SentryId = SentryId(),
-            sessionTrackingEnabled: Boolean = true
+            sessionTrackingEnabled: Boolean = true,
+            reportHistoricalAnrs: Boolean = true,
+            attachAnrThreadDump: Boolean = false
         ): AnrV2Integration {
             options.run {
                 setLogger(this@Fixture.logger)
@@ -78,6 +82,8 @@ class AnrV2IntegrationTest {
                 this.isAnrEnabled = isAnrEnabled
                 this.flushTimeoutMillis = flushTimeoutMillis
                 this.isEnableAutoSessionTracking = sessionTrackingEnabled
+                this.isReportHistoricalAnrs = reportHistoricalAnrs
+                this.isAttachAnrThreadDump = attachAnrThreadDump
                 addInAppInclude("io.sentry.samples")
                 setEnvelopeDiskCache(EnvelopeCache.create(this))
             }
@@ -93,7 +99,8 @@ class AnrV2IntegrationTest {
         fun addAppExitInfo(
             reason: Int? = ApplicationExitInfo.REASON_ANR,
             timestamp: Long? = null,
-            importance: Int? = null
+            importance: Int? = null,
+            addTrace: Boolean = true
         ) {
             val builder = ApplicationExitInfoBuilder.newBuilder()
             if (reason != null) {
@@ -106,6 +113,9 @@ class AnrV2IntegrationTest {
                 builder.setImportance(importance)
             }
             val exitInfo = spy(builder.build()) {
+                if (!addTrace) {
+                    return
+                }
                 whenever(mock.traceInputStream).thenReturn(
                     """
 "main" prio=5 tid=1 Blocked
@@ -259,9 +269,11 @@ class AnrV2IntegrationTest {
                 assertEquals(false, otherThread.isMain)
                 val firstFrame = otherThread.stacktrace!!.frames!!.first()
                 assertEquals(
-                    "/apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)",
+                    "/apex/com.android.runtime/lib64/bionic/libc.so",
                     firstFrame.`package`
                 )
+                assertEquals("__start_thread", firstFrame.function)
+                assertEquals(64, firstFrame.lineno)
             },
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -354,6 +366,29 @@ class AnrV2IntegrationTest {
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 !(hint as AnrV2Hint).shouldEnrich()
+            }
+        )
+    }
+
+    @Test
+    fun `when historical ANRs flag is disabled, does not report`() {
+        val integration = fixture.getSut(
+            tmpDir,
+            lastReportedAnrTimestamp = oldTimestamp,
+            reportHistoricalAnrs = false
+        )
+        fixture.addAppExitInfo(timestamp = newTimestamp - 2 * 60 * 1000)
+        fixture.addAppExitInfo(timestamp = newTimestamp - 1 * 60 * 1000)
+        fixture.addAppExitInfo(timestamp = newTimestamp)
+
+        integration.register(fixture.hub, fixture.options)
+
+        // only the latest anr is reported which should be enrichable
+        verify(fixture.hub, atMost(1)).captureEvent(
+            any(),
+            argThat<Hint> {
+                val hint = HintUtils.getSentrySdkHint(this)
+                (hint as AnrV2Hint).shouldEnrich()
             }
         )
     }
@@ -485,5 +520,34 @@ class AnrV2IntegrationTest {
         )
         // should return true, because latch is 0 now
         assertTrue((fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush())
+    }
+
+    @Test
+    fun `attaches plain thread dump, if enabled`() {
+        val integration = fixture.getSut(
+            tmpDir,
+            lastReportedAnrTimestamp = oldTimestamp,
+            attachAnrThreadDump = true
+        )
+        fixture.addAppExitInfo(timestamp = newTimestamp)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.hub).captureEvent(
+            any(),
+            check<Hint> {
+                assertNotNull(it.threadDump)
+            }
+        )
+    }
+
+    @Test
+    fun `when traceInputStream is null, does not report ANR`() {
+        val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
+        fixture.addAppExitInfo(timestamp = newTimestamp, addTrace = false)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 }
