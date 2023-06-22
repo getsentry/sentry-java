@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ public final class SentryInitProvider extends EmptySecureContentProvider {
     }
     if (ManifestMetadataReader.isAutoInit(context, logger)) {
       SentryAndroid.init(context, logger);
+      SentryIntegrationPackageStorage.getInstance().addIntegration("AutoInit");
     }
     return true;
   }
