@@ -9,7 +9,7 @@
   - Add a proguard rule to keep `ApplicationNotResponding` class from obfuscation
   - Add a new option `setReportHistoricalAnrs`; when enabled, it will report all of the ANRs from the [getHistoricalExitReasons](https://developer.android.com/reference/android/app/ActivityManager?hl=en#getHistoricalProcessExitReasons(java.lang.String,%20int,%20int)) list. 
   By default, the SDK only reports and enriches the latest ANR and only this one counts towards ANR rate. 
-  Worth noting that once the SDK has been updated to the version with the ANRv2 implementation, this option is not necessary, because the SDK always reads the latest ANR on the next app restart.
+  Worth noting that this option is mainly useful when updating the SDK to the version where ANRv2 has been introduced, to report all ANRs happened prior to the SDK update. After that, the SDK will always pick up the latest ANR from the historical exit reasons list on next app restart, so there should be no historical ANRs to report.
   These ANRs are reported with the `HistoricalAppExitInfo` mechanism.
   - Add a new option `setAttachAnrThreadDump` to send ANR thread dump from the system as an attachment. 
   This is only useful as additional information, because the SDK attempts to parse the thread dump into proper threads with stacktraces by default.
