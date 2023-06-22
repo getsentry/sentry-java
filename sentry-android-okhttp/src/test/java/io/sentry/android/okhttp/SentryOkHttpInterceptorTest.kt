@@ -57,7 +57,7 @@ class SentryOkHttpInterceptorTest {
             beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
             includeMockServerInTracePropagationTargets: Boolean = true,
             keepDefaultTracePropagationTargets: Boolean = false,
-            captureFailedRequests: Boolean = false,
+            captureFailedRequests: Boolean? = false,
             failedRequestTargets: List<String> = listOf(".*"),
             failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
                 HttpStatusCodeRange(
@@ -91,13 +91,22 @@ class SentryOkHttpInterceptorTest {
                     .setResponseCode(httpStatusCode)
             )
 
-            val interceptor = SentryOkHttpInterceptor(
-                hub,
-                beforeSpan,
-                captureFailedRequests = captureFailedRequests,
-                failedRequestTargets = failedRequestTargets,
-                failedRequestStatusCodes = failedRequestStatusCodes
-            )
+            val interceptor = when (captureFailedRequests) {
+                null -> SentryOkHttpInterceptor(
+                    hub,
+                    beforeSpan,
+                    failedRequestTargets = failedRequestTargets,
+                    failedRequestStatusCodes = failedRequestStatusCodes
+                )
+
+                else -> SentryOkHttpInterceptor(
+                    hub,
+                    beforeSpan,
+                    captureFailedRequests = captureFailedRequests,
+                    failedRequestTargets = failedRequestTargets,
+                    failedRequestStatusCodes = failedRequestStatusCodes
+                )
+            }
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
     }
@@ -347,6 +356,17 @@ class SentryOkHttpInterceptorTest {
         assertNotNull(httpClientSpan.spanContext.sampled) {
             assertFalse(it)
         }
+    }
+
+    @Test
+    fun `captures failed requests by default`() {
+        val sut = fixture.getSut(
+            httpStatusCode = 500,
+            captureFailedRequests = null
+        )
+        sut.newCall(getRequest()).execute()
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test
