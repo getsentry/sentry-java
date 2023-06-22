@@ -157,6 +157,9 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable BeforeCaptureCallback beforeViewHierarchyCaptureCallback;
 
+  /** Turns NDK on or off. Default is enabled. */
+  private boolean enableNdk = true;
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -509,5 +512,23 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setBeforeViewHierarchyCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
     this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
+  }
+
+  /**
+   * Check if NDK is ON or OFF Default is ON
+   *
+   * @return true if ON or false otherwise
+   */
+  public boolean isEnableNdk() {
+    return enableNdk;
+  }
+
+  /**
+   * Sets NDK to ON or OFF
+   *
+   * @param enableNdk true if ON or false otherwise
+   */
+  public void setEnableNdk(boolean enableNdk) {
+    this.enableNdk = enableNdk;
   }
 }

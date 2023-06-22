@@ -103,9 +103,6 @@ public class SentryOptions {
    */
   private boolean debug;
 
-  /** Turns NDK on or off. Default is enabled. */
-  private boolean enableNdk = true;
-
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
 
@@ -587,24 +584,6 @@ public class SentryOptions {
   public void setEnvelopeReader(final @Nullable IEnvelopeReader envelopeReader) {
     this.envelopeReader =
         envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance();
-  }
-
-  /**
-   * Check if NDK is ON or OFF Default is ON
-   *
-   * @return true if ON or false otherwise
-   */
-  public boolean isEnableNdk() {
-    return enableNdk;
-  }
-
-  /**
-   * Sets NDK to ON or OFF
-   *
-   * @param enableNdk true if ON or false otherwise
-   */
-  public void setEnableNdk(boolean enableNdk) {
-    this.enableNdk = enableNdk;
   }
 
   /**

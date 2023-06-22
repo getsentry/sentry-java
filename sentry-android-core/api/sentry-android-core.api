@@ -225,6 +225,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableFramesTracking ()Z
+	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
 	public fun isEnableRootCheck ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
@@ -243,6 +244,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableFramesTracking (Z)V
+	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
 	public fun setEnableRootCheck (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
