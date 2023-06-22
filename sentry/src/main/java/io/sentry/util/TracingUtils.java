@@ -45,7 +45,7 @@ public final class TracingUtils {
       return new TracingHeaders(
           span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders));
     } else {
-      final @NotNull AtomicReference<TracingHeaders> returnValue = new AtomicReference<>();
+      final @NotNull TracingHeadersHolder returnValue = new TracingHeadersHolder();
       hub.configureScope(
           (scope) -> {
             maybeUpdateBaggage(scope, sentryOptions);
@@ -58,13 +58,13 @@ public final class TracingUtils {
                   BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
             }
 
-            returnValue.set(
+            returnValue.headers =
                 new TracingHeaders(
                     new SentryTraceHeader(
                         propagationContext.getTraceId(), propagationContext.getSpanId(), null),
-                    baggageHeader));
+                    baggageHeader);
           });
-      return returnValue.get();
+      return returnValue.headers;
     }
   }
 
@@ -82,9 +82,13 @@ public final class TracingUtils {
     }
   }
 
-  private static boolean isAllowedToSendTo(
+  private static boolean shouldAttachTracingHeaders(
       final @NotNull String requestUrl, final @NotNull SentryOptions sentryOptions) {
     return PropagationTargetsUtils.contain(sentryOptions.getTracePropagationTargets(), requestUrl);
+  }
+
+  private static final class TracingHeadersHolder {
+    private @Nullable TracingHeaders headers = null;
   }
 
   public static final class TracingHeaders {
