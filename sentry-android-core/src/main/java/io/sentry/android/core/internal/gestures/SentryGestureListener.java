@@ -20,6 +20,7 @@ import io.sentry.TransactionOptions;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.internal.gestures.UiElement;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.TracingUtils;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
@@ -184,9 +185,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         hint);
   }
 
-  // TODO should we start a new trace here if performance is disabled?
   private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
+      TracingUtils.startNewTrace(hub);
       return;
     }
 
