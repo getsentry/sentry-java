@@ -9,7 +9,6 @@ import io.sentry.Scope;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
