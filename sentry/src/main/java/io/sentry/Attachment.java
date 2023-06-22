@@ -334,4 +334,14 @@ public final class Attachment {
         VIEW_HIERARCHY_ATTACHMENT_TYPE,
         false);
   }
+
+  /**
+   * Creates a new Thread Dump Attachment
+   *
+   * @param bytes the array bytes
+   * @return the Attachment
+   */
+  public static @NotNull Attachment fromThreadDump(final byte[] bytes) {
+    return new Attachment(bytes, "thread-dump.txt", "text/plain", false);
+  }
 }
