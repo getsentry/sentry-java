@@ -160,6 +160,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
 
+  /**
+   * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
+   * for sentry-android.
+   */
+  private boolean enableScopeSync;
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -530,5 +536,23 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableNdk(boolean enableNdk) {
     this.enableNdk = enableNdk;
+  }
+
+  /**
+   * Returns if the Java to NDK Scope sync is enabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableScopeSync() {
+    return enableScopeSync;
+  }
+
+  /**
+   * Enables or not the Java to NDK Scope sync
+   *
+   * @param enableScopeSync true if enabled or false otherwise
+   */
+  public void setEnableScopeSync(boolean enableScopeSync) {
+    this.enableScopeSync = enableScopeSync;
   }
 }

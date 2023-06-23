@@ -228,6 +228,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
 	public fun isEnableRootCheck ()Z
+	public fun isEnableScopeSync ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
@@ -247,6 +248,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
 	public fun setEnableRootCheck (Z)V
+	public fun setEnableScopeSync (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V

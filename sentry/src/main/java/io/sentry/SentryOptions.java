@@ -289,12 +289,6 @@ public class SentryOptions {
   private final @NotNull List<IOptionsObserver> optionsObservers = new CopyOnWriteArrayList<>();
 
   /**
-   * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
-   * for sentry-android.
-   */
-  private boolean enableScopeSync;
-
-  /**
    * Enables loading additional options from external locations like {@code sentry.properties} file
    * or environment variables, system properties.
    */
@@ -1363,24 +1357,6 @@ public class SentryOptions {
   @NotNull
   public List<IOptionsObserver> getOptionsObservers() {
     return optionsObservers;
-  }
-
-  /**
-   * Returns if the Java to NDK Scope sync is enabled
-   *
-   * @return true if enabled or false otherwise
-   */
-  public boolean isEnableScopeSync() {
-    return enableScopeSync;
-  }
-
-  /**
-   * Enables or not the Java to NDK Scope sync
-   *
-   * @param enableScopeSync true if enabled or false otherwise
-   */
-  public void setEnableScopeSync(boolean enableScopeSync) {
-    this.enableScopeSync = enableScopeSync;
   }
 
   /**
