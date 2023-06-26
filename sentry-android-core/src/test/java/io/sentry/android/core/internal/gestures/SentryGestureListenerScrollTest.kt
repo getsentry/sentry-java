@@ -12,6 +12,7 @@ import android.widget.ListAdapter
 import androidx.core.view.ScrollingView
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.PropagationContext
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
@@ -44,6 +45,7 @@ class SentryGestureListenerScrollTest {
         }
         val hub = mock<IHub>()
         val scope = mock<Scope>()
+        val propagationContext = PropagationContext()
 
         val firstEvent = mock<MotionEvent>()
         val eventsInBetween = listOf(mock<MotionEvent>(), mock(), mock())
@@ -75,6 +77,7 @@ class SentryGestureListenerScrollTest {
             }
             whenever(activity.window).thenReturn(window)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            doAnswer { (it.arguments[0] as Scope.IWithPropagationContext).accept(propagationContext); propagationContext }.whenever(scope).withPropagationContext(any())
             return SentryGestureListener(
                 activity,
                 hub,

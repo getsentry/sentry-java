@@ -65,6 +65,9 @@ public final class Scope {
   /** Transaction lock, Ops should be atomic */
   private final @NotNull Object transactionLock = new Object();
 
+  /** PropagationContext lock, Ops should be atomic */
+  private final @NotNull Object propagationContextLock = new Object();
+
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
 
@@ -814,6 +817,14 @@ public final class Scope {
     return propagationContext;
   }
 
+  public @NotNull PropagationContext withPropagationContext(
+      final @NotNull IWithPropagationContext callback) {
+    synchronized (propagationContextLock) {
+      callback.accept(propagationContext);
+      return new PropagationContext(propagationContext);
+    }
+  }
+
   /** the IWithTransaction callback */
   @ApiStatus.Internal
   public interface IWithTransaction {
@@ -824,5 +835,16 @@ public final class Scope {
      * @param transaction the current transaction or null if none exists
      */
     void accept(@Nullable ITransaction transaction);
+  }
+
+  /** the IWithPropagationContext callback */
+  public interface IWithPropagationContext {
+
+    /**
+     * The accept method of the callback
+     *
+     * @param propagationContext the current propagationContext
+     */
+    void accept(@NotNull PropagationContext propagationContext);
   }
 }

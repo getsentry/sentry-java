@@ -131,6 +131,11 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public Baggage(final @NotNull Baggage baggage) {
+    this(baggage.keyValues, baggage.thirdPartyHeader, baggage.mutable, baggage.logger);
+  }
+
+  @ApiStatus.Internal
   public Baggage(
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,

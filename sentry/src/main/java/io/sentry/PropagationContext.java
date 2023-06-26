@@ -65,8 +65,16 @@ public final class PropagationContext {
         propagationContext.getTraceId(),
         propagationContext.getSpanId(),
         propagationContext.getParentSpanId(),
-        propagationContext.getBaggage(),
+        cloneBaggage(propagationContext.getBaggage()),
         propagationContext.isSampled());
+  }
+
+  private static @Nullable Baggage cloneBaggage(final @Nullable Baggage baggage) {
+    if (baggage != null) {
+      return new Baggage(baggage);
+    }
+
+    return null;
   }
 
   public PropagationContext(

@@ -11,7 +11,9 @@ import android.widget.CheckBox
 import android.widget.RadioButton
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.PropagationContext
 import io.sentry.Scope
+import io.sentry.Scope.IWithPropagationContext
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
@@ -40,6 +42,7 @@ class SentryGestureListenerClickTest {
         }
         val hub = mock<IHub>()
         val scope = mock<Scope>()
+        val propagationContext = PropagationContext()
         lateinit var target: View
         lateinit var invalidTarget: View
 
@@ -84,6 +87,7 @@ class SentryGestureListenerClickTest {
             whenever(this.target.context).thenReturn(context)
             whenever(activity.window).thenReturn(window)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            doAnswer { (it.arguments[0] as IWithPropagationContext).accept(propagationContext); propagationContext; }.whenever(scope).withPropagationContext(any())
             return SentryGestureListener(
                 activity,
                 hub,

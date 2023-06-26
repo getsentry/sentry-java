@@ -17,9 +17,10 @@ public final class TracingUtils {
   public static void startNewTrace(final @NotNull IHub hub) {
     hub.configureScope(
         scope -> {
-          synchronized (scope) {
-            scope.setPropagationContext(new PropagationContext());
-          }
+          scope.withPropagationContext(
+              propagationContext -> {
+                scope.setPropagationContext(new PropagationContext());
+              });
         });
   }
 
@@ -46,43 +47,45 @@ public final class TracingUtils {
       return new TracingHeaders(
           span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders));
     } else {
-      final @NotNull TracingHeadersHolder returnValue = new TracingHeadersHolder();
+      final @NotNull PropagationContextHolder returnValue = new PropagationContextHolder();
       hub.configureScope(
           (scope) -> {
-            synchronized (scope) {
-              maybeUpdateBaggage(scope, sentryOptions);
-              final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
-
-              final @Nullable Baggage baggage = propagationContext.getBaggage();
-              @Nullable BaggageHeader baggageHeader = null;
-              if (baggage != null) {
-                baggageHeader =
-                    BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-              }
-
-              returnValue.headers =
-                  new TracingHeaders(
-                      new SentryTraceHeader(
-                          propagationContext.getTraceId(), propagationContext.getSpanId(), null),
-                      baggageHeader);
-            }
+            returnValue.propagationContext = maybeUpdateBaggage(scope, sentryOptions);
           });
-      return returnValue.headers;
+
+      if (returnValue.propagationContext != null) {
+        final @NotNull PropagationContext propagationContext = returnValue.propagationContext;
+        final @Nullable Baggage baggage = propagationContext.getBaggage();
+        @Nullable BaggageHeader baggageHeader = null;
+        if (baggage != null) {
+          baggageHeader =
+              BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+        }
+
+        return new TracingHeaders(
+            new SentryTraceHeader(
+                propagationContext.getTraceId(), propagationContext.getSpanId(), null),
+            baggageHeader);
+      }
+
+      return null;
     }
   }
 
-  public static void maybeUpdateBaggage(
+  public static @NotNull PropagationContext maybeUpdateBaggage(
       final @NotNull Scope scope, final @NotNull SentryOptions sentryOptions) {
-    final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
-    @Nullable Baggage baggage = propagationContext.getBaggage();
-    if (baggage == null) {
-      baggage = new Baggage(sentryOptions.getLogger());
-      propagationContext.setBaggage(baggage);
-    }
-    if (baggage.isMutable()) {
-      baggage.setValuesFromScope(scope, sentryOptions);
-      baggage.freeze();
-    }
+    return scope.withPropagationContext(
+        propagationContext -> {
+          @Nullable Baggage baggage = propagationContext.getBaggage();
+          if (baggage == null) {
+            baggage = new Baggage(sentryOptions.getLogger());
+            propagationContext.setBaggage(baggage);
+          }
+          if (baggage.isMutable()) {
+            baggage.setValuesFromScope(scope, sentryOptions);
+            baggage.freeze();
+          }
+        });
   }
 
   private static boolean shouldAttachTracingHeaders(
@@ -90,8 +93,8 @@ public final class TracingUtils {
     return PropagationTargetsUtils.contain(sentryOptions.getTracePropagationTargets(), requestUrl);
   }
 
-  private static final class TracingHeadersHolder {
-    private @Nullable TracingHeaders headers = null;
+  private static final class PropagationContextHolder {
+    private @Nullable PropagationContext propagationContext = null;
   }
 
   public static final class TracingHeaders {

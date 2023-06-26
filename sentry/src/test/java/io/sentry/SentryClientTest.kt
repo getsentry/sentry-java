@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.Scope.IWithPropagationContext
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -2097,7 +2098,9 @@ class SentryClientTest {
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
-        whenever(scope.propagationContext).thenReturn(PropagationContext())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val transactionEnd = object : TransactionEnd {}
         val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
@@ -2132,6 +2135,7 @@ class SentryClientTest {
         val scopePropagationContext = PropagationContext()
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
         whenever(scope.span).thenReturn(transaction)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val sentryEvent = SentryEvent()
         sut.captureEvent(sentryEvent, scope)
@@ -2160,6 +2164,7 @@ class SentryClientTest {
         whenever(scope.contexts).thenReturn(Contexts())
         val scopePropagationContext = PropagationContext()
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val sentryEvent = SentryEvent()
         sut.captureEvent(sentryEvent, scope)
@@ -2193,6 +2198,7 @@ class SentryClientTest {
         whenever(scope.contexts).thenReturn(Contexts())
         val scopePropagationContext = PropagationContext()
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val preExistingSpanContext = SpanContext("op.load")
 
@@ -2225,7 +2231,9 @@ class SentryClientTest {
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
         val scopePropagationContext = PropagationContext()
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val sentryEvent = SentryEvent()
         sut.captureEvent(sentryEvent, scope)
@@ -2259,6 +2267,7 @@ class SentryClientTest {
         whenever(scope.contexts).thenReturn(Contexts())
         val scopePropagationContext = PropagationContext()
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val preExistingSpanContext = SpanContext("op.load")
 

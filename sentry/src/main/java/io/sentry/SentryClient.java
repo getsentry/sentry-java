@@ -177,8 +177,9 @@ public final class SentryClient implements ISentryClient {
         if (scope.getTransaction() != null) {
           traceContext = scope.getTransaction().traceContext();
         } else {
-          TracingUtils.maybeUpdateBaggage(scope, options);
-          traceContext = scope.getPropagationContext().traceContext();
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
         }
       }
 

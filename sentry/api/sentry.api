@@ -30,6 +30,7 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 }
 
 public final class io/sentry/Baggage {
+	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
 	public fun freeze ()V
@@ -1196,7 +1197,12 @@ public final class io/sentry/Scope {
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun withPropagationContext (Lio/sentry/Scope$IWithPropagationContext;)Lio/sentry/PropagationContext;
 	public fun withTransaction (Lio/sentry/Scope$IWithTransaction;)V
+}
+
+public abstract interface class io/sentry/Scope$IWithPropagationContext {
+	public abstract fun accept (Lio/sentry/PropagationContext;)V
 }
 
 public abstract interface class io/sentry/Scope$IWithTransaction {
@@ -4196,7 +4202,7 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/TracingUtils {
 	public fun <init> ()V
-	public static fun maybeUpdateBaggage (Lio/sentry/Scope;Lio/sentry/SentryOptions;)V
+	public static fun maybeUpdateBaggage (Lio/sentry/Scope;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun startNewTrace (Lio/sentry/IHub;)V
 	public static fun trace (Lio/sentry/IHub;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;
 	public static fun traceIfAllowed (Lio/sentry/IHub;Ljava/lang/String;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;
