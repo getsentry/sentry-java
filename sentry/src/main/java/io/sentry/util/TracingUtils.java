@@ -17,7 +17,9 @@ public final class TracingUtils {
   public static void startNewTrace(final @NotNull IHub hub) {
     hub.configureScope(
         scope -> {
-          scope.setPropagationContext(new PropagationContext());
+          synchronized (scope) {
+            scope.setPropagationContext(new PropagationContext());
+          }
         });
   }
 
@@ -47,21 +49,23 @@ public final class TracingUtils {
       final @NotNull TracingHeadersHolder returnValue = new TracingHeadersHolder();
       hub.configureScope(
           (scope) -> {
-            maybeUpdateBaggage(scope, sentryOptions);
-            final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
+            synchronized (scope) {
+              maybeUpdateBaggage(scope, sentryOptions);
+              final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
 
-            final @Nullable Baggage baggage = propagationContext.getBaggage();
-            @Nullable BaggageHeader baggageHeader = null;
-            if (baggage != null) {
-              baggageHeader =
-                  BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+              final @Nullable Baggage baggage = propagationContext.getBaggage();
+              @Nullable BaggageHeader baggageHeader = null;
+              if (baggage != null) {
+                baggageHeader =
+                    BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+              }
+
+              returnValue.headers =
+                  new TracingHeaders(
+                      new SentryTraceHeader(
+                          propagationContext.getTraceId(), propagationContext.getSpanId(), null),
+                      baggageHeader);
             }
-
-            returnValue.headers =
-                new TracingHeaders(
-                    new SentryTraceHeader(
-                        propagationContext.getTraceId(), propagationContext.getSpanId(), null),
-                    baggageHeader);
           });
       return returnValue.headers;
     }
