@@ -133,6 +133,11 @@ class SentryAndroidOptionsTest {
         assertNull(sentryOptions.nativeSdkName)
     }
 
+    @Test
+    fun `when options is initialized, enableScopeSync is false`() {
+        assertFalse(SentryAndroidOptions().isEnableScopeSync)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}
