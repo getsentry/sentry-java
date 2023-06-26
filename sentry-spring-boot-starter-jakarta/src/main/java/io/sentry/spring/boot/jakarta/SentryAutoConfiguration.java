@@ -119,9 +119,6 @@ public class SentryAutoConfiguration {
           BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       options.setSdkVersion(createSdkVersion(options));
       addPackageAndIntegrationInfo();
-      if (options.getTracesSampleRate() == null && options.getEnableTracing() == null) {
-        options.setTracesSampleRate(0.0);
-      }
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
       // information is lost
       // its technically possible to set non-throwable class to `ignoredExceptionsForType` set
