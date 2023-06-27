@@ -17,6 +17,10 @@
   - Enhance regex patterns for native stackframes
 - Tracing headers (`sentry-trace` and `baggage`) are now attached and passed through even if performance is disabled ([#2788](https://github.com/getsentry/sentry-java/pull/2788))
 
+### Fixes
+
+- Remove code that set `tracesSampleRate` to `0.0` for Spring Boot if not set ([#2800](https://github.com/getsentry/sentry-java/pull/2800))
+
 ## 6.23.0
 
 ### Features
