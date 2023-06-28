@@ -28,7 +28,7 @@ public class SentryWebFilter extends AbstractSentryWebFilter {
     @NotNull IHub requestHub = Sentry.cloneMainHub();
     final ServerHttpRequest request = serverWebExchange.getRequest();
     final @Nullable ITransaction transaction = maybeStartTransaction(requestHub, request);
-    if(transaction != null) {
+    if (transaction != null) {
       transaction.getSpanContext().setOrigin("auto.spring_jakarta.webflux");
     }
     return webFilterChain

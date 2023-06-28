@@ -326,13 +326,13 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
           case JsonKeys.STATUS:
             status = reader.nextOrNull(logger, new SpanStatus.Deserializer());
             break;
+          case JsonKeys.ORIGIN:
+            origin = reader.nextString();
+            break;
           case JsonKeys.TAGS:
             tags =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
-            break;
-          case JsonKeys.ORIGIN:
-            origin = reader.nextString();
             break;
           default:
             if (unknown == null) {

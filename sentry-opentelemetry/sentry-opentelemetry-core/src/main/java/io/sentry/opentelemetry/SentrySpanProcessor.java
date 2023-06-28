@@ -38,6 +38,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentrySpanProcessor implements SpanProcessor {
 
+  private static final String TRACE_ORIGN = "auto.otel";
+
   private final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
@@ -88,7 +90,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
-      sentryChildSpan.getSpanContext().setOrigin("auto.otel");
+      sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
       hub.getOptions()
@@ -129,7 +131,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
 
       ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
-      sentryTransaction.getSpanContext().setOrigin("auto.otel");
+      sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }

@@ -12,10 +12,13 @@ import android.widget.ListAdapter
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryTracer
+import io.sentry.SpanContext
+import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -302,6 +305,10 @@ class SentryGestureListenerTracingTest {
         // first view interaction
         val transaction = mock<SentryTracer>()
         val sut = fixture.getSut<View>(transaction = transaction)
+
+        whenever(transaction.spanContext).thenReturn(
+            SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
+        )
 
         sut.onSingleTapUp(fixture.event)
 

@@ -282,7 +282,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private void setSpanOrigin(ISpan span) {
-    if(span != null) {
+    if (span != null) {
       span.getSpanContext().setOrigin("auto.ui.activity");
     }
   }
