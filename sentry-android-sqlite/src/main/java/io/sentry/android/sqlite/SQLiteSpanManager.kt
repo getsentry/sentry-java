@@ -8,6 +8,8 @@ import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 
+private const val TRACE_ORIGIN = "auto.db.sqlite"
+
 internal class SQLiteSpanManager(
     private val hub: IHub = HubAdapter.getInstance()
 ) {
@@ -28,7 +30,7 @@ internal class SQLiteSpanManager(
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
         val span = hub.span?.startChild("db.sql.query", sql)
-        span?.spanContext?.origin = "auto.db.sqlite"
+        span?.spanContext?.origin = TRACE_ORIGIN
         return try {
             val result = operation()
             span?.status = SpanStatus.OK

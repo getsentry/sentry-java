@@ -26,6 +26,8 @@ import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import java.util.concurrent.Executor
 
+private const val TRACE_ORIGIN = "auto.apollo"
+
 class SentryApolloInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
@@ -45,7 +47,7 @@ class SentryApolloInterceptor(
             chain.proceedAsync(request, dispatcher, callBack)
         } else {
             val span = startChild(request, activeSpan)
-            span.spanContext.origin = "auto.apollo"
+            span.spanContext.origin = TRACE_ORIGIN
             val requestWithHeader = if (span.isNoOp) {
                 request
             } else {

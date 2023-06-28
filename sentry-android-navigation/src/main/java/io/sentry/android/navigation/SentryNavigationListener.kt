@@ -21,6 +21,8 @@ import io.sentry.TypeCheckHint
 import io.sentry.protocol.TransactionNameSource
 import java.lang.ref.WeakReference
 
+private const val TRACE_ORIGIN = "auto.navigation"
+
 /**
  * A [NavController.OnDestinationChangedListener] that captures a [Breadcrumb] and starts an
  * [ITransaction] and sends them to Sentry for each [onDestinationChanged] call.
@@ -138,7 +140,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             transactonOptions
         )
 
-        transaction.spanContext.origin = "auto.navigation"
+        transaction.spanContext.origin = TRACE_ORIGIN
 
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)

@@ -16,6 +16,8 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
 import java.util.WeakHashMap
 
+private const val TRACE_ORIGIN = "auto.ui.fragment.lifecycle"
+
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
@@ -164,7 +166,7 @@ class SentryFragmentLifecycleCallbacks(
 
         span?.let {
             fragmentsWithOngoingTransactions[fragment] = it
-            it.spanContext.origin = "auto.ui.fragment.lifecycle"
+            it.spanContext.origin = TRACE_ORIGIN
         }
     }
 

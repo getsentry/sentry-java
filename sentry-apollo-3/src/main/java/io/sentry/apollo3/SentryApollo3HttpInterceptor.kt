@@ -34,6 +34,8 @@ import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
+private const val TRACE_ORIGIN = "auto.apollo3"
+
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
@@ -70,7 +72,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
         if (activeSpan != null) {
             span = startChild(request, activeSpan, operationName, operationType, operationId)
-            span.spanContext.origin = "auto.apollo3"
+            span.spanContext.origin = TRACE_ORIGIN
             if (!span.isNoOp && PropagationTargetsUtils.contain(
                     hub.options.tracePropagationTargets,
                     request.url
@@ -170,7 +172,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         return activeSpan.startChild(operation, description).apply {
             urlDetails.applyToSpan(this)
 
-            spanContext.origin = "auto.apollo3"
+            spanContext.origin = TRACE_ORIGIN
 
             operationId?.let {
                 setData("operationId", it)

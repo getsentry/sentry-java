@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 @ApiStatus.Experimental
 public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentryWebFilter {
 
+  public static final String TRACE_ORIGIN = "auto.spring_jakarta.webflux";
+
   public SentryWebFilterWithThreadLocalAccessor(final @NotNull IHub hub) {
     super(hub);
   }
@@ -40,7 +42,7 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
                       maybeStartTransaction(Sentry.getCurrentHub(), serverWebExchange.getRequest());
                   transactionContainer.transaction = transaction;
                   if (transaction != null) {
-                    transaction.getSpanContext().setOrigin("auto.spring_jakarta.webflux");
+                    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
                   }
                 }));
   }
