@@ -60,9 +60,11 @@ class ThreadDumpParserTest {
         assertEquals(false, randomThread.isMain)
         assertEquals(false, randomThread.isCurrent)
         assertEquals(
-            "/apex/com.android.runtime/lib64/bionic/libc.so (__epoll_pwait+8) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)",
+            "/apex/com.android.runtime/lib64/bionic/libc.so",
             randomThread.stacktrace!!.frames!!.last().`package`
         )
+        assertEquals("__epoll_pwait", randomThread.stacktrace!!.frames!!.last()!!.function)
+        assertEquals(8, randomThread.stacktrace!!.frames!!.last()!!.lineno)
         val firstFrame = randomThread.stacktrace!!.frames!!.first()
         assertEquals("android.os.HandlerThread", firstFrame.module)
         assertEquals("run", firstFrame.function)

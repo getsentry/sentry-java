@@ -37,6 +37,8 @@
 # Also keep method names, as they're e.g. used by native via JNI calls
 -keep class * extends io.sentry.SentryOptions { *; }
 
+-keepnames class io.sentry.android.core.ApplicationNotResponding
+
 ##---------------End: proguard configuration for android-core  ----------
 
 ##---------------Begin: proguard configuration for sentry-apollo-3  ----------
