@@ -210,11 +210,6 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, enableScopeSync is false`() {
-        assertFalse(SentryOptions().isEnableScopeSync)
-    }
-
-    @Test
     fun `when options is initialized, isProfilingEnabled is false`() {
         assertFalse(SentryOptions().isProfilingEnabled)
     }
