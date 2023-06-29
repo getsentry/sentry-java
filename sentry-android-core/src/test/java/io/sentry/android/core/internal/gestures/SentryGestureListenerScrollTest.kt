@@ -20,6 +20,7 @@ import io.sentry.android.core.SentryAndroidOptions
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -166,7 +167,6 @@ class SentryGestureListenerScrollTest {
                 },
                 anyOrNull()
             )
-            verify(fixture.hub).configureScope(anyOrNull())
         }
         verifyNoMoreInteractions(fixture.hub)
     }
@@ -201,6 +201,37 @@ class SentryGestureListenerScrollTest {
         fixture.eventsInBetween.forEach {
             sut.onScroll(fixture.firstEvent, it, 10.0f, 0f)
         }
+        sut.onUp(fixture.endEvent)
+
+        verify(fixture.scope).propagationContext = any()
+    }
+
+    @Test
+    fun `does not start a new trace on repeated scroll but does for a different event`() {
+        val sut = fixture.getSut<ScrollableListView>(direction = "left")
+
+        sut.onDown(fixture.firstEvent)
+        fixture.eventsInBetween.forEach {
+            sut.onScroll(fixture.firstEvent, it, 10.0f, 0f)
+        }
+        sut.onUp(fixture.endEvent)
+
+        verify(fixture.scope).propagationContext = any()
+
+        clearInvocations(fixture.scope)
+
+        sut.onDown(fixture.firstEvent)
+        fixture.eventsInBetween.forEach {
+            sut.onScroll(fixture.firstEvent, it, 10.0f, 0f)
+        }
+        sut.onUp(fixture.endEvent)
+        verify(fixture.scope, never()).propagationContext = any()
+
+        clearInvocations(fixture.scope)
+
+        sut.onDown(fixture.firstEvent)
+        fixture.eventsInBetween.forEach { sut.onScroll(fixture.firstEvent, it, 0f, 30.0f) }
+        sut.onFling(fixture.firstEvent, fixture.endEvent, 1.0f, 1.0f)
         sut.onUp(fixture.endEvent)
 
         verify(fixture.scope).propagationContext = any()
