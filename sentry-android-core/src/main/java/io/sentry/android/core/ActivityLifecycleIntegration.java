@@ -377,7 +377,7 @@ public final class ActivityLifecycleIntegration
       // working. Moving this to onActivityStarted fixes the problem.
       activityFramesTracker.addActivity(activity);
     }
-   	if (options.isEnableActivityLifecycleBreadcrumbs()) {
+    if (options.isEnableActivityLifecycleBreadcrumbs()) {
       addBreadcrumb(activity, "started");
     }
   }
