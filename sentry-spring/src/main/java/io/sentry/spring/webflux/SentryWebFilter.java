@@ -39,7 +39,6 @@ public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_HUB_KEY = "sentry-hub";
   private static final String TRANSACTION_OP = "http.server";
   public static final String TRACE_ORIGIN = "auto.spring.webflux";
-  public static final String TRACE_ORIGIN = "auto.webflux";
 
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
