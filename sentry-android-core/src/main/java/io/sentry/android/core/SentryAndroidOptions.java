@@ -164,7 +164,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.
    */
-  private boolean enableScopeSync;
+  private boolean enableScopeSync = true;
 
   public interface BeforeCaptureCallback {
 
@@ -195,9 +195,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
     setAttachServerName(false);
-
-    // enable scope sync for Android by default
-    setEnableScopeSync(true);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
