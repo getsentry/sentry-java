@@ -368,7 +368,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityStarted(final @NotNull Activity activity) {
-    if (performanceEnabled || options.isEnableActivityLifecycleBreadcrumbs()) {
+    if (performanceEnabled) {
       // The docs on the screen rendering performance tracing
       // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
       // state that the tracing starts for every Activity class when the app calls
@@ -377,8 +377,9 @@ public final class ActivityLifecycleIntegration
       // working. Moving this to onActivityStarted fixes the problem.
       activityFramesTracker.addActivity(activity);
     }
-
-    addBreadcrumb(activity, "started");
+   	if (options.isEnableActivityLifecycleBreadcrumbs()) {
+      addBreadcrumb(activity, "started");
+    }
   }
 
   @SuppressLint("NewApi")
