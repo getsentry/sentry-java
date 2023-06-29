@@ -4,6 +4,18 @@
 
 ### Features
 
+- Add manifest `AutoInit` to integrations list ([#2795](https://github.com/getsentry/sentry-java/pull/2795))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.3 to v0.6.4 ([#2796](https://github.com/getsentry/sentry-java/pull/2796))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#064)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.3...0.6.4)
+
+## 6.24.0
+
+### Features
+
 - Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
 - Improve ANRv2 implementation ([#2792](https://github.com/getsentry/sentry-java/pull/2792))
   - Add a proguard rule to keep `ApplicationNotResponding` class from obfuscation
