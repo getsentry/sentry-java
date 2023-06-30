@@ -382,15 +382,13 @@ public final class ActivityLifecycleIntegration
       // working. Moving this to onActivityStarted fixes the problem.
       activityFramesTracker.addActivity(activity);
     }
-    if (options.isEnableActivityLifecycleBreadcrumbs()) {
-      addBreadcrumb(activity, "started");
-    }
+    addBreadcrumb(activity, "started");
   }
 
   @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
-    if (performanceEnabled || options.isEnableActivityLifecycleBreadcrumbs()) {
+    if (performanceEnabled) {
       // app start span
       @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
       @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
@@ -414,8 +412,8 @@ public final class ActivityLifecycleIntegration
         // its current job. That is, right after the activity draws the layout.
         mainHandler.post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
       }
-      addBreadcrumb(activity, "resumed");
     }
+    addBreadcrumb(activity, "resumed");
   }
 
   @Override
