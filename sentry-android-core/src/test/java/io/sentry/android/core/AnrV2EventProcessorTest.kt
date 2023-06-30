@@ -89,6 +89,7 @@ class AnrV2EventProcessorTest {
             populateOptionsCache: Boolean = false
         ): AnrV2EventProcessor {
             options.cacheDirPath = dir.newFolder().absolutePath
+            options.environment = "release"
             whenever(buildInfo.sdkInfoVersion).thenReturn(currentSdk)
             whenever(buildInfo.isEmulator).thenReturn(true)
 
@@ -337,12 +338,12 @@ class AnrV2EventProcessorTest {
     }
 
     @Test
-    fun `if environment is not persisted, uses default`() {
+    fun `if environment is not persisted, uses environment from options`() {
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
 
         val processed = processEvent(hint)
 
-        assertEquals(AnrV2EventProcessor.DEFAULT_ENVIRONMENT, processed.environment)
+        assertEquals("release", processed.environment)
     }
 
     @Test
