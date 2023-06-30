@@ -65,11 +65,16 @@ public final class Scope {
   /** Transaction lock, Ops should be atomic */
   private final @NotNull Object transactionLock = new Object();
 
+  /** PropagationContext lock, Ops should be atomic */
+  private final @NotNull Object propagationContextLock = new Object();
+
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
 
   /** Scope's attachments */
   private @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
+
+  private @NotNull PropagationContext propagationContext;
 
   /**
    * Scope's ctor
@@ -79,6 +84,7 @@ public final class Scope {
   public Scope(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
+    this.propagationContext = new PropagationContext();
   }
 
   Scope(final @NotNull Scope scope) {
@@ -134,6 +140,8 @@ public final class Scope {
     this.contexts = new Contexts(scope.contexts);
 
     this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
+
+    this.propagationContext = new PropagationContext(scope.propagationContext);
   }
 
   /**
@@ -799,6 +807,25 @@ public final class Scope {
     return session;
   }
 
+  @ApiStatus.Internal
+  public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
+    this.propagationContext = propagationContext;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull PropagationContext getPropagationContext() {
+    return propagationContext;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull PropagationContext withPropagationContext(
+      final @NotNull IWithPropagationContext callback) {
+    synchronized (propagationContextLock) {
+      callback.accept(propagationContext);
+      return new PropagationContext(propagationContext);
+    }
+  }
+
   /** the IWithTransaction callback */
   @ApiStatus.Internal
   public interface IWithTransaction {
@@ -809,5 +836,17 @@ public final class Scope {
      * @param transaction the current transaction or null if none exists
      */
     void accept(@Nullable ITransaction transaction);
+  }
+
+  /** the IWithPropagationContext callback */
+  @ApiStatus.Internal
+  public interface IWithPropagationContext {
+
+    /**
+     * The accept method of the callback
+     *
+     * @param propagationContext the current propagationContext
+     */
+    void accept(@NotNull PropagationContext propagationContext);
   }
 }

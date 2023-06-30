@@ -20,6 +20,7 @@ import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpUtils
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
@@ -87,18 +88,20 @@ class SentryOkHttpInterceptor(
         var code: Int? = null
         try {
             val requestBuilder = request.newBuilder()
-            if (span != null && !span.isNoOp &&
-                PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url.toString())
-            ) {
-                span.toSentryTrace().let {
-                    requestBuilder.addHeader(it.name, it.value)
-                }
 
-                span.toBaggageHeader(request.headers(BaggageHeader.BAGGAGE_HEADER))?.let {
+            TracingUtils.traceIfAllowed(
+                hub,
+                request.url.toString(),
+                request.headers(BaggageHeader.BAGGAGE_HEADER),
+                span
+            )?.let { tracingHeaders ->
+                requestBuilder.addHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
+                tracingHeaders.baggageHeader?.let {
                     requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
                     requestBuilder.addHeader(it.name, it.value)
                 }
             }
+
             request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code

@@ -5,6 +5,7 @@
 ### Features
 
 - Add manifest `AutoInit` to integrations list ([#2795](https://github.com/getsentry/sentry-java/pull/2795))
+- Tracing headers (`sentry-trace` and `baggage`) are now attached and passed through even if performance is disabled ([#2788](https://github.com/getsentry/sentry-java/pull/2788))
 
 ### Dependencies
 

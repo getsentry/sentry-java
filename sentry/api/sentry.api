@@ -30,6 +30,7 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 }
 
 public final class io/sentry/Baggage {
+	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
 	public fun freeze ()V
@@ -61,6 +62,7 @@ public final class io/sentry/Baggage {
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
 	public fun setUserSegment (Ljava/lang/String;)V
+	public fun setValuesFromScope (Lio/sentry/Scope;Lio/sentry/SentryOptions;)V
 	public fun setValuesFromTransaction (Lio/sentry/ITransaction;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
 	public fun toTraceContext ()Lio/sentry/TraceContext;
@@ -348,11 +350,14 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
+	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
 	public fun flush (J)V
+	public fun getBaggage ()Lio/sentry/BaggageHeader;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -391,12 +396,15 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
+	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
 	public fun flush (J)V
+	public fun getBaggage ()Lio/sentry/BaggageHeader;
 	public static fun getInstance ()Lio/sentry/HubAdapter;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -461,11 +469,14 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun clone ()Lio/sentry/IHub;
 	public abstract fun close ()V
 	public abstract fun configureScope (Lio/sentry/ScopeCallback;)V
+	public abstract fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public abstract fun endSession ()V
 	public abstract fun flush (J)V
+	public abstract fun getBaggage ()Lio/sentry/BaggageHeader;
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
+	public abstract fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
 	public abstract fun popScope ()V
@@ -819,12 +830,15 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
+	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
 	public fun flush (J)V
+	public fun getBaggage ()Lio/sentry/BaggageHeader;
 	public static fun getInstance ()Lio/sentry/NoOpHub;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -1112,6 +1126,26 @@ public final class io/sentry/ProfilingTransactionData$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/PropagationContext {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/PropagationContext;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
+	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/PropagationContext;
+	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;)Lio/sentry/PropagationContext;
+	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/PropagationContext;
+	public fun getBaggage ()Lio/sentry/Baggage;
+	public fun getParentSpanId ()Lio/sentry/SpanId;
+	public fun getSpanId ()Lio/sentry/SpanId;
+	public fun getTraceId ()Lio/sentry/protocol/SentryId;
+	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setBaggage (Lio/sentry/Baggage;)V
+	public fun setParentSpanId (Lio/sentry/SpanId;)V
+	public fun setSampled (Ljava/lang/Boolean;)V
+	public fun setSpanId (Lio/sentry/SpanId;)V
+	public fun setTraceId (Lio/sentry/protocol/SentryId;)V
+	public fun traceContext ()Lio/sentry/TraceContext;
+}
+
 public final class io/sentry/RequestDetails {
 	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
 	public fun getHeaders ()Ljava/util/Map;
@@ -1136,6 +1170,7 @@ public final class io/sentry/Scope {
 	public fun clearTransaction ()V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSession ()Lio/sentry/Session;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -1156,12 +1191,18 @@ public final class io/sentry/Scope {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun withPropagationContext (Lio/sentry/Scope$IWithPropagationContext;)Lio/sentry/PropagationContext;
 	public fun withTransaction (Lio/sentry/Scope$IWithTransaction;)V
+}
+
+public abstract interface class io/sentry/Scope$IWithPropagationContext {
+	public abstract fun accept (Lio/sentry/PropagationContext;)V
 }
 
 public abstract interface class io/sentry/Scope$IWithTransaction {
@@ -1224,11 +1265,14 @@ public final class io/sentry/Sentry {
 	public static fun cloneMainHub ()Lio/sentry/IHub;
 	public static fun close ()V
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
+	public static fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public static fun endSession ()V
 	public static fun flush (J)V
+	public static fun getBaggage ()Lio/sentry/BaggageHeader;
 	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getSpan ()Lio/sentry/ISpan;
+	public static fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public static fun init ()V
 	public static fun init (Lio/sentry/OptionsContainer;Lio/sentry/Sentry$OptionsConfiguration;)V
 	public static fun init (Lio/sentry/OptionsContainer;Lio/sentry/Sentry$OptionsConfiguration;Z)V
@@ -2232,13 +2276,12 @@ public final class io/sentry/TracesSamplingDecision {
 }
 
 public final class io/sentry/TransactionContext : io/sentry/SpanContext {
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;Lio/sentry/Baggage;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/protocol/TransactionNameSource;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;Lio/sentry/Baggage;)V
-	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
-	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/TransactionContext;
+	public static fun fromPropagationContext (Lio/sentry/PropagationContext;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
@@ -2247,8 +2290,10 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
+	public fun setName (Ljava/lang/String;)V
 	public fun setParentSampled (Ljava/lang/Boolean;)V
 	public fun setParentSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
+	public fun setTransactionNameSource (Lio/sentry/protocol/TransactionNameSource;)V
 }
 
 public abstract interface class io/sentry/TransactionFinishedCallback {
@@ -4153,6 +4198,20 @@ public final class io/sentry/util/StringUtils {
 	public static fun join (Ljava/lang/CharSequence;Ljava/lang/Iterable;)Ljava/lang/String;
 	public static fun normalizeUUID (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/sentry/util/TracingUtils {
+	public fun <init> ()V
+	public static fun maybeUpdateBaggage (Lio/sentry/Scope;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
+	public static fun startNewTrace (Lio/sentry/IHub;)V
+	public static fun trace (Lio/sentry/IHub;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;
+	public static fun traceIfAllowed (Lio/sentry/IHub;Ljava/lang/String;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;
+}
+
+public final class io/sentry/util/TracingUtils$TracingHeaders {
+	public fun <init> (Lio/sentry/SentryTraceHeader;Lio/sentry/BaggageHeader;)V
+	public fun getBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun getSentryTraceHeader ()Lio/sentry/SentryTraceHeader;
 }
 
 public final class io/sentry/util/UrlUtils {

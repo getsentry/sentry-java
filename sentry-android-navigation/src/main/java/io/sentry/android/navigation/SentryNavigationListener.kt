@@ -19,6 +19,7 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.util.TracingUtils
 import java.lang.ref.WeakReference
 
 /**
@@ -96,6 +97,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         arguments: Map<String, Any?>
     ) {
         if (!isPerformanceEnabled) {
+            TracingUtils.startNewTrace(hub)
             return
         }
 

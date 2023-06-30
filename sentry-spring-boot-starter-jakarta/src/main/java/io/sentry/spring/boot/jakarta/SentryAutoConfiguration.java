@@ -240,7 +240,6 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      @Conditional(SentryTracingCondition.class)
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
           final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {

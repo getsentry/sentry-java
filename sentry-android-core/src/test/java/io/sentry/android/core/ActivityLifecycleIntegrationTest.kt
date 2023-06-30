@@ -16,6 +16,7 @@ import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
 import io.sentry.ISentryExecutorService
 import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryLevel
@@ -32,10 +33,12 @@ import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -54,6 +57,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -141,13 +145,13 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb and tracing are disabled, it doesn't register callback`() {
+    fun `When activity lifecycle breadcrumb and tracing are disabled, it still registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -162,7 +166,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it does not register callback`() {
+    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it still registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
         fixture.options.tracesSampleRate = 1.0
@@ -170,7 +174,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -196,7 +200,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb and tracing activity flag are disabled, it doesn't register callback`() {
+    fun `When activity lifecycle breadcrumb and tracing activity flag are disabled, its still registers callback`() {
         val sut = fixture.getSut()
         fixture.options.isEnableActivityLifecycleBreadcrumbs = false
         fixture.options.tracesSampleRate = 1.0
@@ -205,7 +209,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -1382,6 +1386,60 @@ class ActivityLifecycleIntegrationTest {
         // The old ttfd is finished and the new one is running
         assertTrue(ttfdSpan.isFinished)
         assertFalse(ttfdSpan2.isFinished)
+    }
+
+    @Test
+    fun `starts new trace if performance is disabled`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.enableTracing = false
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = Scope(fixture.options)
+        val propagationContextAtStart = scope.propagationContext
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).configureScope(any())
+        assertNotSame(propagationContextAtStart, scope.propagationContext)
+    }
+
+    @Test
+    fun `does not start another new trace if one has already been started but does after activity was destroyed`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.enableTracing = false
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = Scope(fixture.options)
+        val propagationContextAtStart = scope.propagationContext
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).configureScope(any())
+        val propagationContextAfterNewTrace = scope.propagationContext
+        assertNotSame(propagationContextAtStart, propagationContextAfterNewTrace)
+
+        clearInvocations(fixture.hub)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub, never()).configureScope(any())
+        assertSame(propagationContextAfterNewTrace, scope.propagationContext)
+
+        sut.onActivityDestroyed(activity)
+
+        clearInvocations(fixture.hub)
+        sut.onActivityCreated(activity, fixture.bundle)
+        verify(fixture.hub).configureScope(any())
+        assertNotSame(propagationContextAfterNewTrace, scope.propagationContext)
     }
 
     private fun runFirstDraw(view: View) {

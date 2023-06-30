@@ -31,12 +31,14 @@ import java.io.File
 import java.nio.file.Files
 import java.util.Queue
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -1580,10 +1582,15 @@ class HubTest {
 
     //region startTransaction tests
     @Test
-    fun `when traceHeaders and no transaction is active, traceHeaders are null`() {
+    fun `when traceHeaders and no transaction is active, traceHeaders are generated from scope`() {
         val hub = generateHub()
 
-        assertNull(hub.traceHeaders())
+        var spanId: SpanId? = null
+        hub.configureScope { spanId = it.propagationContext.spanId }
+
+        val traceHeader = hub.traceHeaders()
+        assertNotNull(traceHeader)
+        assertEquals(spanId, traceHeader.spanId)
     }
 
     @Test
@@ -1718,6 +1725,79 @@ class HubTest {
         val hub = spy(generateHub())
         hub.reportFullDisplayed()
         verify(hub).reportFullyDisplayed()
+    }
+
+    @Test
+    fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled`() {
+        val hub = generateHub()
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val transactionContext = hub.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        hub.configureScope { scope ->
+            assertEquals(traceId, scope.propagationContext.traceId)
+            assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
+        }
+
+        assertEquals(traceId, transactionContext!!.traceId)
+        assertEquals(parentSpanId, transactionContext!!.parentSpanId)
+    }
+
+    @Test
+    fun `continueTrace creates new propagation context if header invalid and returns transaction context if performance enabled`() {
+        val hub = generateHub()
+        val traceId = SentryId()
+        var propagationContextHolder = AtomicReference<PropagationContext>()
+
+        hub.configureScope { propagationContextHolder.set(it.propagationContext) }
+        val propagationContextAtStart = propagationContextHolder.get()!!
+
+        val transactionContext = hub.continueTrace("invalid", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        hub.configureScope { scope ->
+            assertNotEquals(propagationContextAtStart.traceId, scope.propagationContext.traceId)
+            assertNotEquals(propagationContextAtStart.parentSpanId, scope.propagationContext.parentSpanId)
+            assertNotEquals(propagationContextAtStart.spanId, scope.propagationContext.spanId)
+
+            assertEquals(scope.propagationContext.traceId, transactionContext!!.traceId)
+            assertEquals(scope.propagationContext.parentSpanId, transactionContext!!.parentSpanId)
+            assertEquals(scope.propagationContext.spanId, transactionContext!!.spanId)
+        }
+    }
+
+    @Test
+    fun `continueTrace creates propagation context from headers and returns null if performance disabled`() {
+        val hub = generateHub { it.enableTracing = false }
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val transactionContext = hub.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        hub.configureScope { scope ->
+            assertEquals(traceId, scope.propagationContext.traceId)
+            assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
+        }
+
+        assertNull(transactionContext)
+    }
+
+    @Test
+    fun `continueTrace creates new propagation context if header invalid and returns null if performance disabled`() {
+        val hub = generateHub { it.enableTracing = false }
+        val traceId = SentryId()
+        var propagationContextHolder = AtomicReference<PropagationContext>()
+
+        hub.configureScope { propagationContextHolder.set(it.propagationContext) }
+        val propagationContextAtStart = propagationContextHolder.get()!!
+
+        val transactionContext = hub.continueTrace("invalid", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        hub.configureScope { scope ->
+            assertNotEquals(propagationContextAtStart.traceId, scope.propagationContext.traceId)
+            assertNotEquals(propagationContextAtStart.parentSpanId, scope.propagationContext.parentSpanId)
+            assertNotEquals(propagationContextAtStart.spanId, scope.propagationContext.spanId)
+        }
+
+        assertNull(transactionContext)
     }
 
     private val dsnTest = "https://key@sentry.io/proj"
