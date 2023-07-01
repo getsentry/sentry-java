@@ -7,11 +7,18 @@
 - Add manifest `AutoInit` to integrations list ([#2795](https://github.com/getsentry/sentry-java/pull/2795))
 - Tracing headers (`sentry-trace` and `baggage`) are now attached and passed through even if performance is disabled ([#2788](https://github.com/getsentry/sentry-java/pull/2788))
 
+### Fixes
+
+- Set `environment` from `SentryOptions` if none persisted in ANRv2 ([#2809](https://github.com/getsentry/sentry-java/pull/2809))
+
 ### Dependencies
 
 - Bump Native SDK from v0.6.3 to v0.6.4 ([#2796](https://github.com/getsentry/sentry-java/pull/2796))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#064)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.6.3...0.6.4)
+- Bump Gradle from v8.1.1 to v8.2.0 ([#2810](https://github.com/getsentry/sentry-java/pull/2810))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v820)
+  - [diff](https://github.com/gradle/gradle/compare/v8.1.1...v8.2.0)
 
 ## 6.24.0
 
