@@ -10,6 +10,7 @@
 ### Fixes
 
 - Set `environment` from `SentryOptions` if none persisted in ANRv2 ([#2809](https://github.com/getsentry/sentry-java/pull/2809))
+- Fix slow/frozen frames were not reported with transactions ([#2811](https://github.com/getsentry/sentry-java/pull/2811))
 
 ### Dependencies
 
