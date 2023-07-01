@@ -55,7 +55,8 @@ class SentryTracerTest {
             transactionOptions.isWaitForChildren = waitForChildren
             transactionOptions.idleTimeout = idleTimeout
             transactionOptions.isTrimEnd = trimEnd
-            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, transactionOptions, transactionFinishedCallback, performanceCollector)
+            transactionOptions.transactionFinishedCallback = transactionFinishedCallback
+            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, transactionOptions, performanceCollector)
         }
     }
 

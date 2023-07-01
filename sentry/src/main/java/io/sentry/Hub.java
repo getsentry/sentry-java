@@ -727,7 +727,7 @@ public final class Hub implements IHub {
 
       transaction =
           new SentryTracer(
-              transactionContext, this, transactionOptions, null, transactionPerformanceCollector);
+              transactionContext, this, transactionOptions, transactionPerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it

@@ -41,7 +41,7 @@ class SpanTest {
         }
 
         fun getRootSut(options: TransactionOptions = TransactionOptions()): Span {
-            return SentryTracer(TransactionContext("name", "op"), hub, options, null).root
+            return SentryTracer(TransactionContext("name", "op"), hub, options).root
         }
     }
 
