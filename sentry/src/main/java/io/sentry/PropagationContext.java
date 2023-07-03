@@ -4,9 +4,11 @@ import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
 import java.util.Arrays;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class PropagationContext {
 
   public static PropagationContext fromHeaders(

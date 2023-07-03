@@ -817,6 +817,7 @@ public final class Scope {
     return propagationContext;
   }
 
+  @ApiStatus.Internal
   public @NotNull PropagationContext withPropagationContext(
       final @NotNull IWithPropagationContext callback) {
     synchronized (propagationContextLock) {
@@ -838,6 +839,7 @@ public final class Scope {
   }
 
   /** the IWithPropagationContext callback */
+  @ApiStatus.Internal
   public interface IWithPropagationContext {
 
     /**

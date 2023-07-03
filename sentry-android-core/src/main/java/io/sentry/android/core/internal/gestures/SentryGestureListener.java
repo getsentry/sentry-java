@@ -186,8 +186,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
+    final UiElement uiElement = activeUiElement;
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
-      TracingUtils.startNewTrace(hub);
+      if (!(target.equals(uiElement) && eventType.equals(activeEventType))) {
+        TracingUtils.startNewTrace(hub);
+        activeUiElement = target;
+        activeEventType = eventType;
+      }
       return;
     }
 
@@ -198,7 +203,6 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final @Nullable String viewIdentifier = target.getIdentifier();
-    final UiElement uiElement = activeUiElement;
 
     if (activeTransaction != null) {
       if (target.equals(uiElement)

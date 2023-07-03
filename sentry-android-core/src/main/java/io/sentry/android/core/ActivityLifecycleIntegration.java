@@ -20,6 +20,7 @@ import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Integration;
+import io.sentry.NoOpTransaction;
 import io.sentry.Scope;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -175,106 +176,110 @@ public final class ActivityLifecycleIntegration
 
   private void startTracing(final @NotNull Activity activity) {
     WeakReference<Activity> weakActivity = new WeakReference<>(activity);
-    if (!performanceEnabled && hub != null) {
-      TracingUtils.startNewTrace(hub);
-    } else if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {
-      // as we allow a single transaction running on the bound Scope, we finish the previous ones
-      stopPreviousTransactions();
+    if (hub != null && !isRunningTransactionOrTrace(activity)) {
+      if (!performanceEnabled) {
+        activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
+        TracingUtils.startNewTrace(hub);
+      } else if (performanceEnabled) {
+        // as we allow a single transaction running on the bound Scope, we finish the previous ones
+        stopPreviousTransactions();
 
-      final String activityName = getActivityName(activity);
+        final String activityName = getActivityName(activity);
 
-      final SentryDate appStartTime =
-          foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
-      final Boolean coldStart = AppStartState.getInstance().isColdStart();
+        final SentryDate appStartTime =
+            foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
+        final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
-      final TransactionOptions transactionOptions = new TransactionOptions();
-      if (options.isEnableActivityLifecycleTracingAutoFinish()) {
-        transactionOptions.setIdleTimeout(options.getIdleTimeout());
-        transactionOptions.setTrimEnd(true);
-      }
-      transactionOptions.setWaitForChildren(true);
-      transactionOptions.setTransactionFinishedCallback(
-          (finishingTransaction) -> {
-            @Nullable Activity unwrappedActivity = weakActivity.get();
-            if (unwrappedActivity != null) {
-              activityFramesTracker.setMetrics(
-                  unwrappedActivity, finishingTransaction.getEventId());
-            } else {
-              if (options != null) {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.WARNING,
-                        "Unable to track activity frames as the Activity %s has been destroyed.",
-                        activityName);
-              }
-            }
-          });
-
-      // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
-      final @NotNull SentryDate ttidStartTime;
-
-      if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-        // The first activity ttid/ttfd spans should start at the app start time
-        ttidStartTime = appStartTime;
-      } else {
-        // The ttid/ttfd spans should start when the previous activity called its onPause method
-        ttidStartTime = lastPausedTime;
-      }
-      transactionOptions.setStartTimestamp(ttidStartTime);
-
-      // we can only bind to the scope if there's no running transaction
-      ITransaction transaction =
-          hub.startTransaction(
-              new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
-              transactionOptions);
-
-      // in case appStartTime isn't available, we don't create a span for it.
-      if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-        // start specific span for app start
-        appStartSpan =
-            transaction.startChild(
-                getAppStartOp(coldStart),
-                getAppStartDesc(coldStart),
-                appStartTime,
-                Instrumenter.SENTRY);
-
-        // in case there's already an end time (e.g. due to deferred SDK init)
-        // we can finish the app-start span
-        finishAppStartSpan();
-      }
-      final @NotNull ISpan ttidSpan =
-          transaction.startChild(
-              TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-      ttidSpanMap.put(activity, ttidSpan);
-
-      if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
-        final @NotNull ISpan ttfdSpan =
-            transaction.startChild(
-                TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-        try {
-          ttfdSpanMap.put(activity, ttfdSpan);
-          ttfdAutoCloseFuture =
-              options
-                  .getExecutorService()
-                  .schedule(() -> finishExceededTtfdSpan(ttfdSpan, ttidSpan), TTFD_TIMEOUT_MILLIS);
-        } catch (RejectedExecutionException e) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.ERROR,
-                  "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
-                  e);
+        final TransactionOptions transactionOptions = new TransactionOptions();
+        if (options.isEnableActivityLifecycleTracingAutoFinish()) {
+          transactionOptions.setIdleTimeout(options.getIdleTimeout());
+          transactionOptions.setTrimEnd(true);
         }
+        transactionOptions.setWaitForChildren(true);
+        transactionOptions.setTransactionFinishedCallback(
+            (finishingTransaction) -> {
+              @Nullable Activity unwrappedActivity = weakActivity.get();
+              if (unwrappedActivity != null) {
+                activityFramesTracker.setMetrics(
+                    unwrappedActivity, finishingTransaction.getEventId());
+              } else {
+                if (options != null) {
+                  options
+                      .getLogger()
+                      .log(
+                          SentryLevel.WARNING,
+                          "Unable to track activity frames as the Activity %s has been destroyed.",
+                          activityName);
+                }
+              }
+            });
+
+        // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
+        final @NotNull SentryDate ttidStartTime;
+
+        if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
+          // The first activity ttid/ttfd spans should start at the app start time
+          ttidStartTime = appStartTime;
+        } else {
+          // The ttid/ttfd spans should start when the previous activity called its onPause method
+          ttidStartTime = lastPausedTime;
+        }
+        transactionOptions.setStartTimestamp(ttidStartTime);
+
+        // we can only bind to the scope if there's no running transaction
+        ITransaction transaction =
+            hub.startTransaction(
+                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
+                transactionOptions);
+
+        // in case appStartTime isn't available, we don't create a span for it.
+        if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
+          // start specific span for app start
+          appStartSpan =
+              transaction.startChild(
+                  getAppStartOp(coldStart),
+                  getAppStartDesc(coldStart),
+                  appStartTime,
+                  Instrumenter.SENTRY);
+
+          // in case there's already an end time (e.g. due to deferred SDK init)
+          // we can finish the app-start span
+          finishAppStartSpan();
+        }
+        final @NotNull ISpan ttidSpan =
+            transaction.startChild(
+                TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
+        ttidSpanMap.put(activity, ttidSpan);
+
+        if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
+          final @NotNull ISpan ttfdSpan =
+              transaction.startChild(
+                  TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
+          try {
+            ttfdSpanMap.put(activity, ttfdSpan);
+            ttfdAutoCloseFuture =
+                options
+                    .getExecutorService()
+                    .schedule(
+                        () -> finishExceededTtfdSpan(ttfdSpan, ttidSpan), TTFD_TIMEOUT_MILLIS);
+          } catch (RejectedExecutionException e) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
+                    e);
+          }
+        }
+
+        // lets bind to the scope so other integrations can pick it up
+        hub.configureScope(
+            scope -> {
+              applyScope(scope, transaction);
+            });
+
+        activitiesWithOngoingTransactions.put(activity, transaction);
       }
-
-      // lets bind to the scope so other integrations can pick it up
-      hub.configureScope(
-          scope -> {
-            applyScope(scope, transaction);
-          });
-
-      activitiesWithOngoingTransactions.put(activity, transaction);
     }
   }
 
@@ -307,7 +312,7 @@ public final class ActivityLifecycleIntegration
         });
   }
 
-  private boolean isRunningTransaction(final @NotNull Activity activity) {
+  private boolean isRunningTransactionOrTrace(final @NotNull Activity activity) {
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
 
@@ -368,7 +373,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityStarted(final @NotNull Activity activity) {
-    if (performanceEnabled || options.isEnableActivityLifecycleBreadcrumbs()) {
+    if (performanceEnabled) {
       // The docs on the screen rendering performance tracing
       // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
       // state that the tracing starts for every Activity class when the app calls
@@ -377,14 +382,13 @@ public final class ActivityLifecycleIntegration
       // working. Moving this to onActivityStarted fixes the problem.
       activityFramesTracker.addActivity(activity);
     }
-
     addBreadcrumb(activity, "started");
   }
 
   @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
-    if (performanceEnabled || options.isEnableActivityLifecycleBreadcrumbs()) {
+    if (performanceEnabled) {
       // app start span
       @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
       @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
@@ -408,8 +412,8 @@ public final class ActivityLifecycleIntegration
         // its current job. That is, right after the activity draws the layout.
         mainHandler.post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
       }
-      addBreadcrumb(activity, "resumed");
     }
+    addBreadcrumb(activity, "resumed");
   }
 
   @Override
@@ -479,15 +483,13 @@ public final class ActivityLifecycleIntegration
       appStartSpan = null;
       ttidSpanMap.remove(activity);
       ttfdSpanMap.remove(activity);
-
-      // clear it up, so we don't start again for the same activity if the activity is in the
-      // activity
-      // stack still.
-      // if the activity is opened again and not in memory, transactions will be created normally.
-      if (performanceEnabled) {
-        activitiesWithOngoingTransactions.remove(activity);
-      }
     }
+
+    // clear it up, so we don't start again for the same activity if the activity is in the
+    // activity
+    // stack still.
+    // if the activity is opened again and not in memory, transactions will be created normally.
+    activitiesWithOngoingTransactions.remove(activity);
   }
 
   private void finishSpan(final @Nullable ISpan span) {

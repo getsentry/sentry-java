@@ -38,6 +38,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -1405,6 +1406,40 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
+    }
+
+    @Test
+    fun `does not start another new trace if one has already been started but does after activity was destroyed`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.enableTracing = false
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = Scope(fixture.options)
+        val propagationContextAtStart = scope.propagationContext
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).configureScope(any())
+        val propagationContextAfterNewTrace = scope.propagationContext
+        assertNotSame(propagationContextAtStart, propagationContextAfterNewTrace)
+
+        clearInvocations(fixture.hub)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub, never()).configureScope(any())
+        assertSame(propagationContextAfterNewTrace, scope.propagationContext)
+
+        sut.onActivityDestroyed(activity)
+
+        clearInvocations(fixture.hub)
+        sut.onActivityCreated(activity, fixture.bundle)
+        verify(fixture.hub).configureScope(any())
+        assertNotSame(propagationContextAfterNewTrace, scope.propagationContext)
     }
 
     private fun runFirstDraw(view: View) {
