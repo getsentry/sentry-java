@@ -25,6 +25,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.Span
 import io.sentry.SpanStatus
+import io.sentry.SpanStatus.OK
 import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
@@ -94,7 +95,7 @@ class ActivityLifecycleIntegrationTest {
             // We let the ActivityLifecycleIntegration create the proper transaction here
             val argumentCaptor = argumentCaptor<TransactionOptions>()
             whenever(hub.startTransaction(any(), argumentCaptor.capture())).thenAnswer {
-                val t = SentryTracer(context, hub, argumentCaptor.lastValue, transactionFinishedCallback)
+                val t = SentryTracer(context, hub, argumentCaptor.lastValue)
                 transaction = t
                 return@thenAnswer t
             }
@@ -1440,6 +1441,19 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         verify(fixture.hub).configureScope(any())
         assertNotSame(propagationContextAfterNewTrace, scope.propagationContext)
+    }
+
+    @Test
+    fun `when transaction is finished, sets frame metrics`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        fixture.transaction.forceFinish(OK, false)
+        verify(fixture.activityFramesTracker).setMetrics(activity, fixture.transaction.eventId)
     }
 
     private fun runFirstDraw(view: View) {

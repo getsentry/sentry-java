@@ -1933,7 +1933,7 @@ public final class io/sentry/SentryTraceHeader {
 
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;Lio/sentry/TransactionOptions;Lio/sentry/TransactionFinishedCallback;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;Lio/sentry/TransactionOptions;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V

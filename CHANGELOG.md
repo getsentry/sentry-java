@@ -12,6 +12,7 @@
 - Remove code that set `tracesSampleRate` to `0.0` for Spring Boot if not set ([#2800](https://github.com/getsentry/sentry-java/pull/2800))
   - This used to enable performance but not send any transactions by default.
   - Performance is now disabled by default.
+- Fix slow/frozen frames were not reported with transactions ([#2811](https://github.com/getsentry/sentry-java/pull/2811))
 
 ### Dependencies
 
