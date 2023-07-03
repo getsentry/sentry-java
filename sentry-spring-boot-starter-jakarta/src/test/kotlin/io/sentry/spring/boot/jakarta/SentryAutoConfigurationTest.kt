@@ -225,7 +225,7 @@ class SentryAutoConfigurationTest {
             "sentry.dsn=http://key@localhost/proj"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
-            assertThat(options.tracesSampleRate).isNotNull().isEqualTo(0.0)
+            assertThat(options.tracesSampleRate).isNull()
         }
     }
 
