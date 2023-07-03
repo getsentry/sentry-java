@@ -794,6 +794,11 @@ public final class Scope {
     }
   }
 
+  @NotNull
+  SentryOptions getOptions() {
+    return options;
+  }
+
   @ApiStatus.Internal
   public @Nullable Session getSession() {
     return session;

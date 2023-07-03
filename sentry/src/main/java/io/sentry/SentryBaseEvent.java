@@ -345,9 +345,7 @@ public abstract class SentryBaseEvent {
 
   public static final class Serializer {
     public void serialize(
-        @NotNull SentryBaseEvent baseEvent,
-        @NotNull JsonObjectWriter writer,
-        @NotNull ILogger logger)
+        @NotNull SentryBaseEvent baseEvent, @NotNull ObjectWriter writer, @NotNull ILogger logger)
         throws IOException {
       if (baseEvent.eventId != null) {
         writer.name(JsonKeys.EVENT_ID).value(logger, baseEvent.eventId);

@@ -3,9 +3,9 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
@@ -377,8 +377,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     if (email != null) {
       writer.name(JsonKeys.EMAIL).value(email);

@@ -13,8 +13,7 @@ public enum SentryLevel implements JsonSerializable {
   FATAL;
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.value(name().toLowerCase(Locale.ROOT));
   }
 

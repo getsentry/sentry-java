@@ -144,8 +144,7 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.ID).value(logger, id);
     writer.name(JsonKeys.TRACE_ID).value(logger, traceId);

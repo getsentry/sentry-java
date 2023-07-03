@@ -231,8 +231,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TRACE_ID);
     traceId.serialize(writer, logger);

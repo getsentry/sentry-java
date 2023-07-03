@@ -357,8 +357,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     if (sessionId != null) {
       writer.name(JsonKeys.SID).value(sessionId.toString());

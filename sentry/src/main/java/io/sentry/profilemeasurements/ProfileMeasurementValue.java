@@ -3,9 +3,9 @@ package io.sentry.profilemeasurements;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectWriter;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -62,7 +62,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
   }
 
   @Override
-  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.VALUE).value(logger, value);
