@@ -5,6 +5,7 @@
 ### Features
 
 - Add manifest `AutoInit` to integrations list ([#2795](https://github.com/getsentry/sentry-java/pull/2795))
+- Tracing headers (`sentry-trace` and `baggage`) are now attached and passed through even if performance is disabled ([#2788](https://github.com/getsentry/sentry-java/pull/2788))
 
 ### Fixes
 
@@ -38,7 +39,6 @@
   This is only useful as additional information, because the SDK attempts to parse the thread dump into proper threads with stacktraces by default.
   - If [ApplicationExitInfo#getTraceInputStream](https://developer.android.com/reference/android/app/ApplicationExitInfo#getTraceInputStream()) returns null, the SDK no longer reports an ANR event, as these events are not very useful without it.
   - Enhance regex patterns for native stackframes
-- Tracing headers (`sentry-trace` and `baggage`) are now attached and passed through even if performance is disabled ([#2788](https://github.com/getsentry/sentry-java/pull/2788))
 
 ## 6.23.0
 
