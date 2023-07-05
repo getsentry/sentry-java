@@ -63,7 +63,7 @@ class MapObjectWriterTest {
         writer.name("InetAddress").value(logger, Inet4Address.getByName("1.1.1.1"))
         writer.name("UUID").value(logger, UUID.fromString("00000000-1111-2222-3333-444444444444"))
         writer.name("Currency").value(logger, Currency.getInstance("EUR"))
-        writer.name("Calendar").value(logger, Calendar.getInstance().apply { timeInMillis = 0 })
+        writer.name("Calendar").value(logger, Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 })
         writer.name("Enum").value(logger, BasicEnum.A)
 
         assertEquals(null, data["null"])
@@ -98,7 +98,7 @@ class MapObjectWriterTest {
                 kotlin.Pair("month", 0),
                 kotlin.Pair("year", 1970),
                 kotlin.Pair("dayOfMonth", 1),
-                kotlin.Pair("hourOfDay", 1),
+                kotlin.Pair("hourOfDay", 0),
                 kotlin.Pair("minute", 0),
                 kotlin.Pair("second", 0)
             ),
