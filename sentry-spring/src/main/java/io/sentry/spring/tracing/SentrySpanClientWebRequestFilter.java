@@ -9,11 +9,10 @@ import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
-import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.TracingUtils;
 import io.sentry.util.UrlUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +37,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     final ISpan activeSpan = hub.getSpan();
     if (activeSpan == null) {
       addBreadcrumb(request, null);
-      return next.exchange(request);
+      return next.exchange(maybeAddHeaders(request, null));
     }
 
     final ISpan span = activeSpan.startChild("http.client");
@@ -47,28 +46,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     span.setDescription(request.method().name() + " " + urlDetails.getUrlOrFallback());
     urlDetails.applyToSpan(span);
 
-    final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
-
-    if (!span.isNoOp()
-        && PropagationTargetsUtils.contain(
-            hub.getOptions().getTracePropagationTargets(), request.url())) {
-
-      final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-      requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-
-      final @Nullable BaggageHeader baggageHeader =
-          span.toBaggageHeader(request.headers().get(BaggageHeader.BAGGAGE_HEADER));
-
-      if (baggageHeader != null) {
-        requestBuilder.headers(
-            httpHeaders -> {
-              httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
-              httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
-            });
-      }
-    }
-
-    final ClientRequest clientRequestWithSentryTraceHeader = requestBuilder.build();
+    final ClientRequest clientRequestWithSentryTraceHeader = maybeAddHeaders(request, span);
 
     return next.exchange(clientRequestWithSentryTraceHeader)
         .flatMap(
@@ -87,6 +65,35 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
               span.finish();
               return throwable;
             });
+  }
+
+  private ClientRequest maybeAddHeaders(
+      final @NotNull ClientRequest request, final @Nullable ISpan span) {
+    final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
+
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.traceIfAllowed(
+            hub,
+            request.url().toString(),
+            request.headers().get(BaggageHeader.BAGGAGE_HEADER),
+            span);
+
+    if (tracingHeaders != null) {
+      requestBuilder.header(
+          tracingHeaders.getSentryTraceHeader().getName(),
+          tracingHeaders.getSentryTraceHeader().getValue());
+
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        requestBuilder.headers(
+            httpHeaders -> {
+              httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
+              httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
+            });
+      }
+    }
+
+    return requestBuilder.build();
   }
 
   private void addBreadcrumb(

@@ -131,6 +131,11 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public Baggage(final @NotNull Baggage baggage) {
+    this(baggage.keyValues, baggage.thirdPartyHeader, baggage.mutable, baggage.logger);
+  }
+
+  @ApiStatus.Internal
   public Baggage(
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,
@@ -350,6 +355,19 @@ public final class Baggage {
             ? transaction.getName()
             : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+  }
+
+  @ApiStatus.Internal
+  public void setValuesFromScope(final @NotNull Scope scope, final @NotNull SentryOptions options) {
+    final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
+    final @Nullable User user = scope.getUser();
+    setTraceId(propagationContext.getTraceId().toString());
+    setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    setRelease(options.getRelease());
+    setEnvironment(options.getEnvironment());
+    setUserSegment(user != null ? getSegment(user) : null);
+    setTransaction(null);
+    setSampleRate(null);
   }
 
   private static @Nullable String getSegment(final @NotNull User user) {

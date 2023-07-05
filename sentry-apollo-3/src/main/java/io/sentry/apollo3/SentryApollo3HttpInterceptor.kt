@@ -8,7 +8,7 @@ import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloHttpException
 import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
-import io.sentry.BaggageHeader.BAGGAGE_HEADER
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
@@ -29,6 +29,7 @@ import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.util.HttpUtils
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
 import okio.Buffer
@@ -67,43 +68,13 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         val operationType = decodeHeaderValue(request, SENTRY_APOLLO_3_OPERATION_TYPE)
         val operationId = getHeader(HEADER_APOLLO_OPERATION_ID, request.headers)
 
-        var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
         var span: ISpan? = null
 
         if (activeSpan != null) {
             span = startChild(request, activeSpan, operationName, operationType, operationId)
-            span.spanContext.origin = TRACE_ORIGIN
-            if (!span.isNoOp && PropagationTargetsUtils.contain(
-                    hub.options.tracePropagationTargets,
-                    request.url
-                )
-            ) {
-                val sentryTraceHeader = span.toSentryTrace()
-                val baggageHeader = span.toBaggageHeader(
-                    cleanedHeaders.filter {
-                        it.name.equals(
-                            BAGGAGE_HEADER,
-                            true
-                        )
-                    }.map { it.value }
-                )
-                cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
-
-                baggageHeader?.let { newHeader ->
-                    cleanedHeaders =
-                        cleanedHeaders.filterNot { it.name.equals(BAGGAGE_HEADER, true) }
-                            .toMutableList().apply {
-                                add(HttpHeader(newHeader.name, newHeader.value))
-                            }
-                }
-            }
         }
 
-        val requestBuilder = request.newBuilder().apply {
-            headers(cleanedHeaders)
-        }
-
-        val modifiedRequest = requestBuilder.build()
+        val modifiedRequest = maybeAddTracingHeaders(hub, request, span)
         var httpResponse: HttpResponse? = null
         var statusCode: Int? = null
 
@@ -141,6 +112,25 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                 operationId
             )
         }
+    }
+
+    private fun maybeAddTracingHeaders(hub: IHub, request: HttpRequest, span: ISpan?): HttpRequest {
+        var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
+
+        TracingUtils.traceIfAllowed(hub, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span)?.let {
+            cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
+            it.baggageHeader?.let { baggageHeader ->
+                cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
+                    add(HttpHeader(baggageHeader.name, baggageHeader.value))
+                }
+            }
+        }
+
+        val requestBuilder = request.newBuilder().apply {
+            headers(cleanedHeaders)
+        }
+
+        return requestBuilder.build()
     }
 
     override fun getIntegrationName(): String {

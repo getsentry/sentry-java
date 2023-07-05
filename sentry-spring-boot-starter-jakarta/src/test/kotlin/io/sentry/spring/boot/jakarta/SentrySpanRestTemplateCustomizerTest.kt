@@ -3,6 +3,8 @@ package io.sentry.spring.boot.jakarta
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -13,8 +15,10 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -38,9 +42,11 @@ class SentrySpanRestTemplateCustomizerTest {
         val transaction: SentryTracer
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
         val url = mockServer.url("/test/123").toString()
+        val scope = Scope(sentryOptions)
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
         }
 
@@ -162,6 +168,28 @@ class SentrySpanRestTemplateCustomizerTest {
 
         assertThat(result).isEqualTo("OK")
         assertThat(fixture.transaction.spans).isEmpty()
+    }
+
+    @Test
+    fun `when transaction is not active, adds tracing headers from scope`() {
+        val sut = fixture.getSut(isTransactionActive = false)
+        val headers = HttpHeaders()
+        headers.add("baggage", "thirdPartyBaggage=someValue")
+        headers.add("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+
+        val requestEntity = HttpEntity<Unit>(headers)
+
+        sut.exchange(fixture.url, HttpMethod.GET, requestEntity, String::class.java)
+
+        val recorderRequest = fixture.mockServer.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
 
     @Test

@@ -30,7 +30,6 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryExceptionFactory;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -68,12 +67,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 @WorkerThread
 public final class AnrV2EventProcessor implements BackfillingEventProcessor {
-
-  /**
-   * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
-   * SentryOptions} do not have the environment field set.
-   */
-  static final String DEFAULT_ENVIRONMENT = "production";
 
   private final @NotNull Context context;
 
@@ -337,7 +330,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     if (event.getEnvironment() == null) {
       final String environment =
           PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
-      event.setEnvironment(environment != null ? environment : DEFAULT_ENVIRONMENT);
+      event.setEnvironment(environment != null ? environment : options.getEnvironment());
     }
   }
 

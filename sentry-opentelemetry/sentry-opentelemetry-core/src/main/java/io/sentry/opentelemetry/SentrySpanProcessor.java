@@ -18,6 +18,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.PropagationContext;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
@@ -108,22 +109,14 @@ public final class SentrySpanProcessor implements SpanProcessor {
       final @NotNull TransactionContext transactionContext =
           traceData.getSentryTraceHeader() == null
               ? new TransactionContext(
-                  transactionName,
-                  op,
-                  new SentryId(traceData.getTraceId()),
-                  spanId,
-                  transactionNameSource,
-                  null,
-                  null,
-                  null)
-              : TransactionContext.fromSentryTrace(
-                  transactionName,
-                  transactionNameSource,
-                  op,
-                  traceData.getSentryTraceHeader(),
-                  traceData.getBaggage(),
-                  spanId);
+                  new SentryId(traceData.getTraceId()), spanId, null, null, null)
+              : TransactionContext.fromPropagationContext(
+                  PropagationContext.fromHeaders(
+                      traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
       ;
+      transactionContext.setName(transactionName);
+      transactionContext.setTransactionNameSource(transactionNameSource);
+      transactionContext.setOperation(op);
       transactionContext.setInstrumenter(Instrumenter.OTEL);
 
       TransactionOptions transactionOptions = new TransactionOptions();

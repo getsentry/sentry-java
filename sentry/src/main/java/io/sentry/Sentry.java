@@ -903,10 +903,14 @@ public final class Sentry {
   }
 
   /**
-   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.
    *
-   * @return trace header or null
+   * @deprecated please use {@link Sentry#getTraceparent()} instead.
+   * @return sentry trace header or null
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @Nullable SentryTraceHeader traceHeaders() {
     return getCurrentHub().traceHeaders();
   }
@@ -968,5 +972,39 @@ public final class Sentry {
      * @param options the options
      */
     void configure(@NotNull T options);
+  }
+
+  /**
+   * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
+   * trace ID and span ID is created.
+   *
+   * @param sentryTrace "sentry-trace" header
+   * @param baggageHeaders "baggage" headers
+   * @return a transaction context for starting a transaction or null if performance is disabled
+   */
+  // return TransactionContext (if performance enabled) or null (if performance disabled)
+  public static @Nullable TransactionContext continueTrace(
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
+    return getCurrentHub().continueTrace(sentryTrace, baggageHeaders);
+  }
+
+  /**
+   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.
+   *
+   * @return sentry trace header or null
+   */
+  public static @Nullable SentryTraceHeader getTraceparent() {
+    return getCurrentHub().getTraceparent();
+  }
+
+  /**
+   * Returns the "baggage" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link Sentry#getTraceparent()}.
+   *
+   * @return baggage header or null
+   */
+  public static @Nullable BaggageHeader getBaggage() {
+    return getCurrentHub().getBaggage();
   }
 }

@@ -11,6 +11,7 @@ import android.widget.AbsListView
 import android.widget.ListAdapter
 import io.sentry.IHub
 import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
 import io.sentry.SpanId
@@ -23,6 +24,7 @@ import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -43,6 +45,7 @@ class SentryGestureListenerTracingTest {
         }
         val hub = mock<IHub>()
         val event = mock<MotionEvent>()
+        val scope = mock<Scope>()
         lateinit var target: View
         lateinit var transaction: SentryTracer
 
@@ -82,6 +85,7 @@ class SentryGestureListenerTracingTest {
 
             whenever(hub.startTransaction(any(), any<TransactionOptions>()))
                 .thenReturn(this.transaction)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
 
             return SentryGestureListener(
                 activity,

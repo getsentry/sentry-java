@@ -172,7 +172,7 @@ public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter :
 	protected fun doOnError (Lio/sentry/ITransaction;Ljava/lang/Throwable;)V
 	protected fun maybeStartTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/ITransaction;
 	protected fun shouldTraceRequest (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Z
-	protected fun startTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/ITransaction;
+	protected fun startTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 }
 
 public final class io/sentry/spring/jakarta/webflux/ReactorUtils {

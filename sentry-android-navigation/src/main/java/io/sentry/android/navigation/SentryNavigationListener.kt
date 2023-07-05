@@ -19,6 +19,7 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.util.TracingUtils
 import java.lang.ref.WeakReference
 
 private const val TRACE_ORIGIN = "auto.navigation"
@@ -98,6 +99,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         arguments: Map<String, Any?>
     ) {
         if (!isPerformanceEnabled) {
+            TracingUtils.startNewTrace(hub)
             return
         }
 
