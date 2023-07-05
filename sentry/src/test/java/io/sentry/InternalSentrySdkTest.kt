@@ -2,12 +2,14 @@ package io.sentry
 
 import io.sentry.protocol.App
 import io.sentry.protocol.User
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class ScopeUtilTest {
+class InternalSentrySdkTest {
     @Test
-    fun `serializing scopes correctly creates map`() {
+    fun `serializeScope correctly creates top level map`() {
         val options = SentryOptions()
         val scope = Scope(options)
 
@@ -22,7 +24,7 @@ class ScopeUtilTest {
         )
         scope.setTag("variant", "yellow")
 
-        val serializedScope = ScopeUtil.serialize(scope)
+        val serializedScope = InternalSentrySdk.serializeScope(scope)
 
         assertTrue(serializedScope.containsKey("user"))
         assertTrue(serializedScope.containsKey("contexts"))
@@ -31,5 +33,22 @@ class ScopeUtilTest {
         assertTrue(serializedScope.containsKey("fingerprint"))
         assertTrue(serializedScope.containsKey("level"))
         assertTrue(serializedScope.containsKey("breadcrumbs"))
+    }
+
+    @Test
+    fun `serializeScope returns empty map in case scope is null`() {
+        val serializedScope = InternalSentrySdk.serializeScope(null)
+        assertTrue(serializedScope.isEmpty())
+    }
+
+    @Test
+    fun `serializeScope returns empty map in case scope serialization fails`() {
+        val scope = mock<Scope>()
+        val options = SentryOptions()
+        whenever(scope.options).thenReturn(options)
+        whenever(scope.user).thenThrow(IllegalStateException("something is off"))
+
+        val serializedScope = InternalSentrySdk.serializeScope(scope)
+        assertTrue(serializedScope.isEmpty())
     }
 }

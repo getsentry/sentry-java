@@ -655,6 +655,11 @@ public abstract interface class io/sentry/IntegrationName {
 	public fun getIntegrationName ()Ljava/lang/String;
 }
 
+public final class io/sentry/InternalSentrySdk {
+	public fun <init> ()V
+	public static fun serializeScope (Lio/sentry/Scope;)Ljava/util/Map;
+}
+
 public final class io/sentry/IpAddressUtils {
 	public static final field DEFAULT_IP_ADDRESS Ljava/lang/String;
 	public static fun isDefault (Ljava/lang/String;)Z
@@ -1210,11 +1215,6 @@ public abstract interface class io/sentry/Scope$IWithTransaction {
 
 public abstract interface class io/sentry/ScopeCallback {
 	public abstract fun run (Lio/sentry/Scope;)V
-}
-
-public final class io/sentry/ScopeUtil {
-	public fun <init> ()V
-	public static fun serialize (Lio/sentry/Scope;)Ljava/util/Map;
 }
 
 public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/Integration {
