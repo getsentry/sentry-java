@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix concurrent access to frameMetrics listener ([#2823](https://github.com/getsentry/sentry-java/pull/2823))
+
 ## 6.25.0
 
 ### Features
