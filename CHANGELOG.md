@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Allow removing integrations in SentryAndroid.init ([#2826](https://github.com/getsentry/sentry-java/pull/2826))
+
 ## 6.25.0
 
 ### Features

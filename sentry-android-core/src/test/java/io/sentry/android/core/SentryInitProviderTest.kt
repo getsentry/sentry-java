@@ -133,7 +133,20 @@ class SentryInitProviderTest {
         metaData.putBoolean(ManifestMetadataReader.NDK_ENABLE, false)
 
         AndroidOptionsInitializer.loadDefaultAndMetadataOptions(sentryOptions, mockContext)
-        AndroidOptionsInitializer.initializeIntegrationsAndProcessors(sentryOptions, mockContext)
+
+        val loadClass = LoadClass()
+        val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
+        AndroidOptionsInitializer.installDefaultIntegrations(
+            mockContext,
+            sentryOptions,
+            BuildInfoProvider(AndroidLogger()),
+            loadClass,
+            activityFramesTracker,
+            false,
+            false
+        )
+
+        AndroidOptionsInitializer.initializeIntegrationsAndProcessors(sentryOptions, mockContext, loadClass, activityFramesTracker)
 
         assertFalse(sentryOptions.isEnableNdk)
     }

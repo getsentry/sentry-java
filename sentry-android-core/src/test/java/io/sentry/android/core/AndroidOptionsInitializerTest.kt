@@ -68,10 +68,26 @@ class AndroidOptionsInitializerTest {
                 sentryOptions,
                 if (useRealContext) context else mockContext
             )
+
+            val loadClass = LoadClass()
+            val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
+
+            AndroidOptionsInitializer.installDefaultIntegrations(
+                if (useRealContext) context else mockContext,
+                sentryOptions,
+                BuildInfoProvider(AndroidLogger()),
+                loadClass,
+                activityFramesTracker,
+                false,
+                false
+            )
+
             sentryOptions.configureOptions()
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
                 sentryOptions,
-                if (useRealContext) context else mockContext
+                if (useRealContext) context else mockContext,
+                loadClass,
+                activityFramesTracker
             )
         }
 
@@ -89,6 +105,8 @@ class AndroidOptionsInitializerTest {
             )
             sentryOptions.isDebug = true
             val buildInfo = createBuildInfo(minApi)
+            val loadClass = createClassMock(classesToLoad)
+            val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 sentryOptions,
@@ -96,13 +114,23 @@ class AndroidOptionsInitializerTest {
                 logger,
                 buildInfo
             )
+
+            AndroidOptionsInitializer.installDefaultIntegrations(
+                context,
+                sentryOptions,
+                buildInfo,
+                loadClass,
+                activityFramesTracker,
+                isFragmentAvailable,
+                isTimberAvailable
+            )
+
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
                 sentryOptions,
                 context,
                 buildInfo,
-                createClassMock(classesToLoad),
-                isFragmentAvailable,
-                isTimberAvailable
+                loadClass,
+                activityFramesTracker
             )
         }
 
