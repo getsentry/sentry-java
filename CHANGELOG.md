@@ -5,6 +5,7 @@
 ### Features
 
 - Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
+- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
 
 ### Fixes
 
