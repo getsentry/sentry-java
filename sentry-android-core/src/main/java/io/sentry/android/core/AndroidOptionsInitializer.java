@@ -100,14 +100,16 @@ final class AndroidOptionsInitializer {
 
   @TestOnly
   static void initializeIntegrationsAndProcessors(
-      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull LoadClass loadClass,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     initializeIntegrationsAndProcessors(
         options,
         context,
         new BuildInfoProvider(new AndroidLogger()),
-        new LoadClass(),
-        false,
-        false);
+        loadClass,
+        activityFramesTracker);
   }
 
   static void initializeIntegrationsAndProcessors(
@@ -115,25 +117,12 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     if (options.getCacheDirPath() != null
         && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
       options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
     }
-
-    final ActivityFramesTracker activityFramesTracker =
-        new ActivityFramesTracker(loadClass, options);
-
-    installDefaultIntegrations(
-        context,
-        options,
-        buildInfoProvider,
-        loadClass,
-        activityFramesTracker,
-        isFragmentAvailable,
-        isTimberAvailable);
 
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
@@ -192,7 +181,7 @@ final class AndroidOptionsInitializer {
     }
   }
 
-  private static void installDefaultIntegrations(
+  static void installDefaultIntegrations(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -200,6 +189,9 @@ final class AndroidOptionsInitializer {
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
+
+    // Integration MUST NOT cache option values in ctor, as they will be configured later by the
+    // user
 
     // read the startup crash marker here to avoid doing double-IO for the SendCachedEnvelope
     // integrations below
