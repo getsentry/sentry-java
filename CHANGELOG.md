@@ -6,6 +6,11 @@
 
 - Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
 
+### Fixes
+
+Breaking changes:
+- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
+
 ## 6.23.0
 
 ### Features

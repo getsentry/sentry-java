@@ -103,9 +103,6 @@ public class SentryOptions {
    */
   private boolean debug;
 
-  /** Turns NDK on or off. Default is enabled. */
-  private boolean enableNdk = true;
-
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
 
@@ -290,12 +287,6 @@ public class SentryOptions {
   private final @NotNull List<IScopeObserver> observers = new CopyOnWriteArrayList<>();
 
   private final @NotNull List<IOptionsObserver> optionsObservers = new CopyOnWriteArrayList<>();
-
-  /**
-   * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
-   * for sentry-android.
-   */
-  private boolean enableScopeSync;
 
   /**
    * Enables loading additional options from external locations like {@code sentry.properties} file
@@ -587,24 +578,6 @@ public class SentryOptions {
   public void setEnvelopeReader(final @Nullable IEnvelopeReader envelopeReader) {
     this.envelopeReader =
         envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance();
-  }
-
-  /**
-   * Check if NDK is ON or OFF Default is ON
-   *
-   * @return true if ON or false otherwise
-   */
-  public boolean isEnableNdk() {
-    return enableNdk;
-  }
-
-  /**
-   * Sets NDK to ON or OFF
-   *
-   * @param enableNdk true if ON or false otherwise
-   */
-  public void setEnableNdk(boolean enableNdk) {
-    this.enableNdk = enableNdk;
   }
 
   /**
@@ -1384,24 +1357,6 @@ public class SentryOptions {
   @NotNull
   public List<IOptionsObserver> getOptionsObservers() {
     return optionsObservers;
-  }
-
-  /**
-   * Returns if the Java to NDK Scope sync is enabled
-   *
-   * @return true if enabled or false otherwise
-   */
-  public boolean isEnableScopeSync() {
-    return enableScopeSync;
-  }
-
-  /**
-   * Enables or not the Java to NDK Scope sync
-   *
-   * @param enableScopeSync true if enabled or false otherwise
-   */
-  public void setEnableScopeSync(boolean enableScopeSync) {
-    this.enableScopeSync = enableScopeSync;
   }
 
   /**
