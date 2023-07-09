@@ -28,7 +28,7 @@ import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.util.TracingUtils
 import java.util.concurrent.Executor
 
-private const val TRACE_ORIGIN = "auto.apollo"
+private const val TRACE_ORIGIN = "auto.graphql.apollo"
 
 class SentryApolloInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),

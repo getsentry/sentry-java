@@ -25,7 +25,7 @@ import org.springframework.http.client.ClientHttpResponse;
 
 @Open
 public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
-  public static final String TRACE_ORIGIN = "auto.spring_jakarta";
+  private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.resttemplate";
   private final @NotNull IHub hub;
 
   public SentrySpanClientHttpRequestInterceptor(final @NotNull IHub hub) {

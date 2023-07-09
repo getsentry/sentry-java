@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val PROTOCOL_KEY = "protocol"
 private const val ERROR_MESSAGE_KEY = "error_message"
-private const val TRACE_ORIGIN = "auto.okhttp"
+private const val TRACE_ORIGIN = "auto.http.okhttp"
 
 internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
     private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()

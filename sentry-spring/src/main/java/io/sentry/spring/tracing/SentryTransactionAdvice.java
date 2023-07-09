@@ -25,7 +25,7 @@ import org.springframework.util.StringUtils;
 @ApiStatus.Internal
 @Open
 public class SentryTransactionAdvice implements MethodInterceptor {
-  public static final String TRACE_ORIGIN = "auto.spring";
+  private static final String TRACE_ORIGIN = "auto.function.spring.advice";
   private final @NotNull IHub hub;
 
   public SentryTransactionAdvice(final @NotNull IHub hub) {

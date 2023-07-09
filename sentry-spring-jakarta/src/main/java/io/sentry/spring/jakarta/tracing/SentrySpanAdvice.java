@@ -20,7 +20,7 @@ import org.springframework.util.StringUtils;
  */
 @Open
 public class SentrySpanAdvice implements MethodInterceptor {
-  private static final String TRACE_ORIGIN = "auto.spring_jakarta";
+  private static final String TRACE_ORIGIN = "auto.function.spring_jakarta.advice";
   private final @NotNull IHub hub;
 
   public SentrySpanAdvice(final @NotNull IHub hub) {

@@ -35,7 +35,7 @@ import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
-private const val TRACE_ORIGIN = "auto.apollo3"
+private const val TRACE_ORIGIN = "auto.graphql.apollo3"
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryInstrumentation extends SimpleInstrumentation {
-  private static final String TRACE_ORIGIN = "auto.db.graphql";
+  private static final String TRACE_ORIGIN = "auto.graphql.graphql";
   private final @NotNull IHub hub;
   private final @Nullable BeforeSpanCallback beforeSpan;
 

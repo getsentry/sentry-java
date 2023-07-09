@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 @Open
 public class SentryWebFilter extends AbstractSentryWebFilter {
 
-  public static final String TRACE_ORIGIN = "auto.spring_jakarta.webflux";
+  private static final String TRACE_ORIGIN = "auto.spring_jakarta.webflux";
 
   public SentryWebFilter(final @NotNull IHub hub) {
     super(hub);
