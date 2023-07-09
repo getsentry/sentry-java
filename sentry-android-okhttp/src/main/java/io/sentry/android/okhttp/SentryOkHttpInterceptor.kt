@@ -28,8 +28,6 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 
-private const val TRACE_ORIGIN = "auto.http.okhttp"
-
 /**
  * The Sentry's [SentryOkHttpInterceptor], it will automatically add a breadcrumb and start a span
  * out of the active span bound to the scope for each HTTP Request.
