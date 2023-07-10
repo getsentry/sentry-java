@@ -103,19 +103,16 @@ public abstract interface annotation class io/sentry/spring/tracing/SentrySpan :
 }
 
 public class io/sentry/spring/tracing/SentrySpanAdvice : org/aopalliance/intercept/MethodInterceptor {
-	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
 
 public class io/sentry/spring/tracing/SentrySpanClientHttpRequestInterceptor : org/springframework/http/client/ClientHttpRequestInterceptor {
-	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun intercept (Lorg/springframework/http/HttpRequest;[BLorg/springframework/http/client/ClientHttpRequestExecution;)Lorg/springframework/http/client/ClientHttpResponse;
 }
 
 public class io/sentry/spring/tracing/SentrySpanClientWebRequestFilter : org/springframework/web/reactive/function/client/ExchangeFilterFunction {
-	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun filter (Lorg/springframework/web/reactive/function/client/ClientRequest;Lorg/springframework/web/reactive/function/client/ExchangeFunction;)Lreactor/core/publisher/Mono;
 }
@@ -130,7 +127,6 @@ public class io/sentry/spring/tracing/SentryTracingConfiguration {
 }
 
 public class io/sentry/spring/tracing/SentryTracingFilter : org/springframework/web/filter/OncePerRequestFilter {
-	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/tracing/TransactionNameProvider;)V
@@ -144,7 +140,6 @@ public abstract interface annotation class io/sentry/spring/tracing/SentryTransa
 }
 
 public class io/sentry/spring/tracing/SentryTransactionAdvice : org/aopalliance/intercept/MethodInterceptor {
-	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
@@ -184,7 +179,6 @@ public final class io/sentry/spring/webflux/SentryWebExceptionHandler : org/spri
 
 public final class io/sentry/spring/webflux/SentryWebFilter : org/springframework/web/server/WebFilter {
 	public static final field SENTRY_HUB_KEY Ljava/lang/String;
-	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }
