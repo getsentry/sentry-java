@@ -8,6 +8,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryContextTest {
@@ -77,6 +78,29 @@ class SentryContextTest {
     fun testContextMayBeEmpty() {
         runBlocking(SentryContext()) {
             assertNull(getTag("myKey"))
+        }
+    }
+
+    @Test
+    fun testContextIsClonedWhenPassedToChild() = runBlocking {
+        Sentry.setTag("parent", "parentValue")
+        launch(SentryContext()) {
+            Sentry.setTag("c1", "c1value")
+            assertEquals("c1value", getTag("c1"))
+            assertEquals("parentValue", getTag("parent"))
+            assertNull(getTag("c2"))
+
+            val c2 = launch() {
+                Sentry.setTag("c2", "c2value")
+                assertEquals("c2value", getTag("c2"))
+                assertEquals("parentValue", getTag("parent"))
+                assertNotNull(getTag("c1"))
+            }
+
+            c2.join()
+
+            assertNotNull(getTag("c1"))
+            assertNull(getTag("c2"))
         }
     }
 
