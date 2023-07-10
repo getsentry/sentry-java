@@ -19,10 +19,11 @@ import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,12 +31,12 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull Set<Window> trackedWindows = new HashSet<>();
+  private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
   private final @NotNull SentryOptions options;
   private @Nullable Handler handler;
   private @Nullable WeakReference<Window> currentWindow;
-  private final @NotNull HashMap<String, FrameMetricsCollectorListener> listenerMap =
-      new HashMap<>();
+  private final @NotNull Map<String, FrameMetricsCollectorListener> listenerMap =
+      new ConcurrentHashMap<>();
   private boolean isAvailable = false;
   private final WindowFrameMetricsManager windowFrameMetricsManager;
 
