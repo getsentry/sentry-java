@@ -277,8 +277,9 @@ public final class Scope {
    *
    * @return the fingerprint list
    */
+  @ApiStatus.Internal
   @NotNull
-  List<String> getFingerprint() {
+  public List<String> getFingerprint() {
     return fingerprint;
   }
 
@@ -303,8 +304,9 @@ public final class Scope {
    *
    * @return the breadcrumbs queue
    */
+  @ApiStatus.Internal
   @NotNull
-  Queue<Breadcrumb> getBreadcrumbs() {
+  public Queue<Breadcrumb> getBreadcrumbs() {
     return breadcrumbs;
   }
 
@@ -469,8 +471,9 @@ public final class Scope {
    *
    * @return the extra map
    */
+  @ApiStatus.Internal
   @NotNull
-  Map<String, Object> getExtras() {
+  public Map<String, Object> getExtras() {
     return extra;
   }
 

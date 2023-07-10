@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class Installation {
+public final class Installation {
   @TestOnly static @Nullable String deviceId = null;
 
   @TestOnly static final String INSTALLATION = "INSTALLATION";

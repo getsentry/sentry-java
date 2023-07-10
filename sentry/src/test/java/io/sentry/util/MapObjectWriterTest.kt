@@ -63,7 +63,10 @@ class MapObjectWriterTest {
         writer.name("InetAddress").value(logger, Inet4Address.getByName("1.1.1.1"))
         writer.name("UUID").value(logger, UUID.fromString("00000000-1111-2222-3333-444444444444"))
         writer.name("Currency").value(logger, Currency.getInstance("EUR"))
-        writer.name("Calendar").value(logger, Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 })
+        writer.name("Calendar").value(
+            logger,
+            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 }
+        )
         writer.name("Enum").value(logger, BasicEnum.A)
 
         assertEquals(null, data["null"])

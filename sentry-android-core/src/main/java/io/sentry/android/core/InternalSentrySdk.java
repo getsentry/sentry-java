@@ -1,8 +1,16 @@
-package io.sentry;
+package io.sentry.android.core;
 
+import android.content.Context;
+import io.sentry.HubAdapter;
+import io.sentry.ILogger;
+import io.sentry.ObjectWriter;
+import io.sentry.Scope;
+import io.sentry.SentryLevel;
+import io.sentry.protocol.Device;
 import io.sentry.util.MapObjectWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,16 +18,30 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class InternalSentrySdk {
 
+  /**
+   * @return a copy of the current hub's topmost scope, or null in case the hub is disabled
+   */
+  @Nullable
+  public static Scope getCurrentScope() {
+    final @NotNull AtomicReference<Scope> scopeRef = new AtomicReference<>();
+    HubAdapter.getInstance().withScope(scopeRef::set);
+    return scopeRef.get();
+  }
+
   @NotNull
-  public static Map<String, Object> serializeScope(@Nullable Scope scope) {
+  public static Map<String, Object> serializeScope(
+      @NotNull Context context, @NotNull SentryAndroidOptions options, @Nullable Scope scope) {
     final @NotNull Map<String, Object> data = new HashMap<>();
     if (scope == null) {
       return data;
     }
 
-    final @NotNull SentryOptions options = scope.getOptions();
     final @NotNull ILogger logger = options.getLogger();
     final @NotNull ObjectWriter writer = new MapObjectWriter(data);
+
+    final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
+    final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false);
+    scope.getContexts().setDevice(deviceInfo);
 
     try {
       writer.name("user").value(logger, scope.getUser());
