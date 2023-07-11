@@ -5,6 +5,7 @@ import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -16,13 +17,13 @@ final class SendCachedEnvelopeIntegration implements Integration {
 
   private final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
       factory;
-  private final boolean hasStartupCrashMarker;
+  private final @NotNull LazyEvaluator<Boolean> startupCrashMarkerEvaluator;
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
-      final boolean hasStartupCrashMarker) {
+      final @NotNull LazyEvaluator<Boolean> startupCrashMarkerEvaluator) {
     this.factory = Objects.requireNonNull(factory, "SendFireAndForgetFactory is required");
-    this.hasStartupCrashMarker = hasStartupCrashMarker;
+    this.startupCrashMarkerEvaluator = startupCrashMarkerEvaluator;
   }
 
   @Override
@@ -62,7 +63,7 @@ final class SendCachedEnvelopeIntegration implements Integration {
                     }
                   });
 
-      if (hasStartupCrashMarker) {
+      if (startupCrashMarkerEvaluator.getValue()) {
         androidOptions
             .getLogger()
             .log(SentryLevel.DEBUG, "Startup Crash marker exists, blocking flush.");

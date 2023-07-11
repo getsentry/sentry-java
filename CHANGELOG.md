@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Allow removing integrations in SentryAndroid.init ([#2826](https://github.com/getsentry/sentry-java/pull/2826))
 - Fix concurrent access to frameMetrics listener ([#2823](https://github.com/getsentry/sentry-java/pull/2823))
 
 ### Dependencies
