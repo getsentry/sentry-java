@@ -22,6 +22,9 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import java.io.File
@@ -597,6 +600,22 @@ class AndroidOptionsInitializerTest {
 
         assertFalse(fixture.sentryOptions.optionsObservers.any { it is PersistingOptionsObserver })
         assertFalse(fixture.sentryOptions.scopeObservers.any { it is PersistingScopeObserver })
+    }
+
+    @Test
+    fun `installDefaultIntegrations does not evaluate cacheDir or outboxPath when called`() {
+        val mockOptions = spy(fixture.sentryOptions)
+        AndroidOptionsInitializer.installDefaultIntegrations(
+            fixture.context,
+            mockOptions,
+            mock(),
+            mock(),
+            mock(),
+            false,
+            false
+        )
+        verify(mockOptions, never()).outboxPath
+        verify(mockOptions, never()).cacheDirPath
     }
 
     @Config(sdk = [30])

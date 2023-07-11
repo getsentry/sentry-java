@@ -26,6 +26,7 @@ import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.ArrayList;
@@ -195,12 +196,13 @@ final class AndroidOptionsInitializer {
 
     // read the startup crash marker here to avoid doing double-IO for the SendCachedEnvelope
     // integrations below
-    final boolean hasStartupCrashMarker = AndroidEnvelopeCache.hasStartupCrashMarker(options);
+    LazyEvaluator<Boolean> startupCrashMarkerEvaluator =
+        new LazyEvaluator<>(() -> AndroidEnvelopeCache.hasStartupCrashMarker(options));
 
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
             new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath()),
-            hasStartupCrashMarker));
+            startupCrashMarkerEvaluator));
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
@@ -220,7 +222,7 @@ final class AndroidOptionsInitializer {
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
             new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
-            hasStartupCrashMarker));
+            startupCrashMarkerEvaluator));
 
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it
