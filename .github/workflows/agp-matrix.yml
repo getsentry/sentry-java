@@ -16,6 +16,27 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: aosp_atd
+
+      - name: create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@d94c3fbe4fe6a29e4a5ba47c12fb47677c73656b # pin@v2
+        with:
+          api-level: 30
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          target: 'aosp_atd'
+          channel: canary # Necessary for ATDs
+          script: echo "Generated AVD snapshot for caching."
+
   agp-matrix-compatibility:
     timeout-minutes: 30
     runs-on: macos-latest
@@ -47,31 +68,10 @@ jobs:
       - name: Make assembleUiTests
         run: make assembleUiTests
 
-      - name: AVD cache
-        uses: actions/cache@v3
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: aosp_atd
-
       # We stop gradle at the end to make sure the cache folders
       # don't contain any lock files and are free to be cached.
       - name: Make stop
         run: make stop
-
-      - name: create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@d94c3fbe4fe6a29e4a5ba47c12fb47677c73656b #pin@v2.28.0
-        with:
-          api-level: 30
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          target: 'aosp_atd'
-          channel: canary # Necessary for ATDs
-          script: echo "Generated AVD snapshot for caching."
 
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@d94c3fbe4fe6a29e4a5ba47c12fb47677c73656b # pin@v2
