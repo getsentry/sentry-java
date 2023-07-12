@@ -43,6 +43,8 @@ public final class InternalSentrySdk {
     final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
     final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false);
     scope.getContexts().setDevice(deviceInfo);
+    scope.getContexts().setOperatingSystem(deviceInfoUtil.getOperatingSystem());
+
     @Nullable User user = scope.getUser();
     if (user == null) {
       user = new User();
