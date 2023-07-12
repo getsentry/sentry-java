@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix Coroutine Context Propagation using CopyableThreadContextElement ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
+
 ## 6.25.1
 
 ### Fixes
