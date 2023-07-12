@@ -7,6 +7,7 @@ import io.sentry.ObjectWriter;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +43,15 @@ public final class InternalSentrySdk {
     final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
     final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false);
     scope.getContexts().setDevice(deviceInfo);
+    @Nullable User user = scope.getUser();
+    if (user == null) {
+      user = new User();
+      user.setId(Installation.id(context));
+    }
+    if (user.getId() == null) {
+      user.setId(Installation.id(context));
+    }
+    scope.setUser(user);
 
     try {
       writer.name("user").value(logger, scope.getUser());
