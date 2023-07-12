@@ -104,19 +104,28 @@ public final class SentryAndroid {
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final LoadClass loadClass = new LoadClass();
+            final ActivityFramesTracker activityFramesTracker =
+                new ActivityFramesTracker(loadClass, options);
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);
 
+            // We install the default integrations before the option configuration, so that the user
+            // can remove any of them. Integrations will not evaluate the options immediately, but
+            // will use them later, after being configured.
+            AndroidOptionsInitializer.installDefaultIntegrations(
+                context,
+                options,
+                buildInfoProvider,
+                loadClass,
+                activityFramesTracker,
+                isFragmentAvailable,
+                isTimberAvailable);
+
             configuration.configure(options);
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
-                options,
-                context,
-                buildInfoProvider,
-                loadClass,
-                isFragmentAvailable,
-                isTimberAvailable);
+                options, context, buildInfoProvider, loadClass, activityFramesTracker);
 
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
@@ -151,7 +160,7 @@ public final class SentryAndroid {
 
   /**
    * Deduplicate potentially duplicated Fragment and Timber integrations, which can be added
-   * automatically by our SDK as well as by the user. The user's ones (provided first in the
+   * automatically by our SDK as well as by the user. The user's ones (provided last in the
    * options.integrations list) win over ours.
    *
    * @param options SentryOptions to retrieve integrations from
@@ -178,14 +187,14 @@ public final class SentryAndroid {
     }
 
     if (fragmentIntegrations.size() > 1) {
-      for (int i = 1; i < fragmentIntegrations.size(); i++) {
+      for (int i = 0; i < fragmentIntegrations.size() - 1; i++) {
         final Integration integration = fragmentIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
     }
 
     if (timberIntegrations.size() > 1) {
-      for (int i = 1; i < timberIntegrations.size(); i++) {
+      for (int i = 0; i < timberIntegrations.size() - 1; i++) {
         final Integration integration = timberIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
