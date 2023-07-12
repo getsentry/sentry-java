@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Change GraphQL and Kotlin coroutines core dependencies to compileOnly ([#2837](https://github.com/getsentry/sentry-java/pull/2837))
+
 ## 6.25.0
 
 ### Features
