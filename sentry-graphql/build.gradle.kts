@@ -38,6 +38,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockWebserver)
     testImplementation(Config.Libs.okhttp)
+    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {
