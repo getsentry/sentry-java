@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.Scope.IWithPropagationContext
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -1340,12 +1341,14 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when scope does not have an active transaction, trace state is not set on the envelope`() {
+    fun `when scope does not have an active transaction, trace state is set on the envelope from scope`() {
         val sut = fixture.getSut()
-        sut.captureEvent(SentryEvent(), createScope())
+        val scope = createScope()
+        sut.captureEvent(SentryEvent(), scope)
         verify(fixture.transport).send(
             check {
-                assertNull(it.header.traceContext)
+                assertNotNull(it.header.traceContext)
+                assertEquals(scope.propagationContext.traceId, it.header.traceContext?.traceId)
             },
             anyOrNull()
         )
@@ -1526,6 +1529,42 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val attachment = Attachment.fromViewHierarchy(ViewHierarchy("android_view_system", emptyList()))
         val hint = Hint().also { it.viewHierarchy = attachment }
+
+        sut.captureEvent(SentryEvent(), hint)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `thread dump is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromThreadDump(byteArrayOf())
+        val hint = Hint().also { it.threadDump = attachment }
+
+        sut.captureEvent(SentryEvent(), hint)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val threadDump = envelope.items.last()
+                assertNotNull(threadDump) {
+                    assertEquals(attachment.filename, threadDump.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `thread dump is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromThreadDump(byteArrayOf())
+        val hint = Hint().also { it.threadDump = attachment }
 
         sut.captureEvent(SentryEvent(), hint)
 
@@ -2059,6 +2098,9 @@ class SentryClientTest {
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
 
         val transactionEnd = object : TransactionEnd {}
         val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
@@ -2069,6 +2111,174 @@ class SentryClientTest {
         verify(fixture.transport).send(
             check {
                 assertEquals(1, it.items.count())
+            },
+            any()
+        )
+    }
+
+    @Test
+    fun `attaches trace context from span if none present yet`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        whenever(scope.span).thenReturn(transaction)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        val sentryEvent = SentryEvent()
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+
+        assertEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+        assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    }
+
+    @Test
+    fun `attaches trace context from scope if none present yet and no span on scope`() {
+        val sut = fixture.getSut()
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        val sentryEvent = SentryEvent()
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+
+        assertEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    }
+
+    @Test
+    fun `keeps existing trace context if already present`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        val preExistingSpanContext = SpanContext("op.load")
+
+        val sentryEvent = SentryEvent()
+        sentryEvent.contexts.trace = preExistingSpanContext
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+
+        assertEquals(preExistingSpanContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertEquals(preExistingSpanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+        assertNotEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertNotEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+        assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
+        assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    }
+
+    @Test
+    fun `uses propagation context on scope for trace header if no transaction is on scope`() {
+        val sut = fixture.getSut()
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        val sentryEvent = SentryEvent()
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertNotNull(it.header.traceContext)
+                assertEquals(scopePropagationContext.traceId, it.header.traceContext!!.traceId)
+            },
+            any()
+        )
+    }
+
+    @Test
+    fun `uses trace context on transaction for trace header if a transaction is on scope`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.spanContext).thenReturn(spanContext)
+        val transactionTraceContext = TraceContext(SentryId(), "pubkey")
+        whenever(transaction.traceContext()).thenReturn(transactionTraceContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        val preExistingSpanContext = SpanContext("op.load")
+
+        val sentryEvent = SentryEvent()
+        sentryEvent.contexts.trace = preExistingSpanContext
+        sut.captureEvent(sentryEvent, scope)
+
+        verify(fixture.transport).send(
+            check {
+                assertNotNull(it.header.traceContext)
+                assertEquals(transactionTraceContext.traceId, it.header.traceContext!!.traceId)
             },
             any()
         )
@@ -2127,6 +2337,7 @@ class SentryClientTest {
         override fun execute(event: SentryEvent, hint: Hint): SentryEvent? {
             hint.screenshot = null
             hint.viewHierarchy = null
+            hint.threadDump = null
             return event
         }
     }

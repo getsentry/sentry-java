@@ -11,6 +11,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -171,10 +172,18 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final TraceContext traceContext =
-          scope != null && scope.getTransaction() != null
-              ? scope.getTransaction().traceContext()
-              : null;
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        final @Nullable ITransaction transaction = scope.getTransaction();
+        if (transaction != null) {
+          traceContext = transaction.traceContext();
+        } else {
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
+        }
+      }
+
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
       final SentryEnvelope envelope =
@@ -249,6 +258,11 @@ public final class SentryClient implements ISentryClient {
     @Nullable final Attachment viewHierarchy = hint.getViewHierarchy();
     if (viewHierarchy != null) {
       attachments.add(viewHierarchy);
+    }
+
+    @Nullable final Attachment threadDump = hint.getThreadDump();
+    if (threadDump != null) {
+      attachments.add(threadDump);
     }
 
     return attachments;
@@ -652,8 +666,14 @@ public final class SentryClient implements ISentryClient {
       }
       // Set trace data from active span to connect events with transactions
       final ISpan span = scope.getSpan();
-      if (event.getContexts().getTrace() == null && span != null) {
-        event.getContexts().setTrace(span.getSpanContext());
+      if (event.getContexts().getTrace() == null) {
+        if (span == null) {
+          event
+              .getContexts()
+              .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
+        } else {
+          event.getContexts().setTrace(span.getSpanContext());
+        }
       }
 
       event = processEvent(event, hint, scope.getEventProcessors());

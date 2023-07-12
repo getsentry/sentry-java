@@ -11,11 +11,16 @@ import android.widget.CheckBox
 import android.widget.RadioButton
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.PropagationContext
+import io.sentry.Scope
+import io.sentry.Scope.IWithPropagationContext
+import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -36,6 +41,8 @@ class SentryGestureListenerClickTest {
             dsn = "https://key@sentry.io/proj"
         }
         val hub = mock<IHub>()
+        val scope = mock<Scope>()
+        val propagationContext = PropagationContext()
         lateinit var target: View
         lateinit var invalidTarget: View
 
@@ -79,6 +86,8 @@ class SentryGestureListenerClickTest {
             whenever(context.resources).thenReturn(resources)
             whenever(this.target.context).thenReturn(context)
             whenever(activity.window).thenReturn(window)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            doAnswer { (it.arguments[0] as IWithPropagationContext).accept(propagationContext); propagationContext; }.whenever(scope).withPropagationContext(any())
             return SentryGestureListener(
                 activity,
                 hub,
@@ -227,5 +236,21 @@ class SentryGestureListenerClickTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `creates new trace on click`() {
+        class LocalView(context: Context) : View(context)
+
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<LocalView>(event, attachViewsToRoot = false)
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+            whenever(it.childCount).thenReturn(1)
+            whenever(it.getChildAt(0)).thenReturn(fixture.target)
+        }
+
+        sut.onSingleTapUp(event)
+
+        verify(fixture.scope).propagationContext = any()
     }
 }

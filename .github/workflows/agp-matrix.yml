@@ -16,6 +16,30 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
+  cache-avd:
+    runs-on: macos-latest
+    steps:
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: aosp_atd
+
+      - name: create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@d94c3fbe4fe6a29e4a5ba47c12fb47677c73656b # pin@v2
+        with:
+          api-level: 30
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          target: 'aosp_atd'
+          channel: canary # Necessary for ATDs
+          script: echo "Generated AVD snapshot for caching."
+
   agp-matrix-compatibility:
     timeout-minutes: 30
     runs-on: macos-latest
@@ -35,7 +59,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629 # pin@v2
+        uses: gradle/gradle-build-action@40b6781dcdec2762ad36556682ac74e31030cfe2 # pin@v2
 
       - name: Setup Java Version
         uses: actions/setup-java@v3
@@ -51,6 +75,15 @@ jobs:
       # don't contain any lock files and are free to be cached.
       - name: Make stop
         run: make stop
+
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: aosp_atd
 
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@d94c3fbe4fe6a29e4a5ba47c12fb47677c73656b # pin@v2

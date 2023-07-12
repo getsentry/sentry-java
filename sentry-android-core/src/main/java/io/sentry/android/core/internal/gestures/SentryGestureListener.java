@@ -20,6 +20,7 @@ import io.sentry.TransactionOptions;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.internal.gestures.UiElement;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.TracingUtils;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
@@ -185,7 +186,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
+    final UiElement uiElement = activeUiElement;
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
+      if (!(target.equals(uiElement) && eventType.equals(activeEventType))) {
+        TracingUtils.startNewTrace(hub);
+        activeUiElement = target;
+        activeEventType = eventType;
+      }
       return;
     }
 
@@ -196,7 +203,6 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final @Nullable String viewIdentifier = target.getIdentifier();
-    final UiElement uiElement = activeUiElement;
 
     if (activeTransaction != null) {
       if (target.equals(uiElement)

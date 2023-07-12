@@ -37,12 +37,6 @@ public final class SentryTracer implements ITransaction {
    */
   private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
-  /**
-   * When `waitForChildren` is set to `true` and this callback is set, it's called before the
-   * transaction is captured.
-   */
-  private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
-
   private volatile @Nullable TimerTask timerTask;
   private volatile @Nullable Timer timer = null;
   private final @NotNull Object timerLock = new Object();
@@ -57,22 +51,20 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull TransactionOptions transactionOptions;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
-    this(context, hub, new TransactionOptions(), null, null);
+    this(context, hub, new TransactionOptions(), null);
   }
 
   public SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
-      final @NotNull TransactionOptions transactionOptions,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, transactionOptions, transactionFinishedCallback, null);
+      final @NotNull TransactionOptions transactionOptions) {
+    this(context, hub, transactionOptions, null);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @NotNull TransactionOptions transactionOptions,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback,
       final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
@@ -84,7 +76,6 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.hub = hub;
-    this.transactionFinishedCallback = transactionFinishedCallback;
     this.transactionPerformanceCollector = transactionPerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
     this.transactionOptions = transactionOptions;
@@ -222,8 +213,10 @@ public final class SentryTracer implements ITransaction {
                 });
           });
       final SentryTransaction transaction = new SentryTransaction(this);
-      if (transactionFinishedCallback != null) {
-        transactionFinishedCallback.execute(this);
+      final TransactionFinishedCallback finishedCallback =
+          transactionOptions.getTransactionFinishedCallback();
+      if (finishedCallback != null) {
+        finishedCallback.execute(this);
       }
 
       if (timer != null) {

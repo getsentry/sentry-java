@@ -216,6 +216,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
+	public fun isAttachAnrThreadDump ()Z
 	public fun isAttachScreenshot ()Z
 	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
@@ -230,9 +231,11 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableRootCheck ()Z
 	public fun isEnableScopeSync ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
+	public fun isReportHistoricalAnrs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
+	public fun setAttachAnrThreadDump (Z)V
 	public fun setAttachScreenshot (Z)V
 	public fun setAttachViewHierarchy (Z)V
 	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
@@ -253,6 +256,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
+	public fun setReportHistoricalAnrs (Z)V
 }
 
 public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {
