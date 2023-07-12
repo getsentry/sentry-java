@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class AndroidViewGestureTargetLocator implements GestureTargetLocator {
 
+  private static final String ORIGIN = "old_view_system";
+
   private final boolean isAndroidXAvailable;
   private final int[] coordinates = new int[2];
 
@@ -46,7 +48,7 @@ public final class AndroidViewGestureTargetLocator implements GestureTargetLocat
       if (className == null) {
         className = targetView.getClass().getSimpleName();
       }
-      return new UiElement(targetView, className, resourceName, null);
+      return new UiElement(targetView, className, resourceName, null, ORIGIN);
     } catch (Resources.NotFoundException ignored) {
       return null;
     }

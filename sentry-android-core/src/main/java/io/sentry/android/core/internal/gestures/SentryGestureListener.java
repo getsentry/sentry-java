@@ -244,7 +244,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         hub.startTransaction(
             new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
 
-    transaction.getSpanContext().setOrigin(TRACE_ORIGIN + "." + eventType);
+    transaction.getSpanContext().setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
 
     hub.configureScope(
         scope -> {

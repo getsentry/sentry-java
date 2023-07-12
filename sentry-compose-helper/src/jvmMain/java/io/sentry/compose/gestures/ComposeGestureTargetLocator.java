@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("KotlinInternalInJava")
 public final class ComposeGestureTargetLocator implements GestureTargetLocator {
+  
+  private static final String ORIGIN = "jetpack_compose";
 
   private final @NotNull ILogger logger;
   private volatile @Nullable SentryComposeHelper composeHelper;
@@ -103,7 +105,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
     if (targetTag == null) {
       return null;
     } else {
-      return new UiElement(null, null, null, targetTag);
+      return new UiElement(null, null, null, targetTag, ORIGIN);
     }
   }
 

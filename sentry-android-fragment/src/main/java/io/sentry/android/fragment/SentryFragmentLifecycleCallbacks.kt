@@ -16,7 +16,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
 import java.util.WeakHashMap
 
-private const val TRACE_ORIGIN = "auto.ui.fragment.lifecycle"
+private const val TRACE_ORIGIN = "auto.ui.fragment"
 
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(

@@ -209,7 +209,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return origin;
   }
 
-  public void setOrigin(@Nullable String origin) {
+  public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
   }
 
