@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("KotlinInternalInJava")
 public final class ComposeGestureTargetLocator implements GestureTargetLocator {
-  
+
   private static final String ORIGIN = "jetpack_compose";
 
   private final @NotNull ILogger logger;
