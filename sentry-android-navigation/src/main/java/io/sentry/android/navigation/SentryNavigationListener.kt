@@ -143,7 +143,9 @@ class SentryNavigationListener @JvmOverloads constructor(
             transactonOptions
         )
 
-        transaction.spanContext.origin = traceOriginAppendix?.let { "$TRACE_ORIGIN.$traceOriginAppendix" } ?: TRACE_ORIGIN
+        transaction.spanContext.origin = traceOriginAppendix?.let {
+            "$TRACE_ORIGIN.$traceOriginAppendix"
+        } ?: TRACE_ORIGIN
 
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)
