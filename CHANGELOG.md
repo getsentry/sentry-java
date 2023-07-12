@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 6.25.1
 
 ### Fixes
 
+- Allow removing integrations in SentryAndroid.init ([#2826](https://github.com/getsentry/sentry-java/pull/2826))
 - Fix concurrent access to frameMetrics listener ([#2823](https://github.com/getsentry/sentry-java/pull/2823))
 
 ### Dependencies
@@ -11,6 +12,9 @@
 - Bump Native SDK from v0.6.4 to v0.6.5 ([#2822](https://github.com/getsentry/sentry-java/pull/2822))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#065)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.6.4...0.6.5)
+- Bump Gradle from v8.2.0 to v8.2.1 ([#2830](https://github.com/getsentry/sentry-java/pull/2830))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v821)
+  - [diff](https://github.com/gradle/gradle/compare/v8.2.0...v8.2.1)
 
 ## 6.25.0
 

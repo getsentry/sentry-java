@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.app.ActivityManager
+import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Bundle
@@ -17,6 +18,8 @@ import io.sentry.SentryLevel.FATAL
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
+import io.sentry.ShutdownHookIntegration
+import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
@@ -386,6 +389,36 @@ class SentryAndroidTest {
             "io.sentry.sample@1.1.0+220",
             PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
         )
+    }
+
+    @Test
+    fun `init can remove all integrations`() {
+        lateinit var optionsRef: SentryOptions
+        fixture.initSut(context = mock<Application>()) { options ->
+            optionsRef = options
+            options.dsn = "https://key@sentry.io/123"
+            assertEquals(18, options.integrations.size)
+            options.integrations.removeAll {
+                it is UncaughtExceptionHandlerIntegration ||
+                    it is ShutdownHookIntegration ||
+                    it is SendCachedEnvelopeIntegration ||
+                    it is NdkIntegration ||
+                    it is EnvelopeFileObserverIntegration ||
+                    it is AppLifecycleIntegration ||
+                    it is AnrIntegration ||
+                    it is ActivityLifecycleIntegration ||
+                    it is CurrentActivityIntegration ||
+                    it is UserInteractionIntegration ||
+                    it is FragmentLifecycleIntegration ||
+                    it is SentryTimberIntegration ||
+                    it is AppComponentsBreadcrumbsIntegration ||
+                    it is SystemEventsBreadcrumbsIntegration ||
+                    it is NetworkBreadcrumbsIntegration ||
+                    it is TempSensorBreadcrumbsIntegration ||
+                    it is PhoneStateBreadcrumbsIntegration
+            }
+        }
+        assertEquals(0, optionsRef.integrations.size)
     }
 
     private fun prefillScopeCache(cacheDir: String) {
