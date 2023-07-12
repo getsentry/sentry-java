@@ -207,6 +207,11 @@ public final class Sentry {
               "Sentry has been already initialized. Previous configuration will be overwritten.");
     }
 
+    if(!options.isEnabled()) {
+      close();
+      return;
+    }
+
     if (!initConfigurations(options)) {
       return;
     }
