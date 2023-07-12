@@ -1,11 +1,15 @@
 package io.sentry.android.core;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
 import io.sentry.ILogger;
 import io.sentry.ObjectWriter;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
+import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
@@ -40,22 +44,41 @@ public final class InternalSentrySdk {
     final @NotNull ILogger logger = options.getLogger();
     final @NotNull ObjectWriter writer = new MapObjectWriter(data);
 
-    final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
-    final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false);
-    scope.getContexts().setDevice(deviceInfo);
-    scope.getContexts().setOperatingSystem(deviceInfoUtil.getOperatingSystem());
-
-    @Nullable User user = scope.getUser();
-    if (user == null) {
-      user = new User();
-      user.setId(Installation.id(context));
-    }
-    if (user.getId() == null) {
-      user.setId(Installation.id(context));
-    }
-    scope.setUser(user);
-
     try {
+
+      final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
+      final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false);
+      scope.getContexts().setDevice(deviceInfo);
+      scope.getContexts().setOperatingSystem(deviceInfoUtil.getOperatingSystem());
+
+      // user
+      @Nullable User user = scope.getUser();
+      if (user == null) {
+        user = new User();
+        scope.setUser(user);
+      }
+      if (user.getId() == null) {
+        user.setId(Installation.id(context));
+      }
+
+      // app context
+      @Nullable App app = scope.getContexts().getApp();
+      if (app == null) {
+        app = new App();
+        app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+        app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
+
+        final @NotNull BuildInfoProvider buildInfoProvider =
+            new BuildInfoProvider(options.getLogger());
+        final @Nullable PackageInfo packageInfo =
+            ContextUtils.getPackageInfo(
+                context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
+        if (packageInfo != null) {
+          ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+        }
+        scope.getContexts().setApp(app);
+      }
+
       writer.name("user").value(logger, scope.getUser());
       writer.name("contexts").value(logger, scope.getContexts());
       writer.name("tags").value(logger, scope.getTags());
