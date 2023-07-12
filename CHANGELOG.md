@@ -1,5 +1,17 @@
 # Changelog
 
+## 7.0.0
+
+### Features
+
+Breaking changes:
+- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+
+### Fixes
+
+Breaking changes:
+- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
+
 ## Unreleased
 
 ### Fixes
@@ -55,11 +67,6 @@
   This is only useful as additional information, because the SDK attempts to parse the thread dump into proper threads with stacktraces by default.
   - If [ApplicationExitInfo#getTraceInputStream](https://developer.android.com/reference/android/app/ApplicationExitInfo#getTraceInputStream()) returns null, the SDK no longer reports an ANR event, as these events are not very useful without it.
   - Enhance regex patterns for native stackframes
-
-### Fixes
-
-Breaking changes:
-- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 
 ## 6.23.0
 
