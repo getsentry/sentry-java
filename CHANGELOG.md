@@ -1,10 +1,12 @@
 # Changelog
 
-## 6.25.1
+## Unreleased
 
 ### Features
 
-- Add TraceOrigin to Transactions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
+- Add TraceOrigin to Transacadadsftions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
+
+## 6.25.1
 
 ### Fixes
 
