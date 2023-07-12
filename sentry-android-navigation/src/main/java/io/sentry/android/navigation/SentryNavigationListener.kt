@@ -36,7 +36,8 @@ private const val TRACE_ORIGIN = "auto.navigation"
 class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
-    private val enableNavigationTracing: Boolean = true
+    private val enableNavigationTracing: Boolean = true,
+    private val traceOriginAppendix: String? = null
 ) : NavController.OnDestinationChangedListener, IntegrationName {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
@@ -142,7 +143,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             transactonOptions
         )
 
-        transaction.spanContext.origin = TRACE_ORIGIN
+        transaction.spanContext.origin = traceOriginAppendix?.let { "$TRACE_ORIGIN.$traceOriginAppendix" } ?: TRACE_ORIGIN
 
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)
