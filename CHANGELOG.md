@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix ANRv2 thread dump parsing for native-only threads ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+- Derive `TracingContext` values from event for ANRv2 events ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+
 ## 6.25.0
 
 ### Features
