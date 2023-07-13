@@ -1,13 +1,18 @@
 package io.sentry.kotlin
 
 import io.sentry.Sentry
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -138,6 +143,31 @@ class SentryContextTest {
         assertNull(getTag("c1"))
         assertNull(getTag("c2"))
         assertNull(getTag("cloned"))
+    }
+
+    @Test
+    fun `mergeForChild returns copy of initial context if Key not present`() {
+        val initialContextElement = SentryContext(
+            Sentry.getCurrentHub().clone().also {
+                it.setTag("cloned", "clonedValue")
+            }
+        )
+        val mergedContextElement = initialContextElement.mergeForChild(CoroutineName("test"))
+
+        assertNotEquals(initialContextElement, mergedContextElement)
+        assertNotNull((mergedContextElement)[initialContextElement.key])
+    }
+
+    @Test
+    fun `mergeForChild returns passed context`() {
+        val initialContextElement = SentryContext(
+            Sentry.getCurrentHub().clone().also {
+                it.setTag("cloned", "clonedValue")
+            }
+        )
+        val mergedContextElement = SentryContext().mergeForChild(initialContextElement)
+
+        assertEquals(initialContextElement, mergedContextElement)
     }
 
     private fun getTag(tag: String): String? {

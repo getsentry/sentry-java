@@ -3,6 +3,7 @@ package io.sentry.kotlin
 import io.sentry.IHub
 import io.sentry.Sentry
 import kotlinx.coroutines.CopyableThreadContextElement
+import kotlinx.coroutines.CoroutineName
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
