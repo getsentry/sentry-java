@@ -179,6 +179,7 @@ public final class io/sentry/android/core/Installation {
 
 public final class io/sentry/android/core/InternalSentrySdk {
 	public fun <init> ()V
+	public static fun captureEnvelope ([B)Lio/sentry/protocol/SentryId;
 	public static fun getCurrentScope ()Lio/sentry/Scope;
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/Scope;)Ljava/util/Map;
 }

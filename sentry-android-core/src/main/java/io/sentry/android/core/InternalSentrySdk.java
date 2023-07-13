@@ -5,21 +5,33 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
 import io.sentry.Scope;
+import io.sentry.SentryEnvelope;
+import io.sentry.SentryEnvelopeItem;
+import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.Session;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/** Sentry SDK internal API methods meant for being used by the Sentry Hybrid SDKs. */
 @ApiStatus.Internal
 public final class InternalSentrySdk {
 
@@ -47,7 +59,7 @@ public final class InternalSentrySdk {
     try {
 
       final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
-      final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false);
+      final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(true, true);
       scope.getContexts().setDevice(deviceInfo);
       scope.getContexts().setOperatingSystem(deviceInfoUtil.getOperatingSystem());
 
@@ -92,5 +104,83 @@ public final class InternalSentrySdk {
     }
 
     return data;
+  }
+
+  /**
+   * Captures the provided envelope. Compared to {@link IHub#captureEvent(SentryEvent)} this method
+   * - will not enrich events with additional data (e.g. scope) - will not execute beforeSend: it's
+   * up to the caller to take care of this - will not perform any sampling: it's up to the caller to
+   * take care of this - will enrich the envelope with a Session updates is applicable
+   *
+   * @param envelopeData the serialized envelope data
+   * @return The Id (SentryId object) of the event
+   * @throws Exception In case the provided envelope could not be parsed / is invalid
+   */
+  public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) throws Exception {
+    final @NotNull IHub hub = HubAdapter.getInstance();
+    final @NotNull SentryOptions options = hub.getOptions();
+
+    final @NotNull ISerializer serializer = options.getSerializer();
+    final @Nullable SentryEnvelope envelope =
+        options.getEnvelopeReader().read(new ByteArrayInputStream(envelopeData));
+    if (envelope == null) {
+      throw new IllegalArgumentException("Envelope could not be read");
+    }
+
+    final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    // determine session state based on events inside envelope
+    @Nullable Session.State status = null;
+    boolean crashedOrErrored = false;
+    for (SentryEnvelopeItem item : envelope.getItems()) {
+      envelopeItems.add(item);
+
+      final SentryEvent event = item.getEvent(serializer);
+      if (event != null) {
+        if (event.isCrashed()) {
+          status = Session.State.Crashed;
+        }
+        if (event.isCrashed() || event.isErrored()) {
+          crashedOrErrored = true;
+        }
+      }
+    }
+
+    // update session and add it to envelope if necessary
+    final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
+    if (session != null) {
+      final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
+      envelopeItems.add(sessionItem);
+    }
+
+    final SentryEnvelope repackagedEnvelope =
+        new SentryEnvelope(envelope.getHeader(), envelopeItems);
+    return hub.captureEnvelope(repackagedEnvelope);
+  }
+
+  @Nullable
+  private static Session updateSession(
+      @NotNull IHub hub,
+      @NotNull SentryOptions options,
+      final @Nullable Session.State status,
+      final boolean crashedOrErrored) {
+    final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
+    hub.withScope(
+        scope -> {
+          final @Nullable Session session = scope.getSession();
+          if (session != null) {
+            final boolean updated = session.update(status, null, crashedOrErrored, null);
+            // if we have an uncaughtExceptionHint we can end the session.
+            if (updated) {
+              if (session.getStatus() == Session.State.Crashed) {
+                session.end();
+              }
+              sessionRef.set(session);
+            }
+          } else {
+            options.getLogger().log(SentryLevel.INFO, "Session is null on updateSession");
+          }
+        });
+    return sessionRef.get();
   }
 }
