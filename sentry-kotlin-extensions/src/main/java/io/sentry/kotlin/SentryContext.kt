@@ -19,7 +19,7 @@ public class SentryContext(private val hub: IHub = Sentry.getCurrentHub().clone(
     }
 
     override fun mergeForChild(overwritingElement: CoroutineContext.Element): CoroutineContext {
-        return SentryContext(hub.clone())
+        return overwritingElement[Key] ?: SentryContext(hub.clone())
     }
 
     override fun updateThreadContext(context: CoroutineContext): IHub {

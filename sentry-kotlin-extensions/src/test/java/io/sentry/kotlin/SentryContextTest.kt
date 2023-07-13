@@ -106,6 +106,40 @@ class SentryContextTest {
         assertNull(getTag("c2"))
     }
 
+    @Test
+    fun testExplicitlyPassedContextOverridesPropagatedContext() = runBlocking {
+        Sentry.setTag("parent", "parentValue")
+        launch(SentryContext()) {
+            Sentry.setTag("c1", "c1value")
+            assertEquals("c1value", getTag("c1"))
+            assertEquals("parentValue", getTag("parent"))
+            assertNull(getTag("c2"))
+
+            val c2 = launch(
+                SentryContext(
+                    Sentry.getCurrentHub().clone().also {
+                        it.setTag("cloned", "clonedValue")
+                    }
+                )
+            ) {
+                Sentry.setTag("c2", "c2value")
+                assertEquals("c2value", getTag("c2"))
+                assertEquals("parentValue", getTag("parent"))
+                assertNotNull(getTag("c1"))
+                assertNotNull(getTag("cloned"))
+            }
+
+            c2.join()
+
+            assertNotNull(getTag("c1"))
+            assertNull(getTag("c2"))
+            assertNull(getTag("cloned"))
+        }
+        assertNull(getTag("c1"))
+        assertNull(getTag("c2"))
+        assertNull(getTag("cloned"))
+    }
+
     private fun getTag(tag: String): String? {
         var value: String? = null
         Sentry.configureScope {
