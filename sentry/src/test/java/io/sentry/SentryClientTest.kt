@@ -737,7 +737,6 @@ class SentryClientTest {
             release = "io.sentry.samples@22.1.1"
             contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
             transaction = "MainActivity"
-            user = User().apply { id = "user_id" }
         }
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
         val scope = createScope()
@@ -750,7 +749,6 @@ class SentryClientTest {
                 assertEquals("io.sentry.samples@22.1.1", it.header.traceContext!!.release)
                 assertEquals(traceId, it.header.traceContext!!.traceId)
                 assertEquals("MainActivity", it.header.traceContext!!.transaction)
-                assertEquals("user_id", it.header.traceContext!!.userId)
             },
             anyOrNull()
         )

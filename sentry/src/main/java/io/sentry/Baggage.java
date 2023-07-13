@@ -137,7 +137,6 @@ public final class Baggage {
     baggage.setEnvironment(event.getEnvironment());
     final User user = event.getUser();
     baggage.setUserSegment(user != null ? getSegment(user) : null);
-    baggage.setUserId(user != null ? user.getId() : null);
     baggage.setTransaction(event.getTransaction());
     // we don't persist sample rate
     baggage.setSampleRate(null);
