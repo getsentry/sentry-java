@@ -4152,6 +4152,15 @@ public final class io/sentry/util/JsonSerializationUtils {
 	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
 }
 
+public final class io/sentry/util/LazyEvaluator {
+	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
+	public fun getValue ()Ljava/lang/Object;
+}
+
+public abstract interface class io/sentry/util/LazyEvaluator$Evaluator {
+	public abstract fun evaluate ()Ljava/lang/Object;
+}
+
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logNotInstanceOf (Ljava/lang/Class;Ljava/lang/Object;Lio/sentry/ILogger;)V

@@ -5,6 +5,7 @@ import io.sentry.ILogger
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.util.LazyEvaluator
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -53,7 +54,7 @@ class SendCachedEnvelopeIntegrationTest {
                 }
             )
 
-            return SendCachedEnvelopeIntegration(factory, hasStartupCrashMarker)
+            return SendCachedEnvelopeIntegration(factory, LazyEvaluator { hasStartupCrashMarker })
         }
     }
 
