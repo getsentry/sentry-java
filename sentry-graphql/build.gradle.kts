@@ -22,7 +22,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    implementation(Config.Libs.graphQlJava)
+    compileOnly(Config.Libs.graphQlJava)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -38,6 +38,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockWebserver)
     testImplementation(Config.Libs.okhttp)
+    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {
