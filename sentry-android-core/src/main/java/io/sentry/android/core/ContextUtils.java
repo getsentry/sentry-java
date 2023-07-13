@@ -35,7 +35,7 @@ public final class ContextUtils {
     private final boolean isSideLoaded;
     private final @Nullable String installerStore;
 
-    public SideLoadedInfo(boolean isSideLoaded, @Nullable String installerStore) {
+    public SideLoadedInfo(final boolean isSideLoaded, final @Nullable String installerStore) {
       this.isSideLoaded = isSideLoaded;
       this.installerStore = installerStore;
     }
