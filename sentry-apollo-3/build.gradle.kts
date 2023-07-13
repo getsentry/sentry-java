@@ -24,7 +24,7 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryKotlinExtensions)
 
-    implementation(Config.Libs.apolloKotlin)
+    compileOnly(Config.Libs.apolloKotlin)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -40,6 +40,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(Config.Libs.apolloKotlin)
 }
 
 configure<SourceSetContainer> {

@@ -6,6 +6,10 @@
 
 - Add TraceOrigin to Transacadadsftions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
 
+### Fixes
+
+- Change Spring Boot, Apollo, Apollo 3, JUL, Logback, Log4j2, OpenFeign, GraphQL and Kotlin coroutines core dependencies to compileOnly ([#2837](https://github.com/getsentry/sentry-java/pull/2837))
+
 ## 6.25.1
 
 ### Fixes
