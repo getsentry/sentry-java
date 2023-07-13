@@ -102,6 +102,8 @@ class SentryContextTest {
             assertNotNull(getTag("c1"))
             assertNull(getTag("c2"))
         }
+        assertNull(getTag("c1"))
+        assertNull(getTag("c2"))
     }
 
     private fun getTag(tag: String): String? {
