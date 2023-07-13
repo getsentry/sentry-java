@@ -21,7 +21,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    implementation(Config.Libs.feignCore)
+    compileOnly(Config.Libs.feignCore)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -36,6 +36,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(Config.Libs.feignCore)
 }
 
 configure<SourceSetContainer> {
