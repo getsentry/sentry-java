@@ -3627,6 +3627,7 @@ public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, i
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStartTimestamp ()Ljava/lang/Double;

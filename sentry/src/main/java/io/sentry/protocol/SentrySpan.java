@@ -138,6 +138,10 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     return data;
   }
 
+  public @Nullable String getOrigin() {
+    return origin;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {

@@ -330,6 +330,15 @@ class SentryGestureListenerTracingTest {
         verify(fixture.transaction).scheduleFinish()
     }
 
+    @Test
+    fun `captures transaction and sets trace origin`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        assertEquals("auto.ui.gesture_listener.old_view_system", fixture.transaction.spanContext.origin)
+    }
+
     internal open class ScrollableListView : AbsListView(mock()) {
         override fun getAdapter(): ListAdapter = mock()
         override fun setSelection(position: Int) = Unit
