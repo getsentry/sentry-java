@@ -126,6 +126,26 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  @NotNull
+  public static Baggage fromEvent(
+      final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
+    final Baggage baggage = new Baggage(options.getLogger());
+    final SpanContext trace = event.getContexts().getTrace();
+    baggage.setTraceId(trace != null ? trace.getTraceId().toString() : null);
+    baggage.setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    baggage.setRelease(event.getRelease());
+    baggage.setEnvironment(event.getEnvironment());
+    final User user = event.getUser();
+    baggage.setUserSegment(user != null ? getSegment(user) : null);
+    baggage.setUserId(user != null ? user.getId() : null);
+    baggage.setTransaction(event.getTransaction());
+    // we don't persist sample rate
+    baggage.setSampleRate(null);
+    baggage.freeze();
+    return baggage;
+  }
+
+  @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
     this(new HashMap<>(), null, true, logger);
   }

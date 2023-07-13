@@ -730,6 +730,33 @@ class SentryClientTest {
     }
 
     @Test
+    fun `tracingContext values are derived from backfillable events`() {
+        val traceId = SentryId(UUID.randomUUID())
+        val event = SentryEvent().apply {
+            environment = "release"
+            release = "io.sentry.samples@22.1.1"
+            contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
+            transaction = "MainActivity"
+            user = User().apply { id = "user_id" }
+        }
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val scope = createScope()
+
+        fixture.getSut().captureEvent(event, scope, hint)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals("release", it.header.traceContext!!.environment)
+                assertEquals("io.sentry.samples@22.1.1", it.header.traceContext!!.release)
+                assertEquals(traceId, it.header.traceContext!!.traceId)
+                assertEquals("MainActivity", it.header.traceContext!!.transaction)
+                assertEquals("user_id", it.header.traceContext!!.userId)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `non-backfillable events are only wired through regular processors`() {
         val backfillingProcessor = mock<BackfillingEventProcessor>()
         val nonBackfillingProcessor = mock<EventProcessor>()
