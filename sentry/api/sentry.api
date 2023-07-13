@@ -272,12 +272,14 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracingOrigins ()Ljava/util/List;
+	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
+	public fun setEnabled (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
@@ -1772,6 +1774,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
 	public fun isEnableUserInteractionTracing ()Z
+	public fun isEnabled ()Z
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
@@ -1806,6 +1809,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableUncaughtExceptionHandler (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
 	public fun setEnableUserInteractionTracing (Z)V
+	public fun setEnabled (Z)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
 	public fun setEnvironment (Ljava/lang/String;)V

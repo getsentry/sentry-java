@@ -434,7 +434,6 @@ public class SentryOptions {
   private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
-
   /** Whether Sentry should be enabled */
   private boolean enabled = true;
 
@@ -2354,6 +2353,10 @@ public class SentryOptions {
     }
     for (String bundleId : options.getBundleIds()) {
       addBundleId(bundleId);
+    }
+
+    if (options.isEnabled() != null) {
+      setEnabled(options.isEnabled());
     }
   }
 

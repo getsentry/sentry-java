@@ -247,6 +247,13 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with enabled set to true`() {
+        withPropertiesFile("enabled=true") { options ->
+            assertTrue(options.isEnabled() == true)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

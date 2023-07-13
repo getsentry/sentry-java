@@ -207,11 +207,6 @@ public final class Sentry {
               "Sentry has been already initialized. Previous configuration will be overwritten.");
     }
 
-    if(!options.isEnabled()) {
-      close();
-      return;
-    }
-
     if (!initConfigurations(options)) {
       return;
     }
@@ -293,8 +288,9 @@ public final class Sentry {
 
     final String dsn = options.getDsn();
     if (dsn == null) {
-      throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");
-    } else if (dsn.isEmpty()) {
+      throw new IllegalArgumentException(
+          "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
+    } else if (dsn.isEmpty() || !options.isEnabled()) {
       close();
       return false;
     }
