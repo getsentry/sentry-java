@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Disable Sentry with SentryOptions ([#2840](https://github.com/getsentry/sentry-java/pull/2840))
+
 ## 6.25.1
 
 ### Fixes
