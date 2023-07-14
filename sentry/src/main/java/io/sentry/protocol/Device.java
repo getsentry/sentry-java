@@ -534,7 +534,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     // JsonElementSerializer
 
     @Override
-    public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
+    public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
         throws IOException {
       writer.value(toString().toLowerCase(Locale.ROOT));
     }
@@ -590,7 +590,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (name != null) {
       writer.name(JsonKeys.NAME).value(name);

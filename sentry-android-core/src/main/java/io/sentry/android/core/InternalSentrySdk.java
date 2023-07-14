@@ -45,9 +45,21 @@ public final class InternalSentrySdk {
     return scopeRef.get();
   }
 
+  /**
+   * Serializes the provided scope. Specific data may be back-filled (e.g. device context) if the
+   * scope itself does not provide it.
+   *
+   * @param context Android context
+   * @param options Sentry Options
+   * @param scope the scope
+   * @return a map containing all relevant scope data (user, contexts, tags, extras, fingerprint,
+   *     level, breadcrumbs)
+   */
   @NotNull
   public static Map<String, Object> serializeScope(
-      @NotNull Context context, @NotNull SentryAndroidOptions options, @Nullable Scope scope) {
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions options,
+      final @Nullable Scope scope) {
     final @NotNull Map<String, Object> data = new HashMap<>();
     if (scope == null) {
       return data;
@@ -70,7 +82,11 @@ public final class InternalSentrySdk {
         scope.setUser(user);
       }
       if (user.getId() == null) {
-        user.setId(Installation.id(context));
+        try {
+          user.setId(Installation.id(context));
+        } catch (RuntimeException e) {
+          logger.log(SentryLevel.ERROR, "Could not retrieve installation ID", e);
+        }
       }
 
       // app context
@@ -160,8 +176,8 @@ public final class InternalSentrySdk {
 
   @Nullable
   private static Session updateSession(
-      @NotNull IHub hub,
-      @NotNull SentryOptions options,
+      final @NotNull IHub hub,
+      final @NotNull SentryOptions options,
       final @Nullable Session.State status,
       final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();

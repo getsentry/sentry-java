@@ -149,7 +149,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.START_TIMESTAMP).value(logger, doubleToBigDecimal(startTimestamp));
     if (timestamp != null) {

@@ -94,7 +94,8 @@ public final class Message implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (formatted != null) {
       writer.name(JsonKeys.FORMATTED).value(formatted);

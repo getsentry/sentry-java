@@ -145,7 +145,8 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (renderingSystem != null) {
       writer.name(JsonKeys.RENDERING_SYSTEM).value(renderingSystem);

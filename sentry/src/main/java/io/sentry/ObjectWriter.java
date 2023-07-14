@@ -13,21 +13,22 @@ public interface ObjectWriter {
 
   ObjectWriter endObject() throws IOException;
 
-  ObjectWriter name(String name) throws IOException;
+  ObjectWriter name(final @NotNull String name) throws IOException;
 
-  ObjectWriter value(String value) throws IOException;
+  ObjectWriter value(final @Nullable String value) throws IOException;
 
   ObjectWriter nullValue() throws IOException;
 
-  ObjectWriter value(boolean value) throws IOException;
+  ObjectWriter value(final boolean value) throws IOException;
 
-  ObjectWriter value(Boolean value) throws IOException;
+  ObjectWriter value(final @Nullable Boolean value) throws IOException;
 
-  ObjectWriter value(double value) throws IOException;
+  ObjectWriter value(final double value) throws IOException;
 
-  ObjectWriter value(long value) throws IOException;
+  ObjectWriter value(final long value) throws IOException;
 
-  ObjectWriter value(Number value) throws IOException;
+  ObjectWriter value(final @Nullable Number value) throws IOException;
 
-  ObjectWriter value(@NotNull ILogger logger, @Nullable Object object) throws IOException;
+  ObjectWriter value(final @NotNull ILogger logger, final @Nullable Object object)
+      throws IOException;
 }

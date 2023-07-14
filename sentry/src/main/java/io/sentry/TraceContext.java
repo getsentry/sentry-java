@@ -193,7 +193,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     writer.name(TraceContext.JsonKeys.TRACE_ID).value(logger, traceId);
     writer.name(TraceContext.JsonKeys.PUBLIC_KEY).value(publicKey);

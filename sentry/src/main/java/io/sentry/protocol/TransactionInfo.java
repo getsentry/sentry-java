@@ -31,7 +31,8 @@ public final class TransactionInfo implements JsonSerializable, JsonUnknown {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (source != null) {
       writer.name(JsonKeys.SOURCE).value(logger, source);

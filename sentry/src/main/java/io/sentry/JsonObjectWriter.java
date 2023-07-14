@@ -8,10 +8,10 @@ import org.jetbrains.annotations.Nullable;
 
 public final class JsonObjectWriter implements ObjectWriter {
 
-  private final JsonWriter jsonWriter;
-  private final JsonObjectSerializer jsonObjectSerializer;
+  private final @NotNull JsonWriter jsonWriter;
+  private final @NotNull JsonObjectSerializer jsonObjectSerializer;
 
-  public JsonObjectWriter(Writer out, int maxDepth) {
+  public JsonObjectWriter(final @NotNull Writer out, final int maxDepth) {
     jsonWriter = new JsonWriter(out);
     jsonObjectSerializer = new JsonObjectSerializer(maxDepth);
   }
@@ -41,13 +41,13 @@ public final class JsonObjectWriter implements ObjectWriter {
   }
 
   @Override
-  public JsonObjectWriter name(String name) throws IOException {
+  public JsonObjectWriter name(final @NotNull String name) throws IOException {
     jsonWriter.name(name);
     return this;
   }
 
   @Override
-  public JsonObjectWriter value(String value) throws IOException {
+  public JsonObjectWriter value(final @Nullable String value) throws IOException {
     jsonWriter.value(value);
     return this;
   }
@@ -59,31 +59,31 @@ public final class JsonObjectWriter implements ObjectWriter {
   }
 
   @Override
-  public JsonObjectWriter value(boolean value) throws IOException {
+  public JsonObjectWriter value(final boolean value) throws IOException {
     jsonWriter.value(value);
     return this;
   }
 
   @Override
-  public JsonObjectWriter value(Boolean value) throws IOException {
+  public JsonObjectWriter value(final @Nullable Boolean value) throws IOException {
     jsonWriter.value(value);
     return this;
   }
 
   @Override
-  public JsonObjectWriter value(double value) throws IOException {
+  public JsonObjectWriter value(final double value) throws IOException {
     jsonWriter.value(value);
     return this;
   }
 
   @Override
-  public JsonObjectWriter value(long value) throws IOException {
+  public JsonObjectWriter value(final long value) throws IOException {
     jsonWriter.value(value);
     return this;
   }
 
   @Override
-  public JsonObjectWriter value(Number value) throws IOException {
+  public JsonObjectWriter value(final @Nullable Number value) throws IOException {
     jsonWriter.value(value);
     return this;
   }
@@ -97,13 +97,13 @@ public final class JsonObjectWriter implements ObjectWriter {
    * @return this writer.
    */
   @Override
-  public JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object)
+  public JsonObjectWriter value(final @NotNull ILogger logger, final @Nullable Object object)
       throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
     return this;
   }
 
-  public void setIndent(@NotNull final String indent) {
+  public void setIndent(final @NotNull String indent) {
     jsonWriter.setIndent(indent);
   }
 }

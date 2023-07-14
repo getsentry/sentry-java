@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
-public class DeviceInfoUtil {
+public final class DeviceInfoUtil {
 
   @SuppressLint("StaticFieldLeak")
   private static volatile DeviceInfoUtil instance;
@@ -61,7 +61,8 @@ public class DeviceInfoUtil {
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
   }
 
-  public static @NotNull DeviceInfoUtil getInstance(
+  @NotNull
+  public static DeviceInfoUtil getInstance(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     if (instance == null) {
       synchronized (DeviceInfoUtil.class) {
@@ -139,7 +140,8 @@ public class DeviceInfoUtil {
     return device;
   }
 
-  public final @NotNull OperatingSystem getOperatingSystem() {
+  @NotNull
+  public OperatingSystem getOperatingSystem() {
     return os;
   }
 
@@ -164,7 +166,8 @@ public class DeviceInfoUtil {
     return os;
   }
 
-  public @Nullable ContextUtils.SideLoadedInfo getSideLoadedInfo() {
+  @Nullable
+  public ContextUtils.SideLoadedInfo getSideLoadedInfo() {
     return sideLoadedInfo;
   }
 
@@ -226,6 +229,7 @@ public class DeviceInfoUtil {
   }
 
   @SuppressWarnings("NewApi")
+  @NotNull
   private TimeZone getTimeZone() {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N) {
       LocaleList locales = context.getResources().getConfiguration().getLocales();
@@ -238,7 +242,8 @@ public class DeviceInfoUtil {
   }
 
   @SuppressWarnings("JdkObsolete")
-  private @Nullable Date getBootTime() {
+  @Nullable
+  private Date getBootTime() {
     try {
       // if user changes the clock, will give a wrong answer, consider ACTION_TIME_CHANGED.
       // currentTimeMillis returns UTC already
@@ -249,7 +254,8 @@ public class DeviceInfoUtil {
     return null;
   }
 
-  private @Nullable Intent getBatteryIntent() {
+  @Nullable
+  private Intent getBatteryIntent() {
     return context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
   }
 
@@ -258,7 +264,8 @@ public class DeviceInfoUtil {
    *
    * @return the device's current battery level (as a percentage of total), or null if unknown
    */
-  private @Nullable Float getBatteryLevel(final @NotNull Intent batteryIntent) {
+  @Nullable
+  private Float getBatteryLevel(final @NotNull Intent batteryIntent) {
     try {
       int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
       int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
@@ -281,7 +288,8 @@ public class DeviceInfoUtil {
    *
    * @return whether or not the device is currently plugged in and charging, or null if unknown
    */
-  private @Nullable Boolean isCharging(final @NotNull Intent batteryIntent) {
+  @Nullable
+  private Boolean isCharging(final @NotNull Intent batteryIntent) {
     try {
       int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
       return plugged == BatteryManager.BATTERY_PLUGGED_AC
@@ -292,7 +300,8 @@ public class DeviceInfoUtil {
     }
   }
 
-  private @Nullable Float getBatteryTemperature(final @NotNull Intent batteryIntent) {
+  @Nullable
+  private Float getBatteryTemperature(final @NotNull Intent batteryIntent) {
     try {
       int temperature = batteryIntent.getIntExtra(EXTRA_TEMPERATURE, -1);
       if (temperature != -1) {
@@ -309,7 +318,8 @@ public class DeviceInfoUtil {
    *
    * @return the device's current screen orientation, or null if unknown
    */
-  private @Nullable Device.DeviceOrientation getOrientation() {
+  @Nullable
+  private Device.DeviceOrientation getOrientation() {
     Device.DeviceOrientation deviceOrientation = null;
     try {
       deviceOrientation =
@@ -329,7 +339,8 @@ public class DeviceInfoUtil {
   }
 
   @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  private @NotNull Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
+  @NotNull
+  private Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
       return memInfo.totalMem;
     }
@@ -342,7 +353,8 @@ public class DeviceInfoUtil {
    *
    * @return the total amount of internal storage, in bytes
    */
-  private @Nullable Long getTotalInternalStorage(final @NotNull StatFs stat) {
+  @Nullable
+  private Long getTotalInternalStorage(final @NotNull StatFs stat) {
     try {
       long blockSize = getBlockSizeLong(stat);
       long totalBlocks = getBlockCountLong(stat);
@@ -397,7 +409,8 @@ public class DeviceInfoUtil {
    *
    * @return the unused amount of internal storage, in bytes
    */
-  private @Nullable Long getUnusedInternalStorage(final @NotNull StatFs stat) {
+  @Nullable
+  private Long getUnusedInternalStorage(final @NotNull StatFs stat) {
     try {
       long blockSize = getBlockSizeLong(stat);
       long availableBlocks = getAvailableBlocksLong(stat);
@@ -410,7 +423,8 @@ public class DeviceInfoUtil {
     }
   }
 
-  private @Nullable StatFs getExternalStorageStat(final @Nullable File internalStorage) {
+  @Nullable
+  private StatFs getExternalStorageStat(final @Nullable File internalStorage) {
     if (!isExternalStorageMounted()) {
       File path = getExternalStorageDep(internalStorage);
       if (path != null) { // && path.canRead()) { canRead() will read return false
@@ -424,7 +438,8 @@ public class DeviceInfoUtil {
   }
 
   @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  private @Nullable File[] getExternalFilesDirs() {
+  @Nullable
+  private File[] getExternalFilesDirs() {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.KITKAT) {
       return context.getExternalFilesDirs(null);
     } else {
@@ -436,7 +451,8 @@ public class DeviceInfoUtil {
     return null;
   }
 
-  private @Nullable File getExternalStorageDep(final @Nullable File internalStorage) {
+  @Nullable
+  private File getExternalStorageDep(final @Nullable File internalStorage) {
     final @Nullable File[] externalFilesDirs = getExternalFilesDirs();
 
     if (externalFilesDirs != null) {
@@ -471,7 +487,8 @@ public class DeviceInfoUtil {
    * @return the total amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  private @Nullable Long getTotalExternalStorage(final @NotNull StatFs stat) {
+  @Nullable
+  private Long getTotalExternalStorage(final @NotNull StatFs stat) {
     try {
       final long blockSize = getBlockSizeLong(stat);
       final long totalBlocks = getBlockCountLong(stat);
@@ -495,7 +512,8 @@ public class DeviceInfoUtil {
    * @return the unused amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  private @Nullable Long getUnusedExternalStorage(final @NotNull StatFs stat) {
+  @Nullable
+  private Long getUnusedExternalStorage(final @NotNull StatFs stat) {
     try {
       final long blockSize = getBlockSizeLong(stat);
       final long availableBlocks = getAvailableBlocksLong(stat);
@@ -508,7 +526,8 @@ public class DeviceInfoUtil {
     }
   }
 
-  private @Nullable String getDeviceId() {
+  @Nullable
+  private String getDeviceId() {
     try {
       return Installation.id(context);
     } catch (Throwable e) {

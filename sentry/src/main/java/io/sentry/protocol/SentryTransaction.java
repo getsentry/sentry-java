@@ -181,7 +181,8 @@ public final class SentryTransaction extends SentryBaseEvent
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (transaction != null) {
       writer.name(JsonKeys.TRANSACTION).value(transaction);

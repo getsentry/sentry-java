@@ -187,7 +187,8 @@ public final class SentryException implements JsonUnknown, JsonSerializable {
   // JsonSerializable
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (type != null) {
       writer.name(JsonKeys.TYPE).value(type);

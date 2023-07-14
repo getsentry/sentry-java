@@ -248,7 +248,8 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (message != null) {

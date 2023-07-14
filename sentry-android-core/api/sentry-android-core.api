@@ -151,14 +151,13 @@ public final class io/sentry/android/core/CurrentActivityIntegration : android/a
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public class io/sentry/android/core/DeviceInfoUtil {
+public final class io/sentry/android/core/DeviceInfoUtil {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun collectDeviceInformation (ZZ)Lio/sentry/protocol/Device;
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
-	public final fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
+	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
 	public static fun resetInstance ()V
-	protected fun retrieveOperatingSystemInformation ()Lio/sentry/protocol/OperatingSystem;
 }
 
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
@@ -171,10 +170,6 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
-}
-
-public final class io/sentry/android/core/Installation {
-	public static fun id (Landroid/content/Context;)Ljava/lang/String;
 }
 
 public final class io/sentry/android/core/InternalSentrySdk {

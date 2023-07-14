@@ -26,15 +26,36 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class MapObjectWriter implements ObjectWriter {
 
   final @NotNull Map<String, Object> root;
   /**
-   * The stack for maintaining the hierarchy and structure Possible elements: Map<>: An Object
-   * List<>: Array of objects String: The key for the object on top
+   * The stack for maintaining the hierarchy of a json-like data structure. Possible elements:
+   *
+   * <pre>
+   * Map: A JSON like object
+   * List: An array of values.
+   * String: The name for the upcoming Map/List
+   * </pre>
+   *
+   * E.g. consider the following stack:
+   *
+   * <pre>
+   * | String ("lastName")
+   * | Map (firstName="John")
+   * </pre>
+   *
+   * Once .value("Doe") is called, the top-most stack-element ("lastName") is popped and the
+   * key/value pair is stored in top-most stack element.
+   *
+   * <pre>
+   * | Map (firstName="John", lastName="Doe")
+   * </pre>
    */
   final @NotNull ArrayDeque<Object> stack;
 
@@ -208,7 +229,7 @@ public final class MapObjectWriter implements ObjectWriter {
   }
 
   @SuppressWarnings("unchecked")
-  private void postValue(@Nullable Object value) {
+  private void postValue(final @Nullable Object value) {
     final Object topStackElement = stack.peekLast();
     if (topStackElement instanceof List) {
       // if top stack element is an array, value is an element within the array

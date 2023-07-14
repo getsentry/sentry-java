@@ -8,13 +8,11 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-@ApiStatus.Internal
-public final class Installation {
+final class Installation {
   @TestOnly static @Nullable String deviceId = null;
 
   @TestOnly static final String INSTALLATION = "INSTALLATION";

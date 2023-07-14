@@ -184,7 +184,8 @@ public final class App implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (appIdentifier != null) {
       writer.name(JsonKeys.APP_IDENTIFIER).value(appIdentifier);
