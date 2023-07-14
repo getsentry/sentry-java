@@ -1,10 +1,12 @@
 # Changelog
 
-## 6.25.2
+## Unreleased
 
 ### Features
 
 - You can now disable Sentry by setting the `enabled` option to `false` ([#2840](https://github.com/getsentry/sentry-java/pull/2840))
+
+## 6.25.2
 
 ### Fixes
 
