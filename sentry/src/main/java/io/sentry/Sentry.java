@@ -288,12 +288,12 @@ public final class Sentry {
 
     final String dsn = options.getDsn();
 
-    if(!options.isEnabled() || (dsn != null && dsn.isEmpty())) {
+    if (!options.isEnabled() || (dsn != null && dsn.isEmpty())) {
       close();
       return false;
     } else if (dsn == null) {
       throw new IllegalArgumentException(
-        "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
+          "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
     }
 
     @SuppressWarnings("unused")
