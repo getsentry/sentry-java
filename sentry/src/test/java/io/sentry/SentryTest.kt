@@ -185,6 +185,22 @@ class SentryTest {
     }
 
     @Test
+    fun `initializes Sentry with enabled=false, thus disabling Sentry even if dsn is null`() {
+        Sentry.init {
+            it.isEnabled = false
+        }
+
+        Sentry.setTag("none", "shouldNotExist")
+
+        var value: String? = null
+        Sentry.getCurrentHub().configureScope {
+            value = it.tags[value]
+        }
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertNull(value)
+    }
+
+    @Test
     fun `captureUserFeedback gets forwarded to client`() {
         Sentry.init { it.dsn = dsn }
 
