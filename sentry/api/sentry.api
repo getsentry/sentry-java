@@ -195,6 +195,11 @@ public final class io/sentry/DateUtils {
 	public static fun toUtilDateNotNull (Lio/sentry/SentryDate;)Ljava/util/Date;
 }
 
+public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
@@ -1520,6 +1525,7 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun getThreads ()Ljava/util/List;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTransaction ()Ljava/lang/String;
+	public fun getUnhandledException ()Lio/sentry/protocol/SentryException;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isCrashed ()Z
 	public fun isErrored ()Z
@@ -2344,6 +2350,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
 	public static final field SENTRY_IS_FROM_HYBRID_SDK Ljava/lang/String;
 	public static final field SENTRY_JAVASCRIPT_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
@@ -2625,6 +2632,12 @@ public abstract interface class io/sentry/hints/Cached {
 
 public abstract interface class io/sentry/hints/DiskFlushNotification {
 	public abstract fun markFlushed ()V
+}
+
+public final class io/sentry/hints/EventDropReason : java/lang/Enum {
+	public static final field MULTITHREADED_DEDUPLICATION Lio/sentry/hints/EventDropReason;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/hints/EventDropReason;
+	public static fun values ()[Lio/sentry/hints/EventDropReason;
 }
 
 public abstract interface class io/sentry/hints/Flushable {
@@ -4110,6 +4123,7 @@ public final class io/sentry/util/FileUtils {
 
 public final class io/sentry/util/HintUtils {
 	public static fun createWithTypeCheckHint (Ljava/lang/Object;)Lio/sentry/Hint;
+	public static fun getEventDropReason (Lio/sentry/Hint;)Lio/sentry/hints/EventDropReason;
 	public static fun getSentrySdkHint (Lio/sentry/Hint;)Ljava/lang/Object;
 	public static fun hasType (Lio/sentry/Hint;Ljava/lang/Class;)Z
 	public static fun isFromHybridSdk (Lio/sentry/Hint;)Z
@@ -4117,6 +4131,7 @@ public final class io/sentry/util/HintUtils {
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;Lio/sentry/util/HintUtils$SentryHintFallback;)V
 	public static fun runIfHasTypeLogIfNot (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/ILogger;Lio/sentry/util/HintUtils$SentryConsumer;)V
+	public static fun setEventDropReason (Lio/sentry/Hint;Lio/sentry/hints/EventDropReason;)V
 	public static fun setIsFromHybridSdk (Lio/sentry/Hint;Ljava/lang/String;)V
 	public static fun setTypeCheckHint (Lio/sentry/Hint;Ljava/lang/Object;)V
 	public static fun shouldApplyScopeData (Lio/sentry/Hint;)Z

@@ -2,11 +2,13 @@ package io.sentry
 
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.hints.DiskFlushNotification
+import io.sentry.hints.EventDropReason.MULTITHREADED_DEDUPLICATION
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argWhere
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -219,6 +221,29 @@ class UncaughtExceptionHandlerIntegrationTest {
         // we do not call markFlushed, hence it should time out waiting for flush, but because
         // we drop the event, it should not even come to this if-check
         verify(fixture.logger, never()).log(
+            any(),
+            argThat { startsWith("Timed out") },
+            any<Any>()
+        )
+    }
+
+    @Test
+    fun `waits for event to flush on disk if it was dropped by multithreaded deduplicator`() {
+        val hintCaptor = argumentCaptor<Hint>()
+        whenever(fixture.hub.captureEvent(any(), hintCaptor.capture())).thenAnswer {
+            HintUtils.setEventDropReason(hintCaptor.firstValue, MULTITHREADED_DEDUPLICATION)
+            return@thenAnswer SentryId.EMPTY_ID
+        }
+
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        // we do not call markFlushed, even though we dropped the event, the reason was
+        // MULTITHREADED_DEDUPLICATION, so it should time out
+        verify(fixture.logger).log(
             any(),
             argThat { startsWith("Timed out") },
             any<Any>()
