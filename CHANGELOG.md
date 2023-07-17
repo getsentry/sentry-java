@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix ANRv2 thread dump parsing for native-only threads ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+- Derive `TracingContext` values from event for ANRv2 events ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+
+## 6.25.2
+
+### Fixes
+
+- Change Spring Boot, Apollo, Apollo 3, JUL, Logback, Log4j2, OpenFeign, GraphQL and Kotlin coroutines core dependencies to compileOnly ([#2837](https://github.com/getsentry/sentry-java/pull/2837))
+
 ## 6.25.1
 
 ### Fixes
