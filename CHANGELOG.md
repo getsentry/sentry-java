@@ -6,6 +6,8 @@
 
 - Fix ANRv2 thread dump parsing for native-only threads ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
 - Derive `TracingContext` values from event for ANRv2 events ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+- Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))
+  - This will improve Crash-Free Session Rate as we no longer will send multiple Session updates with `Crashed` status, but only the one that is relevant
 
 ## 6.25.2
 
