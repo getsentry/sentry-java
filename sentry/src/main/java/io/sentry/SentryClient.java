@@ -173,7 +173,13 @@ public final class SentryClient implements ISentryClient {
 
     try {
       @Nullable TraceContext traceContext = null;
-      if (scope != null) {
+      if (HintUtils.hasType(hint, Backfillable.class)) {
+        // for backfillable hint we synthesize Baggage from event values
+        if (event != null) {
+          final Baggage baggage = Baggage.fromEvent(event, options);
+          traceContext = baggage.toTraceContext();
+        }
+      } else if (scope != null) {
         final @Nullable ITransaction transaction = scope.getTransaction();
         if (transaction != null) {
           traceContext = transaction.traceContext();
