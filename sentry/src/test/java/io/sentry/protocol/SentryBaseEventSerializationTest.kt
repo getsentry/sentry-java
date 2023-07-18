@@ -3,8 +3,8 @@ package io.sentry.protocol
 import io.sentry.ILogger
 import io.sentry.JsonDeserializer
 import io.sentry.JsonObjectReader
-import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
+import io.sentry.ObjectWriter
 import io.sentry.SentryBaseEvent
 import io.sentry.vendor.gson.stream.JsonToken
 import org.junit.Test
@@ -17,7 +17,7 @@ class SentryBaseEventSerializationTest {
      * Make subclass, as `SentryBaseEvent` initializers are protected.
      */
     class Sut : SentryBaseEvent(), JsonSerializable {
-        override fun serialize(writer: JsonObjectWriter, logger: ILogger) {
+        override fun serialize(writer: ObjectWriter, logger: ILogger) {
             writer.beginObject()
             Serializer().serialize(this, writer, logger)
             writer.endObject()
