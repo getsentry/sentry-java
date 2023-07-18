@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.26.0
 
 ### Features
 - (Internal) Extend APIs for hybrid SDKs ([#2814](https://github.com/getsentry/sentry-java/pull/2814), [#2846](https://github.com/getsentry/sentry-java/pull/2846))
