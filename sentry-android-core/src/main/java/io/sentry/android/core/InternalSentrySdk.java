@@ -54,7 +54,7 @@ public final class InternalSentrySdk {
    * @param options Sentry Options
    * @param scope the scope
    * @return a map containing all relevant scope data (user, contexts, tags, extras, fingerprint,
-   *     level, breadcrumbs) or null if the scope itself is null or serialization fails
+   *     level, breadcrumbs)
    */
   @NotNull
   public static Map<String, Object> serializeScope(
