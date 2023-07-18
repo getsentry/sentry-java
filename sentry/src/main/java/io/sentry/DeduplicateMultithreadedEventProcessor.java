@@ -27,8 +27,9 @@ public final class DeduplicateMultithreadedEventProcessor implements EventProces
 
   @Override
   public @Nullable SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
-    if (!event.isCrashed()) {
-      // only dedupe crashes, because handled errors might be sent simultaneously on purpose
+    if (!HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
+      // only dedupe crashes coming from our exception handler, because custom errors/crashes might
+      // be sent on purpose
       return event;
     }
 

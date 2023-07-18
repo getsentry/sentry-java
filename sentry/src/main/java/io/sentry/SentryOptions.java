@@ -2239,7 +2239,6 @@ public class SentryOptions {
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
-      eventProcessors.add(new DeduplicateMultithreadedEventProcessor(this));
 
       if (Platform.isJvm()) {
         eventProcessors.add(new SentryRuntimeEventProcessor());

@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.hints.EventDropReason
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryException
@@ -49,70 +50,76 @@ class DeduplicateMultithreadedEventProcessorTest {
 
     @Test
     fun `does not drop if no type`() {
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         val event = fixture.getEvent(isHandled = false)
         val processor = fixture.getSut()
-        val processedEvent = processor.process(SentryEvent(), Hint())
+        val processedEvent = processor.process(event, hint)
 
         assertNotNull(processedEvent)
     }
 
     @Test
     fun `does not drop if no tid`() {
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         val event = fixture.getEvent(isHandled = false, type = "OutOfMemoryError")
         val processor = fixture.getSut()
-        val processedEvent = processor.process(SentryEvent(), Hint())
+        val processedEvent = processor.process(event, hint)
 
         assertNotNull(processedEvent)
     }
 
     @Test
     fun `does not drop if not yet processed`() {
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         val event = fixture.getEvent(isHandled = false, type = "OutOfMemoryError", tid = 1)
         val processor = fixture.getSut()
-        val processedEvent = processor.process(SentryEvent(), Hint())
+        val processedEvent = processor.process(event, hint)
 
         assertNotNull(processedEvent)
     }
 
     @Test
     fun `does not drop if an event of this type was not processed yet`() {
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         val event1 = fixture.getEvent(isHandled = false, type = "OutOfMemoryError", tid = 1)
         val event2 = fixture.getEvent(isHandled = false, type = "RuntimeException", tid = 2)
 
         val processor = fixture.getSut()
 
-        val processedEvent1 = processor.process(event1, Hint())
+        val processedEvent1 = processor.process(event1, hint)
         assertNotNull(processedEvent1)
 
-        val processedEvent2 = processor.process(event2, Hint())
+        val processedEvent2 = processor.process(event2, hint)
         assertNotNull(processedEvent2)
     }
 
     @Test
     fun `does not drop if an event of this type is from the same thread`() {
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         val event1 = fixture.getEvent(isHandled = false, type = "OutOfMemoryError", tid = 1)
         val event2 = fixture.getEvent(isHandled = false, type = "OutOfMemoryError", tid = 1)
 
         val processor = fixture.getSut()
 
-        val processedEvent1 = processor.process(event1, Hint())
+        val processedEvent1 = processor.process(event1, hint)
         assertNotNull(processedEvent1)
 
-        val processedEvent2 = processor.process(event2, Hint())
+        val processedEvent2 = processor.process(event2, hint)
         assertNotNull(processedEvent2)
     }
 
     @Test
     fun `drops if the same event of this type is from a different thread`() {
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         val event1 = fixture.getEvent(isHandled = false, type = "OutOfMemoryError", tid = 1)
         val event2 = fixture.getEvent(isHandled = false, type = "OutOfMemoryError", tid = 2)
 
         val processor = fixture.getSut()
 
-        val processedEvent1 = processor.process(event1, Hint())
+        val processedEvent1 = processor.process(event1, hint)
         assertNotNull(processedEvent1)
 
-        val processedEvent2 = processor.process(event2, Hint())
+        val processedEvent2 = processor.process(event2, hint)
         assertNull(processedEvent2)
     }
 
@@ -123,7 +130,7 @@ class DeduplicateMultithreadedEventProcessorTest {
 
         val processor = fixture.getSut()
 
-        val hint = Hint()
+        val hint = HintUtils.createWithTypeCheckHint(UncaughtHint())
         processor.process(event1, hint)
         processor.process(event2, hint)
         assertEquals(
@@ -131,4 +138,6 @@ class DeduplicateMultithreadedEventProcessorTest {
             HintUtils.getEventDropReason(hint)
         )
     }
+
+    internal class UncaughtHint : UncaughtExceptionHint(0, NoOpLogger.getInstance())
 }
