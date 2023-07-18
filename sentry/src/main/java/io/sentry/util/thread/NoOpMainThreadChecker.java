@@ -18,15 +18,18 @@ public final class NoOpMainThreadChecker implements IMainThreadChecker {
     return false;
   }
 
-  @Override public boolean isMainThread(@NotNull Thread thread) {
+  @Override
+  public boolean isMainThread(@NotNull Thread thread) {
     return false;
   }
 
-  @Override public boolean isMainThread() {
+  @Override
+  public boolean isMainThread() {
     return false;
   }
 
-  @Override public boolean isMainThread(@NotNull SentryThread sentryThread) {
+  @Override
+  public boolean isMainThread(@NotNull SentryThread sentryThread) {
     return false;
   }
 }

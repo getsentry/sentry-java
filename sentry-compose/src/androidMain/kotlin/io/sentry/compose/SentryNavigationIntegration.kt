@@ -16,7 +16,6 @@ import io.sentry.ITransaction
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.navigation.SentryNavigationListener
-import io.sentry.util.IntegrationUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 
 internal class SentryLifecycleObserver(

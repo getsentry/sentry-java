@@ -658,13 +658,8 @@ public final class io/sentry/Instrumenter : java/lang/Enum {
 	public static fun values ()[Lio/sentry/Instrumenter;
 }
 
-public abstract interface class io/sentry/Integration : io/sentry/IntegrationName {
+public abstract interface class io/sentry/Integration {
 	public abstract fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
-public abstract interface class io/sentry/IntegrationName {
-	public fun addIntegrationToSdkVersion ()V
-	public fun getIntegrationName ()Ljava/lang/String;
 }
 
 public final class io/sentry/IpAddressUtils {
@@ -2646,9 +2641,9 @@ public final class io/sentry/exception/SentryHttpClientException : java/lang/Exc
 }
 
 public abstract interface class io/sentry/hints/AbnormalExit {
-	public fun ignoreCurrentThread ()Z
+	public abstract fun ignoreCurrentThread ()Z
 	public abstract fun mechanism ()Ljava/lang/String;
-	public fun timestamp ()Ljava/lang/Long;
+	public abstract fun timestamp ()Ljava/lang/Long;
 }
 
 public abstract interface class io/sentry/hints/ApplyScopeData {
@@ -4188,6 +4183,12 @@ public final class io/sentry/util/HttpUtils {
 	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
 }
 
+public final class io/sentry/util/IntegrationUtils {
+	public fun <init> ()V
+	public static fun addIntegrationToSdkVersion (Ljava/lang/Class;)V
+	public static fun addIntegrationToSdkVersion (Ljava/lang/String;)V
+}
+
 public final class io/sentry/util/JsonSerializationUtils {
 	public fun <init> ()V
 	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
@@ -4315,21 +4316,27 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 }
 
 public abstract interface class io/sentry/util/thread/IMainThreadChecker {
-	public fun isMainThread ()Z
+	public abstract fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
-	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
-	public fun isMainThread (Ljava/lang/Thread;)Z
+	public abstract fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
+	public abstract fun isMainThread (Ljava/lang/Thread;)Z
 }
 
 public final class io/sentry/util/thread/MainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
 	public static fun getInstance ()Lio/sentry/util/thread/MainThreadChecker;
+	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
+	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
+	public fun isMainThread (Ljava/lang/Thread;)Z
 }
 
 public final class io/sentry/util/thread/NoOpMainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
 	public fun <init> ()V
 	public static fun getInstance ()Lio/sentry/util/thread/NoOpMainThreadChecker;
+	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
+	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
+	public fun isMainThread (Ljava/lang/Thread;)Z
 }
 
 public class io/sentry/vendor/Base64 {

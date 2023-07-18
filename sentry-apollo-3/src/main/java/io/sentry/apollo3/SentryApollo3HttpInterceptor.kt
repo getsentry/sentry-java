@@ -43,7 +43,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 ) : HttpInterceptor {
 
     init {
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("Apollo3")
         if (captureFailedRequests) {
             SentryIntegrationPackageStorage.getInstance()
                 .addIntegration("Apollo3ClientError")
@@ -129,10 +129,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         }
 
         return requestBuilder.build()
-    }
-
-    override fun getIntegrationName(): String {
-        return super.getIntegrationName().replace("Http", "")
     }
 
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
