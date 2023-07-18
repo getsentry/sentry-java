@@ -181,7 +181,7 @@ public final class InternalSentrySdk {
       final @Nullable Session.State status,
       final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
-    hub.withScope(
+    hub.configureScope(
         scope -> {
           final @Nullable Session session = scope.getSession();
           if (session != null) {

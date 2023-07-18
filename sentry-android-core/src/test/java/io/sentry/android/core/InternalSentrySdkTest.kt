@@ -29,6 +29,7 @@ import org.mockito.kotlin.whenever
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -251,20 +252,26 @@ class InternalSentrySdkTest {
             }
         )
 
-        // then the session should be included
         val capturedEnvelope = fixture.capturedEnvelopes.first()
         val capturedEnvelopeItems = capturedEnvelope.items.toList()
 
-        // and it should contain the original event / attachment
+        // then it should contain the original event + session
         assertEquals(2, capturedEnvelopeItems.size)
         assertEquals(SentryItemType.Event, capturedEnvelopeItems[0].header.type)
         assertEquals(SentryItemType.Session, capturedEnvelopeItems[1].header.type)
 
+        // and then the sent session should be marked as crashed
         val capturedSession = fixture.options.serializer.deserialize(
             InputStreamReader(ByteArrayInputStream(capturedEnvelopeItems[1].data)),
             Session::class.java
         )!!
-
         assertEquals(Session.State.Crashed, capturedSession.status)
+
+        // and the local session should be marked as crashed too
+        val scopeRef = AtomicReference<Scope>()
+        Sentry.configureScope { scope ->
+            scopeRef.set(scope)
+        }
+        assertEquals(Session.State.Crashed, scopeRef.get().session!!.status)
     }
 }
