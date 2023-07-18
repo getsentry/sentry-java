@@ -41,7 +41,8 @@ public final class InternalSentrySdk {
   @Nullable
   public static Scope getCurrentScope() {
     final @NotNull AtomicReference<Scope> scopeRef = new AtomicReference<>();
-    HubAdapter.getInstance().withScope(scopeRef::set);
+    //noinspection Convert2MethodRef
+    HubAdapter.getInstance().withScope(scope -> scopeRef.set(scope));
     return scopeRef.get();
   }
 
@@ -60,15 +61,14 @@ public final class InternalSentrySdk {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @Nullable Scope scope) {
+
     final @NotNull Map<String, Object> data = new HashMap<>();
     if (scope == null) {
       return data;
     }
-
-    final @NotNull ILogger logger = options.getLogger();
-    final @NotNull ObjectWriter writer = new MapObjectWriter(data);
-
     try {
+      final @NotNull ILogger logger = options.getLogger();
+      final @NotNull ObjectWriter writer = new MapObjectWriter(data);
 
       final @NotNull DeviceInfoUtil deviceInfoUtil = DeviceInfoUtil.getInstance(context, options);
       final @NotNull Device deviceInfo = deviceInfoUtil.collectDeviceInformation(true, true);
@@ -114,7 +114,7 @@ public final class InternalSentrySdk {
       writer.name("fingerprint").value(logger, scope.getFingerprint());
       writer.name("level").value(logger, scope.getLevel());
       writer.name("breadcrumbs").value(logger, scope.getBreadcrumbs());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Could not serialize scope.", e);
       return new HashMap<>();
     }
@@ -124,54 +124,62 @@ public final class InternalSentrySdk {
 
   /**
    * Captures the provided envelope. Compared to {@link IHub#captureEvent(SentryEvent)} this method
-   * - will not enrich events with additional data (e.g. scope) - will not execute beforeSend: it's
-   * up to the caller to take care of this - will not perform any sampling: it's up to the caller to
-   * take care of this - will enrich the envelope with a Session updates is applicable
+   * <br>
+   * - will not enrich events with additional data (e.g. scope)<br>
+   * - will not execute beforeSend: it's up to the caller to take care of this<br>
+   * - will not perform any sampling: it's up to the caller to take care of this<br>
+   * - will enrich the envelope with a Session update if applicable<br>
    *
    * @param envelopeData the serialized envelope data
-   * @return The Id (SentryId object) of the event
-   * @throws Exception In case the provided envelope could not be parsed / is invalid
+   * @return The Id (SentryId object) of the event, or null in case the envelope could not be
+   *     captured
    */
-  public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) throws Exception {
+  @Nullable
+  public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) {
     final @NotNull IHub hub = HubAdapter.getInstance();
     final @NotNull SentryOptions options = hub.getOptions();
 
-    final @NotNull ISerializer serializer = options.getSerializer();
-    final @Nullable SentryEnvelope envelope =
-        options.getEnvelopeReader().read(new ByteArrayInputStream(envelopeData));
-    if (envelope == null) {
-      throw new IllegalArgumentException("Envelope could not be read");
-    }
+    try {
+      final @NotNull ISerializer serializer = options.getSerializer();
+      final @Nullable SentryEnvelope envelope =
+          options.getEnvelopeReader().read(new ByteArrayInputStream(envelopeData));
+      if (envelope == null) {
+        return null;
+      }
 
-    final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
-    // determine session state based on events inside envelope
-    @Nullable Session.State status = null;
-    boolean crashedOrErrored = false;
-    for (SentryEnvelopeItem item : envelope.getItems()) {
-      envelopeItems.add(item);
+      // determine session state based on events inside envelope
+      @Nullable Session.State status = null;
+      boolean crashedOrErrored = false;
+      for (SentryEnvelopeItem item : envelope.getItems()) {
+        envelopeItems.add(item);
 
-      final SentryEvent event = item.getEvent(serializer);
-      if (event != null) {
-        if (event.isCrashed()) {
-          status = Session.State.Crashed;
-        }
-        if (event.isCrashed() || event.isErrored()) {
-          crashedOrErrored = true;
+        final SentryEvent event = item.getEvent(serializer);
+        if (event != null) {
+          if (event.isCrashed()) {
+            status = Session.State.Crashed;
+          }
+          if (event.isCrashed() || event.isErrored()) {
+            crashedOrErrored = true;
+          }
         }
       }
-    }
 
-    // update session and add it to envelope if necessary
-    final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
-    if (session != null) {
-      final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
-      envelopeItems.add(sessionItem);
-    }
+      // update session and add it to envelope if necessary
+      final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
+      if (session != null) {
+        final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
+        envelopeItems.add(sessionItem);
+      }
 
-    final SentryEnvelope repackagedEnvelope =
-        new SentryEnvelope(envelope.getHeader(), envelopeItems);
-    return hub.captureEnvelope(repackagedEnvelope);
+      final SentryEnvelope repackagedEnvelope =
+          new SentryEnvelope(envelope.getHeader(), envelopeItems);
+      return hub.captureEnvelope(repackagedEnvelope);
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+    }
+    return null;
   }
 
   @Nullable
@@ -181,7 +189,7 @@ public final class InternalSentrySdk {
       final @Nullable Session.State status,
       final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
-    hub.withScope(
+    hub.configureScope(
         scope -> {
           final @Nullable Session session = scope.getSession();
           if (session != null) {
