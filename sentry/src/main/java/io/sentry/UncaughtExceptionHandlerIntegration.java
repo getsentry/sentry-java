@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.BlockingFlushHint;
@@ -78,7 +80,7 @@ public final class UncaughtExceptionHandlerIntegration
       this.options
           .getLogger()
           .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
   }
 

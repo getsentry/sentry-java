@@ -14,7 +14,6 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
@@ -28,6 +27,7 @@ import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.util.HttpUtils
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
@@ -40,10 +40,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
-) : HttpInterceptor, IntegrationName {
+) : HttpInterceptor {
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion(javaClass)
         if (captureFailedRequests) {
             SentryIntegrationPackageStorage.getInstance()
                 .addIntegration("Apollo3ClientError")

@@ -628,5 +628,7 @@ class MainEventProcessorTest {
         override fun mechanism(): String? = null
 
         override fun ignoreCurrentThread(): Boolean = ignoreCurrentThread
+
+        override fun timestamp(): Long? = null
     }
 }

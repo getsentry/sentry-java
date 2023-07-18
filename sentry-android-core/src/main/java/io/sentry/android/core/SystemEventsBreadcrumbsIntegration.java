@@ -31,6 +31,7 @@ import static android.content.Intent.ACTION_SHUTDOWN;
 import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
 import static android.content.Intent.ACTION_TIME_CHANGED;
 import static io.sentry.TypeCheckHint.ANDROID_INTENT;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -103,7 +104,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         this.options
             .getLogger()
             .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion();
+        addIntegrationToSdkVersion(getClass());
       } catch (Throwable e) {
         this.options.setEnableSystemEventBreadcrumbs(false);
         this.options

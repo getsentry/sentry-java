@@ -238,7 +238,11 @@ class EnvelopeCacheTest {
         fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
 
         val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
-        val abnormalHint = AbnormalExit { "abnormal_mechanism" }
+        val abnormalHint = object : AbnormalExit {
+            override fun mechanism(): String? = "abnormal_mechanism"
+            override fun ignoreCurrentThread(): Boolean = false
+            override fun timestamp(): Long? = null
+        }
         val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
         cache.store(envelope, hints)
 
@@ -261,7 +265,7 @@ class EnvelopeCacheTest {
         val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
         val abnormalHint = object : AbnormalExit {
             override fun mechanism(): String = "abnormal_mechanism"
-
+            override fun ignoreCurrentThread(): Boolean = false
             override fun timestamp(): Long = sessionExitedWithAbnormal
         }
         val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
@@ -284,7 +288,7 @@ class EnvelopeCacheTest {
         val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
         val abnormalHint = object : AbnormalExit {
             override fun mechanism(): String = "abnormal_mechanism"
-
+            override fun ignoreCurrentThread(): Boolean = false
             override fun timestamp(): Long = sessionExitedWithAbnormal
         }
         val hints = HintUtils.createWithTypeCheckHint(abnormalHint)

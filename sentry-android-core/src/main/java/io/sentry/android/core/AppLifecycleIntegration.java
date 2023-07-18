@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.IHub;
 import io.sentry.Integration;
@@ -94,7 +96,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     try {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
       options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     } catch (Throwable e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.

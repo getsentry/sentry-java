@@ -9,7 +9,6 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ITransaction
-import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -19,6 +18,7 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.TracingUtils
 import java.lang.ref.WeakReference
 
@@ -35,7 +35,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
     private val enableNavigationTracing: Boolean = true
-) : NavController.OnDestinationChangedListener, IntegrationName {
+) : NavController.OnDestinationChangedListener {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
     private var previousArgs: Bundle? = null
@@ -45,7 +45,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var activeTransaction: ITransaction? = null
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion(javaClass)
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }

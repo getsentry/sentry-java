@@ -2,12 +2,12 @@ package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 import static io.sentry.android.core.internal.util.ScreenshotUtils.takeScreenshot;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
-import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * captured.
  */
 @ApiStatus.Internal
-public final class ScreenshotEventProcessor implements EventProcessor, IntegrationName {
+public final class ScreenshotEventProcessor implements EventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -40,7 +40,7 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
     this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
 
     if (options.isAttachScreenshot()) {
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
   }
 

@@ -13,19 +13,20 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import io.sentry.Breadcrumb
 import io.sentry.ITransaction
-import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.navigation.SentryNavigationListener
+import io.sentry.util.IntegrationUtils
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 
 internal class SentryLifecycleObserver(
     private val navController: NavController,
     private val navListener: NavController.OnDestinationChangedListener =
         SentryNavigationListener()
-) : LifecycleEventObserver, IntegrationName {
+) : LifecycleEventObserver {
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion("ComposeNavigation")
         SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
     }
 
@@ -35,10 +36,6 @@ internal class SentryLifecycleObserver(
         } else if (event == Lifecycle.Event.ON_PAUSE) {
             navController.removeOnDestinationChangedListener(navListener)
         }
-    }
-
-    override fun getIntegrationName(): String {
-        return "ComposeNavigation"
     }
 
     fun dispose() {
