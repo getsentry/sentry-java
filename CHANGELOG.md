@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.26.0
 
 ### Fixes
 
