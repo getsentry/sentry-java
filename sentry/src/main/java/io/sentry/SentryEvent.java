@@ -211,17 +211,20 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
    * @return true if its crashed or false otherwise
    */
   public boolean isCrashed() {
+    return getUnhandledException() != null;
+  }
+
+  public @Nullable SentryException getUnhandledException() {
     if (exception != null) {
       for (SentryException e : exception.getValues()) {
         if (e.getMechanism() != null
             && e.getMechanism().isHandled() != null
             && !e.getMechanism().isHandled()) {
-          return true;
+          return e;
         }
       }
     }
-
-    return false;
+    return null;
   }
 
   /**

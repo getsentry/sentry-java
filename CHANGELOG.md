@@ -4,7 +4,9 @@
 
 ### Fixes
 
-- Do not send session updates for terminated sessions ([#2849](https://github.com/getsentry/sentry-java/pull/2849))
+- Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))
+  - This will improve Crash-Free Session Rate as we no longer will send multiple Session updates with `Crashed` status, but only the one that is relevant
+ - Do not send session updates for terminated sessions ([#2849](https://github.com/getsentry/sentry-java/pull/2849))
 
 ## 6.26.0
 
