@@ -965,7 +965,7 @@ class SentryClientTest {
         fixture.getSut().updateSessionData(event, Hint(), scope)
         scope.withSession {
             assertEquals(Session.State.Crashed, it!!.status)
-            assertNull(it.init)
+            assertNotNull(it.duration)
         }
     }
 
