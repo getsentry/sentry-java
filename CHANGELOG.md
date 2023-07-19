@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Do not send session updates for terminated sessions ([#2849](https://github.com/getsentry/sentry-java/pull/2849))
+
 ## 6.26.0
 
 ### Features
