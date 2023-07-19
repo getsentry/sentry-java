@@ -14,6 +14,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.SpanStatus.OUT_OF_RANGE
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
@@ -321,6 +322,17 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.transaction).scheduleFinish()
+    }
+
+    @Test
+    fun `preserves existing transaction status`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        fixture.transaction.status = OUT_OF_RANGE
+        sut.stopTracing(SpanStatus.CANCELLED)
+        assertEquals(OUT_OF_RANGE, fixture.transaction.status)
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {
