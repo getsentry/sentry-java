@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))
+  - This will improve Crash-Free Session Rate as we no longer will send multiple Session updates with `Crashed` status, but only the one that is relevant
+
 ## 6.26.0
 
 ### Features
