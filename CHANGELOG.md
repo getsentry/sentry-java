@@ -9,6 +9,8 @@ Breaking changes:
 
 ### Fixes
 
+- Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
+
 Breaking changes:
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 
