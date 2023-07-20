@@ -198,7 +198,7 @@ public final class SentryTracer implements ITransaction {
         if (!child.isFinished()) {
           child.setSpanFinishedCallback(
               null); // reset the callback, as we're already in the finish method
-          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
+          child.finish(child.getStatus(), finishTimestamp);
         }
       }
       root.finish(finishStatus.spanStatus, finishTimestamp);
