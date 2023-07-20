@@ -10,6 +10,7 @@ Breaking changes:
 ### Fixes
 
 - Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
+- Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
 
 Breaking changes:
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
