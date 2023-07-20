@@ -1,6 +1,7 @@
 package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
+import graphql.GraphQLError;
 import io.sentry.EventProcessor;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
@@ -9,6 +10,7 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
+import io.sentry.graphql.SentryDataFetcherExceptionHandler;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.ContextTagsEventProcessor;
@@ -19,6 +21,7 @@ import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
+import io.sentry.spring.graphql.SentryGraphqlConfiguration;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
@@ -52,6 +55,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -152,6 +156,16 @@ public class SentryAutoConfiguration {
         return new OpenTelemetryLinkErrorEventProcessor();
       }
     }
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryGraphqlConfiguration.class)
+    @Open
+    @ConditionalOnClass({
+      SentryDataFetcherExceptionHandler.class,
+      DataFetcherExceptionResolverAdapter.class,
+      GraphQLError.class
+    })
+    static class GraphqlConfiguration {}
 
     /** Registers beans specific to Spring MVC. */
     @Configuration(proxyBeanMethods = false)

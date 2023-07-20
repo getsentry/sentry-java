@@ -33,8 +33,9 @@ dependencies {
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.slf4jApi)
-
     compileOnly(Config.Libs.springWebflux)
+    compileOnly(Config.Libs.springBootStarterGraphql)
+    compileOnly(projects.sentryGraphql)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

@@ -189,6 +189,113 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   }
 
   /**
+   * Creates a breadcrumb for a GraphQL operation.
+   *
+   * @param operationName - the name of the GraphQL operation
+   * @param operationType - the type of GraphQL operation (e.g. query, mutation, subscription)
+   * @param operationId - the ID of the GraphQL operation
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb graphqlOperation(
+      final @Nullable String operationName,
+      final @Nullable String operationType,
+      final @Nullable String operationId) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+
+    breadcrumb.setType("graphql");
+
+    if (operationName != null) {
+      breadcrumb.setData("operation_name", operationName);
+    }
+    if (operationType != null) {
+      breadcrumb.setData("operation_type", operationType);
+      breadcrumb.setCategory(operationType);
+    } else {
+      breadcrumb.setCategory("graphql.operation");
+    }
+    if (operationId != null) {
+      breadcrumb.setData("operation_id", operationId);
+    }
+
+    return breadcrumb;
+  }
+
+  /**
+   * Creates a breadcrumb for a GraphQL data fetcher.
+   *
+   * @param path - the name of the GraphQL operation
+   * @param field - the type of GraphQL operation (e.g. query, mutation, subscription)
+   * @param type - the ID of the GraphQL operation
+   * @param objectType - the object type of the GraphQL data fetch operation
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb graphqlDataFetcher(
+      final @Nullable String path,
+      final @Nullable String field,
+      final @Nullable String type,
+      final @Nullable String objectType) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+
+    breadcrumb.setType("graphql");
+    breadcrumb.setCategory("data_fetcher");
+
+    if (path != null) {
+      // TODO key?
+      breadcrumb.setData("graphql.path", path);
+    }
+    if (field != null) {
+      // TODO key?
+      breadcrumb.setData("graphql.field", field);
+    }
+    if (type != null) {
+      // TODO key?
+      breadcrumb.setData("graphql.type", type);
+    }
+    if (objectType != null) {
+      // TODO key?
+      breadcrumb.setData("graphql.object_type", objectType);
+    }
+
+    return breadcrumb;
+  }
+
+  /**
+   * Creates a breadcrumb for a GraphQL data loader.
+   *
+   * @param keys - keys to be fetched by the data loader
+   * @param keyType - class of the data loaders key(s)
+   * @param valueType - class of the data loaders value(s)
+   * @param name - name of the data loader
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb graphqlDataLoader(
+      final @NotNull Iterable<?> keys,
+      final @Nullable Class<?> keyType,
+      final @Nullable Class<?> valueType,
+      final @Nullable String name) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+
+    breadcrumb.setType("graphql");
+    breadcrumb.setCategory("data_loader");
+
+    breadcrumb.setData("keys", keys);
+
+    if (keyType != null) {
+      breadcrumb.setData("key_type", keyType.getName());
+    }
+
+    if (valueType != null) {
+      breadcrumb.setData("value_type", valueType.getName());
+    }
+
+    if (name != null) {
+      breadcrumb.setData("name", name);
+    }
+
+    return breadcrumb;
+  }
+
+  /**
    * Creates navigation breadcrumb - a navigation event can be a URL change in a web application, or
    * a UI transition in a mobile or desktop application, etc.
    *

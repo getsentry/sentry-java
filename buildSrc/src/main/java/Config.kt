@@ -73,14 +73,17 @@ object Config {
         val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
+        val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBootVersion"
         val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
         val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
 
         val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
+        val springBoot3StarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBoot3Version"
         val springBoot3StarterTest = "org.springframework.boot:spring-boot-starter-test:$springBoot3Version"
         val springBoot3StarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBoot3Version"
         val springBoot3StarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBoot3Version"
