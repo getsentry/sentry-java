@@ -147,7 +147,7 @@ public final class UserFeedback implements JsonUnknown, JsonSerializable {
   // JsonSerializable
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.EVENT_ID);

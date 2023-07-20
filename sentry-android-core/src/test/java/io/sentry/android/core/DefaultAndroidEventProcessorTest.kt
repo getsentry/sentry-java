@@ -13,10 +13,6 @@ import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME
-import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
-import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
-import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
-import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
 import io.sentry.android.core.internal.util.CpuInfoUtils
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
@@ -80,6 +76,7 @@ class DefaultAndroidEventProcessorTest {
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
         AppState.getInstance().resetInstance()
+        DeviceInfoUtil.resetInstance()
     }
 
     @Test
@@ -296,19 +293,6 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Executor service should be called on ctor`() {
-        val sut = fixture.getSut(context)
-
-        val contextData = sut.contextData.get()
-
-        assertNotNull(contextData)
-        assertNotNull(contextData[ROOTED])
-        assertNotNull(contextData[KERNEL_VERSION])
-        assertNotNull(contextData[EMULATOR])
-        assertNotNull(contextData[SIDE_LOADED])
-    }
-
-    @Test
     fun `Processor won't throw exception`() {
         val sut = fixture.getSut(context)
 
@@ -323,7 +307,7 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `Processor won't throw exception when theres a hint`() {
         val processor =
-            DefaultAndroidEventProcessor(context, fixture.buildInfo, mock(), fixture.options)
+            DefaultAndroidEventProcessor(context, fixture.buildInfo, fixture.options)
 
         val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
         processor.process(SentryEvent(), hints)
@@ -575,14 +559,5 @@ class DefaultAndroidEventProcessorTest {
             val thread = it.threads!!.first()
             assertNull(thread.isMain)
         }
-    }
-
-    @Test
-    fun `does not perform root check if root checker is disabled`() {
-        fixture.options.isEnableRootCheck = false
-        val sut = fixture.getSut(context)
-
-        val contextData = sut.contextData.get()
-        assertNull(contextData[ROOTED])
     }
 }

@@ -44,7 +44,7 @@ public final class SpanId implements JsonSerializable {
   // JsonElementSerializer
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.value(value);
   }
