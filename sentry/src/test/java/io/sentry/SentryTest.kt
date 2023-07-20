@@ -723,6 +723,47 @@ class SentryTest {
         assertFalse(previousSessionFile.exists())
     }
 
+    @Test
+    fun `getSpan calls hub getSpan`() {
+        val hub = mock<IHub>()
+        Sentry.init({
+            it.dsn = dsn
+        }, false)
+        Sentry.setCurrentHub(hub)
+        Sentry.getSpan()
+        verify(hub).span
+    }
+
+    @Test
+    fun `getSpan calls returns root span if globalhub mode is enabled`() {
+        Sentry.init({
+            it.dsn = dsn
+            it.enableTracing = true
+            it.sampleRate = 1.0
+        }, true)
+
+        val transaction = Sentry.startTransaction("name", "op-root", true)
+        transaction.startChild("op-child")
+
+        val span = Sentry.getSpan()!!
+        assertEquals("op-root", span.operation)
+    }
+
+    @Test
+    fun `getSpan calls returns child span if globalhub mode is disabled`() {
+        Sentry.init({
+            it.dsn = dsn
+            it.enableTracing = true
+            it.sampleRate = 1.0
+        }, false)
+
+        val transaction = Sentry.startTransaction("name", "op-root", true)
+        transaction.startChild("op-child")
+
+        val span = Sentry.getSpan()!!
+        assertEquals("op-child", span.operation)
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set

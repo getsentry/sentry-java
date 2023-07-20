@@ -6,6 +6,7 @@
 
 Breaking changes:
 - Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+- If global hub mode is enabled (default on Android), Sentry.getSpan() returns the root span instead of the latest span ([#2853](https://github.com/getsentry/sentry-java/pull/2853))
 
 ### Fixes
 
