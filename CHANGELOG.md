@@ -7,6 +7,7 @@
 - Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))
   - This will improve Crash-Free Session Rate as we no longer will send multiple Session updates with `Crashed` status, but only the one that is relevant
 - Ensure no Java 8 method reference sugar is used for Android ([#2857](https://github.com/getsentry/sentry-java/pull/2857))
+- Do not send session updates for terminated sessions ([#2849](https://github.com/getsentry/sentry-java/pull/2849))
 
 ## 6.26.0
 

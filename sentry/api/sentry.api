@@ -2063,6 +2063,7 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
+	public fun isTerminated ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
 	public fun setUnknown (Ljava/util/Map;)V
