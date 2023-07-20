@@ -255,7 +255,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   void stopTracing(final @NotNull SpanStatus status) {
     if (activeTransaction != null) {
-      activeTransaction.finish(status);
+      final SpanStatus currentStatus = activeTransaction.getStatus();
+      // status might be set by other integrations, let's not overwrite it
+      if (currentStatus == null) {
+        activeTransaction.finish(status);
+      } else {
+        activeTransaction.finish();
+      }
     }
     hub.configureScope(
         scope -> {
