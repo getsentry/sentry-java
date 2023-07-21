@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Features
+
+Breaking changes:
+- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+
+### Fixes
+
+- Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
+
+Breaking changes:
+- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
+
+## Unreleased
+
 ### Fixes
 
 - Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
