@@ -6,6 +6,7 @@
 
 Breaking changes:
 - Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+- Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
 
 ### Fixes
 

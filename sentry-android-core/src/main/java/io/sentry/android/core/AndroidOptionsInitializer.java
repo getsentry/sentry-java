@@ -41,6 +41,8 @@ import org.jetbrains.annotations.TestOnly;
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
+  static final long DEFAULT_FLUSH_TIMEOUT_MS = 4000;
+
   static final String SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME =
       "io.sentry.compose.gestures.ComposeGestureTargetLocator";
 
@@ -92,6 +94,9 @@ final class AndroidOptionsInitializer {
     options.setLogger(logger);
 
     options.setDateProvider(new SentryAndroidDateProvider());
+
+    // set a lower flush timeout on Android to avoid ANRs
+    options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
