@@ -297,7 +297,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when event does not have ip address set and sendDefaultPii is set to true, sets {{auto}} as the ip address`() {
+    fun `when event does not have ip address set, sets {{auto}} as the ip address`() {
         val sut = fixture.getSut(sendDefaultPii = true)
         val event = SentryEvent()
         sut.process(event, Hint())
@@ -307,7 +307,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when event has ip address set and sendDefaultPii is set to true, keeps original ip address`() {
+    fun `when event has ip address set, keeps original ip address`() {
         val sut = fixture.getSut(sendDefaultPii = true)
         val event = SentryEvent()
         event.user = User().apply {
@@ -316,17 +316,6 @@ class MainEventProcessorTest {
         sut.process(event, Hint())
         assertNotNull(event.user) {
             assertEquals("192.168.0.1", it.ipAddress)
-        }
-    }
-
-    @Test
-    fun `when event does not have ip address set and sendDefaultPii is set to false, does not set ip address`() {
-        val sut = fixture.getSut(sendDefaultPii = false)
-        val event = SentryEvent()
-        event.user = User()
-        sut.process(event, Hint())
-        assertNotNull(event.user) {
-            assertNull(it.ipAddress)
         }
     }
 
