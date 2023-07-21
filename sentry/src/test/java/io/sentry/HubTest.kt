@@ -1627,6 +1627,15 @@ class HubTest {
     }
 
     @Test
+    fun `when there is a transaction but the hub is closed, getTransaction returns null`() {
+        val hub = generateHub()
+        hub.startTransaction("name", "op")
+        hub.close()
+
+        assertNull(hub.transaction)
+    }
+
+    @Test
     fun `when there is active span within a transaction bound to the scope, getSpan returns active span`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction", "op")
