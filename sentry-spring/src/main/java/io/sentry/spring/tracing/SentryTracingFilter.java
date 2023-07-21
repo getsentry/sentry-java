@@ -32,6 +32,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
   private static final String TRANSACTION_OP = "http.server";
 
+  private static final String TRACE_ORIGIN = "auto.http.spring.webmvc";
+
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
 
@@ -98,6 +100,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       throws IOException, ServletException {
     // at this stage we are not able to get real transaction name
     final ITransaction transaction = startTransaction(httpRequest, transactionContext);
+    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+
     try {
       filterChain.doFilter(httpRequest, httpResponse);
     } catch (Throwable e) {

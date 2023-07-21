@@ -25,6 +25,7 @@ import org.springframework.util.StringUtils;
 @ApiStatus.Internal
 @Open
 public class SentryTransactionAdvice implements MethodInterceptor {
+  private static final String TRACE_ORIGIN = "auto.function.spring.advice";
   private final @NotNull IHub hub;
 
   public SentryTransactionAdvice(final @NotNull IHub hub) {
@@ -68,6 +69,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
           hub.startTransaction(
               new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
               transactionOptions);
+      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
       try {
         final Object result = invocation.proceed();
         transaction.setStatus(SpanStatus.OK);

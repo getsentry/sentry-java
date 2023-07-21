@@ -2159,16 +2159,18 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public static final field TYPE Ljava/lang/String;
 	protected field description Ljava/lang/String;
 	protected field op Ljava/lang/String;
+	protected field origin Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
 	protected field tags Ljava/util/Map;
 	public fun <init> (Lio/sentry/SpanContext;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;Lio/sentry/SpanStatus;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;Lio/sentry/SpanStatus;Ljava/lang/String;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getProfileSampled ()Ljava/lang/Boolean;
 	public fun getSampled ()Ljava/lang/Boolean;
@@ -2182,6 +2184,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
+	public fun setOrigin (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 	public fun setSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
@@ -2199,6 +2202,7 @@ public final class io/sentry/SpanContext$Deserializer : io/sentry/JsonDeserializ
 public final class io/sentry/SpanContext$JsonKeys {
 	public static final field DESCRIPTION Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
+	public static final field ORIGIN Ljava/lang/String;
 	public static final field PARENT_SPAN_ID Ljava/lang/String;
 	public static final field SPAN_ID Ljava/lang/String;
 	public static final field STATUS Ljava/lang/String;
@@ -2792,10 +2796,11 @@ public abstract interface class io/sentry/internal/gestures/GestureTargetLocator
 }
 
 public final class io/sentry/internal/gestures/UiElement {
-	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getClassName ()Ljava/lang/String;
 	public fun getIdentifier ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getResourceName ()Ljava/lang/String;
 	public fun getTag ()Ljava/lang/String;
 	public fun getView ()Ljava/lang/Object;
@@ -3676,10 +3681,11 @@ public final class io/sentry/protocol/SentryRuntime$JsonKeys {
 public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Span;)V
 	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/util/Map;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStartTimestamp ()Ljava/lang/Double;
@@ -3703,6 +3709,7 @@ public final class io/sentry/protocol/SentrySpan$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field DESCRIPTION Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
+	public static final field ORIGIN Ljava/lang/String;
 	public static final field PARENT_SPAN_ID Ljava/lang/String;
 	public static final field SPAN_ID Ljava/lang/String;
 	public static final field START_TIMESTAMP Ljava/lang/String;

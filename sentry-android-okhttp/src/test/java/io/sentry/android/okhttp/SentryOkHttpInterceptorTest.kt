@@ -244,6 +244,7 @@ class SentryOkHttpInterceptorTest {
         assertEquals("http.client", httpClientSpan.operation)
         assertEquals("GET ${request.url}", httpClientSpan.description)
         assertEquals(201, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+        assertEquals("auto.http.okhttp", httpClientSpan.spanContext.origin)
         assertEquals(SpanStatus.OK, httpClientSpan.status)
         assertTrue(httpClientSpan.isFinished)
     }

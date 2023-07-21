@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add TraceOrigin to Transactions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
+
 ### Fixes
 
 - Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))

@@ -112,6 +112,17 @@ class SentryJdbcEventListenerTest {
     }
 
     @Test
+    fun `adds trace origin to span`() {
+        val sut = fixture.getSut()
+
+        sut.connection.use {
+            it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+        }
+
+        assertEquals("auto.db.jdbc", fixture.tx.children.first().spanContext.origin)
+    }
+
+    @Test
     fun `sets SDKVersion Info`() {
         val sut = fixture.getSut()
         assertNotNull(fixture.hub.options.sdkVersion)
