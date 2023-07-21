@@ -193,14 +193,11 @@ public final class SentryTracer implements ITransaction {
         performanceCollectionData.clear();
       }
 
-      // finish unfinished children
-      for (final Span child : children) {
-        if (!child.isFinished()) {
-          child.setSpanFinishedCallback(
-              null); // reset the callback, as we're already in the finish method
-          child.finish(child.getStatus(), finishTimestamp);
-        }
-      }
+      // any un-finished childs will remain unfinished
+      // as relay takes care of setting the end-timestamp + deadline_exceeded
+      // see
+      // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
+
       root.finish(finishStatus.spanStatus, finishTimestamp);
 
       hub.configureScope(

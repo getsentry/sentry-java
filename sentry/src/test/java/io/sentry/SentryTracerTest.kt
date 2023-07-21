@@ -536,26 +536,27 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `finishing unfinished spans with the transaction timestamp`() {
+    fun `when finishing, unfinished spans won't have any automatic end-date or status`() {
         val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         // span with no status set
         val span = transaction.startChild("op") as Span
+        span.finish(SpanStatus.INVALID_ARGUMENT)
 
         // span with a status
-        val span2 = transaction.startChild("op2")
-        span2.status = SpanStatus.PERMISSION_DENIED
+        val span1 = transaction.startChild("op2")
 
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
 
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(2, it.spans.size)
-                assertEquals(transaction.root.finishDate, span.finishDate)
-                // if the span had no status set, it should still be null
-                assertNull(it.spans[0].status)
+                // span status/timestamp is retained
+                assertNotNull(it.spans[0].status)
+                assertNotNull(it.spans[0].timestamp)
 
-                // any existing span status should be kept as well
-                assertEquals(SpanStatus.PERMISSION_DENIED, it.spans[1].status)
+                // span status/timestamp remains untouched
+                assertNull(it.spans[1].status)
+                assertNull(it.spans[1].timestamp)
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
