@@ -306,7 +306,11 @@ public interface IHub {
   void popScope();
 
   /**
-   * Runs the callback with a new scope which gets dropped at the end
+   * Runs the callback with a new scope which gets dropped at the end. If you're using the Sentry
+   * SDK in globalHubMode (defaults to true on Android) {@link
+   * Sentry#init(Sentry.OptionsConfiguration, boolean)} calling withScope is discouraged, as scope
+   * changes may be dropped when executed in parallel. Use {@link
+   * IHub#configureScope(ScopeCallback)} instead.
    *
    * @param callback the callback
    */
