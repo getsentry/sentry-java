@@ -296,6 +296,31 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
+    fun `when event user data does not have ip address set, sets {{auto}} as the ip address`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent().apply {
+            user = User()
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertEquals("{{auto}}", it.ipAddress)
+        }
+    }
+
+    @Test
+    fun `when event has ip address set, keeps original ip address`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent()
+        event.user = User().apply {
+            ipAddress = "192.168.0.1"
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertEquals("192.168.0.1", it.ipAddress)
+        }
+    }
+
+    @Test
     fun `Executor service should be called on ctor`() {
         val sut = fixture.getSut(context)
 
