@@ -22,7 +22,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    implementation(Config.Libs.graphQlJava)
+    compileOnly(Config.Libs.graphQlJava)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -41,6 +41,7 @@ dependencies {
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
+    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {

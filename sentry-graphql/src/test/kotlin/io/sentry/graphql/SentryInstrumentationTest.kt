@@ -95,10 +95,10 @@ class SentryInstrumentationTest {
             val span = fixture.activeSpan.children.first()
             assertEquals("graphql", span.operation)
             assertEquals("Query.shows", span.description)
+            assertEquals("auto.graphql.graphql", span.spanContext.origin)
             assertTrue(span.isFinished)
             assertEquals(SpanStatus.OK, span.status)
         }
-    }
 
     @Test
     fun `when transaction is active, and data fetcher throws, creates inner spans`() {

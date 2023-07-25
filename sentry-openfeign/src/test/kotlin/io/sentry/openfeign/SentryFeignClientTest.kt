@@ -168,6 +168,7 @@ class SentryFeignClientTest {
         assertEquals("GET ${fixture.server.url("/status/200")}", httpClientSpan.description)
         assertEquals(201, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.OK, httpClientSpan.status)
+        assertEquals("auto.http.openfeign", httpClientSpan.spanContext.origin)
         assertTrue(httpClientSpan.isFinished)
     }
 

@@ -47,6 +47,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
           );
   public static final @NotNull String SENTRY_HUB_CONTEXT_KEY = "sentry.hub";
   public static final @NotNull String SENTRY_EXCEPTIONS_CONTEXT_KEY = "sentry.exceptions";
+  private static final String TRACE_ORIGIN = "auto.graphql.graphql";
   private final @Nullable BeforeSpanCallback beforeSpan;
   private final @NotNull SentrySubscriptionHandler subscriptionHandler;
 
@@ -350,9 +351,14 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       parent = (GraphQLObjectType) type;
     }
 
-    return transaction.startChild(
-        "graphql",
-        parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
+    final @NotNull ISpan span =
+        transaction.startChild(
+            "graphql",
+            parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
+
+    span.getSpanContext().setOrigin(TRACE_ORIGIN);
+
+    return span;
   }
 
   static final class TracingState implements InstrumentationState {

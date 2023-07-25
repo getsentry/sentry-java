@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 /** P6Spy JDBC event listener that creates {@link Span}s around database queries. */
 @Open
 public class SentryJdbcEventListener extends SimpleJdbcEventListener {
+  private static final String TRACE_ORIGIN = "auto.db.jdbc";
   private final @NotNull IHub hub;
   private static final @NotNull ThreadLocal<ISpan> CURRENT_SPAN = new ThreadLocal<>();
 
@@ -35,6 +36,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
     if (parent != null && !parent.isNoOp()) {
       final ISpan span = parent.startChild("db.query", statementInformation.getSql());
       CURRENT_SPAN.set(span);
+      span.getSpanContext().setOrigin(TRACE_ORIGIN);
     }
   }
 

@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
+import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.SendFireAndForgetEnvelopeSender;
@@ -26,6 +27,7 @@ import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.ArrayList;
@@ -100,14 +102,16 @@ final class AndroidOptionsInitializer {
 
   @TestOnly
   static void initializeIntegrationsAndProcessors(
-      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull LoadClass loadClass,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     initializeIntegrationsAndProcessors(
         options,
         context,
         new BuildInfoProvider(new AndroidLogger()),
-        new LoadClass(),
-        false,
-        false);
+        loadClass,
+        activityFramesTracker);
   }
 
   static void initializeIntegrationsAndProcessors(
@@ -115,26 +119,14 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     if (options.getCacheDirPath() != null
         && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
       options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
     }
 
-    final ActivityFramesTracker activityFramesTracker =
-        new ActivityFramesTracker(loadClass, options);
-
-    installDefaultIntegrations(
-        context,
-        options,
-        buildInfoProvider,
-        loadClass,
-        activityFramesTracker,
-        isFragmentAvailable,
-        isTimberAvailable);
-
+    options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
@@ -192,7 +184,7 @@ final class AndroidOptionsInitializer {
     }
   }
 
-  private static void installDefaultIntegrations(
+  static void installDefaultIntegrations(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -201,14 +193,18 @@ final class AndroidOptionsInitializer {
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
 
+    // Integration MUST NOT cache option values in ctor, as they will be configured later by the
+    // user
+
     // read the startup crash marker here to avoid doing double-IO for the SendCachedEnvelope
     // integrations below
-    final boolean hasStartupCrashMarker = AndroidEnvelopeCache.hasStartupCrashMarker(options);
+    LazyEvaluator<Boolean> startupCrashMarkerEvaluator =
+        new LazyEvaluator<>(() -> AndroidEnvelopeCache.hasStartupCrashMarker(options));
 
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
             new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath()),
-            hasStartupCrashMarker));
+            startupCrashMarkerEvaluator));
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
@@ -228,7 +224,7 @@ final class AndroidOptionsInitializer {
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
             new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
-            hasStartupCrashMarker));
+            startupCrashMarkerEvaluator));
 
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it

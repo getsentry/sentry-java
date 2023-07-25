@@ -23,6 +23,7 @@ import reactor.core.publisher.Mono;
 
 @Open
 public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction {
+  private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.webclient";
   private final @NotNull IHub hub;
 
   public SentrySpanClientWebRequestFilter(final @NotNull IHub hub) {
@@ -40,6 +41,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     }
 
     final ISpan span = activeSpan.startChild("http.client");
+    span.getSpanContext().setOrigin(TRACE_ORIGIN);
     span.setDescription(request.method().name() + " " + request.url());
 
     final @NotNull ClientRequest modifiedRequest = maybeAddTracingHeaders(request, span);

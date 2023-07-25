@@ -44,6 +44,8 @@ final class ANRWatchDog extends Thread {
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
       final @NotNull Context context) {
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     this(
         () -> SystemClock.uptimeMillis(),
         timeoutIntervalMillis,

@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add TraceOrigin to Transactions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
+
+### Fixes
+
+- Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))
+  - This will improve Crash-Free Session Rate as we no longer will send multiple Session updates with `Crashed` status, but only the one that is relevant
+- Ensure no Java 8 method reference sugar is used for Android ([#2857](https://github.com/getsentry/sentry-java/pull/2857))
+- Do not send session updates for terminated sessions ([#2849](https://github.com/getsentry/sentry-java/pull/2849))
+
+## 6.26.0
+
+### Features
+- (Internal) Extend APIs for hybrid SDKs ([#2814](https://github.com/getsentry/sentry-java/pull/2814), [#2846](https://github.com/getsentry/sentry-java/pull/2846))
+
+### Fixes
+
+- Fix ANRv2 thread dump parsing for native-only threads ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+- Derive `TracingContext` values from event for ANRv2 events ([#2839](https://github.com/getsentry/sentry-java/pull/2839))
+
+## 6.25.2
+
+### Fixes
+
+- Change Spring Boot, Apollo, Apollo 3, JUL, Logback, Log4j2, OpenFeign, GraphQL and Kotlin coroutines core dependencies to compileOnly ([#2837](https://github.com/getsentry/sentry-java/pull/2837))
+
+## 6.25.1
+
+### Fixes
+
+- Allow removing integrations in SentryAndroid.init ([#2826](https://github.com/getsentry/sentry-java/pull/2826))
+- Fix concurrent access to frameMetrics listener ([#2823](https://github.com/getsentry/sentry-java/pull/2823))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.4 to v0.6.5 ([#2822](https://github.com/getsentry/sentry-java/pull/2822))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#065)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.4...0.6.5)
+- Bump Gradle from v8.2.0 to v8.2.1 ([#2830](https://github.com/getsentry/sentry-java/pull/2830))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v821)
+  - [diff](https://github.com/gradle/gradle/compare/v8.2.0...v8.2.1)
+
 ## 6.25.0
 
 ### Features

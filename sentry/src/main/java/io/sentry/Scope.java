@@ -87,7 +87,8 @@ public final class Scope {
     this.propagationContext = new PropagationContext();
   }
 
-  Scope(final @NotNull Scope scope) {
+  @ApiStatus.Internal
+  public Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
     this.session = scope.session;
@@ -285,8 +286,9 @@ public final class Scope {
    *
    * @return the fingerprint list
    */
+  @ApiStatus.Internal
   @NotNull
-  List<String> getFingerprint() {
+  public List<String> getFingerprint() {
     return fingerprint;
   }
 
@@ -311,8 +313,9 @@ public final class Scope {
    *
    * @return the breadcrumbs queue
    */
+  @ApiStatus.Internal
   @NotNull
-  Queue<Breadcrumb> getBreadcrumbs() {
+  public Queue<Breadcrumb> getBreadcrumbs() {
     return breadcrumbs;
   }
 
@@ -477,8 +480,9 @@ public final class Scope {
    *
    * @return the extra map
    */
+  @ApiStatus.Internal
   @NotNull
-  Map<String, Object> getExtras() {
+  public Map<String, Object> getExtras() {
     return extra;
   }
 
@@ -800,6 +804,11 @@ public final class Scope {
     synchronized (transactionLock) {
       callback.accept(transaction);
     }
+  }
+
+  @NotNull
+  SentryOptions getOptions() {
+    return options;
   }
 
   @ApiStatus.Internal

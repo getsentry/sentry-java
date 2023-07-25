@@ -35,6 +35,7 @@ import reactor.core.publisher.Mono;
 public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_HUB_KEY = "sentry-hub";
   private static final String TRANSACTION_OP = "http.server";
+  private static final String TRACE_ORIGIN = "auto.spring.webflux";
 
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
@@ -65,6 +66,10 @@ public final class SentryWebFilter implements WebFilter {
         isTracingEnabled && shouldTraceRequest(requestHub, request)
             ? startTransaction(requestHub, request, transactionContext)
             : null;
+
+    if (transaction != null) {
+      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+    }
 
     return webFilterChain
         .filter(serverWebExchange)

@@ -28,6 +28,8 @@ import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.util.TracingUtils
 import java.util.concurrent.Executor
 
+private const val TRACE_ORIGIN = "auto.graphql.apollo"
+
 class SentryApolloInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
@@ -49,6 +51,7 @@ class SentryApolloInterceptor(
             chain.proceedAsync(modifiedRequest, dispatcher, callBack)
         } else {
             val span = startChild(request, activeSpan)
+            span.spanContext.origin = TRACE_ORIGIN
 
             val headers = addTracingHeaders(request, span)
             val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
