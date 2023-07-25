@@ -21,7 +21,7 @@ public final class SentrySpringSubscriptionHandler implements SentrySubscription
       return flux.doOnError(
           throwable -> {
             ExceptionReporter.ExceptionDetails exceptionDetails =
-                new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment());
+                new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment(), true);
             if (throwable instanceof SubscriptionPublisherException
                 && throwable.getCause() != null) {
               exceptionReporter.captureThrowable(throwable.getCause(), exceptionDetails, null);

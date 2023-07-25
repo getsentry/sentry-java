@@ -35,39 +35,92 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 public final class SentryInstrumentation extends SimpleInstrumentation {
 
   private static final @NotNull List<String> ERROR_TYPES_HANDLED_BY_DATA_FETCHERS =
-      Arrays.asList("INTERNAL", "INTERNAL_ERROR");
+      Arrays.asList(
+          "INTERNAL_ERROR", // spring-graphql
+          "INTERNAL", // Netflix DGS
+          "DataFetchingException" // raw graphql-java
+          );
+  public static final @NotNull String SENTRY_HUB_CONTEXT_KEY = "sentry.hub";
+  public static final @NotNull String SENTRY_EXCEPTIONS_CONTEXT_KEY = "sentry.exceptions";
   private final @Nullable BeforeSpanCallback beforeSpan;
   private final @NotNull SentrySubscriptionHandler subscriptionHandler;
 
   private final @NotNull ExceptionReporter exceptionReporter;
 
-  // TODO ctor that takes a hub
+  /**
+   * @deprecated please use a constructor that takes a {@link SentrySubscriptionHandler} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public SentryInstrumentation() {
+    this(null, NoOpSubscriptionHandler.getInstance(), false);
+  }
+
+  /**
+   * @deprecated please use a constructor that takes a {@link SentrySubscriptionHandler} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public SentryInstrumentation(final @Nullable IHub hub) {
+    this(null, NoOpSubscriptionHandler.getInstance(), false);
+  }
+
+  /**
+   * @deprecated please use a constructor that takes a {@link SentrySubscriptionHandler} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public SentryInstrumentation(final @Nullable BeforeSpanCallback beforeSpan) {
     this(beforeSpan, NoOpSubscriptionHandler.getInstance(), false);
   }
 
+  /**
+   * @deprecated please use a constructor that takes a {@link SentrySubscriptionHandler} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public SentryInstrumentation(
+      final @Nullable IHub hub, final @Nullable BeforeSpanCallback beforeSpan) {
+    this(beforeSpan, NoOpSubscriptionHandler.getInstance(), false);
+  }
+
+  /**
+   * @param beforeSpan callback when a span is created
+   * @param subscriptionHandler can report subscription errors
+   * @param isSpring true if using spring-graphql, false for Netflix DGS an non Spring
+   */
   public SentryInstrumentation(
       final @Nullable BeforeSpanCallback beforeSpan,
       final @NotNull SentrySubscriptionHandler subscriptionHandler,
       final boolean isSpring) {
+    this(beforeSpan, subscriptionHandler, new ExceptionReporter(isSpring));
+  }
+
+  @TestOnly
+  public SentryInstrumentation(
+      final @Nullable BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final @NotNull ExceptionReporter exceptionReporter) {
     this.beforeSpan = beforeSpan;
     this.subscriptionHandler = subscriptionHandler;
-    this.exceptionReporter = new ExceptionReporter(isSpring);
+    this.exceptionReporter = exceptionReporter;
     SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
   }
 
-  public SentryInstrumentation(final @Nullable IHub hub) {
-    this((BeforeSpanCallback) null);
-  }
-
-  public SentryInstrumentation(final @NotNull SentrySubscriptionHandler subscriptionHandler) {
-    this(null, subscriptionHandler, false);
+  /**
+   * @param subscriptionHandler can report subscription errors
+   * @param isSpring true if using spring-graphql, false for Netflix DGS an non Spring
+   */
+  public SentryInstrumentation(
+      final @NotNull SentrySubscriptionHandler subscriptionHandler, final boolean isSpring) {
+    this(null, subscriptionHandler, isSpring);
   }
 
   @Override
@@ -81,7 +134,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     final TracingState tracingState = parameters.getInstrumentationState();
     final @NotNull IHub currentHub = Sentry.getCurrentHub();
     tracingState.setTransaction(currentHub.getSpan());
-    parameters.getGraphQLContext().put("sentry.hub", currentHub);
+    parameters.getGraphQLContext().put(SENTRY_HUB_CONTEXT_KEY, currentHub);
     return super.beginExecution(parameters);
   }
 
@@ -96,12 +149,12 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                 if (graphQLContext != null) {
                   final @NotNull List<Throwable> exceptions =
                       graphQLContext.getOrDefault(
-                          "sentry.exceptions", new CopyOnWriteArrayList<Throwable>());
+                          SENTRY_EXCEPTIONS_CONTEXT_KEY, new CopyOnWriteArrayList<Throwable>());
                   for (Throwable throwable : exceptions) {
                     exceptionReporter.captureThrowable(
                         throwable,
                         new ExceptionReporter.ExceptionDetails(
-                            hubFromContext(graphQLContext), parameters),
+                            hubFromContext(graphQLContext), parameters, false),
                         result);
                   }
                 }
@@ -116,7 +169,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                       exceptionReporter.captureThrowable(
                           new RuntimeException(error.getMessage()),
                           new ExceptionReporter.ExceptionDetails(
-                              hubFromContext(graphQLContext), parameters),
+                              hubFromContext(graphQLContext), parameters, false),
                           result);
                     }
                   }
@@ -126,7 +179,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                 exceptionReporter.captureThrowable(
                     exception,
                     new ExceptionReporter.ExceptionDetails(
-                        hubFromContext(parameters.getGraphQLContext()), parameters),
+                        hubFromContext(parameters.getGraphQLContext()), parameters, false),
                     null);
               }
             });
@@ -177,7 +230,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     if (context == null) {
       return NoOpHub.getInstance();
     }
-    return context.getOrDefault("sentry.hub", NoOpHub.getInstance());
+    return context.getOrDefault(SENTRY_HUB_CONTEXT_KEY, NoOpHub.getInstance());
   }
 
   @Override
@@ -207,14 +260,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
         final ISpan span = createSpan(transaction, parameters);
         try {
           final @Nullable Object tmpResult = dataFetcher.get(environment);
-          final Object result =
-              tmpResult == null
-                  ? null
-                  : subscriptionHandler.onSubscriptionResult(
-                      tmpResult,
-                      hubFromContext(environment.getGraphQlContext()),
-                      exceptionReporter,
-                      parameters);
+          final @Nullable Object result =
+              maybeCallSubscriptionHandler(parameters, environment, tmpResult);
           if (result instanceof CompletableFuture) {
             ((CompletableFuture<?>) result)
                 .whenComplete(
@@ -240,16 +287,29 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
         }
       } else {
         final Object result = dataFetcher.get(environment);
-        if (result != null) {
-          return subscriptionHandler.onSubscriptionResult(
-              result,
-              hubFromContext(environment.getGraphQlContext()),
-              exceptionReporter,
-              parameters);
-        }
-        return null;
+        return maybeCallSubscriptionHandler(parameters, environment, result);
       }
     };
+  }
+
+  private @Nullable Object maybeCallSubscriptionHandler(
+      final @NotNull InstrumentationFieldFetchParameters parameters,
+      final @NotNull DataFetchingEnvironment environment,
+      final @Nullable Object tmpResult) {
+    if (tmpResult == null) {
+      return null;
+    }
+
+    if (OperationDefinition.Operation.SUBSCRIPTION.equals(
+        environment.getOperationDefinition().getOperation())) {
+      return subscriptionHandler.onSubscriptionResult(
+          tmpResult,
+          hubFromContext(environment.getGraphQlContext()),
+          exceptionReporter,
+          parameters);
+    }
+
+    return tmpResult;
   }
 
   @Override

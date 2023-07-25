@@ -103,7 +103,7 @@ public class ProjectController {
           final @NotNull Map<String, Assignee> map = new HashMap<>();
           for (final @NotNull Task task : tasks) {
             if ("Acrash".equalsIgnoreCase(task.assigneeId)) {
-              throw new RuntimeException("Causing an error while loading task");
+              throw new RuntimeException("Causing an error while loading assignee");
             }
             map.put(task.assigneeId, new Assignee(task.assigneeId, "Name" + task.assigneeId));
           }

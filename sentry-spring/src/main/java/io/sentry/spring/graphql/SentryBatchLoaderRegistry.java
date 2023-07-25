@@ -1,5 +1,7 @@
 package io.sentry.spring.graphql;
 
+import static io.sentry.graphql.SentryInstrumentation.SENTRY_HUB_CONTEXT_KEY;
+
 import graphql.GraphQLContext;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
@@ -12,12 +14,14 @@ import java.util.function.Consumer;
 import org.dataloader.BatchLoaderEnvironment;
 import org.dataloader.DataLoaderOptions;
 import org.dataloader.DataLoaderRegistry;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.graphql.execution.BatchLoaderRegistry;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@ApiStatus.Internal
 public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
 
   private final @NotNull BatchLoaderRegistry delegate;
@@ -106,7 +110,7 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
       Object context = environment.getContext();
       if (context instanceof GraphQLContext) {
         GraphQLContext graphqlContext = (GraphQLContext) context;
-        return graphqlContext.getOrDefault("sentry.hub", NoOpHub.getInstance());
+        return graphqlContext.getOrDefault(SENTRY_HUB_CONTEXT_KEY, NoOpHub.getInstance());
       }
 
       return NoOpHub.getInstance();

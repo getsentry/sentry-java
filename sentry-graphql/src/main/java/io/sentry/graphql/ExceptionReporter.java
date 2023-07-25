@@ -14,9 +14,11 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.Response;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class ExceptionReporter {
   private final boolean isSpring;
 
@@ -59,14 +61,9 @@ public final class ExceptionReporter {
     hub.configureScope(
         (scope) -> {
           final @Nullable Request scopeRequest = scope.getRequest();
-          if (scopeRequest != null) {
-            setDetailsOnRequest(hub, exceptionDetails, scopeRequest);
-            event.setRequest(scopeRequest);
-          } else {
-            Request newRequest = new Request();
-            setDetailsOnRequest(hub, exceptionDetails, newRequest);
-            event.setRequest(newRequest);
-          }
+          final @NotNull Request request = scopeRequest == null ? new Request() : scopeRequest;
+          setDetailsOnRequest(hub, exceptionDetails, request);
+          event.setRequest(request);
         });
   }
 
@@ -79,13 +76,14 @@ public final class ExceptionReporter {
     if (exceptionDetails.isSubscription() || !isSpring) {
       final @NotNull Map<String, Object> data = new HashMap<>();
 
-      data.put("data", exceptionDetails.getQuery());
+      data.put("query", exceptionDetails.getQuery());
 
       if (hub.getOptions().isSendDefaultPii()) {
         data.put("variables", exceptionDetails.getVariables());
       }
 
-      // for Spring this will be replaced by RequestBodyExtractingEventProcessor
+      // for Spring HTTP this will be replaced by RequestBodyExtractingEventProcessor
+      // for non subscription (websocket) errors
       request.setData(data);
     }
   }
@@ -100,19 +98,22 @@ public final class ExceptionReporter {
 
     public ExceptionDetails(
         final @NotNull IHub hub,
-        final @Nullable InstrumentationExecutionParameters instrumentationExecutionParameters) {
+        final @Nullable InstrumentationExecutionParameters instrumentationExecutionParameters,
+        final boolean isSubscription) {
       this.hub = hub;
       this.instrumentationExecutionParameters = instrumentationExecutionParameters;
       dataFetchingEnvironment = null;
-      isSubscription = false;
+      this.isSubscription = isSubscription;
     }
 
     public ExceptionDetails(
-        final @NotNull IHub hub, final @Nullable DataFetchingEnvironment dataFetchingEnvironment) {
+        final @NotNull IHub hub,
+        final @Nullable DataFetchingEnvironment dataFetchingEnvironment,
+        final boolean isSubscription) {
       this.hub = hub;
       this.dataFetchingEnvironment = dataFetchingEnvironment;
       instrumentationExecutionParameters = null;
-      isSubscription = true;
+      this.isSubscription = isSubscription;
     }
 
     public @Nullable String getQuery() {
@@ -139,7 +140,7 @@ public final class ExceptionReporter {
       return isSubscription;
     }
 
-    public IHub getHub() {
+    public @NotNull IHub getHub() {
       return hub;
     }
   }

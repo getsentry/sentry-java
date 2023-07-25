@@ -237,7 +237,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     final Breadcrumb breadcrumb = new Breadcrumb();
 
     breadcrumb.setType("graphql");
-    breadcrumb.setCategory("data_fetcher");
+    breadcrumb.setCategory("graphql.fetcher");
 
     if (path != null) {
       // TODO key?
@@ -276,7 +276,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     final Breadcrumb breadcrumb = new Breadcrumb();
 
     breadcrumb.setType("graphql");
-    breadcrumb.setCategory("data_loader");
+    breadcrumb.setCategory("graphql.data_loader");
 
     breadcrumb.setData("keys", keys);
 

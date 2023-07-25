@@ -5,10 +5,12 @@ import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.schema.DataFetchingEnvironment;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 
+@ApiStatus.Internal
 public final class SentryDataFetcherExceptionResolverAdapter
     extends DataFetcherExceptionResolverAdapter {
   private final @NotNull SentryGraphqlExceptionHandler handler;

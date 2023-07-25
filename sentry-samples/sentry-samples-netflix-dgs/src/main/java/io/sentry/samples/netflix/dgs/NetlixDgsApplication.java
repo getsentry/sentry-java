@@ -17,7 +17,7 @@ public class NetlixDgsApplication {
 
   @Bean
   SentryInstrumentation sentryInstrumentation() {
-    return new SentryInstrumentation(new SentryDgsSubscriptionHandler());
+    return new SentryInstrumentation(new SentryDgsSubscriptionHandler(), false);
   }
 
   @Bean

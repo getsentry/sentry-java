@@ -36,8 +36,11 @@ dependencies {
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.mockWebserver)
     testImplementation(Config.Libs.okhttp)
+    testImplementation(Config.Libs.springBootStarterGraphql)
+    testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
 }
 
 configure<SourceSetContainer> {

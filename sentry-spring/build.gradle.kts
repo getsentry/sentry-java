@@ -45,6 +45,7 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryTestSupport)
+    testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
@@ -54,7 +55,9 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
+    testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {

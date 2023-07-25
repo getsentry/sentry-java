@@ -20,7 +20,7 @@ public final class SentryDgsSubscriptionHandler implements SentrySubscriptionHan
       return flux.doOnError(
           throwable -> {
             ExceptionReporter.ExceptionDetails exceptionDetails =
-                new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment());
+                new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment(), true);
             exceptionReporter.captureThrowable(throwable, exceptionDetails, null);
           });
     }
