@@ -1,14 +1,21 @@
 package io.sentry.android.core
 
+import android.app.Activity
 import android.app.Application
 import android.content.pm.ProviderInfo
 import android.os.Bundle
+import android.os.Looper
+import android.view.View
+import android.view.ViewTreeObserver
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.SentryNanotimeDate
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import org.robolectric.Shadows
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -84,17 +91,45 @@ class SentryPerformanceProviderTest {
         val mockContext = ContextUtilsTest.createMockContext(true)
         providerInfo.authority = AUTHORITY
 
-        val provider = SentryPerformanceProvider()
+        val provider = SentryPerformanceProvider(
+            mock {
+                whenever(mock.sdkInfoVersion).thenReturn(29)
+            },
+            MainLooperHandler()
+        )
         provider.attachInfo(mockContext, providerInfo)
 
-        provider.onActivityCreated(mock(), Bundle())
-        provider.onActivityResumed(mock())
+        val view = createView()
+        val activity = mock<Activity>()
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
+        provider.onActivityCreated(activity, Bundle())
+        provider.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
 
         assertNotNull(AppStartState.getInstance().appStartInterval)
         assertNotNull(AppStartState.getInstance().appStartEndTime)
 
         verify((mockContext.applicationContext as Application))
             .unregisterActivityLifecycleCallbacks(any())
+    }
+
+    private fun createView(): View {
+        val view = View(ApplicationProvider.getApplicationContext())
+
+        // Adding a listener forces ViewTreeObserver.mOnDrawListeners to be initialized and non-null.
+        val dummyListener = ViewTreeObserver.OnDrawListener {}
+        view.viewTreeObserver.addOnDrawListener(dummyListener)
+        view.viewTreeObserver.removeOnDrawListener(dummyListener)
+
+        return view
+    }
+
+    private fun runFirstDraw(view: View) {
+        // Removes OnDrawListener in the next OnGlobalLayout after onDraw
+        view.viewTreeObserver.dispatchOnDraw()
+        view.viewTreeObserver.dispatchOnGlobalLayout()
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
     }
 
     companion object {
