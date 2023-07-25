@@ -99,6 +99,7 @@ class SentryInstrumentationTest {
             assertTrue(span.isFinished)
             assertEquals(SpanStatus.OK, span.status)
         }
+    }
 
     @Test
     fun `when transaction is active, and data fetcher throws, creates inner spans`() {
