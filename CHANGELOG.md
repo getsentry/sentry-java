@@ -13,18 +13,12 @@ Breaking changes:
 ### Fixes
 
 - Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
-- Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
 
 Breaking changes:
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
+- Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
 
-## 6.25.2
-
-### Fixes
-
-- Change Spring Boot, Apollo, Apollo 3, JUL, Logback, Log4j2, OpenFeign, GraphQL and Kotlin coroutines core dependencies to compileOnly ([#2837](https://github.com/getsentry/sentry-java/pull/2837))
-
-## 6.25.1
+## Unreleased
 
 ### Features
 
