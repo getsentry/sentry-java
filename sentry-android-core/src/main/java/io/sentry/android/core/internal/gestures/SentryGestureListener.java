@@ -236,6 +236,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setWaitForChildren(true);
+    transactionOptions.setDeadlineTimeout(TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS);
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
 

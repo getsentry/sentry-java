@@ -192,6 +192,8 @@ public final class ActivityLifecycleIntegration
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
+          transactionOptions.setDeadlineTimeout(
+              TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS);
           transactionOptions.setIdleTimeout(options.getIdleTimeout());
           transactionOptions.setTrimEnd(true);
         }

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 /** Sentry Transaction options */
 public final class TransactionOptions extends SpanOptions {
 
+  public static final long SENTRY_AUTO_TRANSACTION_DEADLINE_MS = 300000;
+
   /**
    * Arbitrary data used in {@link SamplingContext} to determine if transaction is going to be
    * sampled.
@@ -33,6 +35,16 @@ public final class TransactionOptions extends SpanOptions {
    * <p>The default is 3 seconds.
    */
   private @Nullable Long idleTimeout = null;
+
+  /**
+   * The deadline time, measured in ms, to wait until the transaction will be force-finished with
+   * deadline-exceeded status./
+   *
+   * <p>When set to {@code null} the transaction won't be forcefully finished.
+   *
+   * <p>The default is 30 seconds.
+   */
+  private @Nullable Long deadlineTimeout = null;
 
   /**
    * When `waitForChildren` is set to `true` and this callback is set, it's called before the
@@ -119,6 +131,26 @@ public final class TransactionOptions extends SpanOptions {
    */
   public @Nullable Long getIdleTimeout() {
     return idleTimeout;
+  }
+
+  /**
+   * Sets the deadlineTimeout. If set, an transaction and it's child spans will be force-finished
+   * with status {@link SpanStatus#DEADLINE_EXCEEDED} in case the transaction isn't finished in
+   * time.
+   *
+   * @param deadlineTimeoutMs - the deadlineTimeout, in ms - or null if no deadline should be set
+   */
+  public void setDeadlineTimeout(@Nullable Long deadlineTimeoutMs) {
+    this.deadlineTimeout = deadlineTimeoutMs;
+  }
+
+  /**
+   * Gets the deadlineTimeout
+   *
+   * @return deadlineTimeout - the deadlineTimeout, in ms - or null if no deadline is set
+   */
+  public @Nullable Long getDeadlineTimeout() {
+    return deadlineTimeout;
   }
 
   /**

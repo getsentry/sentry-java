@@ -354,7 +354,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `Transaction op is ui_load`() {
+    fun `Transaction op is ui_load and idle+deadline timeouts are set`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -365,11 +365,14 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(
-            check {
+            check<TransactionContext> {
                 assertEquals("ui.load", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            check<TransactionOptions> { transactionOptions ->
+                assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
+                assertEquals(TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS, transactionOptions.deadlineTimeout)
+            }
         )
     }
 
