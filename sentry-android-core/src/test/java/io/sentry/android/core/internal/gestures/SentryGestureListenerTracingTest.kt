@@ -13,11 +13,14 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
+import io.sentry.SpanContext
+import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.SpanStatus.OUT_OF_RANGE
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -308,6 +311,10 @@ class SentryGestureListenerTracingTest {
         val transaction = mock<SentryTracer>()
         val sut = fixture.getSut<View>(transaction = transaction)
 
+        whenever(transaction.spanContext).thenReturn(
+            SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
+        )
+
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub).startTransaction(
@@ -322,6 +329,15 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.transaction).scheduleFinish()
+    }
+
+    @Test
+    fun `captures transaction and sets trace origin`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        assertEquals("auto.ui.gesture_listener.old_view_system", fixture.transaction.spanContext.origin)
     }
 
     @Test

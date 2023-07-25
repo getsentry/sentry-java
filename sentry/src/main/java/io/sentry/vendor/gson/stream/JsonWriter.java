@@ -22,6 +22,8 @@
 package io.sentry.vendor.gson.stream;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -417,7 +419,7 @@ public class JsonWriter implements Closeable, Flushable {
    * @param value the literal string value, or null to encode a null literal.
    * @return this writer.
    */
-  public JsonWriter value(String value) throws IOException {
+  public JsonWriter value(@Nullable String value) throws IOException {
     if (value == null) {
       return nullValue();
     }
@@ -434,7 +436,7 @@ public class JsonWriter implements Closeable, Flushable {
    * @param value the literal string value, or null to encode a null literal.
    * @return this writer.
    */
-  public JsonWriter jsonValue(String value) throws IOException {
+  public JsonWriter jsonValue(@Nullable String value) throws IOException {
     if (value == null) {
       return nullValue();
     }
@@ -480,7 +482,7 @@ public class JsonWriter implements Closeable, Flushable {
    *
    * @return this writer.
    */
-  public JsonWriter value(Boolean value) throws IOException {
+  public JsonWriter value(@Nullable Boolean value) throws IOException {
     if (value == null) {
       return nullValue();
     }
@@ -526,7 +528,7 @@ public class JsonWriter implements Closeable, Flushable {
    *     {@link Double#isInfinite() infinities}.
    * @return this writer.
    */
-  public JsonWriter value(Number value) throws IOException {
+  public JsonWriter value(@Nullable Number value) throws IOException {
     if (value == null) {
       return nullValue();
     }

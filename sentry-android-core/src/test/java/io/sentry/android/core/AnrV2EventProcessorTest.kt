@@ -406,6 +406,10 @@ class AnrV2EventProcessorTest {
             debugMeta = DebugMeta().apply {
                 images = listOf(DebugImage().apply { type = DebugImage.PROGUARD; uuid = "uuid1" })
             }
+            user = User().apply {
+                id = "42"
+                ipAddress = "2.4.8.16"
+            }
         }
 
         assertEquals("NotAndroid", processed.platform)
@@ -427,6 +431,9 @@ class AnrV2EventProcessorTest {
         assertEquals(2, processed.debugMeta!!.images!!.size)
         assertEquals("uuid1", processed.debugMeta!!.images!![0].uuid)
         assertEquals("uuid", processed.debugMeta!!.images!![1].uuid)
+
+        assertEquals("42", processed.user!!.id)
+        assertEquals("2.4.8.16", processed.user!!.ipAddress)
     }
 
     @Test
