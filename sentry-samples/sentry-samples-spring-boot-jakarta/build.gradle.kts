@@ -20,6 +20,7 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBoot3StarterSecurity)
     implementation(Config.Libs.springBoot3StarterWeb)
+    implementation(Config.Libs.springBoot3StarterWebsocket)
     implementation(Config.Libs.springBoot3StarterGraphql)
     implementation(Config.Libs.springBoot3StarterWebflux)
     implementation(Config.Libs.springBoot3StarterAop)
