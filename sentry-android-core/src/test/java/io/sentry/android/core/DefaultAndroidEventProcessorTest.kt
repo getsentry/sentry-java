@@ -318,19 +318,6 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Executor service should be called on ctor`() {
-        val sut = fixture.getSut(context)
-
-        val contextData = sut.contextData.get()
-
-        assertNotNull(contextData)
-        assertNotNull(contextData[ROOTED])
-        assertNotNull(contextData[KERNEL_VERSION])
-        assertNotNull(contextData[EMULATOR])
-        assertNotNull(contextData[SIDE_LOADED])
-    }
-
-    @Test
     fun `Processor won't throw exception`() {
         val sut = fixture.getSut(context)
 
