@@ -87,7 +87,8 @@ public final class Scope {
     this.propagationContext = new PropagationContext();
   }
 
-  Scope(final @NotNull Scope scope) {
+  @ApiStatus.Internal
+  public Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
     this.session = scope.session;

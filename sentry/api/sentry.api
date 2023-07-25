@@ -1205,6 +1205,7 @@ public final class io/sentry/SamplingContext {
 }
 
 public final class io/sentry/Scope {
+	public fun <init> (Lio/sentry/Scope;)V
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
