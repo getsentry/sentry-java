@@ -3,9 +3,9 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectWriter;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -136,7 +136,8 @@ public final class Geo implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(JsonObjectWriter writer, ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (city != null) {
       writer.name(JsonKeys.CITY).value(city);

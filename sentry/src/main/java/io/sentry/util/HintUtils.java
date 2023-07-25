@@ -2,6 +2,7 @@ package io.sentry.util;
 
 import static io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_DOTNET_SDK_NAME;
+import static io.sentry.TypeCheckHint.SENTRY_EVENT_DROP_REASON;
 import static io.sentry.TypeCheckHint.SENTRY_IS_FROM_HYBRID_SDK;
 import static io.sentry.TypeCheckHint.SENTRY_JAVASCRIPT_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
@@ -11,6 +12,7 @@ import io.sentry.ILogger;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
+import io.sentry.hints.EventDropReason;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +33,16 @@ public final class HintUtils {
 
   public static boolean isFromHybridSdk(final @NotNull Hint hint) {
     return Boolean.TRUE.equals(hint.getAs(SENTRY_IS_FROM_HYBRID_SDK, Boolean.class));
+  }
+
+  public static void setEventDropReason(
+      final @NotNull Hint hint, final @NotNull EventDropReason eventDropReason) {
+    hint.set(SENTRY_EVENT_DROP_REASON, eventDropReason);
+  }
+
+  @Nullable
+  public static EventDropReason getEventDropReason(final @NotNull Hint hint) {
+    return hint.getAs(SENTRY_EVENT_DROP_REASON, EventDropReason.class);
   }
 
   public static Hint createWithTypeCheckHint(Object typeCheckHint) {

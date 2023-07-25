@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
  */
 @Open
 public class SentrySpanAdvice implements MethodInterceptor {
+  private static final String TRACE_ORIGIN = "auto.function.spring_jakarta.advice";
   private final @NotNull IHub hub;
 
   public SentrySpanAdvice(final @NotNull IHub hub) {
@@ -46,6 +47,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
       }
       final String operation = resolveSpanOperation(targetClass, mostSpecificMethod, sentrySpan);
       final ISpan span = activeSpan.startChild(operation);
+      span.getSpanContext().setOrigin(TRACE_ORIGIN);
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.description())) {
         span.setDescription(sentrySpan.description());
       }

@@ -3,6 +3,7 @@ package io.sentry;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.hints.EventDropReason;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
@@ -98,7 +99,11 @@ public final class UncaughtExceptionHandlerIntegration
 
         final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
         final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-        if (!isEventDropped) {
+        final EventDropReason eventDropReason = HintUtils.getEventDropReason(hint);
+        // in case the event has been dropped by multithreaded deduplicator, the other threads will
+        // crash the app without a chance to persist the main event so we have to special-case this
+        if (!isEventDropped
+            || EventDropReason.MULTITHREADED_DEDUPLICATION.equals(eventDropReason)) {
           // Block until the event is flushed to disk
           if (!exceptionHint.waitFlush()) {
             options

@@ -33,7 +33,7 @@ public final class JsonObjectSerializer {
   }
 
   public void serialize(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Object object)
+      @NotNull ObjectWriter writer, @NotNull ILogger logger, @Nullable Object object)
       throws IOException {
     if (object == null) {
       writer.nullValue();
@@ -89,7 +89,7 @@ public final class JsonObjectSerializer {
   // Helper
 
   private void serializeDate(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Date date)
+      @NotNull ObjectWriter writer, @NotNull ILogger logger, @NotNull Date date)
       throws IOException {
     try {
       writer.value(DateUtils.getTimestamp(date));
@@ -100,7 +100,7 @@ public final class JsonObjectSerializer {
   }
 
   private void serializeTimeZone(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull TimeZone timeZone)
+      @NotNull ObjectWriter writer, @NotNull ILogger logger, @NotNull TimeZone timeZone)
       throws IOException {
     try {
       writer.value(timeZone.getID());
@@ -111,7 +111,7 @@ public final class JsonObjectSerializer {
   }
 
   private void serializeCollection(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
+      @NotNull ObjectWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
       throws IOException {
     writer.beginArray();
     for (Object object : collection) {
@@ -121,7 +121,7 @@ public final class JsonObjectSerializer {
   }
 
   private void serializeMap(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map)
+      @NotNull ObjectWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map)
       throws IOException {
     writer.beginObject();
     for (Object key : map.keySet()) {

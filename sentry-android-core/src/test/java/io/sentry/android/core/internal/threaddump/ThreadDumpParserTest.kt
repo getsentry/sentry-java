@@ -6,6 +6,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class ThreadDumpParserTest {
 
@@ -71,5 +72,27 @@ class ThreadDumpParserTest {
         assertEquals("HandlerThread.java", firstFrame.filename)
         assertEquals(67, firstFrame.lineno)
         assertEquals(null, firstFrame.isInApp)
+    }
+
+    @Test
+    fun `parses native only thread dump`() {
+        val lines = Lines.readLines(File("src/test/resources/thread_dump_native_only.txt"))
+        val parser = ThreadDumpParser(
+            SentryOptions().apply { addInAppInclude("io.sentry.samples") },
+            false
+        )
+        val threads = parser.parse(lines)
+        // just verifying a few important threads, as there are many
+        val thread = threads.find { it.name == "samples.android" }
+        assertEquals(9955, thread!!.id)
+        assertNull(thread.state)
+        assertEquals(false, thread.isCrashed)
+        assertEquals(false, thread.isMain)
+        assertEquals(false, thread.isCurrent)
+        val lastFrame = thread.stacktrace!!.frames!!.last()
+        assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", lastFrame.`package`)
+        assertEquals("syscall", lastFrame.function)
+        assertEquals(28, lastFrame.lineno)
+        assertNull(lastFrame.isInApp)
     }
 }

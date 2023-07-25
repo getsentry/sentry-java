@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.content.Context.ACTIVITY_SERVICE;
+import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -15,6 +16,7 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.protocol.App;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -22,10 +24,39 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ContextUtils {
+@ApiStatus.Internal
+public final class ContextUtils {
+
+  static class SideLoadedInfo {
+    private final boolean isSideLoaded;
+    private final @Nullable String installerStore;
+
+    public SideLoadedInfo(final boolean isSideLoaded, final @Nullable String installerStore) {
+      this.isSideLoaded = isSideLoaded;
+      this.installerStore = installerStore;
+    }
+
+    public boolean isSideLoaded() {
+      return isSideLoaded;
+    }
+
+    public @Nullable String getInstallerStore() {
+      return installerStore;
+    }
+
+    public @NotNull Map<String, String> asTags() {
+      final Map<String, String> data = new HashMap<>();
+      data.put("isSideLoaded", String.valueOf(isSideLoaded));
+      if (installerStore != null) {
+        data.put("installerStore", installerStore);
+      }
+      return data;
+    }
+  }
 
   private ContextUtils() {}
 
@@ -187,8 +218,8 @@ final class ContextUtils {
     return defaultVersion;
   }
 
-  @SuppressWarnings("deprecation")
-  static @Nullable Map<String, String> getSideLoadedInfo(
+  @SuppressWarnings({"deprecation"})
+  static @Nullable SideLoadedInfo retrieveSideLoadedInfo(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
@@ -202,20 +233,10 @@ final class ContextUtils {
 
         // getInstallSourceInfo requires INSTALL_PACKAGES permission which is only given to system
         // apps.
+        // if it's installed via adb, system apps or untrusted sources
+        // could be amazon, google play etc - or null in case of sideload
         final String installerPackageName = packageManager.getInstallerPackageName(packageName);
-
-        final Map<String, String> sideLoadedInfo = new HashMap<>();
-
-        if (installerPackageName != null) {
-          sideLoadedInfo.put("isSideLoaded", "false");
-          // could be amazon, google play etc
-          sideLoadedInfo.put("installerStore", installerPackageName);
-        } else {
-          // if it's installed via adb, system apps or untrusted sources
-          sideLoadedInfo.put("isSideLoaded", "true");
-        }
-
-        return sideLoadedInfo;
+        return new SideLoadedInfo(installerPackageName == null, installerPackageName);
       }
     } catch (IllegalArgumentException e) {
       // it'll never be thrown as we are querying its own App's package.
@@ -322,6 +343,39 @@ final class ContextUtils {
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
+    }
+  }
+
+  // we perform an if-check for that, but lint fails to recognize
+  @SuppressLint("NewApi")
+  static void setAppPackageInfo(
+      final @NotNull PackageInfo packageInfo,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull App app) {
+    app.setAppIdentifier(packageInfo.packageName);
+    app.setAppVersion(packageInfo.versionName);
+    app.setAppBuild(ContextUtils.getVersionCode(packageInfo, buildInfoProvider));
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
+      final Map<String, String> permissions = new HashMap<>();
+      final String[] requestedPermissions = packageInfo.requestedPermissions;
+      final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
+
+      if (requestedPermissions != null
+          && requestedPermissions.length > 0
+          && requestedPermissionsFlags != null
+          && requestedPermissionsFlags.length > 0) {
+        for (int i = 0; i < requestedPermissions.length; i++) {
+          String permission = requestedPermissions[i];
+          permission = permission.substring(permission.lastIndexOf('.') + 1);
+
+          final boolean granted =
+              (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
+                  == REQUESTED_PERMISSION_GRANTED;
+          permissions.put(permission, granted ? "granted" : "not_granted");
+        }
+      }
+      app.setPermissions(permissions);
     }
   }
 }
