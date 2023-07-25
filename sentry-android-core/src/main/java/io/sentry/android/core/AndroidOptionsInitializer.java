@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
+import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.SendFireAndForgetEnvelopeSender;
@@ -40,6 +41,8 @@ import org.jetbrains.annotations.TestOnly;
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
+
+  static final long DEFAULT_FLUSH_TIMEOUT_MS = 4000;
 
   static final String SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME =
       "io.sentry.compose.gestures.ComposeGestureTargetLocator";
@@ -93,6 +96,9 @@ final class AndroidOptionsInitializer {
 
     options.setDateProvider(new SentryAndroidDateProvider());
 
+    // set a lower flush timeout on Android to avoid ANRs
+    options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
+
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
 
@@ -125,6 +131,7 @@ final class AndroidOptionsInitializer {
       options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
     }
 
+    options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));

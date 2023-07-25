@@ -106,7 +106,7 @@ public enum SpanStatus implements JsonSerializable {
   // JsonSerializable
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.value(name().toLowerCase(Locale.ROOT));
   }

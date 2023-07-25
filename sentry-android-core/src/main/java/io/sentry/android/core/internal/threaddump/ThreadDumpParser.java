@@ -38,31 +38,35 @@ import org.jetbrains.annotations.Nullable;
 public class ThreadDumpParser {
   private static final Pattern BEGIN_MANAGED_THREAD_RE =
       Pattern.compile("\"(.*)\" (.*) ?prio=(\\d+)\\s+tid=(\\d+)\\s*(.*)");
+
+  private static final Pattern BEGIN_UNMANAGED_NATIVE_THREAD_RE =
+      Pattern.compile("\"(.*)\" (.*) ?sysTid=(\\d+)");
+
   private static final Pattern NATIVE_RE =
       Pattern.compile(
-          "  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*?)\\s+\\((.*)\\+(\\d+)\\)(?: \\(.*\\))?");
+          " *(?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*?)\\s+\\((.*)\\+(\\d+)\\)(?: \\(.*\\))?");
   private static final Pattern NATIVE_NO_LOC_RE =
       Pattern.compile(
-          "  (?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?(?: \\(.*\\))?");
+          " *(?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?(?: \\(.*\\))?");
   private static final Pattern JAVA_RE =
-      Pattern.compile("  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
+      Pattern.compile(" *at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
   private static final Pattern JNI_RE =
-      Pattern.compile("  at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\(Native method\\)");
+      Pattern.compile(" *at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\(Native method\\)");
   private static final Pattern LOCKED_RE =
-      Pattern.compile("  - locked \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+      Pattern.compile(" *- locked \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
   private static final Pattern SLEEPING_ON_RE =
-      Pattern.compile("  - sleeping on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+      Pattern.compile(" *- sleeping on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
   private static final Pattern WAITING_ON_RE =
-      Pattern.compile("  - waiting on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+      Pattern.compile(" *- waiting on \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
   private static final Pattern WAITING_TO_LOCK_RE =
       Pattern.compile(
-          "  - waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
+          " *- waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)");
   private static final Pattern WAITING_TO_LOCK_HELD_RE =
       Pattern.compile(
-          "  - waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)"
+          " *- waiting to lock \\<([0x0-9a-fA-F]{1,16})\\> \\(a (?:(.+)\\.)?([^.]+)\\)"
               + "(?: held by thread (\\d+))");
   private static final Pattern WAITING_TO_LOCK_UNKNOWN_RE =
-      Pattern.compile("  - waiting to lock an unknown object");
+      Pattern.compile(" *- waiting to lock an unknown object");
   private static final Pattern BLANK_RE = Pattern.compile("\\s+");
 
   private final @NotNull SentryOptions options;
@@ -82,6 +86,7 @@ public class ThreadDumpParser {
     final List<SentryThread> sentryThreads = new ArrayList<>();
 
     final Matcher beginManagedThreadRe = BEGIN_MANAGED_THREAD_RE.matcher("");
+    final Matcher beginUnmanagedNativeThreadRe = BEGIN_UNMANAGED_NATIVE_THREAD_RE.matcher("");
 
     while (lines.hasNext()) {
       final Line line = lines.next();
@@ -92,7 +97,7 @@ public class ThreadDumpParser {
       final String text = line.text;
       // we only handle managed threads, as unmanaged/not attached do not have the thread id and
       // our protocol does not support this case
-      if (matches(beginManagedThreadRe, text)) {
+      if (matches(beginManagedThreadRe, text) || matches(beginUnmanagedNativeThreadRe, text)) {
         lines.rewind();
 
         final SentryThread thread = parseThread(lines);
@@ -108,6 +113,7 @@ public class ThreadDumpParser {
     final SentryThread sentryThread = new SentryThread();
 
     final Matcher beginManagedThreadRe = BEGIN_MANAGED_THREAD_RE.matcher("");
+    final Matcher beginUnmanagedNativeThreadRe = BEGIN_UNMANAGED_NATIVE_THREAD_RE.matcher("");
 
     // thread attributes
     if (!lines.hasNext()) {
@@ -137,14 +143,24 @@ public class ThreadDumpParser {
           sentryThread.setState(state);
         }
       }
-      final String threadName = sentryThread.getName();
-      if (threadName != null) {
-        final boolean isMain = threadName.equals("main");
-        sentryThread.setMain(isMain);
-        // since it's an ANR, the crashed thread will always be main
-        sentryThread.setCrashed(isMain);
-        sentryThread.setCurrent(isMain && !isBackground);
+    } else if (matches(beginUnmanagedNativeThreadRe, line.text)) {
+      final Long sysTid = getLong(beginUnmanagedNativeThreadRe, 3, null);
+      if (sysTid == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
+        // tid is required by our protocol
+        return null;
       }
+      sentryThread.setId(sysTid);
+      sentryThread.setName(beginUnmanagedNativeThreadRe.group(1));
+    }
+
+    final String threadName = sentryThread.getName();
+    if (threadName != null) {
+      final boolean isMain = threadName.equals("main");
+      sentryThread.setMain(isMain);
+      // since it's an ANR, the crashed thread will always be main
+      sentryThread.setCrashed(isMain);
+      sentryThread.setCurrent(isMain && !isBackground);
     }
 
     // thread stacktrace

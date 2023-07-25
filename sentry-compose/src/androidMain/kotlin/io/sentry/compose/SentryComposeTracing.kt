@@ -20,6 +20,8 @@ private const val OP_COMPOSE = "ui.compose"
 private const val OP_PARENT_RENDER = "ui.compose.rendering"
 private const val OP_RENDER = "ui.render"
 
+private const val OP_TRACE_ORIGIN = "auto.ui.jetpack_compose"
+
 @Immutable
 private class ImmutableHolder<T>(var item: T)
 
@@ -42,7 +44,9 @@ private val localSentryCompositionParentSpan = compositionLocalOf {
                     isTrimEnd = true
                     isIdle = true
                 }
-            )
+            )?.apply {
+                spanContext.origin = OP_TRACE_ORIGIN
+            }
     )
 }
 
@@ -57,7 +61,9 @@ private val localSentryRenderingParentSpan = compositionLocalOf {
                     isTrimEnd = true
                     isIdle = true
                 }
-            )
+            )?.apply {
+                spanContext.origin = OP_TRACE_ORIGIN
+            }
     )
 }
 
@@ -71,7 +77,9 @@ public fun SentryTraced(
 ) {
     val parentCompositionSpan = localSentryCompositionParentSpan.current
     val parentRenderingSpan = localSentryRenderingParentSpan.current
-    val compositionSpan = parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)
+    val compositionSpan = parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)?.apply {
+        spanContext.origin = OP_TRACE_ORIGIN
+    }
     val firstRendered = remember { ImmutableHolder(false) }
 
     val baseModifier = if (enableUserInteractionTracing) Modifier.sentryTag(tag) else modifier

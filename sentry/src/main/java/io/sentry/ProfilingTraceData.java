@@ -385,7 +385,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.ANDROID_API_LEVEL).value(logger, androidApiLevel);
