@@ -24,7 +24,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - name: ".*"
-        platformVersion: 13
+        platformVersion: "13"
 
   - name: "Android 12 Ui test (api 31)"
     testOptions:
@@ -32,7 +32,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - name: ".*"
-        platformVersion: 12
+        platformVersion: "12"
 
   - name: "Android 11 Ui test (api 30)"
     testOptions:
@@ -40,7 +40,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - name: ".*"
-        platformVersion: 11
+        platformVersion: "11"
 
   - name: "Android 10 Ui test (api 29)"
     testOptions:
@@ -48,7 +48,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - name: ".*"
-        platformVersion: 10
+        platformVersion: "10"
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
