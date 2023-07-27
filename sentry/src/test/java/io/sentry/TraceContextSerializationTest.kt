@@ -23,7 +23,8 @@ class TraceContextSerializationTest {
             "c052c566-6619-45f5-a61f-172802afa39a",
             "f7d8662b-5551-4ef8-b6a8-090f0561a530",
             "0252ec25-cd0a-4230-bd2f-936a4585637e",
-            "0.00000021"
+            "0.00000021",
+            "true"
         )
     }
     private val fixture = Fixture()
