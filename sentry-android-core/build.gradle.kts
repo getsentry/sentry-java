@@ -66,7 +66,6 @@ android {
     }
 }
 
-
 tasks.create("unitTestCoverageReport", JacocoReport::class) {
     dependsOn("testDebugUnitTest")
 
