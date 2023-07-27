@@ -34,10 +34,22 @@ type Task {
     assigneeId: String
     """ Assignee """
     assignee: Assignee
+    """ ID of the Creator """
+    creatorId: String
+    """ Creator """
+    creator: Creator
 }
 
 """ An Assignee """
 type Assignee {
+    """ ID """
+    id: String!
+    """ Name """
+    name: String!
+}
+
+""" An Creator """
+type Creator {
     """ ID """
     id: String!
     """ Name """

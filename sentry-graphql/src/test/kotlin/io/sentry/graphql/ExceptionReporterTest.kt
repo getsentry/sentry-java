@@ -41,10 +41,10 @@ class ExceptionReporterTest {
         val query = """query greeting(name: "somename")"""
         val variables = mapOf("variableA" to "value a")
 
-        fun getSut(options: SentryOptions = SentryOptions(), isSpring: Boolean = false): ExceptionReporter {
+        fun getSut(options: SentryOptions = SentryOptions(), captureRequestBodyForNonSubscriptions: Boolean = true): ExceptionReporter {
             whenever(hub.options).thenReturn(options)
             scope = Scope(options)
-            val exceptionReporter = ExceptionReporter(isSpring)
+            val exceptionReporter = ExceptionReporter(captureRequestBodyForNonSubscriptions)
             executionResult = ExecutionResultImpl.newExecutionResult()
                 .data("raw result")
                 .addError(
@@ -152,7 +152,7 @@ class ExceptionReporterTest {
 
     @Test
     fun `does not attach query or variables if spring`() {
-        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, true)
+        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
         exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
         verify(fixture.hub).captureEvent(
@@ -172,7 +172,7 @@ class ExceptionReporterTest {
 
     @Test
     fun `attaches query and variables if spring and subscription`() {
-        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, true)
+        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
         exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, true), fixture.executionResult)
 
         verify(fixture.hub).captureEvent(

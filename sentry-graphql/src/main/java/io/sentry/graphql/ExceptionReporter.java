@@ -20,10 +20,10 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class ExceptionReporter {
-  private final boolean isSpring;
+  private final boolean captureRequestBodyForNonSubscriptions;
 
-  public ExceptionReporter(final boolean isSpring) {
-    this.isSpring = isSpring;
+  public ExceptionReporter(final boolean captureRequestBodyForNonSubscriptions) {
+    this.captureRequestBodyForNonSubscriptions = captureRequestBodyForNonSubscriptions;
   }
 
   private static final @NotNull String MECHANISM_TYPE = "GraphqlInstrumentation";
@@ -73,13 +73,16 @@ public final class ExceptionReporter {
       final @NotNull Request request) {
     request.setApiTarget("graphql");
 
-    if (exceptionDetails.isSubscription() || !isSpring) {
+    if (exceptionDetails.isSubscription() || captureRequestBodyForNonSubscriptions) {
       final @NotNull Map<String, Object> data = new HashMap<>();
 
       data.put("query", exceptionDetails.getQuery());
 
       if (hub.getOptions().isSendDefaultPii()) {
-        data.put("variables", exceptionDetails.getVariables());
+        Map<String, Object> variables = exceptionDetails.getVariables();
+        if (variables != null && !variables.isEmpty()) {
+          data.put("variables", variables);
+        }
       }
 
       // for Spring HTTP this will be replaced by RequestBodyExtractingEventProcessor

@@ -2,6 +2,7 @@ package io.sentry.spring.graphql;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.graphql.SentryInstrumentation;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.graphql.GraphQlSourceBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,17 +13,29 @@ import org.springframework.core.annotation.Order;
 @Open
 public class SentryGraphqlConfiguration {
 
+  @Bean
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+  public GraphQlSourceBuilderCustomizer sourceBuilderCustomizerWebmvc() {
+    return sourceBuilderCustomizer(false);
+  }
+
+  @Bean
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  public GraphQlSourceBuilderCustomizer sourceBuilderCustomizerWebflux() {
+    return sourceBuilderCustomizer(true);
+  }
+
   /**
    * We're not setting defaultDataFetcherExceptionHandler here on purpose and instead use the
    * resolver adapter below. This way Springs handler can still forward to other resolver adapters.
    */
-  @Bean
-  public GraphQlSourceBuilderCustomizer sourceBuilderCustomizer() {
+  private GraphQlSourceBuilderCustomizer sourceBuilderCustomizer(final boolean captureRequestBody) {
     return (builder) ->
         builder.configureGraphQl(
             graphQlBuilder ->
                 graphQlBuilder.instrumentation(
-                    new SentryInstrumentation(null, new SentrySpringSubscriptionHandler(), true)));
+                    new SentryInstrumentation(
+                        null, new SentrySpringSubscriptionHandler(), captureRequestBody)));
   }
 
   @Bean

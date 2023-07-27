@@ -57,7 +57,7 @@ class SentryInstrumentationTest {
 
             val graphQLSchema = SchemaGenerator().makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring(dataFetcherThrows))
             val graphQL = GraphQL.newGraphQL(graphQLSchema)
-                .instrumentation(SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), false))
+                .instrumentation(SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), true))
                 .build()
 
             if (isTransactionActive) {

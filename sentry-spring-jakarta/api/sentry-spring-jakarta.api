@@ -123,7 +123,8 @@ public class io/sentry/spring/jakarta/graphql/SentryGraphqlConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
 	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
-	public fun sourceBuilderCustomizer ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sourceBuilderCustomizerWebflux ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sourceBuilderCustomizerWebmvc ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
 }
 
 public final class io/sentry/spring/jakarta/graphql/SentrySpringSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {

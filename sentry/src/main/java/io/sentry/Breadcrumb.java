@@ -224,8 +224,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * Creates a breadcrumb for a GraphQL data fetcher.
    *
    * @param path - the name of the GraphQL operation
-   * @param field - the type of GraphQL operation (e.g. query, mutation, subscription)
-   * @param type - the ID of the GraphQL operation
+   * @param field - the field being fetched
+   * @param type - the type being fetched
    * @param objectType - the object type of the GraphQL data fetch operation
    * @return the breadcrumb
    */

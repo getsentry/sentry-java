@@ -59,7 +59,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public SentryInstrumentation() {
-    this(null, NoOpSubscriptionHandler.getInstance(), false);
+    this(null, NoOpSubscriptionHandler.getInstance(), true);
   }
 
   /**
@@ -68,7 +68,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public SentryInstrumentation(final @Nullable IHub hub) {
-    this(null, NoOpSubscriptionHandler.getInstance(), false);
+    this(null, NoOpSubscriptionHandler.getInstance(), true);
   }
 
   /**
@@ -77,7 +77,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public SentryInstrumentation(final @Nullable BeforeSpanCallback beforeSpan) {
-    this(beforeSpan, NoOpSubscriptionHandler.getInstance(), false);
+    this(beforeSpan, NoOpSubscriptionHandler.getInstance(), true);
   }
 
   /**
@@ -87,19 +87,25 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   @SuppressWarnings("InlineMeSuggester")
   public SentryInstrumentation(
       final @Nullable IHub hub, final @Nullable BeforeSpanCallback beforeSpan) {
-    this(beforeSpan, NoOpSubscriptionHandler.getInstance(), false);
+    this(beforeSpan, NoOpSubscriptionHandler.getInstance(), true);
   }
 
   /**
    * @param beforeSpan callback when a span is created
    * @param subscriptionHandler can report subscription errors
-   * @param isSpring true if using spring-graphql, false for Netflix DGS an non Spring
+   * @param captureRequestBodyForNonSubscriptions false if request bodies should not be captured by
+   *     this integration for query and mutation operations. This can be used to prevent unnecessary
+   *     work by not adding the request body when another integration will add it anyways, as is the
+   *     case with our spring integration for WebMVC.
    */
   public SentryInstrumentation(
       final @Nullable BeforeSpanCallback beforeSpan,
       final @NotNull SentrySubscriptionHandler subscriptionHandler,
-      final boolean isSpring) {
-    this(beforeSpan, subscriptionHandler, new ExceptionReporter(isSpring));
+      final boolean captureRequestBodyForNonSubscriptions) {
+    this(
+        beforeSpan,
+        subscriptionHandler,
+        new ExceptionReporter(captureRequestBodyForNonSubscriptions));
   }
 
   @TestOnly
@@ -117,11 +123,15 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
 
   /**
    * @param subscriptionHandler can report subscription errors
-   * @param isSpring true if using spring-graphql, false for Netflix DGS an non Spring
+   * @param captureRequestBodyForNonSubscriptions false if request bodies should not be captured by
+   *     this integration for query and mutation operations. This can be used to prevent unnecessary
+   *     work by not adding the request body when another integration will add it anyways, as is the
+   *     case with our spring integration for WebMVC.
    */
   public SentryInstrumentation(
-      final @NotNull SentrySubscriptionHandler subscriptionHandler, final boolean isSpring) {
-    this(null, subscriptionHandler, isSpring);
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final boolean captureRequestBodyForNonSubscriptions) {
+    this(null, subscriptionHandler, captureRequestBodyForNonSubscriptions);
   }
 
   @Override
