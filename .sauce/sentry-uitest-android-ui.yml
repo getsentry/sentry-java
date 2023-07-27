@@ -23,28 +23,32 @@ suites:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Google_Pixel_5_13_real_us # Google Pixel 5 - api 33 (13)
+      - name: ".*"
+        platformVersion: "13"
 
   - name: "Android 12 Ui test (api 31)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Samsung_Galaxy_S22_Ultra_5G_real_us # Samsung Galaxy S22 Ultra 5G - api 31 (12)
+      - name: ".*"
+        platformVersion: "12"
 
   - name: "Android 11 Ui test (api 30)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10+ - api 30 (11)
+      - name: ".*"
+        platformVersion: "11"
 
   - name: "Android 10 Ui test (api 29)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: OnePlus_7T_real_us # OnePlus 7T - api 29 (10)
+      - name: ".*"
+        platformVersion: "10"
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
