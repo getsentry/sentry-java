@@ -41,7 +41,7 @@ jobs:
 
       # Try clean first
       - name: Clean
-        run: ./gradlew clean
+        run: make clean
 
       # Try unit test coverage report for sentry-android-core
       - name: Run unit test coverage
