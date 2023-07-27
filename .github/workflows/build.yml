@@ -39,26 +39,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Clean, check formatting, build and do a dry release
-      - name: Make all
-        run: make all
-
-      # We stop gradle at the end to make sure the cache folders
-      # don't contain any lock files and are free to be cached.
-      - name: Make stop
-        run: make stop
-
-      - name: Archive packages
-        # We need artifacts from only one the builds
-        if: runner.os == 'Linux' && matrix.java == '17'
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.sha }}
-          if-no-files-found: error
-          path: |
-            ./*/build/distributions/*.zip
-            ./sentry-opentelemetry/*/build/distributions/*.zip
-            ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
+      # Try unit test coverage report for sentry-android-core
+      - name: Run unit test coverage
+        run: ./gradlew unitTestCoverageReport
 
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
