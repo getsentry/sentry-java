@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
+import kotlin.test.assertNull
 
 class BreadcrumbTest {
 
@@ -192,5 +193,44 @@ class BreadcrumbTest {
         assertEquals("error", breadcrumb.type)
         assertEquals("message", breadcrumb.message)
         assertEquals(SentryLevel.ERROR, breadcrumb.level)
+    }
+
+    @Test
+    fun `serializes String keys for graphql data loader breadcrumb`() {
+        val breadcrumb = Breadcrumb.graphqlDataLoader(listOf("key1", "key2"), String::class.java, Throwable::class.java, null)
+        assertEquals("graphql", breadcrumb.type)
+        assertEquals("graphql.data_loader", breadcrumb.category)
+        assertEquals(listOf("key1", "key2"), breadcrumb.data["keys"] as? Iterable<String>)
+        assertEquals("java.lang.String", breadcrumb.data["key_type"])
+        assertEquals("java.lang.Throwable", breadcrumb.data["value_type"])
+        assertNull(breadcrumb.data["name"])
+    }
+
+    @Test
+    fun `serializes Long keys for graphql data loader breadcrumb`() {
+        val breadcrumb = Breadcrumb.graphqlDataLoader(listOf(java.lang.Long.valueOf(1), java.lang.Long.valueOf(2)), java.lang.Long::class.java, Throwable::class.java, null)
+        assertEquals("graphql", breadcrumb.type)
+        assertEquals("graphql.data_loader", breadcrumb.category)
+        assertEquals(listOf("1", "2"), breadcrumb.data["keys"] as? Iterable<String>)
+        assertEquals("java.lang.Long", breadcrumb.data["key_type"])
+        assertEquals("java.lang.Throwable", breadcrumb.data["value_type"])
+        assertNull(breadcrumb.data["name"])
+    }
+
+    @Test
+    fun `serializes object keys using toString for graphql data loader breadcrumb`() {
+        val breadcrumb = Breadcrumb.graphqlDataLoader(listOf(TestKey(1L), TestKey(2L)), TestKey::class.java, Throwable::class.java, null)
+        assertEquals("graphql", breadcrumb.type)
+        assertEquals("graphql.data_loader", breadcrumb.category)
+        assertEquals(listOf("1", "2"), breadcrumb.data["keys"] as? Iterable<String>)
+        assertEquals("io.sentry.BreadcrumbTest\$TestKey", breadcrumb.data["key_type"])
+        assertEquals("java.lang.Throwable", breadcrumb.data["value_type"])
+        assertNull(breadcrumb.data["name"])
+    }
+
+    class TestKey(val id: Long) {
+        override fun toString(): String {
+            return id.toString()
+        }
     }
 }

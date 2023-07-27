@@ -99,6 +99,11 @@ public class ProjectController {
       this.assigneeId = assigneeId;
       this.creatorId = creatorId;
     }
+
+    @Override
+    public String toString() {
+      return "Task{id=" + id + "}";
+    }
   }
 
   public static class Assignee {

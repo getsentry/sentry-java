@@ -5,8 +5,10 @@ import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -278,7 +280,11 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     breadcrumb.setType("graphql");
     breadcrumb.setCategory("graphql.data_loader");
 
-    breadcrumb.setData("keys", keys);
+    final List<String> serializedKeys = new ArrayList<>();
+    for (Object key : keys) {
+      serializedKeys.add(key.toString());
+    }
+    breadcrumb.setData("keys", serializedKeys);
 
     if (keyType != null) {
       breadcrumb.setData("key_type", keyType.getName());
