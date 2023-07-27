@@ -26,7 +26,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            enableUnitTestCoverage = true
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -62,6 +64,31 @@ android {
             ignore = true
         }
     }
+}
+
+
+tasks.create("unitTestCoverageReport", JacocoReport::class) {
+    dependsOn("testDebugUnitTest")
+
+    group = "Verification" // existing group containing tasks for generating linting reports etc.
+    description = "Generate Jacoco coverage reports for the 'local' debug build."
+
+    reports {
+        // human readable (written into './build/reports/jacoco/unitTestCoverageReport/html')
+        html.required.set(true)
+        // CI-readable (written into './build/reports/jacoco/unitTestCoverageReport/unitTestCoverageReport.xml')
+        xml.required.set(true)
+    }
+
+    // Execution data generated when running the tests against classes instrumented by the JaCoCo agent.
+    // This is enabled with 'enableUnitTestCoverage' in the 'debug' build type.
+    executionData.setFrom("${project.buildDir}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+
+    // Compiled Kotlin class files are written into build-variant-specific subdirectories of 'build/tmp/kotlin-classes'.
+    classDirectories.setFrom("${project.buildDir}/tmp/kotlin-classes/debugUnitTest")
+
+    // To produce an accurate report, the bytecode is mapped back to the original source code.
+    sourceDirectories.setFrom("${project.projectDir}/src/main/java")
 }
 
 tasks.withType<Test> {
