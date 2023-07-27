@@ -73,9 +73,7 @@ tasks.create("unitTestCoverageReport", JacocoReport::class) {
     description = "Generate Jacoco coverage reports for the 'local' debug build."
 
     reports {
-        // human readable (written into './build/reports/jacoco/unitTestCoverageReport/html')
         html.required.set(true)
-        // CI-readable (written into './build/reports/jacoco/unitTestCoverageReport/unitTestCoverageReport.xml')
         xml.required.set(true)
     }
 
