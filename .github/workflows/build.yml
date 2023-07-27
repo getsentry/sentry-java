@@ -39,6 +39,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      # Try clean first
+      - name: Clean
+        run: ./gradlew clean
+
       # Try unit test coverage report for sentry-android-core
       - name: Run unit test coverage
         run: ./gradlew unitTestCoverageReport
