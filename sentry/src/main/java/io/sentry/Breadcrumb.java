@@ -242,20 +242,16 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     breadcrumb.setCategory("graphql.fetcher");
 
     if (path != null) {
-      // TODO key?
-      breadcrumb.setData("graphql.path", path);
+      breadcrumb.setData("path", path);
     }
     if (field != null) {
-      // TODO key?
-      breadcrumb.setData("graphql.field", field);
+      breadcrumb.setData("field", field);
     }
     if (type != null) {
-      // TODO key?
-      breadcrumb.setData("graphql.type", type);
+      breadcrumb.setData("type", type);
     }
     if (objectType != null) {
-      // TODO key?
-      breadcrumb.setData("graphql.object_type", objectType);
+      breadcrumb.setData("object_type", objectType);
     }
 
     return breadcrumb;

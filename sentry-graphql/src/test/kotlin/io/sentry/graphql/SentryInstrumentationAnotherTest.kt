@@ -235,10 +235,10 @@ class SentryInstrumentationAnotherTest {
             org.mockito.kotlin.check<Breadcrumb> { breadcrumb ->
                 assertEquals("graphql", breadcrumb.type)
                 assertEquals("graphql.fetcher", breadcrumb.category)
-                assertEquals("/child", breadcrumb.data["graphql.path"])
-                assertEquals("myFieldName", breadcrumb.data["graphql.field"])
-                assertEquals("MyResponseType", breadcrumb.data["graphql.type"])
-                assertEquals("QUERY", breadcrumb.data["graphql.object_type"])
+                assertEquals("/child", breadcrumb.data["path"])
+                assertEquals("myFieldName", breadcrumb.data["field"])
+                assertEquals("MyResponseType", breadcrumb.data["type"])
+                assertEquals("QUERY", breadcrumb.data["object_type"])
             }
         )
     }
