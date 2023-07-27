@@ -45,7 +45,7 @@ jobs:
 
       # Try build
       - name: Build and run tests
-        run: ./gradlew test
+        run: ./gradlew :sentry-android-core:test tasks --all
 
       # Try unit test coverage report for sentry-android-core
       - name: Run unit test coverage
