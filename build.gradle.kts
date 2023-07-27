@@ -40,7 +40,7 @@ buildscript {
         classpath(Config.BuildPlugins.composeGradlePlugin)
     }
 }
-
+/*
 apiValidation {
     ignoredPackages.addAll(
         setOf(
@@ -69,7 +69,7 @@ apiValidation {
             "test-app-sentry"
         )
     )
-}
+}*/
 
 allprojects {
     repositories {

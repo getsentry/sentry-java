@@ -29,9 +29,15 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
 
-      # Try clean first
-      - name: Clean
-        run: make clean
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       # Try unit test coverage report for sentry-android-core
       - name: Run unit test coverage
