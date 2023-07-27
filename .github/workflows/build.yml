@@ -43,6 +43,10 @@ jobs:
       - name: Clean
         run: make clean
 
+      # Try build
+      - name: Build and run tests
+        run: ./gradlew testDebugUnitTest
+
       # Try unit test coverage report for sentry-android-core
       - name: Run unit test coverage
         run: ./gradlew unitTestCoverageReport
