@@ -97,7 +97,7 @@ allprojects {
 }
 
 subprojects {
-    if (name.contains("sentry-android")) {
+    if (name.contains("sentry-android") && !name.contains("sentry-android-integration-tests")) {
         tasks.create("unitTestCoverageReport", JacocoReport::class) {
             dependsOn("testReleaseUnitTest")
 
