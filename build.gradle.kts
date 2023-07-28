@@ -101,23 +101,28 @@ subprojects {
         tasks.create("unitTestCoverageReport", JacocoReport::class) {
             dependsOn("testReleaseUnitTest")
 
-            group = "Verification" // existing group containing tasks for generating linting reports etc.
+            group =
+                "Verification" // existing group containing tasks for generating linting reports etc.
             description = "Generate Jacoco coverage reports for the release build."
 
             reports {
-                html.required.set(true)
+                html.required.set(false)
                 xml.required.set(true)
             }
 
-            // Execution data generated when running the tests against classes instrumented by the JaCoCo agent.
-            // This is enabled with 'enableUnitTestCoverage' in the 'debug' build type.
             executionData.setFrom("$buildDir/outputs/unit_test_code_coverage/releaseUnitTest/testReleaseUnitTest.exec")
-
-            // Compiled Kotlin class files are written into build-variant-specific subdirectories of 'build/tmp/kotlin-classes'.
             classDirectories.setFrom("$buildDir/tmp/kotlin-classes/releaseUnitTest")
-
-            // To produce an accurate report, the bytecode is mapped back to the original source code.
             sourceDirectories.setFrom("$projectDir}/src/main/java")
+
+            doLast {
+                File("$buildDir/reports/jacoco/unitTestCoverageReport/unitTestCoverageReport.xml").renameTo(
+                    File("$buildDir/reports/jacoco/unitTestCoverageReport/jacocoTestReport.xml")
+                )
+
+                File("$buildDir/reports/jacoco/unitTestCoverageReport").renameTo(
+                    File("$buildDir/reports/jacoco/test")
+                )
+            }
         }
     }
 
