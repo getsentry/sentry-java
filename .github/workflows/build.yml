@@ -39,10 +39,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Try unit test coverage report for android modules
-      - name: Run unit test coverage
-        run: ./gradlew unitTestCoverageReport
-
       # Clean, check formatting, build and do a dry release
       - name: Make all
         run: make all
@@ -51,6 +47,18 @@ jobs:
       # don't contain any lock files and are free to be cached.
       - name: Make stop
         run: make stop
+
+      - name: Archive packages
+        # We need artifacts from only one the builds
+        if: runner.os == 'Linux' && matrix.java == '17'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            ./*/build/distributions/*.zip
+            ./sentry-opentelemetry/*/build/distributions/*.zip
+            ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
 
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
