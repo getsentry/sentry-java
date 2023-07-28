@@ -8,6 +8,7 @@ import io.sentry.SentryTracer
 import io.sentry.Span
 import io.sentry.SpanDataConvention
 import io.sentry.SpanOptions
+import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
@@ -243,6 +244,28 @@ class SentryOkHttpEventTest {
     }
 
     @Test
+    fun `when finishEvent, all running spans are finished with internal_error status`() {
+        val sut = fixture.getSut()
+        sut.startSpan("span")
+        val spans = sut.getEventSpans()
+        assertNull(spans["span"]!!.status)
+        sut.finishEvent()
+        assertEquals(SpanStatus.INTERNAL_ERROR, spans["span"]!!.status)
+    }
+
+    @Test
+    fun `when finishEvent, does not override running spans status if set`() {
+        val sut = fixture.getSut()
+        sut.startSpan("span")
+        val spans = sut.getEventSpans()
+        assertNull(spans["span"]!!.status)
+        spans["span"]!!.status = SpanStatus.OK
+        assertEquals(SpanStatus.OK, spans["span"]!!.status)
+        sut.finishEvent()
+        assertEquals(SpanStatus.OK, spans["span"]!!.status)
+    }
+
+    @Test
     fun `setResponse set protocol and code in the breadcrumb and root span, and response in the hint`() {
         val sut = fixture.getSut()
         sut.setResponse(fixture.response)
@@ -441,6 +464,32 @@ class SentryOkHttpEventTest {
         assertEquals(rootSpan.spanId, requestBodySpan?.parentSpanId)
         assertEquals(rootSpan.spanId, responseHeadersSpan?.parentSpanId)
         assertEquals(rootSpan.spanId, responseBodySpan?.parentSpanId)
+    }
+
+    @Test
+    fun `finishSpan beforeFinish is called on span, parent and call root span`() {
+        val sut = fixture.getSut()
+        sut.startSpan(CONNECTION_EVENT)
+        sut.startSpan(REQUEST_HEADERS_EVENT)
+        sut.startSpan("random event")
+        sut.finishSpan(REQUEST_HEADERS_EVENT) { it.status = SpanStatus.INTERNAL_ERROR }
+        sut.finishSpan("random event") { it.status = SpanStatus.DEADLINE_EXCEEDED }
+        sut.finishSpan(CONNECTION_EVENT)
+        val spans = sut.getEventSpans()
+        val connectionSpan = spans[CONNECTION_EVENT] as Span?
+        val requestHeadersSpan = spans[REQUEST_HEADERS_EVENT] as Span?
+        val randomEventSpan = spans["random event"] as Span?
+        assertNotNull(connectionSpan)
+        assertNotNull(requestHeadersSpan)
+        assertNotNull(randomEventSpan)
+        // requestHeadersSpan was finished with INTERNAL_ERROR
+        assertEquals(SpanStatus.INTERNAL_ERROR, requestHeadersSpan.status)
+        // randomEventSpan was finished with DEADLINE_EXCEEDED
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, randomEventSpan.status)
+        // requestHeadersSpan was finished with INTERNAL_ERROR, and it propagates to its parent
+        assertEquals(SpanStatus.INTERNAL_ERROR, connectionSpan.status)
+        // requestHeadersSpan was finished with INTERNAL_ERROR, but random event was finished with DEADLINE_EXCEEDED, and it propagates to root call
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, sut.callRootSpan!!.status)
     }
 
     /** Retrieve all the spans started in the event using reflection. */

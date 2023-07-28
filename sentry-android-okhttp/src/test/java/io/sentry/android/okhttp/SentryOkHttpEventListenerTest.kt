@@ -19,6 +19,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -249,7 +250,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `propagate all calls to the event listener passed in the ctor`() {
-        val sut = fixture.getSut(eventListener = fixture.mockEventListener, httpStatusCode = 500)
+        val sut = fixture.getSut(eventListener = fixture.mockEventListener)
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
         val call = sut.newCall(request)
@@ -260,7 +261,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `propagate all calls to the event listener factory passed in the ctor`() {
-        val sut = fixture.getSut(eventListenerFactory = fixture.mockEventListenerFactory, httpStatusCode = 500)
+        val sut = fixture.getSut(eventListenerFactory = fixture.mockEventListenerFactory)
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
         val call = sut.newCall(request)
@@ -272,7 +273,7 @@ class SentryOkHttpEventListenerTest {
     @Test
     fun `propagate all calls to the SentryOkHttpEventListener passed in the ctor`() {
         val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
-        val sut = fixture.getSut(eventListener = originalListener, httpStatusCode = 500)
+        val sut = fixture.getSut(eventListener = originalListener)
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
         val call = sut.newCall(request)
@@ -284,7 +285,7 @@ class SentryOkHttpEventListenerTest {
     @Test
     fun `propagate all calls to the SentryOkHttpEventListener factory passed in the ctor`() {
         val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
-        val sut = fixture.getSut(eventListenerFactory = { originalListener }, httpStatusCode = 500)
+        val sut = fixture.getSut(eventListenerFactory = { originalListener })
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
         val call = sut.newCall(request)
@@ -303,6 +304,48 @@ class SentryOkHttpEventListenerTest {
         response.close()
         // Spans are created by the originalListener, so the listener doesn't create duplicates
         assertEquals(9, fixture.sentryTracer.children.size)
+    }
+
+    @Test
+    fun `status propagates to parent span and call root span`() {
+        val sut = fixture.getSut(httpStatusCode = 500)
+        val request = getRequest()
+        val call = sut.newCall(request)
+        val response = call.execute()
+        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
+        val callSpan = okHttpEvent?.callRootSpan
+        val responseHeaderSpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_headers" }
+        val connectionSpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.connection" }
+        response.close()
+        assertNotNull(callSpan)
+        assertNotNull(responseHeaderSpan)
+        assertNotNull(connectionSpan)
+        assertEquals(SpanStatus.fromHttpStatusCode(500), callSpan.status)
+        assertEquals(SpanStatus.fromHttpStatusCode(500), responseHeaderSpan.status)
+        assertEquals(SpanStatus.fromHttpStatusCode(500), connectionSpan.status)
+    }
+
+    @Test
+    fun `call root span status is not overridden if not null`() {
+        val mockListener = mock<EventListener>()
+        lateinit var call: Call
+        whenever(mockListener.connectStart(any(), anyOrNull(), anyOrNull())).then {
+            val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
+            val callSpan = okHttpEvent?.callRootSpan
+            assertNotNull(callSpan)
+            assertNull(callSpan.status)
+            callSpan.status = SpanStatus.UNKNOWN
+            it
+        }
+        val sut = fixture.getSut(eventListener = mockListener)
+        val request = getRequest()
+        call = sut.newCall(request)
+        val response = call.execute()
+        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
+        val callSpan = okHttpEvent?.callRootSpan
+        assertNotNull(callSpan)
+        response.close()
+        assertEquals(SpanStatus.UNKNOWN, callSpan.status)
     }
 
     private fun verifyDelegation(
