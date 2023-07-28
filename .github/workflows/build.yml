@@ -44,13 +44,13 @@ jobs:
         run: ./gradlew unitTestCoverageReport
 
       # Clean, check formatting, build and do a dry release
-      #- name: Make all
-      #  run: make all
+      - name: Make all
+        run: make all
 
       # We stop gradle at the end to make sure the cache folders
       # don't contain any lock files and are free to be cached.
-      #- name: Make stop
-      #  run: make stop
+      - name: Make stop
+        run: make stop
 
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds

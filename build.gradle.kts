@@ -98,12 +98,10 @@ allprojects {
 
 subprojects {
     if (name.contains("sentry-android") && !name.contains("sentry-android-integration-tests")) {
-        tasks.create("unitTestCoverageReport", JacocoReport::class) {
-            dependsOn("testReleaseUnitTest")
+        val androidJacocoTaskName = "androidJacocoTestReport"
 
-            group =
-                "Verification" // existing group containing tasks for generating linting reports etc.
-            description = "Generate Jacoco coverage reports for the release build."
+        tasks.create(androidJacocoTaskName, JacocoReport::class) {
+            dependsOn("testReleaseUnitTest")
 
             reports {
                 html.required.set(false)
@@ -115,11 +113,11 @@ subprojects {
             sourceDirectories.setFrom("$projectDir}/src/main/java")
 
             doLast {
-                File("$buildDir/reports/jacoco/unitTestCoverageReport/unitTestCoverageReport.xml").renameTo(
-                    File("$buildDir/reports/jacoco/unitTestCoverageReport/jacocoTestReport.xml")
+                File("$buildDir/reports/jacoco/$androidJacocoTaskName/$androidJacocoTaskName.xml").renameTo(
+                    File("$buildDir/reports/jacoco/$androidJacocoTaskName/jacocoTestReport.xml")
                 )
 
-                File("$buildDir/reports/jacoco/unitTestCoverageReport").renameTo(
+                File("$buildDir/reports/jacoco/$androidJacocoTaskName").renameTo(
                     File("$buildDir/reports/jacoco/test")
                 )
             }

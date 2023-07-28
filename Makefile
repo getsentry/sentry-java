@@ -1,6 +1,6 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease androidCoverageReport
 
-all: stop clean javadocs compile
+all: stop clean javadocs compile androidCoverageReport
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
 
@@ -50,3 +50,7 @@ assembleBenchmarkTestRelease:
 assembleUiTestRelease:
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+
+# Create coverage reports for android modules
+androidCoverageReport:
+	./gradlew androidJacocoTestReport
