@@ -488,7 +488,7 @@ class SentryOkHttpEventTest {
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, randomEventSpan.status)
         // requestHeadersSpan was finished with INTERNAL_ERROR, and it propagates to its parent
         assertEquals(SpanStatus.INTERNAL_ERROR, connectionSpan.status)
-        // requestHeadersSpan was finished with INTERNAL_ERROR, but random event was finished with DEADLINE_EXCEEDED, and it propagates to root call
+        // random event was finished last with DEADLINE_EXCEEDED, and it propagates to root call
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, sut.callRootSpan!!.status)
     }
 

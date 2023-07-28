@@ -314,7 +314,8 @@ class SentryOkHttpEventListenerTest {
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
         val callSpan = okHttpEvent?.callRootSpan
-        val responseHeaderSpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_headers" }
+        val responseHeaderSpan =
+            fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_headers" }
         val connectionSpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.connection" }
         response.close()
         assertNotNull(callSpan)
