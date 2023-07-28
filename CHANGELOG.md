@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- propagate okhttp status to parent spans ([#2872](https://github.com/getsentry/sentry-java/pull/2872))
+
+### Fixes
+
 ## 6.27.0
 
 ### Features
