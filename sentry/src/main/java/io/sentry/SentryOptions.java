@@ -434,6 +434,9 @@ public class SentryOptions {
   private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
+  /** Whether to format serialized data, e.g. events logged to console in debug mode */
+  private boolean prettyPrintSerializationOutput = true;
+
   /**
    * Adds an event processor
    *
@@ -2094,6 +2097,24 @@ public class SentryOptions {
    */
   public void setTraceOptionsRequests(boolean traceOptionsRequests) {
     this.traceOptionsRequests = traceOptionsRequests;
+  }
+
+  /**
+   * Whether to format serialized data, e.g. events logged to console in debug mode
+   *
+   * @return true if data should be pretty printed
+   */
+  public boolean isPrettyPrintSerializationOutput() {
+    return prettyPrintSerializationOutput;
+  }
+
+  /**
+   * Whether to format serialized data, e.g. events logged to console in debug mode
+   *
+   * @param prettyPrintSerializationOutput true if output should be pretty printed
+   */
+  public void setPrettyPrintSerializationOutput(boolean prettyPrintSerializationOutput) {
+    this.prettyPrintSerializationOutput = prettyPrintSerializationOutput;
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
