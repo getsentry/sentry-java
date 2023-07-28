@@ -1,15 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Improve server side GraphQL support for spring-graphql and Nextflix DGS ([#2856](https://github.com/getsentry/sentry-java/pull/2856))
+    - More exceptions and errors caught and reported to Sentry by also looking at the `ExecutionResult` (more specifically its `errors`)
+    - More details for Sentry events: query, variables and response (where possible)
+    - Breadcrumbs for operation (query, mutation, subscription), data fetchers and data loaders (Spring only)
+    - Better hub propagation by using `GraphQLContext`
+
 ## 6.27.0
 
 ### Features
 
 - Add TraceOrigin to Transactions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
-- Improve server side GraphQL support for spring-graphql and Nextflix DGS ([#2856](https://github.com/getsentry/sentry-java/pull/2856))
-  - More exceptions and errors caught and reported to Sentry by also looking at the `ExecutionResult` (more specifically its `errors`)
-  - More details for Sentry events: query, variables and response (where possible)
-  - Breadcrumbs for operation (query, mutation, subscription), data fetchers and data loaders (Spring only)
-  - Better hub propagation by using `GraphQLContext`
 
 ### Fixes
 
