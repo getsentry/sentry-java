@@ -7,6 +7,7 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -124,6 +125,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
         }
+        transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, httpResponse.getStatus());
+        transaction.setData(SpanDataConvention.HTTP_METHOD_KEY, httpRequest.getMethod());
         transaction.finish();
       }
     }

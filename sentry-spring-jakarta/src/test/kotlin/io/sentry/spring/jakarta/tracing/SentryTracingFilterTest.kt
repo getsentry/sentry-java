@@ -5,6 +5,7 @@ import io.sentry.ILogger
 import io.sentry.PropagationContext
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
@@ -101,6 +102,8 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                 assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
                 assertThat(it.contexts.trace!!.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
+                assertThat(it.extras?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY)).isEqualTo(200)
+                assertThat(it.extras?.get(SpanDataConvention.HTTP_METHOD_KEY)).isEqualTo("POST")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -117,6 +120,8 @@ class SentryTracingFilterTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+                assertThat(it.extras?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY)).isEqualTo(500)
+                assertThat(it.extras?.get(SpanDataConvention.HTTP_METHOD_KEY)).isEqualTo("POST")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
