@@ -14,7 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Open
 public class SentryProperties extends SentryOptions {
 
-  /** Weather to use Git commit id as a release. */
+  /** Whether to use Git commit id as a release. */
   private boolean useGitCommitIdAsRelease = true;
 
   /** Report all or only uncaught web exceptions. */
