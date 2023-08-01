@@ -12,7 +12,6 @@ import io.sentry.ITransaction;
 import io.sentry.NoOpHub;
 import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
-import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -149,17 +148,15 @@ public final class SentryWebFilter implements WebFilter {
     if (response != null) {
       final @Nullable Integer rawStatusCode = response.getRawStatusCode();
       if (rawStatusCode != null) {
-        transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, rawStatusCode);
+        transaction
+            .getContexts()
+            .withResponse(
+                (sentryResponse) -> {
+                  sentryResponse.setStatusCode(rawStatusCode);
+                });
         if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(rawStatusCode));
         }
-      }
-    }
-    final @Nullable ServerHttpRequest request = exchange.getRequest();
-    if (request != null) {
-      final @Nullable HttpMethod method = request.getMethod();
-      if (method != null) {
-        transaction.setData(SpanDataConvention.HTTP_METHOD_KEY, method.name());
       }
     }
     transaction.finish();

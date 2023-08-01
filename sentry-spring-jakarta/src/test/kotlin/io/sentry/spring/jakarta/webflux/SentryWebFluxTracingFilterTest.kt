@@ -9,7 +9,6 @@ import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
-import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
@@ -116,8 +115,7 @@ class SentryWebFluxTracingFilterTest {
                     assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                     assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
                     assertThat(it.contexts.trace!!.origin).isEqualTo("auto.spring_jakarta.webflux")
-                    assertThat(it.extras?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY)).isEqualTo(200)
-                    assertThat(it.extras?.get(SpanDataConvention.HTTP_METHOD_KEY)).isEqualTo("POST")
+                    assertThat(it.contexts.response!!.statusCode).isEqualTo(200)
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
@@ -136,8 +134,7 @@ class SentryWebFluxTracingFilterTest {
             verify(fixture.hub).captureTransaction(
                 check {
                     assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-                    assertThat(it.extras?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY)).isEqualTo(500)
-                    assertThat(it.extras?.get(SpanDataConvention.HTTP_METHOD_KEY)).isEqualTo("POST")
+                    assertThat(it.contexts.response!!.statusCode).isEqualTo(500)
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),

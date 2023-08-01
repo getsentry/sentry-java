@@ -6,6 +6,7 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.ObjectWriter;
 import io.sentry.SpanContext;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -18,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
+
+  /** Response lock, Ops should be atomic */
+  private final @NotNull Object responseLock = new Object();
 
   public Contexts() {}
 
@@ -113,6 +117,19 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
 
   public @Nullable Response getResponse() {
     return toContextType(Response.TYPE, Response.class);
+  }
+
+  public void withResponse(HintUtils.SentryConsumer<Response> callback) {
+    synchronized (responseLock) {
+      final @Nullable Response response = getResponse();
+      if (response != null) {
+        callback.accept(response);
+      } else {
+        final @NotNull Response newResponse = new Response();
+        setResponse(newResponse);
+        callback.accept(newResponse);
+      }
+    }
   }
 
   public void setResponse(final @NotNull Response response) {
