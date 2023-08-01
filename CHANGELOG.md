@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add http response code to Spring WebFlux transactions ([#2870](https://github.com/getsentry/sentry-java/pull/2870))
+
 ## 6.27.0
 
 ### Features
