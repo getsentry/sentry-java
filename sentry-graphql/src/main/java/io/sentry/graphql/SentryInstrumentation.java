@@ -205,10 +205,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     }
     final @Nullable Map<String, Object> extensions = error.getExtensions();
     if (extensions != null) {
-      Object extensionErrorType = extensions.get("errorType");
-      if (extensionErrorType != null) {
-        return extensionErrorType.toString();
-      }
+      return StringUtils.toString(extensions.get("errorType"));
     }
     return null;
   }
