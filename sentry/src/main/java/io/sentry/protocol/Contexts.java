@@ -133,7 +133,9 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   }
 
   public void setResponse(final @NotNull Response response) {
-    this.put(Response.TYPE, response);
+    synchronized (responseLock) {
+      this.put(Response.TYPE, response);
+    }
   }
 
   // region json
