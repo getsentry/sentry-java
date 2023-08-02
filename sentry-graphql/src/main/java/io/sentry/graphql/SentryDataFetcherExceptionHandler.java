@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * exception handler.
  *
  * @deprecated please use {@link SentryGenericDataFetcherExceptionHandler} in combination with
- *     {@link SentryInstrumentation} instead.
+ *     {@link SentryInstrumentation} instead for better error reporting.
  */
 @Deprecated
 public final class SentryDataFetcherExceptionHandler implements DataFetcherExceptionHandler {
