@@ -17,12 +17,14 @@ public class SentryGraphqlConfiguration {
   @Bean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   public GraphQlSourceBuilderCustomizer sourceBuilderCustomizerWebmvc() {
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GrahQLWebMVC");
     return sourceBuilderCustomizer(false);
   }
 
   @Bean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   public GraphQlSourceBuilderCustomizer sourceBuilderCustomizerWebflux() {
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GrahQLWebFlux");
     return sourceBuilderCustomizer(true);
   }
 
@@ -31,7 +33,6 @@ public class SentryGraphqlConfiguration {
    * resolver adapter below. This way Springs handler can still forward to other resolver adapters.
    */
   private GraphQlSourceBuilderCustomizer sourceBuilderCustomizer(final boolean captureRequestBody) {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("SpringGrahQL");
     return (builder) ->
         builder.configureGraphQl(
             graphQlBuilder ->
