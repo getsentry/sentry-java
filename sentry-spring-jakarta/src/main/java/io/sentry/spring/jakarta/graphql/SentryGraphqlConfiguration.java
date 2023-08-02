@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta.graphql;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.graphql.SentryInstrumentation;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.graphql.GraphQlSourceBuilderCustomizer;
@@ -30,6 +31,7 @@ public class SentryGraphqlConfiguration {
    * resolver adapter below. This way Springs handler can still forward to other resolver adapters.
    */
   private GraphQlSourceBuilderCustomizer sourceBuilderCustomizer(final boolean captureRequestBody) {
+    SentryIntegrationPackageStorage.getInstance().addIntegration("SpringGrahQL");
     return (builder) ->
         builder.configureGraphQl(
             graphQlBuilder ->

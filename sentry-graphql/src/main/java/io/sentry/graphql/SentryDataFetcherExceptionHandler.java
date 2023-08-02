@@ -8,6 +8,7 @@ import graphql.execution.DataFetcherExceptionHandlerResult;
 import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,6 +28,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
       final @NotNull IHub hub, final @NotNull DataFetcherExceptionHandler delegate) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("GrahQLLegacyExceptionHandler");
   }
 
   public SentryDataFetcherExceptionHandler(final @NotNull DataFetcherExceptionHandler delegate) {
