@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryGraphqlExceptionHandler {
   private final @Nullable DataFetcherExceptionHandler delegate;
+  private final @NotNull Object exceptionContextLock = new Object();
 
   public SentryGraphqlExceptionHandler(final @Nullable DataFetcherExceptionHandler delegate) {
     this.delegate = delegate;
@@ -29,11 +30,13 @@ public final class SentryGraphqlExceptionHandler {
     if (environment != null) {
       final @Nullable GraphQLContext graphQlContext = environment.getGraphQlContext();
       if (graphQlContext != null) {
-        final @NotNull List<Throwable> exceptions =
-            graphQlContext.getOrDefault(
-                SENTRY_EXCEPTIONS_CONTEXT_KEY, new CopyOnWriteArrayList<Throwable>());
-        exceptions.add(throwable);
-        graphQlContext.put(SENTRY_EXCEPTIONS_CONTEXT_KEY, exceptions);
+        synchronized (exceptionContextLock) {
+          final @NotNull List<Throwable> exceptions =
+              graphQlContext.getOrDefault(
+                  SENTRY_EXCEPTIONS_CONTEXT_KEY, new CopyOnWriteArrayList<Throwable>());
+          exceptions.add(throwable);
+          graphQlContext.put(SENTRY_EXCEPTIONS_CONTEXT_KEY, exceptions);
+        }
       }
     }
     if (delegate != null) {
