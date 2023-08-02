@@ -10,7 +10,7 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
-import io.sentry.graphql.SentryDataFetcherExceptionHandler;
+import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.ContextTagsEventProcessor;
@@ -161,7 +161,7 @@ public class SentryAutoConfiguration {
     @Import(SentryGraphqlConfiguration.class)
     @Open
     @ConditionalOnClass({
-      SentryDataFetcherExceptionHandler.class,
+      SentryGraphqlExceptionHandler.class,
       DataFetcherExceptionResolverAdapter.class,
       GraphQLError.class
     })

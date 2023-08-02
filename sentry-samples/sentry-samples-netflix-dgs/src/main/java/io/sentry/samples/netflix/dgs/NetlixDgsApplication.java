@@ -1,7 +1,7 @@
 package io.sentry.samples.netflix.dgs;
 
 import com.netflix.graphql.dgs.exceptions.DefaultDataFetcherExceptionHandler;
-import io.sentry.graphql.SentryDataFetcherExceptionHandler;
+import io.sentry.graphql.SentryGenericDataFetcherExceptionHandler;
 import io.sentry.graphql.SentryInstrumentation;
 import io.sentry.spring.graphql.SentryDgsSubscriptionHandler;
 import org.springframework.boot.SpringApplication;
@@ -21,8 +21,8 @@ public class NetlixDgsApplication {
   }
 
   @Bean
-  SentryDataFetcherExceptionHandler sentryDataFetcherExceptionHandler() {
+  SentryGenericDataFetcherExceptionHandler sentryDataFetcherExceptionHandler() {
     // delegate to default Netflix DGS exception handler
-    return new SentryDataFetcherExceptionHandler(new DefaultDataFetcherExceptionHandler());
+    return new SentryGenericDataFetcherExceptionHandler(new DefaultDataFetcherExceptionHandler());
   }
 }

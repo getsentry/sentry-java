@@ -35,6 +35,12 @@ public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql
 	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
 }
 
+public final class io/sentry/graphql/SentryGenericDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
+	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
+}
+
 public final class io/sentry/graphql/SentryGraphqlExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun onException (Ljava/lang/Throwable;Lgraphql/schema/DataFetchingEnvironment;Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
