@@ -12,7 +12,6 @@ import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -321,12 +320,6 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     }
 
     return tmpResult;
-  }
-
-  @Override
-  public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(
-      InstrumentationFieldParameters parameters) {
-    return super.beginSubscribedFieldEvent(parameters);
   }
 
   private void finish(
