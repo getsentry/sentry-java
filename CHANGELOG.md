@@ -5,6 +5,7 @@
 ### Features
 
 - Improve server side GraphQL support for spring-graphql and Nextflix DGS ([#2856](https://github.com/getsentry/sentry-java/pull/2856))
+    - If you have already been using `SentryDataFetcherExceptionHandler` that still works but has been deprecated. Please use `SentryGenericDataFetcherExceptionHandler` combined with `SentryInstrumentation` instead for better error reporting.
     - More exceptions and errors caught and reported to Sentry by also looking at the `ExecutionResult` (more specifically its `errors`)
     - More details for Sentry events: query, variables and response (where possible)
     - Breadcrumbs for operation (query, mutation, subscription), data fetchers and data loaders (Spring only)
