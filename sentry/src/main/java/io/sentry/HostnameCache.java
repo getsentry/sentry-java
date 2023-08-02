@@ -59,6 +59,8 @@ final class HostnameCache {
   }
 
   HostnameCache(long cacheDuration) {
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     this(cacheDuration, () -> InetAddress.getLocalHost());
   }
 

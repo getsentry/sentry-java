@@ -313,7 +313,10 @@ class SentryOkHttpEventListener(
         okHttpEvent.setResponse(response)
         okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
             it.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.code)
-            it.status = SpanStatus.fromHttpStatusCode(response.code)
+            // Let's not override the status of a span that was set
+            if (it.status == null) {
+                it.status = SpanStatus.fromHttpStatusCode(response.code)
+            }
         }
     }
 

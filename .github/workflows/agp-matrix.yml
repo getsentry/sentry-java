@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@40b6781dcdec2762ad36556682ac74e31030cfe2 # pin@v2
+        uses: gradle/gradle-build-action@a4cf152f482c7ca97ef56ead29bf08bcd953284c # pin@v2
 
       - name: Setup Java Version
         uses: actions/setup-java@v3
