@@ -140,7 +140,7 @@ public final class AsyncHttpTransport implements ITransport {
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
-      if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+      if (!executor.awaitTermination(options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
             .log(
