@@ -47,6 +47,7 @@ public final class io/sentry/Baggage {
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampleRate ()Ljava/lang/String;
 	public fun getSampleRateDouble ()Ljava/lang/Double;
+	public fun getSampled ()Ljava/lang/String;
 	public fun getThirdPartyHeader ()Ljava/lang/String;
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransaction ()Ljava/lang/String;
@@ -59,6 +60,7 @@ public final class io/sentry/Baggage {
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setSampleRate (Ljava/lang/String;)V
+	public fun setSampled (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
@@ -74,6 +76,7 @@ public final class io/sentry/Baggage$DSCKeys {
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
+	public static final field SAMPLED Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
@@ -2296,6 +2299,7 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampleRate ()Ljava/lang/String;
+	public fun getSampled ()Ljava/lang/String;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -2315,6 +2319,7 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
+	public static final field SAMPLED Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
@@ -3007,6 +3012,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 	public fun setResponse (Lio/sentry/protocol/Response;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun withResponse (Lio/sentry/util/HintUtils$SentryConsumer;)V
 }
 
 public final class io/sentry/protocol/Contexts$Deserializer : io/sentry/JsonDeserializer {
