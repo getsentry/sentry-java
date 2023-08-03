@@ -140,6 +140,7 @@ public final class Baggage {
     baggage.setTransaction(event.getTransaction());
     // we don't persist sample rate
     baggage.setSampleRate(null);
+    baggage.setSampled(null);
     baggage.freeze();
     return baggage;
   }
@@ -330,8 +331,18 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @Nullable String getSampled() {
+    return get(DSCKeys.SAMPLED);
+  }
+
+  @ApiStatus.Internal
   public void setSampleRate(final @Nullable String sampleRate) {
     set(DSCKeys.SAMPLE_RATE, sampleRate);
+  }
+
+  @ApiStatus.Internal
+  public void setSampled(final @Nullable String sampled) {
+    set(DSCKeys.SAMPLED, sampled);
   }
 
   @ApiStatus.Internal
@@ -374,6 +385,7 @@ public final class Baggage {
             ? transaction.getName()
             : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+    setSampled(StringUtils.toString(sampled(samplingDecision)));
   }
 
   @ApiStatus.Internal
@@ -387,6 +399,7 @@ public final class Baggage {
     setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(null);
     setSampleRate(null);
+    setSampled(null);
   }
 
   private static @Nullable String getSegment(final @NotNull User user) {
@@ -418,6 +431,14 @@ public final class Baggage {
     DecimalFormat df =
         new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
     return df.format(sampleRateAsDouble);
+  }
+
+  private static @Nullable Boolean sampled(@Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getSampled();
   }
 
   private static boolean isHighQualityTransactionName(
@@ -458,7 +479,8 @@ public final class Baggage {
               getUserId(),
               getUserSegment(),
               getTransaction(),
-              getSampleRate());
+              getSampleRate(),
+              getSampled());
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -476,6 +498,7 @@ public final class Baggage {
     public static final String USER_SEGMENT = "sentry-user_segment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
+    public static final String SAMPLED = "sentry-sampled";
 
     public static final List<String> ALL =
         Arrays.asList(
@@ -486,6 +509,7 @@ public final class Baggage {
             ENVIRONMENT,
             USER_SEGMENT,
             TRANSACTION,
-            SAMPLE_RATE);
+            SAMPLE_RATE,
+            SAMPLED);
   }
 }
