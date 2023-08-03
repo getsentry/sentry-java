@@ -17,3 +17,107 @@ Make an HTTP request that will trigger events:
 ```
 curl -XPOST --user user:password http://localhost:8080/person/ -H "Content-Type:application/json" -d '{"firstName":"John","lastName":"Smith"}'
 ```
+
+
+## GraphQL
+
+The following queries can be used to test the GraphQL integration.
+
+### Greeting
+```
+{
+    greeting(name: "crash")
+}
+```
+
+### Greeting with variables
+
+```
+query GreetingQuery($name: String) {
+    greeting(name: $name)
+}
+```
+variables:
+```
+{
+    "name": "crash"
+}
+```
+
+### Project
+
+```
+query ProjectQuery($slug: ID!) {
+    project(slug: $slug) {
+        slug
+        name
+        repositoryUrl
+        status
+    }
+}
+```
+variables:
+```
+{
+    "slug": "statuscrash"
+}
+```
+
+### Mutation
+
+```
+mutation AddProjectMutation($slug: ID!) {
+    addProject(slug: $slug)
+}
+```
+variables:
+```
+{
+    "slug": "nocrash",
+    "name": "nocrash"
+}
+```
+
+### Subscription
+
+```
+subscription SubscriptionNotifyNewTask($slug: ID!) {
+    notifyNewTask(projectSlug: $slug) {
+        id
+        name
+        assigneeId
+        assignee {
+            id
+            name
+        }
+    }
+}
+```
+variables:
+```
+{
+    "slug": "crash"
+}
+```
+
+### Data loader
+
+```
+query TasksAndAssigneesQuery($slug: ID!) {
+    tasks(projectSlug: $slug) {
+        id
+        name
+        assigneeId
+        assignee {
+            id
+            name
+        }
+    }
+}
+```
+variables:
+```
+{
+    "slug": "crash"
+}
+```
