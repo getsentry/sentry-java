@@ -33,6 +33,10 @@ import kotlin.test.assertSame
 class ExceptionReporterTest {
 
     class Fixture {
+        val defaultOptions = SentryOptions().also {
+            it.isSendDefaultPii = true
+            it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS
+        }
         val exception = IllegalStateException("some exception")
         val hub = mock<IHub>()
         lateinit var instrumentationExecutionParameters: InstrumentationExecutionParameters
@@ -41,7 +45,7 @@ class ExceptionReporterTest {
         val query = """query greeting(name: "somename")"""
         val variables = mapOf("variableA" to "value a")
 
-        fun getSut(options: SentryOptions = SentryOptions(), captureRequestBodyForNonSubscriptions: Boolean = true): ExceptionReporter {
+        fun getSut(options: SentryOptions = defaultOptions, captureRequestBodyForNonSubscriptions: Boolean = true): ExceptionReporter {
             whenever(hub.options).thenReturn(options)
             scope = Scope(options)
             val exceptionReporter = ExceptionReporter(captureRequestBodyForNonSubscriptions)
@@ -94,28 +98,6 @@ class ExceptionReporterTest {
                 assertNotNull(it.request)
                 val request = it.request!!
                 val data = request.data as Map<Any, Any>
-                assertNull(data["variables"])
-                assertEquals(fixture.query, data["query"])
-                assertEquals("graphql", request.apiTarget)
-            },
-            any<Hint>()
-        )
-    }
-
-    @Test
-    fun `attaches variables if sendDefaultPii = true`() {
-        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true })
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
-
-        verify(fixture.hub).captureEvent(
-            org.mockito.kotlin.check {
-                val ex = it.throwableMechanism as ExceptionMechanismException
-                assertFalse(ex.exceptionMechanism.isHandled!!)
-                assertSame(fixture.exception, ex.throwable)
-                assertEquals("GraphqlInstrumentation", ex.exceptionMechanism.type)
-                assertNotNull(it.request)
-                val request = it.request!!
-                val data = request.data as Map<Any, Any>
                 assertEquals(fixture.variables, data["variables"])
                 assertEquals(fixture.query, data["query"])
                 assertEquals("graphql", request.apiTarget)
@@ -126,7 +108,7 @@ class ExceptionReporterTest {
 
     @Test
     fun `uses requests on scope as base`() {
-        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true })
+        val exceptionReporter = fixture.getSut()
         val headers = mapOf("some-header" to "some-header-value")
         fixture.scope.request = Request().also { it.headers = headers }
         exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
@@ -152,6 +134,26 @@ class ExceptionReporterTest {
 
     @Test
     fun `does not attach query or variables if spring`() {
+        val exceptionReporter = fixture.getSut(captureRequestBodyForNonSubscriptions = false)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+
+        verify(fixture.hub).captureEvent(
+            org.mockito.kotlin.check {
+                val ex = it.throwableMechanism as ExceptionMechanismException
+                assertFalse(ex.exceptionMechanism.isHandled!!)
+                assertSame(fixture.exception, ex.throwable)
+                assertEquals("GraphqlInstrumentation", ex.exceptionMechanism.type)
+                assertNotNull(it.request)
+                val request = it.request!!
+                assertNull(request.data)
+                assertEquals("graphql", request.apiTarget)
+            },
+            any<Hint>()
+        )
+    }
+
+    @Test
+    fun `does not attach query or variables if no max body size is set`() {
         val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
         exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
@@ -171,8 +173,28 @@ class ExceptionReporterTest {
     }
 
     @Test
+    fun `does not attach query or variables if sendDefaultPii is false`() {
+        val exceptionReporter = fixture.getSut(SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }, false)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+
+        verify(fixture.hub).captureEvent(
+            org.mockito.kotlin.check {
+                val ex = it.throwableMechanism as ExceptionMechanismException
+                assertFalse(ex.exceptionMechanism.isHandled!!)
+                assertSame(fixture.exception, ex.throwable)
+                assertEquals("GraphqlInstrumentation", ex.exceptionMechanism.type)
+                assertNotNull(it.request)
+                val request = it.request!!
+                assertNull(request.data)
+                assertEquals("graphql", request.apiTarget)
+            },
+            any<Hint>()
+        )
+    }
+
+    @Test
     fun `attaches query and variables if spring and subscription`() {
-        val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
+        val exceptionReporter = fixture.getSut(captureRequestBodyForNonSubscriptions = false)
         exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, true), fixture.executionResult)
 
         verify(fixture.hub).captureEvent(

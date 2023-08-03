@@ -63,7 +63,7 @@ public class ShowsDatafetcher {
   }
 
   @DgsData(parentType = "Show", field = "actor")
-  public CompletableFuture<Actor> director(DataFetchingEnvironment dfe) {
+  public CompletableFuture<Actor> actor(DataFetchingEnvironment dfe) {
 
     DataLoader<Integer, Actor> dataLoader = dfe.getDataLoader("actors");
     // does not work, thanks docs

@@ -11,16 +11,16 @@ import reactor.core.publisher.Flux;
 public final class SentrySpringSubscriptionHandler implements SentrySubscriptionHandler {
 
   @Override
-  public Object onSubscriptionResult(
+  public @NotNull Object onSubscriptionResult(
       final @NotNull Object result,
       final @NotNull IHub hub,
       final @NotNull ExceptionReporter exceptionReporter,
       final @NotNull InstrumentationFieldFetchParameters parameters) {
     if (result instanceof Flux) {
-      Flux<?> flux = (Flux<?>) result;
+      final @NotNull Flux<?> flux = (Flux<?>) result;
       return flux.doOnError(
           throwable -> {
-            ExceptionReporter.ExceptionDetails exceptionDetails =
+            final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
                 new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment(), true);
             if (throwable instanceof SubscriptionPublisherException
                 && throwable.getCause() != null) {

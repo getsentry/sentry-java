@@ -8,6 +8,7 @@ import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Request;
@@ -33,25 +34,31 @@ public final class ExceptionReporter {
       final @NotNull ExceptionDetails exceptionDetails,
       final @Nullable ExecutionResult result) {
     final @NotNull IHub hub = exceptionDetails.getHub();
-    final Mechanism mechanism = new Mechanism();
+    final @NotNull Mechanism mechanism = new Mechanism();
     mechanism.setType(MECHANISM_TYPE);
     mechanism.setHandled(false);
-    final Throwable mechanismException =
+    final @NotNull Throwable mechanismException =
         new ExceptionMechanismException(mechanism, throwable, Thread.currentThread());
-    final SentryEvent event = new SentryEvent(mechanismException);
+    final @NotNull SentryEvent event = new SentryEvent(mechanismException);
     event.setLevel(SentryLevel.FATAL);
 
-    final Hint hint = new Hint();
+    final @NotNull Hint hint = new Hint();
     setRequestDetailsOnEvent(hub, exceptionDetails, event);
 
-    if (result != null) {
-      @NotNull Response response = new Response();
-      Map<String, Object> responseBody = result.toSpecification();
+    if (result != null && isAllowedToAttachBody(hub)) {
+      final @NotNull Response response = new Response();
+      final @NotNull Map<String, Object> responseBody = result.toSpecification();
       response.setData(responseBody);
       event.getContexts().setResponse(response);
     }
 
     hub.captureEvent(event, hint);
+  }
+
+  private boolean isAllowedToAttachBody(final @NotNull IHub hub) {
+    final @NotNull SentryOptions options = hub.getOptions();
+    return options.isSendDefaultPii()
+        && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());
   }
 
   private void setRequestDetailsOnEvent(
@@ -73,16 +80,15 @@ public final class ExceptionReporter {
       final @NotNull Request request) {
     request.setApiTarget("graphql");
 
-    if (exceptionDetails.isSubscription() || captureRequestBodyForNonSubscriptions) {
+    if (isAllowedToAttachBody(hub)
+        && (exceptionDetails.isSubscription() || captureRequestBodyForNonSubscriptions)) {
       final @NotNull Map<String, Object> data = new HashMap<>();
 
       data.put("query", exceptionDetails.getQuery());
 
-      if (hub.getOptions().isSendDefaultPii()) {
-        Map<String, Object> variables = exceptionDetails.getVariables();
-        if (variables != null && !variables.isEmpty()) {
-          data.put("variables", variables);
-        }
+      final @Nullable Map<String, Object> variables = exceptionDetails.getVariables();
+      if (variables != null && !variables.isEmpty()) {
+        data.put("variables", variables);
       }
 
       // for Spring HTTP this will be replaced by RequestBodyExtractingEventProcessor
