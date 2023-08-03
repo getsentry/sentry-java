@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add HTTP response code to Spring WebFlux transactions ([#2870](https://github.com/getsentry/sentry-java/pull/2870))
 - Add `sampled` to Dynamic Sampling Context ([#2869](https://github.com/getsentry/sentry-java/pull/2869))
 
 ### Fixes

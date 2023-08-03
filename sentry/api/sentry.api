@@ -3009,6 +3009,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 	public fun setResponse (Lio/sentry/protocol/Response;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun withResponse (Lio/sentry/util/HintUtils$SentryConsumer;)V
 }
 
 public final class io/sentry/protocol/Contexts$Deserializer : io/sentry/JsonDeserializer {
