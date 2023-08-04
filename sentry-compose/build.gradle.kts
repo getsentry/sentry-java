@@ -86,6 +86,7 @@ android {
     buildTypes {
         getByName("debug")
         getByName("release") {
+            enableUnitTestCoverage = true
             consumerProguardFiles("proguard-rules.pro")
         }
     }

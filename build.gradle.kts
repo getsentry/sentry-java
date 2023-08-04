@@ -97,10 +97,6 @@ allprojects {
 }
 
 subprojects {
-    tasks.withType(JavaCompile::class).configureEach {
-        // enable compilation in a separate daemon process
-    }
-
     val jacocoAndroidModules = listOf(
         "sentry-android-core",
         "sentry-android-fragment",
