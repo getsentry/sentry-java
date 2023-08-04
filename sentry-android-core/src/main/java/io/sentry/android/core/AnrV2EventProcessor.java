@@ -501,11 +501,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
-      final Map<String, String> sideLoadedInfo =
-          ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+      final ContextUtils.SideLoadedInfo sideLoadedInfo =
+          ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
 
       if (sideLoadedInfo != null) {
-        for (final Map.Entry<String, String> entry : sideLoadedInfo.entrySet()) {
+        final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
+        for (Map.Entry<String, String> entry : tags.entrySet()) {
           event.setTag(entry.getKey(), entry.getValue());
         }
       }

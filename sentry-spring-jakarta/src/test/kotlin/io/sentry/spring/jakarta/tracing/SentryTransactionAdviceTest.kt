@@ -64,6 +64,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("customName")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
                 assertThat(it.status).isEqualTo(SpanStatus.OK)
+                assertThat(it.contexts.trace!!.origin).isEqualTo("auto.function.spring_jakarta.advice")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

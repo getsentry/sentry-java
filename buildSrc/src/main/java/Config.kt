@@ -104,7 +104,7 @@ object Config {
         val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
         val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
 
-        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
+        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 

@@ -57,7 +57,8 @@ class SentryNavigationListenerTest {
             enableTracing: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             hasViewIdInRes: Boolean = true,
-            transaction: SentryTracer? = null
+            transaction: SentryTracer? = null,
+            traceOriginAppendix: String? = null
         ): SentryNavigationListener {
             options = SentryOptions().apply {
                 dsn = "http://key@localhost/proj"
@@ -93,7 +94,7 @@ class SentryNavigationListenerTest {
             whenever(context.resources).thenReturn(resources)
             whenever(navController.context).thenReturn(context)
             whenever(destination.route).thenReturn(toRoute)
-            return SentryNavigationListener(hub, enableBreadcrumbs, enableTracing)
+            return SentryNavigationListener(hub, enableBreadcrumbs, enableTracing, traceOriginAppendix)
         }
     }
 
@@ -365,5 +366,23 @@ class SentryNavigationListenerTest {
 
         verify(fixture.hub).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
+    }
+
+    @Test
+    fun `onDestinationChanged sets trace origin`() {
+        val sut = fixture.getSut()
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        assertEquals("auto.navigation", fixture.transaction.spanContext.origin)
+    }
+
+    @Test
+    fun `onDestinationChanged sets trace origin with appendix`() {
+        val sut = fixture.getSut(traceOriginAppendix = "jetpack_compose")
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        assertEquals("auto.navigation.jetpack_compose", fixture.transaction.spanContext.origin)
     }
 }
