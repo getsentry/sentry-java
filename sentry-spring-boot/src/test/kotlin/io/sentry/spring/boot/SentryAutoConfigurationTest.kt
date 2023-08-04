@@ -155,7 +155,8 @@ class SentryAutoConfigurationTest {
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
             "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry",
-            "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$"
+            "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$",
+            "sentry.enabled=false"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -184,6 +185,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
             assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
+            assertThat(options.isEnabled).isEqualTo(false)
         }
     }
 

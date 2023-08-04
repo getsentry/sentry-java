@@ -15,6 +15,7 @@
 - Add autoconfigure modules for Spring Boot called `sentry-spring-boot` and `sentry-spring-boot-jakarta` ([#2880](https://github.com/getsentry/sentry-java/pull/2880))
   - The autoconfigure modules `sentry-spring-boot` and `sentry-spring-boot-jakarta` have a `compileOnly` dependency on `spring-boot-starter` which is needed for our auto installation in [sentry-android-gradle-plugin](https://github.com/getsentry/sentry-android-gradle-plugin)
   - The starter modules  `sentry-spring-boot-starter` and `sentry-spring-boot-starter-jakarta` now bring `spring-boot-starter` as a dependency
+- You can now disable Sentry by setting the `enabled` option to `false` ([#2840](https://github.com/getsentry/sentry-java/pull/2840))
 
 ### Fixes
 
