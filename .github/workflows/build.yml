@@ -48,6 +48,18 @@ jobs:
       - name: Make stop
         run: make stop
 
+      - name: Archive packages
+        # We need artifacts from only one the builds
+        if: runner.os == 'Linux' && matrix.java == '17'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            ./*/build/distributions/*.zip
+            ./sentry-opentelemetry/*/build/distributions/*.zip
+            ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
+
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
         if: runner.os == 'Linux' && matrix.java == '17'
