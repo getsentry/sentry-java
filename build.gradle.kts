@@ -113,19 +113,25 @@ subprojects {
         tasks.create(androidJacocoTaskName, JacocoReport::class) {
             dependsOn("testReleaseUnitTest")
 
+            val subprojectName = this@subprojects.name
+
             reports {
                 html.required.set(true)
                 xml.required.set(true)
             }
 
             var classesDir = "$buildDir/tmp/kotlin-classes/release"
-            if (name.equals("sentry-android-ndk") || name.equals("sentry-android-core")) {
-                classesDir = "$buildDir/intermediates/javac/release"
+            if (subprojectName == "sentry-android-ndk" || subprojectName == "sentry-android-core") {
+                classesDir = "$buildDir/intermediates/javac/release/classes"
             }
+
             var sourcesDir = "$projectDir/src/main/java"
-            if (name.equals("sentry-compose")) {
+            if (subprojectName == "sentry-compose") {
+                println("in here compose?")
                 sourcesDir = "$projectDir/src/androidMain/kotlin"
             }
+
+            println("name: ${this@subprojects.name}, classesDir: $classesDir, sourcesDir: $sourcesDir")
 
             val classesTree = fileTree(classesDir).setExcludes(
                 listOf(
