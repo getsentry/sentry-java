@@ -889,13 +889,17 @@ class ActivityLifecycleIntegrationTest {
         AppStartState.getInstance().setColdStart(false)
 
         // when activity is created
+        val view = fixture.createView()
         val activity = mock<Activity>()
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
         sut.onActivityCreated(activity, fixture.bundle)
         // then app-start end time should still be null
         assertNull(AppStartState.getInstance().appStartEndTime)
 
         // when activity is resumed
         sut.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
         // end-time should be set
         assertNotNull(AppStartState.getInstance().appStartEndTime)
     }
@@ -936,10 +940,14 @@ class ActivityLifecycleIntegrationTest {
         AppStartState.getInstance().setColdStart(false)
 
         // when activity is created, started and resumed multiple times
+        val view = fixture.createView()
         val activity = mock<Activity>()
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityStarted(activity)
         sut.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
 
         val firstAppStartEndTime = AppStartState.getInstance().appStartEndTime
 
@@ -948,6 +956,8 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityStopped(activity)
         sut.onActivityStarted(activity)
         sut.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
 
         // then the end time should not be overwritten
         assertEquals(

@@ -215,6 +215,7 @@ public class io/sentry/spring/jakarta/webflux/SentryWebFilter : io/sentry/spring
 }
 
 public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLocalAccessor : io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter {
+	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }

@@ -4,9 +4,9 @@ import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.Span;
 import io.sentry.SpanId;
@@ -35,6 +35,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   private final @NotNull String op;
   private final @Nullable String description;
   private final @Nullable SpanStatus status;
+
+  private final @Nullable String origin;
   private final @NotNull Map<String, String> tags;
   private final @Nullable Map<String, Object> data;
 
@@ -54,6 +56,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.parentSpanId = span.getParentSpanId();
     this.traceId = span.getTraceId();
     this.status = span.getStatus();
+    this.origin = span.getSpanContext().getOrigin();
     final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
@@ -77,6 +80,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       @NotNull String op,
       @Nullable String description,
       @Nullable SpanStatus status,
+      @Nullable String origin,
       @NotNull Map<String, String> tags,
       @Nullable Map<String, Object> data) {
     this.startTimestamp = startTimestamp;
@@ -89,6 +93,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.status = status;
     this.tags = tags;
     this.data = data;
+    this.origin = origin;
   }
 
   public boolean isFinished() {
@@ -135,6 +140,10 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     return data;
   }
 
+  public @Nullable String getOrigin() {
+    return origin;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {
@@ -146,12 +155,13 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     public static final String OP = "op";
     public static final String DESCRIPTION = "description";
     public static final String STATUS = "status";
+    public static final String ORIGIN = "origin";
     public static final String TAGS = "tags";
     public static final String DATA = "data";
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.START_TIMESTAMP).value(logger, doubleToBigDecimal(startTimestamp));
@@ -169,6 +179,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     }
     if (status != null) {
       writer.name(JsonKeys.STATUS).value(logger, status);
+    }
+    if (origin != null) {
+      writer.name(JsonKeys.ORIGIN).value(logger, origin);
     }
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
@@ -217,6 +230,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       String op = null;
       String description = null;
       SpanStatus status = null;
+      String origin = null;
       Map<String, String> tags = null;
       Map<String, Object> data = null;
 
@@ -258,6 +272,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
           case JsonKeys.STATUS:
             status = reader.nextOrNull(logger, new SpanStatus.Deserializer());
             break;
+          case JsonKeys.ORIGIN:
+            origin = reader.nextStringOrNull();
+            break;
           case JsonKeys.TAGS:
             tags = (Map<String, String>) reader.nextObjectOrNull();
             break;
@@ -297,6 +314,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
               op,
               description,
               status,
+              origin,
               tags,
               data);
       sentrySpan.setUnknown(unknown);

@@ -61,6 +61,7 @@ class SQLiteSpanManagerTest {
         val span = fixture.sentryTracer.children.firstOrNull()
         assertNotNull(span)
         assertEquals("db.sql.query", span.operation)
+        assertEquals("auto.db.sqlite", span.spanContext.origin)
         assertEquals("sql", span.description)
         assertEquals(SpanStatus.OK, span.status)
         assertTrue(span.isFinished)

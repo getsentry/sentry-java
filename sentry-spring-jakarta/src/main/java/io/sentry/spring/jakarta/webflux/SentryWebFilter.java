@@ -17,6 +17,8 @@ import reactor.core.publisher.Mono;
 @Open
 public class SentryWebFilter extends AbstractSentryWebFilter {
 
+  private static final String TRACE_ORIGIN = "auto.spring_jakarta.webflux";
+
   public SentryWebFilter(final @NotNull IHub hub) {
     super(hub);
   }
@@ -28,6 +30,9 @@ public class SentryWebFilter extends AbstractSentryWebFilter {
     @NotNull IHub requestHub = Sentry.cloneMainHub();
     final ServerHttpRequest request = serverWebExchange.getRequest();
     final @Nullable ITransaction transaction = maybeStartTransaction(requestHub, request);
+    if (transaction != null) {
+      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+    }
     return webFilterChain
         .filter(serverWebExchange)
         .doFinally(__ -> doFinally(serverWebExchange, requestHub, transaction))

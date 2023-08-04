@@ -3,8 +3,8 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
+import io.sentry.ObjectWriter;
 import io.sentry.SpanContext;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -122,7 +122,7 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   // region json
 
   @Override
-  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.

@@ -103,13 +103,17 @@ public final class JsonObjectDeserializer {
         pushCurrentToken(new TokenName(reader.nextName()));
         break;
       case STRING:
-        done = handlePrimitive(reader::nextString);
+        // avoid method refs on Android due to some issues with older AGP setups
+        // noinspection Convert2MethodRef
+        done = handlePrimitive(() -> reader.nextString());
         break;
       case NUMBER:
         done = handlePrimitive(() -> nextNumber(reader));
         break;
       case BOOLEAN:
-        done = handlePrimitive(reader::nextBoolean);
+        // avoid method refs on Android due to some issues with older AGP setups
+        // noinspection Convert2MethodRef
+        done = handlePrimitive(() -> reader.nextBoolean());
         break;
       case NULL:
         reader.nextNull();
