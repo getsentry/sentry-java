@@ -1,15 +1,12 @@
 package io.sentry.android.core.internal.util;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.os.Build;
 import android.view.View;
 import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.util.thread.IMainThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -23,20 +20,16 @@ public class ScreenshotUtils {
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   public static @Nullable byte[] takeScreenshot(
-      final @NotNull Activity activity,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
-    return takeScreenshot(
-        activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
+      final @NotNull Activity activity, final @NotNull ILogger logger) {
+    return takeScreenshot(activity, AndroidMainThreadChecker.getInstance(), logger);
   }
 
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IMainThreadChecker mainThreadChecker,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull ILogger logger) {
 
-    if (!isActivityValid(activity, buildInfoProvider)
+    if (!isActivityValid(activity)
         || activity.getWindow() == null
         || activity.getWindow().getDecorView() == null
         || activity.getWindow().getDecorView().getRootView() == null) {
@@ -91,13 +84,7 @@ public class ScreenshotUtils {
     return null;
   }
 
-  @SuppressLint("NewApi")
-  private static boolean isActivityValid(
-      final @NotNull Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return !activity.isFinishing() && !activity.isDestroyed();
-    } else {
-      return !activity.isFinishing();
-    }
+  private static boolean isActivityValid(final @NotNull Activity activity) {
+    return !activity.isFinishing() && !activity.isDestroyed();
   }
 }

@@ -30,7 +30,6 @@ import kotlin.test.assertTrue
 class ScreenshotEventProcessorTest {
 
     private class Fixture {
-        val buildInfo = mock<BuildInfoProvider>()
         val activity = mock<Activity>()
         val window = mock<Window>()
         val view = mock<View>()
@@ -58,7 +57,7 @@ class ScreenshotEventProcessorTest {
             options.isAttachScreenshot = attachScreenshot
             options.mainThreadChecker = mainThreadChecker
 
-            return ScreenshotEventProcessor(options, buildInfo)
+            return ScreenshotEventProcessor(options)
         }
     }
 

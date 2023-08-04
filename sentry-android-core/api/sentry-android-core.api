@@ -206,7 +206,7 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor, io/sentry/IntegrationName {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
