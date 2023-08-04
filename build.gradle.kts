@@ -96,7 +96,13 @@ allprojects {
     }
 }
 
+
 subprojects {
+    tasks.withType(JavaCompile::class).configureEach {
+        //enable compilation in a separate daemon process
+
+    }
+
     val jacocoAndroidModules = listOf(
         "sentry-android-core",
         "sentry-android-fragment",
@@ -120,7 +126,7 @@ subprojects {
 
             var classesDir = "$buildDir/tmp/kotlin-classes/release"
             if (name.equals("sentry-android-ndk") || name.equals("sentry-android-core")) {
-                classesDir = "$buildDir/intermediates/javac/releaseUnitTest"
+                classesDir = "$buildDir/intermediates/javac/release"
             }
 
             val classesTree = fileTree(classesDir).setExcludes(
