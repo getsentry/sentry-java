@@ -99,6 +99,7 @@ allprojects {
 subprojects {
     if (name.contains("sentry-android") || name.equals("sentry-compose") && !name.contains("sentry-android-integration-tests")) {
         val androidJacocoTaskName = "androidJacocoTestReport"
+        println("my name: $name")
 
         tasks.create(androidJacocoTaskName, JacocoReport::class) {
             dependsOn("testReleaseUnitTest")
@@ -108,7 +109,7 @@ subprojects {
                 xml.required.set(true)
             }
 
-            val classesTree = fileTree("$buildDir/intermediates/javac/release").setExcludes(
+            val debugTree = fileTree("$buildDir/intermediates/javac/release").setExcludes(
                 listOf(
                     "**/R.class",
                     "**/R$*.class",
@@ -119,7 +120,7 @@ subprojects {
                 )
             )
             executionData.setFrom("$buildDir/outputs/unit_test_code_coverage/releaseUnitTest/testReleaseUnitTest.exec")
-            classDirectories.setFrom(classesTree)
+            classDirectories.setFrom(debugTree)
             sourceDirectories.setFrom("$projectDir}/src/main/java")
 
             doLast {
