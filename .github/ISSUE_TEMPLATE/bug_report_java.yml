@@ -18,6 +18,8 @@ body:
         - sentry-opentelemetry-core
         - sentry-servlet
         - sentry-servlet-jakarta
+        - sentry-spring-boot
+        - sentry-spring-boot-jakarta
         - sentry-spring-boot-starter
         - sentry-spring-boot-starter-jakarta
         - sentry-spring
