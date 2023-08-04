@@ -9,6 +9,7 @@ Breaking changes:
 - Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
 - Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
   - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
+- Reduce timeout of AsyncHttpTransport to avoid ANR ([#2879](https://github.com/getsentry/sentry-java/pull/2879))
 
 ### Fixes
 

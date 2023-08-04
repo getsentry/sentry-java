@@ -25,6 +25,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -319,6 +320,15 @@ class AsyncHttpTransportTest {
                 assertEquals(it.header.sentAt, now)
             }
         )
+    }
+
+    @Test
+    fun `close uses flushTimeoutMillis option to schedule termination`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val sut = fixture.getSUT()
+        sut.close()
+
+        verify(fixture.executor).awaitTermination(eq(123), eq(TimeUnit.MILLISECONDS))
     }
 
     private fun createSession(): Session {
