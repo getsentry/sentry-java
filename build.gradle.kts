@@ -96,11 +96,9 @@ allprojects {
     }
 }
 
-
 subprojects {
     tasks.withType(JavaCompile::class).configureEach {
-        //enable compilation in a separate daemon process
-
+        // enable compilation in a separate daemon process
     }
 
     val jacocoAndroidModules = listOf(
