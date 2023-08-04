@@ -97,7 +97,17 @@ allprojects {
 }
 
 subprojects {
-    if (name.contains("sentry-android") && !name.contains("sentry-android-integration-tests")) {
+    val jacocoAndroidModules = listOf(
+        "sentry-android-core",
+        "sentry-android-fragment",
+        "sentry-android-navigation",
+        "sentry-android-ndk",
+        "sentry-android-okhttp",
+        "sentry-android-sqlite",
+        "sentry-android-timber",
+        "sentry-compose"
+    )
+    if (jacocoAndroidModules.contains(name)) {
         val androidJacocoTaskName = "androidJacocoTestReport"
 
         tasks.create(androidJacocoTaskName, JacocoReport::class) {
