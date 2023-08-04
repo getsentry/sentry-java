@@ -13,7 +13,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
-    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion apply false
+    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
 }
 
 buildscript {
@@ -40,7 +40,7 @@ buildscript {
         classpath(Config.BuildPlugins.composeGradlePlugin)
     }
 }
-/*
+
 apiValidation {
     ignoredPackages.addAll(
         setOf(
@@ -70,7 +70,7 @@ apiValidation {
         )
     )
 }
-*/
+
 allprojects {
     repositories {
         google()
@@ -127,7 +127,6 @@ subprojects {
 
             var sourcesDir = "$projectDir/src/main/java"
             if (subprojectName == "sentry-compose") {
-                println("in here compose?")
                 sourcesDir = "$projectDir/src/androidMain/kotlin"
             }
 
