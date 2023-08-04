@@ -181,4 +181,12 @@ public final class StringUtils {
 
     return stringBuilder.toString();
   }
+
+  public static @Nullable String toString(final @Nullable Object object) {
+    if (object == null) {
+      return null;
+    }
+
+    return object.toString();
+  }
 }

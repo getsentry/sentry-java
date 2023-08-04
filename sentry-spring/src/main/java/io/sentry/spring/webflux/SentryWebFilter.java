@@ -144,11 +144,17 @@ public final class SentryWebFilter implements WebFilter {
       transaction.setName(transactionName, TransactionNameSource.ROUTE);
       transaction.setOperation(TRANSACTION_OP);
     }
-    if (transaction.getStatus() == null) {
-      final @Nullable ServerHttpResponse response = exchange.getResponse();
-      if (response != null) {
-        final @Nullable Integer rawStatusCode = response.getRawStatusCode();
-        if (rawStatusCode != null) {
+    final @Nullable ServerHttpResponse response = exchange.getResponse();
+    if (response != null) {
+      final @Nullable Integer rawStatusCode = response.getRawStatusCode();
+      if (rawStatusCode != null) {
+        transaction
+            .getContexts()
+            .withResponse(
+                (sentryResponse) -> {
+                  sentryResponse.setStatusCode(rawStatusCode);
+                });
+        if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(rawStatusCode));
         }
       }

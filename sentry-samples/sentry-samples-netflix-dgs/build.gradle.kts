@@ -25,6 +25,7 @@ dependencies {
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryGraphql)
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
+    implementation("com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure:4.9.2")
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

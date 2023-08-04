@@ -33,8 +33,9 @@ dependencies {
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.slf4jApi)
-
     compileOnly(Config.Libs.springWebflux)
+    compileOnly(Config.Libs.springBootStarterGraphql)
+    compileOnly(projects.sentryGraphql)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -44,6 +45,7 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryTestSupport)
+    testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
@@ -53,7 +55,9 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
+    testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {
