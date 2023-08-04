@@ -116,7 +116,7 @@ subprojects {
             val subprojectName = this@subprojects.name
 
             reports {
-                html.required.set(true)
+                html.required.set(false)
                 xml.required.set(true)
             }
 
@@ -129,8 +129,6 @@ subprojects {
             if (subprojectName == "sentry-compose") {
                 sourcesDir = "$projectDir/src/androidMain/kotlin"
             }
-
-            println("name: ${this@subprojects.name}, classesDir: $classesDir, sourcesDir: $sourcesDir")
 
             val classesTree = fileTree(classesDir).setExcludes(
                 listOf(
