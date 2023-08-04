@@ -24,7 +24,9 @@ io.sentry.servlet.jakarta
 io.sentry.spring
 io.sentry.spring.boot
 io.sentry.spring.boot.jakarta
+io.sentry.spring.graphql
 io.sentry.spring.jakarta
+io.sentry.spring.jakarta.graphql
 io.sentry.spring.jakarta.tracing
 io.sentry.spring.jakarta.webflux
 io.sentry.spring.tracing
