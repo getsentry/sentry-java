@@ -162,11 +162,15 @@ final class ManifestMetadataReader {
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
         if (!enabled || (dsn != null && dsn.isEmpty())) {
-          options.getLogger().log(SentryLevel.DEBUG, "Sentry enabled flag set to false or DSN is empty: disabling sentry-android");
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Sentry enabled flag set to false or DSN is empty: disabling sentry-android");
         } else if (dsn == null) {
           options
-            .getLogger()
-            .log(SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
+              .getLogger()
+              .log(SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
         }
 
         options.setEnabled(enabled);
