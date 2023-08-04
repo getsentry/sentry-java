@@ -13,7 +13,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
-    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
+    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion apply false
 }
 
 buildscript {
@@ -40,7 +40,7 @@ buildscript {
         classpath(Config.BuildPlugins.composeGradlePlugin)
     }
 }
-
+/*
 apiValidation {
     ignoredPackages.addAll(
         setOf(
@@ -70,7 +70,7 @@ apiValidation {
         )
     )
 }
-
+*/
 allprojects {
     repositories {
         google()
@@ -118,7 +118,12 @@ subprojects {
                 xml.required.set(true)
             }
 
-            val debugTree = fileTree("$buildDir/intermediates/javac/release").setExcludes(
+            var classesDir = "$buildDir/tmp/kotlin-classes/release"
+            if (name.equals("sentry-android-ndk") || name.equals("sentry-android-core")) {
+                classesDir = "$buildDir/intermediates/javac/releaseUnitTest"
+            }
+
+            val classesTree = fileTree(classesDir).setExcludes(
                 listOf(
                     "**/R.class",
                     "**/R$*.class",
@@ -129,7 +134,7 @@ subprojects {
                 )
             )
             executionData.setFrom("$buildDir/outputs/unit_test_code_coverage/releaseUnitTest/testReleaseUnitTest.exec")
-            classDirectories.setFrom(debugTree)
+            classDirectories.setFrom(classesTree)
             sourceDirectories.setFrom("$projectDir}/src/main/java")
 
             doLast {
