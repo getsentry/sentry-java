@@ -122,6 +122,10 @@ subprojects {
             if (name.equals("sentry-android-ndk") || name.equals("sentry-android-core")) {
                 classesDir = "$buildDir/intermediates/javac/release"
             }
+            var sourcesDir = "$projectDir/src/main/java"
+            if (name.equals("sentry-compose")) {
+                sourcesDir = "$projectDir/src/androidMain/kotlin"
+            }
 
             val classesTree = fileTree(classesDir).setExcludes(
                 listOf(
@@ -135,7 +139,7 @@ subprojects {
             )
             executionData.setFrom("$buildDir/outputs/unit_test_code_coverage/releaseUnitTest/testReleaseUnitTest.exec")
             classDirectories.setFrom(classesTree)
-            sourceDirectories.setFrom("$projectDir}/src/main/java")
+            sourceDirectories.setFrom(sourcesDir)
 
             doLast {
                 File("$buildDir/reports/jacoco/$androidJacocoTaskName/$androidJacocoTaskName.xml").renameTo(
