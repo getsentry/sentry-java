@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.28.0
 
 ### Features
 
