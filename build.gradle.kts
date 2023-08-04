@@ -97,9 +97,8 @@ allprojects {
 }
 
 subprojects {
-    if (name.contains("sentry-android") || name.equals("sentry-compose") && !name.contains("sentry-android-integration-tests")) {
+    if (name.contains("sentry-android") && !name.contains("sentry-android-integration-tests")) {
         val androidJacocoTaskName = "androidJacocoTestReport"
-        println("my name: $name")
 
         tasks.create(androidJacocoTaskName, JacocoReport::class) {
             dependsOn("testReleaseUnitTest")
