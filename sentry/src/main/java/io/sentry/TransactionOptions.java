@@ -1,11 +1,12 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry Transaction options */
 public final class TransactionOptions extends SpanOptions {
 
-  public static final long SENTRY_AUTO_TRANSACTION_DEADLINE_MS = 300000;
+  @ApiStatus.Internal public static final long DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION = 300000;
 
   /**
    * Arbitrary data used in {@link SamplingContext} to determine if transaction is going to be

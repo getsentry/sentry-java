@@ -217,7 +217,7 @@ class SentryGestureListenerTracingTest {
             check<TransactionOptions> { transactionOptions ->
                 assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
                 assertEquals(
-                    TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS,
+                    TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
                     transactionOptions.deadlineTimeout
                 )
             }

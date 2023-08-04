@@ -43,7 +43,6 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
@@ -371,7 +370,7 @@ class ActivityLifecycleIntegrationTest {
             },
             check<TransactionOptions> { transactionOptions ->
                 assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
-                assertEquals(TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS, transactionOptions.deadlineTimeout)
+                assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, transactionOptions.deadlineTimeout)
             }
         )
     }

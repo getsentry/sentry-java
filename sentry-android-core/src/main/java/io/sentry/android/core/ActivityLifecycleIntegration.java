@@ -193,7 +193,7 @@ public final class ActivityLifecycleIntegration
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         transactionOptions.setDeadlineTimeout(
-            TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS);
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
 
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
           transactionOptions.setIdleTimeout(options.getIdleTimeout());

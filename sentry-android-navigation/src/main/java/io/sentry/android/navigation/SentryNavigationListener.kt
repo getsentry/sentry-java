@@ -135,7 +135,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         val transactionOptions = TransactionOptions().also {
             it.isWaitForChildren = true
             it.idleTimeout = hub.options.idleTimeout
-            it.deadlineTimeout = TransactionOptions.SENTRY_AUTO_TRANSACTION_DEADLINE_MS
+            it.deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
             it.isTrimEnd = true
         }
 
