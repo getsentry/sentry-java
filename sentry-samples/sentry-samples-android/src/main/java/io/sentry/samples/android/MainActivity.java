@@ -21,9 +21,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
@@ -137,6 +140,28 @@ public class MainActivity extends AppCompatActivity {
           // Use the client's IP address
           user.setIpAddress("{{auto}}");
           Sentry.setUser(user);
+        });
+
+    binding.outOfMemory.setOnClickListener(
+        view -> {
+          final CountDownLatch latch = new CountDownLatch(1);
+          for (int i = 0; i < 20; i++) {
+            new Thread(
+                    () -> {
+                      final List<String> data = new ArrayList<>();
+                      try {
+                        latch.await();
+                        for (int j = 0; j < 1_000_000; j++) {
+                          data.add(new String(new byte[1024 * 8]));
+                        }
+                      } catch (InterruptedException e) {
+                        e.printStackTrace();
+                      }
+                    })
+                .start();
+          }
+
+          latch.countDown();
         });
 
     binding.nativeCrash.setOnClickListener(view -> NativeSample.crash());

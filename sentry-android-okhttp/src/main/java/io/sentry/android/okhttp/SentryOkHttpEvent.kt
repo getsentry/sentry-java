@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val PROTOCOL_KEY = "protocol"
 private const val ERROR_MESSAGE_KEY = "error_message"
+internal const val TRACE_ORIGIN = "auto.http.okhttp"
 
 internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
     private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()
@@ -37,7 +38,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
         // We start the call span that will contain all the others
         callRootSpan = hub.span?.startChild("http.client", "$method $url")
-
+        callRootSpan?.spanContext?.origin = TRACE_ORIGIN
         urlDetails.applyToSpan(callRootSpan)
 
         // We setup a breadcrumb with all meaningful data
@@ -107,6 +108,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
             else -> callRootSpan
         } ?: callRootSpan
         val span = parentSpan?.startChild("http.client.$event") ?: return
+        span.spanContext.origin = TRACE_ORIGIN
         eventSpans[event] = span
     }
 

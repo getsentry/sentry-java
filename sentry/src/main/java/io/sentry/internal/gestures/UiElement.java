@@ -10,16 +10,19 @@ public final class UiElement {
   final @Nullable String className;
   final @Nullable String resourceName;
   final @Nullable String tag;
+  final @NotNull String origin;
 
   public UiElement(
       @Nullable Object view,
       @Nullable String className,
       @Nullable String resourceName,
-      @Nullable String tag) {
+      @Nullable String tag,
+      @NotNull String origin) {
     this.viewRef = new WeakReference<>(view);
     this.className = className;
     this.resourceName = resourceName;
     this.tag = tag;
+    this.origin = origin;
   }
 
   public @Nullable String getClassName() {
@@ -32,6 +35,10 @@ public final class UiElement {
 
   public @Nullable String getTag() {
     return tag;
+  }
+
+  public @NotNull String getOrigin() {
+    return origin;
   }
 
   public @NotNull String getIdentifier() {

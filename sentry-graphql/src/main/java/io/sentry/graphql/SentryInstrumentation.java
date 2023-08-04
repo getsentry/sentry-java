@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryInstrumentation extends SimpleInstrumentation {
+  private static final String TRACE_ORIGIN = "auto.graphql.graphql";
   private final @NotNull IHub hub;
   private final @Nullable BeforeSpanCallback beforeSpan;
 
@@ -137,9 +138,14 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       parent = (GraphQLObjectType) type;
     }
 
-    return transaction.startChild(
-        "graphql",
-        parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
+    final @NotNull ISpan span =
+        transaction.startChild(
+            "graphql",
+            parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
+
+    span.getSpanContext().setOrigin(TRACE_ORIGIN);
+
+    return span;
   }
 
   static final class TracingState implements InstrumentationState {

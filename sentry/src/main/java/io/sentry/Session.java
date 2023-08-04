@@ -125,6 +125,10 @@ public final class Session implements JsonUnknown, JsonSerializable {
         null);
   }
 
+  public boolean isTerminated() {
+    return status != State.Ok;
+  }
+
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getStarted() {
     if (started == null) {
@@ -357,7 +361,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     if (sessionId != null) {

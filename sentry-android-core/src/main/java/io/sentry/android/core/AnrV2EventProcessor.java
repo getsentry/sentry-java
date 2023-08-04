@@ -475,35 +475,19 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {
-    if (options.isSendDefaultPii()) {
-      if (event.getUser() == null) {
-        final User user = new User();
-        user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-        event.setUser(user);
-      } else if (event.getUser().getIpAddress() == null) {
-        event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-      }
+    @Nullable User user = event.getUser();
+    if (user == null) {
+      user = new User();
+      event.setUser(user);
     }
 
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
-    final User user = event.getUser();
-    if (user == null) {
-      event.setUser(getDefaultUser());
-    } else if (user.getId() == null) {
+    if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-  }
-
-  /**
-   * Sets the default user which contains only the userId.
-   *
-   * @return the User object
-   */
-  private @NotNull User getDefaultUser() {
-    User user = new User();
-    user.setId(getDeviceId());
-
-    return user;
+    if (user.getIpAddress() == null) {
+      user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
+    }
   }
 
   private @Nullable String getDeviceId() {
@@ -517,11 +501,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
-      final Map<String, String> sideLoadedInfo =
-          ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+      final ContextUtils.SideLoadedInfo sideLoadedInfo =
+          ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
 
       if (sideLoadedInfo != null) {
-        for (final Map.Entry<String, String> entry : sideLoadedInfo.entrySet()) {
+        final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
+        for (Map.Entry<String, String> entry : tags.entrySet()) {
           event.setTag(entry.getKey(), entry.getValue());
         }
       }

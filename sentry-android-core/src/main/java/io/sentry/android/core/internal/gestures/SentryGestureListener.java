@@ -33,6 +33,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class SentryGestureListener implements GestureDetector.OnGestureListener {
 
   static final String UI_ACTION = "ui.action";
+  private static final String TRACE_ORIGIN = "auto.ui.gesture_listener";
 
   private final @NotNull WeakReference<Activity> activityRef;
   private final @NotNull IHub hub;
@@ -243,6 +244,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         hub.startTransaction(
             new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
 
+    transaction.getSpanContext().setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
+
     hub.configureScope(
         scope -> {
           applyScope(scope, transaction);
@@ -255,7 +258,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   void stopTracing(final @NotNull SpanStatus status) {
     if (activeTransaction != null) {
-      activeTransaction.finish(status);
+      final SpanStatus currentStatus = activeTransaction.getStatus();
+      // status might be set by other integrations, let's not overwrite it
+      if (currentStatus == null) {
+        activeTransaction.finish(status);
+      } else {
+        activeTransaction.finish();
+      }
     }
     hub.configureScope(
         scope -> {

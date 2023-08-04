@@ -34,6 +34,7 @@ public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
 	public fun freeze ()V
+	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;ZLio/sentry/ILogger;)Lio/sentry/Baggage;
@@ -112,7 +113,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public static fun navigation (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun query (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public fun removeData (Ljava/lang/String;)V
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCategory (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -193,6 +194,11 @@ public final class io/sentry/DateUtils {
 	public static fun secondsToNanos (J)J
 	public static fun toUtilDate (Lio/sentry/SentryDate;)Ljava/util/Date;
 	public static fun toUtilDateNotNull (Lio/sentry/SentryDate;)Ljava/util/Date;
+}
+
+public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
@@ -712,14 +718,38 @@ public final class io/sentry/JsonObjectSerializer {
 	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
 	public final field jsonReflectionObjectSerializer Lio/sentry/JsonReflectionObjectSerializer;
 	public fun <init> (I)V
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
 }
 
-public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/JsonWriter {
+public final class io/sentry/JsonObjectWriter : io/sentry/ObjectWriter {
 	public fun <init> (Ljava/io/Writer;I)V
+	public fun beginArray ()Lio/sentry/JsonObjectWriter;
+	public synthetic fun beginArray ()Lio/sentry/ObjectWriter;
+	public fun beginObject ()Lio/sentry/JsonObjectWriter;
+	public synthetic fun beginObject ()Lio/sentry/ObjectWriter;
+	public fun endArray ()Lio/sentry/JsonObjectWriter;
+	public synthetic fun endArray ()Lio/sentry/ObjectWriter;
+	public fun endObject ()Lio/sentry/JsonObjectWriter;
+	public synthetic fun endObject ()Lio/sentry/ObjectWriter;
 	public fun name (Ljava/lang/String;)Lio/sentry/JsonObjectWriter;
-	public synthetic fun name (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public synthetic fun name (Ljava/lang/String;)Lio/sentry/ObjectWriter;
+	public fun nullValue ()Lio/sentry/JsonObjectWriter;
+	public synthetic fun nullValue ()Lio/sentry/ObjectWriter;
+	public fun setIndent (Ljava/lang/String;)V
+	public fun value (D)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (D)Lio/sentry/ObjectWriter;
+	public fun value (J)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (J)Lio/sentry/ObjectWriter;
 	public fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/ObjectWriter;
+	public fun value (Ljava/lang/Boolean;)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (Ljava/lang/Boolean;)Lio/sentry/ObjectWriter;
+	public fun value (Ljava/lang/Number;)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (Ljava/lang/Number;)Lio/sentry/ObjectWriter;
+	public fun value (Ljava/lang/String;)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (Ljava/lang/String;)Lio/sentry/ObjectWriter;
+	public fun value (Z)Lio/sentry/JsonObjectWriter;
+	public synthetic fun value (Z)Lio/sentry/ObjectWriter;
 }
 
 public final class io/sentry/JsonReflectionObjectSerializer {
@@ -728,7 +758,7 @@ public final class io/sentry/JsonReflectionObjectSerializer {
 }
 
 public abstract interface class io/sentry/JsonSerializable {
-	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public abstract fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 }
 
 public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
@@ -978,6 +1008,22 @@ public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory 
 	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
 }
 
+public abstract interface class io/sentry/ObjectWriter {
+	public abstract fun beginArray ()Lio/sentry/ObjectWriter;
+	public abstract fun beginObject ()Lio/sentry/ObjectWriter;
+	public abstract fun endArray ()Lio/sentry/ObjectWriter;
+	public abstract fun endObject ()Lio/sentry/ObjectWriter;
+	public abstract fun name (Ljava/lang/String;)Lio/sentry/ObjectWriter;
+	public abstract fun nullValue ()Lio/sentry/ObjectWriter;
+	public abstract fun value (D)Lio/sentry/ObjectWriter;
+	public abstract fun value (J)Lio/sentry/ObjectWriter;
+	public abstract fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/ObjectWriter;
+	public abstract fun value (Ljava/lang/Boolean;)Lio/sentry/ObjectWriter;
+	public abstract fun value (Ljava/lang/Number;)Lio/sentry/ObjectWriter;
+	public abstract fun value (Ljava/lang/String;)Lio/sentry/ObjectWriter;
+	public abstract fun value (Z)Lio/sentry/ObjectWriter;
+}
+
 public final class io/sentry/OptionsContainer {
 	public static fun create (Ljava/lang/Class;)Lio/sentry/OptionsContainer;
 	public fun createInstance ()Ljava/lang/Object;
@@ -1030,7 +1076,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isDeviceIsEmulator ()Z
 	public fun readDeviceCpuFrequencies ()V
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAndroidApiLevel (I)V
 	public fun setBuildId (Ljava/lang/String;)V
 	public fun setCpuArchitecture (Ljava/lang/String;)V
@@ -1104,7 +1150,7 @@ public final class io/sentry/ProfilingTransactionData : io/sentry/JsonSerializab
 	public fun getUnknown ()Ljava/util/Map;
 	public fun hashCode ()I
 	public fun notifyFinish (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;)V
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setRelativeEndNs (Ljava/lang/Long;)V
@@ -1172,7 +1218,10 @@ public final class io/sentry/Scope {
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
 	public fun clearTransaction ()V
+	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getExtras ()Ljava/util/Map;
+	public fun getFingerprint ()Ljava/util/List;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRequest ()Lio/sentry/protocol/Request;
@@ -1394,7 +1443,7 @@ public final class io/sentry/SentryBaseEvent$JsonKeys {
 
 public final class io/sentry/SentryBaseEvent$Serializer {
 	public fun <init> ()V
-	public fun serialize (Lio/sentry/SentryBaseEvent;Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/SentryBaseEvent;Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 }
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
@@ -1451,7 +1500,7 @@ public final class io/sentry/SentryEnvelopeHeader : io/sentry/JsonSerializable, 
 	public fun getSentAt ()Ljava/util/Date;
 	public fun getTraceContext ()Lio/sentry/TraceContext;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setSentAt (Ljava/util/Date;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -1492,7 +1541,7 @@ public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializab
 	public fun getLength ()I
 	public fun getType ()Lio/sentry/SentryItemType;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -1524,11 +1573,12 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun getThreads ()Ljava/util/List;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTransaction ()Ljava/lang/String;
+	public fun getUnhandledException ()Lio/sentry/protocol/SentryException;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isCrashed ()Z
 	public fun isErrored ()Z
 	public fun removeModule (Ljava/lang/String;)V
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setExceptions (Ljava/util/List;)V
 	public fun setFingerprints (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1600,7 +1650,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field UserFeedback Lio/sentry/SentryItemType;
 	public fun getItemType ()Ljava/lang/String;
 	public static fun resolve (Ljava/lang/Object;)Lio/sentry/SentryItemType;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun valueOfLabel (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun values ()[Lio/sentry/SentryItemType;
@@ -1612,7 +1662,7 @@ public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSeriali
 	public static final field FATAL Lio/sentry/SentryLevel;
 	public static final field INFO Lio/sentry/SentryLevel;
 	public static final field WARNING Lio/sentry/SentryLevel;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryLevel;
 	public static fun values ()[Lio/sentry/SentryLevel;
 }
@@ -1633,7 +1683,7 @@ public final class io/sentry/SentryLockReason : io/sentry/JsonSerializable, io/s
 	public fun getType ()I
 	public fun getUnknown ()Ljava/util/Map;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAddress (Ljava/lang/String;)V
 	public fun setClassName (Ljava/lang/String;)V
 	public fun setPackageName (Ljava/lang/String;)V
@@ -2013,7 +2063,8 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun isTerminated ()Z
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
@@ -2108,16 +2159,18 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public static final field TYPE Ljava/lang/String;
 	protected field description Ljava/lang/String;
 	protected field op Ljava/lang/String;
+	protected field origin Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
 	protected field tags Ljava/util/Map;
 	public fun <init> (Lio/sentry/SpanContext;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;Lio/sentry/SpanStatus;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;Lio/sentry/SpanStatus;Ljava/lang/String;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getProfileSampled ()Ljava/lang/Boolean;
 	public fun getSampled ()Ljava/lang/Boolean;
@@ -2128,9 +2181,10 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
+	public fun setOrigin (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 	public fun setSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
@@ -2148,6 +2202,7 @@ public final class io/sentry/SpanContext$Deserializer : io/sentry/JsonDeserializ
 public final class io/sentry/SpanContext$JsonKeys {
 	public static final field DESCRIPTION Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
+	public static final field ORIGIN Ljava/lang/String;
 	public static final field PARENT_SPAN_ID Ljava/lang/String;
 	public static final field SPAN_ID Ljava/lang/String;
 	public static final field STATUS Ljava/lang/String;
@@ -2172,7 +2227,7 @@ public final class io/sentry/SpanId : io/sentry/JsonSerializable {
 	public fun <init> (Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -2213,7 +2268,7 @@ public final class io/sentry/SpanStatus : java/lang/Enum, io/sentry/JsonSerializ
 	public static final field UNKNOWN_ERROR Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (I)Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (Ljava/lang/Integer;Lio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SpanStatus;
 	public static fun values ()[Lio/sentry/SpanStatus;
 }
@@ -2242,7 +2297,7 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
 	public fun getUserSegment ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -2344,6 +2399,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
 	public static final field SENTRY_IS_FROM_HYBRID_SDK Ljava/lang/String;
 	public static final field SENTRY_JAVASCRIPT_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
@@ -2384,7 +2440,7 @@ public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentr
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setComments (Ljava/lang/String;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -2482,7 +2538,7 @@ public final class io/sentry/clientreport/ClientReport : io/sentry/JsonSerializa
 	public fun getDiscardedEvents ()Ljava/util/List;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -2525,7 +2581,7 @@ public final class io/sentry/clientreport/DiscardedEvent : io/sentry/JsonSeriali
 	public fun getQuantity ()Ljava/lang/Long;
 	public fun getReason ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun toString ()Ljava/lang/String;
 }
@@ -2625,6 +2681,12 @@ public abstract interface class io/sentry/hints/Cached {
 
 public abstract interface class io/sentry/hints/DiskFlushNotification {
 	public abstract fun markFlushed ()V
+}
+
+public final class io/sentry/hints/EventDropReason : java/lang/Enum {
+	public static final field MULTITHREADED_DEDUPLICATION Lio/sentry/hints/EventDropReason;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/hints/EventDropReason;
+	public static fun values ()[Lio/sentry/hints/EventDropReason;
 }
 
 public abstract interface class io/sentry/hints/Flushable {
@@ -2734,10 +2796,11 @@ public abstract interface class io/sentry/internal/gestures/GestureTargetLocator
 }
 
 public final class io/sentry/internal/gestures/UiElement {
-	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getClassName ()Ljava/lang/String;
 	public fun getIdentifier ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getResourceName ()Ljava/lang/String;
 	public fun getTag ()Ljava/lang/String;
 	public fun getView ()Ljava/lang/Object;
@@ -2805,7 +2868,7 @@ public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValues ()Ljava/util/Collection;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnit (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setValues (Ljava/util/Collection;)V
@@ -2831,7 +2894,7 @@ public final class io/sentry/profilemeasurements/ProfileMeasurementValue : io/se
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()D
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -2862,7 +2925,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getPermissions ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAppBuild (Ljava/lang/String;)V
 	public fun setAppIdentifier (Ljava/lang/String;)V
 	public fun setAppName (Ljava/lang/String;)V
@@ -2902,7 +2965,7 @@ public final class io/sentry/protocol/Browser : io/sentry/JsonSerializable, io/s
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
@@ -2931,7 +2994,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 	public fun getResponse ()Lio/sentry/protocol/Response;
 	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
 	public fun getTrace ()Lio/sentry/SpanContext;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
@@ -2962,7 +3025,7 @@ public final class io/sentry/protocol/DebugImage : io/sentry/JsonSerializable, i
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUuid ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setArch (Ljava/lang/String;)V
 	public fun setCodeFile (Ljava/lang/String;)V
 	public fun setCodeId (Ljava/lang/String;)V
@@ -3000,7 +3063,7 @@ public final class io/sentry/protocol/DebugMeta : io/sentry/JsonSerializable, io
 	public fun getImages ()Ljava/util/List;
 	public fun getSdkInfo ()Lio/sentry/protocol/SdkInfo;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setImages (Ljava/util/List;)V
 	public fun setSdkInfo (Lio/sentry/protocol/SdkInfo;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3058,7 +3121,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun isLowMemory ()Ljava/lang/Boolean;
 	public fun isOnline ()Ljava/lang/Boolean;
 	public fun isSimulator ()Ljava/lang/Boolean;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setArchs ([Ljava/lang/String;)V
 	public fun setBatteryLevel (Ljava/lang/Float;)V
 	public fun setBatteryTemperature (Ljava/lang/Float;)V
@@ -3105,7 +3168,7 @@ public final class io/sentry/protocol/Device$Deserializer : io/sentry/JsonDeseri
 public final class io/sentry/protocol/Device$DeviceOrientation : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field LANDSCAPE Lio/sentry/protocol/Device$DeviceOrientation;
 	public static final field PORTRAIT Lio/sentry/protocol/Device$DeviceOrientation;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/protocol/Device$DeviceOrientation;
 	public static fun values ()[Lio/sentry/protocol/Device$DeviceOrientation;
 }
@@ -3162,7 +3225,7 @@ public final class io/sentry/protocol/Geo : io/sentry/JsonSerializable, io/sentr
 	public fun getCountryCode ()Ljava/lang/String;
 	public fun getRegion ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCity (Ljava/lang/String;)V
 	public fun setCountryCode (Ljava/lang/String;)V
 	public fun setRegion (Ljava/lang/String;)V
@@ -3197,7 +3260,7 @@ public final class io/sentry/protocol/Gpu : io/sentry/JsonSerializable, io/sentr
 	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun isMultiThreadedRendering ()Ljava/lang/Boolean;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setApiType (Ljava/lang/String;)V
 	public fun setId (Ljava/lang/Integer;)V
 	public fun setMemorySize (Ljava/lang/Integer;)V
@@ -3242,7 +3305,7 @@ public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializa
 	public fun getUnit ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()Ljava/lang/Number;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -3269,7 +3332,7 @@ public final class io/sentry/protocol/Mechanism : io/sentry/JsonSerializable, io
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isHandled ()Ljava/lang/Boolean;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setHandled (Ljava/lang/Boolean;)V
@@ -3303,7 +3366,7 @@ public final class io/sentry/protocol/Message : io/sentry/JsonSerializable, io/s
 	public fun getMessage ()Ljava/lang/String;
 	public fun getParams ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setFormatted (Ljava/lang/String;)V
 	public fun setMessage (Ljava/lang/String;)V
 	public fun setParams (Ljava/util/List;)V
@@ -3335,7 +3398,7 @@ public final class io/sentry/protocol/OperatingSystem : io/sentry/JsonSerializab
 	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun isRooted ()Ljava/lang/Boolean;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setBuild (Ljava/lang/String;)V
 	public fun setKernelVersion (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -3378,7 +3441,7 @@ public final class io/sentry/protocol/Request : io/sentry/JsonSerializable, io/s
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUrl ()Ljava/lang/String;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setApiTarget (Ljava/lang/String;)V
 	public fun setBodySize (Ljava/lang/Long;)V
 	public fun setCookies (Ljava/lang/String;)V
@@ -3424,7 +3487,7 @@ public final class io/sentry/protocol/Response : io/sentry/JsonSerializable, io/
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setBodySize (Ljava/lang/Long;)V
 	public fun setCookies (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/Object;)V
@@ -3455,7 +3518,7 @@ public final class io/sentry/protocol/SdkInfo : io/sentry/JsonSerializable, io/s
 	public fun getVersionMajor ()Ljava/lang/Integer;
 	public fun getVersionMinor ()Ljava/lang/Integer;
 	public fun getVersionPatchlevel ()Ljava/lang/Integer;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setSdkName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersionMajor (Ljava/lang/Integer;)V
@@ -3490,7 +3553,7 @@ public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, i
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
@@ -3520,7 +3583,7 @@ public final class io/sentry/protocol/SentryException : io/sentry/JsonSerializab
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setMechanism (Lio/sentry/protocol/Mechanism;)V
 	public fun setModule (Ljava/lang/String;)V
 	public fun setStacktrace (Lio/sentry/protocol/SentryStackTrace;)V
@@ -3553,7 +3616,7 @@ public final class io/sentry/protocol/SentryId : io/sentry/JsonSerializable {
 	public fun <init> (Ljava/util/UUID;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -3570,7 +3633,7 @@ public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
@@ -3595,7 +3658,7 @@ public final class io/sentry/protocol/SentryRuntime : io/sentry/JsonSerializable
 	public fun getRawDescription ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setRawDescription (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3618,10 +3681,11 @@ public final class io/sentry/protocol/SentryRuntime$JsonKeys {
 public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Span;)V
 	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/util/Map;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStartTimestamp ()Ljava/lang/Double;
@@ -3631,7 +3695,7 @@ public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, i
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -3645,6 +3709,7 @@ public final class io/sentry/protocol/SentrySpan$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field DESCRIPTION Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
+	public static final field ORIGIN Ljava/lang/String;
 	public static final field PARENT_SPAN_ID Ljava/lang/String;
 	public static final field SPAN_ID Ljava/lang/String;
 	public static final field START_TIMESTAMP Ljava/lang/String;
@@ -3679,7 +3744,7 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializa
 	public fun getVars ()Ljava/util/Map;
 	public fun isInApp ()Ljava/lang/Boolean;
 	public fun isNative ()Ljava/lang/Boolean;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAbsPath (Ljava/lang/String;)V
 	public fun setColno (Ljava/lang/Integer;)V
 	public fun setContextLine (Ljava/lang/String;)V
@@ -3738,7 +3803,7 @@ public final class io/sentry/protocol/SentryStackTrace : io/sentry/JsonSerializa
 	public fun getRegisters ()Ljava/util/Map;
 	public fun getSnapshot ()Ljava/lang/Boolean;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setFrames (Ljava/util/List;)V
 	public fun setRegisters (Ljava/util/Map;)V
 	public fun setSnapshot (Ljava/lang/Boolean;)V
@@ -3771,7 +3836,7 @@ public final class io/sentry/protocol/SentryThread : io/sentry/JsonSerializable,
 	public fun isCurrent ()Ljava/lang/Boolean;
 	public fun isDaemon ()Ljava/lang/Boolean;
 	public fun isMain ()Ljava/lang/Boolean;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCrashed (Ljava/lang/Boolean;)V
 	public fun setCurrent (Ljava/lang/Boolean;)V
 	public fun setDaemon (Ljava/lang/Boolean;)V
@@ -3819,7 +3884,7 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
 	public fun isSampled ()Z
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -3843,7 +3908,7 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 public final class io/sentry/protocol/TransactionInfo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -3886,7 +3951,7 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsername ()Ljava/lang/String;
 	public fun hashCode ()I
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setGeo (Lio/sentry/protocol/Geo;)V
@@ -3923,7 +3988,7 @@ public final class io/sentry/protocol/ViewHierarchy : io/sentry/JsonSerializable
 	public fun getRenderingSystem ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getWindows ()Ljava/util/List;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -3953,7 +4018,7 @@ public final class io/sentry/protocol/ViewHierarchyNode : io/sentry/JsonSerializ
 	public fun getWidth ()Ljava/lang/Double;
 	public fun getX ()Ljava/lang/Double;
 	public fun getY ()Ljava/lang/Double;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAlpha (Ljava/lang/Double;)V
 	public fun setChildren (Ljava/util/List;)V
 	public fun setHeight (Ljava/lang/Double;)V
@@ -4110,6 +4175,7 @@ public final class io/sentry/util/FileUtils {
 
 public final class io/sentry/util/HintUtils {
 	public static fun createWithTypeCheckHint (Ljava/lang/Object;)Lio/sentry/Hint;
+	public static fun getEventDropReason (Lio/sentry/Hint;)Lio/sentry/hints/EventDropReason;
 	public static fun getSentrySdkHint (Lio/sentry/Hint;)Ljava/lang/Object;
 	public static fun hasType (Lio/sentry/Hint;Ljava/lang/Class;)Z
 	public static fun isFromHybridSdk (Lio/sentry/Hint;)Z
@@ -4117,6 +4183,7 @@ public final class io/sentry/util/HintUtils {
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;Lio/sentry/util/HintUtils$SentryHintFallback;)V
 	public static fun runIfHasTypeLogIfNot (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/ILogger;Lio/sentry/util/HintUtils$SentryConsumer;)V
+	public static fun setEventDropReason (Lio/sentry/Hint;Lio/sentry/hints/EventDropReason;)V
 	public static fun setIsFromHybridSdk (Lio/sentry/Hint;Ljava/lang/String;)V
 	public static fun setTypeCheckHint (Lio/sentry/Hint;Ljava/lang/Object;)V
 	public static fun shouldApplyScopeData (Lio/sentry/Hint;)Z
@@ -4163,6 +4230,36 @@ public abstract interface class io/sentry/util/LazyEvaluator$Evaluator {
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logNotInstanceOf (Ljava/lang/Class;Ljava/lang/Object;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/util/MapObjectWriter : io/sentry/ObjectWriter {
+	public fun <init> (Ljava/util/Map;)V
+	public synthetic fun beginArray ()Lio/sentry/ObjectWriter;
+	public fun beginArray ()Lio/sentry/util/MapObjectWriter;
+	public synthetic fun beginObject ()Lio/sentry/ObjectWriter;
+	public fun beginObject ()Lio/sentry/util/MapObjectWriter;
+	public synthetic fun endArray ()Lio/sentry/ObjectWriter;
+	public fun endArray ()Lio/sentry/util/MapObjectWriter;
+	public synthetic fun endObject ()Lio/sentry/ObjectWriter;
+	public fun endObject ()Lio/sentry/util/MapObjectWriter;
+	public synthetic fun name (Ljava/lang/String;)Lio/sentry/ObjectWriter;
+	public fun name (Ljava/lang/String;)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun nullValue ()Lio/sentry/ObjectWriter;
+	public fun nullValue ()Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (D)Lio/sentry/ObjectWriter;
+	public fun value (D)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (J)Lio/sentry/ObjectWriter;
+	public fun value (J)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/ObjectWriter;
+	public fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (Ljava/lang/Boolean;)Lio/sentry/ObjectWriter;
+	public fun value (Ljava/lang/Boolean;)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (Ljava/lang/Number;)Lio/sentry/ObjectWriter;
+	public fun value (Ljava/lang/Number;)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (Ljava/lang/String;)Lio/sentry/ObjectWriter;
+	public fun value (Ljava/lang/String;)Lio/sentry/util/MapObjectWriter;
+	public synthetic fun value (Z)Lio/sentry/ObjectWriter;
+	public fun value (Z)Lio/sentry/util/MapObjectWriter;
 }
 
 public final class io/sentry/util/Objects {

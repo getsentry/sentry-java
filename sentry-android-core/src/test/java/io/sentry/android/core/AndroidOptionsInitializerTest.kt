@@ -175,6 +175,20 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `flush timeout is set to Android specific default value`() {
+        fixture.initSut()
+        assertEquals(AndroidOptionsInitializer.DEFAULT_FLUSH_TIMEOUT_MS, fixture.sentryOptions.flushTimeoutMillis)
+    }
+
+    @Test
+    fun `flush timeout can be overridden`() {
+        fixture.initSut(configureOptions = {
+            flushTimeoutMillis = 1234
+        })
+        assertEquals(1234, fixture.sentryOptions.flushTimeoutMillis)
+    }
+
+    @Test
     fun `AndroidEventProcessor added to processors list`() {
         fixture.initSut()
         val actual =
