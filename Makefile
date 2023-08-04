@@ -1,6 +1,6 @@
 .PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease androidCoverageReport
 
-all: stop clean javadocs compile androidCoverageReport
+all: androidCoverageReport
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
 
