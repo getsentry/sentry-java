@@ -13,7 +13,8 @@ plugins {
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
-    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
+    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion apply false
+    id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
 }
 
 buildscript {
@@ -108,50 +109,17 @@ subprojects {
         "sentry-compose"
     )
     if (jacocoAndroidModules.contains(name)) {
-        val androidJacocoTaskName = "androidJacocoTestReport"
+        afterEvaluate {
+            tasks.getByName("jacocoTestReport") {
+                // Copy the report file to the default location that Codecov is expecting during CI
+                doLast {
+                    val jacocoXmlFile = File(buildDir, "jacoco/jacoco.xml")
+                    val jacocoTestReportFile = File(buildDir, "jacoco/jacocoTestReport.xml")
+                    val targetReportFile = File(buildDir, "reports/jacoco/jacocoTestReport.xml")
 
-        tasks.create(androidJacocoTaskName, JacocoReport::class) {
-            dependsOn("testReleaseUnitTest")
-
-            val subprojectName = this@subprojects.name
-
-            reports {
-                html.required.set(false)
-                xml.required.set(true)
-            }
-
-            var classesDir = "$buildDir/tmp/kotlin-classes/release"
-            if (subprojectName == "sentry-android-ndk" || subprojectName == "sentry-android-core") {
-                classesDir = "$buildDir/intermediates/javac/release/classes"
-            }
-
-            var sourcesDir = "$projectDir/src/main/java"
-            if (subprojectName == "sentry-compose") {
-                sourcesDir = "$projectDir/src/androidMain/kotlin"
-            }
-
-            val classesTree = fileTree(classesDir).setExcludes(
-                listOf(
-                    "**/R.class",
-                    "**/R$*.class",
-                    "**/BuildConfig.*",
-                    "**/Manifest*.*",
-                    "**/*Test*.*",
-                    "android/**/*.*"
-                )
-            )
-            executionData.setFrom("$buildDir/outputs/unit_test_code_coverage/releaseUnitTest/testReleaseUnitTest.exec")
-            classDirectories.setFrom(classesTree)
-            sourceDirectories.setFrom(sourcesDir)
-
-            doLast {
-                File("$buildDir/reports/jacoco/$androidJacocoTaskName/$androidJacocoTaskName.xml").renameTo(
-                    File("$buildDir/reports/jacoco/$androidJacocoTaskName/jacocoTestReport.xml")
-                )
-
-                File("$buildDir/reports/jacoco/$androidJacocoTaskName").renameTo(
-                    File("$buildDir/reports/jacoco/test")
-                )
+                    jacocoXmlFile.renameTo(jacocoTestReportFile)
+                    jacocoTestReportFile.copyTo(targetReportFile, overwrite = true)
+                }
             }
         }
     }

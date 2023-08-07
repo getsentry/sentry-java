@@ -9,6 +9,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.compose")
     jacoco
+    id(Config.QualityPlugins.jacocoAndroid)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
     id(Config.BuildPlugins.dokkaPluginAlias)
@@ -86,7 +87,6 @@ android {
     buildTypes {
         getByName("debug")
         getByName("release") {
-            enableUnitTestCoverage = true
             consumerProguardFiles("proguard-rules.pro")
         }
     }
@@ -114,9 +114,14 @@ android {
     }
 }
 
+jacoco {
+    toolVersion = "0.8.10"
+}
+
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = false
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
     }
 }
 
