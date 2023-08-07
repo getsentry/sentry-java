@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("com.apollographql.apollo3") version "3.8.1"
 }
 
 android {
@@ -111,6 +112,8 @@ dependencies {
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
+    implementation(projects.sentryApollo3)
+    implementation(Config.Libs.apolloKotlin)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
 
@@ -133,4 +136,8 @@ dependencies {
     implementation(Config.Libs.composeMaterial)
 
     debugImplementation(Config.Libs.leakCanary)
+}
+
+apollo {
+    packageName.set("io.sentry.samples.android.graphql")
 }

@@ -141,7 +141,7 @@ object Config {
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
-        val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
+        val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.1"
 
         object OpenTelemetry {
             val otelVersion = "1.23.1"

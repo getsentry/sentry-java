@@ -14,6 +14,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
+import io.sentry.samples.android.graphql.GraphqlActivity;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -213,6 +214,13 @@ public class MainActivity extends AppCompatActivity {
           // finishing so its completely destroyed
           finish();
           startActivity(new Intent(this, SecondActivity.class));
+        });
+
+    binding.openGraphqlActivity.setOnClickListener(
+        view -> {
+          // finishing so its completely destroyed
+          finish();
+          startActivity(new Intent(this, GraphqlActivity.class));
         });
 
     binding.openSampleFragment.setOnClickListener(

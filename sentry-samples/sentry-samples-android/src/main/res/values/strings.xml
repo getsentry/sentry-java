@@ -15,6 +15,7 @@
   <string name="anr">ANR</string>
   <string name="do_request">Do Request</string>
   <string name="open_second_activity">Open Second Activity</string>
+  <string name="open_graphql_activity">Open GraphQL Activity</string>
   <string name="open_sample_fragment">Open Sample Fragment</string>
   <string name="open_third_fragment">Open Third Fragment</string>
   <string name="open_gestures_activity">Open Gestures Activity</string>

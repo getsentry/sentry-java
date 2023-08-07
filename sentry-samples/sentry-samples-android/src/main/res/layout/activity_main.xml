@@ -89,6 +89,12 @@
       android:text="@string/open_second_activity" />
 
     <Button
+      android:id="@+id/open_graphql_activity"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/open_graphql_activity" />
+
+    <Button
       android:id="@+id/open_sample_fragment"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
