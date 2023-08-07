@@ -141,6 +141,7 @@ public final class TransactionOptions extends SpanOptions {
    *
    * @param deadlineTimeoutMs - the deadlineTimeout, in ms - or null if no deadline should be set
    */
+  @ApiStatus.Internal
   public void setDeadlineTimeout(@Nullable Long deadlineTimeoutMs) {
     this.deadlineTimeout = deadlineTimeoutMs;
   }
@@ -150,6 +151,7 @@ public final class TransactionOptions extends SpanOptions {
    *
    * @return deadlineTimeout - the deadlineTimeout, in ms - or null if no deadline is set
    */
+  @ApiStatus.Internal
   public @Nullable Long getDeadlineTimeout() {
     return deadlineTimeout;
   }

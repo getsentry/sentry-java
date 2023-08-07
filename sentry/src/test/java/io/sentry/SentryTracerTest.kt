@@ -798,6 +798,19 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when initialized with idleTimeout it has no influence on deadline timeout`() {
+        val transaction = fixture.getSut(idleTimeout = 3000, deadlineTimeout = 20)
+        val deadlineTimeoutTask = transaction.deadlineTimeoutTask
+
+        val span = transaction.startChild("op")
+        // when the span finishes, it re-schedules the idle task
+        span.finish()
+
+        // but the deadline timeout task should not be re-scheduled
+        assertEquals(deadlineTimeoutTask, transaction.deadlineTimeoutTask)
+    }
+
+    @Test
     fun `when initialized without idleTimeout, does not schedule finish timer`() {
         val transaction = fixture.getSut()
         assertNull(transaction.idleTimeoutTask)
