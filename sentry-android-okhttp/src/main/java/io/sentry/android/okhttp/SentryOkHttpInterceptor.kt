@@ -78,7 +78,7 @@ class SentryOkHttpInterceptor(
             isFromEventListener = true
         } else {
             // read the span from the bound scope
-            span = hub.span?.startChild("http.client", "$method $url")
+            span = hub.transaction?.startChild("http.client", "$method $url")
             isFromEventListener = false
         }
 

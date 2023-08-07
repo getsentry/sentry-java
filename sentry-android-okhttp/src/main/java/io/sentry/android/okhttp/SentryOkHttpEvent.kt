@@ -37,7 +37,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         val method: String = request.method
 
         // We start the call span that will contain all the others
-        callRootSpan = hub.span?.startChild("http.client", "$method $url")
+        callRootSpan = hub.transaction?.startChild("http.client", "$method $url")
         callRootSpan?.spanContext?.origin = TRACE_ORIGIN
         urlDetails.applyToSpan(callRootSpan)
 
