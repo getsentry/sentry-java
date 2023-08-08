@@ -1,3 +1,6 @@
 [submodule "sentry-android-ndk/sentry-native"]
 	path = sentry-android-ndk/sentry-native
 	url = https://github.com/getsentry/sentry-native
+[submodule "sentry-profiling/async-profiler"]
+	path = sentry-profiling/async-profiler
+	url = https://github.com/vaind/async-profiler.git

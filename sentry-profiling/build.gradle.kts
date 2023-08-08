@@ -17,13 +17,10 @@ configure<JavaPluginExtension> {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 
 dependencies {
     api(projects.sentry)
-
-    implementation(Config.Libs.asyncProfiler)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -32,12 +29,10 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(projects.sentry)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockWebserver)
 }
 
 configure<SourceSetContainer> {
