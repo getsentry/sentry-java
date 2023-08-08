@@ -12,6 +12,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
@@ -32,16 +33,25 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
 
   public ScreenshotEventProcessor(
-      final @NotNull SentryAndroidOptions options,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
+    final @NotNull SentryAndroidOptions options,
+    final @NotNull BuildInfoProvider buildInfoProvider) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.buildInfoProvider =
-        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+      Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion(getClass());
     }
+  }
+
+  @Override
+  public @NotNull SentryTransaction process(@NotNull SentryTransaction transaction,
+    @NotNull Hint hint) {
+    // that's only necessary because on newer versions of Unity, if not overriding this method, it's
+    // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
+    // compilation mismatch
+    return transaction;
   }
 
   @Override
@@ -63,7 +73,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     // the BeforeCaptureCallback may overrules the debouncing decision
     final boolean shouldDebounce = debouncer.checkForDebounce();
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
-        options.getBeforeScreenshotCaptureCallback();
+      options.getBeforeScreenshotCaptureCallback();
     if (beforeCaptureCallback != null) {
       if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
         return event;
@@ -73,8 +83,8 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     }
 
     final byte[] screenshot =
-        takeScreenshot(
-            activity, options.getMainThreadChecker(), options.getLogger(), buildInfoProvider);
+      takeScreenshot(
+        activity, options.getMainThreadChecker(), options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }

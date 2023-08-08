@@ -373,6 +373,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    addBreadcrumb(breadcrumb, new Hint());
+  }
+
+  @Override
   public void setLevel(final @Nullable SentryLevel level) {
     if (!isEnabled()) {
       options

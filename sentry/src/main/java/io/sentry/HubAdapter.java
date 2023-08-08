@@ -88,6 +88,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    addBreadcrumb(breadcrumb, new Hint());
+  }
+
+  @Override
   public void setLevel(@Nullable SentryLevel level) {
     Sentry.setLevel(level);
   }

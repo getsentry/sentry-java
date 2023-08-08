@@ -18,6 +18,7 @@ import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
@@ -50,6 +51,15 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     if (options.isAttachViewHierarchy()) {
       addIntegrationToSdkVersion(getClass());
     }
+  }
+
+  @Override
+  public @NotNull SentryTransaction process(@NotNull SentryTransaction transaction,
+    @NotNull Hint hint) {
+    // that's only necessary because on newer versions of Unity, if not overriding this method, it's
+    // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
+    // compilation mismatch
+    return transaction;
   }
 
   @Override

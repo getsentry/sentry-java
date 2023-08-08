@@ -47,6 +47,11 @@ public interface MeasurementUnit {
 
     /** Week (`"week"`), 604,800 seconds. */
     WEEK;
+
+    @Override
+    public @NotNull String apiName() {
+      return name().toLowerCase(Locale.ROOT);
+    }
   }
 
   /** Size of information derived from bytes. */
@@ -92,6 +97,11 @@ public interface MeasurementUnit {
 
     /** Exbibyte (`"exbibyte"`), 2^60 bytes. */
     EXBIBYTE;
+
+    @Override
+    public @NotNull String apiName() {
+      return name().toLowerCase(Locale.ROOT);
+    }
   }
 
   /** Fractions such as percentages. */
@@ -101,6 +111,11 @@ public interface MeasurementUnit {
 
     /** Ratio expressed as a fraction of `100`. `100%` equals a ratio of `1.0`. */
     PERCENT;
+
+    @Override
+    public @NotNull String apiName() {
+      return name().toLowerCase(Locale.ROOT);
+    }
   }
 
   /**
@@ -119,6 +134,11 @@ public interface MeasurementUnit {
     public @NotNull String name() {
       return name;
     }
+
+    @Override
+    public @NotNull String apiName() {
+      return name().toLowerCase(Locale.ROOT);
+    }
   }
 
   @NotNull
@@ -126,7 +146,5 @@ public interface MeasurementUnit {
 
   /** Unit adhering to the API spec. */
   @ApiStatus.Internal
-  default @NotNull String apiName() {
-    return name().toLowerCase(Locale.ROOT);
-  }
+  @NotNull String apiName();
 }

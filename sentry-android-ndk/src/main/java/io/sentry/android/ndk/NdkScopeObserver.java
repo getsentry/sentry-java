@@ -3,6 +3,7 @@ package io.sentry.android.ndk;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.IScopeObserver;
+import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.User;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class NdkScopeObserver implements IScopeObserver {
+public final class NdkScopeObserver extends ScopeObserverAdapter {
 
   private final @NotNull SentryOptions options;
   private final @NotNull INativeScope nativeScope;
