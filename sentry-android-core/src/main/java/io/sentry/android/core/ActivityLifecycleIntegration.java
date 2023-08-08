@@ -192,6 +192,9 @@ public final class ActivityLifecycleIntegration
         final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
         final TransactionOptions transactionOptions = new TransactionOptions();
+        transactionOptions.setDeadlineTimeout(
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
           transactionOptions.setIdleTimeout(options.getIdleTimeout());
           transactionOptions.setTrimEnd(true);

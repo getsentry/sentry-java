@@ -2352,8 +2352,10 @@ public abstract interface class io/sentry/TransactionFinishedCallback {
 }
 
 public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
+	public static final field DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION J
 	public fun <init> ()V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
+	public fun getDeadlineTimeout ()Ljava/lang/Long;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
@@ -2361,6 +2363,7 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun isWaitForChildren ()Z
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
+	public fun setDeadlineTimeout (Ljava/lang/Long;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
