@@ -54,8 +54,8 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryTransaction process(@NotNull SentryTransaction transaction,
-    @NotNull Hint hint) {
+  public @NotNull SentryTransaction process(
+      @NotNull SentryTransaction transaction, @NotNull Hint hint) {
     // that's only necessary because on newer versions of Unity, if not overriding this method, it's
     // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
     // compilation mismatch

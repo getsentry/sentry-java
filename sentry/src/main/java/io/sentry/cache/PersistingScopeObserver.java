@@ -3,7 +3,6 @@ package io.sentry.cache;
 import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.Breadcrumb;
-import io.sentry.IScopeObserver;
 import io.sentry.JsonDeserializer;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;

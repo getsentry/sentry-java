@@ -146,5 +146,6 @@ public interface MeasurementUnit {
 
   /** Unit adhering to the API spec. */
   @ApiStatus.Internal
-  @NotNull String apiName();
+  @NotNull
+  String apiName();
 }

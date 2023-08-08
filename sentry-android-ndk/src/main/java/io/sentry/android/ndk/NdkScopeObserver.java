@@ -2,7 +2,6 @@ package io.sentry.android.ndk;
 
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
-import io.sentry.IScopeObserver;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
