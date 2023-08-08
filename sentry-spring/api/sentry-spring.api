@@ -88,6 +88,50 @@ public final class io/sentry/spring/SpringSecuritySentryUserProvider : io/sentry
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public final class io/sentry/spring/graphql/SentryBatchLoaderRegistry : org/springframework/graphql/execution/BatchLoaderRegistry {
+	public fun forName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun forTypePair (Ljava/lang/Class;Ljava/lang/Class;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun registerDataLoaders (Lorg/dataloader/DataLoaderRegistry;Lgraphql/GraphQLContext;)V
+}
+
+public final class io/sentry/spring/graphql/SentryBatchLoaderRegistry$SentryRegistrationSpec : org/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec {
+	public fun <init> (Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;Ljava/lang/Class;Ljava/lang/Class;)V
+	public fun <init> (Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;Ljava/lang/String;)V
+	public fun registerBatchLoader (Ljava/util/function/BiFunction;)V
+	public fun registerMappedBatchLoader (Ljava/util/function/BiFunction;)V
+	public fun withName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun withOptions (Ljava/util/function/Consumer;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun withOptions (Lorg/dataloader/DataLoaderOptions;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+}
+
+public final class io/sentry/spring/graphql/SentryDataFetcherExceptionResolverAdapter : org/springframework/graphql/execution/DataFetcherExceptionResolverAdapter {
+	public fun <init> ()V
+	public fun isThreadLocalContextAware ()Z
+}
+
+public final class io/sentry/spring/graphql/SentryDgsSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {
+	public fun <init> ()V
+	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring/graphql/SentryGraphqlBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor {
+	public fun <init> ()V
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/graphql/SentryGraphqlConfiguration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sourceBuilderCustomizerWebflux ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sourceBuilderCustomizerWebmvc ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+}
+
+public final class io/sentry/spring/graphql/SentrySpringSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {
+	public fun <init> ()V
+	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+}
+
 public class io/sentry/spring/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;

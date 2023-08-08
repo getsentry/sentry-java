@@ -110,11 +110,17 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       transaction.setName(transactionName, TransactionNameSource.ROUTE);
       transaction.setOperation(TRANSACTION_OP);
     }
-    if (transaction.getStatus() == null) {
-      final @Nullable ServerHttpResponse response = exchange.getResponse();
-      if (response != null) {
-        final @Nullable HttpStatusCode statusCode = response.getStatusCode();
-        if (statusCode != null) {
+    final @Nullable ServerHttpResponse response = exchange.getResponse();
+    if (response != null) {
+      final @Nullable HttpStatusCode statusCode = response.getStatusCode();
+      if (statusCode != null) {
+        transaction
+            .getContexts()
+            .withResponse(
+                (sentryResponse) -> {
+                  sentryResponse.setStatusCode(statusCode.value());
+                });
+        if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(statusCode.value()));
         }
       }

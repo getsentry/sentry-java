@@ -115,6 +115,7 @@ class SentryWebFluxTracingFilterTest {
                     assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                     assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
                     assertThat(it.contexts.trace!!.origin).isEqualTo("auto.spring_jakarta.webflux")
+                    assertThat(it.contexts.response!!.statusCode).isEqualTo(200)
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
@@ -133,6 +134,7 @@ class SentryWebFluxTracingFilterTest {
             verify(fixture.hub).captureTransaction(
                 check {
                     assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+                    assertThat(it.contexts.response!!.statusCode).isEqualTo(500)
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),

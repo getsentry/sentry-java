@@ -19,11 +19,13 @@ repositories {
 
 dependencies {
     implementation(Config.Libs.springBoot3StarterWebflux)
+    implementation(Config.Libs.springBoot3StarterGraphql)
     implementation(Config.Libs.contextPropagation)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
+    implementation(projects.sentryGraphql)
 
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

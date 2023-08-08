@@ -7,12 +7,15 @@ public class Show {
 
   private Integer releaseYear;
 
+  private Integer actorId;
+
   public Show() {}
 
-  public Show(Integer id, String title, Integer releaseYear) {
+  public Show(Integer id, String title, Integer releaseYear, Integer actorId) {
     this.id = id;
     this.title = title;
     this.releaseYear = releaseYear;
+    this.actorId = actorId;
   }
 
   public Integer getId() {
@@ -39,6 +42,14 @@ public class Show {
     this.releaseYear = releaseYear;
   }
 
+  public Integer getActorId() {
+    return actorId;
+  }
+
+  public void setActorId(Integer actorId) {
+    this.actorId = actorId;
+  }
+
   @Override
   public String toString() {
     return "Show{"
@@ -50,6 +61,9 @@ public class Show {
         + "',"
         + "releaseYear='"
         + releaseYear
+        + "',"
+        + "actorId='"
+        + actorId
         + "'"
         + "}";
   }
@@ -61,12 +75,13 @@ public class Show {
     Show that = (Show) o;
     return java.util.Objects.equals(id, that.id)
         && java.util.Objects.equals(title, that.title)
-        && java.util.Objects.equals(releaseYear, that.releaseYear);
+        && java.util.Objects.equals(releaseYear, that.releaseYear)
+        && java.util.Objects.equals(actorId, that.actorId);
   }
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(id, title, releaseYear);
+    return java.util.Objects.hash(id, title, releaseYear, actorId);
   }
 
   public static io.sentry.samples.netflix.dgs.graphql.types.Show.Builder newBuilder() {
@@ -80,12 +95,15 @@ public class Show {
 
     private Integer releaseYear;
 
+    private Integer actorId;
+
     public Show build() {
       io.sentry.samples.netflix.dgs.graphql.types.Show result =
           new io.sentry.samples.netflix.dgs.graphql.types.Show();
       result.id = this.id;
       result.title = this.title;
       result.releaseYear = this.releaseYear;
+      result.actorId = this.actorId;
       return result;
     }
 
@@ -102,6 +120,11 @@ public class Show {
     public io.sentry.samples.netflix.dgs.graphql.types.Show.Builder releaseYear(
         Integer releaseYear) {
       this.releaseYear = releaseYear;
+      return this;
+    }
+
+    public io.sentry.samples.netflix.dgs.graphql.types.Show.Builder actorId(Integer actorId) {
+      this.actorId = actorId;
       return this;
     }
   }
