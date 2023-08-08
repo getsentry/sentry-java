@@ -122,7 +122,7 @@ subprojects {
             }
 
             tasks.getByName("jacocoTestReport") {
-                if (name == "sentry-compose") {
+                if (this@afterEvaluate.name == "sentry-compose") {
                     dependsOn("jacocoCompose")
                 }
             }
@@ -131,8 +131,7 @@ subprojects {
 
     // Handle Jacoco for KMP modules manually
     if (name == "sentry-compose") {
-        val composeTaskName = "jacocoCompose"
-        tasks.create(composeTaskName, JacocoReport::class) {
+        tasks.create("jacocoCompose", JacocoReport::class) {
             dependsOn("testReleaseUnitTest")
 
             reports {
