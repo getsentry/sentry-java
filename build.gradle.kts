@@ -105,20 +105,29 @@ subprojects {
         "sentry-android-ndk",
         "sentry-android-okhttp",
         "sentry-android-sqlite",
-        "sentry-android-timber",
-        "sentry-compose"
+        "sentry-android-timber"
     )
     if (jacocoAndroidModules.contains(name)) {
         afterEvaluate {
+            jacoco {
+                toolVersion = "0.8.10"
+            }
+
+            tasks.withType<Test> {
+                configure<JacocoTaskExtension> {
+                    isIncludeNoLocationClasses = true
+                    excludes = listOf("jdk.internal.*")
+                }
+            }
+
             tasks.getByName("jacocoTestReport") {
                 // Copy the report file to the default location that Codecov is expecting during CI
                 doLast {
-                    val jacocoXmlFile = File(buildDir, "jacoco/jacoco.xml")
-                    val jacocoTestReportFile = File(buildDir, "jacoco/jacocoTestReport.xml")
-                    val targetReportFile = File(buildDir, "reports/jacoco/jacocoTestReport.xml")
-
-                    jacocoXmlFile.renameTo(jacocoTestReportFile)
-                    jacocoTestReportFile.copyTo(targetReportFile, overwrite = true)
+                    copy {
+                        from("$buildDir/jacoco/jacoco.xml")
+                        into("$buildDir/reports/")
+                        rename("jacoco.xml", "jacocoTestReport.xml")
+                    }
                 }
             }
         }

@@ -56,17 +56,6 @@ android {
     }
 }
 
-jacoco {
-    toolVersion = "0.8.10"
-}
-
-tasks.withType<Test> {
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
-}
-
 kotlin {
     explicitApi()
 }
