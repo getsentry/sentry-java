@@ -12,6 +12,7 @@ Breaking changes:
 - Reduce timeout of AsyncHttpTransport to avoid ANR ([#2879](https://github.com/getsentry/sentry-java/pull/2879))
 - Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
   - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s
+- Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
 
 ### Fixes
 
