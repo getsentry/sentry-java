@@ -142,7 +142,7 @@ class SentryApolloInterceptor(
     }
 
     private fun finish(span: ISpan, request: InterceptorRequest, response: InterceptorResponse? = null) {
-        var newSpan: ISpan = span
+        var newSpan: ISpan? = span
         if (beforeSpan != null) {
             try {
                 newSpan = beforeSpan.execute(span, request, response)
@@ -150,7 +150,12 @@ class SentryApolloInterceptor(
                 hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
             }
         }
-        newSpan.finish()
+        if (newSpan == null) {
+            // span is dropped
+            span.spanContext.sampled = false
+        } else {
+            span.finish()
+        }
 
         response?.let {
             if (it.httpResponse.isPresent) {
@@ -166,9 +171,9 @@ class SentryApolloInterceptor(
                     breadcrumb.setData("response_body_size", contentLength)
                 }
 
-                val hint = Hint().also {
-                    it.set(APOLLO_REQUEST, httpRequest)
-                    it.set(APOLLO_RESPONSE, httpResponse)
+                val hint = Hint().apply {
+                    set(APOLLO_REQUEST, httpRequest)
+                    set(APOLLO_RESPONSE, httpResponse)
                 }
                 hub.addBreadcrumb(breadcrumb, hint)
             }
@@ -192,6 +197,6 @@ class SentryApolloInterceptor(
          * @param request the HTTP request executed by okHttp
          * @param response the HTTP response received by okHttp
          */
-        fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan
+        fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan?
     }
 }
