@@ -54,3 +54,4 @@ jobs:
         uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@v3
         with:
           name: sentry-java
+          path: sentry-compose/build/reports/kover/reportRelease.xml
