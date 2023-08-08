@@ -41,7 +41,7 @@ jobs:
 
       # Clean, check formatting, build and do a dry release
       - name: Make all
-        run: make all
+        run: ./gradlew koverCoverageReport
 
       # We stop gradle at the end to make sure the cache folders
       # don't contain any lock files and are free to be cached.
