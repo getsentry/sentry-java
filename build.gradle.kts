@@ -125,15 +125,6 @@ subprojects {
                 if (name == "sentry-compose") {
                     dependsOn("jacocoCompose")
                 }
-
-                doLast {
-                    // Copies the generated Jacoco XML report to the default location that Codecov is expecting during CI.
-                    copy {
-                        from("$buildDir/jacoco/jacoco.xml")
-                        into("$buildDir/reports/")
-                        rename("jacoco.xml", "jacocoTestReport.xml")
-                    }
-                }
             }
         }
     }
