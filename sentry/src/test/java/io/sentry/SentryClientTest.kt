@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.Scope.IWithPropagationContext
+import io.sentry.Session.State.Crashed
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -954,6 +955,21 @@ class SentryClientTest {
     }
 
     @Test
+    fun `When event is non handled, end the session`() {
+        val scope = Scope(fixture.sentryOptions)
+        scope.startSession()
+
+        val event = SentryEvent().apply {
+            exceptions = createNonHandledException()
+        }
+        fixture.getSut().updateSessionData(event, Hint(), scope)
+        scope.withSession {
+            assertEquals(Session.State.Crashed, it!!.status)
+            assertNotNull(it.duration)
+        }
+    }
+
+    @Test
     fun `When event is handled, keep level as it is`() {
         val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
@@ -1131,6 +1147,28 @@ class SentryClientTest {
                     val event = getEventFromData(it.items.first().data)
                     val map = event.contexts["key"] as Map<*, *>
                     assertEquals("abc", map["value"])
+                },
+                anyOrNull()
+            )
+        }
+    }
+
+    @Test
+    fun `when session is in terminal state, does not send session update`() {
+        val sut = fixture.getSut()
+
+        val event = SentryEvent().apply {
+            exceptions = createNonHandledException()
+        }
+        val scope = Scope(fixture.sentryOptions)
+        val sessionPair = scope.startSession()
+        scope.withSession { it!!.update(Crashed, null, false) }
+
+        assertNotNull(sessionPair) {
+            sut.captureEvent(event, scope, null)
+            verify(fixture.transport).send(
+                check {
+                    assertNull(it.items.find { item -> item.header.type == SentryItemType.Session })
                 },
                 anyOrNull()
             )

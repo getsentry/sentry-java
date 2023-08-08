@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** A Feign client that creates a span around each executed HTTP call. */
 public final class SentryFeignClient implements Client {
+  private static final String TRACE_ORIGIN = "auto.http.openfeign";
   private final @NotNull Client delegate;
   private final @NotNull IHub hub;
   private final @Nullable BeforeSpanCallback beforeSpan;
@@ -53,6 +54,7 @@ public final class SentryFeignClient implements Client {
       }
 
       ISpan span = activeSpan.startChild("http.client");
+      span.getSpanContext().setOrigin(TRACE_ORIGIN);
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
       span.setDescription(request.httpMethod().name() + " " + urlDetails.getUrlOrFallback());
       urlDetails.applyToSpan(span);

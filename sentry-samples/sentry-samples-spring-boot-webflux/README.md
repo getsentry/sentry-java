@@ -17,3 +17,28 @@ Make an HTTP request that will trigger events:
 ```
 curl -XPOST --user user:password http://localhost:8080/person/ -H "Content-Type:application/json" -d '{"firstName":"John","lastName":"Smith"}'
 ```
+
+## GraphQL
+
+The following queries can be used to test the GraphQL integration.
+
+### Greeting
+```
+{
+    greeting(name: "crash")
+}
+```
+
+### Greeting with variables
+
+```
+query GreetingQuery($name: String) {
+    greeting(name: $name)
+}
+```
+variables:
+```
+{
+    "name": "crash"
+}
+```

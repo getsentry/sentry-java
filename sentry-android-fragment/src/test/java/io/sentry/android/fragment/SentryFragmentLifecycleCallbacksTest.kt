@@ -12,7 +12,10 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SpanContext
+import io.sentry.SpanId
 import io.sentry.SpanStatus
+import io.sentry.protocol.SentryId
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -46,6 +49,9 @@ class SentryFragmentLifecycleCallbacksTest {
                 SentryOptions().apply {
                     setTracesSampleRate(tracesSampleRate)
                 }
+            )
+            whenever(span.spanContext).thenReturn(
+                SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
             )
             whenever(transaction.startChild(any(), any())).thenReturn(span)
             whenever(scope.transaction).thenReturn(transaction)

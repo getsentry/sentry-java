@@ -434,6 +434,9 @@ public class SentryOptions {
   private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
+  /** Whether Sentry should be enabled */
+  private boolean enabled = true;
+
   /**
    * Adds an event processor
    *
@@ -2096,6 +2099,24 @@ public class SentryOptions {
     this.traceOptionsRequests = traceOptionsRequests;
   }
 
+  /**
+   * Whether Sentry is enabled.
+   *
+   * @return true if Sentry should be enabled
+   */
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  /**
+   * Whether Sentry should be enabled.
+   *
+   * @param enabled true if Sentry should be enabled
+   */
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -2332,6 +2353,10 @@ public class SentryOptions {
     }
     for (String bundleId : options.getBundleIds()) {
       addBundleId(bundleId);
+    }
+
+    if (options.isEnabled() != null) {
+      setEnabled(options.isEnabled());
     }
   }
 

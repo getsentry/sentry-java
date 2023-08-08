@@ -100,6 +100,7 @@ class SentryTracingFilterTest {
                 assertThat(it.transaction).isEqualTo("POST /product/{id}")
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                 assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
+                assertThat(it.contexts.trace!!.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

@@ -43,6 +43,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
+  /** Describes the status of the Transaction. */
+  protected @Nullable String origin = "manual";
+
   private @Nullable Map<String, Object> unknown;
 
   public SpanContext(
@@ -65,7 +68,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision samplingDecision) {
-    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null);
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, "manual");
   }
 
   @ApiStatus.Internal
@@ -76,7 +79,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable String description,
       final @Nullable TracesSamplingDecision samplingDecision,
-      final @Nullable SpanStatus status) {
+      final @Nullable SpanStatus status,
+      final @Nullable String origin) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.op = Objects.requireNonNull(operation, "operation is required");
@@ -84,6 +88,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.samplingDecision = samplingDecision;
     this.description = description;
     this.status = status;
+    this.origin = origin;
   }
 
   /**
@@ -200,6 +205,14 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.samplingDecision = samplingDecision;
   }
 
+  public @Nullable String getOrigin() {
+    return origin;
+  }
+
+  public void setOrigin(final @Nullable String origin) {
+    this.origin = origin;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -228,6 +241,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     public static final String DESCRIPTION = "description";
     public static final String STATUS = "status";
     public static final String TAGS = "tags";
+    public static final String ORIGIN = "origin";
   }
 
   @Override
@@ -248,6 +262,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     }
     if (status != null) {
       writer.name(JsonKeys.STATUS).value(logger, status);
+    }
+    if (origin != null) {
+      writer.name(JsonKeys.ORIGIN).value(logger, origin);
     }
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
@@ -284,6 +301,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       String op = null;
       String description = null;
       SpanStatus status = null;
+      String origin = null;
       Map<String, String> tags = null;
 
       Map<String, Object> unknown = null;
@@ -307,6 +325,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.STATUS:
             status = reader.nextOrNull(logger, new SpanStatus.Deserializer());
+            break;
+          case JsonKeys.ORIGIN:
+            origin = reader.nextString();
             break;
           case JsonKeys.TAGS:
             tags =
@@ -346,6 +367,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       SpanContext spanContext = new SpanContext(traceId, spanId, op, parentSpanId, null);
       spanContext.setDescription(description);
       spanContext.setStatus(status);
+      spanContext.setOrigin(origin);
       if (tags != null) {
         spanContext.tags = tags;
       }

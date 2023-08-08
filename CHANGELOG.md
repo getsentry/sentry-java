@@ -1,6 +1,43 @@
 # Changelog
 
-## Unreleased
+## 6.28.0
+
+### Features
+
+- Add HTTP response code to Spring WebFlux transactions ([#2870](https://github.com/getsentry/sentry-java/pull/2870))
+- Add `sampled` to Dynamic Sampling Context ([#2869](https://github.com/getsentry/sentry-java/pull/2869))
+- Improve server side GraphQL support for spring-graphql and Nextflix DGS ([#2856](https://github.com/getsentry/sentry-java/pull/2856))
+    - If you have already been using `SentryDataFetcherExceptionHandler` that still works but has been deprecated. Please use `SentryGenericDataFetcherExceptionHandler` combined with `SentryInstrumentation` instead for better error reporting.
+    - More exceptions and errors caught and reported to Sentry by also looking at the `ExecutionResult` (more specifically its `errors`)
+    - More details for Sentry events: query, variables and response (where possible)
+    - Breadcrumbs for operation (query, mutation, subscription), data fetchers and data loaders (Spring only)
+    - Better hub propagation by using `GraphQLContext`
+- Add autoconfigure modules for Spring Boot called `sentry-spring-boot` and `sentry-spring-boot-jakarta` ([#2880](https://github.com/getsentry/sentry-java/pull/2880))
+  - The autoconfigure modules `sentry-spring-boot` and `sentry-spring-boot-jakarta` have a `compileOnly` dependency on `spring-boot-starter` which is needed for our auto installation in [sentry-android-gradle-plugin](https://github.com/getsentry/sentry-android-gradle-plugin)
+  - The starter modules  `sentry-spring-boot-starter` and `sentry-spring-boot-starter-jakarta` now bring `spring-boot-starter` as a dependency
+- You can now disable Sentry by setting the `enabled` option to `false` ([#2840](https://github.com/getsentry/sentry-java/pull/2840))
+
+### Fixes
+
+- Propagate OkHttp status to parent spans ([#2872](https://github.com/getsentry/sentry-java/pull/2872))
+
+## 6.27.0
+
+### Features
+
+- Add TraceOrigin to Transactions and Spans ([#2803](https://github.com/getsentry/sentry-java/pull/2803))
+
+### Fixes
+
+- Deduplicate events happening in multiple threads simultaneously (e.g. `OutOfMemoryError`) ([#2845](https://github.com/getsentry/sentry-java/pull/2845))
+  - This will improve Crash-Free Session Rate as we no longer will send multiple Session updates with `Crashed` status, but only the one that is relevant
+- Ensure no Java 8 method reference sugar is used for Android ([#2857](https://github.com/getsentry/sentry-java/pull/2857))
+- Do not send session updates for terminated sessions ([#2849](https://github.com/getsentry/sentry-java/pull/2849))
+
+## 6.26.0
+
+### Features
+- (Internal) Extend APIs for hybrid SDKs ([#2814](https://github.com/getsentry/sentry-java/pull/2814), [#2846](https://github.com/getsentry/sentry-java/pull/2846))
 
 ### Fixes
 

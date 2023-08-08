@@ -35,6 +35,8 @@ import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
+private const val TRACE_ORIGIN = "auto.graphql.apollo3"
+
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
@@ -155,6 +157,8 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
         return activeSpan.startChild(operation, description).apply {
             urlDetails.applyToSpan(this)
+
+            spanContext.origin = TRACE_ORIGIN
 
             operationId?.let {
                 setData("operationId", it)

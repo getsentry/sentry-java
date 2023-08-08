@@ -35,6 +35,7 @@ import reactor.core.publisher.Mono;
 public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_HUB_KEY = "sentry-hub";
   private static final String TRANSACTION_OP = "http.server";
+  private static final String TRACE_ORIGIN = "auto.spring.webflux";
 
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
@@ -65,6 +66,10 @@ public final class SentryWebFilter implements WebFilter {
         isTracingEnabled && shouldTraceRequest(requestHub, request)
             ? startTransaction(requestHub, request, transactionContext)
             : null;
+
+    if (transaction != null) {
+      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+    }
 
     return webFilterChain
         .filter(serverWebExchange)
@@ -139,11 +144,17 @@ public final class SentryWebFilter implements WebFilter {
       transaction.setName(transactionName, TransactionNameSource.ROUTE);
       transaction.setOperation(TRANSACTION_OP);
     }
-    if (transaction.getStatus() == null) {
-      final @Nullable ServerHttpResponse response = exchange.getResponse();
-      if (response != null) {
-        final @Nullable Integer rawStatusCode = response.getRawStatusCode();
-        if (rawStatusCode != null) {
+    final @Nullable ServerHttpResponse response = exchange.getResponse();
+    if (response != null) {
+      final @Nullable Integer rawStatusCode = response.getRawStatusCode();
+      if (rawStatusCode != null) {
+        transaction
+            .getContexts()
+            .withResponse(
+                (sentryResponse) -> {
+                  sentryResponse.setStatusCode(rawStatusCode);
+                });
+        if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(rawStatusCode));
         }
       }

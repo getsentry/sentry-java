@@ -10,6 +10,9 @@ public final class TypeCheckHint {
   @ApiStatus.Internal
   public static final String SENTRY_IS_FROM_HYBRID_SDK = "sentry:isFromHybridSdk";
 
+  @ApiStatus.Internal
+  public static final String SENTRY_EVENT_DROP_REASON = "sentry:eventDropReason";
+
   @ApiStatus.Internal public static final String SENTRY_JAVASCRIPT_SDK_NAME = "sentry.javascript";
 
   @ApiStatus.Internal public static final String SENTRY_DOTNET_SDK_NAME = "sentry.dotnet";

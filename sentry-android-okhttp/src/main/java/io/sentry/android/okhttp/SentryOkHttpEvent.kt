@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val PROTOCOL_KEY = "protocol"
 private const val ERROR_MESSAGE_KEY = "error_message"
+internal const val TRACE_ORIGIN = "auto.http.okhttp"
 
 internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
     private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()
@@ -37,7 +38,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
         // We start the call span that will contain all the others
         callRootSpan = hub.span?.startChild("http.client", "$method $url")
-
+        callRootSpan?.spanContext?.origin = TRACE_ORIGIN
         urlDetails.applyToSpan(callRootSpan)
 
         // We setup a breadcrumb with all meaningful data
@@ -62,7 +63,6 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         breadcrumb.setData("status_code", response.code)
         callRootSpan?.setData(PROTOCOL_KEY, response.protocol.name)
         callRootSpan?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.code)
-        callRootSpan?.status = SpanStatus.fromHttpStatusCode(response.code)
     }
 
     fun setProtocol(protocolName: String?) {
@@ -97,23 +97,20 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     /** Starts a span, if the callRootSpan is not null. */
     fun startSpan(event: String) {
         // Find the parent of the span being created. E.g. secureConnect is child of connect
-        val parentSpan = when (event) {
-            // PROXY_SELECT, DNS, CONNECT and CONNECTION are not children of one another
-            SECURE_CONNECT_EVENT -> eventSpans[CONNECT_EVENT]
-            REQUEST_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
-            REQUEST_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
-            RESPONSE_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
-            RESPONSE_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
-            else -> callRootSpan
-        } ?: callRootSpan
+        val parentSpan = findParentSpan(event)
         val span = parentSpan?.startChild("http.client.$event") ?: return
+        span.spanContext.origin = TRACE_ORIGIN
         eventSpans[event] = span
     }
 
-    /** Finishes a previously started span, and runs [beforeFinish] on it and on the call root span. */
+    /** Finishes a previously started span, and runs [beforeFinish] on it, on its parent and on the call root span. */
     fun finishSpan(event: String, beforeFinish: ((span: ISpan) -> Unit)? = null) {
         val span = eventSpans[event] ?: return
+        val parentSpan = findParentSpan(event)
         beforeFinish?.invoke(span)
+        if (parentSpan != null && parentSpan != callRootSpan) {
+            beforeFinish?.invoke(parentSpan)
+        }
         callRootSpan?.let { beforeFinish?.invoke(it) }
         span.finish()
     }
@@ -123,7 +120,10 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         callRootSpan ?: return
 
         // We forcefully finish all spans, even if they should already have been finished through finishSpan()
-        eventSpans.values.filter { !it.isFinished }.forEach { it.finish(SpanStatus.DEADLINE_EXCEEDED) }
+        eventSpans.values.filter { !it.isFinished }.forEach {
+            // If a status was set on the span, we use that, otherwise we set its status as error.
+            it.finish(it.status ?: SpanStatus.INTERNAL_ERROR)
+        }
         beforeFinish?.invoke(callRootSpan)
         callRootSpan.finish()
 
@@ -135,4 +135,14 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         hub.addBreadcrumb(breadcrumb, hint)
         return
     }
+
+    private fun findParentSpan(event: String): ISpan? = when (event) {
+        // PROXY_SELECT, DNS, CONNECT and CONNECTION are not children of one another
+        SECURE_CONNECT_EVENT -> eventSpans[CONNECT_EVENT]
+        REQUEST_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
+        REQUEST_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
+        RESPONSE_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
+        RESPONSE_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
+        else -> callRootSpan
+    } ?: callRootSpan
 }

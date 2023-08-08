@@ -29,10 +29,10 @@ import org.mockito.kotlin.whenever
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -120,6 +120,27 @@ class InternalSentrySdkTest {
     }
 
     @Test
+    fun `current scope returns a copy of the scope`() {
+        Sentry.setCurrentHub(
+            Hub(
+                SentryOptions().apply {
+                    dsn = "https://key@uri/1234567"
+                }
+            )
+        )
+        Sentry.addBreadcrumb("test")
+
+        // when the clone is modified
+        val clonedScope = InternalSentrySdk.getCurrentScope()!!
+        clonedScope.clearBreadcrumbs()
+
+        // then modifications should not be reflected
+        Sentry.configureScope { scope ->
+            assertEquals(1, scope.breadcrumbs.size)
+        }
+    }
+
+    @Test
     fun `serializeScope correctly creates top level map`() {
         val options = SentryAndroidOptions()
         val scope = Scope(options)
@@ -203,9 +224,7 @@ class InternalSentrySdkTest {
 
     @Test
     fun `captureEnvelope fails if payload is invalid`() {
-        assertFails {
-            InternalSentrySdk.captureEnvelope(ByteArray(8))
-        }
+        assertNull(InternalSentrySdk.captureEnvelope(ByteArray(8)))
     }
 
     @Test
@@ -251,20 +270,26 @@ class InternalSentrySdkTest {
             }
         )
 
-        // then the session should be included
         val capturedEnvelope = fixture.capturedEnvelopes.first()
         val capturedEnvelopeItems = capturedEnvelope.items.toList()
 
-        // and it should contain the original event / attachment
+        // then it should contain the original event + session
         assertEquals(2, capturedEnvelopeItems.size)
         assertEquals(SentryItemType.Event, capturedEnvelopeItems[0].header.type)
         assertEquals(SentryItemType.Session, capturedEnvelopeItems[1].header.type)
 
+        // and then the sent session should be marked as crashed
         val capturedSession = fixture.options.serializer.deserialize(
             InputStreamReader(ByteArrayInputStream(capturedEnvelopeItems[1].data)),
             Session::class.java
         )!!
-
         assertEquals(Session.State.Crashed, capturedSession.status)
+
+        // and the local session should be marked as crashed too
+        val scopeRef = AtomicReference<Scope>()
+        Sentry.configureScope { scope ->
+            scopeRef.set(scope)
+        }
+        assertEquals(Session.State.Crashed, scopeRef.get().session!!.status)
     }
 }

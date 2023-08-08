@@ -86,7 +86,8 @@ public final class SentryTransaction extends SentryBaseEvent
             tracerContext.getOperation(),
             tracerContext.getDescription(),
             tracerContext.getSamplingDecision(),
-            tracerContext.getStatus()));
+            tracerContext.getStatus(),
+            tracerContext.getOrigin()));
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());
     }

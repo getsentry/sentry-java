@@ -125,6 +125,10 @@ public final class Session implements JsonUnknown, JsonSerializable {
         null);
   }
 
+  public boolean isTerminated() {
+    return status != State.Ok;
+  }
+
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getStarted() {
     if (started == null) {

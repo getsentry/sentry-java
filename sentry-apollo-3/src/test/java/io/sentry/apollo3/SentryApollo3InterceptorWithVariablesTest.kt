@@ -163,6 +163,7 @@ class SentryApollo3InterceptorWithVariablesTest {
         val httpClientSpan = it.spans.first()
         assertEquals("http.graphql.query", httpClientSpan.op)
         assertEquals("query LaunchDetails", httpClientSpan.description)
+        assertEquals("auto.graphql.apollo3", httpClientSpan.origin)
         assertNotNull(httpClientSpan.data) {
             assertNotNull(it["operationId"])
             assertNotNull(it["variables"])

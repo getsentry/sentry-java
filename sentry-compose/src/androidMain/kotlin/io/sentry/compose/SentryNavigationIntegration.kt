@@ -18,10 +18,12 @@ import io.sentry.SentryOptions
 import io.sentry.android.navigation.SentryNavigationListener
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 
+private const val TRACE_ORIGIN_APPENDIX = "jetpack_compose"
+
 internal class SentryLifecycleObserver(
     private val navController: NavController,
     private val navListener: NavController.OnDestinationChangedListener =
-        SentryNavigationListener()
+        SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX)
 ) : LifecycleEventObserver {
 
     init {
@@ -67,7 +69,8 @@ public fun NavHostController.withSentryObservableEffect(
             this@withSentryObservableEffect,
             navListener = SentryNavigationListener(
                 enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
-                enableNavigationTracing = enableTracingSnapshot
+                enableNavigationTracing = enableTracingSnapshot,
+                traceOriginAppendix = TRACE_ORIGIN_APPENDIX
             )
         )
 

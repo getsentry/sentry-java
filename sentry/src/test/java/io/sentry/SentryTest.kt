@@ -13,6 +13,7 @@ import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
@@ -166,6 +167,49 @@ class SentryTest {
         } finally {
             temporaryFolder.delete()
         }
+    }
+
+    @Test
+    fun `initializes Sentry with enabled=false, thus disabling Sentry even if dsn is set`() {
+        Sentry.init {
+            it.isEnabled = false
+            it.dsn = "http://key@localhost/proj"
+        }
+
+        Sentry.setTag("none", "shouldNotExist")
+
+        var value: String? = null
+        Sentry.getCurrentHub().configureScope {
+            value = it.tags[value]
+        }
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertNull(value)
+    }
+
+    @Test
+    fun `initializes Sentry with enabled=false, thus disabling Sentry even if dsn is null`() {
+        Sentry.init {
+            it.isEnabled = false
+        }
+
+        Sentry.setTag("none", "shouldNotExist")
+
+        var value: String? = null
+        Sentry.getCurrentHub().configureScope {
+            value = it.tags[value]
+        }
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertNull(value)
+    }
+
+    @Test
+    fun `initializes Sentry with dsn = null, throwing IllegalArgumentException`() {
+        val exception =
+            assertThrows(java.lang.IllegalArgumentException::class.java) { Sentry.init() }
+        assertEquals(
+            "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.",
+            exception.message
+        )
     }
 
     @Test

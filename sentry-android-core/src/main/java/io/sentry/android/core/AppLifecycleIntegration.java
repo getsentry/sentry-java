@@ -132,6 +132,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     } else {
       // some versions of the androidx lifecycle-process require this to be executed on the main
       // thread.
+      // avoid method refs on Android due to some issues with older AGP setups
+      // noinspection Convert2MethodRef
       handler.post(() -> removeObserver());
     }
   }
