@@ -105,7 +105,8 @@ subprojects {
         "sentry-android-ndk",
         "sentry-android-okhttp",
         "sentry-android-sqlite",
-        "sentry-android-timber"
+        "sentry-android-timber",
+        "sentry-compose"
     )
     if (jacocoAndroidModules.contains(name)) {
         afterEvaluate {
@@ -121,8 +122,12 @@ subprojects {
             }
 
             tasks.getByName("jacocoTestReport") {
-                // Copy the report file to the default location that Codecov is expecting during CI
+                if (name == "sentry-compose") {
+                    dependsOn("jacocoCompose")
+                }
+
                 doLast {
+                    // Copies the generated Jacoco XML report to the default location that Codecov is expecting during CI.
                     copy {
                         from("$buildDir/jacoco/jacoco.xml")
                         into("$buildDir/reports/")
@@ -130,6 +135,36 @@ subprojects {
                     }
                 }
             }
+        }
+    }
+
+    // Handle Jacoco for KMP modules manually
+    if (name == "sentry-compose") {
+        val composeTaskName = "jacocoCompose"
+        tasks.create(composeTaskName, JacocoReport::class) {
+            dependsOn("testReleaseUnitTest")
+
+            reports {
+                html.required.set(false)
+                xml.required.set(true)
+            }
+
+            val classesDir = "$buildDir/tmp/kotlin-classes/release"
+            val sourcesDir = "$projectDir/src/androidMain/kotlin"
+
+            val classesTree = fileTree(classesDir).setExcludes(
+                listOf(
+                    "**/R.class",
+                    "**/R$*.class",
+                    "**/BuildConfig.*",
+                    "**/Manifest*.*",
+                    "**/*Test*.*",
+                    "android/**/*.*"
+                )
+            )
+            executionData.setFrom("$buildDir/jacoco/testReleaseUnitTest.exec")
+            classDirectories.setFrom(classesTree)
+            sourceDirectories.setFrom(sourcesDir)
         }
     }
 
