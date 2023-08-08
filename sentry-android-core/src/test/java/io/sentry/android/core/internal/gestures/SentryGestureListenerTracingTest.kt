@@ -207,6 +207,24 @@ class SentryGestureListenerTracingTest {
     }
 
     @Test
+    fun `captures transaction and both idle+deadline timeouts are set`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        verify(fixture.hub).startTransaction(
+            any<TransactionContext>(),
+            check<TransactionOptions> { transactionOptions ->
+                assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
+                assertEquals(
+                    TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
+                    transactionOptions.deadlineTimeout
+                )
+            }
+        )
+    }
+
+    @Test
     fun `captures transaction with interaction event type as op`() {
         val sut = fixture.getSut<View>()
 
