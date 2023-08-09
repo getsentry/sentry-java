@@ -107,7 +107,7 @@ subprojects {
         "sentry-android-ndk",
         "sentry-android-okhttp",
         "sentry-android-sqlite",
-        "sentry-android-timber",
+        "sentry-android-timber"
     )
     if (jacocoAndroidModules.contains(name)) {
         afterEvaluate {
@@ -131,7 +131,7 @@ subprojects {
                 androidReports("release") {
                     xml {
                         // Change the report file name so the Codecov Github action can find it
-                        setReportFile(file("${buildDir}/reports/kover/report.xml"))
+                        setReportFile(file("$buildDir/reports/kover/report.xml"))
                     }
                 }
             }
