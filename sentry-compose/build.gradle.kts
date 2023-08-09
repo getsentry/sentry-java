@@ -15,14 +15,6 @@ plugins {
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
-koverReport {
-    androidReports("release") {
-        xml {
-            setReportFile(file("$buildDir/reports/kover/report.xml"))
-        }
-    }
-}
-
 kotlin {
     explicitApi()
 
