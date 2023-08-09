@@ -53,4 +53,4 @@ assembleUiTestRelease:
 
 # Create coverage reports
 jacocoTestReport:
-	./gradlew :sentry-compose:koverXmlReport
+	./gradlew :sentry-compose:koverXmlReportRelease
