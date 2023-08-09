@@ -20,7 +20,7 @@ plugins {
 koverReport {
     androidReports("release") {
         xml {
-            setReportFile(file("${buildDir}/reports/kover/report.xml"))
+            setReportFile(file("$buildDir/reports/kover/report.xml"))
         }
     }
 }
