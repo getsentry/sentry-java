@@ -20,7 +20,7 @@ plugins {
 koverReport {
     defaults {
         xml {
-            setReportFile(file("${buildDir}/reports/kover/report.xml"))
+            setReportFile(file("$buildDir/reports/kover/report.xml"))
         }
     }
 }
