@@ -8,6 +8,7 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
+    id("org.jetbrains.kotlinx.kover") version "0.7.3"
     jacoco
     id(Config.QualityPlugins.jacocoAndroid)
     id(Config.QualityPlugins.gradleVersions)

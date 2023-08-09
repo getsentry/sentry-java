@@ -1,6 +1,6 @@
 .PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease androidCoverageReport
 
-all: stop clean javadocs compile jacocoTestReport
+all: jacocoTestReport
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
 
@@ -53,4 +53,4 @@ assembleUiTestRelease:
 
 # Create coverage reports
 jacocoTestReport:
-	./gradlew jacocoTestReport
+	./gradlew :sentry-compose:koverXmlReport
