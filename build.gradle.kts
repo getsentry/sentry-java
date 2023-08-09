@@ -4,6 +4,7 @@ import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import kotlinx.kover.gradle.plugin.dsl.KoverReportExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -15,6 +16,7 @@ plugins {
     `maven-publish`
     id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
     id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
+    id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
 }
 
 buildscript {
@@ -106,7 +108,6 @@ subprojects {
         "sentry-android-okhttp",
         "sentry-android-sqlite",
         "sentry-android-timber",
-        "sentry-compose"
     )
     if (jacocoAndroidModules.contains(name)) {
         afterEvaluate {
@@ -120,41 +121,20 @@ subprojects {
                     excludes = listOf("jdk.internal.*")
                 }
             }
-
-            tasks.getByName("jacocoTestReport") {
-                if (this@afterEvaluate.name == "sentry-compose") {
-                    dependsOn("jacocoCompose")
-                }
-            }
         }
     }
 
-    // Handle Jacoco for KMP modules manually
-    if (name == "sentry-compose") {
-        tasks.create("jacocoCompose", JacocoReport::class) {
-            dependsOn("testReleaseUnitTest")
-
-            reports {
-                html.required.set(false)
-                xml.required.set(true)
+    val koverKmpModules = listOf("sentry-compose")
+    if (koverKmpModules.contains(name)) {
+        afterEvaluate {
+            configure<KoverReportExtension> {
+                androidReports("release") {
+                    xml {
+                        // Change the report file name so the Codecov Github action can find it
+                        setReportFile(file("${buildDir}/reports/kover/report.xml"))
+                    }
+                }
             }
-
-            val classesDir = "$buildDir/tmp/kotlin-classes/release"
-            val sourcesDir = "$projectDir/src/androidMain/kotlin"
-
-            val classesTree = fileTree(classesDir).setExcludes(
-                listOf(
-                    "**/R.class",
-                    "**/R$*.class",
-                    "**/BuildConfig.*",
-                    "**/Manifest*.*",
-                    "**/*Test*.*",
-                    "android/**/*.*"
-                )
-            )
-            executionData.setFrom("$buildDir/jacoco/testReleaseUnitTest.exec")
-            classDirectories.setFrom(classesTree)
-            sourceDirectories.setFrom(sourcesDir)
         }
     }
 
