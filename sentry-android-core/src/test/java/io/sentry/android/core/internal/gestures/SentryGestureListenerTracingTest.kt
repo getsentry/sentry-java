@@ -28,6 +28,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
@@ -333,20 +334,18 @@ class SentryGestureListenerTracingTest {
             SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
         )
 
+        // when the same button is clicked twice
+        sut.onSingleTapUp(fixture.event)
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        // then two transaction should be captured
+        verify(fixture.hub, times(2)).startTransaction(
             check {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
             any<TransactionOptions>()
         )
-
-        // second view interaction
-        sut.onSingleTapUp(fixture.event)
-
-        verify(fixture.transaction).scheduleFinish()
     }
 
     @Test
