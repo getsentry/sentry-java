@@ -15,6 +15,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
+import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
@@ -923,7 +924,7 @@ public final class Sentry {
    *     span.
    */
   public static @Nullable ISpan getSpan() {
-    if (globalHubMode) {
+    if (globalHubMode && Platform.isAndroid()) {
       return getCurrentHub().getTransaction();
     } else {
       return getCurrentHub().getSpan();

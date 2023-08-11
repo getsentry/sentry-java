@@ -6,5 +6,9 @@ class PlatformTestManipulator {
         fun pretendJavaNinePlus(isJavaNinePlus: Boolean) {
             Platform.isJavaNinePlus = isJavaNinePlus
         }
+
+        fun pretendIsAndroid(isAndroid: Boolean) {
+            Platform.isAndroid = isAndroid
+        }
     }
 }
