@@ -196,4 +196,32 @@ class DatabaseUtilsTest {
         assertEquals("postgresql", details.dbSystem)
         assertEquals("my_database", details.dbName)
     }
+
+    @Test
+    fun `detects db system for datadirect postgres`() {
+        val details = DatabaseUtils.parse("jdbc:datadirect:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2")
+        assertEquals("postgresql", details.dbSystem)
+        assertEquals("my_database", details.dbName)
+    }
+
+    @Test
+    fun `detects db system for tibcosoftware postgres`() {
+        val details = DatabaseUtils.parse("jdbc:tibcosoftware:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2")
+        assertEquals("postgresql", details.dbSystem)
+        assertEquals("my_database", details.dbName)
+    }
+
+    @Test
+    fun `detects db system for jtds postgres`() {
+        val details = DatabaseUtils.parse("jdbc:jtds:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2")
+        assertEquals("postgresql", details.dbSystem)
+        assertEquals("my_database", details.dbName)
+    }
+
+    @Test
+    fun `detects db system for microsoft sqlserver`() {
+        val details = DatabaseUtils.parse("jdbc:microsoft:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database")
+        assertEquals("sqlserver", details.dbSystem)
+        assertEquals("my_database", details.dbName)
+    }
 }

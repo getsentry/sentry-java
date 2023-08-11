@@ -108,6 +108,12 @@ public final class DatabaseUtils {
         }
       }
     }
+    if ("datadirect".equalsIgnoreCase(dbSystem)
+        || "tibcosoftware".equalsIgnoreCase(dbSystem)
+        || "jtds".equalsIgnoreCase(dbSystem)
+        || "microsoft".equalsIgnoreCase(dbSystem)) {
+      return parse(StringUtils.removePrefix(urlString, dbSystem + ":"));
+    }
 
     return new DatabaseDetails(dbSystem, null);
   }
