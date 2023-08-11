@@ -147,4 +147,44 @@ class StringUtilsTest {
         val result = StringUtils.join(",", emptyList())
         assertEquals("", result)
     }
+
+    @Test
+    fun `remove prefix on null returns emtpy string`() {
+        assertEquals("", StringUtils.removePrefix(null, ":"))
+    }
+
+    @Test
+    fun `remove prefix on string equal to prefix returns empty string`() {
+        assertEquals("", StringUtils.removePrefix(":", ":"))
+    }
+
+    @Test
+    fun `remove prefix on string returns string without prefix`() {
+        assertEquals("abc", StringUtils.removePrefix(":abc", ":"))
+    }
+
+    @Test
+    fun `remove prefix on string returns string untouched if prefix is not at start`() {
+        assertEquals("abc:", StringUtils.removePrefix("abc:", ":"))
+    }
+
+    @Test
+    fun `returns only prefix before separator`() {
+        assertEquals("abc", StringUtils.substringBefore("abc:", ":"))
+    }
+
+    @Test
+    fun `returns empty string if string is null substringBefore`() {
+        assertEquals("", StringUtils.substringBefore(null, ":"))
+    }
+
+    @Test
+    fun `returns full string if separator is not in string`() {
+        assertEquals("abc", StringUtils.substringBefore("abc", ":"))
+    }
+
+    @Test
+    fun `returns empty string if separator is at start of string`() {
+        assertEquals("", StringUtils.substringBefore(":abc", ":"))
+    }
 }

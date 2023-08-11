@@ -189,4 +189,30 @@ public final class StringUtils {
 
     return object.toString();
   }
+
+  public static @NotNull String removePrefix(
+      final @Nullable String string, final @NotNull String prefix) {
+    if (string == null) {
+      return "";
+    }
+    final int index = string.indexOf(prefix);
+    if (index == 0) {
+      return string.substring(prefix.length());
+    } else {
+      return string;
+    }
+  }
+
+  public static @NotNull String substringBefore(
+      final @Nullable String string, final @NotNull String separator) {
+    if (string == null) {
+      return "";
+    }
+    final int index = string.indexOf(separator);
+    if (index >= 0) {
+      return string.substring(0, index);
+    } else {
+      return string;
+    }
+  }
 }
