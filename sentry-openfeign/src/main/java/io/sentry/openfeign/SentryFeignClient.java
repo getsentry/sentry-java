@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +57,9 @@ public final class SentryFeignClient implements Client {
       ISpan span = activeSpan.startChild("http.client");
       span.getSpanContext().setOrigin(TRACE_ORIGIN);
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
-      span.setDescription(request.httpMethod().name() + " " + urlDetails.getUrlOrFallback());
+      final @NotNull String method = request.httpMethod().name();
+      span.setDescription(method + " " + urlDetails.getUrlOrFallback());
+      span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
       urlDetails.applyToSpan(span);
 
       final @NotNull Request modifiedRequest = maybeAddTracingHeaders(request, span);
