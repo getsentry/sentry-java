@@ -93,6 +93,13 @@ class DatabaseUtilsTest {
     }
 
     @Test
+    fun `detects db system for sqlite linux`() {
+        val details = DatabaseUtils.parse("jdbc:sqlite:/home/sqlite/db/some.db")
+        assertEquals("sqlite", details.dbSystem)
+        assertEquals("/home/sqlite/db/some.db", details.dbName)
+    }
+
+    @Test
     fun `detects db system for mongo`() {
         val details = DatabaseUtils.parse("jdbc:mongo://some-server.com:1234/mydb")
         assertEquals("mongo", details.dbSystem)
