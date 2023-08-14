@@ -5,6 +5,7 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
+    id(Config.QualityPlugins.jacocoAndroid)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
 }
@@ -53,12 +54,6 @@ android {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
         }
-    }
-}
-
-tasks.withType<Test> {
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = false
     }
 }
 
