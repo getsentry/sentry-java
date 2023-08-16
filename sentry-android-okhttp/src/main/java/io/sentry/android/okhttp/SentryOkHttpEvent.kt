@@ -15,6 +15,7 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.util.UrlUtils
+import java.util.Locale
 import okhttp3.Request
 import okhttp3.Response
 import java.util.concurrent.ConcurrentHashMap
@@ -50,7 +51,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         callRootSpan?.setData("url", url)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
-        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method)
+        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
     }
 
     /**
