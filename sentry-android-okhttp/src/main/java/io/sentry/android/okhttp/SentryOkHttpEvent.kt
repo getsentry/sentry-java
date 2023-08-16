@@ -15,9 +15,9 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.util.UrlUtils
-import java.util.Locale
 import okhttp3.Request
 import okhttp3.Response
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 private const val PROTOCOL_KEY = "protocol"
