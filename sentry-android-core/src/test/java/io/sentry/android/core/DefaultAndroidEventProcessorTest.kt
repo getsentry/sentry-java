@@ -134,18 +134,6 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `when Android version is below JELLY_BEAN, does not add permissions`() {
-        whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-        val sut = fixture.getSut(context)
-
-        assertNotNull(sut.process(SentryEvent(), Hint())) {
-            // assert adds permissions
-            val unknown = it.contexts.app!!.permissions
-            assertNull(unknown)
-        }
-    }
-
-    @Test
     fun `When Transaction and hint is not Cached, data should be applied`() {
         val sut = fixture.getSut(context)
 
