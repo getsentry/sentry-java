@@ -7,6 +7,7 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.util.thread.IMainThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -20,14 +21,20 @@ public class ScreenshotUtils {
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   public static @Nullable byte[] takeScreenshot(
-      final @NotNull Activity activity, final @NotNull ILogger logger) {
-    return takeScreenshot(activity, AndroidMainThreadChecker.getInstance(), logger);
+      final @NotNull Activity activity,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    return takeScreenshot(
+        activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
   }
 
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IMainThreadChecker mainThreadChecker,
-      final @NotNull ILogger logger) {
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    // We are keeping BuildInfoProvider param for compatibility, as it's being used by
+    // cross-platform SDKs
 
     if (!isActivityValid(activity)
         || activity.getWindow() == null

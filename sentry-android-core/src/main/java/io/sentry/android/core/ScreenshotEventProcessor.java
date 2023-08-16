@@ -26,12 +26,17 @@ import org.jetbrains.annotations.Nullable;
 public final class ScreenshotEventProcessor implements EventProcessor, IntegrationName {
 
   private final @NotNull SentryAndroidOptions options;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
 
   private final @NotNull Debouncer debouncer;
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
 
-  public ScreenshotEventProcessor(final @NotNull SentryAndroidOptions options) {
+  public ScreenshotEventProcessor(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
+    this.buildInfoProvider =
+        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
 
     if (options.isAttachScreenshot()) {
@@ -68,7 +73,8 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
     }
 
     final byte[] screenshot =
-        takeScreenshot(activity, options.getMainThreadChecker(), options.getLogger());
+        takeScreenshot(
+            activity, options.getMainThreadChecker(), options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }
