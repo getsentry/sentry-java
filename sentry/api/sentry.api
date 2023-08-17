@@ -284,11 +284,13 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracingOrigins ()Ljava/util/List;
+	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnabled (Ljava/lang/Boolean;)V
@@ -1825,6 +1827,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
+	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableScopeSync ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
@@ -1859,6 +1862,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
+	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V

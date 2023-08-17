@@ -6,6 +6,7 @@
 
 - Send `db.system` and `db.name` in span data ([#2894](https://github.com/getsentry/sentry-java/pull/2894))
 - Send `http.request.method` in span data ([#2896](https://github.com/getsentry/sentry-java/pull/2896))
+- Add `enablePrettySerializationOutput` option for opting out of pretty print ([#2871](https://github.com/getsentry/sentry-java/pull/2871))
 
 ## 6.28.0
 
