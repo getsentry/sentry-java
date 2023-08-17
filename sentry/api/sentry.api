@@ -2229,6 +2229,8 @@ public final class io/sentry/SpanContext$JsonKeys {
 public abstract interface class io/sentry/SpanDataConvention {
 	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
 	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field DB_NAME_KEY Ljava/lang/String;
+	public static final field DB_SYSTEM_KEY Ljava/lang/String;
 	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
 	public static final field HTTP_METHOD_KEY Ljava/lang/String;
 	public static final field HTTP_QUERY_KEY Ljava/lang/String;
@@ -4321,7 +4323,9 @@ public final class io/sentry/util/StringUtils {
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun join (Ljava/lang/CharSequence;Ljava/lang/Iterable;)Ljava/lang/String;
 	public static fun normalizeUUID (Ljava/lang/String;)Ljava/lang/String;
+	public static fun removePrefix (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static fun substringBefore (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 	public static fun toString (Ljava/lang/Object;)Ljava/lang/String;
 }
 

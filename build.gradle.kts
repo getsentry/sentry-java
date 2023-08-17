@@ -4,6 +4,7 @@ import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import kotlinx.kover.gradle.plugin.dsl.KoverReportExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -14,6 +15,8 @@ plugins {
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
     id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
+    id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
+    id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
 }
 
 buildscript {
@@ -97,6 +100,44 @@ allprojects {
 }
 
 subprojects {
+    val jacocoAndroidModules = listOf(
+        "sentry-android-core",
+        "sentry-android-fragment",
+        "sentry-android-navigation",
+        "sentry-android-ndk",
+        "sentry-android-okhttp",
+        "sentry-android-sqlite",
+        "sentry-android-timber"
+    )
+    if (jacocoAndroidModules.contains(name)) {
+        afterEvaluate {
+            jacoco {
+                toolVersion = "0.8.10"
+            }
+
+            tasks.withType<Test> {
+                configure<JacocoTaskExtension> {
+                    isIncludeNoLocationClasses = true
+                    excludes = listOf("jdk.internal.*")
+                }
+            }
+        }
+    }
+
+    val koverKmpModules = listOf("sentry-compose")
+    if (koverKmpModules.contains(name)) {
+        afterEvaluate {
+            configure<KoverReportExtension> {
+                androidReports("release") {
+                    xml {
+                        // Change the report file name so the Codecov Github action can find it
+                        setReportFile(file("$buildDir/reports/kover/report.xml"))
+                    }
+                }
+            }
+        }
+    }
+
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
             buildUponDefaultConfig = true

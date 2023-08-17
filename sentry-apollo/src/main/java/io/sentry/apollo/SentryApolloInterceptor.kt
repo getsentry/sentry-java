@@ -26,6 +26,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.util.TracingUtils
+import java.util.Locale
 import java.util.concurrent.Executor
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo"
@@ -71,6 +72,12 @@ class SentryApolloInterceptor(
                             span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
                         } else {
                             span.status = SpanStatus.UNKNOWN
+                        }
+                        response.httpResponse.map { it.request().method() }.orNull()?.let {
+                            span.setData(
+                                SpanDataConvention.HTTP_METHOD_KEY,
+                                it.toUpperCase(Locale.ROOT)
+                            )
                         }
 
                         finish(span, requestWithHeader, response)
