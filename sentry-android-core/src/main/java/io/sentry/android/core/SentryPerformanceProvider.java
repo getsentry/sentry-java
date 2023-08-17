@@ -6,7 +6,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.View;
@@ -126,8 +125,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
       // sets App start as finished when the very first activity calls onResume
       firstActivityResumed = true;
       final View rootView = activity.findViewById(android.R.id.content);
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
-          && rootView != null) {
+      if (rootView != null) {
         FirstDrawDoneListener.registerForNextDraw(
             rootView, () -> AppStartState.getInstance().setAppStartEnd(), buildInfoProvider);
       } else {

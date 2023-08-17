@@ -88,7 +88,7 @@ public final class DeviceInfoUtil {
     final @NotNull Device device = new Device();
 
     if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context, buildInfoProvider));
+      device.setName(ContextUtils.getDeviceName(context));
     }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
@@ -196,7 +196,7 @@ public final class DeviceInfoUtil {
         ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
       // in bytes
-      device.setMemorySize(getMemorySize(memInfo));
+      device.setMemorySize(memInfo.totalMem);
       if (includeDynamicData) {
         device.setFreeMemory(memInfo.availMem);
         device.setLowMemory(memInfo.lowMemory);
@@ -338,16 +338,6 @@ public final class DeviceInfoUtil {
     return deviceOrientation;
   }
 
-  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  @NotNull
-  private Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
-      return memInfo.totalMem;
-    }
-    // using Runtime as a fallback
-    return java.lang.Runtime.getRuntime().totalMemory(); // JVM in bytes too
-  }
-
   /**
    * Get the total amount of internal storage, in bytes.
    *
@@ -356,52 +346,13 @@ public final class DeviceInfoUtil {
   @Nullable
   private Long getTotalInternalStorage(final @NotNull StatFs stat) {
     try {
-      long blockSize = getBlockSizeLong(stat);
-      long totalBlocks = getBlockCountLong(stat);
+      long blockSize = stat.getBlockSizeLong();
+      long totalBlocks = stat.getBlockCountLong();
       return totalBlocks * blockSize;
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting total internal storage amount.", e);
       return null;
     }
-  }
-
-  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  private long getBlockSizeLong(final @NotNull StatFs stat) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-      return stat.getBlockSizeLong();
-    }
-    return getBlockSizeDep(stat);
-  }
-
-  @SuppressWarnings({"deprecation"})
-  private int getBlockSizeDep(final @NotNull StatFs stat) {
-    return stat.getBlockSize();
-  }
-
-  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  private long getBlockCountLong(final @NotNull StatFs stat) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-      return stat.getBlockCountLong();
-    }
-    return getBlockCountDep(stat);
-  }
-
-  @SuppressWarnings({"deprecation"})
-  private int getBlockCountDep(final @NotNull StatFs stat) {
-    return stat.getBlockCount();
-  }
-
-  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  private long getAvailableBlocksLong(final @NotNull StatFs stat) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-      return stat.getAvailableBlocksLong();
-    }
-    return getAvailableBlocksDep(stat);
-  }
-
-  @SuppressWarnings({"deprecation"})
-  private int getAvailableBlocksDep(final @NotNull StatFs stat) {
-    return stat.getAvailableBlocks();
   }
 
   /**
@@ -412,8 +363,8 @@ public final class DeviceInfoUtil {
   @Nullable
   private Long getUnusedInternalStorage(final @NotNull StatFs stat) {
     try {
-      long blockSize = getBlockSizeLong(stat);
-      long availableBlocks = getAvailableBlocksLong(stat);
+      long blockSize = stat.getBlockSizeLong();
+      long availableBlocks = stat.getAvailableBlocksLong();
       return availableBlocks * blockSize;
     } catch (Throwable e) {
       options
@@ -437,23 +388,9 @@ public final class DeviceInfoUtil {
     return null;
   }
 
-  @SuppressWarnings({"ObsoleteSdkInt", "NewApi"})
-  @Nullable
-  private File[] getExternalFilesDirs() {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.KITKAT) {
-      return context.getExternalFilesDirs(null);
-    } else {
-      File single = context.getExternalFilesDir(null);
-      if (single != null) {
-        return new File[] {single};
-      }
-    }
-    return null;
-  }
-
   @Nullable
   private File getExternalStorageDep(final @Nullable File internalStorage) {
-    final @Nullable File[] externalFilesDirs = getExternalFilesDirs();
+    final @Nullable File[] externalFilesDirs = context.getExternalFilesDirs(null);
 
     if (externalFilesDirs != null) {
       // return the 1st file which is not the emulated internal storage
@@ -490,8 +427,8 @@ public final class DeviceInfoUtil {
   @Nullable
   private Long getTotalExternalStorage(final @NotNull StatFs stat) {
     try {
-      final long blockSize = getBlockSizeLong(stat);
-      final long totalBlocks = getBlockCountLong(stat);
+      final long blockSize = stat.getBlockSizeLong();
+      final long totalBlocks = stat.getBlockCountLong();
       return totalBlocks * blockSize;
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
@@ -515,8 +452,8 @@ public final class DeviceInfoUtil {
   @Nullable
   private Long getUnusedExternalStorage(final @NotNull StatFs stat) {
     try {
-      final long blockSize = getBlockSizeLong(stat);
-      final long availableBlocks = getAvailableBlocksLong(stat);
+      final long blockSize = stat.getBlockSizeLong();
+      final long availableBlocks = stat.getAvailableBlocksLong();
       return availableBlocks * blockSize;
     } catch (Throwable e) {
       options

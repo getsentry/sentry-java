@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -43,7 +44,6 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
@@ -84,7 +84,7 @@ class ActivityLifecycleIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
 
         fun getSut(
-            apiVersion: Int = 29,
+            apiVersion: Int = Build.VERSION_CODES.Q,
             importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
             initializer: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null
         ): ActivityLifecycleIntegration {
@@ -354,7 +354,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `Transaction op is ui_load`() {
+    fun `Transaction op is ui_load and idle+deadline timeouts are set`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -365,11 +365,14 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(
-            check {
+            check<TransactionContext> {
                 assertEquals("ui.load", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            check<TransactionOptions> { transactionOptions ->
+                assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
+                assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, transactionOptions.deadlineTimeout)
+            }
         )
     }
 
@@ -716,7 +719,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `do not stop transaction on resumed if API less than 29 and ttid and ttfd are finished`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut(Build.VERSION_CODES.P)
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
         sut.register(fixture.hub, fixture.options)
@@ -732,7 +735,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `start transaction on created if API less than 29`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut(Build.VERSION_CODES.P)
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -780,7 +783,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `App start is Cold when savedInstanceState is null`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -792,7 +795,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `App start is Warm when savedInstanceState is not null`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -805,7 +808,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `Do not overwrite App start type after set`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 

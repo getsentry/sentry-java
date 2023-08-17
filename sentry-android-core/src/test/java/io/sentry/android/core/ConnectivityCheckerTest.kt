@@ -109,7 +109,7 @@ class ConnectivityCheckerTest {
     @Test
     fun `When sdkInfoVersion is not min Marshmallow, return null for getConnectionType`() {
         val buildInfo = mock<BuildInfoProvider>()
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
 
         assertNull(ConnectivityChecker.getConnectionType(mock(), mock(), buildInfo))
     }
@@ -142,7 +142,7 @@ class ConnectivityCheckerTest {
 
     @Test
     fun `When network is TYPE_WIFI, return wifi`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
         whenever(networkInfo.type).thenReturn(TYPE_WIFI)
 
         assertEquals("wifi", ConnectivityChecker.getConnectionType(contextMock, mock(), buildInfo))
@@ -160,7 +160,7 @@ class ConnectivityCheckerTest {
 
     @Test
     fun `When network is TYPE_ETHERNET, return ethernet`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
         whenever(networkInfo.type).thenReturn(TYPE_ETHERNET)
 
         assertEquals(
@@ -181,7 +181,7 @@ class ConnectivityCheckerTest {
 
     @Test
     fun `When network is TYPE_MOBILE, return cellular`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
         whenever(networkInfo.type).thenReturn(TYPE_MOBILE)
 
         assertEquals(

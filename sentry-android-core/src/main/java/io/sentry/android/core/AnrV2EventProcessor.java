@@ -527,7 +527,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private @NotNull Device getDevice() {
     Device device = new Device();
     if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context, buildInfoProvider));
+      device.setName(ContextUtils.getDeviceName(context));
     }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
@@ -566,13 +566,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     return device;
   }
 
-  @SuppressLint("NewApi")
   private @NotNull Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
-      return memInfo.totalMem;
-    }
-    // using Runtime as a fallback
-    return java.lang.Runtime.getRuntime().totalMemory(); // JVM in bytes too
+    return memInfo.totalMem;
   }
 
   private void mergeOS(final @NotNull SentryBaseEvent event) {

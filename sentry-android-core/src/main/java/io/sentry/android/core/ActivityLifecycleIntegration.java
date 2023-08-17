@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
@@ -192,6 +191,9 @@ public final class ActivityLifecycleIntegration
         final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
         final TransactionOptions transactionOptions = new TransactionOptions();
+        transactionOptions.setDeadlineTimeout(
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
           transactionOptions.setIdleTimeout(options.getIdleTimeout());
           transactionOptions.setTrimEnd(true);
@@ -396,15 +398,13 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "started");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (performanceEnabled) {
       final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
       final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
       final View rootView = activity.findViewById(android.R.id.content);
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
-          && rootView != null) {
+      if (rootView != null) {
         FirstDrawDoneListener.registerForNextDraw(
             rootView, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
       } else {

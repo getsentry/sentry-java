@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
 import android.content.Context
+import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
@@ -84,7 +85,7 @@ class AnrV2EventProcessorTest {
 
         fun getSut(
             dir: TemporaryFolder,
-            currentSdk: Int = 21,
+            currentSdk: Int = Build.VERSION_CODES.LOLLIPOP,
             populateScopeCache: Boolean = false,
             populateOptionsCache: Boolean = false
         ): AnrV2EventProcessor {

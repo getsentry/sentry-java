@@ -94,7 +94,12 @@ class SentryNavigationListenerTest {
             whenever(context.resources).thenReturn(resources)
             whenever(navController.context).thenReturn(context)
             whenever(destination.route).thenReturn(toRoute)
-            return SentryNavigationListener(hub, enableBreadcrumbs, enableTracing, traceOriginAppendix)
+            return SentryNavigationListener(
+                hub,
+                enableBreadcrumbs,
+                enableTracing,
+                traceOriginAppendix
+            )
         }
     }
 
@@ -355,7 +360,8 @@ class SentryNavigationListenerTest {
     fun `starts new trace if performance is disabled`() {
         val sut = fixture.getSut(enableTracing = false)
 
-        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> =
+            ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
@@ -384,5 +390,19 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         assertEquals("auto.navigation.jetpack_compose", fixture.transaction.spanContext.origin)
+    }
+
+    @Test
+    fun `Navigation listener transactions set automatic deadline timeout`() {
+        val sut = fixture.getSut()
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.hub).startTransaction(
+            any<TransactionContext>(),
+            check<TransactionOptions> { options ->
+                assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, options.deadlineTimeout)
+            }
+        )
     }
 }
