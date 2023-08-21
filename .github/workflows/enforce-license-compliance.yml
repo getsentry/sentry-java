@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@a4cf152f482c7ca97ef56ead29bf08bcd953284c # pin@v2
+        uses: gradle/gradle-build-action@243af859f8ca30903d9d7f7936897ca0358ba691 # pin@v2
 
       - name: Set up Java
         uses: actions/setup-java@v3
