@@ -75,21 +75,24 @@ public final class SentryEnvelopeItem {
                   writer.write("\n");
                   writer.flush();
 
-                  // TODO is it safe to use multiple writers on a single stream?
-                  final GZIPOutputStream gzipStream = new GZIPOutputStream(stream);
-                  final OutputStreamWriter gzipStreamWriter =
-                      new OutputStreamWriter(gzipStream, UTF_8);
-
-                  final @Nullable List<Object> payload = replayRecording.getPayload();
-                  if (payload == null) {
-                    throw new IllegalArgumentException("Empty replay recording payload");
+                  final ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
+                  try (
+                       final GZIPOutputStream gzipStream = new GZIPOutputStream(payloadStream);
+                       final OutputStreamWriter gzipStreamWriter = new OutputStreamWriter(gzipStream, UTF_8);
+                  ) {
+                      final @Nullable List<Object> payload = replayRecording.getPayload();
+                      if (payload == null) {
+                        throw new IllegalArgumentException("Empty replay recording payload");
+                      }
+                      serializer.serialize(payload, gzipStreamWriter);
+                      gzipStreamWriter.flush();
+                  } catch (Throwable t) {
+                    throw t;
                   }
-                  serializer.serialize(payload, gzipStreamWriter);
-                  gzipStreamWriter.flush();
-                  gzipStreamWriter.close();
+                  payloadStream.flush();
 
-                  writer.write("\n");
-                  writer.flush();
+                  stream.write(payloadStream.toByteArray());
+                  stream.flush();
 
                   return stream.toByteArray();
                 }
