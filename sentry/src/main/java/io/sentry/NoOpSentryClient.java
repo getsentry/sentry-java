@@ -33,6 +33,12 @@ final class NoOpSentryClient implements ISentryClient {
   public void flush(long timeoutMillis) {}
 
   @Override
+  public @NotNull SentryId captureSessionReplayEvent(
+      @NotNull SentryReplayEvent event, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
   @Override

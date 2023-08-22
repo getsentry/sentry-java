@@ -322,11 +322,14 @@ public final class io/sentry/Hint {
 	public fun <init> ()V
 	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addAttachments (Ljava/util/List;)V
+	public fun addReplayRecording (Lio/sentry/ReplayRecording;)V
 	public fun clear ()V
 	public fun clearAttachments ()V
+	public fun clearReplayRecordings ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getAs (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun getAttachments ()Ljava/util/List;
+	public fun getReplayRecordings ()Ljava/util/List;
 	public fun getScreenshot ()Lio/sentry/Attachment;
 	public fun getThreadDump ()Lio/sentry/Attachment;
 	public fun getViewHierarchy ()Lio/sentry/Attachment;
@@ -359,6 +362,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
@@ -405,6 +409,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
@@ -476,6 +481,7 @@ public abstract interface class io/sentry/IHub {
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public abstract fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -575,6 +581,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;)V
 	public abstract fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
+	public abstract fun captureSessionReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
@@ -863,6 +870,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
@@ -1202,6 +1210,28 @@ public final class io/sentry/PropagationContext {
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
 
+public final class io/sentry/ReplayRecording : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getPayload ()Ljava/util/Map;
+	public fun getSegmentId ()Ljava/lang/Integer;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setPayload (Ljava/util/Map;)V
+	public fun setSegmentId (Ljava/lang/Integer;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/ReplayRecording$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/ReplayRecording;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/ReplayRecording$JsonKeys {
+	public static final field SEGMENT_ID Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/RequestDetails {
 	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
 	public fun getHeaders ()Ljava/util/Map;
@@ -1320,6 +1350,7 @@ public final class io/sentry/Sentry {
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public static fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)V
 	public static fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public static fun clearBreadcrumbs ()V
 	public static fun cloneMainHub ()Lio/sentry/IHub;
@@ -1457,6 +1488,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
+	public fun captureSessionReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Scope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
@@ -1531,6 +1563,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromClientReport (Lio/sentry/ISerializer;Lio/sentry/clientreport/ClientReport;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromReplayRecording (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/ReplayRecording;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getClientReport (Lio/sentry/ISerializer;)Lio/sentry/clientreport/ClientReport;
@@ -1965,6 +1998,47 @@ public final class io/sentry/SentryOptions$RequestSize : java/lang/Enum {
 
 public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
+}
+
+public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getErrorIds ()Ljava/util/List;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun getReplayStartTimestamp ()Ljava/lang/Double;
+	public fun getSegmentId ()Ljava/lang/Integer;
+	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getTraceIds ()Ljava/util/List;
+	public fun getType ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getUrls ()Ljava/util/List;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setErrorIds (Ljava/util/List;)V
+	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
+	public fun setReplayStartTimestamp (Ljava/lang/Double;)V
+	public fun setSegmentId (Ljava/lang/Integer;)V
+	public fun setTimestamp (Ljava/lang/Double;)V
+	public fun setTraceIds (Ljava/util/List;)V
+	public fun setType (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setUrls (Ljava/util/List;)V
+}
+
+public final class io/sentry/SentryReplayEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryReplayEvent;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryReplayEvent$JsonKeys {
+	public static final field ERROR_IDS Ljava/lang/String;
+	public static final field REPLAY_ID Ljava/lang/String;
+	public static final field REPLAY_START_TIMESTAMP Ljava/lang/String;
+	public static final field SEGMENT_ID Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TRACE_IDS Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field URLS Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentrySpanStorage {

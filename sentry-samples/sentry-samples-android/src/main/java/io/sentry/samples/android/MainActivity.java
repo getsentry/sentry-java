@@ -5,10 +5,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
+import io.sentry.DateUtils;
+import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
+import io.sentry.ReplayRecording;
 import io.sentry.Sentry;
+import io.sentry.SentryDate;
+import io.sentry.SentryReplayEvent;
 import io.sentry.UserFeedback;
+import io.sentry.android.core.AndroidDateUtils;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -24,8 +30,10 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import timber.log.Timber;
 
@@ -62,6 +70,59 @@ public class MainActivity extends AppCompatActivity {
     Sentry.configureScope(
         scope -> {
           scope.addAttachment(image);
+        });
+
+    binding.sendReplay.setOnClickListener(
+        view -> {
+          final SentryReplayEvent replay = new SentryReplayEvent();
+          final SentryDate now = AndroidDateUtils.getCurrentSentryDateTime();
+
+          replay.setTimestamp(DateUtils.nanosToSeconds(now.nanoTimestamp()));
+          replay.setReplayStartTimestamp(DateUtils.nanosToSeconds(now.nanoTimestamp()) - 3.0);
+          replay.setSegmentId(0);
+
+          final ReplayRecording replayRecording = new ReplayRecording();
+          replayRecording.setSegmentId(0);
+
+          final Map<String, Object> payload = new HashMap<>();
+          replayRecording.setPayload(payload);
+
+          final Hint hint = new Hint();
+          hint.addReplayRecording(replayRecording);
+
+          /**
+           * { "type": "Document", "childNodes": [ { "type": "Element", "tagName": "html",
+           * "attributes": {}, "childNodes": [ { "type": "Element", "tagName": "body", "attributes":
+           * {}, "childNodes": [ { "type": "Text", "textContent": "\n ", "id": 5 },
+           */
+          final Map<String, Object> text = new HashMap<>();
+          text.put("type", "Text");
+          text.put("textContent", "Hello World!");
+          text.put("id", "1");
+
+          final List<Object> bodyChildren = new ArrayList<>();
+          bodyChildren.add(text);
+
+          final Map<String, Object> body = new HashMap<>();
+          body.put("type", "Element");
+          body.put("tagName", "body");
+          body.put("childNodes", bodyChildren);
+
+          final List<Object> htmlChildren = new ArrayList<>();
+          htmlChildren.add(body);
+
+          final Map<String, Object> html = new HashMap<>();
+          html.put("type", "Element");
+          html.put("tagName", "html");
+          html.put("childNodes", htmlChildren);
+
+          final List<Object> documentChildren = new ArrayList<>();
+          documentChildren.add(html);
+
+          payload.put("type", "Document");
+          payload.put("childNodes", documentChildren);
+
+          Sentry.captureReplay(replay, hint);
         });
 
     binding.crashFromJava.setOnClickListener(

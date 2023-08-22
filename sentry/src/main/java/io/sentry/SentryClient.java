@@ -196,7 +196,8 @@ public final class SentryClient implements ISentryClient {
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
       final SentryEnvelope envelope =
-          buildEnvelope(event, attachments, session, traceContext, null);
+          buildEnvelope(
+              event, attachments, hint.getReplayRecordings(), session, traceContext, null);
 
       hint.clear();
       if (envelope != null) {
@@ -219,6 +220,41 @@ public final class SentryClient implements ISentryClient {
           transaction.forceFinish(SpanStatus.ABORTED, false);
         }
       }
+    }
+
+    return sentryId;
+  }
+
+  @Override
+  public @NotNull SentryId captureSessionReplayEvent(
+      @NotNull SentryReplayEvent event, @Nullable Hint hint) {
+    Objects.requireNonNull(event, "SessionReplay is required.");
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event.getReplayId() != null) {
+      sentryId = event.getReplayId();
+    }
+
+    try {
+      final List<Attachment> attachments = getAttachments(hint);
+      final SentryEnvelope envelope =
+          buildEnvelope(event, attachments, hint.getReplayRecordings(), null, null, null);
+
+      hint.clear();
+      if (envelope != null) {
+        transport.send(envelope, hint);
+      }
+    } catch (IOException | SentryEnvelopeException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
     }
 
     return sentryId;
@@ -280,6 +316,7 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event,
       final @Nullable List<Attachment> attachments,
+      final @Nullable List<ReplayRecording> replayRecordings,
       final @Nullable Session session,
       final @Nullable TraceContext traceContext,
       final @Nullable ProfilingTraceData profilingTraceData)
@@ -321,6 +358,15 @@ public final class SentryClient implements ISentryClient {
                 attachment,
                 options.getMaxAttachmentSize());
         envelopeItems.add(attachmentItem);
+      }
+    }
+
+    if (replayRecordings != null) {
+      for (final ReplayRecording replayRecording : replayRecordings) {
+        final SentryEnvelopeItem replayItem =
+            SentryEnvelopeItem.fromReplayRecording(
+                options.getSerializer(), options.getLogger(), replayRecording);
+        envelopeItems.add(replayItem);
       }
     }
 
@@ -623,6 +669,7 @@ public final class SentryClient implements ISentryClient {
           buildEnvelope(
               transaction,
               filterForTransaction(getAttachments(hint)),
+              hint.getReplayRecordings(),
               null,
               traceContext,
               profilingTraceData);

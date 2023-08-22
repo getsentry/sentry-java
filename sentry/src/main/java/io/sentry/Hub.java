@@ -862,4 +862,9 @@ public final class Hub implements IHub {
 
     return null;
   }
+
+  @Override
+  public @NotNull SentryId captureReplay(SentryReplayEvent replay, Hint hint) {
+    return stack.peek().getClient().captureSessionReplayEvent(replay, hint);
+  }
 }

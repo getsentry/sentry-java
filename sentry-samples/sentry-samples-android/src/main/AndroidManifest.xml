@@ -63,7 +63,7 @@
             android:exported="false" />
 
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
-        <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559" />
+        <meta-data android:name="io.sentry.dsn" android:value="https://8cd64c9ba450ea55e964b3d5d9f68ca3@o4503964729475072.ingest.sentry.io/4505747636158464" />
 
         <!--    how to enable Sentry's debug mode-->
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
@@ -87,13 +87,13 @@
         <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
 
         <!--    how to enable the NDK Scope Sync -->
-        <meta-data android:name="io.sentry.ndk.scope-sync.enable" android:value="true" />
+        <meta-data android:name="io.sentry.ndk.scope-sync.enable" android:value="false" />
 
         <!--    how to set a custom release-->
         <!--    <meta-data android:name="io.sentry.release" android:value="io.sentry.samples.android@1.1.0+2" />-->
 
         <!--    how to disable automatic session tracking-->
-        <!--    <meta-data android:name="io.sentry.auto-session-tracking.enable" android:value="false" />-->
+            <meta-data android:name="io.sentry.auto-session-tracking.enable" android:value="false" />
 
         <!--    how to set an environment-->
         <meta-data android:name="io.sentry.environment" android:value="${sentryEnvironment}" />
@@ -102,12 +102,12 @@
         <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="10000" />
 
         <!--    how to enable the performance API by either enabling tracing or setting a sample-rate-->
-        <meta-data android:name="io.sentry.traces.enable" android:value="true" />
+        <meta-data android:name="io.sentry.traces.enable" android:value="false" />
 <!-- how to set custom sample rate different from the default 1.0 -->
 <!--        <meta-data android:name="io.sentry.traces.sample-rate" android:value="0.8" /> -->
 
         <!--    how to enable profiling when starting transactions -->
-        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
+        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="0.0" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
@@ -116,10 +116,10 @@
         <!--    <meta-data android:name="io.sentry.traces.activity.auto-finish.enable" android:value="false" />-->
 
         <!-- how to enable the UI auto instrumentation for tracing -->
-        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="false" />
 
         <!-- how to enable the time-to-full-display tracing in Activity auto instrumentation -->
-        <meta-data android:name="io.sentry.traces.time-to-full-display.enable" android:value="true" />
+        <meta-data android:name="io.sentry.traces.time-to-full-display.enable" android:value="false" />
 
         <!--    how to enable and set a sampleRate (anything between 0.01 and 1.0), it's disabled by default-->
         <!--    <meta-data android:name="io.sentry.sample-rate" android:value="0.5" />-->
@@ -150,6 +150,6 @@
 
         <!--    how to disable sentry -->
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
-      
+
     </application>
 </manifest>

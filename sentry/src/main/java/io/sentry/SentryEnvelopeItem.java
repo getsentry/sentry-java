@@ -22,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +52,60 @@ public final class SentryEnvelopeItem {
     this.header = Objects.requireNonNull(header, "SentryEnvelopeItemHeader is required.");
     this.dataFactory = Objects.requireNonNull(dataFactory, "DataFactory is required.");
     this.data = null;
+  }
+
+  public static SentryEnvelopeItem fromReplayRecording(
+      @NotNull ISerializer serializer,
+      @NotNull ILogger logger,
+      @NotNull ReplayRecording replayRecording) {
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try {
+                try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    final Writer writer =
+                        new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+
+                  // session replay recording format
+                  // {"segment_id":0}\n{json-serialized-gzipped-rrweb-protocol}
+
+                  serializer.serialize(replayRecording, writer);
+                  writer.write("\n");
+                  writer.flush();
+
+                  // TODO is it safe to use multiple writers on a single stream?
+                  // final GZIPOutputStream gzipStream = new GZIPOutputStream(stream);
+
+                  final @Nullable Map<String, Object> payload = replayRecording.getPayload();
+                  if (payload == null) {
+                    throw new IllegalArgumentException("Empty replay recording payload");
+                  }
+                  final String serializedPayload = serializer.serialize(payload);
+                  // gzipStream.write(serializedPayload.getBytes(UTF_8));
+                  // gzipStream.flush();
+                  // gzipStream.close();
+                  writer.write(serializedPayload);
+                  writer.flush();
+
+                  return stream.toByteArray();
+                }
+              } catch (Throwable t) {
+                logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
+                return null;
+              }
+            });
+
+    final SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ReplayRecording,
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   // TODO: Should be a Stream
