@@ -209,7 +209,8 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureReplay(SentryReplayEvent replay, Hint hint) {
+  public @NotNull SentryId captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 }

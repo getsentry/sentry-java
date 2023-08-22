@@ -670,6 +670,12 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
+  @Override
+  public @NotNull SentryId captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+    return stack.peek().getClient().captureSessionReplayEvent(replay, hint);
+  }
+
   @ApiStatus.Internal
   @Override
   public @NotNull ITransaction startTransaction(
@@ -861,10 +867,5 @@ public final class Hub implements IHub {
     }
 
     return null;
-  }
-
-  @Override
-  public @NotNull SentryId captureReplay(SentryReplayEvent replay, Hint hint) {
-    return stack.peek().getClient().captureSessionReplayEvent(replay, hint);
   }
 }

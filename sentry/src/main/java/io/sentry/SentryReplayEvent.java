@@ -46,7 +46,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return type;
   }
 
-  public void setType(@Nullable String type) {
+  public void setType(final @Nullable String type) {
     this.type = type;
   }
 
@@ -55,7 +55,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return replayId;
   }
 
-  public void setReplayId(@Nullable SentryId replayId) {
+  public void setReplayId(final @Nullable SentryId replayId) {
     this.replayId = replayId;
   }
 
@@ -64,7 +64,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return segmentId;
   }
 
-  public void setSegmentId(@Nullable Integer segmentId) {
+  public void setSegmentId(final @Nullable Integer segmentId) {
     this.segmentId = segmentId;
   }
 
@@ -73,7 +73,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return timestamp;
   }
 
-  public void setTimestamp(@Nullable Double timestamp) {
+  public void setTimestamp(final @Nullable Double timestamp) {
     this.timestamp = timestamp;
   }
 
@@ -82,7 +82,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return replayStartTimestamp;
   }
 
-  public void setReplayStartTimestamp(@Nullable Double replayStartTimestamp) {
+  public void setReplayStartTimestamp(final @Nullable Double replayStartTimestamp) {
     this.replayStartTimestamp = replayStartTimestamp;
   }
 
@@ -91,7 +91,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return urls;
   }
 
-  public void setUrls(@Nullable List<String> urls) {
+  public void setUrls(final @Nullable List<String> urls) {
     this.urls = urls;
   }
 
@@ -100,7 +100,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return errorIds;
   }
 
-  public void setErrorIds(@Nullable List<String> errorIds) {
+  public void setErrorIds(final @Nullable List<String> errorIds) {
     this.errorIds = errorIds;
   }
 
@@ -109,7 +109,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     return traceIds;
   }
 
-  public void setTraceIds(@Nullable List<String> traceIds) {
+  public void setTraceIds(final @Nullable List<String> traceIds) {
     this.traceIds = traceIds;
   }
 
@@ -159,7 +159,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
+  public void setUnknown(final @Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
@@ -167,7 +167,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
     @Override
     public @NotNull SentryReplayEvent deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
 
@@ -236,8 +236,8 @@ public final class SentryReplayEvent extends SentryBaseEvent
     }
 
     @Nullable
-    private static Double nextTimestamp(JsonObjectReader reader, ILogger logger)
-        throws IOException {
+    private static Double nextTimestamp(
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws IOException {
       @Nullable Double result;
       try {
         result = reader.nextDoubleOrNull();
@@ -249,7 +249,8 @@ public final class SentryReplayEvent extends SentryBaseEvent
     }
 
     @Nullable
-    private static List<String> nextStringList(JsonObjectReader reader) throws IOException {
+    private static List<String> nextStringList(final @NotNull JsonObjectReader reader)
+        throws IOException {
       @Nullable List<String> result = null;
       final @Nullable Object data = reader.nextObjectOrNull();
       if (data instanceof List) {

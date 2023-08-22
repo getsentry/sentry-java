@@ -961,7 +961,8 @@ public final class Sentry {
     reportFullyDisplayed();
   }
 
-  public static void captureReplay(SentryReplayEvent replay, Hint hint) {
+  public static void captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
     getCurrentHub().captureReplay(replay, hint);
   }
 

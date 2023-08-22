@@ -56,9 +56,9 @@ public final class SentryEnvelopeItem {
   }
 
   public static SentryEnvelopeItem fromReplayRecording(
-      @NotNull ISerializer serializer,
-      @NotNull ILogger logger,
-      @NotNull ReplayRecording replayRecording) {
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger,
+      final @NotNull ReplayRecording replayRecording) {
 
     final CachedItem cachedItem =
         new CachedItem(
@@ -76,16 +76,15 @@ public final class SentryEnvelopeItem {
                   writer.flush();
 
                   final ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
-                  try (
-                       final GZIPOutputStream gzipStream = new GZIPOutputStream(payloadStream);
-                       final OutputStreamWriter gzipStreamWriter = new OutputStreamWriter(gzipStream, UTF_8);
-                  ) {
-                      final @Nullable List<Object> payload = replayRecording.getPayload();
-                      if (payload == null) {
-                        throw new IllegalArgumentException("Empty replay recording payload");
-                      }
-                      serializer.serialize(payload, gzipStreamWriter);
-                      gzipStreamWriter.flush();
+                  try (final GZIPOutputStream gzipStream = new GZIPOutputStream(payloadStream);
+                      final OutputStreamWriter gzipStreamWriter =
+                          new OutputStreamWriter(gzipStream, UTF_8)) {
+                    final @Nullable List<Object> payload = replayRecording.getPayload();
+                    if (payload == null) {
+                      throw new IllegalArgumentException("Empty replay recording payload");
+                    }
+                    serializer.serialize(payload, gzipStreamWriter);
+                    gzipStreamWriter.flush();
                   } catch (Throwable t) {
                     throw t;
                   }

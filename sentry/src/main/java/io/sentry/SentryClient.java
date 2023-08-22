@@ -227,7 +227,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureSessionReplayEvent(
-      @NotNull SentryReplayEvent event, @Nullable Hint hint) {
+      final @NotNull SentryReplayEvent event, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SessionReplay is required.");
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());

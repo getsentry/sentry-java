@@ -72,7 +72,7 @@ public final class Hint {
     internalStorage.remove(name);
   }
 
-  public void addReplayRecording(@Nullable ReplayRecording recording) {
+  public void addReplayRecording(final @Nullable ReplayRecording recording) {
     if (recording != null) {
       replayRecordings.add(recording);
     }

@@ -183,6 +183,12 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public @NotNull SentryId captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+    return Sentry.getCurrentHub().captureReplay(replay, hint);
+  }
+
+  @Override
   public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
     return Sentry.startTransaction(transactionContexts);
   }
@@ -250,10 +256,5 @@ public final class HubAdapter implements IHub {
   @Override
   public @Nullable BaggageHeader getBaggage() {
     return Sentry.getBaggage();
-  }
-
-  @Override
-  public @NotNull SentryId captureReplay(SentryReplayEvent replay, Hint hint) {
-    return Sentry.getCurrentHub().captureReplay(replay, hint);
   }
 }

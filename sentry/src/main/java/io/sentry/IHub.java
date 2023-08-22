@@ -628,5 +628,5 @@ public interface IHub {
   BaggageHeader getBaggage();
 
   @NotNull
-  SentryId captureReplay(SentryReplayEvent replay, Hint hint);
+  SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
 }

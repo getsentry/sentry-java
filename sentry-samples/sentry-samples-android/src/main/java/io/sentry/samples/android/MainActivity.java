@@ -66,9 +66,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
     binding.launchReplay.setOnClickListener(
-        view -> {
-          startActivity(new Intent(this, ReplayActivity.class));
-        });
+        view -> startActivity(new Intent(this, ReplayActivity.class)));
 
     binding.crashFromJava.setOnClickListener(
         view -> {
