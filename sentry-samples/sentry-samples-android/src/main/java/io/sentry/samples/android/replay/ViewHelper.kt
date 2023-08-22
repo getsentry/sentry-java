@@ -20,7 +20,8 @@ object ViewHelper {
     private val forName = Class::class.java.getMethod("forName", String::class.java)
     private val getDeclaredMethod = Class::class.java.getMethod(
         "getMethod",
-        String::class.java, arrayOf<Class<*>>()::class.java
+        String::class.java,
+        arrayOf<Class<*>>()::class.java
     )
 
     private val getDeclaredField = Class::class.java.getMethod(
@@ -55,6 +56,6 @@ object ViewHelper {
         } catch (e: Exception) {
             Log.e(TAG, "failed to decode porter duff color filter, returning null")
         }
-        return null;
+        return null
     }
 }

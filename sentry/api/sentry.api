@@ -1212,11 +1212,11 @@ public final class io/sentry/PropagationContext {
 
 public final class io/sentry/ReplayRecording : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun getPayload ()Ljava/util/Map;
+	public fun getPayload ()Ljava/util/List;
 	public fun getSegmentId ()Ljava/lang/Integer;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-	public fun setPayload (Ljava/util/Map;)V
+	public fun setPayload (Ljava/util/List;)V
 	public fun setSegmentId (Ljava/lang/Integer;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }

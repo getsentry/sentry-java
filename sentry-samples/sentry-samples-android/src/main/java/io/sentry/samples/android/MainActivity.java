@@ -3,9 +3,18 @@ package io.sentry.samples.android;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-
 import androidx.appcompat.app.AppCompatActivity;
-
+import io.sentry.Attachment;
+import io.sentry.ISpan;
+import io.sentry.MeasurementUnit;
+import io.sentry.Sentry;
+import io.sentry.UserFeedback;
+import io.sentry.instrumentation.file.SentryFileOutputStream;
+import io.sentry.protocol.SentryId;
+import io.sentry.protocol.User;
+import io.sentry.samples.android.compose.ComposeActivity;
+import io.sentry.samples.android.databinding.ActivityMainBinding;
+import io.sentry.samples.android.replay.ReplayActivity;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,19 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
-
-import io.sentry.Attachment;
-import io.sentry.ISpan;
-import io.sentry.MeasurementUnit;
-import io.sentry.Sentry;
-import io.sentry.UserFeedback;
-import io.sentry.instrumentation.file.SentryFileOutputStream;
-import io.sentry.protocol.SentryId;
-import io.sentry.protocol.User;
-import io.sentry.samples.android.compose.ComposeActivity;
-import io.sentry.samples.android.databinding.ActivityMainBinding;
-import io.sentry.samples.android.replay.ReplayActivity;
-
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
@@ -50,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
     try (final InputStream inputStream =
-           getApplicationContext().getResources().openRawResource(R.raw.sentry);
-         FileOutputStream outputStream = new FileOutputStream(imageFile)) {
+            getApplicationContext().getResources().openRawResource(R.raw.sentry);
+        FileOutputStream outputStream = new FileOutputStream(imageFile)) {
       final byte[] bytes = new byte[1024];
       while (inputStream.read(bytes) != -1) {
         // To keep the sample code simple this happens on the main thread. Don't do this in a
@@ -65,199 +61,199 @@ public class MainActivity extends AppCompatActivity {
 
     final Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
     Sentry.configureScope(
-      scope -> {
-        scope.addAttachment(image);
-      });
+        scope -> {
+          scope.addAttachment(image);
+        });
 
     binding.launchReplay.setOnClickListener(
-      view -> {
-        startActivity(new Intent(this, ReplayActivity.class));
-      });
+        view -> {
+          startActivity(new Intent(this, ReplayActivity.class));
+        });
 
     binding.crashFromJava.setOnClickListener(
-      view -> {
-        throw new RuntimeException("Uncaught Exception from Java.");
-      });
+        view -> {
+          throw new RuntimeException("Uncaught Exception from Java.");
+        });
 
     binding.sendMessage.setOnClickListener(view -> Sentry.captureMessage("Some message."));
 
     binding.sendUserFeedback.setOnClickListener(
-      view -> {
-        SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
+        view -> {
+          SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
 
-        UserFeedback userFeedback = new UserFeedback(sentryId);
-        userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
-        userFeedback.setEmail("john@me.com");
-        userFeedback.setName("John Me");
-        Sentry.captureUserFeedback(userFeedback);
-      });
+          UserFeedback userFeedback = new UserFeedback(sentryId);
+          userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
+          userFeedback.setEmail("john@me.com");
+          userFeedback.setName("John Me");
+          Sentry.captureUserFeedback(userFeedback);
+        });
 
     binding.addAttachment.setOnClickListener(
-      view -> {
-        String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
-        File file = getApplication().getFileStreamPath(fileName);
-        try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
-             final OutputStreamWriter outputStreamWriter =
-               new OutputStreamWriter(fileOutputStream);
-             final Writer writer = new BufferedWriter(outputStreamWriter)) {
-          for (int i = 0; i < 1024; i++) {
-            // To keep the sample code simple this happens on the main thread. Don't do this in a
-            // real app.
-            writer.write(String.format(Locale.getDefault(), "%d\n", i));
+        view -> {
+          String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
+          File file = getApplication().getFileStreamPath(fileName);
+          try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
+              final OutputStreamWriter outputStreamWriter =
+                  new OutputStreamWriter(fileOutputStream);
+              final Writer writer = new BufferedWriter(outputStreamWriter)) {
+            for (int i = 0; i < 1024; i++) {
+              // To keep the sample code simple this happens on the main thread. Don't do this in a
+              // real app.
+              writer.write(String.format(Locale.getDefault(), "%d\n", i));
+            }
+            writer.flush();
+          } catch (IOException e) {
+            Sentry.captureException(e);
           }
-          writer.flush();
-        } catch (IOException e) {
-          Sentry.captureException(e);
-        }
 
-        Sentry.configureScope(
-          scope -> {
-            String json = "{ \"number\": 10 }";
-            Attachment attachment = new Attachment(json.getBytes(), "log.json");
-            scope.addAttachment(attachment);
-            scope.addAttachment(new Attachment(file.getPath()));
-          });
-      });
+          Sentry.configureScope(
+              scope -> {
+                String json = "{ \"number\": 10 }";
+                Attachment attachment = new Attachment(json.getBytes(), "log.json");
+                scope.addAttachment(attachment);
+                scope.addAttachment(new Attachment(file.getPath()));
+              });
+        });
 
     binding.captureException.setOnClickListener(
-      view ->
-        Sentry.captureException(
-          new Exception(new Exception(new Exception("Some exception.")))));
+        view ->
+            Sentry.captureException(
+                new Exception(new Exception(new Exception("Some exception.")))));
 
     binding.breadcrumb.setOnClickListener(
-      view -> {
-        Sentry.addBreadcrumb("Breadcrumb");
-        Sentry.setExtra("extra", "extra");
-        Sentry.setFingerprint(Collections.singletonList("fingerprint"));
-        Sentry.setTransaction("transaction");
-        Sentry.captureException(new Exception("Some exception with scope."));
-      });
+        view -> {
+          Sentry.addBreadcrumb("Breadcrumb");
+          Sentry.setExtra("extra", "extra");
+          Sentry.setFingerprint(Collections.singletonList("fingerprint"));
+          Sentry.setTransaction("transaction");
+          Sentry.captureException(new Exception("Some exception with scope."));
+        });
 
     binding.unsetUser.setOnClickListener(
-      view -> {
-        Sentry.setTag("user_set", "null");
-        Sentry.setUser(null);
-      });
+        view -> {
+          Sentry.setTag("user_set", "null");
+          Sentry.setUser(null);
+        });
 
     binding.setUser.setOnClickListener(
-      view -> {
-        Sentry.setTag("user_set", "instance");
-        User user = new User();
-        user.setUsername("username_from_java");
-        // works with some null properties?
-        // user.setId("id_from_java");
-        user.setEmail("email_from_java");
-        // Use the client's IP address
-        user.setIpAddress("{{auto}}");
-        Sentry.setUser(user);
-      });
+        view -> {
+          Sentry.setTag("user_set", "instance");
+          User user = new User();
+          user.setUsername("username_from_java");
+          // works with some null properties?
+          // user.setId("id_from_java");
+          user.setEmail("email_from_java");
+          // Use the client's IP address
+          user.setIpAddress("{{auto}}");
+          Sentry.setUser(user);
+        });
 
     binding.outOfMemory.setOnClickListener(
-      view -> {
-        final CountDownLatch latch = new CountDownLatch(1);
-        for (int i = 0; i < 20; i++) {
-          new Thread(
-            () -> {
-              final List<String> data = new ArrayList<>();
-              try {
-                latch.await();
-                for (int j = 0; j < 1_000_000; j++) {
-                  data.add(new String(new byte[1024 * 8]));
-                }
-              } catch (InterruptedException e) {
-                e.printStackTrace();
-              }
-            })
-            .start();
-        }
+        view -> {
+          final CountDownLatch latch = new CountDownLatch(1);
+          for (int i = 0; i < 20; i++) {
+            new Thread(
+                    () -> {
+                      final List<String> data = new ArrayList<>();
+                      try {
+                        latch.await();
+                        for (int j = 0; j < 1_000_000; j++) {
+                          data.add(new String(new byte[1024 * 8]));
+                        }
+                      } catch (InterruptedException e) {
+                        e.printStackTrace();
+                      }
+                    })
+                .start();
+          }
 
-        latch.countDown();
-      });
+          latch.countDown();
+        });
 
     binding.nativeCrash.setOnClickListener(view -> NativeSample.crash());
 
     binding.nativeCapture.setOnClickListener(view -> NativeSample.message());
 
     binding.anr.setOnClickListener(
-      view -> {
-        // Try cause ANR by blocking for 10 seconds.
-        // By default the SDK sends an event if blocked by at least 5 seconds.
-        // Keep clicking on the ANR button till you've gotten the "App. isn''t responding" dialog,
-        // then either click on Wait or Close, at this point you should have seen an event on
-        // Sentry.
-        // NOTE: By default it doesn't raise if the debugger is attached. That can also be
-        // configured.
-        new Thread(
-          new Runnable() {
-            @Override
-            public void run() {
-              synchronized (mutex) {
-                while (true) {
-                  try {
-                    Thread.sleep(10000);
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                }
-              }
-            }
-          })
-          .start();
+        view -> {
+          // Try cause ANR by blocking for 10 seconds.
+          // By default the SDK sends an event if blocked by at least 5 seconds.
+          // Keep clicking on the ANR button till you've gotten the "App. isn''t responding" dialog,
+          // then either click on Wait or Close, at this point you should have seen an event on
+          // Sentry.
+          // NOTE: By default it doesn't raise if the debugger is attached. That can also be
+          // configured.
+          new Thread(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        while (true) {
+                          try {
+                            Thread.sleep(10000);
+                          } catch (InterruptedException e) {
+                            e.printStackTrace();
+                          }
+                        }
+                      }
+                    }
+                  })
+              .start();
 
-        new Handler()
-          .postDelayed(
-            new Runnable() {
-              @Override
-              public void run() {
-                synchronized (mutex) {
-                  // Shouldn't happen
-                  throw new IllegalStateException();
-                }
-              }
-            },
-            1000);
-      });
+          new Handler()
+              .postDelayed(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        // Shouldn't happen
+                        throw new IllegalStateException();
+                      }
+                    }
+                  },
+                  1000);
+        });
 
     binding.openSecondActivity.setOnClickListener(
-      view -> {
-        // finishing so its completely destroyed
-        finish();
-        startActivity(new Intent(this, SecondActivity.class));
-      });
+        view -> {
+          // finishing so its completely destroyed
+          finish();
+          startActivity(new Intent(this, SecondActivity.class));
+        });
 
     binding.openSampleFragment.setOnClickListener(
-      view -> SampleFragment.newInstance().show(getSupportFragmentManager(), null));
+        view -> SampleFragment.newInstance().show(getSupportFragmentManager(), null));
 
     binding.openThirdFragment.setOnClickListener(
-      view -> startActivity(new Intent(this, ThirdActivityFragment.class)));
+        view -> startActivity(new Intent(this, ThirdActivityFragment.class)));
 
     binding.openGesturesActivity.setOnClickListener(
-      view -> startActivity(new Intent(this, GesturesActivity.class)));
+        view -> startActivity(new Intent(this, GesturesActivity.class)));
 
     binding.testTimberIntegration.setOnClickListener(
-      view -> {
-        crashCount++;
-        Timber.i("Some info here");
-        Timber.e(
-          new RuntimeException("Uncaught Exception from Java."),
-          "Something wrong happened %d times",
-          crashCount);
-      });
+        view -> {
+          crashCount++;
+          Timber.i("Some info here");
+          Timber.e(
+              new RuntimeException("Uncaught Exception from Java."),
+              "Something wrong happened %d times",
+              crashCount);
+        });
 
     binding.openPermissionsActivity.setOnClickListener(
-      view -> {
-        startActivity(new Intent(this, PermissionsActivity.class));
-      });
+        view -> {
+          startActivity(new Intent(this, PermissionsActivity.class));
+        });
 
     binding.openComposeActivity.setOnClickListener(
-      view -> {
-        startActivity(new Intent(this, ComposeActivity.class));
-      });
+        view -> {
+          startActivity(new Intent(this, ComposeActivity.class));
+        });
 
     binding.openProfilingActivity.setOnClickListener(
-      view -> {
-        startActivity(new Intent(this, ProfilingActivity.class));
-      });
+        view -> {
+          startActivity(new Intent(this, ProfilingActivity.class));
+        });
 
     setContentView(binding.getRoot());
   }

@@ -1,14 +1,12 @@
 package io.sentry;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.sentry.vendor.gson.stream.JsonToken;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
@@ -42,7 +40,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
     if (segmentId != null) {
       writer.name(JsonKeys.SEGMENT_ID).value(segmentId);
@@ -71,7 +69,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
     @Override
     public @NotNull ReplayRecording deserialize(
-      @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
 
       final ReplayRecording replay = new ReplayRecording();
 

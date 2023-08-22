@@ -13,7 +13,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import io.sentry.samples.android.replay.RRWebRecorder
 import java.util.LinkedList
 
 class WindowRecorder : Window.OnFrameMetricsAvailableListener {
@@ -28,18 +27,16 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
     private var canvas: Canvas? = null
     private var activity: Activity? = null
     private var lastCapturedAtMs: Long? = null
-    private var startTimeMs: Long = 0
 
     fun startRecording(activity: Activity) {
         this.activity = activity
-        this.startTimeMs = SystemClock.uptimeMillis()
 
         activity.window.addOnFrameMetricsAvailableListener(this, Handler(Looper.getMainLooper()))
         activity.window.callback = object : WindowCallbackDelegate(activity.window.callback) {
 
             override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
                 event?.let {
-                    val timestamp = SystemClock.uptimeMillis() - startTimeMs
+                    val timestamp = System.currentTimeMillis()
                     recorder.onTouchEvent(timestamp, event)
                 }
                 return super.dispatchTouchEvent(event)
@@ -62,7 +59,6 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
             captureFrame(it)
         }
     }
-
 
     private fun captureFrame(view: View) {
         if (view.width == 0 || view.height == 0 || view.visibility == View.GONE) {
@@ -94,7 +90,7 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
 
         // reset the canvas first, as it will be re-used for clipping operations
         canvas!!.restoreToCount(1)
-        recorder.beginFrame(now - startTimeMs, view.width, view.height)
+        recorder.beginFrame(System.currentTimeMillis(), view.width, view.height)
 
         val location = IntArray(2)
         val items = LinkedList<View?>()
@@ -113,7 +109,8 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
 
                     val saveCount = canvasDelegate!!.save()
                     recorder.translate(
-                        x, y
+                        x,
+                        y
                     )
                     ViewHelper.executeOnDraw(item, canvasDelegate!!)
                     canvasDelegate!!.restoreToCount(saveCount)
@@ -129,5 +126,4 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
             }
         }
     }
-
 }

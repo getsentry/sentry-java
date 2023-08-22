@@ -13,49 +13,86 @@ class RRWebRecorder : Recorder {
     var currentFrame = emptyMap<String, Any>()
     var currentFrameCommands = ArrayList<Map<String, Any>>()
 
+    var startTimeMs: Long = 0L
+    var endTimeMs: Long = 0L
+
     override fun beginFrame(timestampMs: Long, width: Int, height: Int) {
         if (recording.isEmpty()) {
-            val initialScreen = mapOf(
-                "timestamp" to timestampMs,
-                "type" to 2,
-                "data" to mapOf<String, Any>(
-                    "node" to mapOf(
-                        "id" to 1,
-                        "type" to 0,
-                        "childNodes" to listOf(
-                            mapOf(
-                                "type" to 1,
-                                "name" to "html",
-                                "id" to 2,
-                            ),
-                            mapOf(
-                                "id" to 3,
-                                "type" to 2,
-                                "tagName" to "html",
-                                "childNodes" to listOf(
-                                    mapOf(
-                                        "id" to 5,
-                                        "type" to 2,
-                                        "tagName" to "body",
-                                        "childNodes" to listOf(
-                                            mapOf(
-                                                "type" to 2,
-                                                "tagName" to "canvas",
-                                                "id" to 7
+            startTimeMs = timestampMs
+
+            recording.add(
+                mapOf(
+                    "timestamp" to timestampMs,
+                    "type" to 0,
+                    "data" to emptyMap<String, Any>()
+                )
+            )
+            recording.add(
+                mapOf(
+                    "timestamp" to timestampMs,
+                    "type" to 1,
+                    "data" to emptyMap<String, Any>()
+                )
+            )
+            recording.add(
+                mapOf(
+                    "timestamp" to timestampMs,
+                    "type" to 4,
+                    "data" to mapOf<String, Any>(
+                        "href" to "http://localhost",
+                        "width" to width,
+                        "height" to height
+                    )
+                )
+            )
+
+            recording.add(
+                mapOf(
+                    "timestamp" to timestampMs,
+                    "type" to 2,
+                    "data" to mapOf<String, Any>(
+                        "node" to mapOf(
+                            "id" to 1,
+                            "type" to 0,
+                            "childNodes" to listOf(
+                                mapOf(
+                                    "type" to 1,
+                                    "name" to "html",
+                                    "id" to 2
+                                ),
+                                mapOf(
+                                    "id" to 3,
+                                    "type" to 2,
+                                    "tagName" to "html",
+                                    "childNodes" to listOf(
+                                        mapOf(
+                                            "id" to 5,
+                                            "type" to 2,
+                                            "tagName" to "body",
+                                            "childNodes" to listOf(
+                                                mapOf(
+                                                    "type" to 2,
+                                                    "tagName" to "canvas",
+                                                    "id" to 7,
+                                                    "attributes" to mapOf(
+                                                        "id" to "canvas",
+                                                        "width" to width,
+                                                        "height" to height
+                                                    )
+                                                )
                                             )
                                         )
                                     )
                                 )
+                            ),
+                            "initialOffset" to mapOf(
+                                "left" to 0,
+                                "top" to 0
                             )
                         )
-                    ),
-                    "initialOffset" to mapOf(
-                        "left" to 0,
-                        "top" to 0
                     )
                 )
             )
-            recording.add(initialScreen)
         }
 
         currentFrameCommands = ArrayList()
@@ -76,12 +113,14 @@ class RRWebRecorder : Recorder {
             )
         )
         recording.add(currentFrame)
+        endTimeMs = timestampMs
     }
 
     override fun save() {
         currentFrameCommands.add(
             mapOf(
-                "property" to "save"
+                "property" to "save",
+                "args" to emptyList<Any>()
             )
         )
     }
@@ -89,7 +128,8 @@ class RRWebRecorder : Recorder {
     override fun restore() {
         currentFrameCommands.add(
             mapOf(
-                "property" to "restore"
+                "property" to "restore",
+                "args" to emptyList<Any>()
             )
         )
     }
@@ -98,7 +138,8 @@ class RRWebRecorder : Recorder {
         // TODO how often?
         currentFrameCommands.add(
             mapOf(
-                "property" to "restore"
+                "property" to "restore",
+                "args" to emptyList<Any>()
             )
         )
     }
@@ -117,6 +158,7 @@ class RRWebRecorder : Recorder {
         currentFrameCommands.add(
             mapOf(
                 "property" to "clip",
+                "args" to emptyList<Any>()
             )
         )
     }
@@ -140,7 +182,6 @@ class RRWebRecorder : Recorder {
         )
         draw(paint)
     }
-
 
     override fun drawCircle(cx: Float, cy: Float, radius: Float, paint: Paint) {
         setupPaint(paint)
@@ -240,12 +281,16 @@ class RRWebRecorder : Recorder {
 
         currentFrameCommands.add(
             mapOf(
-                "property" to "beginPath"
+                "property" to "beginPath",
+                "args" to emptyList<Any>()
             )
         )
         for (i in points.indices step 3) {
-            val command = if (i == 0)
-                "moveTo" else "lineTo"
+            val command = if (i == 0) {
+                "moveTo"
+            } else {
+                "lineTo"
+            }
             currentFrameCommands.add(
                 mapOf(
                     "property" to command,
@@ -260,25 +305,29 @@ class RRWebRecorder : Recorder {
         if (paint.style == Paint.Style.FILL) {
             currentFrameCommands.add(
                 mapOf(
-                    "property" to "fill"
+                    "property" to "fill",
+                    "args" to emptyList<Any>()
                 )
             )
         } else if (paint.style == Paint.Style.STROKE) {
             currentFrameCommands.add(
                 mapOf(
-                    "property" to "stroke"
+                    "property" to "stroke",
+                    "args" to emptyList<Any>()
                 )
             )
         } else {
             // fill and stroke
             currentFrameCommands.add(
                 mapOf(
-                    "property" to "fill"
+                    "property" to "fill",
+                    "args" to emptyList<Any>()
                 )
             )
             currentFrameCommands.add(
                 mapOf(
-                    "property" to "stroke"
+                    "property" to "stroke",
+                    "args" to emptyList<Any>()
                 )
             )
         }
@@ -288,6 +337,7 @@ class RRWebRecorder : Recorder {
         currentFrameCommands.add(
             mapOf(
                 "property" to "beginPath",
+                "args" to emptyList<Any>()
             )
         )
         currentFrameCommands.add(

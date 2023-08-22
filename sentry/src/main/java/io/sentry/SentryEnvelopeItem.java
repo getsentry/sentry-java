@@ -23,10 +23,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.zip.GZIPOutputStream;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,7 +77,8 @@ public final class SentryEnvelopeItem {
 
                   // TODO is it safe to use multiple writers on a single stream?
                   final GZIPOutputStream gzipStream = new GZIPOutputStream(stream);
-                  final OutputStreamWriter gzipStreamWriter = new OutputStreamWriter(gzipStream, UTF_8);
+                  final OutputStreamWriter gzipStreamWriter =
+                      new OutputStreamWriter(gzipStream, UTF_8);
 
                   final @Nullable List<Object> payload = replayRecording.getPayload();
                   if (payload == null) {

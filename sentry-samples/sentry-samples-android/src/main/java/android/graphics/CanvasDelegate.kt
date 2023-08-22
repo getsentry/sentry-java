@@ -6,10 +6,9 @@ import android.graphics.text.MeasuredText
 import android.util.Log
 import io.sentry.samples.android.replay.Recorder
 
-
 class CanvasDelegate(
     private val recorder: Recorder,
-    private val original: Canvas,
+    private val original: Canvas
 ) : Canvas() {
 
     companion object {
@@ -156,7 +155,7 @@ class CanvasDelegate(
 
     override fun rotate(degrees: Float) {
         // Log.d(TAG, "TODO rotate: ")
-        recorder.rotate(degrees);
+        recorder.rotate(degrees)
         original.rotate(degrees)
     }
 
@@ -558,7 +557,8 @@ class CanvasDelegate(
             rect.left,
             rect.top,
             rect.right,
-            rect.bottom, paint
+            rect.bottom,
+            paint
         )
         // original.drawRect(rect, paint)
     }
@@ -569,7 +569,8 @@ class CanvasDelegate(
             r.left.toFloat(),
             r.top.toFloat(),
             r.right.toFloat(),
-            r.bottom.toFloat(), paint
+            r.bottom.toFloat(),
+            paint
         )
         // original.drawRect(r, paint)
     }
@@ -577,7 +578,11 @@ class CanvasDelegate(
     override fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
         // Log.d(TAG, "drawRect: 2")
         recorder.drawRect(
-            left, top, right, bottom, paint
+            left,
+            top,
+            right,
+            bottom,
+            paint
         )
         // original.drawRect(left, top, right, bottom, paint)
     }

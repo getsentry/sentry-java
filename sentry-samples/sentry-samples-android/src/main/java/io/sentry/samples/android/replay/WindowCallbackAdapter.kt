@@ -115,7 +115,6 @@ open class WindowCallbackDelegate(callback: Window.Callback?) : Window.Callback 
     }
 }
 
-
 class EmptyCallback : Window.Callback {
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         return false
@@ -142,27 +141,21 @@ class EmptyCallback : Window.Callback {
     override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean = false
 
     override fun onWindowAttributesChanged(attrs: WindowManager.LayoutParams?) {
-
     }
 
     override fun onContentChanged() {
-
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
-
     }
 
     override fun onAttachedToWindow() {
-
     }
 
     override fun onDetachedFromWindow() {
-
     }
 
     override fun onPanelClosed(featureId: Int, menu: Menu) {
-
     }
 
     override fun onSearchRequested(): Boolean = false
@@ -177,11 +170,8 @@ class EmptyCallback : Window.Callback {
     ): ActionMode? = null
 
     override fun onActionModeStarted(mode: ActionMode?) {
-
     }
 
     override fun onActionModeFinished(mode: ActionMode?) {
-
     }
-
 }
