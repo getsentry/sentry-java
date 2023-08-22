@@ -24,6 +24,8 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.zip.GZIPOutputStream;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -75,17 +77,17 @@ public final class SentryEnvelopeItem {
                   writer.flush();
 
                   // TODO is it safe to use multiple writers on a single stream?
-                  // final GZIPOutputStream gzipStream = new GZIPOutputStream(stream);
+                  final GZIPOutputStream gzipStream = new GZIPOutputStream(stream);
 
                   final @Nullable Map<String, Object> payload = replayRecording.getPayload();
                   if (payload == null) {
                     throw new IllegalArgumentException("Empty replay recording payload");
                   }
                   final String serializedPayload = serializer.serialize(payload);
-                  // gzipStream.write(serializedPayload.getBytes(UTF_8));
-                  // gzipStream.flush();
-                  // gzipStream.close();
-                  writer.write(serializedPayload);
+                  gzipStream.write(serializedPayload.getBytes(UTF_8));
+                  gzipStream.flush();
+                  gzipStream.close();
+                  writer.write("\n");
                   writer.flush();
 
                   return stream.toByteArray();
