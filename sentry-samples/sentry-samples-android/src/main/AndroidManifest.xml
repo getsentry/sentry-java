@@ -63,6 +63,10 @@
             android:name=".compose.ComposeActivity"
             android:exported="false" />
 
+      <activity
+        android:name=".replay.ReplayActivity"
+        android:exported="false" />
+
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
       <meta-data android:name="io.sentry.dsn" android:value="https://444b58a36317c1138b4efccb2f1df801@o447951.ingest.sentry.io/4505747944112131" />
 

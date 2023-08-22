@@ -1,11 +1,14 @@
 package io.sentry;
 
-import io.sentry.vendor.gson.stream.JsonToken;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import io.sentry.vendor.gson.stream.JsonToken;
 
 public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
@@ -17,7 +20,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, Object> unknown;
 
   // TODO spec it out, good enough for now
-  private @Nullable Map<String, Object> payload;
+  private @Nullable List<Object> payload;
 
   @Nullable
   public Integer getSegmentId() {
@@ -29,17 +32,17 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
   }
 
   @Nullable
-  public Map<String, Object> getPayload() {
+  public List<Object> getPayload() {
     return payload;
   }
 
-  public void setPayload(@Nullable Map<String, Object> payload) {
+  public void setPayload(@Nullable List<Object> payload) {
     this.payload = payload;
   }
 
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-      throws IOException {
+    throws IOException {
     writer.beginObject();
     if (segmentId != null) {
       writer.name(JsonKeys.SEGMENT_ID).value(segmentId);
@@ -68,7 +71,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
     @Override
     public @NotNull ReplayRecording deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
 
       final ReplayRecording replay = new ReplayRecording();
 

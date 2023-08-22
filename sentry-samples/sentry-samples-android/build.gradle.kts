@@ -133,4 +133,6 @@ dependencies {
     implementation(Config.Libs.composeMaterial)
 
     debugImplementation(Config.Libs.leakCanary)
+
+    implementation("com.github.ChickenHook:RestrictionBypass:2.2")
 }

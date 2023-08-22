@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical">
+
+  <FrameLayout
+    android:id="@+id/recording"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:clipToPadding="false"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:padding="20dp"
+      tools:context=".android.sandbox.MainActivity">
+
+
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#CC3A5F"
+        android:padding="24dp"
+        android:text="Hello World!"
+        android:textColor="#FFFFFF" />
+
+
+    </LinearLayout>
+  </FrameLayout>
+
+  <Button
+    android:id="@+id/action_replay"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom|center_horizontal"
+    android:layout_marginBottom="16dp"
+    android:tag="exclude"
+    android:text="Send Replay" />
+
+</FrameLayout>

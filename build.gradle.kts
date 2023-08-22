@@ -78,6 +78,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven(url = "https://jitpack.io")
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()

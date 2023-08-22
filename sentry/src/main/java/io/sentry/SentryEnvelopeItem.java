@@ -22,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.zip.GZIPOutputStream;
@@ -78,15 +79,16 @@ public final class SentryEnvelopeItem {
 
                   // TODO is it safe to use multiple writers on a single stream?
                   final GZIPOutputStream gzipStream = new GZIPOutputStream(stream);
+                  final OutputStreamWriter gzipStreamWriter = new OutputStreamWriter(gzipStream, UTF_8);
 
-                  final @Nullable Map<String, Object> payload = replayRecording.getPayload();
+                  final @Nullable List<Object> payload = replayRecording.getPayload();
                   if (payload == null) {
                     throw new IllegalArgumentException("Empty replay recording payload");
                   }
-                  final String serializedPayload = serializer.serialize(payload);
-                  gzipStream.write(serializedPayload.getBytes(UTF_8));
-                  gzipStream.flush();
-                  gzipStream.close();
+                  serializer.serialize(payload, gzipStreamWriter);
+                  gzipStreamWriter.flush();
+                  gzipStreamWriter.close();
+
                   writer.write("\n");
                   writer.flush();
 
