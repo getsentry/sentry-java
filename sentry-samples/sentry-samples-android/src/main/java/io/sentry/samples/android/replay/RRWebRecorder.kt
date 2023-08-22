@@ -20,6 +20,7 @@ class RRWebRecorder : Recorder {
         if (recording.isEmpty()) {
             startTimeMs = timestampMs
 
+            // DOMContentLoadedEvent
             recording.add(
                 mapOf(
                     "timestamp" to timestampMs,
@@ -27,6 +28,8 @@ class RRWebRecorder : Recorder {
                     "data" to emptyMap<String, Any>()
                 )
             )
+
+            // LoadEvent
             recording.add(
                 mapOf(
                     "timestamp" to timestampMs,
@@ -34,6 +37,8 @@ class RRWebRecorder : Recorder {
                     "data" to emptyMap<String, Any>()
                 )
             )
+
+            // MetaEvent
             recording.add(
                 mapOf(
                     "timestamp" to timestampMs,
@@ -46,6 +51,7 @@ class RRWebRecorder : Recorder {
                 )
             )
 
+            // FullSnapshotEvent
             recording.add(
                 mapOf(
                     "timestamp" to timestampMs,
@@ -102,6 +108,7 @@ class RRWebRecorder : Recorder {
                 "args" to listOf(0, 0, width, height)
             )
         )
+        // IncrementalSnapshotEvent
         currentFrame = mapOf(
             "timestamp" to timestampMs,
             "type" to 3,

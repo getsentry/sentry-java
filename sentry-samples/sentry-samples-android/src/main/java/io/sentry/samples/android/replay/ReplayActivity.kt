@@ -26,15 +26,16 @@ class ReplayActivity : AppCompatActivity() {
             val replay = SentryReplayEvent()
 
             replay.timestamp =
-                DateUtils.millisToSeconds(viewRecorder.recorder.startTimeMs.toDouble())
-            replay.replayStartTimestamp =
                 DateUtils.millisToSeconds(viewRecorder.recorder.endTimeMs.toDouble())
+
+            replay.replayStartTimestamp =
+                DateUtils.millisToSeconds(viewRecorder.recorder.startTimeMs.toDouble())
             replay.segmentId = 0
 
-            val replayRecording = ReplayRecording()
-            replayRecording.segmentId = 0
-            replayRecording.payload = viewRecorder.recorder.recording
-
+            val replayRecording = ReplayRecording().apply {
+                segmentId = 0
+                payload = viewRecorder.recorder.recording
+            }
             val hint = Hint()
             hint.addReplayRecording(replayRecording)
 
