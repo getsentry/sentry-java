@@ -20,11 +20,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.zip.GZIPOutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -73,26 +72,15 @@ public final class SentryEnvelopeItem {
 
                   serializer.serialize(replayRecording, writer);
                   writer.write("\n");
-                  writer.flush();
-
-                  final ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
-                  try (final GZIPOutputStream gzipStream = new GZIPOutputStream(payloadStream);
-                      final OutputStreamWriter gzipStreamWriter =
-                          new OutputStreamWriter(gzipStream, UTF_8)) {
-                    final @Nullable List<Object> payload = replayRecording.getPayload();
-                    if (payload == null) {
-                      throw new IllegalArgumentException("Empty replay recording payload");
-                    }
-                    serializer.serialize(payload, gzipStreamWriter);
-                    gzipStreamWriter.flush();
-                  } catch (Throwable t) {
-                    throw t;
+                  if (replayRecording.getPayload() != null) {
+                    serializer.serialize(replayRecording.getPayload(), writer);
                   }
-                  payloadStream.flush();
 
-                  stream.write(payloadStream.toByteArray());
+                  // final byte[] payload = compressRecordingPayload(serializer, replayRecording);
+                  // stream.write(payload);
+
+                  writer.flush();
                   stream.flush();
-
                   return stream.toByteArray();
                 }
               } catch (Throwable t) {
@@ -101,14 +89,68 @@ public final class SentryEnvelopeItem {
               }
             });
 
+    //    try {
+    //      final byte[] data = cachedItem.getBytes();
+    //      final String dataStr = new String(data, UTF_8);
+    //
+    //      final String[] items = dataStr.split("\n", 2);
+    //      final String header = items[0];
+    //      final String payload = items[1];
+    //
+    //      final ByteArrayInputStream byteArrayInputStream = new
+    // ByteArrayInputStream(payload.getBytes(UTF_8));
+    //      final GZIPInputStream inputStream = new GZIPInputStream(byteArrayInputStream);
+    //
+    //      final ByteArrayOutputStream decodedData = new ByteArrayOutputStream();
+    //
+    //      byte[] buf = new byte[4096];
+    //      int readLen;
+    //      while ((readLen = inputStream.read(buf, 0, buf.length)) != -1) {
+    //        decodedData.write(buf, 0, readLen);
+    //      }
+    //
+    //    } catch (Exception e) {
+    //
+    //    }
+
     final SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
             SentryItemType.ReplayRecording, () -> cachedItem.getBytes().length, null, null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+    SentryEnvelopeItem item = new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+
+    try {
+      StringWriter writer = new StringWriter();
+      serializer.serialize(item.header, writer);
+      writer.flush();
+      writer.flush();
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "f", e);
+    }
+    return item;
   }
+
+  //  private static byte[] compressRecordingPayload(ISerializer serializer, ReplayRecording
+  // replayRecording) throws IOException {
+  //    try (final ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
+  //         final DeflaterOutputStream deflateStream = new DeflaterOutputStream(payloadStream);
+  //         final OutputStreamWriter gzipStreamWriter = new OutputStreamWriter(deflateStream,
+  // UTF_8)) {
+  //      final @Nullable List<Object> payload = replayRecording.getPayload();
+  //      if (payload == null) {
+  //        throw new IllegalArgumentException("Empty replay recording payload");
+  //      }
+  //      serializer.serialize(payload, gzipStreamWriter);
+  //
+  //      gzipStreamWriter.flush();
+  //      deflateStream.flush();
+  //      deflateStream.finish();
+  //
+  //      return payloadStream.toByteArray();
+  //    }
+  //  }
 
   // TODO: Should be a Stream
   // dataFactory is a Callable which returns theoretically a nullable result. Our implementations
