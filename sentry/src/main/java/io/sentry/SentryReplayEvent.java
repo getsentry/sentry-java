@@ -39,7 +39,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
   public SentryReplayEvent() {
     super();
-    this.replayId = new SentryId();
+    this.replayId = this.getEventId();
     this.type = "replay_event";
     this.replayType = "session";
     this.errorIds = new ArrayList<>();
