@@ -2,6 +2,7 @@ package io.sentry.samples.android.replay
 
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -16,10 +17,16 @@ class ReplayActivity : AppCompatActivity() {
     }
 
     private val viewRecorder: WindowRecorder = WindowRecorder()
+    private var counter = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_replay)
+
+        findViewById<TextView>(R.id.increase_counter).setOnClickListener {
+            counter++
+            (it as TextView).text = "Counter: $counter"
+        }
 
         findViewById<View>(R.id.action_replay).setOnClickListener {
             viewRecorder.stopRecording()

@@ -54,7 +54,7 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         frameMetrics: FrameMetrics?,
         dropCountSinceLastInvocation: Int
     ) {
-        val view = activity?.findViewById<View>(android.R.id.content)
+        val view = activity?.window?.decorView
         view?.let {
             captureFrame(it)
         }

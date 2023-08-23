@@ -2005,6 +2005,7 @@ public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/s
 	public fun getErrorIds ()Ljava/util/List;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun getReplayStartTimestamp ()Ljava/lang/Double;
+	public fun getReplayType ()Ljava/lang/String;
 	public fun getSegmentId ()Ljava/lang/Integer;
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceIds ()Ljava/util/List;
@@ -2015,6 +2016,7 @@ public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/s
 	public fun setErrorIds (Ljava/util/List;)V
 	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setReplayStartTimestamp (Ljava/lang/Double;)V
+	public fun setReplayType (Ljava/lang/String;)V
 	public fun setSegmentId (Ljava/lang/Integer;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
 	public fun setTraceIds (Ljava/util/List;)V
@@ -2033,6 +2035,7 @@ public final class io/sentry/SentryReplayEvent$JsonKeys {
 	public static final field ERROR_IDS Ljava/lang/String;
 	public static final field REPLAY_ID Ljava/lang/String;
 	public static final field REPLAY_START_TIMESTAMP Ljava/lang/String;
+	public static final field REPLAY_TYPE Ljava/lang/String;
 	public static final field SEGMENT_ID Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_IDS Ljava/lang/String;

@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PorterDuffColorFilter
 import android.view.MotionEvent
+import kotlin.math.roundToInt
 
 class RRWebRecorder : Recorder {
 
@@ -64,7 +65,8 @@ class RRWebRecorder : Recorder {
                                 mapOf(
                                     "type" to 1,
                                     "name" to "html",
-                                    "id" to 2
+                                    "id" to 2,
+                                    "childNodes" to emptyList<Any>()
                                 ),
                                 mapOf(
                                     "id" to 3,
@@ -84,7 +86,8 @@ class RRWebRecorder : Recorder {
                                                         "id" to "canvas",
                                                         "width" to width,
                                                         "height" to height
-                                                    )
+                                                    ),
+                                                    "childNodes" to emptyList<Any>()
                                                 )
                                             )
                                         )
@@ -141,14 +144,16 @@ class RRWebRecorder : Recorder {
         )
     }
 
-    override fun restoreToCount(saveCount: Int) {
-        // TODO how often?
-        currentFrameCommands.add(
-            mapOf(
-                "property" to "restore",
-                "args" to emptyList<Any>()
+    override fun restoreToCount(currentSaveCount: Int, targetSaveCount: Int) {
+        val numRestores = (currentSaveCount - targetSaveCount)
+        for (i in 0..numRestores) {
+            currentFrameCommands.add(
+                mapOf(
+                    "property" to "restore",
+                    "args" to emptyList<Any>()
+                )
             )
-        )
+        }
     }
 
     override fun translate(dx: Float, dy: Float) {
@@ -180,7 +185,7 @@ class RRWebRecorder : Recorder {
         paint: Paint
     ) {
         setupPaint(paint)
-        // TODO how to support RY
+        // TODO how to support RY ?
         currentFrameCommands.add(
             mapOf(
                 "property" to "roundRect",
@@ -214,10 +219,7 @@ class RRWebRecorder : Recorder {
     ) {
         setupPaint(paint)
 
-        // TODO font support
-        // ctx.font = "50px serif";
         // ctx.fillText("Hello world", 50, 90);
-
         val relevantText = text.subSequence(start, end).toString()
         currentFrameCommands.add(
             mapOf(
@@ -272,7 +274,38 @@ class RRWebRecorder : Recorder {
     }
 
     override fun onTouchEvent(timestampMs: Long, event: MotionEvent) {
-        // TODO("Not yet implemented")
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_MOVE) {
+            val payload = mapOf(
+                "timestamp" to timestampMs,
+                "type" to 3,
+                "data" to mapOf(
+                    "positions" to listOf(
+                        mapOf(
+                            "x" to event.x,
+                            "y" to event.y,
+                            "id" to 7,
+                            "timeOffset" to 0
+                        )
+                    )
+                )
+            )
+            recording.add(payload)
+        } else if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) {
+            val type = if (action == MotionEvent.ACTION_DOWN) 1 else 2
+            val payload = mapOf(
+                "timestamp" to timestampMs,
+                "type" to 3,
+                "data" to mapOf(
+                    "source" to 2,
+                    "type" to type,
+                    "id" to 7,
+                    "x" to event.x,
+                    "y" to event.y
+                )
+            )
+            recording.add(payload)
+        }
     }
 
     override fun drawPath(path: Path, paint: Paint) {
@@ -396,18 +429,27 @@ class RRWebRecorder : Recorder {
             )
         )
 
+        // TODO better font support
+        // font: font-style font-variant font-weight font-size/line-height font-family|caption|icon|menu|message-box|small-caption|status-bar|initial|inherit;
+        // ${paint.typeface.isBold}
+        val fontWeight = when {
+            paint.typeface == null -> "normal"
+            paint.typeface.isBold -> "bold"
+            paint.typeface.isItalic -> "italic"
+            else -> "normal"
+        }
         currentFrameCommands.add(
             mapOf(
                 "property" to "font",
-                "args" to listOf("${paint.textSize}px"),
+                "args" to listOf("$fontWeight ${paint.textSize.roundToInt()}px sans-serif"),
                 "setter" to true
             )
         )
 
         val textAlign = when (paint.textAlign) {
             Paint.Align.RIGHT -> "right"
-            Paint.Align.LEFT -> "left"
             Paint.Align.CENTER -> "center"
+            else -> "left"
         }
 
         currentFrameCommands.add(

@@ -137,7 +137,7 @@ class CanvasDelegate(
 
     override fun restoreToCount(saveCount: Int) {
         // Log.d(TAG, "restoreToCount: $saveCount")
-        recorder.restoreToCount(saveCount)
+        recorder.restoreToCount(original.saveCount, saveCount)
         original.restoreToCount(saveCount)
     }
 

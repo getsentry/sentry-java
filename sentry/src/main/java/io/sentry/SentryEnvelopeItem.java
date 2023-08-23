@@ -103,10 +103,7 @@ public final class SentryEnvelopeItem {
 
     final SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryItemType.ReplayRecording,
-            () -> cachedItem.getBytes().length,
-            "application/json",
-            null);
+            SentryItemType.ReplayRecording, () -> cachedItem.getBytes().length, null, null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

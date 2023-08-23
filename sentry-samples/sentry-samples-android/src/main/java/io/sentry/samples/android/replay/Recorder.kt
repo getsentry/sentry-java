@@ -9,7 +9,7 @@ public interface Recorder {
     fun beginFrame(timestampMs: Long, width: Int, height: Int)
     fun save()
     fun restore()
-    fun restoreToCount(saveCount: Int)
+    fun restoreToCount(currentSaveCount: Int, targetSaveCount: Int)
     fun translate(dx: Float, dy: Float)
     fun clipRectF(left: Float, top: Float, right: Float, bottom: Float)
     fun drawRoundRect(
