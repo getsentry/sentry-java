@@ -227,13 +227,28 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureSessionReplayEvent(
-      final @NotNull SentryReplayEvent event, @Nullable Hint hint) {
+      @NotNull SentryReplayEvent event, final @Nullable Scope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SessionReplay is required.");
-
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
 
     if (hint == null) {
       hint = new Hint();
+    }
+
+    if (shouldApplyScopeData(event, hint)) {
+      applyScope(event, scope);
+    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+
+    for (EventProcessor eventProcessor : options.getEventProcessors()) {
+      event = eventProcessor.process(event, hint);
+      if (event == null) {
+        break;
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
     }
 
     SentryId sentryId = SentryId.EMPTY_ID;

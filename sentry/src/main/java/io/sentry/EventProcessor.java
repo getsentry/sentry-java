@@ -22,6 +22,18 @@ public interface EventProcessor {
   }
 
   /**
+   * May mutate or drop a SentryEvent
+   *
+   * @param event the SentryEvent
+   * @param hint the Hint
+   * @return the event itself, a mutated SentryEvent or null
+   */
+  @Nullable
+  default SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
+    return event;
+  }
+
+  /**
    * May mutate or drop a SentryTransaction
    *
    * @param transaction the SentryTransaction

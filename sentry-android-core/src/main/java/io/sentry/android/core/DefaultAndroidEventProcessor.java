@@ -9,6 +9,7 @@ import io.sentry.Hint;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryReplayEvent;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.protocol.App;
 import io.sentry.protocol.OperatingSystem;
@@ -61,6 +62,21 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       // be different if the App. crashes because of OOM.
       processNonCachedEvent(event, hint);
       setThreads(event, hint);
+    }
+
+    setCommons(event, true, applyScopeData);
+
+    return event;
+  }
+
+  @Override
+  public @Nullable SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
+    final boolean applyScopeData = shouldApplyScopeData(event, hint);
+    if (applyScopeData) {
+      // we only set memory data if it's not a hard crash, when it's a hard crash the event is
+      // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
+      // be different if the App. crashes because of OOM.
+      processNonCachedEvent(event, hint);
     }
 
     setCommons(event, true, applyScopeData);

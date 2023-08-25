@@ -19,26 +19,40 @@
       android:padding="20dp"
       tools:context=".android.sandbox.MainActivity">
 
-
       <TextView
-        android:id="@+id/increase_counter"
+        android:id="@+id/generated_number"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:background="#f1f1f1"
+        android:minWidth="72dp"
+        android:padding="24dp"
+        android:textAlignment="center"
+        android:textColor="#222222"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        tools:text="1" />
+
+      <TextView
+        android:id="@+id/generated_number_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Tap to generate a random number."
+        android:visibility="visible" />
+
+      <TextView
+        android:id="@+id/generate_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         android:background="#CC3A5F"
         android:padding="24dp"
-        android:text="Hello World!"
-        android:textColor="#FFFFFF" />
+        android:text="Generate a number!"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold" />
 
     </LinearLayout>
   </FrameLayout>
-
-  <Button
-    android:id="@+id/action_replay"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_gravity="bottom|center_horizontal"
-    android:layout_marginBottom="16dp"
-    android:tag="exclude"
-    android:text="Send Replay" />
 
 </FrameLayout>

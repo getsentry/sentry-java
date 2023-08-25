@@ -71,7 +71,8 @@ public interface ISentryClient {
   }
 
   @NotNull
-  SentryId captureSessionReplayEvent(@NotNull SentryReplayEvent event, @Nullable Hint hint);
+  SentryId captureSessionReplayEvent(
+      @NotNull SentryReplayEvent event, @Nullable Scope scope, @Nullable Hint hint);
 
   /**
    * Captures the message.

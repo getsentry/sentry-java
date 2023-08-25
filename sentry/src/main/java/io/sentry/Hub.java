@@ -673,7 +673,8 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureReplay(
       final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
-    return stack.peek().getClient().captureSessionReplayEvent(replay, hint);
+    final StackItem item = stack.peek();
+    return item.getClient().captureSessionReplayEvent(replay, item.getScope(), hint);
   }
 
   @ApiStatus.Internal

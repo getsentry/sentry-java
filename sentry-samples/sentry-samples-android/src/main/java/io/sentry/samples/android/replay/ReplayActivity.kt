@@ -10,43 +10,22 @@ import io.sentry.ReplayRecording
 import io.sentry.Sentry
 import io.sentry.SentryReplayEvent
 import io.sentry.samples.android.R
+import kotlin.random.Random
 
 class ReplayActivity : AppCompatActivity() {
-    companion object {
-        private const val TAG = "ReplayActivity"
-    }
 
     private val viewRecorder: WindowRecorder = WindowRecorder()
-    private var counter = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_replay)
 
-        findViewById<TextView>(R.id.increase_counter).setOnClickListener {
-            counter++
-            (it as TextView).text = "Counter: $counter"
-        }
-
-        findViewById<View>(R.id.action_replay).setOnClickListener {
-            viewRecorder.stopRecording()
-            val replay = SentryReplayEvent()
-
-            replay.timestamp =
-                DateUtils.millisToSeconds(viewRecorder.recorder.endTimeMs.toDouble())
-
-            replay.replayStartTimestamp =
-                DateUtils.millisToSeconds(viewRecorder.recorder.startTimeMs.toDouble())
-            replay.segmentId = 0
-
-            val replayRecording = ReplayRecording().apply {
-                segmentId = 0
-                payload = viewRecorder.recorder.recording
-            }
-            val hint = Hint()
-            hint.addReplayRecording(replayRecording)
-
-            Sentry.captureReplay(replay, hint)
+        val generatedNumberTextView = findViewById<TextView>(R.id.generated_number)
+        val generatedNumberLabelTextView = findViewById<TextView>(R.id.generated_number_label)
+        findViewById<View>(R.id.generate_number).setOnClickListener {
+            val number = Random.nextInt(1, 11)
+            generatedNumberTextView.text = "$number"
+            generatedNumberLabelTextView.visibility = View.VISIBLE
         }
     }
 
@@ -58,5 +37,32 @@ class ReplayActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         viewRecorder.stopRecording()
+        Sentry.getCurrentHub().configureScope { scope ->
+            scope.breadcrumbs.forEach { breadcrumb ->
+                if (breadcrumb.timestamp.time > viewRecorder.recorder.startTimeMs &&
+                    breadcrumb.timestamp.time < viewRecorder.recorder.endTimeMs &&
+                    breadcrumb.category == "ui.click"
+                ) {
+                    viewRecorder.recorder.addBreadcrumb(breadcrumb)
+                }
+            }
+        }
+        val replay = SentryReplayEvent()
+
+        replay.timestamp =
+            DateUtils.millisToSeconds(viewRecorder.recorder.endTimeMs.toDouble())
+
+        replay.replayStartTimestamp =
+            DateUtils.millisToSeconds(viewRecorder.recorder.startTimeMs.toDouble())
+        replay.segmentId = 0
+
+        val replayRecording = ReplayRecording().apply {
+            segmentId = 0
+            payload = viewRecorder.recorder.recording as List<Any>
+        }
+        val hint = Hint()
+        hint.addReplayRecording(replayRecording)
+
+        Sentry.captureReplay(replay, hint)
     }
 }

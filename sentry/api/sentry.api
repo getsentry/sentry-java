@@ -246,6 +246,7 @@ public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
 
 public abstract interface class io/sentry/EventProcessor {
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
@@ -581,7 +582,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;)V
 	public abstract fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
-	public abstract fun captureSessionReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public abstract fun captureSessionReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
@@ -794,6 +795,7 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
@@ -1488,7 +1490,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
-	public fun captureSessionReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public fun captureSessionReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Scope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V

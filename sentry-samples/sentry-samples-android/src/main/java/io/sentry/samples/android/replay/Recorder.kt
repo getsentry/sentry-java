@@ -4,6 +4,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.view.MotionEvent
+import io.sentry.Breadcrumb
 
 public interface Recorder {
     fun beginFrame(timestampMs: Long, width: Int, height: Int)
@@ -32,4 +33,5 @@ public interface Recorder {
     fun setMatrix(matrix: Matrix?)
     fun onTouchEvent(timestampMs: Long, event: MotionEvent)
     fun drawPath(path: Path, paint: Paint)
+    fun addBreadcrumb(breadcrumb: Breadcrumb)
 }

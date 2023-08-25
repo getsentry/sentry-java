@@ -34,7 +34,9 @@ final class NoOpSentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureSessionReplayEvent(
-      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+      final @NotNull SentryReplayEvent replay,
+      final @Nullable Scope scope,
+      final @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 

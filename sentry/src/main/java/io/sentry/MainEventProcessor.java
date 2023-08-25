@@ -64,6 +64,17 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     return event;
   }
 
+  @Override
+  public @NotNull SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
+    setCommons(event);
+    setDebugMeta(event);
+
+    if (shouldApplyScopeData(event, hint)) {
+      processNonCachedEvent(event);
+    }
+    return event;
+  }
+
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
     final @NotNull List<DebugImage> debugImages = new ArrayList<>();
 

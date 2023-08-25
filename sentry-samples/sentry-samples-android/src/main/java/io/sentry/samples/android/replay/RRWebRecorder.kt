@@ -6,12 +6,28 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PorterDuffColorFilter
 import android.view.MotionEvent
+import io.sentry.Breadcrumb
 import kotlin.math.roundToInt
+
+class RREvent(
+    val timestamp: Long,
+    val type: Int,
+    val data: Map<String, Any>
+)
 
 class RRWebRecorder : Recorder {
 
-    val recording = ArrayList<Any>()
-    var currentFrame = emptyMap<String, Any>()
+    companion object {
+        private const val TYPE_DOMCONTENTLOADEDEVENT = 0
+        private const val TYPE_LOADEVENT = 1
+        private const val TYPE_METAEVENT = 4
+        private const val TYPE_FULLSNAPSHOTEVENT = 2
+        private const val TYPE_INCREMENTALSNAPSHOTEVENT = 3
+        private const val TYPE_BREADCRUMB = 5
+    }
+
+    val recording = ArrayList<RREvent>()
+    var currentFrame = RREvent(0, 0, emptyMap())
     var currentFrameCommands = ArrayList<Map<String, Any>>()
 
     var startTimeMs: Long = 0L
@@ -22,29 +38,17 @@ class RRWebRecorder : Recorder {
             startTimeMs = timestampMs
 
             // DOMContentLoadedEvent
-            recording.add(
-                mapOf(
-                    "timestamp" to timestampMs,
-                    "type" to 0,
-                    "data" to emptyMap<String, Any>()
-                )
-            )
+            recording.add(RREvent(timestampMs, TYPE_DOMCONTENTLOADEDEVENT, emptyMap()))
 
             // LoadEvent
-            recording.add(
-                mapOf(
-                    "timestamp" to timestampMs,
-                    "type" to 1,
-                    "data" to emptyMap<String, Any>()
-                )
-            )
+            recording.add(RREvent(timestampMs, TYPE_LOADEVENT, emptyMap()))
 
             // MetaEvent
             recording.add(
-                mapOf(
-                    "timestamp" to timestampMs,
-                    "type" to 4,
-                    "data" to mapOf<String, Any>(
+                RREvent(
+                    timestampMs,
+                    TYPE_METAEVENT,
+                    mapOf<String, Any>(
                         "href" to "http://localhost",
                         "width" to width,
                         "height" to height
@@ -54,10 +58,10 @@ class RRWebRecorder : Recorder {
 
             // FullSnapshotEvent
             recording.add(
-                mapOf(
-                    "timestamp" to timestampMs,
-                    "type" to 2,
-                    "data" to mapOf<String, Any>(
+                RREvent(
+                    timestampMs,
+                    TYPE_FULLSNAPSHOTEVENT,
+                    mapOf<String, Any>(
                         "node" to mapOf(
                             "id" to 1,
                             "type" to 0,
@@ -84,8 +88,8 @@ class RRWebRecorder : Recorder {
                                                     "id" to 7,
                                                     "attributes" to mapOf(
                                                         "id" to "canvas",
-                                                        "width" to width,
-                                                        "height" to height
+                                                        "width" to "$width",
+                                                        "height" to "$height"
                                                     ),
                                                     "childNodes" to emptyList<Any>()
                                                 )
@@ -112,10 +116,10 @@ class RRWebRecorder : Recorder {
             )
         )
         // IncrementalSnapshotEvent
-        currentFrame = mapOf(
-            "timestamp" to timestampMs,
-            "type" to 3,
-            "data" to mapOf<String, Any>(
+        currentFrame = RREvent(
+            timestampMs,
+            TYPE_INCREMENTALSNAPSHOTEVENT,
+            mapOf<String, Any>(
                 "source" to 9,
                 "id" to 7,
                 "type" to 0,
@@ -273,41 +277,6 @@ class RRWebRecorder : Recorder {
         // Android has a 3x3 matrix
     }
 
-    override fun onTouchEvent(timestampMs: Long, event: MotionEvent) {
-        val action = event.actionMasked
-        if (action == MotionEvent.ACTION_MOVE) {
-            val payload = mapOf(
-                "timestamp" to timestampMs,
-                "type" to 3,
-                "data" to mapOf(
-                    "positions" to listOf(
-                        mapOf(
-                            "x" to event.x,
-                            "y" to event.y,
-                            "id" to 7,
-                            "timeOffset" to 0
-                        )
-                    )
-                )
-            )
-            recording.add(payload)
-        } else if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) {
-            val type = if (action == MotionEvent.ACTION_DOWN) 1 else 2
-            val payload = mapOf(
-                "timestamp" to timestampMs,
-                "type" to 3,
-                "data" to mapOf(
-                    "source" to 2,
-                    "type" to type,
-                    "id" to 7,
-                    "x" to event.x,
-                    "y" to event.y
-                )
-            )
-            recording.add(payload)
-        }
-    }
-
     override fun drawPath(path: Path, paint: Paint) {
         setupPaint(paint)
 
@@ -339,6 +308,68 @@ class RRWebRecorder : Recorder {
             )
         }
         draw(paint)
+    }
+
+    override fun onTouchEvent(timestampMs: Long, event: MotionEvent) {
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_MOVE) {
+            val payload = RREvent(
+                timestampMs,
+                TYPE_INCREMENTALSNAPSHOTEVENT,
+                mapOf(
+                    "positions" to listOf(
+                        mapOf(
+                            "x" to event.x,
+                            "y" to event.y,
+                            "id" to 7,
+                            "timeOffset" to 0
+                        )
+                    )
+                )
+            )
+            recording.add(payload)
+        } else if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) {
+            val type = if (action == MotionEvent.ACTION_DOWN) 1 else 2
+            val payload = RREvent(
+                timestampMs,
+                TYPE_INCREMENTALSNAPSHOTEVENT,
+                mapOf(
+                    "source" to 2,
+                    "type" to type,
+                    "id" to 7,
+                    "x" to event.x,
+                    "y" to event.y
+                )
+            )
+            recording.add(payload)
+        }
+    }
+
+    override fun addBreadcrumb(breadcrumb: Breadcrumb) {
+        val message =
+            breadcrumb.message ?: breadcrumb.data["view.id"] ?: breadcrumb.data["view.class"]
+                ?: breadcrumb.data["view.tag"] ?: breadcrumb.data["screen"] ?: ""
+
+        recording.add(
+            RREvent(
+                breadcrumb.timestamp.time,
+                TYPE_BREADCRUMB,
+                mapOf(
+                    "tag" to "breadcrumb",
+                    "payload" to mapOf(
+                        "timestamp" to breadcrumb.timestamp.time / 1000,
+                        "type" to "default",
+                        "category" to breadcrumb.category,
+                        "message" to message,
+                        "data" to breadcrumb.data
+                    )
+                )
+            )
+        )
+
+        recording.sortBy { chunk ->
+            chunk.timestamp
+        }
     }
 
     private fun draw(paint: Paint) {
