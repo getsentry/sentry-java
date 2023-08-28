@@ -25,6 +25,8 @@ Breaking changes:
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 - Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
 - Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
+- Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
+  - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
 
 ## Unreleased
 
