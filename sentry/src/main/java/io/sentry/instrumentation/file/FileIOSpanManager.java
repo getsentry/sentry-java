@@ -29,7 +29,7 @@ final class FileIOSpanManager {
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
   static @Nullable ISpan startSpan(final @NotNull IHub hub, final @NotNull String op) {
-    final ISpan parent = hub.getTransaction();
+    final ISpan parent = Platform.isAndroid() ? hub.getTransaction() : hub.getSpan();
     return parent != null ? parent.startChild(op) : null;
   }
 

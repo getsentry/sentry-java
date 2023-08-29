@@ -14,6 +14,7 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEAD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
+import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
 import okhttp3.Request
 import okhttp3.Response
@@ -37,7 +38,8 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         val method: String = request.method
 
         // We start the call span that will contain all the others
-        callRootSpan = hub.transaction?.startChild("http.client", "$method $url")
+        val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
+        callRootSpan = parentSpan?.startChild("http.client", "$method $url")
         callRootSpan?.spanContext?.origin = TRACE_ORIGIN
         urlDetails.applyToSpan(callRootSpan)
 
