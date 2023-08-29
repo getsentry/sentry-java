@@ -3,9 +3,7 @@ package io.sentry.android.sqlite
 import android.annotation.SuppressLint
 import android.database.Cursor
 import android.database.SQLException
-import android.os.Build
 import android.os.CancellationSignal
-import androidx.annotation.RequiresApi
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteStatement
@@ -62,7 +60,6 @@ internal class SentrySupportSQLiteDatabase(
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     override fun query(
         query: SupportSQLiteQuery,
         cancellationSignal: CancellationSignal?

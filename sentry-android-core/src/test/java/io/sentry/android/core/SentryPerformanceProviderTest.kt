@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.app.Activity
 import android.app.Application
 import android.content.pm.ProviderInfo
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -93,7 +94,7 @@ class SentryPerformanceProviderTest {
 
         val provider = SentryPerformanceProvider(
             mock {
-                whenever(mock.sdkInfoVersion).thenReturn(29)
+                whenever(mock.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
             },
             MainLooperHandler()
         )

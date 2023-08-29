@@ -35,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SentryApolloInterceptorTest {
 
@@ -170,6 +171,24 @@ class SentryApolloInterceptorTest {
                 assertEquals(1, it.spans.size)
                 val httpClientSpan = it.spans.first()
                 assertEquals("overwritten description", httpClientSpan.description)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when beforeSpan callback returns null, span is dropped`() {
+        executeQuery(
+            fixture.getSut { _, _, _ ->
+                null
+            }
+        )
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertTrue(it.spans.isEmpty())
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

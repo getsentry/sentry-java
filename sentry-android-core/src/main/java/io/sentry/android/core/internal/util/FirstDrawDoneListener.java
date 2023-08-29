@@ -1,12 +1,10 @@
 package io.sentry.android.core.internal.util;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import androidx.annotation.RequiresApi;
 import io.sentry.android.core.BuildInfoProvider;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
@@ -19,8 +17,6 @@ import org.jetbrains.annotations.NotNull;
  * href="https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/util/FirstDrawDoneListener.java">Firebase</a>
  * under the Apache License, Version 2.0.
  */
-@SuppressLint("ObsoleteSdkInt")
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final @NotNull Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final @NotNull AtomicReference<View> viewReference;
@@ -35,8 +31,8 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
     // merged into the real ViewTreeObserver.
     // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
-    if (buildInfoProvider.getSdkInfoVersion() < 26
-        && !isAliveAndAttached(view, buildInfoProvider)) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.O
+        && !isAliveAndAttached(view)) {
       view.addOnAttachStateChangeListener(
           new View.OnAttachStateChangeListener() {
             @Override
@@ -83,17 +79,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
    * @return true if the View is already attached and the ViewTreeObserver is not a floating
    *     placeholder.
    */
-  private static boolean isAliveAndAttached(
-      final @NotNull View view, final @NotNull BuildInfoProvider buildInfoProvider) {
-    return view.getViewTreeObserver().isAlive() && isAttachedToWindow(view, buildInfoProvider);
-  }
-
-  @SuppressLint("NewApi")
-  private static boolean isAttachedToWindow(
-      final @NotNull View view, final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() >= 19) {
-      return view.isAttachedToWindow();
-    }
-    return view.getWindowToken() != null;
+  private static boolean isAliveAndAttached(final @NotNull View view) {
+    return view.getViewTreeObserver().isAlive() && view.isAttachedToWindow();
   }
 }
