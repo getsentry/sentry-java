@@ -555,6 +555,15 @@ public interface IHub {
   ISpan getSpan();
 
   /**
+   * Returns the transaction.
+   *
+   * @return the transaction or null when no active transaction is running.
+   */
+  @ApiStatus.Internal
+  @Nullable
+  ITransaction getTransaction();
+
+  /**
    * Gets the {@link SentryOptions} attached to current scope.
    *
    * @return the options attached to current scope.

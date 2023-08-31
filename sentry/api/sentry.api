@@ -364,6 +364,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -411,6 +412,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -483,6 +485,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
 	public abstract fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public abstract fun getTransaction ()Lio/sentry/ITransaction;
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
 	public abstract fun popScope ()V
@@ -869,6 +872,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V

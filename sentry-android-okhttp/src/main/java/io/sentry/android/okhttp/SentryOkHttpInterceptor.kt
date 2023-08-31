@@ -19,6 +19,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpUtils
+import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
@@ -78,7 +79,8 @@ class SentryOkHttpInterceptor(
             isFromEventListener = true
         } else {
             // read the span from the bound scope
-            span = hub.span?.startChild("http.client", "$method $url")
+            val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
+            span = parentSpan?.startChild("http.client", "$method $url")
             isFromEventListener = false
         }
 

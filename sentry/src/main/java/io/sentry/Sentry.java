@@ -15,6 +15,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
+import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
@@ -918,10 +919,16 @@ public final class Sentry {
   /**
    * Gets the current active transaction or span.
    *
-   * @return the active span or null when no active transaction is running
+   * @return the active span or null when no active transaction is running. In case of
+   *     globalHubMode=true, always the active transaction is returned, rather than the last active
+   *     span.
    */
   public static @Nullable ISpan getSpan() {
-    return getCurrentHub().getSpan();
+    if (globalHubMode && Platform.isAndroid()) {
+      return getCurrentHub().getTransaction();
+    } else {
+      return getCurrentHub().getSpan();
+    }
   }
 
   /**

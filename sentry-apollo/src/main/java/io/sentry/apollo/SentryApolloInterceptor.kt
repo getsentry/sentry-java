@@ -44,7 +44,7 @@ class SentryApolloInterceptor(
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
-        val activeSpan = hub.span
+        val activeSpan = if (io.sentry.util.Platform.isAndroid()) hub.transaction else hub.span
         if (activeSpan == null) {
             val headers = addTracingHeaders(request, null)
             val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
