@@ -440,6 +440,26 @@ public abstract interface class io/sentry/ICollector {
 	public abstract fun setup ()V
 }
 
+public abstract interface class io/sentry/IConnectionStatusProvider {
+	public abstract fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
+	public abstract fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public abstract fun getConnectionType ()Ljava/lang/String;
+	public abstract fun removeConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
+}
+
+public final class io/sentry/IConnectionStatusProvider$ConnectionStatus : java/lang/Enum {
+	public static final field CONNECTED Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public static final field DISCONNECTED Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public static final field NO_PERMISSION Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public static final field UNKNOWN Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public static fun values ()[Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+}
+
+public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionStatusObserver {
+	public abstract fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
+}
+
 public abstract interface class io/sentry/IEnvelopeReader {
 	public abstract fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 }
@@ -839,6 +859,14 @@ public final class io/sentry/MemoryCollectionData {
 	public fun getTimestampMillis ()J
 	public fun getUsedHeapMemory ()J
 	public fun getUsedNativeMemory ()J
+}
+
+public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectionStatusProvider {
+	public fun <init> ()V
+	public fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
+	public fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public fun getConnectionType ()Ljava/lang/String;
+	public fun removeConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
@@ -1266,9 +1294,11 @@ public abstract interface class io/sentry/ScopeCallback {
 	public abstract fun run (Lio/sentry/Scope;)V
 }
 
-public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/Integration {
+public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Lio/sentry/SendCachedEnvelopeFireAndForgetIntegration$SendFireAndForgetFactory;)V
-	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+	public fun close ()V
+	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
 public abstract interface class io/sentry/SendCachedEnvelopeFireAndForgetIntegration$SendFireAndForget {
@@ -1748,6 +1778,7 @@ public class io/sentry/SentryOptions {
 	public fun getCacheDirPath ()Ljava/lang/String;
 	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
 	public fun getCollectors ()Ljava/util/List;
+	public fun getConnectionStatusProvider ()Lio/sentry/IConnectionStatusProvider;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
@@ -1839,6 +1870,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
+	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
@@ -4108,6 +4140,7 @@ public final class io/sentry/transport/RateLimiter {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
+	public fun getRateLimitedUntilFor (Ljava/lang/String;)Ljava/util/Date;
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
 

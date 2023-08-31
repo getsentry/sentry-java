@@ -87,6 +87,11 @@ public final class RateLimiter {
     return envelope;
   }
 
+  @Nullable
+  public Date getRateLimitedUntilFor(final @NotNull String itemType) {
+    return null;
+  }
+
   /**
    * It marks the hint when sending has failed, so it's not necessary to wait the timeout
    *

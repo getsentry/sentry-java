@@ -1,29 +1,26 @@
 package io.sentry.android.core;
 
-import android.content.Context;
-import io.sentry.ILogger;
-import io.sentry.android.core.internal.util.ConnectivityChecker;
+import io.sentry.IConnectionStatusProvider;
+import io.sentry.SentryOptions;
 import io.sentry.transport.ITransportGate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 final class AndroidTransportGate implements ITransportGate {
 
-  private final Context context;
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  AndroidTransportGate(final @NotNull Context context, final @NotNull ILogger logger) {
-    this.context = context;
-    this.logger = logger;
+  AndroidTransportGate(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
   public boolean isConnected() {
-    return isConnected(ConnectivityChecker.getConnectionStatus(context, logger));
+    return isConnected(options.getConnectionStatusProvider().getConnectionStatus());
   }
 
   @TestOnly
-  boolean isConnected(final @NotNull ConnectivityChecker.Status status) {
+  boolean isConnected(final @NotNull IConnectionStatusProvider.ConnectionStatus status) {
     // let's assume its connected if there's no permission or something as we can't really know
     // whether is online or not.
     switch (status) {

@@ -1,6 +1,6 @@
 package io.sentry.android.core
 
-import io.sentry.android.core.internal.util.ConnectivityChecker
+import io.sentry.IConnectionStatusProvider
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -11,7 +11,7 @@ class AndroidTransportGateTest {
 
     private class Fixture {
         fun getSut(): AndroidTransportGate {
-            return AndroidTransportGate(mock(), mock())
+            return AndroidTransportGate(mock())
         }
     }
     private val fixture = Fixture()
@@ -23,21 +23,21 @@ class AndroidTransportGateTest {
 
     @Test
     fun `isConnected returns true if connection was not found`() {
-        assertTrue(fixture.getSut().isConnected(ConnectivityChecker.Status.UNKNOWN))
+        assertTrue(fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.UNKNOWN))
     }
 
     @Test
     fun `isConnected returns true if connection is connected`() {
-        assertTrue(fixture.getSut().isConnected(ConnectivityChecker.Status.CONNECTED))
+        assertTrue(fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.CONNECTED))
     }
 
     @Test
     fun `isConnected returns false if connection is not connected`() {
-        assertFalse(fixture.getSut().isConnected(ConnectivityChecker.Status.NOT_CONNECTED))
+        assertFalse(fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED))
     }
 
     @Test
     fun `isConnected returns false if no permission`() {
-        assertTrue(fixture.getSut().isConnected(ConnectivityChecker.Status.NO_PERMISSION))
+        assertTrue(fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION))
     }
 }

@@ -1,15 +1,21 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Sends cached events over when your App. is starting. */
-public final class SendCachedEnvelopeFireAndForgetIntegration implements Integration {
+public final class SendCachedEnvelopeFireAndForgetIntegration
+    implements Integration, IConnectionStatusProvider.IConnectionStatusObserver, Closeable {
 
   private final @NotNull SendFireAndForgetFactory factory;
+  private @Nullable IConnectionStatusProvider connectionStatusProvider;
+  private @Nullable IHub hub;
+  private @Nullable SentryOptions options;
 
   public interface SendFireAndForget {
     void send();
@@ -52,11 +58,13 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     this.factory = Objects.requireNonNull(factory, "SendFireAndForgetFactory is required");
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Override
-  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
     Objects.requireNonNull(options, "SentryOptions is required");
+
+    this.hub = hub;
+    this.options = options;
 
     final String cachedDir = options.getCacheDirPath();
     if (!factory.hasValidPath(cachedDir, options.getLogger())) {
@@ -64,8 +72,48 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       return;
     }
 
-    final SendFireAndForget sender = factory.create(hub, options);
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
+    addIntegrationToSdkVersion();
 
+    connectionStatusProvider = options.getConnectionStatusProvider();
+    connectionStatusProvider.addConnectionStatusObserver(this);
+
+    run(hub, options);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (connectionStatusProvider != null) {
+      connectionStatusProvider.removeConnectionStatusObserver(this);
+    }
+  }
+
+  @Override
+  public void onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus status) {
+    if (hub != null && options != null) {
+      run(hub, options);
+    }
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private synchronized void run(@NotNull IHub hub, @NotNull SentryOptions options) {
+
+    // assume we're connected unless overruled by the provider
+    @NotNull
+    IConnectionStatusProvider.ConnectionStatus connectionStatus =
+        IConnectionStatusProvider.ConnectionStatus.CONNECTED;
+    if (connectionStatusProvider != null) {
+      connectionStatus = connectionStatusProvider.getConnectionStatus();
+    }
+
+    // skip run only if we're certainly disconnected
+    if (connectionStatus == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+      return;
+    }
+
+    final SendFireAndForget sender = factory.create(hub, options);
     if (sender == null) {
       options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
       return;
@@ -85,10 +133,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
                 }
               });
 
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-      addIntegrationToSdkVersion();
     } catch (RejectedExecutionException e) {
       options
           .getLogger()

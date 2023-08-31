@@ -425,6 +425,9 @@ public class SentryOptions {
   private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
+  private @NotNull IConnectionStatusProvider connectionStatusProvider =
+      new NoOpConnectionStatusProvider();
+
   /**
    * Adds an event processor
    *
@@ -2086,6 +2089,16 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull List<ICollector> getCollectors() {
     return collectors;
+  }
+
+  @NotNull
+  public IConnectionStatusProvider getConnectionStatusProvider() {
+    return connectionStatusProvider;
+  }
+
+  public void setConnectionStatusProvider(
+      final @NotNull IConnectionStatusProvider connectionStatusProvider) {
+    this.connectionStatusProvider = connectionStatusProvider;
   }
 
   /** The BeforeSend callback */

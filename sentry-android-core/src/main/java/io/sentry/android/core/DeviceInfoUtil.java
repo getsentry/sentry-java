@@ -16,7 +16,6 @@ import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.internal.util.ConnectivityChecker;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
@@ -180,8 +179,8 @@ public final class DeviceInfoUtil {
     }
 
     Boolean connected;
-    switch (ConnectivityChecker.getConnectionStatus(context, options.getLogger())) {
-      case NOT_CONNECTED:
+    switch (options.getConnectionStatusProvider().getConnectionStatus()) {
+      case DISCONNECTED:
         connected = false;
         break;
       case CONNECTED:
@@ -223,8 +222,7 @@ public final class DeviceInfoUtil {
 
     if (device.getConnectionType() == null) {
       // wifi, ethernet or cellular, null if none
-      device.setConnectionType(
-          ConnectivityChecker.getConnectionType(context, options.getLogger(), buildInfoProvider));
+      device.setConnectionType(options.getConnectionStatusProvider().getConnectionType());
     }
   }
 
