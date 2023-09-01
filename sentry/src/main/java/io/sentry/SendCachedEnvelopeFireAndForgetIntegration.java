@@ -80,7 +80,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     connectionStatusProvider = options.getConnectionStatusProvider();
     connectionStatusProvider.addConnectionStatusObserver(this);
 
-    run(hub, options);
+    sendCachedEnvelopes(hub, options);
   }
 
   @Override
@@ -93,12 +93,12 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   @Override
   public void onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus status) {
     if (hub != null && options != null) {
-      run(hub, options);
+      sendCachedEnvelopes(hub, options);
     }
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  private synchronized void run(@NotNull IHub hub, @NotNull SentryOptions options) {
+  private synchronized void sendCachedEnvelopes(@NotNull IHub hub, @NotNull SentryOptions options) {
 
     // assume we're connected unless overruled by the provider
     @NotNull
