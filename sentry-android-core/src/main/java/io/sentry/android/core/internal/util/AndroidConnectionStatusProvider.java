@@ -18,6 +18,7 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Note: ConnectivityManager sometimes throws SecurityExceptions on Android 11. Hence all relevant
@@ -64,7 +65,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   @Override
-  public void addConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
+  public boolean addConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
     final ConnectivityManager.NetworkCallback callback =
         new ConnectivityManager.NetworkCallback() {
           @Override
@@ -89,7 +90,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
         };
 
     registeredCallbacks.put(observer, callback);
-    registerNetworkCallback(context, logger, buildInfoProvider, callback);
+    return registerNetworkCallback(context, logger, buildInfoProvider, callback);
   }
 
   @Override
@@ -325,5 +326,12 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     } catch (Throwable t) {
       logger.log(SentryLevel.ERROR, "unregisterNetworkCallback failed", t);
     }
+  }
+
+  @TestOnly
+  @NotNull
+  public Map<IConnectionStatusObserver, ConnectivityManager.NetworkCallback>
+      getRegisteredCallbacks() {
+    return registeredCallbacks;
   }
 }

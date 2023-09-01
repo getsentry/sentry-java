@@ -17,8 +17,8 @@ public final class NoOpConnectionStatusProvider implements IConnectionStatusProv
   }
 
   @Override
-  public void addConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
-    // no-op
+  public boolean addConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
+    return false;
   }
 
   @Override

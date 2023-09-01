@@ -478,4 +478,32 @@ class SentryOptionsTest {
     fun `when options are initialized, FullyDrawnReporter is set`() {
         assertEquals(FullyDisplayedReporter.getInstance(), SentryOptions().fullyDisplayedReporter)
     }
+
+    @Test
+    fun `when options is initialized, connectionStatusProvider is not null and default to noop`() {
+        assertNotNull(SentryOptions().connectionStatusProvider)
+        assertTrue(SentryOptions().connectionStatusProvider is NoOpConnectionStatusProvider)
+    }
+
+    @Test
+    fun `when connectionStatusProvider is set, its returned as well`() {
+        val options = SentryOptions()
+        val customProvider = object : IConnectionStatusProvider {
+            override fun getConnectionStatus(): IConnectionStatusProvider.ConnectionStatus {
+                return IConnectionStatusProvider.ConnectionStatus.UNKNOWN
+            }
+
+            override fun getConnectionType(): String? = null
+
+            override fun addConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) {
+                // no-op
+            }
+
+            override fun removeConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) {
+                // no-op
+            }
+        }
+        options.connectionStatusProvider = customProvider
+        assertEquals(customProvider, options.connectionStatusProvider)
+    }
 }

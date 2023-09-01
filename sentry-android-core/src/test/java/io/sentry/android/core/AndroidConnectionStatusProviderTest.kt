@@ -20,6 +20,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
@@ -31,7 +32,7 @@ import kotlin.test.assertTrue
 
 class AndroidConnectionStatusProviderTest {
 
-    private lateinit var connectionStatusProvider: IConnectionStatusProvider
+    private lateinit var connectionStatusProvider: AndroidConnectionStatusProvider
     private lateinit var contextMock: Context
     private lateinit var connectivityManager: ConnectivityManager
     private lateinit var networkInfo: NetworkInfo
@@ -293,5 +294,53 @@ class AndroidConnectionStatusProviderTest {
             failed = true
         }
         assertFalse(failed)
+    }
+
+    @Test
+    fun `connectionStatus returns NO_PERMISSIONS when context does not hold the permission`() {
+        whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
+        assertEquals(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION, connectionStatusProvider.connectionStatus)
+    }
+
+    @Test
+    fun `connectionStatus returns ethernet when underlying mechanism provides ethernet`() {
+        whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(true)
+        assertEquals(
+            "ethernet",
+            connectionStatusProvider.connectionType
+        )
+    }
+
+    @Test
+    fun `adding and removing an observer works correctly`() {
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+
+        val observer = IConnectionStatusProvider.IConnectionStatusObserver { }
+        val addResult = connectionStatusProvider.addConnectionStatusObserver(observer)
+        assertTrue(addResult)
+
+        connectionStatusProvider.removeConnectionStatusObserver(observer)
+        assertTrue(connectionStatusProvider.registeredCallbacks.isEmpty())
+    }
+
+    @Test
+    fun `underlying callbacks correctly trigger update`() {
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+
+        var callback: NetworkCallback? = null
+        whenever(connectivityManager.registerDefaultNetworkCallback(any())).then { invocation ->
+            callback = invocation.getArgument(0, NetworkCallback::class.java)
+            Unit
+        }
+        val observer = mock<IConnectionStatusProvider.IConnectionStatusObserver>()
+        connectionStatusProvider.addConnectionStatusObserver(observer)
+        callback!!.onAvailable(mock<Network>())
+        callback!!.onUnavailable()
+        callback!!.onLosing(mock<Network>(), 0)
+        callback!!.onLost(mock<Network>())
+        callback!!.onUnavailable()
+        connectionStatusProvider.removeConnectionStatusObserver(observer)
+
+        verify(observer, times(5)).onConnectionStatusChanged(any())
     }
 }
