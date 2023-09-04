@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import io.sentry.IConnectionStatusProvider;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
@@ -7,17 +8,26 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-final class SendCachedEnvelopeIntegration implements Integration {
+final class SendCachedEnvelopeIntegration
+    implements Integration, IConnectionStatusProvider.IConnectionStatusObserver, Closeable {
 
   private final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
       factory;
   private final @NotNull LazyEvaluator<Boolean> startupCrashMarkerEvaluator;
+  private final AtomicBoolean startupCrashHandled = new AtomicBoolean(false);
+  private @Nullable IConnectionStatusProvider connectionStatusProvider;
+  private @Nullable IHub hub;
+  private @Nullable SentryAndroidOptions options;
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
@@ -29,7 +39,8 @@ final class SendCachedEnvelopeIntegration implements Integration {
   @Override
   public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
-    final SentryAndroidOptions androidOptions =
+    this.hub = hub;
+    this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
@@ -40,51 +51,74 @@ final class SendCachedEnvelopeIntegration implements Integration {
       return;
     }
 
+    connectionStatusProvider = options.getConnectionStatusProvider();
+    connectionStatusProvider.addConnectionStatusObserver(this);
+
+    sendCachedEnvelopes(hub, this.options);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (connectionStatusProvider != null) {
+      connectionStatusProvider.removeConnectionStatusObserver(this);
+    }
+  }
+
+  @Override
+  public void onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus status) {
+    if (hub != null && options != null) {
+      sendCachedEnvelopes(hub, options);
+    }
+  }
+
+  private synchronized void sendCachedEnvelopes(
+      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
+
     final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
-        factory.create(hub, androidOptions);
+        factory.create(hub, options);
 
     if (sender == null) {
-      androidOptions.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+      options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
       return;
     }
-
     try {
-      Future<?> future =
-          androidOptions
+      final Future<?> future =
+          options
               .getExecutorService()
               .submit(
                   () -> {
                     try {
                       sender.send();
                     } catch (Throwable e) {
-                      androidOptions
+                      options
                           .getLogger()
                           .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
                     }
                   });
 
-      if (startupCrashMarkerEvaluator.getValue()) {
-        androidOptions
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Startup Crash marker exists, blocking flush.");
+      // startupCrashMarkerEvaluator remains true on subsequent runs, let's ensure we only block on
+      // the very first execution (=app start)
+      if (startupCrashMarkerEvaluator.getValue()
+          && startupCrashHandled.compareAndSet(false, true)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Startup Crash marker exists, blocking flush.");
         try {
-          future.get(androidOptions.getStartupCrashFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
+          future.get(options.getStartupCrashFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-          androidOptions
+          options
               .getLogger()
               .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
         }
       }
-      androidOptions.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
+      options.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
     } catch (RejectedExecutionException e) {
-      androidOptions
+      options
           .getLogger()
           .log(
               SentryLevel.ERROR,
               "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
               e);
     } catch (Throwable e) {
-      androidOptions
+      options
           .getLogger()
           .log(SentryLevel.ERROR, "Failed to call the executor. Cached events will not be sent", e);
     }
