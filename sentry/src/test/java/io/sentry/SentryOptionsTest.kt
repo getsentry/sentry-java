@@ -495,9 +495,7 @@ class SentryOptionsTest {
 
             override fun getConnectionType(): String? = null
 
-            override fun addConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) {
-                // no-op
-            }
+            override fun addConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) = false
 
             override fun removeConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) {
                 // no-op
