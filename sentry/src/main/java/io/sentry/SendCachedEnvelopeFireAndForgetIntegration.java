@@ -100,16 +100,13 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   @SuppressWarnings("FutureReturnValueIgnored")
   private synchronized void sendCachedEnvelopes(@NotNull IHub hub, @NotNull SentryOptions options) {
 
-    // assume we're connected unless overruled by the provider
-    @NotNull
-    IConnectionStatusProvider.ConnectionStatus connectionStatus =
-        IConnectionStatusProvider.ConnectionStatus.CONNECTED;
-    if (connectionStatusProvider != null) {
-      connectionStatus = connectionStatusProvider.getConnectionStatus();
-    }
-
     // skip run only if we're certainly disconnected
-    if (connectionStatus == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+    if (connectionStatusProvider != null
+        && connectionStatusProvider.getConnectionStatus()
+            == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
       return;
     }
 
