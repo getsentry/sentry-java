@@ -8,6 +8,10 @@
 - Send `http.request.method` in span data ([#2896](https://github.com/getsentry/sentry-java/pull/2896))
 - Add `enablePrettySerializationOutput` option for opting out of pretty print ([#2871](https://github.com/getsentry/sentry-java/pull/2871))
 
+### Fixes
+
+- Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
+
 ## 6.28.0
 
 ### Features
