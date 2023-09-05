@@ -74,13 +74,21 @@ final class SendCachedEnvelopeIntegration
   private synchronized void sendCachedEnvelopes(
       final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
 
+    if (connectionStatusProvider != null
+        && connectionStatusProvider.getConnectionStatus()
+            == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+      options.getLogger().log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
+      return;
+    }
+
     final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
         factory.create(hub, options);
 
     if (sender == null) {
-      options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+      options.getLogger().log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");
       return;
     }
+
     try {
       final Future<?> future =
           options
