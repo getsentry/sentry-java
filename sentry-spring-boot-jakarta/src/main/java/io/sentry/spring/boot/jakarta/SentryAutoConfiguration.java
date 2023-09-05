@@ -273,6 +273,10 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(
+        value = "sentry.enable-aot-compatibility",
+        havingValue = "false",
+        matchIfMissing = true)
     @Conditional(SentryTracingCondition.class)
     @ConditionalOnClass(ProceedingJoinPoint.class)
     @Import(SentryAdviceConfiguration.class)
