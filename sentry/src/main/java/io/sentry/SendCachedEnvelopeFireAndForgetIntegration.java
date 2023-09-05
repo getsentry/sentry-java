@@ -8,7 +8,7 @@ import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Sends cached events over when your App. is starting. */
+/** Sends cached events over when your App is starting or a network connection is present. */
 public final class SendCachedEnvelopeFireAndForgetIntegration
     implements Integration, IConnectionStatusProvider.IConnectionStatusObserver, Closeable {
 
