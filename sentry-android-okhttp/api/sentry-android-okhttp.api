@@ -17,9 +17,13 @@ public final class io/sentry/android/okhttp/SentryOkHttpEventListener : okhttp3/
 	public synthetic fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lokhttp3/EventListener$Factory;)V
 	public fun <init> (Lokhttp3/EventListener;)V
+	public fun cacheConditionalHit (Lokhttp3/Call;Lokhttp3/Response;)V
+	public fun cacheHit (Lokhttp3/Call;Lokhttp3/Response;)V
+	public fun cacheMiss (Lokhttp3/Call;)V
 	public fun callEnd (Lokhttp3/Call;)V
 	public fun callFailed (Lokhttp3/Call;Ljava/io/IOException;)V
 	public fun callStart (Lokhttp3/Call;)V
+	public fun canceled (Lokhttp3/Call;)V
 	public fun connectEnd (Lokhttp3/Call;Ljava/net/InetSocketAddress;Ljava/net/Proxy;Lokhttp3/Protocol;)V
 	public fun connectFailed (Lokhttp3/Call;Ljava/net/InetSocketAddress;Ljava/net/Proxy;Lokhttp3/Protocol;Ljava/io/IOException;)V
 	public fun connectStart (Lokhttp3/Call;Ljava/net/InetSocketAddress;Ljava/net/Proxy;)V
@@ -39,6 +43,7 @@ public final class io/sentry/android/okhttp/SentryOkHttpEventListener : okhttp3/
 	public fun responseFailed (Lokhttp3/Call;Ljava/io/IOException;)V
 	public fun responseHeadersEnd (Lokhttp3/Call;Lokhttp3/Response;)V
 	public fun responseHeadersStart (Lokhttp3/Call;)V
+	public fun satisfactionFailure (Lokhttp3/Call;Lokhttp3/Response;)V
 	public fun secureConnectEnd (Lokhttp3/Call;Lokhttp3/Handshake;)V
 	public fun secureConnectStart (Lokhttp3/Call;)V
 }
