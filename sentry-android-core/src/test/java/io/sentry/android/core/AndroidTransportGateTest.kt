@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import io.sentry.IConnectionStatusProvider
+import io.sentry.Sentry
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -11,7 +12,7 @@ class AndroidTransportGateTest {
 
     private class Fixture {
         fun getSut(): AndroidTransportGate {
-            return AndroidTransportGate(mock())
+            return AndroidTransportGate(SentryAndroidOptions())
         }
     }
     private val fixture = Fixture()
