@@ -163,7 +163,8 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     fun scheduleFinish(timestamp: SentryDate) {
         hub.options.executorService.schedule({
             if (!isReadingResponseBody.get() &&
-                (eventSpans.values.all { it.isFinished } || callRootSpan?.isFinished != true)) {
+                (eventSpans.values.all { it.isFinished } || callRootSpan?.isFinished != true)
+            ) {
                 finishEvent(timestamp)
             }
         }, RESPONSE_BODY_TIMEOUT_MILLIS)
