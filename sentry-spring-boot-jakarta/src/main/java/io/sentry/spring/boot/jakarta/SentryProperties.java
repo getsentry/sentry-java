@@ -33,6 +33,8 @@ public class SentryProperties extends SentryOptions {
   /** Reactive framework (e.g. WebFlux) integration properties */
   private @NotNull Reactive reactive = new Reactive();
 
+  private boolean enableAotCompatibility = false;
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -83,6 +85,14 @@ public class SentryProperties extends SentryOptions {
 
   public void setReactive(@NotNull Reactive reactive) {
     this.reactive = reactive;
+  }
+
+  public boolean isEnableAotCompatibility() {
+    return enableAotCompatibility;
+  }
+
+  public void setEnableAotCompatibility(boolean enableAotCompatibility) {
+    this.enableAotCompatibility = enableAotCompatibility;
   }
 
   @Open
