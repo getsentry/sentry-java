@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
+
 ## 6.29.0
 
 ### Features
