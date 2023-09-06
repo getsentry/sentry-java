@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.29.0
 
 ### Features
 
