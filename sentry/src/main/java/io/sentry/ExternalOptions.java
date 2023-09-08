@@ -45,6 +45,8 @@ public final class ExternalOptions {
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
 
+  private @Nullable Boolean sendModules;
+
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
       final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
@@ -121,6 +123,8 @@ public final class ExternalOptions {
 
     options.setEnablePrettySerializationOutput(
         propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
+
+    options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -367,8 +371,16 @@ public final class ExternalOptions {
     return enablePrettySerializationOutput;
   }
 
+  public @Nullable Boolean isSendModules() {
+    return sendModules;
+  }
+
   public void setEnablePrettySerializationOutput(
       final @Nullable Boolean enablePrettySerializationOutput) {
     this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
+  public void setSendModules(final @Nullable Boolean sendModules) {
+    this.sendModules = sendModules;
   }
 }

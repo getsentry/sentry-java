@@ -440,6 +440,9 @@ public class SentryOptions {
   /** Whether to format serialized data, e.g. events logged to console in debug mode */
   private boolean enablePrettySerializationOutput = true;
 
+  /** Whether to send modules containing information about versions. */
+  private boolean sendModules = true;
+
   /**
    * Adds an event processor
    *
@@ -2130,12 +2133,30 @@ public class SentryOptions {
   }
 
   /**
+   * Whether to send modules containing information about versions.
+   *
+   * @return true if modules should be sent.
+   */
+  public boolean isSendModules() {
+    return sendModules;
+  }
+
+  /**
    * Whether to format serialized data, e.g. events logged to console in debug mode
    *
    * @param enablePrettySerializationOutput true if output should be pretty printed
    */
   public void setEnablePrettySerializationOutput(boolean enablePrettySerializationOutput) {
     this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
+  /**
+   * Whether to send modules containing information about versions.
+   *
+   * @param sendModules true if modules should be sent.
+   */
+  public void setSendModules(boolean sendModules) {
+    this.sendModules = sendModules;
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
@@ -2381,6 +2402,10 @@ public class SentryOptions {
     }
     if (options.isEnablePrettySerializationOutput() != null) {
       setEnablePrettySerializationOutput(options.isEnablePrettySerializationOutput());
+    }
+
+    if(options.isSendModules() != null) {
+      setSendModules(options.isSendModules());
     }
   }
 
