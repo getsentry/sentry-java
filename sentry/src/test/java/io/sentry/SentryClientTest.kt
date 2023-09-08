@@ -2557,6 +2557,8 @@ class SentryClientTest {
 
     private class AbnormalHint(private val mechanism: String? = null) : AbnormalExit {
         override fun mechanism(): String? = mechanism
+        override fun ignoreCurrentThread(): Boolean = false
+        override fun timestamp(): Long? = null
     }
 
     private fun eventProcessorThrows(): EventProcessor {

@@ -7,6 +7,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import timber.log.Timber
 import java.io.Closeable
 
@@ -28,7 +29,7 @@ class SentryTimberIntegration(
 
         logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
         SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion(javaClass)
     }
 
     override fun close() {

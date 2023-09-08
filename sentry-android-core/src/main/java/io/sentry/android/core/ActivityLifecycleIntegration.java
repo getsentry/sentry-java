@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
 import android.app.Application;
@@ -126,7 +127,7 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-    addIntegrationToSdkVersion();
+    addIntegrationToSdkVersion(getClass());
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {

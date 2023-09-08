@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
@@ -88,7 +90,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     } catch (RejectedExecutionException e) {
       options
           .getLogger()

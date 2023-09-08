@@ -203,9 +203,7 @@ public interface IHub {
    *
    * @param breadcrumb the breadcrumb
    */
-  default void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
-    addBreadcrumb(breadcrumb, new Hint());
-  }
+  void addBreadcrumb(@NotNull Breadcrumb breadcrumb);
 
   /**
    * Adds a breadcrumb to the current Scope

@@ -18,13 +18,13 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.TracingUtils
 import java.util.Locale
 import java.util.concurrent.Executor
@@ -34,13 +34,13 @@ private const val TRACE_ORIGIN = "auto.graphql.apollo"
 class SentryApolloInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
-) : ApolloInterceptor, IntegrationName {
+) : ApolloInterceptor {
 
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion(javaClass)
         SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
 
