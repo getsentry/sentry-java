@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+Breaking changes:
+- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+- Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
+- Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
+  - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
+- Reduce timeout of AsyncHttpTransport to avoid ANR ([#2879](https://github.com/getsentry/sentry-java/pull/2879))
+- Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
+  - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s
+- Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
+- Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
+  - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
+- Android only: If global hub mode is enabled, Sentry.getSpan() returns the root span instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
+- Android only: Observe network state to upload any unsent envelopes ([#2910](https://github.com/getsentry/sentry-java/pull/2910))
+
+### Fixes
+
+- Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
+- Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
+
+Breaking changes:
+- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
+- Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
+- Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
+- Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
+  - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
+
 ## 6.29.0
 
 ### Features
@@ -31,36 +61,6 @@
 - Propagate OkHttp status to parent spans ([#2872](https://github.com/getsentry/sentry-java/pull/2872))
 
 ## 6.27.0
-
-### Features
-
-Breaking changes:
-- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
-- Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
-- Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
-  - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
-- Reduce timeout of AsyncHttpTransport to avoid ANR ([#2879](https://github.com/getsentry/sentry-java/pull/2879))
-- Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
-  - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s
-- Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
-- Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
-  - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
-- Android only: If global hub mode is enabled, Sentry.getSpan() returns the root span instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
-- Android only: Observe network state to upload any unsent envelopes ([#2910](https://github.com/getsentry/sentry-java/pull/2910))
-
-### Fixes
-
-- Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
-- Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
-
-Breaking changes:
-- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
-- Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
-- Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
-- Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
-  - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
-
-## Unreleased
 
 ### Features
 
