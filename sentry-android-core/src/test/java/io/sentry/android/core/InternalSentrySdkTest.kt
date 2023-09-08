@@ -120,6 +120,27 @@ class InternalSentrySdkTest {
     }
 
     @Test
+    fun `current scope returns a copy of the scope`() {
+        Sentry.setCurrentHub(
+            Hub(
+                SentryOptions().apply {
+                    dsn = "https://key@uri/1234567"
+                }
+            )
+        )
+        Sentry.addBreadcrumb("test")
+
+        // when the clone is modified
+        val clonedScope = InternalSentrySdk.getCurrentScope()!!
+        clonedScope.clearBreadcrumbs()
+
+        // then modifications should not be reflected
+        Sentry.configureScope { scope ->
+            assertEquals(1, scope.breadcrumbs.size)
+        }
+    }
+
+    @Test
     fun `serializeScope correctly creates top level map`() {
         val options = SentryAndroidOptions()
         val scope = Scope(options)

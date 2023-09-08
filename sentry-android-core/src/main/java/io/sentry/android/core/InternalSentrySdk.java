@@ -41,8 +41,11 @@ public final class InternalSentrySdk {
   @Nullable
   public static Scope getCurrentScope() {
     final @NotNull AtomicReference<Scope> scopeRef = new AtomicReference<>();
-    //noinspection Convert2MethodRef
-    HubAdapter.getInstance().withScope(scope -> scopeRef.set(scope));
+    HubAdapter.getInstance()
+        .configureScope(
+            scope -> {
+              scopeRef.set(new Scope(scope));
+            });
     return scopeRef.get();
   }
 

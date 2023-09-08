@@ -16,6 +16,7 @@ import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import io.sentry.util.UrlUtils;
 import java.io.IOException;
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.http.HttpRequest;
@@ -53,6 +54,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
           request.getMethod() != null ? request.getMethod().name() : "unknown";
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());
       span.setDescription(methodName + " " + urlDetails.getUrlOrFallback());
+      span.setData(SpanDataConvention.HTTP_METHOD_KEY, methodName.toUpperCase(Locale.ROOT));
       urlDetails.applyToSpan(span);
 
       maybeAddTracingHeaders(request, span);

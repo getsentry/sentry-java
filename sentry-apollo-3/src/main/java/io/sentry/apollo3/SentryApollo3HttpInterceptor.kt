@@ -20,6 +20,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SpanDataConvention
+import io.sentry.SpanDataConvention.HTTP_METHOD_KEY
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
@@ -35,6 +36,7 @@ import io.sentry.vendor.Base64
 import okhttp3.internal.platform.Platform
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
+import java.util.Locale
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo3"
 
@@ -172,7 +174,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             variables?.let {
                 setData("variables", it)
             }
-            setData("http.method", method)
+            setData(HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
         }
     }
 

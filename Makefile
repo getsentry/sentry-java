@@ -1,6 +1,6 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease createCoverageReports
 
-all: stop clean javadocs compile
+all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
 
@@ -50,3 +50,10 @@ assembleBenchmarkTestRelease:
 assembleUiTestRelease:
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+
+# Create coverage reports
+#  - Jacoco for Java & Android modules
+#  - Kover for KMP modules e.g sentry-compose
+createCoverageReports:
+	./gradlew jacocoTestReport
+	./gradlew koverXmlReportRelease
