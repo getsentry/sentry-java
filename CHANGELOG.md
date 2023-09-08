@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `sendModules` option for disable sending modules ([#2926](https://github.com/getsentry/sentry-java/pull/2926))
+
 ## 6.29.0
 
 ### Features
