@@ -769,6 +769,22 @@ public final class Hub implements IHub {
 
   @Override
   @ApiStatus.Internal
+  public @Nullable ITransaction getTransaction() {
+    ITransaction span = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'getTransaction' call is a no-op.");
+    } else {
+      span = stack.peek().getScope().getTransaction();
+    }
+    return span;
+  }
+
+  @Override
+  @ApiStatus.Internal
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,

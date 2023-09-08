@@ -132,15 +132,16 @@ class SentryNavigationListener @JvmOverloads constructor(
         // we add '/' to the name to match dart and web pattern
         name = "/" + name.substringBefore('/') // strip out arguments from the tx name
 
-        val transactonOptions = TransactionOptions().also {
+        val transactionOptions = TransactionOptions().also {
             it.isWaitForChildren = true
             it.idleTimeout = hub.options.idleTimeout
+            it.deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
             it.isTrimEnd = true
         }
 
         val transaction = hub.startTransaction(
             TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
-            transactonOptions
+            transactionOptions
         )
 
         transaction.spanContext.origin = traceOriginAppendix?.let {

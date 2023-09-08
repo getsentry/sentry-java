@@ -31,9 +31,9 @@ object Config {
     object Android {
         private val sdkVersion = 33
 
-        val minSdkVersion = 14
+        val minSdkVersion = 19
         val minSdkVersionOkHttp = 21
-        val minSdkVersionNdk = 16
+        val minSdkVersionNdk = 19
         val minSdkVersionCompose = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
@@ -108,7 +108,7 @@ object Config {
         val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
         val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
 
-        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
+        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 

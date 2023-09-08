@@ -37,10 +37,14 @@ public final class SentryTracer implements ITransaction {
    */
   private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
-  private volatile @Nullable TimerTask timerTask;
+  private volatile @Nullable TimerTask idleTimeoutTask;
+  private volatile @Nullable TimerTask deadlineTimeoutTask;
+
   private volatile @Nullable Timer timer = null;
   private final @NotNull Object timerLock = new Object();
-  private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
+
+  private final @NotNull AtomicBoolean isIdleFinishTimerRunning = new AtomicBoolean(false);
+  private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
 
   private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
@@ -92,8 +96,11 @@ public final class SentryTracer implements ITransaction {
       transactionPerformanceCollector.start(this);
     }
 
-    if (transactionOptions.getIdleTimeout() != null) {
+    if (transactionOptions.getIdleTimeout() != null
+        || transactionOptions.getDeadlineTimeout() != null) {
       timer = new Timer(true);
+
+      scheduleDeadlineTimeout();
       scheduleFinish();
     }
   }
@@ -101,34 +108,47 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void scheduleFinish() {
     synchronized (timerLock) {
-      cancelTimer();
       if (timer != null) {
-        isFinishTimerRunning.set(true);
-        timerTask =
-            new TimerTask() {
-              @Override
-              public void run() {
-                finishFromTimer();
-              }
-            };
+        final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
 
-        try {
-          timer.schedule(timerTask, transactionOptions.getIdleTimeout());
-        } catch (Throwable e) {
-          hub.getOptions()
-              .getLogger()
-              .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
-          // if we failed to schedule the finish timer for some reason, we finish it here right away
-          finishFromTimer();
+        if (idleTimeout != null) {
+          cancelIdleTimer();
+          isIdleFinishTimerRunning.set(true);
+          idleTimeoutTask =
+              new TimerTask() {
+                @Override
+                public void run() {
+                  onIdleTimeoutReached();
+                }
+              };
+
+          try {
+            timer.schedule(idleTimeoutTask, idleTimeout);
+          } catch (Throwable e) {
+            hub.getOptions()
+                .getLogger()
+                .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+            // if we failed to schedule the finish timer for some reason, we finish it here right
+            // away
+            onIdleTimeoutReached();
+          }
         }
       }
     }
   }
 
-  private void finishFromTimer() {
-    final SpanStatus status = getStatus();
+  private void onIdleTimeoutReached() {
+    final @Nullable SpanStatus status = getStatus();
     finish((status != null) ? status : SpanStatus.OK);
-    isFinishTimerRunning.set(false);
+    isIdleFinishTimerRunning.set(false);
+  }
+
+  private void onDeadlineTimeoutReached() {
+    final @Nullable SpanStatus status = getStatus();
+    forceFinish(
+        (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
+        transactionOptions.getIdleTimeout() != null);
+    isDeadlineTimerRunning.set(false);
   }
 
   @Override
@@ -193,14 +213,11 @@ public final class SentryTracer implements ITransaction {
         performanceCollectionData.clear();
       }
 
-      // finish unfinished children
-      for (final Span child : children) {
-        if (!child.isFinished()) {
-          child.setSpanFinishedCallback(
-              null); // reset the callback, as we're already in the finish method
-          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
-        }
-      }
+      // any un-finished childs will remain unfinished
+      // as relay takes care of setting the end-timestamp + deadline_exceeded
+      // see
+      // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
+
       root.finish(finishStatus.spanStatus, finishTimestamp);
 
       hub.configureScope(
@@ -222,6 +239,8 @@ public final class SentryTracer implements ITransaction {
       if (timer != null) {
         synchronized (timerLock) {
           if (timer != null) {
+            cancelIdleTimer();
+            cancelDeadlineTimer();
             timer.cancel();
             timer = null;
           }
@@ -244,12 +263,51 @@ public final class SentryTracer implements ITransaction {
     }
   }
 
-  private void cancelTimer() {
+  private void cancelIdleTimer() {
     synchronized (timerLock) {
-      if (timerTask != null) {
-        timerTask.cancel();
-        isFinishTimerRunning.set(false);
-        timerTask = null;
+      if (idleTimeoutTask != null) {
+        idleTimeoutTask.cancel();
+        isIdleFinishTimerRunning.set(false);
+        idleTimeoutTask = null;
+      }
+    }
+  }
+
+  private void scheduleDeadlineTimeout() {
+    final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
+    if (deadlineTimeOut != null) {
+      synchronized (timerLock) {
+        if (timer != null) {
+          cancelDeadlineTimer();
+          isDeadlineTimerRunning.set(true);
+          deadlineTimeoutTask =
+              new TimerTask() {
+                @Override
+                public void run() {
+                  onDeadlineTimeoutReached();
+                }
+              };
+          try {
+            timer.schedule(deadlineTimeoutTask, deadlineTimeOut);
+          } catch (Throwable e) {
+            hub.getOptions()
+                .getLogger()
+                .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+            // if we failed to schedule the finish timer for some reason, we finish it here right
+            // away
+            onDeadlineTimeoutReached();
+          }
+        }
+      }
+    }
+  }
+
+  private void cancelDeadlineTimer() {
+    synchronized (timerLock) {
+      if (deadlineTimeoutTask != null) {
+        deadlineTimeoutTask.cancel();
+        isDeadlineTimerRunning.set(false);
+        deadlineTimeoutTask = null;
       }
     }
   }
@@ -360,7 +418,7 @@ public final class SentryTracer implements ITransaction {
 
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
-    cancelTimer();
+    cancelIdleTimer();
     final Span span =
         new Span(
             root.getTraceId(),
@@ -720,8 +778,14 @@ public final class SentryTracer implements ITransaction {
 
   @TestOnly
   @Nullable
-  TimerTask getTimerTask() {
-    return timerTask;
+  TimerTask getIdleTimeoutTask() {
+    return idleTimeoutTask;
+  }
+
+  @TestOnly
+  @Nullable
+  TimerTask getDeadlineTimeoutTask() {
+    return deadlineTimeoutTask;
   }
 
   @TestOnly
@@ -733,7 +797,13 @@ public final class SentryTracer implements ITransaction {
   @TestOnly
   @NotNull
   AtomicBoolean isFinishTimerRunning() {
-    return isFinishTimerRunning;
+    return isIdleFinishTimerRunning;
+  }
+
+  @TestOnly
+  @NotNull
+  AtomicBoolean isDeadlineTimerRunning() {
+    return isDeadlineTimerRunning;
   }
 
   @TestOnly

@@ -32,6 +32,13 @@ import org.jetbrains.annotations.VisibleForTesting;
 @ApiStatus.Internal
 public final class SentryGestureListener implements GestureDetector.OnGestureListener {
 
+  private enum GestureType {
+    Click,
+    Scroll,
+    Swipe,
+    Unknown
+  }
+
   static final String UI_ACTION = "ui.action";
   private static final String TRACE_ORIGIN = "auto.ui.gesture_listener";
 
@@ -41,7 +48,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   private @Nullable UiElement activeUiElement = null;
   private @Nullable ITransaction activeTransaction = null;
-  private @Nullable String activeEventType = null;
+  private @NotNull GestureType activeEventType = GestureType.Unknown;
 
   private final ScrollState scrollState = new ScrollState();
 
@@ -61,7 +68,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return;
     }
 
-    if (scrollState.type == null) {
+    if (scrollState.type == GestureType.Unknown) {
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "Unable to define scroll type. No breadcrumb captured.");
@@ -107,8 +114,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return false;
     }
 
-    addBreadcrumb(target, "click", Collections.emptyMap(), motionEvent);
-    startTracing(target, "click");
+    addBreadcrumb(target, GestureType.Click, Collections.emptyMap(), motionEvent);
+    startTracing(target, GestureType.Click);
     return false;
   }
 
@@ -123,7 +130,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return false;
     }
 
-    if (scrollState.type == null) {
+    if (scrollState.type == GestureType.Unknown) {
       final @Nullable UiElement target =
           ViewUtils.findTarget(
               options, decorView, firstEvent.getX(), firstEvent.getY(), UiElement.Type.SCROLLABLE);
@@ -140,7 +147,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       }
 
       scrollState.setTarget(target);
-      scrollState.type = "scroll";
+      scrollState.type = GestureType.Scroll;
     }
     return false;
   }
@@ -151,7 +158,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       final @Nullable MotionEvent motionEvent1,
       final float v,
       final float v1) {
-    scrollState.type = "swipe";
+    scrollState.type = GestureType.Swipe;
     return false;
   }
 
@@ -164,7 +171,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   // region utils
   private void addBreadcrumb(
       final @NotNull UiElement target,
-      final @NotNull String eventType,
+      final @NotNull GestureType eventType,
       final @NotNull Map<String, Object> additionalData,
       final @NotNull MotionEvent motionEvent) {
 
@@ -172,24 +179,29 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return;
     }
 
+    final String type = getGestureType(eventType);
+
     final Hint hint = new Hint();
     hint.set(ANDROID_MOTION_EVENT, motionEvent);
     hint.set(ANDROID_VIEW, target.getView());
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
-            eventType,
-            target.getResourceName(),
-            target.getClassName(),
-            target.getTag(),
-            additionalData),
+            type, target.getResourceName(), target.getClassName(), target.getTag(), additionalData),
         hint);
   }
 
-  private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
-    final UiElement uiElement = activeUiElement;
+  private void startTracing(final @NotNull UiElement target, final @NotNull GestureType eventType) {
+
+    final boolean isNewGestureSameAsActive =
+        (eventType == activeEventType && target.equals(activeUiElement));
+    final boolean isClickGesture = eventType == GestureType.Click;
+    // we always want to start new transaction/traces for clicks, for swipe/scroll only if the
+    // target changed
+    final boolean isNewInteraction = isClickGesture || !isNewGestureSameAsActive;
+
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
-      if (!(target.equals(uiElement) && eventType.equals(activeEventType))) {
+      if (isNewInteraction) {
         TracingUtils.startNewTrace(hub);
         activeUiElement = target;
         activeEventType = eventType;
@@ -206,9 +218,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final @Nullable String viewIdentifier = target.getIdentifier();
 
     if (activeTransaction != null) {
-      if (target.equals(uiElement)
-          && eventType.equals(activeEventType)
-          && !activeTransaction.isFinished()) {
+      if (!isNewInteraction && !activeTransaction.isFinished()) {
         options
             .getLogger()
             .log(
@@ -233,10 +243,12 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     // we can only bind to the scope if there's no running transaction
     final String name = getActivityName(activity) + "." + viewIdentifier;
-    final String op = UI_ACTION + "." + eventType;
+    final String op = UI_ACTION + "." + getGestureType(eventType);
 
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setWaitForChildren(true);
+    transactionOptions.setDeadlineTimeout(
+        TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
 
@@ -258,17 +270,25 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   void stopTracing(final @NotNull SpanStatus status) {
     if (activeTransaction != null) {
-      activeTransaction.finish(status);
+      final SpanStatus currentStatus = activeTransaction.getStatus();
+      // status might be set by other integrations, let's not overwrite it
+      if (currentStatus == null) {
+        activeTransaction.finish(status);
+      } else {
+        activeTransaction.finish();
+      }
     }
     hub.configureScope(
         scope -> {
+          // avoid method refs on Android due to some issues with older AGP setups
+          // noinspection Convert2MethodRef
           clearScope(scope);
         });
     activeTransaction = null;
     if (activeUiElement != null) {
       activeUiElement = null;
     }
-    activeEventType = null;
+    activeEventType = GestureType.Unknown;
   }
 
   @VisibleForTesting
@@ -329,11 +349,32 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
     return decorView;
   }
+
+  @NotNull
+  private static String getGestureType(final @NotNull GestureType eventType) {
+    final @NotNull String type;
+    switch (eventType) {
+      case Click:
+        type = "click";
+        break;
+      case Scroll:
+        type = "scroll";
+        break;
+      case Swipe:
+        type = "swipe";
+        break;
+      default:
+      case Unknown:
+        type = "unknown";
+        break;
+    }
+    return type;
+  }
   // endregion
 
   // region scroll logic
   private static final class ScrollState {
-    private @Nullable String type = null;
+    private @NotNull GestureType type = GestureType.Unknown;
     private @Nullable UiElement target;
     private float startX = 0f;
     private float startY = 0f;
@@ -370,7 +411,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     private void reset() {
       target = null;
-      type = null;
+      type = GestureType.Unknown;
       startX = 0f;
       startY = 0f;
     }

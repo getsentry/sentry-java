@@ -183,6 +183,11 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @Nullable ITransaction getTransaction() {
+    return null;
+  }
+
+  @Override
   public @NotNull SentryOptions getOptions() {
     return emptyOptions;
   }

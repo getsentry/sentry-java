@@ -70,7 +70,7 @@ public final class NdkIntegration implements Integration, Closeable {
     }
   }
 
-  private void disableNdkIntegration(final @NotNull SentryOptions options) {
+  private void disableNdkIntegration(final @NotNull SentryAndroidOptions options) {
     options.setEnableNdk(false);
     options.setEnableScopeSync(false);
   }

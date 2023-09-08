@@ -1607,15 +1607,32 @@ class HubTest {
     @Test
     fun `when there is no active transaction, getSpan returns null`() {
         val hub = generateHub()
-        assertNull(hub.getSpan())
+        assertNull(hub.span)
     }
 
     @Test
-    fun `when there is active transaction bound to the scope, getSpan returns active transaction`() {
+    fun `when there is no active transaction, getTransaction returns null`() {
+        val hub = generateHub()
+        assertNull(hub.transaction)
+    }
+
+    @Test
+    fun `when there is active transaction bound to the scope, getTransaction and getSpan return active transaction`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
-        assertEquals(tx, hub.getSpan())
+        hub.configureScope { it.transaction = tx }
+
+        assertEquals(tx, hub.transaction)
+        assertEquals(tx, hub.span)
+    }
+
+    @Test
+    fun `when there is a transaction but the hub is closed, getTransaction returns null`() {
+        val hub = generateHub()
+        hub.startTransaction("name", "op")
+        hub.close()
+
+        assertNull(hub.transaction)
     }
 
     @Test
@@ -1625,6 +1642,8 @@ class HubTest {
         hub.configureScope { it.setTransaction(tx) }
         hub.configureScope { it.setTransaction(tx) }
         val span = tx.startChild("op")
+
+        assertEquals(tx, hub.transaction)
         assertEquals(span, hub.span)
     }
     // endregion

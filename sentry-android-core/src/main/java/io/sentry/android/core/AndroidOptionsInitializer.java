@@ -5,7 +5,6 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.Build;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
@@ -41,6 +40,8 @@ import org.jetbrains.annotations.TestOnly;
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
+
+  static final long DEFAULT_FLUSH_TIMEOUT_MS = 4000;
 
   static final String SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME =
       "io.sentry.compose.gestures.ComposeGestureTargetLocator";
@@ -93,6 +94,9 @@ final class AndroidOptionsInitializer {
     options.setLogger(logger);
 
     options.setDateProvider(new SentryAndroidDateProvider());
+
+    // set a lower flush timeout on Android to avoid ANRs
+    options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
@@ -208,10 +212,7 @@ final class AndroidOptionsInitializer {
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
-    final Class<?> sentryNdkClass =
-        isNdkAvailable(buildInfoProvider)
-            ? loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger())
-            : null;
+    final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
     options.addIntegration(new NdkIntegration(sentryNdkClass));
 
     // this integration uses android.os.FileObserver, we can't move to sentry
@@ -319,9 +320,5 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
-  }
-
-  private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {
-    return buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN;
   }
 }

@@ -4,7 +4,6 @@ import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
@@ -193,6 +192,9 @@ public final class ActivityLifecycleIntegration
         final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
         final TransactionOptions transactionOptions = new TransactionOptions();
+        transactionOptions.setDeadlineTimeout(
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
           transactionOptions.setIdleTimeout(options.getIdleTimeout());
           transactionOptions.setTrimEnd(true);
@@ -397,26 +399,13 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "started");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (performanceEnabled) {
-      // app start span
-      @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
-      @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
-      // in case the SentryPerformanceProvider is disabled it does not set the app start times,
-      // and we need to set the end time manually here,
-      // the start time gets set manually in SentryAndroid.init()
-      if (appStartStartTime != null && appStartEndTime == null) {
-        AppStartState.getInstance().setAppStartEnd();
-      }
-      finishAppStartSpan();
-
       final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
       final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
       final View rootView = activity.findViewById(android.R.id.content);
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
-          && rootView != null) {
+      if (rootView != null) {
         FirstDrawDoneListener.registerForNextDraw(
             rootView, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
       } else {
@@ -541,6 +530,17 @@ public final class ActivityLifecycleIntegration
   }
 
   private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
+    // app start span
+    @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
+    @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+    // in case the SentryPerformanceProvider is disabled it does not set the app start times,
+    // and we need to set the end time manually here,
+    // the start time gets set manually in SentryAndroid.init()
+    if (appStartStartTime != null && appStartEndTime == null) {
+      AppStartState.getInstance().setAppStartEnd();
+    }
+    finishAppStartSpan();
+
     if (options != null && ttidSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
       final long durationNanos = endDate.diff(ttidSpan.getStartDate());

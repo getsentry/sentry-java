@@ -227,6 +227,12 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  @ApiStatus.Internal
+  public @Nullable ITransaction getTransaction() {
+    return Sentry.getCurrentHub().getTransaction();
+  }
+
+  @Override
   public @NotNull SentryOptions getOptions() {
     return Sentry.getCurrentHub().getOptions();
   }

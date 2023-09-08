@@ -372,6 +372,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -419,6 +420,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -491,6 +493,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
 	public abstract fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public abstract fun getTransaction ()Lio/sentry/ITransaction;
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
 	public abstract fun popScope ()V
@@ -872,6 +875,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
@@ -1819,8 +1823,6 @@ public class io/sentry/SentryOptions {
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
-	public fun isEnableNdk ()Z
-	public fun isEnableScopeSync ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
@@ -1853,8 +1855,6 @@ public class io/sentry/SentryOptions {
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
-	public fun setEnableNdk (Z)V
-	public fun setEnableScopeSync (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
@@ -2364,8 +2364,10 @@ public abstract interface class io/sentry/TransactionFinishedCallback {
 }
 
 public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
+	public static final field DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION J
 	public fun <init> ()V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
+	public fun getDeadlineTimeout ()Ljava/lang/Long;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
@@ -2373,6 +2375,7 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun isWaitForChildren ()Z
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
+	public fun setDeadlineTimeout (Ljava/lang/Long;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V

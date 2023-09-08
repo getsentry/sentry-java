@@ -226,6 +226,11 @@ class HubAdapterTest {
         verify(hub).span
     }
 
+    @Test fun `getTransaction calls Hub`() {
+        HubAdapter.getInstance().transaction
+        verify(hub).transaction
+    }
+
     @Test fun `getOptions calls Hub`() {
         HubAdapter.getInstance().options
         verify(hub).options

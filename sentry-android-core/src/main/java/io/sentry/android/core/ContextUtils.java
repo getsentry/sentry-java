@@ -301,14 +301,8 @@ public final class ContextUtils {
     }
   }
 
-  @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
-  static @Nullable String getDeviceName(
-      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return Settings.Global.getString(context.getContentResolver(), "device_name");
-    } else {
-      return null;
-    }
+  static @Nullable String getDeviceName(final @NotNull Context context) {
+    return Settings.Global.getString(context.getContentResolver(), "device_name");
   }
 
   @SuppressWarnings("deprecation")
@@ -346,8 +340,6 @@ public final class ContextUtils {
     }
   }
 
-  // we perform an if-check for that, but lint fails to recognize
-  @SuppressLint("NewApi")
   static void setAppPackageInfo(
       final @NotNull PackageInfo packageInfo,
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -356,26 +348,24 @@ public final class ContextUtils {
     app.setAppVersion(packageInfo.versionName);
     app.setAppBuild(ContextUtils.getVersionCode(packageInfo, buildInfoProvider));
 
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
-      final Map<String, String> permissions = new HashMap<>();
-      final String[] requestedPermissions = packageInfo.requestedPermissions;
-      final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
+    final Map<String, String> permissions = new HashMap<>();
+    final String[] requestedPermissions = packageInfo.requestedPermissions;
+    final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
 
-      if (requestedPermissions != null
-          && requestedPermissions.length > 0
-          && requestedPermissionsFlags != null
-          && requestedPermissionsFlags.length > 0) {
-        for (int i = 0; i < requestedPermissions.length; i++) {
-          String permission = requestedPermissions[i];
-          permission = permission.substring(permission.lastIndexOf('.') + 1);
+    if (requestedPermissions != null
+        && requestedPermissions.length > 0
+        && requestedPermissionsFlags != null
+        && requestedPermissionsFlags.length > 0) {
+      for (int i = 0; i < requestedPermissions.length; i++) {
+        String permission = requestedPermissions[i];
+        permission = permission.substring(permission.lastIndexOf('.') + 1);
 
-          final boolean granted =
-              (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
-                  == REQUESTED_PERMISSION_GRANTED;
-          permissions.put(permission, granted ? "granted" : "not_granted");
-        }
+        final boolean granted =
+            (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
+                == REQUESTED_PERMISSION_GRANTED;
+        permissions.put(permission, granted ? "granted" : "not_granted");
       }
-      app.setPermissions(permissions);
     }
+    app.setPermissions(permissions);
   }
 }

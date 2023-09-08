@@ -19,6 +19,7 @@ import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
@@ -45,7 +46,7 @@ import java.io.IOException
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
-    private val captureFailedRequests: Boolean = false,
+    private val captureFailedRequests: Boolean = true,
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
@@ -78,7 +79,8 @@ class SentryOkHttpInterceptor(
             isFromEventListener = true
         } else {
             // read the span from the bound scope
-            span = hub.span?.startChild("http.client", "$method $url")
+            val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
+            span = parentSpan?.startChild("http.client", "$method $url")
             isFromEventListener = false
         }
 

@@ -32,6 +32,7 @@ import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
+import okhttp3.internal.platform.Platform
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
@@ -62,7 +63,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         request: HttpRequest,
         chain: HttpInterceptorChain
     ): HttpResponse {
-        val activeSpan = hub.span
+        val activeSpan = if (io.sentry.util.Platform.isAndroid()) hub.transaction else hub.span
 
         val operationName = getHeader(HEADER_APOLLO_OPERATION_NAME, request.headers)
         val operationType = decodeHeaderValue(request, SENTRY_APOLLO_3_OPERATION_TYPE)
