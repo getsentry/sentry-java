@@ -6,6 +6,7 @@ import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
+import io.sentry.internal.modules.NoOpModulesLoader
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
@@ -31,6 +32,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -765,6 +767,18 @@ class SentryTest {
 
         await.untilTrue(triggered)
         assertFalse(previousSessionFile.exists())
+    }
+
+    @Test
+    fun `if send modules is false, using NoOpModulesLoader`() {
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.isSendModules = false
+            sentryOptions = it
+        }
+
+        assertIs<NoOpModulesLoader>(sentryOptions?.modulesLoader)
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {
