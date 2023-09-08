@@ -350,6 +350,7 @@ public final class io/sentry/HttpStatusCodeRange {
 
 public final class io/sentry/Hub : io/sentry/IHub {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -397,6 +398,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 }
 
 public final class io/sentry/HubAdapter : io/sentry/IHub {
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -459,7 +461,7 @@ public abstract interface class io/sentry/IEnvelopeSender {
 }
 
 public abstract interface class io/sentry/IHub {
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addBreadcrumb (Ljava/lang/String;)V
 	public fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
@@ -537,30 +539,30 @@ public abstract interface class io/sentry/IMemoryCollector {
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
-	public fun setDist (Ljava/lang/String;)V
-	public fun setEnvironment (Ljava/lang/String;)V
-	public fun setProguardUuid (Ljava/lang/String;)V
-	public fun setRelease (Ljava/lang/String;)V
-	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
-	public fun setTags (Ljava/util/Map;)V
+	public abstract fun setDist (Ljava/lang/String;)V
+	public abstract fun setEnvironment (Ljava/lang/String;)V
+	public abstract fun setProguardUuid (Ljava/lang/String;)V
+	public abstract fun setRelease (Ljava/lang/String;)V
+	public abstract fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
+	public abstract fun setTags (Ljava/util/Map;)V
 }
 
 public abstract interface class io/sentry/IScopeObserver {
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
-	public fun removeExtra (Ljava/lang/String;)V
-	public fun removeTag (Ljava/lang/String;)V
-	public fun setBreadcrumbs (Ljava/util/Collection;)V
-	public fun setContexts (Lio/sentry/protocol/Contexts;)V
-	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setExtras (Ljava/util/Map;)V
-	public fun setFingerprint (Ljava/util/Collection;)V
-	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setRequest (Lio/sentry/protocol/Request;)V
-	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setTags (Ljava/util/Map;)V
-	public fun setTrace (Lio/sentry/SpanContext;)V
-	public fun setTransaction (Ljava/lang/String;)V
-	public fun setUser (Lio/sentry/protocol/User;)V
+	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public abstract fun removeExtra (Ljava/lang/String;)V
+	public abstract fun removeTag (Ljava/lang/String;)V
+	public abstract fun setBreadcrumbs (Ljava/util/Collection;)V
+	public abstract fun setContexts (Lio/sentry/protocol/Contexts;)V
+	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun setExtras (Ljava/util/Map;)V
+	public abstract fun setFingerprint (Ljava/util/Collection;)V
+	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
+	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
+	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun setTags (Ljava/util/Map;)V
+	public abstract fun setTrace (Lio/sentry/SpanContext;)V
+	public abstract fun setTransaction (Ljava/lang/String;)V
+	public abstract fun setUser (Lio/sentry/protocol/User;)V
 }
 
 public abstract interface class io/sentry/ISentryClient {
@@ -790,12 +792,13 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 
 public abstract interface class io/sentry/MeasurementUnit {
 	public static final field NONE Ljava/lang/String;
-	public fun apiName ()Ljava/lang/String;
+	public abstract fun apiName ()Ljava/lang/String;
 	public abstract fun name ()Ljava/lang/String;
 }
 
 public final class io/sentry/MeasurementUnit$Custom : io/sentry/MeasurementUnit {
 	public fun <init> (Ljava/lang/String;)V
+	public fun apiName ()Ljava/lang/String;
 	public fun name ()Ljava/lang/String;
 }
 
@@ -808,6 +811,7 @@ public final class io/sentry/MeasurementUnit$Duration : java/lang/Enum, io/sentr
 	public static final field NANOSECOND Lio/sentry/MeasurementUnit$Duration;
 	public static final field SECOND Lio/sentry/MeasurementUnit$Duration;
 	public static final field WEEK Lio/sentry/MeasurementUnit$Duration;
+	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Duration;
 	public static fun values ()[Lio/sentry/MeasurementUnit$Duration;
 }
@@ -815,6 +819,7 @@ public final class io/sentry/MeasurementUnit$Duration : java/lang/Enum, io/sentr
 public final class io/sentry/MeasurementUnit$Fraction : java/lang/Enum, io/sentry/MeasurementUnit {
 	public static final field PERCENT Lio/sentry/MeasurementUnit$Fraction;
 	public static final field RATIO Lio/sentry/MeasurementUnit$Fraction;
+	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Fraction;
 	public static fun values ()[Lio/sentry/MeasurementUnit$Fraction;
 }
@@ -834,6 +839,7 @@ public final class io/sentry/MeasurementUnit$Information : java/lang/Enum, io/se
 	public static final field PETABYTE Lio/sentry/MeasurementUnit$Information;
 	public static final field TEBIBYTE Lio/sentry/MeasurementUnit$Information;
 	public static final field TERABYTE Lio/sentry/MeasurementUnit$Information;
+	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Information;
 	public static fun values ()[Lio/sentry/MeasurementUnit$Information;
 }
@@ -852,6 +858,7 @@ public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 }
 
 public final class io/sentry/NoOpHub : io/sentry/IHub {
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -1270,6 +1277,25 @@ public abstract interface class io/sentry/Scope$IWithTransaction {
 
 public abstract interface class io/sentry/ScopeCallback {
 	public abstract fun run (Lio/sentry/Scope;)V
+}
+
+public abstract class io/sentry/ScopeObserverAdapter : io/sentry/IScopeObserver {
+	public fun <init> ()V
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public fun removeExtra (Ljava/lang/String;)V
+	public fun removeTag (Ljava/lang/String;)V
+	public fun setBreadcrumbs (Ljava/util/Collection;)V
+	public fun setContexts (Lio/sentry/protocol/Contexts;)V
+	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setExtras (Ljava/util/Map;)V
+	public fun setFingerprint (Ljava/util/Collection;)V
+	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setRequest (Lio/sentry/protocol/Request;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTags (Ljava/util/Map;)V
+	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun setTransaction (Ljava/lang/String;)V
+	public fun setUser (Lio/sentry/protocol/User;)V
 }
 
 public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/Integration {
@@ -1825,7 +1851,6 @@ public class io/sentry/SentryOptions {
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
-	public fun isEnableNdk ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
@@ -2524,7 +2549,7 @@ public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOption
 	public fun setTags (Ljava/util/Map;)V
 }
 
-public final class io/sentry/cache/PersistingScopeObserver : io/sentry/IScopeObserver {
+public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObserverAdapter {
 	public static final field BREADCRUMBS_FILENAME Ljava/lang/String;
 	public static final field CONTEXTS_FILENAME Ljava/lang/String;
 	public static final field EXTRAS_FILENAME Ljava/lang/String;
