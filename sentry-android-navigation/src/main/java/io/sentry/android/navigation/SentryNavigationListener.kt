@@ -36,8 +36,8 @@ private const val TRACE_ORIGIN = "auto.navigation"
 class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
-    private val enableNavigationTracing: Boolean = true
-        private val traceOriginAppendix: String? = null
+    private val enableNavigationTracing: Boolean = true,
+    private val traceOriginAppendix: String? = null
 ) : NavController.OnDestinationChangedListener {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
