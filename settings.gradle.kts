@@ -34,6 +34,8 @@ include(
     "sentry-apache-http-client-5",
     "sentry-spring",
     "sentry-spring-jakarta",
+    "sentry-spring-boot",
+    "sentry-spring-boot-jakarta",
     "sentry-spring-boot-starter",
     "sentry-spring-boot-starter-jakarta",
     "sentry-bom",

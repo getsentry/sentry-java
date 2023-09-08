@@ -20,12 +20,13 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   private final @Nullable String userSegment;
   private final @Nullable String transaction;
   private final @Nullable String sampleRate;
+  private final @Nullable String sampled;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
   TraceContext(@NotNull SentryId traceId, @NotNull String publicKey) {
-    this(traceId, publicKey, null, null, null, null, null, null);
+    this(traceId, publicKey, null, null, null, null, null, null, null);
   }
 
   TraceContext(
@@ -36,7 +37,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       @Nullable String userId,
       @Nullable String userSegment,
       @Nullable String transaction,
-      @Nullable String sampleRate) {
+      @Nullable String sampleRate,
+      @Nullable String sampled) {
     this.traceId = traceId;
     this.publicKey = publicKey;
     this.release = release;
@@ -45,6 +47,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this.userSegment = userSegment;
     this.transaction = transaction;
     this.sampleRate = sampleRate;
+    this.sampled = sampled;
   }
 
   @SuppressWarnings("UnusedMethod")
@@ -87,6 +90,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
   public @Nullable String getSampleRate() {
     return sampleRate;
+  }
+
+  public @Nullable String getSampled() {
+    return sampled;
   }
 
   /**
@@ -190,6 +197,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     public static final String USER_SEGMENT = "user_segment";
     public static final String TRANSACTION = "transaction";
     public static final String SAMPLE_RATE = "sample_rate";
+    public static final String SAMPLED = "sampled";
   }
 
   @Override
@@ -216,6 +224,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     if (sampleRate != null) {
       writer.name(TraceContext.JsonKeys.SAMPLE_RATE).value(sampleRate);
     }
+    if (sampled != null) {
+      writer.name(TraceContext.JsonKeys.SAMPLED).value(sampled);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -241,6 +252,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       String userSegment = null;
       String transaction = null;
       String sampleRate = null;
+      String sampled = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -273,6 +285,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
           case TraceContext.JsonKeys.SAMPLE_RATE:
             sampleRate = reader.nextStringOrNull();
             break;
+          case TraceContext.JsonKeys.SAMPLED:
+            sampled = reader.nextStringOrNull();
+            break;
           default:
             if (unknown == null) {
               unknown = new ConcurrentHashMap<>();
@@ -304,7 +319,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
               userId,
               userSegment,
               transaction,
-              sampleRate);
+              sampleRate,
+              sampled);
       traceContext.setUnknown(unknown);
       reader.endObject();
       return traceContext;

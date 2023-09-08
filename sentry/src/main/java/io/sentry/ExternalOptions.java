@@ -42,6 +42,8 @@ public final class ExternalOptions {
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
+  private @Nullable Boolean enabled;
+  private @Nullable Boolean enablePrettySerializationOutput;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -114,6 +116,11 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
+
+    options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
+
+    options.setEnablePrettySerializationOutput(
+        propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -346,5 +353,22 @@ public final class ExternalOptions {
 
   public void addBundleId(final @NotNull String bundleId) {
     bundleIds.add(bundleId);
+  }
+
+  public @Nullable Boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(final @Nullable Boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  public @Nullable Boolean isEnablePrettySerializationOutput() {
+    return enablePrettySerializationOutput;
+  }
+
+  public void setEnablePrettySerializationOutput(
+      final @Nullable Boolean enablePrettySerializationOutput) {
+    this.enablePrettySerializationOutput = enablePrettySerializationOutput;
   }
 }

@@ -5,8 +5,10 @@ import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -185,6 +187,113 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     if (code != null) {
       breadcrumb.setData("status_code", code);
     }
+    return breadcrumb;
+  }
+
+  /**
+   * Creates a breadcrumb for a GraphQL operation.
+   *
+   * @param operationName - the name of the GraphQL operation
+   * @param operationType - the type of GraphQL operation (e.g. query, mutation, subscription)
+   * @param operationId - the ID of the GraphQL operation
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb graphqlOperation(
+      final @Nullable String operationName,
+      final @Nullable String operationType,
+      final @Nullable String operationId) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+
+    breadcrumb.setType("graphql");
+
+    if (operationName != null) {
+      breadcrumb.setData("operation_name", operationName);
+    }
+    if (operationType != null) {
+      breadcrumb.setData("operation_type", operationType);
+      breadcrumb.setCategory(operationType);
+    } else {
+      breadcrumb.setCategory("graphql.operation");
+    }
+    if (operationId != null) {
+      breadcrumb.setData("operation_id", operationId);
+    }
+
+    return breadcrumb;
+  }
+
+  /**
+   * Creates a breadcrumb for a GraphQL data fetcher.
+   *
+   * @param path - the name of the GraphQL operation
+   * @param field - the field being fetched
+   * @param type - the type being fetched
+   * @param objectType - the object type of the GraphQL data fetch operation
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb graphqlDataFetcher(
+      final @Nullable String path,
+      final @Nullable String field,
+      final @Nullable String type,
+      final @Nullable String objectType) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+
+    breadcrumb.setType("graphql");
+    breadcrumb.setCategory("graphql.fetcher");
+
+    if (path != null) {
+      breadcrumb.setData("path", path);
+    }
+    if (field != null) {
+      breadcrumb.setData("field", field);
+    }
+    if (type != null) {
+      breadcrumb.setData("type", type);
+    }
+    if (objectType != null) {
+      breadcrumb.setData("object_type", objectType);
+    }
+
+    return breadcrumb;
+  }
+
+  /**
+   * Creates a breadcrumb for a GraphQL data loader.
+   *
+   * @param keys - keys to be fetched by the data loader
+   * @param keyType - class of the data loaders key(s)
+   * @param valueType - class of the data loaders value(s)
+   * @param name - name of the data loader
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb graphqlDataLoader(
+      final @NotNull Iterable<?> keys,
+      final @Nullable Class<?> keyType,
+      final @Nullable Class<?> valueType,
+      final @Nullable String name) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+
+    breadcrumb.setType("graphql");
+    breadcrumb.setCategory("graphql.data_loader");
+
+    final List<String> serializedKeys = new ArrayList<>();
+    for (Object key : keys) {
+      serializedKeys.add(key.toString());
+    }
+    breadcrumb.setData("keys", serializedKeys);
+
+    if (keyType != null) {
+      breadcrumb.setData("key_type", keyType.getName());
+    }
+
+    if (valueType != null) {
+      breadcrumb.setData("value_type", valueType.getName());
+    }
+
+    if (name != null) {
+      breadcrumb.setData("name", name);
+    }
+
     return breadcrumb;
   }
 

@@ -108,6 +108,7 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
+                assertEquals("POST", it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -124,6 +125,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
                 assertEquals(403, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+                // we do not have access to the request and method in case of an error
+                assertNull(it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

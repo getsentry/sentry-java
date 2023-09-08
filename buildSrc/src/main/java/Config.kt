@@ -1,3 +1,4 @@
+
 import java.math.BigDecimal
 
 object Config {
@@ -73,16 +74,20 @@ object Config {
         val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
+        val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBootVersion"
         val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
         val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
 
         val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
+        val springBoot3StarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBoot3Version"
         val springBoot3StarterTest = "org.springframework.boot:spring-boot-starter-test:$springBoot3Version"
         val springBoot3StarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBoot3Version"
+        val springBoot3StarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBoot3Version"
         val springBoot3StarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBoot3Version"
         val springBoot3StarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBoot3Version"
         val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
@@ -201,6 +206,10 @@ object Config {
         val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
+        val jacocoAndroid = "com.mxalbert.gradle.jacoco-android"
+        val jacocoAndroidVersion = "0.2.0"
+        val kover = "org.jetbrains.kotlinx.kover"
+        val koverVersion = "0.7.3"
     }
 
     object Sentry {

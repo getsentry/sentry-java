@@ -148,5 +148,8 @@
         <!--    how to enable the send default pii-->
         <meta-data android:name="io.sentry.send-default-pii" android:value="true" />
 
+        <!--    how to disable sentry -->
+        <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
+      
     </application>
 </manifest>

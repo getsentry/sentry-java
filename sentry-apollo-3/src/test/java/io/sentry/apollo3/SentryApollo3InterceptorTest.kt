@@ -18,6 +18,7 @@ import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
+import io.sentry.SpanDataConvention.HTTP_METHOD_KEY
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
@@ -161,6 +162,7 @@ class SentryApollo3InterceptorTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
+                assertEquals("POST", it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
                 assertEquals(404, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
                 assertEquals(SpanStatus.NOT_FOUND, it.spans.first().status)
             },
@@ -335,7 +337,7 @@ class SentryApollo3InterceptorTest {
         assertTrue { httpClientSpan.description?.startsWith("Post LaunchDetails") == true }
         assertNotNull(httpClientSpan.data) {
             assertNotNull(it["operationId"])
-            assertEquals("Post", it["http.method"])
+            assertEquals("POST", it[HTTP_METHOD_KEY])
             httpStatusCode?.let { code ->
                 assertEquals(code, it[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             }
