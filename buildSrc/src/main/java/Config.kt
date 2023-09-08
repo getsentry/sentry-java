@@ -1,3 +1,4 @@
+
 import java.math.BigDecimal
 
 object Config {
@@ -205,6 +206,10 @@ object Config {
         val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
+        val jacocoAndroid = "com.mxalbert.gradle.jacoco-android"
+        val jacocoAndroidVersion = "0.2.0"
+        val kover = "org.jetbrains.kotlinx.kover"
+        val koverVersion = "0.7.3"
     }
 
     object Sentry {

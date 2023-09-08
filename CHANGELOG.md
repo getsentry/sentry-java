@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.29.0
+
+### Features
+
+- Send `db.system` and `db.name` in span data ([#2894](https://github.com/getsentry/sentry-java/pull/2894))
+- Send `http.request.method` in span data ([#2896](https://github.com/getsentry/sentry-java/pull/2896))
+- Add `enablePrettySerializationOutput` option for opting out of pretty print ([#2871](https://github.com/getsentry/sentry-java/pull/2871))
+
 ## 6.28.0
 
 ### Features
@@ -9,6 +17,7 @@
 - Improve server side GraphQL support for spring-graphql and Nextflix DGS ([#2856](https://github.com/getsentry/sentry-java/pull/2856))
     - If you have already been using `SentryDataFetcherExceptionHandler` that still works but has been deprecated. Please use `SentryGenericDataFetcherExceptionHandler` combined with `SentryInstrumentation` instead for better error reporting.
     - More exceptions and errors caught and reported to Sentry by also looking at the `ExecutionResult` (more specifically its `errors`)
+        - You may want to filter out certain errors, please see [docs on filtering](https://docs.sentry.io/platforms/java/configuration/filtering/)
     - More details for Sentry events: query, variables and response (where possible)
     - Breadcrumbs for operation (query, mutation, subscription), data fetchers and data loaders (Spring only)
     - Better hub propagation by using `GraphQLContext`

@@ -13,6 +13,7 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.reactive.function.client.ClientRequest;
@@ -42,7 +43,9 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final ISpan span = activeSpan.startChild("http.client");
     span.getSpanContext().setOrigin(TRACE_ORIGIN);
-    span.setDescription(request.method().name() + " " + request.url());
+    final @NotNull String method = request.method().name();
+    span.setDescription(method + " " + request.url());
+    span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
 
     final @NotNull ClientRequest modifiedRequest = maybeAddTracingHeaders(request, span);
 

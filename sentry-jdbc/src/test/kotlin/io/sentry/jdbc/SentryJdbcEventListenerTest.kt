@@ -1,13 +1,19 @@
 package io.sentry.jdbc
 
+import com.p6spy.engine.common.StatementInformation
 import com.p6spy.engine.spy.P6DataSource
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention.DB_NAME_KEY
+import io.sentry.SpanDataConvention.DB_SYSTEM_KEY
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.jdbc.DatabaseUtils.DatabaseDetails
 import io.sentry.protocol.SdkVersion
 import org.hsqldb.jdbc.JDBCDataSource
+import org.mockito.Mockito
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import javax.sql.DataSource
@@ -130,5 +136,45 @@ class SentryJdbcEventListenerTest {
         val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
         assertNotNull(packageInfo)
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
+    }
+
+    @Test
+    fun `sets database details`() {
+        val sut = fixture.getSut()
+
+        sut.connection.use {
+            it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+        }
+
+        assertEquals("hsqldb", fixture.tx.children.first().data[DB_SYSTEM_KEY])
+        assertEquals("testdb", fixture.tx.children.first().data[DB_NAME_KEY])
+    }
+
+    @Test
+    fun `only parses database details once`() {
+        Mockito.mockStatic(DatabaseUtils::class.java).use { utils ->
+            var invocationCount = 0
+            utils.`when`<Any> { DatabaseUtils.readFrom(any<StatementInformation>()) }
+                .thenAnswer {
+                    invocationCount++
+                    DatabaseDetails("a", "b")
+                }
+            val sut = fixture.getSut()
+
+            sut.connection.use {
+                it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+                it.prepareStatement("INSERT INTO foo VALUES (2)").executeUpdate()
+            }
+
+            sut.connection.use {
+                it.prepareStatement("INSERT INTO foo VALUES (3)").executeUpdate()
+                it.prepareStatement("INSERT INTO foo VALUES (4)").executeUpdate()
+            }
+
+            assertEquals("a", fixture.tx.children.first().data[DB_SYSTEM_KEY])
+            assertEquals("b", fixture.tx.children.first().data[DB_NAME_KEY])
+
+            assertEquals(1, invocationCount)
+        }
     }
 }

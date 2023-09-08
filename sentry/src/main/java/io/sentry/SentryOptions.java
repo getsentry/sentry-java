@@ -428,6 +428,9 @@ public class SentryOptions {
   /** Whether Sentry should be enabled */
   private boolean enabled = true;
 
+  /** Whether to format serialized data, e.g. events logged to console in debug mode */
+  private boolean enablePrettySerializationOutput = true;
+
   /**
    * Adds an event processor
    *
@@ -2072,6 +2075,24 @@ public class SentryOptions {
     this.enabled = enabled;
   }
 
+  /**
+   * Whether to format serialized data, e.g. events logged to console in debug mode
+   *
+   * @return true if data should be pretty printed
+   */
+  public boolean isEnablePrettySerializationOutput() {
+    return enablePrettySerializationOutput;
+  }
+
+  /**
+   * Whether to format serialized data, e.g. events logged to console in debug mode
+   *
+   * @param enablePrettySerializationOutput true if output should be pretty printed
+   */
+  public void setEnablePrettySerializationOutput(boolean enablePrettySerializationOutput) {
+    this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -2312,6 +2333,9 @@ public class SentryOptions {
 
     if (options.isEnabled() != null) {
       setEnabled(options.isEnabled());
+    }
+    if (options.isEnablePrettySerializationOutput() != null) {
+      setEnablePrettySerializationOutput(options.isEnablePrettySerializationOutput());
     }
   }
 

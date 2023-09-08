@@ -364,6 +364,7 @@ class SentryOptionsTest {
         externalOptions.idleTimeout = 1500L
         externalOptions.bundleIds.addAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411 ", " faa3ab42-b1bd-4659-af8e-1682324aa744"))
         externalOptions.isEnabled = false
+        externalOptions.isEnablePrettySerializationOutput = false
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -389,6 +390,7 @@ class SentryOptionsTest {
         assertEquals(1500L, options.idleTimeout)
         assertEquals(setOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744"), options.bundleIds)
         assertFalse(options.isEnabled)
+        assertFalse(options.isEnablePrettySerializationOutput)
     }
 
     @Test
@@ -484,5 +486,10 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, enabled is set to true by default`() {
         assertTrue(SentryOptions().isEnabled)
+    }
+
+    @Test
+    fun `when options are initialized, enablePrettySerializationOutput is set to true by default`() {
+        assertTrue(SentryOptions().isEnablePrettySerializationOutput)
     }
 }
