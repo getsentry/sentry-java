@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
+
 ### Dependencies
 
 - Bump Gradle from v8.2.1 to v8.3.0 ([#2900](https://github.com/getsentry/sentry-java/pull/2900))
@@ -16,10 +20,6 @@
 - Send `db.system` and `db.name` in span data ([#2894](https://github.com/getsentry/sentry-java/pull/2894))
 - Send `http.request.method` in span data ([#2896](https://github.com/getsentry/sentry-java/pull/2896))
 - Add `enablePrettySerializationOutput` option for opting out of pretty print ([#2871](https://github.com/getsentry/sentry-java/pull/2871))
-
-### Fixes
-
-- Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
 
 ## 6.28.0
 

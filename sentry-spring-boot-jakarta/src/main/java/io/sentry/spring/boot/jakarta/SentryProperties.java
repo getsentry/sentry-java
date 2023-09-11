@@ -33,6 +33,11 @@ public class SentryProperties extends SentryOptions {
   /** Reactive framework (e.g. WebFlux) integration properties */
   private @NotNull Reactive reactive = new Reactive();
 
+  /**
+   * If set to true, this flag disables all AOP related features (e.g. {@link
+   * io.sentry.spring.jakarta.tracing.SentryTransaction}, {@link
+   * io.sentry.spring.jakarta.tracing.SentrySpan}) to successfully compile to GraalVM
+   */
   private boolean enableAotCompatibility = false;
 
   public boolean isUseGitCommitIdAsRelease() {
