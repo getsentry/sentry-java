@@ -551,6 +551,8 @@ class AnrV2EventProcessorTest {
 
     internal class AbnormalExitHint(val mechanism: String? = null) : AbnormalExit, Backfillable {
         override fun mechanism(): String? = mechanism
+        override fun ignoreCurrentThread(): Boolean = false
+        override fun timestamp(): Long? = null
         override fun shouldEnrich(): Boolean = true
     }
 

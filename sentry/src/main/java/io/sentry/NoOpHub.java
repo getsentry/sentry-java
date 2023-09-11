@@ -78,6 +78,9 @@ public final class NoOpHub implements IHub {
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {}
 
   @Override
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {}
+
+  @Override
   public void setLevel(@Nullable SentryLevel level) {}
 
   @Override

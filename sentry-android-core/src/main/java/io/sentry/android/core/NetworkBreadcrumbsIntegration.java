@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -79,7 +81,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
       logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
   }
 

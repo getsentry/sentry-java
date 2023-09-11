@@ -6,7 +6,7 @@ public final class io/sentry/android/ndk/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/IScopeObserver {
+public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/ScopeObserverAdapter {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun removeExtra (Ljava/lang/String;)V

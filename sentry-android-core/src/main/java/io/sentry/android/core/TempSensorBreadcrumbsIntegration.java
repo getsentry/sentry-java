@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static io.sentry.TypeCheckHint.ANDROID_SENSOR_EVENT;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -62,7 +63,7 @@ public final class TempSensorBreadcrumbsIntegration
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-            addIntegrationToSdkVersion();
+            addIntegrationToSdkVersion(getClass());
           } else {
             this.options
                 .getLogger()

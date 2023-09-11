@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.File;
@@ -75,7 +77,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-    addIntegrationToSdkVersion();
+    addIntegrationToSdkVersion(getClass());
 
     connectionStatusProvider = options.getConnectionStatusProvider();
     connectionStatusProvider.addConnectionStatusObserver(this);
@@ -129,7 +131,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
                       .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
                 }
               });
-
     } catch (RejectedExecutionException e) {
       options
           .getLogger()

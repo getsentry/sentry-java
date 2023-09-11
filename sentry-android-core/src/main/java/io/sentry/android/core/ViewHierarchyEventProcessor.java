@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,7 +11,6 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
-import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
@@ -17,6 +18,7 @@ import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
@@ -34,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
 @ApiStatus.Internal
-public final class ViewHierarchyEventProcessor implements EventProcessor, IntegrationName {
+public final class ViewHierarchyEventProcessor implements EventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull Debouncer debouncer;
@@ -47,8 +49,17 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
     this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
 
     if (options.isAttachViewHierarchy()) {
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
+  }
+
+  @Override
+  public @NotNull SentryTransaction process(
+      @NotNull SentryTransaction transaction, @NotNull Hint hint) {
+    // that's only necessary because on newer versions of Unity, if not overriding this method, it's
+    // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
+    // compilation mismatch
+    return transaction;
   }
 
   @Override

@@ -8,6 +8,7 @@ import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IMainThreadChecker
@@ -868,6 +869,9 @@ class SentryTest {
 
     private class CustomMainThreadChecker : IMainThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
+        override fun isMainThread(thread: Thread): Boolean = false
+        override fun isMainThread(): Boolean = false
+        override fun isMainThread(sentryThread: SentryThread): Boolean = false
     }
 
     private class CustomMemoryCollector : ICollector {

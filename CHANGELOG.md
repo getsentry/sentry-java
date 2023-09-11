@@ -29,6 +29,10 @@ Breaking changes:
 - Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
 - Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
   - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
+- Migrate from `default` interface methods to proper implementations in each interface implementor ([#2847](https://github.com/getsentry/sentry-java/pull/2847))
+  - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
+  - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
+    (E.g. if you're using `-timber`, `-okhttp` or other packages)
 
 ## 6.29.0
 
