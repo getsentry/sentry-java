@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
+
 ### Dependencies
 
 - Bump Gradle from v8.2.1 to v8.3.0 ([#2900](https://github.com/getsentry/sentry-java/pull/2900))
