@@ -371,13 +371,13 @@ public final class ExternalOptions {
     return enablePrettySerializationOutput;
   }
 
-  public @Nullable Boolean isSendModules() {
-    return sendModules;
-  }
-
   public void setEnablePrettySerializationOutput(
       final @Nullable Boolean enablePrettySerializationOutput) {
     this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
+  public @Nullable Boolean isSendModules() {
+    return sendModules;
   }
 
   public void setSendModules(final @Nullable Boolean sendModules) {
