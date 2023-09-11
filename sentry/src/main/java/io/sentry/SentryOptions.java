@@ -2404,7 +2404,7 @@ public class SentryOptions {
       setEnablePrettySerializationOutput(options.isEnablePrettySerializationOutput());
     }
 
-    if(options.isSendModules() != null) {
+    if (options.isSendModules() != null) {
       setSendModules(options.isSendModules());
     }
   }

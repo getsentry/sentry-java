@@ -362,8 +362,7 @@ public final class Sentry {
     final @NotNull IModulesLoader modulesLoader = options.getModulesLoader();
     if (!options.isSendModules()) {
       options.setModulesLoader(NoOpModulesLoader.getInstance());
-    }
-    else if (modulesLoader instanceof NoOpModulesLoader) {
+    } else if (modulesLoader instanceof NoOpModulesLoader) {
       options.setModulesLoader(
           new CompositeModulesLoader(
               Arrays.asList(
