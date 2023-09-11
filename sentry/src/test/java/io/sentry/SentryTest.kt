@@ -770,7 +770,7 @@ class SentryTest {
     }
 
     @Test
-    fun `if send modules is false, using NoOpModulesLoader`() {
+    fun `if send modules is false, uses NoOpModulesLoader`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
