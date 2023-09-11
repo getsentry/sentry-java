@@ -207,4 +207,9 @@ public final class NoOpHub implements IHub {
   public @Nullable BaggageHeader getBaggage() {
     return null;
   }
+
+  @Override
+  public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
+    return SentryId.EMPTY_ID;
+  }
 }

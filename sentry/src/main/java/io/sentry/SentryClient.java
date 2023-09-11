@@ -449,6 +449,20 @@ public final class SentryClient implements ISentryClient {
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
 
+  private @NotNull SentryEnvelope buildEnvelope(final @NotNull CheckIn checkIn) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem checkInItem =
+        SentryEnvelopeItem.fromCheckIn(options.getSerializer(), checkIn);
+    envelopeItems.add(checkInItem);
+
+    // TODO do we need trace context?
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion());
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
   /**
    * Updates the session data based on the event, hint and scope data
    *
@@ -635,6 +649,42 @@ public final class SentryClient implements ISentryClient {
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
+  @Override
+  public @NotNull SentryId captureCheckIn(
+      final @NotNull CheckIn checkIn, final @Nullable Scope scope, @Nullable Hint hint) {
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    //    if (shouldApplyScopeData(transaction, hint)) {
+    //      addScopeAttachmentsToHint(scope, hint);
+    //    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (checkIn.getCheckInId() != null) {
+      sentryId = checkIn.getCheckInId();
+    }
+
+    try {
+      final SentryEnvelope envelope = buildEnvelope(checkIn);
+
+      hint.clear();
+      if (envelope != null) {
+        transport.send(envelope, hint);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
+      }
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
