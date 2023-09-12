@@ -2,6 +2,7 @@ package io.sentry.android.sqlite
 
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
@@ -37,7 +38,7 @@ class SentrySupportSQLiteOpenHelperTest {
         verify(fixture.mockOpenHelper).readableDatabase
 
         openHelper.databaseName
-        verify(fixture.mockOpenHelper).databaseName
+        verify(fixture.mockOpenHelper, times(2)).databaseName
 
         openHelper.close()
         verify(fixture.mockOpenHelper).close()
