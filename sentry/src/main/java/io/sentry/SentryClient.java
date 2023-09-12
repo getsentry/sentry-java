@@ -71,6 +71,20 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
+  private boolean shouldApplyScopeData(final @NotNull CheckIn event, final @NotNull Hint hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
+      return true;
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Check-in was cached so not applying scope: %s",
+              event.getCheckInId());
+      return false;
+    }
+  }
+
   @Override
   public @NotNull SentryId captureEvent(
       @NotNull SentryEvent event, final @Nullable Scope scope, @Nullable Hint hint) {
@@ -658,14 +672,22 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureCheckIn(
-      final @NotNull CheckIn checkIn, final @Nullable Scope scope, @Nullable Hint hint) {
+      @NotNull CheckIn checkIn, final @Nullable Scope scope, @Nullable Hint hint) {
     if (hint == null) {
       hint = new Hint();
     }
 
-    //    if (shouldApplyScopeData(transaction, hint)) {
-    //      addScopeAttachmentsToHint(scope, hint);
-    //    }
+    if (checkIn.getEnvironment() == null) {
+      checkIn.setEnvironment(options.getEnvironment());
+    }
+
+    if (checkIn.getRelease() == null) {
+      checkIn.setRelease(options.getRelease());
+    }
+
+    if (shouldApplyScopeData(checkIn, hint)) {
+      checkIn = applyScope(checkIn, scope);
+    }
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());
 
@@ -737,6 +759,23 @@ public final class SentryClient implements ISentryClient {
       event = processEvent(event, hint, scope.getEventProcessors());
     }
     return event;
+  }
+
+  private @NotNull CheckIn applyScope(@NotNull CheckIn checkIn, final @Nullable Scope scope) {
+    if (scope != null) {
+      // Set trace data from active span to connect events with transactions
+      final ISpan span = scope.getSpan();
+      if (checkIn.getContexts().getTrace() == null) {
+        if (span == null) {
+          checkIn
+              .getContexts()
+              .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
+        } else {
+          checkIn.getContexts().setTrace(span.getSpanContext());
+        }
+      }
+    }
+    return checkIn;
   }
 
   private <T extends SentryBaseEvent> @NotNull T applyScope(

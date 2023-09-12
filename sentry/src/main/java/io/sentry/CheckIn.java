@@ -5,6 +5,7 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,11 +18,17 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
   private @Nullable Double duration; // in seconds
   private @Nullable String release;
   private @Nullable String environment;
-  //  private @Nullable Map<...> contexts;
+
+  private final @NotNull MonitorContexts contexts = new MonitorContexts();
   private @Nullable MonitorConfig monitorConfig;
 
   private @Nullable Map<String, Object> unknown;
 
+  public CheckIn(String monitorSlug, CheckInStatus status) {
+    this(new SentryId(), monitorSlug, status.apiName());
+  }
+
+  @ApiStatus.Internal
   public CheckIn(SentryId checkInId, String monitorSlug, String status) {
     this.checkInId = checkInId;
     this.monitorSlug = monitorSlug;
@@ -37,7 +44,7 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
     public static final String DURATION = "duration";
     public static final String RELEASE = "release";
     public static final String ENVIRONMENT = "environment";
-    //    public static final String CONTEXTS = "contexts";
+    public static final String CONTEXTS = "contexts";
     public static final String MONITOR_CONFIG = "monitor_config";
   }
 
@@ -59,6 +66,10 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
 
   public void setStatus(@NotNull String status) {
     this.status = status;
+  }
+
+  public void setStatus(@NotNull CheckInStatus status) {
+    this.status = status.apiName();
   }
 
   public @Nullable Double getDuration() {
@@ -91,6 +102,10 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
 
   public void setMonitorConfig(@Nullable MonitorConfig monitorConfig) {
     this.monitorConfig = monitorConfig;
+  }
+
+  public @NotNull MonitorContexts getContexts() {
+    return contexts;
   }
   // JsonUnknown
 
@@ -127,9 +142,10 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.MONITOR_CONFIG);
       monitorConfig.serialize(writer, logger);
     }
-    //    if (contexts != null) {
-    //      writer.name(JsonKeys.CONTEXTS).value(contexts);
-    //    }
+    if (contexts != null) {
+      writer.name(JsonKeys.CONTEXTS);
+      contexts.serialize(writer, logger);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -152,6 +168,7 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
       Double duration = null;
       String release = null;
       String environment = null;
+      MonitorContexts contexts = null;
       Map<String, Object> unknown = null;
 
       reader.beginObject();
@@ -179,9 +196,9 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
           case JsonKeys.MONITOR_CONFIG:
             monitorConfig = new MonitorConfig.Deserializer().deserialize(reader, logger);
             break;
-            //          case JsonKeys.CONTEXTS:
-            //            contexts = reader.nextStringOrNull();
-            //            break;
+          case JsonKeys.CONTEXTS:
+            contexts = new MonitorContexts.Deserializer().deserialize(reader, logger);
+            break;
           default:
             if (unknown == null) {
               unknown = new HashMap<>();
@@ -218,6 +235,7 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
       checkIn.setRelease(release);
       checkIn.setEnvironment(environment);
       checkIn.setMonitorConfig(monitorConfig);
+      checkIn.getContexts().putAll(contexts);
       checkIn.setUnknown(unknown);
       return checkIn;
     }

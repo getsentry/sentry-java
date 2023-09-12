@@ -157,7 +157,9 @@ public final class io/sentry/BuildConfig {
 
 public final class io/sentry/CheckIn : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/CheckInStatus;)V
 	public fun getCheckInId ()Lio/sentry/protocol/SentryId;
+	public fun getContexts ()Lio/sentry/MonitorContexts;
 	public fun getDuration ()Ljava/lang/Double;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getMonitorConfig ()Lio/sentry/MonitorConfig;
@@ -171,6 +173,7 @@ public final class io/sentry/CheckIn : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun setMonitorConfig (Lio/sentry/MonitorConfig;)V
 	public fun setMonitorSlug (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setStatus (Lio/sentry/CheckInStatus;)V
 	public fun setStatus (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -183,6 +186,7 @@ public final class io/sentry/CheckIn$Deserializer : io/sentry/JsonDeserializer {
 
 public final class io/sentry/CheckIn$JsonKeys {
 	public static final field CHECK_IN_ID Ljava/lang/String;
+	public static final field CONTEXTS Ljava/lang/String;
 	public static final field DURATION Ljava/lang/String;
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field MONITOR_CONFIG Ljava/lang/String;
@@ -196,6 +200,7 @@ public final class io/sentry/CheckInStatus : java/lang/Enum, io/sentry/JsonSeria
 	public static final field ERROR Lio/sentry/CheckInStatus;
 	public static final field IN_PROGRESS Lio/sentry/CheckInStatus;
 	public static final field OK Lio/sentry/CheckInStatus;
+	public fun apiName ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/CheckInStatus;
 	public static fun values ()[Lio/sentry/CheckInStatus;
@@ -927,16 +932,34 @@ public final class io/sentry/MonitorConfig$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/MonitorContexts : java/util/concurrent/ConcurrentHashMap, io/sentry/JsonSerializable {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/MonitorContexts;)V
+	public fun getTrace ()Lio/sentry/SpanContext;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setTrace (Lio/sentry/SpanContext;)V
+}
+
+public final class io/sentry/MonitorContexts$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/MonitorContexts;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
 public final class io/sentry/MonitorSchedule : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public static fun crontab (Ljava/lang/String;)Lio/sentry/MonitorSchedule;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnit ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()Ljava/lang/String;
+	public static fun interval (Ljava/lang/Integer;Lio/sentry/MonitorScheduleUnit;)Lio/sentry/MonitorSchedule;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setType (Ljava/lang/String;)V
+	public fun setUnit (Lio/sentry/MonitorScheduleUnit;)V
 	public fun setUnit (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
+	public fun setValue (Ljava/lang/Integer;)V
 	public fun setValue (Ljava/lang/String;)V
 }
 
@@ -951,6 +974,19 @@ public final class io/sentry/MonitorSchedule$JsonKeys {
 	public static final field UNIT Ljava/lang/String;
 	public static final field VALUE Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/MonitorScheduleUnit : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field DAY Lio/sentry/MonitorScheduleUnit;
+	public static final field HOUR Lio/sentry/MonitorScheduleUnit;
+	public static final field MINUTE Lio/sentry/MonitorScheduleUnit;
+	public static final field MONTH Lio/sentry/MonitorScheduleUnit;
+	public static final field WEEK Lio/sentry/MonitorScheduleUnit;
+	public static final field YEAR Lio/sentry/MonitorScheduleUnit;
+	public fun apiName ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleUnit;
+	public static fun values ()[Lio/sentry/MonitorScheduleUnit;
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {

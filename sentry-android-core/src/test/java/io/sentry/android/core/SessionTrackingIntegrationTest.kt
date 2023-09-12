@@ -164,7 +164,7 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
-        override fun captureCheckIn(checkIn: CheckIn, scope: Scope?): SentryId {
+        override fun captureCheckIn(checkIn: CheckIn, scope: Scope?, hint: Hint?): SentryId {
             TODO("Not yet implemented")
         }
     }

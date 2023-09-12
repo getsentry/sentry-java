@@ -4,10 +4,20 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
+
+  public static @NotNull MonitorSchedule crontab(final @NotNull String value) {
+    return new MonitorSchedule("crontab", value, null);
+  }
+
+  public static @NotNull MonitorSchedule interval(
+      final @NotNull Integer value, final @NotNull MonitorScheduleUnit unit) {
+    return new MonitorSchedule("interval", value.toString(), unit.apiName());
+  }
 
   /** crontab | interval */
   private @NotNull String type;
@@ -18,9 +28,12 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
 
-  public MonitorSchedule(final @NotNull String type, final @NotNull String value) {
+  @ApiStatus.Internal
+  public MonitorSchedule(
+      final @NotNull String type, final @NotNull String value, final @Nullable String unit) {
     this.type = type;
     this.value = value;
+    this.unit = unit;
   }
 
   public @NotNull String getType() {
@@ -39,12 +52,20 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
     this.value = value;
   }
 
+  public void setValue(final @NotNull Integer value) {
+    this.value = value.toString();
+  }
+
   public @Nullable String getUnit() {
     return unit;
   }
 
   public void setUnit(final @Nullable String unit) {
     this.unit = unit;
+  }
+
+  public void setUnit(final @Nullable MonitorScheduleUnit unit) {
+    this.unit = unit == null ? null : unit.apiName();
   }
 
   // JsonKeys
@@ -74,7 +95,15 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TYPE).value(type);
-    writer.name(JsonKeys.VALUE).value(value);
+    if ("interval".equalsIgnoreCase(type)) {
+      try {
+        writer.name(JsonKeys.VALUE).value(Integer.valueOf(value));
+      } catch (Throwable t) {
+        // ignored
+      }
+    } else {
+      writer.name(JsonKeys.VALUE).value(value);
+    }
     if (unit != null) {
       writer.name(JsonKeys.UNIT).value(unit);
     }
@@ -135,8 +164,7 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
         throw exception;
       }
 
-      MonitorSchedule monitorSchedule = new MonitorSchedule(type, value);
-      monitorSchedule.setUnit(unit);
+      MonitorSchedule monitorSchedule = new MonitorSchedule(type, value, unit);
       monitorSchedule.setUnknown(unknown);
       return monitorSchedule;
     }

@@ -5,10 +5,13 @@ import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
 /** Status of a CheckIn */
-public enum CheckInStatus implements JsonSerializable {
-  IN_PROGRESS,
-  OK,
-  ERROR;
+public enum MonitorScheduleUnit implements JsonSerializable {
+  MINUTE,
+  HOUR,
+  DAY,
+  WEEK,
+  MONTH,
+  YEAR;
 
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
@@ -20,12 +23,12 @@ public enum CheckInStatus implements JsonSerializable {
     return name().toLowerCase(Locale.ROOT);
   }
 
-  static final class Deserializer implements JsonDeserializer<CheckInStatus> {
+  static final class Deserializer implements JsonDeserializer<MonitorScheduleUnit> {
 
     @Override
-    public @NotNull CheckInStatus deserialize(
+    public @NotNull MonitorScheduleUnit deserialize(
         @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
-      return CheckInStatus.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+      return MonitorScheduleUnit.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
     }
   }
 }
