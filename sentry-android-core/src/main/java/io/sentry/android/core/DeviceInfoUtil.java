@@ -132,9 +132,20 @@ public final class DeviceInfoUtil {
       device.setProcessorCount(cpuFrequencies.size());
     }
 
+    final @Nullable ActivityManager.MemoryInfo memInfo =
+        ContextUtils.getMemInfo(context, options.getLogger());
+    if (memInfo != null) {
+      // in bytes
+      device.setMemorySize(getMemorySize(memInfo));
+      if (collectDynamicData) {
+        device.setFreeMemory(memInfo.availMem);
+        device.setLowMemory(memInfo.lowMemory);
+      }
+    }
+
     // setting such values require IO hence we don't run for transactions
     if (collectDeviceIO && options.isCollectAdditionalContext()) {
-      setDeviceIO(device, collectDynamicData);
+      setDeviceIO(device);
     }
 
     return device;
@@ -171,7 +182,7 @@ public final class DeviceInfoUtil {
     return sideLoadedInfo;
   }
 
-  private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
+  private void setDeviceIO(final @NotNull Device device) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
       device.setBatteryLevel(getBatteryLevel(batteryIntent));
@@ -191,19 +202,6 @@ public final class DeviceInfoUtil {
         connected = null;
     }
     device.setOnline(connected);
-
-    final @Nullable ActivityManager.MemoryInfo memInfo =
-        ContextUtils.getMemInfo(context, options.getLogger());
-    if (memInfo != null) {
-      // in bytes
-      device.setMemorySize(getMemorySize(memInfo));
-      if (includeDynamicData) {
-        device.setFreeMemory(memInfo.availMem);
-        device.setLowMemory(memInfo.lowMemory);
-      }
-      // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
-      // compatibility
-    }
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
     // check the use of

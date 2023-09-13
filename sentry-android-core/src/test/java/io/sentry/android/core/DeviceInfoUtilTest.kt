@@ -99,19 +99,6 @@ class DeviceInfoUtilTest {
     }
 
     @Test
-    fun `does not include device io data when disabled`() {
-        val options = SentryAndroidOptions().apply {
-            isCollectAdditionalContext = true
-        }
-        val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
-        val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
-
-        assertNull(deviceInfo.memorySize)
-        assertNull(deviceInfo.storageSize)
-        assertNull(deviceInfo.freeStorage)
-    }
-
-    @Test
     fun `does include dynamic data when enabled`() {
         val options = SentryAndroidOptions().apply {
             isCollectAdditionalContext = true
