@@ -976,6 +976,15 @@ public final class io/sentry/MonitorSchedule$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/MonitorScheduleType : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field CRONTAB Lio/sentry/MonitorScheduleType;
+	public static final field INTERVAL Lio/sentry/MonitorScheduleType;
+	public fun apiName ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleType;
+	public static fun values ()[Lio/sentry/MonitorScheduleType;
+}
+
 public final class io/sentry/MonitorScheduleUnit : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field DAY Lio/sentry/MonitorScheduleUnit;
 	public static final field HOUR Lio/sentry/MonitorScheduleUnit;

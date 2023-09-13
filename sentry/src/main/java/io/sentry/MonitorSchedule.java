@@ -11,12 +11,13 @@ import org.jetbrains.annotations.Nullable;
 public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
 
   public static @NotNull MonitorSchedule crontab(final @NotNull String value) {
-    return new MonitorSchedule("crontab", value, null);
+    return new MonitorSchedule(MonitorScheduleType.CRONTAB.apiName(), value, null);
   }
 
   public static @NotNull MonitorSchedule interval(
       final @NotNull Integer value, final @NotNull MonitorScheduleUnit unit) {
-    return new MonitorSchedule("interval", value.toString(), unit.apiName());
+    return new MonitorSchedule(
+        MonitorScheduleType.INTERVAL.apiName(), value.toString(), unit.apiName());
   }
 
   /** crontab | interval */
@@ -95,11 +96,11 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TYPE).value(type);
-    if ("interval".equalsIgnoreCase(type)) {
+    if (MonitorScheduleType.INTERVAL.apiName().equalsIgnoreCase(type)) {
       try {
         writer.name(JsonKeys.VALUE).value(Integer.valueOf(value));
       } catch (Throwable t) {
-        // ignored
+        logger.log(SentryLevel.ERROR, "Unable to serialize monitor schedule value: %s", value);
       }
     } else {
       writer.name(JsonKeys.VALUE).value(value);
