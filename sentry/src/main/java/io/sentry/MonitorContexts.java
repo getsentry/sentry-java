@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 public final class MonitorContexts extends ConcurrentHashMap<String, Object>
     implements JsonSerializable {
-  private static final long serialVersionUID = 3987329379811822556L;
 
   public MonitorContexts() {}
 
