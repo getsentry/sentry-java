@@ -47,6 +47,8 @@ public final class DeviceInfoUtil {
   private final @Nullable ContextUtils.SideLoadedInfo sideLoadedInfo;
   private final @NotNull OperatingSystem os;
 
+  private final @Nullable Long totalMem;
+
   public DeviceInfoUtil(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     this.context = context;
@@ -59,6 +61,13 @@ public final class DeviceInfoUtil {
     isEmulator = buildInfoProvider.isEmulator();
     sideLoadedInfo =
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable ActivityManager.MemoryInfo memInfo =
+      ContextUtils.getMemInfo(context, options.getLogger());
+    if (memInfo != null) {
+      totalMem = getMemorySize(memInfo);
+    } else {
+      totalMem = null;
+    }
   }
 
   @NotNull
@@ -132,20 +141,11 @@ public final class DeviceInfoUtil {
       device.setProcessorCount(cpuFrequencies.size());
     }
 
-    final @Nullable ActivityManager.MemoryInfo memInfo =
-        ContextUtils.getMemInfo(context, options.getLogger());
-    if (memInfo != null) {
-      // in bytes
-      device.setMemorySize(getMemorySize(memInfo));
-      if (collectDynamicData) {
-        device.setFreeMemory(memInfo.availMem);
-        device.setLowMemory(memInfo.lowMemory);
-      }
-    }
+    device.setMemorySize(totalMem);
 
     // setting such values require IO hence we don't run for transactions
     if (collectDeviceIO && options.isCollectAdditionalContext()) {
-      setDeviceIO(device);
+      setDeviceIO(device, collectDynamicData);
     }
 
     return device;
@@ -182,7 +182,7 @@ public final class DeviceInfoUtil {
     return sideLoadedInfo;
   }
 
-  private void setDeviceIO(final @NotNull Device device) {
+  private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
       device.setBatteryLevel(getBatteryLevel(batteryIntent));
@@ -202,6 +202,14 @@ public final class DeviceInfoUtil {
         connected = null;
     }
     device.setOnline(connected);
+
+    final @Nullable ActivityManager.MemoryInfo memInfo =
+      ContextUtils.getMemInfo(context, options.getLogger());
+    if (memInfo != null && includeDynamicData) {
+        // in bytes
+        device.setFreeMemory(memInfo.availMem);
+        device.setLowMemory(memInfo.lowMemory);
+    }
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
     // check the use of
