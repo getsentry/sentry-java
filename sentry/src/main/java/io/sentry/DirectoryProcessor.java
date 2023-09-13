@@ -66,7 +66,7 @@ abstract class DirectoryProcessor {
             new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
 
         final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
-
+        hint.set(TypeCheckHint.SENTRY_CACHED_ENVELOPE_FILE_PATH, file.getAbsolutePath());
         processFile(file, hint);
       }
     } catch (Throwable e) {

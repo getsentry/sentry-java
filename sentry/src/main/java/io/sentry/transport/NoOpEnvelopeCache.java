@@ -3,7 +3,8 @@ package io.sentry.transport;
 import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
 import io.sentry.cache.IEnvelopeCache;
-import java.util.ArrayList;
+import java.io.File;
+import java.util.Collections;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,11 +19,16 @@ public final class NoOpEnvelopeCache implements IEnvelopeCache {
   public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {}
 
   @Override
-  public void discard(@NotNull SentryEnvelope envelope) {}
+  public void discard(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {}
 
   @NotNull
   @Override
   public Iterator<SentryEnvelope> iterator() {
-    return new ArrayList<SentryEnvelope>(0).iterator();
+    return Collections.emptyIterator();
+  }
+
+  @Override
+  public boolean containsFile(@NotNull File file) {
+    return false;
   }
 }

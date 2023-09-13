@@ -890,7 +890,8 @@ class SentryTest {
     private class CustomEnvelopCache : IEnvelopeCache {
         override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
         override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
-        override fun discard(envelope: SentryEnvelope) = Unit
+        override fun discard(envelope: SentryEnvelope, hint: Hint) = Unit
+        override fun containsFile(file: File): Boolean = false
     }
 
     private fun getTempPath(): String {

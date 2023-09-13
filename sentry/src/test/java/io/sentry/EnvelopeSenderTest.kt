@@ -32,7 +32,13 @@ class EnvelopeSenderTest {
         }
 
         fun getSut(): EnvelopeSender {
-            return EnvelopeSender(hub!!, serializer!!, logger!!, options.flushTimeoutMillis)
+            return EnvelopeSender(
+                hub!!,
+                serializer!!,
+                logger!!,
+                options.flushTimeoutMillis,
+                options.envelopeDiskCache
+            )
         }
     }
 

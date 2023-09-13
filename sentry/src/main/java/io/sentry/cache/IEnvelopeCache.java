@@ -2,6 +2,7 @@ package io.sentry.cache;
 
 import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
+import java.io.File;
 import org.jetbrains.annotations.NotNull;
 
 public interface IEnvelopeCache extends Iterable<SentryEnvelope> {
@@ -12,5 +13,7 @@ public interface IEnvelopeCache extends Iterable<SentryEnvelope> {
     store(envelope, new Hint());
   }
 
-  void discard(@NotNull SentryEnvelope envelope);
+  void discard(@NotNull SentryEnvelope envelope, @NotNull Hint hint);
+
+  boolean containsFile(@NotNull File file);
 }
