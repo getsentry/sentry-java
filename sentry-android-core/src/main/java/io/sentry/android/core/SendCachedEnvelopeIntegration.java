@@ -1,11 +1,13 @@
 package io.sentry.android.core;
 
+import io.sentry.DataCategory;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -78,6 +80,15 @@ final class SendCachedEnvelopeIntegration
         && connectionStatusProvider.getConnectionStatus()
             == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
       options.getLogger().log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
+      return;
+    }
+
+    // in case there's rate limiting active, skip processing
+    final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+    if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, rate limiting active.");
       return;
     }
 

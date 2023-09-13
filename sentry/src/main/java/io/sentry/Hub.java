@@ -7,6 +7,7 @@ import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -882,5 +883,11 @@ public final class Hub implements IHub {
     }
 
     return null;
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    final StackItem item = stack.peek();
+    return item.getClient().getRateLimiter();
   }
 }

@@ -9,6 +9,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -817,6 +818,11 @@ public final class SentryClient implements ISentryClient {
   @Override
   public void flush(final long timeoutMillis) {
     transport.flush(timeoutMillis);
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return transport.getRateLimiter();
   }
 
   private boolean sample() {

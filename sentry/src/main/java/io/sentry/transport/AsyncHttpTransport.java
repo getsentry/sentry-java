@@ -136,6 +136,11 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   @Override
+  public @NotNull RateLimiter getRateLimiter() {
+    return rateLimiter;
+  }
+
+  @Override
   public void close() throws IOException {
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");

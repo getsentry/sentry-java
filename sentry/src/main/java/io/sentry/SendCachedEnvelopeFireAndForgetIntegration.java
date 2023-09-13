@@ -2,6 +2,7 @@ package io.sentry;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.File;
@@ -109,6 +110,17 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
       options
           .getLogger()
           .log(SentryLevel.INFO, "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
+      return;
+    }
+
+    // in case there's rate limiting active, skip processing
+    final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+    if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
       return;
     }
 
