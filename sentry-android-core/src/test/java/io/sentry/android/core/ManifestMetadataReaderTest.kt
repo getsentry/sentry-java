@@ -1293,4 +1293,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isEnabled)
     }
+
+    @Test
+    fun `applyMetadata reads sendModules flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.SEND_MODULES to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isSendModules)
+    }
+
+    @Test
+    fun `applyMetadata reads sendModules flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isSendModules)
+    }
 }

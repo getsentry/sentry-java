@@ -26,7 +26,7 @@ class SQLiteSpanManagerTest {
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
 
-        fun getSut(isSpanActive: Boolean = true): SQLiteSpanManager {
+        fun getSut(isSpanActive: Boolean = true, databaseName: String? = null): SQLiteSpanManager {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
             }
@@ -36,7 +36,7 @@ class SQLiteSpanManagerTest {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            return SQLiteSpanManager(hub)
+            return SQLiteSpanManager(hub, databaseName)
         }
     }
 
@@ -118,5 +118,26 @@ class SQLiteSpanManagerTest {
 
         assertTrue(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
         assertNotNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
+    }
+
+    @Test
+    fun `when databaseName is provided, sets system and name as span data`() {
+        val sut = fixture.getSut(databaseName = "tracks.db")
+
+        sut.performSql("sql") {}
+        val span = fixture.sentryTracer.children.first()
+
+        assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "sqlite")
+        assertEquals(span.data[SpanDataConvention.DB_NAME_KEY], "tracks.db")
+    }
+
+    @Test
+    fun `when databaseName is null, sets system to in-memory`() {
+        val sut = fixture.getSut()
+
+        sut.performSql("sql") {}
+        val span = fixture.sentryTracer.children.first()
+
+        assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "in-memory")
     }
 }

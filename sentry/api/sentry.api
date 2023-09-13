@@ -337,6 +337,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracingOrigins ()Ljava/util/List;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
+	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
@@ -354,6 +355,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setSendClientReports (Ljava/lang/Boolean;)V
+	public fun setSendModules (Ljava/lang/Boolean;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
@@ -1994,6 +1996,7 @@ public class io/sentry/SentryOptions {
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
+	public fun isSendModules ()Z
 	public fun isTraceOptionsRequests ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
@@ -2058,6 +2061,7 @@ public class io/sentry/SentryOptions {
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
 	public fun setSendDefaultPii (Z)V
+	public fun setSendModules (Z)V
 	public fun setSentryClientName (Ljava/lang/String;)V
 	public fun setSerializer (Lio/sentry/ISerializer;)V
 	public fun setServerName (Ljava/lang/String;)V

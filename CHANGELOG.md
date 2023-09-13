@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `sendModules` option for disable sending modules ([#2926](https://github.com/getsentry/sentry-java/pull/2926))
+- Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
+
+### Dependencies
+
+- Bump Gradle from v8.2.1 to v8.3.0 ([#2900](https://github.com/getsentry/sentry-java/pull/2900))
+  - [changelog](https://github.com/gradle/gradle/blob/master release-test/CHANGELOG.md#v830)
+  - [diff](https://github.com/gradle/gradle/compare/v8.2.1...v8.3.0)
+
 ## 6.29.0
 
 ### Features

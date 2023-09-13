@@ -94,6 +94,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_SENTRY = "io.sentry.enabled";
 
+  static final String SEND_MODULES = "io.sentry.send-modules";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -356,6 +358,8 @@ final class ManifestMetadataReader {
 
         options.setEnableRootCheck(
             readBool(metadata, logger, ENABLE_ROOT_CHECK, options.isEnableRootCheck()));
+
+        options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
       }
 
       options
