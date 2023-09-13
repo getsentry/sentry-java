@@ -62,7 +62,7 @@ public final class DeviceInfoUtil {
     sideLoadedInfo =
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
     final @Nullable ActivityManager.MemoryInfo memInfo =
-      ContextUtils.getMemInfo(context, options.getLogger());
+        ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
       totalMem = getMemorySize(memInfo);
     } else {
@@ -204,11 +204,11 @@ public final class DeviceInfoUtil {
     device.setOnline(connected);
 
     final @Nullable ActivityManager.MemoryInfo memInfo =
-      ContextUtils.getMemInfo(context, options.getLogger());
+        ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null && includeDynamicData) {
-        // in bytes
-        device.setFreeMemory(memInfo.availMem);
-        device.setLowMemory(memInfo.lowMemory);
+      // in bytes
+      device.setFreeMemory(memInfo.availMem);
+      device.setLowMemory(memInfo.lowMemory);
     }
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
