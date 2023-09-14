@@ -147,12 +147,13 @@ public final class SentryTracer implements ITransaction {
     final @Nullable SpanStatus status = getStatus();
     forceFinish(
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
-        transactionOptions.getIdleTimeout() != null);
+        transactionOptions.getIdleTimeout() != null,
+      null);
     isDeadlineTimerRunning.set(false);
   }
 
   @Override
-  public @NotNull void forceFinish(@NotNull SpanStatus status, boolean dropIfNoChildren) {
+  public @NotNull void forceFinish(final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
     if (isFinished()) {
       return;
     }
@@ -168,12 +169,12 @@ public final class SentryTracer implements ITransaction {
       span.setSpanFinishedCallback(null);
       span.finish(status, finishTimestamp);
     }
-    finish(status, finishTimestamp, dropIfNoChildren);
+    finish(status, finishTimestamp, dropIfNoChildren, hint);
   }
 
   @Override
   public void finish(
-      @Nullable SpanStatus status, @Nullable SentryDate finishDate, boolean dropIfNoChildren) {
+      @Nullable SpanStatus status, @Nullable SentryDate finishDate, boolean dropIfNoChildren, @Nullable Hint hint) {
     // try to get the high precision timestamp from the root span
     SentryDate finishTimestamp = root.getFinishDate();
 
@@ -259,7 +260,7 @@ public final class SentryTracer implements ITransaction {
       }
 
       transaction.getMeasurements().putAll(measurements);
-      hub.captureTransaction(transaction, traceContext(), null, profilingTraceData);
+      hub.captureTransaction(transaction, traceContext(), hint, profilingTraceData);
     }
   }
 

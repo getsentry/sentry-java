@@ -13,6 +13,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.NoSend;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -225,6 +226,11 @@ public final class AsyncHttpTransport implements ITransport {
 
       envelope.getHeader().setSentAt(null);
       envelopeCache.store(envelope, hint);
+
+      if (HintUtils.hasType(hint, NoSend.class)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Stored envelope in cache, but not sending since the NoSend hint has been supplied.");
+        return TransportResult.success();
+      }
 
       HintUtils.runIfHasType(
           hint,

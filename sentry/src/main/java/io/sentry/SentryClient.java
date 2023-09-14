@@ -4,6 +4,7 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.NoSendHint;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
@@ -174,6 +175,19 @@ public final class SentryClient implements ISentryClient {
       sentryId = event.getEventId();
     }
 
+    // if we encountered an abnormal exit finish tracing in order to persist and send
+    // any running transaction / profiling data
+    if (scope != null) {
+      @Nullable ITransaction transaction = scope.getTransaction();
+      if (transaction != null) {
+        // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
+        if (HintUtils.hasType(hint, TransactionEnd.class)) {
+          final Hint noSendHint = HintUtils.createWithTypeCheckHint(new NoSendHint());
+          transaction.forceFinish(SpanStatus.ABORTED, false, noSendHint);
+        }
+      }
+    }
+
     try {
       @Nullable TraceContext traceContext = null;
       if (HintUtils.hasType(hint, Backfillable.class)) {
@@ -207,18 +221,6 @@ public final class SentryClient implements ISentryClient {
 
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
-    }
-
-    // if we encountered an abnormal exit finish tracing in order to persist and send
-    // any running transaction / profiling data
-    if (scope != null) {
-      @Nullable ITransaction transaction = scope.getTransaction();
-      if (transaction != null) {
-        // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
-        if (HintUtils.hasType(hint, TransactionEnd.class)) {
-          transaction.forceFinish(SpanStatus.ABORTED, false);
-        }
-      }
     }
 
     return sentryId;

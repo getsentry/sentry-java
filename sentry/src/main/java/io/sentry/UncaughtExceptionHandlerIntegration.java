@@ -7,6 +7,7 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.EventDropReason;
 import io.sentry.hints.SessionEnd;
+import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
@@ -156,7 +157,8 @@ public final class UncaughtExceptionHandlerIntegration
 
   @Open // open for tests
   @ApiStatus.Internal
-  public static class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd {
+  public static class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd,
+    TransactionEnd {
 
     public UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       super(flushTimeoutMillis, logger);
