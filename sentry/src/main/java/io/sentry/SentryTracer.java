@@ -148,12 +148,13 @@ public final class SentryTracer implements ITransaction {
     forceFinish(
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
         transactionOptions.getIdleTimeout() != null,
-      null);
+        null);
     isDeadlineTimerRunning.set(false);
   }
 
   @Override
-  public @NotNull void forceFinish(final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
+  public @NotNull void forceFinish(
+      final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
     if (isFinished()) {
       return;
     }
@@ -174,7 +175,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void finish(
-      @Nullable SpanStatus status, @Nullable SentryDate finishDate, boolean dropIfNoChildren, @Nullable Hint hint) {
+      @Nullable SpanStatus status,
+      @Nullable SentryDate finishDate,
+      boolean dropIfNoChildren,
+      @Nullable Hint hint) {
     // try to get the high precision timestamp from the root span
     SentryDate finishTimestamp = root.getFinishDate();
 

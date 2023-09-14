@@ -157,8 +157,8 @@ public final class UncaughtExceptionHandlerIntegration
 
   @Open // open for tests
   @ApiStatus.Internal
-  public static class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd,
-    TransactionEnd {
+  public static class UncaughtExceptionHint extends BlockingFlushHint
+      implements SessionEnd, TransactionEnd {
 
     public UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       super(flushTimeoutMillis, logger);

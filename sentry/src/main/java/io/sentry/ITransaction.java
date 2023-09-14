@@ -106,7 +106,10 @@ public interface ITransaction extends ISpan {
 
   @ApiStatus.Internal
   void finish(
-      @Nullable SpanStatus status, @Nullable SentryDate timestamp, boolean dropIfNoChildren, @Nullable Hint hint);
+      @Nullable SpanStatus status,
+      @Nullable SentryDate timestamp,
+      boolean dropIfNoChildren,
+      @Nullable Hint hint);
 
   @ApiStatus.Internal
   void setContext(@NotNull String key, @NotNull Object context);

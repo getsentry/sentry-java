@@ -228,7 +228,11 @@ public final class AsyncHttpTransport implements ITransport {
       envelopeCache.store(envelope, hint);
 
       if (HintUtils.hasType(hint, NoSend.class)) {
-        options.getLogger().log(SentryLevel.DEBUG, "Stored envelope in cache, but not sending since the NoSend hint has been supplied.");
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Stored envelope in cache, but not sending since the NoSend hint has been supplied.");
         return TransportResult.success();
       }
 
