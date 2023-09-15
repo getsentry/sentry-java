@@ -156,6 +156,7 @@ public final class io/sentry/BuildConfig {
 }
 
 public final class io/sentry/CheckIn : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Lio/sentry/CheckInStatus;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/CheckInStatus;)V
 	public fun getCheckInId ()Lio/sentry/protocol/SentryId;

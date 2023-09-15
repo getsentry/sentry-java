@@ -21,6 +21,7 @@ import io.sentry.spring.jakarta.SentryUserFilter;
 import io.sentry.spring.jakarta.SentryUserProvider;
 import io.sentry.spring.jakarta.SentryWebConfiguration;
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider;
+import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.graphql.SentryGraphqlConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
+import org.quartz.core.QuartzScheduler;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -56,6 +58,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -166,6 +169,12 @@ public class SentryAutoConfiguration {
       GraphQLError.class
     })
     static class GraphqlConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryQuartzConfiguration.class)
+    @Open
+    @ConditionalOnClass({QuartzScheduler.class, SchedulerFactoryBean.class})
+    static class QuartzConfiguration {}
 
     /** Registers beans specific to Spring MVC. */
     @Configuration(proxyBeanMethods = false)

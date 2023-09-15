@@ -24,12 +24,22 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
 
-  public CheckIn(String monitorSlug, CheckInStatus status) {
+  public CheckIn(final @NotNull String monitorSlug, final @NotNull CheckInStatus status) {
     this(new SentryId(), monitorSlug, status.apiName());
   }
 
+  public CheckIn(
+      final @NotNull SentryId id,
+      final @NotNull String monitorSlug,
+      final @NotNull CheckInStatus status) {
+    this(id, monitorSlug, status.apiName());
+  }
+
   @ApiStatus.Internal
-  public CheckIn(SentryId checkInId, String monitorSlug, String status) {
+  public CheckIn(
+      final @NotNull SentryId checkInId,
+      final @NotNull String monitorSlug,
+      final @NotNull String status) {
     this.checkInId = checkInId;
     this.monitorSlug = monitorSlug;
     this.status = status;

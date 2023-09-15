@@ -30,6 +30,7 @@ dependencies {
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.springBoot3StarterGraphql)
+    compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)

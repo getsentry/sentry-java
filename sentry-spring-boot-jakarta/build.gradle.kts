@@ -36,6 +36,7 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterAop)
     compileOnly(Config.Libs.springBoot3StarterSecurity)
     compileOnly(Config.Libs.springBoot3StarterGraphql)
+    compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)

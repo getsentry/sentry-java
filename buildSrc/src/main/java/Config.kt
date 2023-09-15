@@ -85,6 +85,7 @@ object Config {
 
         val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
         val springBoot3StarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBoot3Version"
+        val springBoot3StarterQuartz = "org.springframework.boot:spring-boot-starter-quartz:$springBoot3Version"
         val springBoot3StarterTest = "org.springframework.boot:spring-boot-starter-test:$springBoot3Version"
         val springBoot3StarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBoot3Version"
         val springBoot3StarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBoot3Version"
