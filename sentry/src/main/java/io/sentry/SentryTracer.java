@@ -542,7 +542,7 @@ public final class SentryTracer implements ITransaction {
   @Override
   @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
-    finish(status, finishDate, true);
+    finish(status, finishDate, true, null);
   }
 
   @Override

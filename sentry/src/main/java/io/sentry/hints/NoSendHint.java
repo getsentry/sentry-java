@@ -1,3 +1,3 @@
 package io.sentry.hints;
 
-public class NoSendHint implements NoSend {}
+public final class NoSendHint implements NoSend {}
