@@ -865,10 +865,6 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
-    return captureCheckInInternal(checkIn);
-  }
-
-  private @NotNull SentryId captureCheckInInternal(final @NotNull CheckIn checkIn) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -876,9 +872,6 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureCheckIn' call is a no-op.");
-      //    } else if (message == null) {
-      //      options.getLogger().log(SentryLevel.WARNING, "captureCheckIn called with null
-      // parameter.");
     } else {
       try {
         StackItem item = stack.peek();
