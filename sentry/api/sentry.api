@@ -197,12 +197,11 @@ public final class io/sentry/CheckIn$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/CheckInStatus : java/lang/Enum, io/sentry/JsonSerializable {
+public final class io/sentry/CheckInStatus : java/lang/Enum {
 	public static final field ERROR Lio/sentry/CheckInStatus;
 	public static final field IN_PROGRESS Lio/sentry/CheckInStatus;
 	public static final field OK Lio/sentry/CheckInStatus;
 	public fun apiName ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/CheckInStatus;
 	public static fun values ()[Lio/sentry/CheckInStatus;
 }
@@ -979,16 +978,15 @@ public final class io/sentry/MonitorSchedule$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/MonitorScheduleType : java/lang/Enum, io/sentry/JsonSerializable {
+public final class io/sentry/MonitorScheduleType : java/lang/Enum {
 	public static final field CRONTAB Lio/sentry/MonitorScheduleType;
 	public static final field INTERVAL Lio/sentry/MonitorScheduleType;
 	public fun apiName ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleType;
 	public static fun values ()[Lio/sentry/MonitorScheduleType;
 }
 
-public final class io/sentry/MonitorScheduleUnit : java/lang/Enum, io/sentry/JsonSerializable {
+public final class io/sentry/MonitorScheduleUnit : java/lang/Enum {
 	public static final field DAY Lio/sentry/MonitorScheduleUnit;
 	public static final field HOUR Lio/sentry/MonitorScheduleUnit;
 	public static final field MINUTE Lio/sentry/MonitorScheduleUnit;
@@ -996,7 +994,6 @@ public final class io/sentry/MonitorScheduleUnit : java/lang/Enum, io/sentry/Jso
 	public static final field WEEK Lio/sentry/MonitorScheduleUnit;
 	public static final field YEAR Lio/sentry/MonitorScheduleUnit;
 	public fun apiName ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleUnit;
 	public static fun values ()[Lio/sentry/MonitorScheduleUnit;
 }

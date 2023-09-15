@@ -463,16 +463,16 @@ public final class SentryClient implements ISentryClient {
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
 
-  private @NotNull SentryEnvelope buildEnvelope(final @NotNull CheckIn checkIn) {
+  private @NotNull SentryEnvelope buildEnvelope(
+      final @NotNull CheckIn checkIn, final @Nullable TraceContext traceContext) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
     final SentryEnvelopeItem checkInItem =
         SentryEnvelopeItem.fromCheckIn(options.getSerializer(), checkIn);
     envelopeItems.add(checkInItem);
 
-    // TODO do we need trace context?
     final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion());
+        new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -691,20 +691,25 @@ public final class SentryClient implements ISentryClient {
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());
 
-    SentryId sentryId = SentryId.EMPTY_ID;
-    if (checkIn.getCheckInId() != null) {
-      sentryId = checkIn.getCheckInId();
-    }
+    SentryId sentryId = checkIn.getCheckInId();
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(checkIn);
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        final @Nullable ITransaction transaction = scope.getTransaction();
+        if (transaction != null) {
+          traceContext = transaction.traceContext();
+        } else {
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
+        }
+      }
+
+      final SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
 
       hint.clear();
-      if (envelope != null) {
-        transport.send(envelope, hint);
-      } else {
-        sentryId = SentryId.EMPTY_ID;
-      }
+      transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
