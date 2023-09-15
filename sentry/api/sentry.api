@@ -2472,7 +2472,9 @@ public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Int
 }
 
 public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/SessionEnd, io/sentry/hints/TransactionEnd {
-	public fun <init> (JLio/sentry/ILogger;)V
+	public fun <init> (JLio/sentry/ILogger;Z)V
+	public fun isFlushable ()Z
+	public fun setFlushable ()V
 }
 
 public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2723,7 +2725,9 @@ public abstract interface class io/sentry/hints/Cached {
 }
 
 public abstract interface class io/sentry/hints/DiskFlushNotification {
+	public abstract fun isFlushable ()Z
 	public abstract fun markFlushed ()V
+	public abstract fun setFlushable ()V
 }
 
 public final class io/sentry/hints/EventDropReason : java/lang/Enum {
@@ -2734,13 +2738,6 @@ public final class io/sentry/hints/EventDropReason : java/lang/Enum {
 
 public abstract interface class io/sentry/hints/Flushable {
 	public abstract fun waitFlush ()Z
-}
-
-public abstract interface class io/sentry/hints/NoSend {
-}
-
-public final class io/sentry/hints/NoSendHint : io/sentry/hints/NoSend {
-	public fun <init> ()V
 }
 
 public abstract interface class io/sentry/hints/Resettable {

@@ -13,6 +13,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -92,8 +93,10 @@ public final class UncaughtExceptionHandlerIntegration
       options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
       try {
+        final ITransaction transaction = hub.getTransaction();
         final UncaughtExceptionHint exceptionHint =
-            new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
+            new UncaughtExceptionHint(
+                options.getFlushTimeoutMillis(), options.getLogger(), transaction != null);
         final Throwable throwable = getUnhandledThrowable(thread, thrown);
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
@@ -160,8 +163,24 @@ public final class UncaughtExceptionHandlerIntegration
   public static class UncaughtExceptionHint extends BlockingFlushHint
       implements SessionEnd, TransactionEnd {
 
-    public UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
+    private final AtomicBoolean hasActiveTransaction;
+
+    public UncaughtExceptionHint(
+        final long flushTimeoutMillis,
+        final @NotNull ILogger logger,
+        final boolean hasActiveTransaction) {
       super(flushTimeoutMillis, logger);
+      this.hasActiveTransaction = new AtomicBoolean(hasActiveTransaction);
+    }
+
+    @Override
+    public boolean isFlushable() {
+      return !hasActiveTransaction.get();
+    }
+
+    @Override
+    public void setFlushable() {
+      hasActiveTransaction.set(false);
     }
   }
 }

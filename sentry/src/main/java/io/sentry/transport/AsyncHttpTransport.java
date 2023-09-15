@@ -13,7 +13,6 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
-import io.sentry.hints.NoSend;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -227,21 +226,20 @@ public final class AsyncHttpTransport implements ITransport {
       envelope.getHeader().setSentAt(null);
       envelopeCache.store(envelope, hint);
 
-      if (HintUtils.hasType(hint, NoSend.class)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Stored envelope in cache, but not sending since the NoSend hint has been supplied.");
-        return TransportResult.success();
-      }
-
       HintUtils.runIfHasType(
           hint,
           DiskFlushNotification.class,
           (diskFlushNotification) -> {
-            diskFlushNotification.markFlushed();
-            options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+            if (diskFlushNotification.isFlushable()) {
+              diskFlushNotification.markFlushed();
+              options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+            } else {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Not firing envelope flush as there's an ongoing transaction");
+            }
           });
 
       if (transportGate.isConnected()) {
