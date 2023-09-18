@@ -153,7 +153,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull void forceFinish(
+  public @NotNull void forceFGinish(
       final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
     if (isFinished()) {
       return;
