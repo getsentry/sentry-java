@@ -27,6 +27,7 @@ body:
         - sentry-logback
         - sentry-log4j2
         - sentry-graphql
+        - sentry-quartz
         - sentry-openfeign
         - sentry-apache-http-client-5
         - other

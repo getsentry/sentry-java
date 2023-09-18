@@ -13,29 +13,4 @@ public class SentryQuartzConfiguration {
   public SchedulerFactoryBeanCustomizer schedulerFactoryBeanCustomizer() {
     return new SentrySchedulerFactoryBeanCustomizer();
   }
-
-  //  @Bean
-  //  public TaskSchedulerCustomizer taskSchedulerCustomizer() {
-  //    return new SentryTaskSchedulerCustomizer();
-  //  }
-
-  //  public final class SentryTaskSchedulerCustomizer implements TaskSchedulerCustomizer {
-  //    @Override
-  //    public void customize(ThreadPoolTaskScheduler taskScheduler) {
-  //      System.out.println("customize taskScheduler");
-  ////    taskScheduler.getScheduledExecutor().
-  //    }
-  //  }
-
-  //  @Autowired
-  //  private SchedulerFactoryBean schedulerFactoryBean;
-
-  //  @PostConstruct
-  //  public void addListeners() throws SchedulerException {
-  //    ListenerManager listenerManager = schedulerFactoryBean.getScheduler()
-  //      .getListenerManager();
-  //
-  //    listenerManager.addTriggerListener(new SentryTriggerListener());
-  //    listenerManager.addJobListener(new SentryJobListener());
-  //  }
 }

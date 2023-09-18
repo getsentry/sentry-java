@@ -1,11 +1,13 @@
-package io.sentry.spring.jakarta.checkin;
+package io.sentry.quartz;
 
+import io.sentry.BuildConfig;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.MonitorConfig;
 import io.sentry.MonitorSchedule;
 import io.sentry.MonitorScheduleUnit;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import java.util.List;
@@ -28,6 +30,12 @@ public final class SentryJobListener implements JobListener {
 
   public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
   public static final String SENTRY_CHECK_IN_SLUG_KEY = "sentry-checkin-slug";
+
+  public SentryJobListener() {
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Quartz");
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-quartz", BuildConfig.VERSION_NAME);
+  }
 
   @Override
   public String getName() {

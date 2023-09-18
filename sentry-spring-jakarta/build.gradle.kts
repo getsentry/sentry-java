@@ -44,6 +44,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     compileOnly(projects.sentryGraphql)
+    compileOnly(projects.sentryQuartz)
 
     // tests
     testImplementation(projects.sentryTestSupport)

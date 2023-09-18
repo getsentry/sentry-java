@@ -30,6 +30,7 @@ dependencies {
     compileOnly(Config.Libs.springBoot3Starter)
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(projects.sentryGraphql)
+    compileOnly(projects.sentryQuartz)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApiJakarta)

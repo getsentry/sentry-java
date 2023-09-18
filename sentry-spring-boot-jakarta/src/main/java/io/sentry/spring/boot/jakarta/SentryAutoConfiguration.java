@@ -13,6 +13,7 @@ import io.sentry.SentryOptions;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.quartz.SentryJobListener;
 import io.sentry.spring.jakarta.ContextTagsEventProcessor;
 import io.sentry.spring.jakarta.SentryExceptionResolver;
 import io.sentry.spring.jakarta.SentryRequestResolver;
@@ -173,7 +174,11 @@ public class SentryAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @Import(SentryQuartzConfiguration.class)
     @Open
-    @ConditionalOnClass({QuartzScheduler.class, SchedulerFactoryBean.class})
+    @ConditionalOnClass({
+      SentryJobListener.class,
+      QuartzScheduler.class,
+      SchedulerFactoryBean.class
+    })
     static class QuartzConfiguration {}
 
     /** Registers beans specific to Spring MVC. */

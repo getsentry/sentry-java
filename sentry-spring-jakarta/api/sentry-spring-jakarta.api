@@ -88,16 +88,6 @@ public final class io/sentry/spring/jakarta/SpringSecuritySentryUserProvider : i
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
-public final class io/sentry/spring/jakarta/checkin/SentryJobListener : org/quartz/JobListener {
-	public static final field SENTRY_CHECK_IN_ID_KEY Ljava/lang/String;
-	public static final field SENTRY_CHECK_IN_SLUG_KEY Ljava/lang/String;
-	public fun <init> ()V
-	public fun getName ()Ljava/lang/String;
-	public fun jobExecutionVetoed (Lorg/quartz/JobExecutionContext;)V
-	public fun jobToBeExecuted (Lorg/quartz/JobExecutionContext;)V
-	public fun jobWasExecuted (Lorg/quartz/JobExecutionContext;Lorg/quartz/JobExecutionException;)V
-}
-
 public class io/sentry/spring/jakarta/checkin/SentryQuartzConfiguration {
 	public fun <init> ()V
 	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;

@@ -1,5 +1,6 @@
 package io.sentry.spring.jakarta.checkin;
 
+import io.sentry.quartz.SentryJobListener;
 import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
