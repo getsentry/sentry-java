@@ -230,7 +230,7 @@ public final class AsyncHttpTransport implements ITransport {
           hint,
           DiskFlushNotification.class,
           (diskFlushNotification) -> {
-            if (diskFlushNotification.isFlushable()) {
+            if (diskFlushNotification.isFlushable(envelope.getHeader().getEventId())) {
               diskFlushNotification.markFlushed();
               options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
             } else {

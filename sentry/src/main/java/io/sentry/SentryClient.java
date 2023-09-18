@@ -215,11 +215,10 @@ public final class SentryClient implements ISentryClient {
     if (scope != null) {
       final @Nullable ITransaction transaction = scope.getTransaction();
       if (transaction != null) {
-        // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
         if (HintUtils.hasType(hint, TransactionEnd.class)) {
           final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
           if (sentrySdkHint instanceof DiskFlushNotification) {
-            ((DiskFlushNotification) sentrySdkHint).setFlushable();
+            ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
             transaction.forceFinish(SpanStatus.ABORTED, false, hint);
           } else {
             transaction.forceFinish(SpanStatus.ABORTED, false, null);

@@ -13,7 +13,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -93,14 +93,17 @@ public final class UncaughtExceptionHandlerIntegration
       options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
       try {
-        final ITransaction transaction = hub.getTransaction();
         final UncaughtExceptionHint exceptionHint =
-            new UncaughtExceptionHint(
-                options.getFlushTimeoutMillis(), options.getLogger(), transaction != null);
+            new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
         final Throwable throwable = getUnhandledThrowable(thread, thrown);
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
 
+        final ITransaction transaction = hub.getTransaction();
+        if (transaction == null && event.getEventId() != null) {
+          // if there's no active transaction on scope, this event can trigger flush notification
+          exceptionHint.setFlushable(event.getEventId());
+        }
         final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
 
         final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
@@ -163,24 +166,21 @@ public final class UncaughtExceptionHandlerIntegration
   public static class UncaughtExceptionHint extends BlockingFlushHint
       implements SessionEnd, TransactionEnd {
 
-    private final AtomicBoolean hasActiveTransaction;
+    private final AtomicReference<SentryId> flushableEventId = new AtomicReference<>();
 
-    public UncaughtExceptionHint(
-        final long flushTimeoutMillis,
-        final @NotNull ILogger logger,
-        final boolean hasActiveTransaction) {
+    public UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       super(flushTimeoutMillis, logger);
-      this.hasActiveTransaction = new AtomicBoolean(hasActiveTransaction);
     }
 
     @Override
-    public boolean isFlushable() {
-      return !hasActiveTransaction.get();
+    public boolean isFlushable(final @Nullable SentryId eventId) {
+      final SentryId unwrapped = flushableEventId.get();
+      return unwrapped != null && unwrapped.equals(eventId);
     }
 
     @Override
-    public void setFlushable() {
-      hasActiveTransaction.set(false);
+    public void setFlushable(final @NotNull SentryId eventId) {
+      flushableEventId.set(eventId);
     }
   }
 }

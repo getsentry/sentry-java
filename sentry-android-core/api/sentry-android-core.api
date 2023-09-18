@@ -75,9 +75,9 @@ public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, ja
 public final class io/sentry/android/core/AnrV2Integration$AnrV2Hint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/AbnormalExit, io/sentry/hints/Backfillable {
 	public fun <init> (JLio/sentry/ILogger;JZZ)V
 	public fun ignoreCurrentThread ()Z
-	public fun isFlushable ()Z
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public fun mechanism ()Ljava/lang/String;
-	public fun setFlushable ()V
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
 	public fun shouldEnrich ()Z
 	public fun timestamp ()Ljava/lang/Long;
 }

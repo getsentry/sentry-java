@@ -388,12 +388,12 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     @Override
-    public boolean isFlushable() {
+    public boolean isFlushable(@Nullable SentryId eventId) {
       return true;
     }
 
     @Override
-    public void setFlushable() {}
+    public void setFlushable(@NotNull SentryId eventId) {}
   }
 
   static final class ParseResult {
