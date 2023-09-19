@@ -1,4 +1,4 @@
-package io.sentry.samples.android.replay
+package io.sentry.android.core.replay
 
 import android.app.Activity
 import android.graphics.Bitmap
@@ -13,13 +13,18 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import io.sentry.DateUtils
+import io.sentry.Hint
+import io.sentry.ReplayRecording
+import io.sentry.Sentry
+import io.sentry.SentryReplayEvent
 import java.util.LinkedList
 
 class WindowRecorder : Window.OnFrameMetricsAvailableListener {
 
     companion object {
         private const val TAG = "WindowRecorder"
-        private const val MIN_TIME_BETWEEN_FRAMES_MS = 1000
+        private const val MIN_TIME_BETWEEN_FRAMES_MS = 500
     }
 
     val recorder = RRWebRecorder()
@@ -44,9 +49,37 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         }
     }
 
-    fun stopRecording() {
+    fun stopRecording() : Pair<SentryReplayEvent, Hint> {
         activity?.window?.removeOnFrameMetricsAvailableListener(this)
         activity = null
+
+        Sentry.getCurrentHub().configureScope { scope ->
+            scope.breadcrumbs.forEach { breadcrumb ->
+                if (breadcrumb.timestamp.time > recorder.startTimeMs &&
+                    breadcrumb.timestamp.time < recorder.endTimeMs &&
+                    breadcrumb.category == "ui.click"
+                ) {
+                    recorder.addBreadcrumb(breadcrumb)
+                }
+            }
+        }
+        val replayEvent = SentryReplayEvent().apply {
+            timestamp =
+                DateUtils.millisToSeconds(recorder.endTimeMs.toDouble())
+            replayStartTimestamp =
+                DateUtils.millisToSeconds(recorder.startTimeMs.toDouble())
+            segmentId = 0
+        }
+
+        val replayRecording = ReplayRecording().apply {
+            segmentId = 0
+            payload = recorder.recording as List<Any>
+        }
+
+        val hint = Hint()
+        hint.addReplayRecording(replayRecording)
+
+        return Pair(replayEvent, hint)
     }
 
     override fun onFrameMetricsAvailable(
@@ -117,7 +150,6 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                 }
 
                 if (item is ViewGroup) {
-                    item.clipChildren
                     val childCount = item.childCount
                     for (i in 0 until childCount) {
                         items.add(item.getChildAt(i))

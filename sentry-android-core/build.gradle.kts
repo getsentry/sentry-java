@@ -74,6 +74,11 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
+
+    implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+    // TODO remove and use double reflection
+    implementation("com.github.ChickenHook:RestrictionBypass:2.2")
+
     compileOnly(projects.sentryAndroidFragment)
     compileOnly(projects.sentryAndroidTimber)
     compileOnly(projects.sentryCompose)

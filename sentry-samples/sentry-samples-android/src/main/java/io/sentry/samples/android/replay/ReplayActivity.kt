@@ -9,6 +9,7 @@ import io.sentry.Hint
 import io.sentry.ReplayRecording
 import io.sentry.Sentry
 import io.sentry.SentryReplayEvent
+import io.sentry.android.core.replay.WindowRecorder
 import io.sentry.samples.android.R
 import kotlin.random.Random
 
@@ -36,33 +37,7 @@ class ReplayActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        viewRecorder.stopRecording()
-        Sentry.getCurrentHub().configureScope { scope ->
-            scope.breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.time > viewRecorder.recorder.startTimeMs &&
-                    breadcrumb.timestamp.time < viewRecorder.recorder.endTimeMs &&
-                    breadcrumb.category == "ui.click"
-                ) {
-                    viewRecorder.recorder.addBreadcrumb(breadcrumb)
-                }
-            }
-        }
-        val replay = SentryReplayEvent()
-
-        replay.timestamp =
-            DateUtils.millisToSeconds(viewRecorder.recorder.endTimeMs.toDouble())
-
-        replay.replayStartTimestamp =
-            DateUtils.millisToSeconds(viewRecorder.recorder.startTimeMs.toDouble())
-        replay.segmentId = 0
-
-        val replayRecording = ReplayRecording().apply {
-            segmentId = 0
-            payload = viewRecorder.recorder.recording as List<Any>
-        }
-        val hint = Hint()
-        hint.addReplayRecording(replayRecording)
-
+        val (replay, hint) = viewRecorder.stopRecording()
         Sentry.captureReplay(replay, hint)
     }
 }

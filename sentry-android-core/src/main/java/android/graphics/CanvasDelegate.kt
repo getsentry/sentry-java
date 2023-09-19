@@ -4,7 +4,7 @@ import android.graphics.PorterDuff.Mode
 import android.graphics.fonts.Font
 import android.graphics.text.MeasuredText
 import android.util.Log
-import io.sentry.samples.android.replay.Recorder
+import io.sentry.android.core.replay.Recorder
 
 class CanvasDelegate(
     private val recorder: Recorder,

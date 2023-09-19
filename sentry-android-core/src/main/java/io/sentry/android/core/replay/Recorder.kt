@@ -1,4 +1,4 @@
-package io.sentry.samples.android.replay
+package io.sentry.android.core.replay
 
 import android.graphics.Matrix
 import android.graphics.Paint
