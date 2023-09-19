@@ -1,0 +1,30 @@
+{
+  "check_in_id": "6d55218195564d6d88cf3883b84666f1",
+  "monitor_slug": "some_slug",
+  "status": "error",
+  "duration": 12.3,
+  "release": "1.0.1",
+  "environment": "env",
+  "monitor_config":
+  {
+    "schedule":
+    {
+      "type": "interval",
+      "value": 42,
+      "unit": "minute"
+    },
+    "checkin_margin": 8,
+    "max_runtime": 9,
+    "timezone": "Europe/Vienna"
+  },
+  "contexts":
+  {
+    "trace":
+    {
+      "trace_id": "f382e3180c714217a81371f8c644aefe",
+      "span_id": "85694b9f567145a6",
+      "op": "default",
+      "origin": "manual"
+    }
+  }
+}

@@ -17,6 +17,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -767,6 +768,25 @@ class SentryTest {
 
         await.untilTrue(triggered)
         assertFalse(previousSessionFile.exists())
+    }
+
+    @Test
+    fun `captureCheckIn gets forwarded to client`() {
+        Sentry.init { it.dsn = dsn }
+
+        val client = mock<ISentryClient>()
+        Sentry.getCurrentHub().bindClient(client)
+
+        val checkIn = CheckIn("some_slug", CheckInStatus.OK)
+        Sentry.captureCheckIn(checkIn)
+
+        verify(client).captureCheckIn(
+            argThat {
+                checkInId == checkIn.checkInId
+            },
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 
     @Test

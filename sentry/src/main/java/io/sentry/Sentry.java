@@ -1011,4 +1011,8 @@ public final class Sentry {
   public static @Nullable BaggageHeader getBaggage() {
     return getCurrentHub().getBaggage();
   }
+
+  public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
+    return getCurrentHub().captureCheckIn(checkIn);
+  }
 }
