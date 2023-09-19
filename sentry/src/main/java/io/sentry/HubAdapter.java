@@ -251,4 +251,9 @@ public final class HubAdapter implements IHub {
   public @Nullable BaggageHeader getBaggage() {
     return Sentry.getBaggage();
   }
+
+  @Override
+  public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
+    return Sentry.captureCheckIn(checkIn);
+  }
 }
