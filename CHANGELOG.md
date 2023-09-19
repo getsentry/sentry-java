@@ -8,6 +8,12 @@
 - Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
 - Add API for sending checkins (CRONS) manually ([#2935](https://github.com/getsentry/sentry-java/pull/2935))
 
+### Fixes
+
+- Always send memory stats for transactions ([#2936](https://github.com/getsentry/sentry-java/pull/2936))
+  - This makes it possible to query transactions by the `device.class` tag on Sentry
+- Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
+
 ### Dependencies
 
 - Bump Gradle from v8.2.1 to v8.3.0 ([#2900](https://github.com/getsentry/sentry-java/pull/2900))
