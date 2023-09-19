@@ -88,6 +88,16 @@ public final class io/sentry/spring/SpringSecuritySentryUserProvider : io/sentry
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public class io/sentry/spring/checkin/SentryQuartzConfiguration {
+	public fun <init> ()V
+	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;
+}
+
+public final class io/sentry/spring/checkin/SentrySchedulerFactoryBeanCustomizer : org/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer {
+	public fun <init> ()V
+	public fun customize (Lorg/springframework/scheduling/quartz/SchedulerFactoryBean;)V
+}
+
 public final class io/sentry/spring/graphql/SentryBatchLoaderRegistry : org/springframework/graphql/execution/BatchLoaderRegistry {
 	public fun forName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
 	public fun forTypePair (Ljava/lang/Class;Ljava/lang/Class;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
