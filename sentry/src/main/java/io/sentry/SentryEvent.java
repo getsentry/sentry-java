@@ -1,8 +1,10 @@
 package io.sentry;
 
+import io.sentry.builder.EventBuilder;
 import io.sentry.protocol.*;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -10,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -86,6 +89,10 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
   SentryEvent(final @NotNull SentryId eventId, final @NotNull Date timestamp) {
     super(eventId);
     this.timestamp = timestamp;
+  }
+
+  public static EventBuilder builder() {
+    return new EventBuilder(new SentryEvent());
   }
 
   /**
@@ -218,8 +225,8 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     if (exception != null) {
       for (SentryException e : exception.getValues()) {
         if (e.getMechanism() != null
-            && e.getMechanism().isHandled() != null
-            && !e.getMechanism().isHandled()) {
+          && e.getMechanism().isHandled() != null
+          && !e.getMechanism().isHandled()) {
           return e;
         }
       }
@@ -252,7 +259,7 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
 
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-      throws IOException {
+    throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (message != null) {
@@ -312,7 +319,7 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull SentryEvent deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       SentryEvent event = new SentryEvent();
       Map<String, Object> unknown = null;
@@ -338,14 +345,14 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
             reader.beginObject();
             reader.nextName(); // SentryValues.JsonKeys.VALUES
             event.threads =
-                new SentryValues<>(reader.nextList(logger, new SentryThread.Deserializer()));
+              new SentryValues<>(reader.nextList(logger, new SentryThread.Deserializer()));
             reader.endObject();
             break;
           case JsonKeys.EXCEPTION:
             reader.beginObject();
             reader.nextName(); // SentryValues.JsonKeys.VALUES
             event.exception =
-                new SentryValues<>(reader.nextList(logger, new SentryException.Deserializer()));
+              new SentryValues<>(reader.nextList(logger, new SentryException.Deserializer()));
             reader.endObject();
             break;
           case JsonKeys.LEVEL:
@@ -362,7 +369,7 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
             break;
           case JsonKeys.MODULES:
             Map<String, String> deserializedModules =
-                (Map<String, String>) reader.nextObjectOrNull();
+              (Map<String, String>) reader.nextObjectOrNull();
             event.modules = CollectionUtils.newConcurrentHashMap(deserializedModules);
             break;
           default:
