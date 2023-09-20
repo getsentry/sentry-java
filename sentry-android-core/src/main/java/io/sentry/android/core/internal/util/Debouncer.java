@@ -10,12 +10,15 @@ public class Debouncer {
 
   private final long waitTimeMs;
   private final @NotNull ICurrentDateProvider timeProvider;
+  private int executions = 0;
+  private final int maxExecutions;
 
   private Long lastExecutionTime = null;
 
-  public Debouncer(final @NotNull ICurrentDateProvider timeProvider, final long waitTimeMs) {
+  public Debouncer(final @NotNull ICurrentDateProvider timeProvider, final long waitTimeMs, final int maxExecutions) {
     this.timeProvider = timeProvider;
     this.waitTimeMs = waitTimeMs;
+    this.maxExecutions = maxExecutions <= 0 ? 1 : maxExecutions;
   }
 
   /**
@@ -25,9 +28,15 @@ public class Debouncer {
   public boolean checkForDebounce() {
     final long now = timeProvider.getCurrentTimeMillis();
     if (lastExecutionTime == null || (lastExecutionTime + waitTimeMs) <= now) {
+      executions = 0;
       lastExecutionTime = now;
       return false;
     }
+    executions++;
+    if (executions < maxExecutions) {
+      return false;
+    }
+    executions = 0;
     return true;
   }
 }

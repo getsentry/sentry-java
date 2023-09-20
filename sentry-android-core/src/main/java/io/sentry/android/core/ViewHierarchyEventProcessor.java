@@ -41,10 +41,11 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
+  private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
-    this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
+    this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachViewHierarchy()) {
       addIntegrationToSdkVersion();
