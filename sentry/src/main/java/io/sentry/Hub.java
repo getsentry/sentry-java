@@ -864,6 +864,7 @@ public final class Hub implements IHub {
   }
 
   @Override
+  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -392,18 +393,22 @@ public final class ExternalOptions {
     this.sendModules = sendModules;
   }
 
+  @ApiStatus.Experimental
   public @Nullable Boolean isEnableAutomaticCheckIns() {
     return enableAutomaticCheckIns;
   }
 
+  @ApiStatus.Experimental
   public void setEnableAutomaticCheckIns(final @Nullable Boolean enableAutomaticCheckIns) {
     this.enableAutomaticCheckIns = enableAutomaticCheckIns;
   }
 
+  @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     this.ignoredCheckIns = ignoredCheckIns;
   }
 
+  @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
