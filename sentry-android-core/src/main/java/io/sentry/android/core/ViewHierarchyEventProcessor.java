@@ -45,7 +45,11 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
-    this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, DEBOUNCE_MAX_EXECUTIONS);
+    this.debouncer =
+        new Debouncer(
+            AndroidCurrentDateProvider.getInstance(),
+            DEBOUNCE_WAIT_TIME_MS,
+            DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachViewHierarchy()) {
       addIntegrationToSdkVersion();

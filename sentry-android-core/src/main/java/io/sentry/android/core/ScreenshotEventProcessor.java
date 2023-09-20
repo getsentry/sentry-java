@@ -38,7 +38,11 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
-    this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, DEBOUNCE_MAX_EXECUTIONS);
+    this.debouncer =
+        new Debouncer(
+            AndroidCurrentDateProvider.getInstance(),
+            DEBOUNCE_WAIT_TIME_MS,
+            DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion();
