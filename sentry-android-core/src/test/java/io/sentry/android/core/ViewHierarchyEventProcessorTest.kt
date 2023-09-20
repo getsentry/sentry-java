@@ -321,7 +321,13 @@ class ViewHierarchyEventProcessorTest {
         val event = SentryEvent().apply {
             exceptions = listOf(SentryException())
         }
-        val hint0 = Hint()
+        var hint0 = Hint()
+        processor.process(event, hint0)
+        assertNotNull(hint0.viewHierarchy)
+        hint0 = Hint()
+        processor.process(event, hint0)
+        assertNotNull(hint0.viewHierarchy)
+        hint0 = Hint()
         processor.process(event, hint0)
         assertNotNull(hint0.viewHierarchy)
 
@@ -345,6 +351,10 @@ class ViewHierarchyEventProcessorTest {
         val hint0 = Hint()
         processor.process(event, hint0)
         assertFalse(debounceFlag)
+        processor.process(event, hint0)
+        assertFalse(debounceFlag)
+        processor.process(event, hint0)
+        assertFalse(debounceFlag)
 
         val hint1 = Hint()
         processor.process(event, hint1)
@@ -362,6 +372,8 @@ class ViewHierarchyEventProcessorTest {
             exceptions = listOf(SentryException())
         }
         val hint0 = Hint()
+        processor.process(event, hint0)
+        processor.process(event, hint0)
         processor.process(event, hint0)
         assertNotNull(hint0.viewHierarchy)
 
