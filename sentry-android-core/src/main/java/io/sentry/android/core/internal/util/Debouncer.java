@@ -15,7 +15,10 @@ public class Debouncer {
 
   private Long lastExecutionTime = null;
 
-  public Debouncer(final @NotNull ICurrentDateProvider timeProvider, final long waitTimeMs, final int maxExecutions) {
+  public Debouncer(
+      final @NotNull ICurrentDateProvider timeProvider,
+      final long waitTimeMs,
+      final int maxExecutions) {
     this.timeProvider = timeProvider;
     this.waitTimeMs = waitTimeMs;
     this.maxExecutions = maxExecutions <= 0 ? 1 : maxExecutions;
