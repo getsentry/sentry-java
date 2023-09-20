@@ -86,9 +86,8 @@ public final class SentryJobListener implements JobListener {
     final @Nullable JobKey key = jobDetail.getKey();
     if (key != null) {
       slugBuilder.append(key.getName());
+      slugBuilder.append("__");
     }
-
-    slugBuilder.append("__");
 
     final @Nullable Class<? extends Job> jobClass = jobDetail.getJobClass();
     if (jobClass != null) {

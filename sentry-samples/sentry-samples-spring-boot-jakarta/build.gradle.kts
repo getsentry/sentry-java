@@ -33,6 +33,7 @@ dependencies {
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql)
+    implementation(projects.sentryQuartz)
 
     // database query tracing
     implementation(projects.sentryJdbc)
