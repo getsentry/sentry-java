@@ -9,6 +9,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
+import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -687,6 +688,20 @@ public final class SentryClient implements ISentryClient {
 
     if (shouldApplyScopeData(checkIn, hint)) {
       checkIn = applyScope(checkIn, scope);
+    }
+
+    if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Check-in was dropped as slug %s is ignored",
+              checkIn.getMonitorSlug());
+      // TODO in a follow up PR with DataCategory.Monitor
+      //      options
+      //        .getClientReportRecorder()
+      //        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+      return SentryId.EMPTY_ID;
     }
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());

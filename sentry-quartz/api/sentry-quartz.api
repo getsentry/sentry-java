@@ -7,6 +7,7 @@ public final class io/sentry/quartz/SentryJobListener : org/quartz/JobListener {
 	public static final field SENTRY_CHECK_IN_ID_KEY Ljava/lang/String;
 	public static final field SENTRY_CHECK_IN_SLUG_KEY Ljava/lang/String;
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
 	public fun getName ()Ljava/lang/String;
 	public fun jobExecutionVetoed (Lorg/quartz/JobExecutionContext;)V
 	public fun jobToBeExecuted (Lorg/quartz/JobExecutionContext;)V
