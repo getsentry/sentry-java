@@ -4,6 +4,7 @@
 
 ### Features
 
+- Improve default debouncing mechanism ([#2945](https://github.com/getsentry/sentry-java/pull/2945))
 - Add `sendModules` option for disable sending modules ([#2926](https://github.com/getsentry/sentry-java/pull/2926))
 - Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
 - Add API for sending checkins (CRONS) manually ([#2935](https://github.com/getsentry/sentry-java/pull/2935))
