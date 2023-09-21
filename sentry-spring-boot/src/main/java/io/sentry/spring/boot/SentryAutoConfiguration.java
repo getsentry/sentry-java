@@ -22,6 +22,8 @@ import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
+import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;
+import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.graphql.SentryGraphqlConfiguration;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
@@ -181,6 +183,22 @@ public class SentryAutoConfiguration {
       SchedulerFactoryBean.class
     })
     static class QuartzConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(ProceedingJoinPoint.class)
+    @ConditionalOnProperty(
+        value = "sentry.enable-aot-compatibility",
+        havingValue = "false",
+        matchIfMissing = true)
+    @Import(SentryCheckInAdviceConfiguration.class)
+    @Open
+    static class SentryCheckInAspectsConfiguration {
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnMissingBean(name = "sentryCheckInPointcut")
+      @Import(SentryCheckInPointcutConfiguration.class)
+      @Open
+      static class SentryCheckInPointcutAutoConfiguration {}
+    }
 
     /** Registers beans specific to Spring MVC. */
     @Configuration(proxyBeanMethods = false)

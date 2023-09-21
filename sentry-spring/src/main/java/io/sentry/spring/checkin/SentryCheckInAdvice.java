@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.checkin;
+package io.sentry.spring.checkin;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CheckIn;
