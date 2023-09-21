@@ -88,6 +88,28 @@ public final class io/sentry/spring/jakarta/SpringSecuritySentryUserProvider : i
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public abstract interface annotation class io/sentry/spring/jakarta/checkin/SentryCheckIn : java/lang/annotation/Annotation {
+	public abstract fun heartbeat ()Z
+	public abstract fun monitorSlug ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryCheckInAdviceConfiguration {
+	public fun <init> ()V
+	public fun sentryCheckInAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCheckInAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryCheckInPointcutConfiguration {
+	public fun <init> ()V
+	public fun sentryCheckInPointcut ()Lorg/springframework/aop/Pointcut;
+}
+
 public class io/sentry/spring/jakarta/checkin/SentryQuartzConfiguration {
 	public fun <init> ()V
 	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;
