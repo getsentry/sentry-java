@@ -2460,7 +2460,7 @@ public class SentryOptions {
     }
     if (options.getIgnoredCheckIns() != null) {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
-      setTracePropagationTargets(ignoredCheckIns);
+      setIgnoredCheckIns(ignoredCheckIns);
     }
   }
 

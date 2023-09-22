@@ -767,6 +767,22 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `when auto checkins is disabled, does not create quartz config`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=false")
+            .run {
+                assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when auto checkins option is skipped, does not create quartz config`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
