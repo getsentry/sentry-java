@@ -9,6 +9,7 @@
 - Add API for sending checkins (CRONS) manually ([#2935](https://github.com/getsentry/sentry-java/pull/2935))
 - Support check-ins (CRONS) for Quartz ([#2940](https://github.com/getsentry/sentry-java/pull/2940))
 - Add option for ignoring certain monitor slugs ([#2943](https://github.com/getsentry/sentry-java/pull/2943))
+- `@SentryCheckIn` annotation and advice config for Spring ([#2946](https://github.com/getsentry/sentry-java/pull/2946))
 
 ### Fixes
 
