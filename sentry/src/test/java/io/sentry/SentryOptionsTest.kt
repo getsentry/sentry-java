@@ -371,6 +371,8 @@ class SentryOptionsTest {
         externalOptions.isEnabled = false
         externalOptions.isEnablePrettySerializationOutput = false
         externalOptions.isSendModules = false
+        externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
+
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -398,6 +400,7 @@ class SentryOptionsTest {
         assertFalse(options.isEnabled)
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
+        assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
     }
 
     @Test

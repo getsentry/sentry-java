@@ -262,13 +262,6 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with enableAutomaticCheckIns set to true`() {
-        withPropertiesFile("enable-automatic-checkins=true") { options ->
-            assertTrue(options.isEnableAutomaticCheckIns == true)
-        }
-    }
-
-    @Test
     fun `creates options with ignoredCheckIns`() {
         withPropertiesFile("ignored-checkins=slugA,slug2") { options ->
             assertTrue(options.ignoredCheckIns!!.containsAll(listOf("slugA", "slug2")))

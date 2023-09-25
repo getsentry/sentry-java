@@ -336,14 +336,12 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracingOrigins ()Ljava/util/List;
-	public fun isEnableAutomaticCheckIns ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
-	public fun setEnableAutomaticCheckIns (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
@@ -1984,7 +1982,6 @@ public class io/sentry/SentryOptions {
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
 	public fun isEnableAutoSessionTracking ()Z
-	public fun isEnableAutomaticCheckIns ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
@@ -2021,7 +2018,6 @@ public class io/sentry/SentryOptions {
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAutoSessionTracking (Z)V
-	public fun setEnableAutomaticCheckIns (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V

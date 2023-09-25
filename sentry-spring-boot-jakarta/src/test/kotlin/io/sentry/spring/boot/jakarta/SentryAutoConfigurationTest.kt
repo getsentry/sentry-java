@@ -162,7 +162,6 @@ class SentryAutoConfigurationTest {
             "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$",
             "sentry.enabled=false",
             "sentry.send-modules=false",
-            "sentry.enable-automatic-checkins=true",
             "sentry.ignored-checkins=slug1,slugB"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
@@ -194,7 +193,6 @@ class SentryAutoConfigurationTest {
             assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
-            assertThat(options.isEnableAutomaticCheckIns).isEqualTo(true)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
         }
     }
@@ -733,7 +731,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when auto checkins is enabled, creates quartz config`() {
+    fun `creates quartz config`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .run {
                 assertThat(it).hasSingleBean(SchedulerFactoryBeanCustomizer::class.java)
@@ -741,7 +739,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when auto checkins is enabled, does not create quartz config if quartz lib missing`() {
+    fun `does not create quartz config if quartz lib missing`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withClassLoader(FilteredClassLoader(QuartzScheduler::class.java))
             .run {
@@ -750,7 +748,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when auto checkins is enabled, does not create quartz config if spring-quartz lib missing`() {
+    fun `does not create quartz config if spring-quartz lib missing`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withClassLoader(FilteredClassLoader(SchedulerFactoryBean::class.java))
             .run {
@@ -759,7 +757,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when auto checkins is enabled, does not create quartz config if sentry-quartz lib missing`() {
+    fun `does not create quartz config if sentry-quartz lib missing`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withClassLoader(FilteredClassLoader(SentryJobListener::class.java))
             .run {

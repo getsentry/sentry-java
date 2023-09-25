@@ -176,7 +176,6 @@ public class SentryAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @Import(SentryQuartzConfiguration.class)
     @Open
-    @ConditionalOnProperty(name = "sentry.enable-automatic-checkins")
     @ConditionalOnClass({
       SentryJobListener.class,
       QuartzScheduler.class,
