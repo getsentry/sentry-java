@@ -371,7 +371,6 @@ class SentryOptionsTest {
         externalOptions.isEnabled = false
         externalOptions.isEnablePrettySerializationOutput = false
         externalOptions.isSendModules = false
-        externalOptions.isEnableAutomaticCheckIns = true
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
 
         val options = SentryOptions()
@@ -401,7 +400,6 @@ class SentryOptionsTest {
         assertFalse(options.isEnabled)
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
-        assertTrue(options.isEnableAutomaticCheckIns)
         assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
     }
 
