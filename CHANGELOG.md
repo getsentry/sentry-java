@@ -8,6 +8,7 @@
 - Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
 - Add API for sending checkins (CRONS) manually ([#2935](https://github.com/getsentry/sentry-java/pull/2935))
 - Automatic CRON checkins for Quartz ([#2940](https://github.com/getsentry/sentry-java/pull/2940))
+- Add option for ignoring certain monitor slugs ([#2943](https://github.com/getsentry/sentry-java/pull/2943))
 
 ### Fixes
 
