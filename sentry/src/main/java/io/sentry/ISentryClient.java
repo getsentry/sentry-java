@@ -266,5 +266,6 @@ public interface ISentryClient {
   }
 
   @NotNull
+  @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable Scope scope, @Nullable Hint hint);
 }

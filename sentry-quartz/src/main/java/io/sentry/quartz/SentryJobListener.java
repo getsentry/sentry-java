@@ -12,6 +12,7 @@ import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import java.util.List;
 import java.util.TimeZone;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quartz.CalendarIntervalTrigger;
@@ -26,6 +27,7 @@ import org.quartz.JobListener;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
+@ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
 
   public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";

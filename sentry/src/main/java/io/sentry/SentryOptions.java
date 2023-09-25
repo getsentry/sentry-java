@@ -444,10 +444,10 @@ public class SentryOptions {
   private boolean sendModules = true;
 
   /** Whether to automatically send check-ins for monitors (CRONS). */
-  private boolean enableAutomaticCheckIns = false;
+  @ApiStatus.Experimental private boolean enableAutomaticCheckIns = false;
 
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
-  private @Nullable List<String> ignoredCheckIns = null;
+  @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
   /**
    * Adds an event processor
@@ -2152,6 +2152,7 @@ public class SentryOptions {
    *
    * @return true if check-ins should be sent automatically.
    */
+  @ApiStatus.Experimental
   public boolean isEnableAutomaticCheckIns() {
     return enableAutomaticCheckIns;
   }
@@ -2179,10 +2180,12 @@ public class SentryOptions {
    *
    * @param enableAutomaticCheckIns true if check-ins should be sent automatically.
    */
+  @ApiStatus.Experimental
   public void setEnableAutomaticCheckIns(boolean enableAutomaticCheckIns) {
     this.enableAutomaticCheckIns = enableAutomaticCheckIns;
   }
 
+  @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     if (ignoredCheckIns == null) {
       this.ignoredCheckIns = null;
@@ -2198,6 +2201,7 @@ public class SentryOptions {
     }
   }
 
+  @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
