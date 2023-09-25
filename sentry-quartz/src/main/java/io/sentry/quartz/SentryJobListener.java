@@ -3,8 +3,6 @@ package io.sentry.quartz;
 import io.sentry.BuildConfig;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
 import io.sentry.MonitorConfig;
 import io.sentry.MonitorSchedule;
 import io.sentry.MonitorScheduleUnit;
@@ -12,7 +10,6 @@ import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.Objects;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
@@ -34,14 +31,7 @@ public final class SentryJobListener implements JobListener {
   public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
   public static final String SENTRY_CHECK_IN_SLUG_KEY = "sentry-checkin-slug";
 
-  private final @NotNull IHub hub;
-
   public SentryJobListener() {
-    this(HubAdapter.getInstance());
-  }
-
-  public SentryJobListener(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
     SentryIntegrationPackageStorage.getInstance().addIntegration("Quartz");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-quartz", BuildConfig.VERSION_NAME);
@@ -55,9 +45,6 @@ public final class SentryJobListener implements JobListener {
   @Override
   public void jobToBeExecuted(JobExecutionContext context) {
     try {
-      if (isDisabled()) {
-        return;
-      }
       final @NotNull String slug = getSlug(context.getJobDetail());
       final @NotNull CheckIn checkIn = new CheckIn(slug, CheckInStatus.IN_PROGRESS);
 
@@ -196,10 +183,6 @@ public final class SentryJobListener implements JobListener {
   @Override
   public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
     try {
-      if (isDisabled()) {
-        return;
-      }
-
       final @Nullable Object checkInIdObjectFromContext = context.get(SENTRY_CHECK_IN_ID_KEY);
       final @Nullable Object slugObjectFromContext = context.get(SENTRY_CHECK_IN_SLUG_KEY);
       final @NotNull SentryId checkInId =
@@ -219,9 +202,5 @@ public final class SentryJobListener implements JobListener {
           .getLogger()
           .log(SentryLevel.ERROR, "Unable to capture check-in in jobWasExecuted.", t);
     }
-  }
-
-  private boolean isDisabled() {
-    return !hub.getOptions().isEnableAutomaticCheckIns();
   }
 }
