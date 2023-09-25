@@ -557,6 +557,44 @@ class SentryClientTest {
         )
     }
 
+    @Test
+    fun `when captureCheckIn, envelope is sent if ignored slug does not match`() {
+        val sut = fixture.getSut { options ->
+            options.ignoredCheckIns = listOf("non_matching_slug")
+        }
+
+        sut.captureCheckIn(checkIn, null, null)
+
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(checkIn.checkInId, actual.header.eventId)
+                assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
+
+                assertEquals(1, actual.items.count())
+                val item = actual.items.first()
+                assertEquals(SentryItemType.CheckIn, item.header.type)
+                assertEquals("application/json", item.header.contentType)
+
+                assertEnvelopeItemDataForCheckIn(item)
+            },
+            any<Hint>()
+        )
+    }
+
+    @Test
+    fun `when captureCheckIn, envelope is not sent if slug is ignored`() {
+        val sut = fixture.getSut { options ->
+            options.ignoredCheckIns = listOf("some_slug")
+        }
+
+        sut.captureCheckIn(checkIn, null, null)
+
+        verify(fixture.transport, never()).send(
+            any(),
+            any<Hint>()
+        )
+    }
+
     private fun assertEnvelopeItemDataForCheckIn(item: SentryEnvelopeItem) {
         val stream = ByteArrayOutputStream()
         val writer = stream.bufferedWriter(Charset.forName("UTF-8"))

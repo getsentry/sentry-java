@@ -53,6 +53,7 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryLogback)
+    testImplementation(projects.sentryQuartz)
     testImplementation(projects.sentryApacheHttpClient5)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
@@ -66,6 +67,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
+    testImplementation(Config.Libs.springBootStarterQuartz)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 }
 
