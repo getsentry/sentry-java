@@ -13,6 +13,7 @@ import io.sentry.SentryOptions;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.quartz.SentryJobListener;
 import io.sentry.spring.ContextTagsEventProcessor;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
@@ -21,6 +22,7 @@ import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
+import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.graphql.SentryGraphqlConfiguration;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
@@ -35,6 +37,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
+import org.quartz.core.QuartzScheduler;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -56,6 +59,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -166,6 +170,16 @@ public class SentryAutoConfiguration {
       GraphQLError.class
     })
     static class GraphqlConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryQuartzConfiguration.class)
+    @Open
+    @ConditionalOnClass({
+      SentryJobListener.class,
+      QuartzScheduler.class,
+      SchedulerFactoryBean.class
+    })
+    static class QuartzConfiguration {}
 
     /** Registers beans specific to Spring MVC. */
     @Configuration(proxyBeanMethods = false)

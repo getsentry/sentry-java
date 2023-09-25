@@ -31,7 +31,6 @@ public class CustomJob {
     try {
       LOGGER.info("Executing scheduled job");
       Thread.sleep(2000L);
-      Sentry.captureCheckIn(new CheckIn(checkInId, "my_monitor_slug", CheckInStatus.OK));
     } catch (Throwable t) {
       didError = true;
       throw t;

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Adds additional information about what happened to an event. */
+/** A check-in for a monitor (CRON). */
 public final class CheckIn implements JsonUnknown, JsonSerializable {
 
   private final @NotNull SentryId checkInId;
@@ -29,10 +29,10 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
   }
 
   public CheckIn(
-      final @NotNull SentryId checkInId,
+      final @NotNull SentryId id,
       final @NotNull String monitorSlug,
       final @NotNull CheckInStatus status) {
-    this(checkInId, monitorSlug, status.apiName());
+    this(id, monitorSlug, status.apiName());
   }
 
   @ApiStatus.Internal

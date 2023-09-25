@@ -1,10 +1,15 @@
 package io.sentry.samples.spring.boot;
 
+import io.sentry.samples.spring.boot.quartz.SampleJob;
+import org.quartz.JobDetail;
+import org.quartz.SimpleTrigger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.quartz.JobDetailFactoryBean;
+import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -23,5 +28,32 @@ public class SentryDemoApplication {
   @Bean
   WebClient webClient(WebClient.Builder builder) {
     return builder.build();
+  }
+
+  @Bean
+  public JobDetailFactoryBean jobDetail() {
+    JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
+    jobDetailFactory.setName("hello_spring_boot_2");
+    jobDetailFactory.setJobClass(SampleJob.class);
+    jobDetailFactory.setDescription("Invoke Sample Job service...");
+    jobDetailFactory.setDurability(true);
+    return jobDetailFactory;
+  }
+
+  //  @Bean
+  //  public CronTriggerFactoryBean trigger(JobDetail job) {
+  //    CronTriggerFactoryBean trigger = new CronTriggerFactoryBean();
+  //    trigger.setJobDetail(job);
+  //    trigger.setCronExpression("0 * * ? * *");
+  //    return trigger;
+  //  }
+
+  @Bean
+  public SimpleTriggerFactoryBean trigger(JobDetail job) {
+    SimpleTriggerFactoryBean trigger = new SimpleTriggerFactoryBean();
+    trigger.setJobDetail(job);
+    trigger.setRepeatInterval(2 * 60 * 1000);
+    trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
+    return trigger;
   }
 }

@@ -1,7 +1,5 @@
-
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
@@ -10,7 +8,6 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
 }
 
 configure<JavaPluginExtension> {
@@ -25,19 +22,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-
-    compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
-    compileOnly(Config.Libs.springWeb)
-    compileOnly(Config.Libs.springAop)
-    compileOnly(Config.Libs.springSecurityWeb)
-    compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApi)
-    compileOnly(Config.Libs.slf4jApi)
-    compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.springBootStarterGraphql)
-    compileOnly(projects.sentryGraphql)
-    compileOnly(Config.Libs.springBootStarterQuartz)
-    compileOnly(projects.sentryQuartz)
+    compileOnly(Config.Libs.quartz)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -46,20 +31,12 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
+    testImplementation(projects.sentry)
     testImplementation(projects.sentryTestSupport)
-    testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.Libs.springBootStarterTest)
-    testImplementation(Config.Libs.springBootStarterWeb)
-    testImplementation(Config.Libs.springBootStarterWebflux)
-    testImplementation(Config.Libs.springBootStarterSecurity)
-    testImplementation(Config.Libs.springBootStarterAop)
-    testImplementation(Config.Libs.springBootStarterGraphql)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {
@@ -91,18 +68,16 @@ tasks {
     }
 }
 
-buildConfig {
-    useJavaOutput()
-    packageName("io.sentry.spring")
-    buildConfigField("String", "SENTRY_SPRING_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_SDK_NAME}\"")
-    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-}
-
-val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
+}
+
+buildConfig {
+    useJavaOutput()
+    packageName("io.sentry.quartz")
+    buildConfigField("String", "SENTRY_QUARTZ_SDK_NAME", "\"${Config.Sentry.SENTRY_QUARTZ_SDK_NAME}\"")
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
