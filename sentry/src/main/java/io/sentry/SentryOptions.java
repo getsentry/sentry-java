@@ -443,9 +443,6 @@ public class SentryOptions {
   /** Whether to send modules containing information about versions. */
   private boolean sendModules = true;
 
-  /** Whether to automatically send check-ins for monitors (CRONS). */
-  @ApiStatus.Experimental private boolean enableAutomaticCheckIns = false;
-
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
@@ -2148,16 +2145,6 @@ public class SentryOptions {
   }
 
   /**
-   * Whether to send check-ins for monitors (CRONS) automatically.
-   *
-   * @return true if check-ins should be sent automatically.
-   */
-  @ApiStatus.Experimental
-  public boolean isEnableAutomaticCheckIns() {
-    return enableAutomaticCheckIns;
-  }
-
-  /**
    * Whether to format serialized data, e.g. events logged to console in debug mode
    *
    * @param enablePrettySerializationOutput true if output should be pretty printed
@@ -2173,16 +2160,6 @@ public class SentryOptions {
    */
   public void setSendModules(boolean sendModules) {
     this.sendModules = sendModules;
-  }
-
-  /**
-   * Whether to send check-ins for monitors (CRONS) automatically.
-   *
-   * @param enableAutomaticCheckIns true if check-ins should be sent automatically.
-   */
-  @ApiStatus.Experimental
-  public void setEnableAutomaticCheckIns(boolean enableAutomaticCheckIns) {
-    this.enableAutomaticCheckIns = enableAutomaticCheckIns;
   }
 
   @ApiStatus.Experimental
@@ -2453,10 +2430,6 @@ public class SentryOptions {
 
     if (options.isSendModules() != null) {
       setSendModules(options.isSendModules());
-    }
-
-    if (options.isEnableAutomaticCheckIns() != null) {
-      setEnableAutomaticCheckIns(options.isEnableAutomaticCheckIns());
     }
     if (options.getIgnoredCheckIns() != null) {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());

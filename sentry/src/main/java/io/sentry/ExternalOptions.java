@@ -46,7 +46,6 @@ public final class ExternalOptions {
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
 
-  private @Nullable Boolean enableAutomaticCheckIns;
   private @Nullable List<String> ignoredCheckIns;
 
   private @Nullable Boolean sendModules;
@@ -129,9 +128,6 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
 
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
-
-    options.setEnableAutomaticCheckIns(
-        propertiesProvider.getBooleanProperty("enable-automatic-checkins"));
 
     options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
 
@@ -391,16 +387,6 @@ public final class ExternalOptions {
 
   public void setSendModules(final @Nullable Boolean sendModules) {
     this.sendModules = sendModules;
-  }
-
-  @ApiStatus.Experimental
-  public @Nullable Boolean isEnableAutomaticCheckIns() {
-    return enableAutomaticCheckIns;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableAutomaticCheckIns(final @Nullable Boolean enableAutomaticCheckIns) {
-    this.enableAutomaticCheckIns = enableAutomaticCheckIns;
   }
 
   @ApiStatus.Experimental

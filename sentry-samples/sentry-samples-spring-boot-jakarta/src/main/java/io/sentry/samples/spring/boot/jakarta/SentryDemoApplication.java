@@ -1,6 +1,6 @@
 package io.sentry.samples.spring.boot.jakarta;
 
-import static io.sentry.quartz.SentryJobListener.SENTRY_CHECK_IN_SLUG_KEY;
+import static io.sentry.quartz.SentryJobListener.SENTRY_SLUG_KEY;
 
 import io.sentry.samples.spring.boot.jakarta.quartz.SampleJob;
 import java.util.Collections;
@@ -39,6 +39,8 @@ public class SentryDemoApplication {
     JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
     jobDetailFactory.setJobClass(SampleJob.class);
     jobDetailFactory.setDurability(true);
+    jobDetailFactory.setJobDataAsMap(
+        Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_job_detail"));
     return jobDetailFactory;
   }
 
@@ -49,7 +51,7 @@ public class SentryDemoApplication {
     trigger.setRepeatInterval(2 * 60 * 1000); // every two minutes
     trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
     trigger.setJobDataAsMap(
-        Collections.singletonMap(SENTRY_CHECK_IN_SLUG_KEY, "monitor_slug_simple_trigger"));
+        Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_simple_trigger"));
     return trigger;
   }
 
@@ -58,8 +60,6 @@ public class SentryDemoApplication {
     CronTriggerFactoryBean trigger = new CronTriggerFactoryBean();
     trigger.setJobDetail(job);
     trigger.setCronExpression("0 0/5 * ? * *"); // every five minutes
-    trigger.setJobDataAsMap(
-        Collections.singletonMap(SENTRY_CHECK_IN_SLUG_KEY, "monitor_slug_cron_trigger"));
     return trigger;
   }
 }
