@@ -163,7 +163,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     // TODO: probably we need to update the current session file for session updates to because of
     // hardcrash events
 
-    final File envelopeFile = getEnvelopeFile(envelope, hint);
+    final File envelopeFile = getEnvelopeFile(envelope);
     if (envelopeFile.exists()) {
       options
           .getLogger()
@@ -339,7 +339,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   public void discard(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
-    final File envelopeFile = getEnvelopeFile(envelope, hint);
+    final File envelopeFile = getEnvelopeFile(envelope);
     if (envelopeFile.exists()) {
       options
           .getLogger()
@@ -363,25 +363,18 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * @return the file
    */
   private synchronized @NotNull File getEnvelopeFile(
-      final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
+      final @NotNull SentryEnvelope envelope) {
     String fileName;
     if (fileNameMap.containsKey(envelope)) {
       fileName = fileNameMap.get(envelope);
     } else {
-      final @Nullable Object cachedFilePath =
-          hint.get(TypeCheckHint.SENTRY_CACHED_ENVELOPE_FILE_PATH);
-      if (cachedFilePath instanceof String) {
-        fileName = (String) cachedFilePath;
-        fileNameMap.put(envelope, fileName);
+      if (envelope.getHeader().getEventId() != null) {
+        fileName = envelope.getHeader().getEventId().toString();
       } else {
-        if (envelope.getHeader().getEventId() != null) {
-          fileName = envelope.getHeader().getEventId().toString();
-        } else {
-          fileName = UUID.randomUUID().toString();
-        }
-        fileName += SUFFIX_ENVELOPE_FILE;
-        fileNameMap.put(envelope, fileName);
+        fileName = UUID.randomUUID().toString();
       }
+      fileName += SUFFIX_ENVELOPE_FILE;
+      fileNameMap.put(envelope, fileName);
     }
 
     return new File(directory.getAbsolutePath(), fileName);

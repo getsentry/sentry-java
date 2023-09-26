@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
-import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
 import io.sentry.util.HintUtils;
@@ -21,19 +20,16 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   private final @NotNull IHub hub;
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
-  private final @NotNull IEnvelopeCache envelopeCache;
 
   public EnvelopeSender(
       final @NotNull IHub hub,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
-      final long flushTimeoutMillis,
-      final @NotNull IEnvelopeCache envelopeCache) {
-    super(logger, flushTimeoutMillis);
+      final long flushTimeoutMillis) {
+    super(logger, flushTimeoutMillis, hub.getOptions().getMaxQueueSize());
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
-    this.envelopeCache = Objects.requireNonNull(envelopeCache, "IEnvelopeCache is required.");
   }
 
   @Override
@@ -53,14 +49,6 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       logger.log(
           SentryLevel.WARNING,
           "File '%s' cannot be deleted so it will not be processed.",
-          file.getAbsolutePath());
-      return;
-    }
-
-    if (envelopeCache.containsFile(file)) {
-      logger.log(
-          SentryLevel.DEBUG,
-          "File '%s' is already in the cache so it will not be processed again.",
           file.getAbsolutePath());
       return;
     }

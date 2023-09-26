@@ -13,6 +13,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.Enqueable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -103,6 +104,11 @@ public final class AsyncHttpTransport implements ITransport {
         options
             .getClientReportRecorder()
             .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
+      } else {
+        HintUtils.runIfHasType(hint, Enqueable.class, enqueable -> {
+          enqueable.markEnqueued();
+          options.getLogger().log(SentryLevel.DEBUG, "Envelope enqueued");
+        });
       }
     }
   }

@@ -3,11 +3,13 @@ package io.sentry;
 import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.hints.Cached;
+import io.sentry.hints.Enqueable;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
 import java.io.File;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -17,9 +19,12 @@ abstract class DirectoryProcessor {
   private final @NotNull ILogger logger;
   private final long flushTimeoutMillis;
 
-  DirectoryProcessor(final @NotNull ILogger logger, final long flushTimeoutMillis) {
+  private final Queue<String> processedEnvelopes;
+
+  DirectoryProcessor(final @NotNull ILogger logger, final long flushTimeoutMillis, final int maxQueueSize) {
     this.logger = logger;
     this.flushTimeoutMillis = flushTimeoutMillis;
+    this.processedEnvelopes = SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxQueueSize));
   }
 
   public void processDirectory(final @NotNull File directory) {
@@ -60,13 +65,22 @@ abstract class DirectoryProcessor {
           continue;
         }
 
-        logger.log(SentryLevel.DEBUG, "Processing file: %s", file.getAbsolutePath());
+        final String filePath = file.getAbsolutePath();
+        // if envelope has already been submitted into the transport queue, we don't process it again
+        if (processedEnvelopes.contains(filePath)) {
+          logger.log(
+            SentryLevel.DEBUG,
+            "File '%s' has already been processed so it will not be processed again.",
+            filePath);
+          continue;
+        }
+
+        logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
 
         final SendCachedEnvelopeHint cachedHint =
-            new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
+            new SendCachedEnvelopeHint(flushTimeoutMillis, logger, () -> processedEnvelopes.add(filePath));
 
         final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
-        hint.set(TypeCheckHint.SENTRY_CACHED_ENVELOPE_FILE_PATH, file.getAbsolutePath());
         processFile(file, hint);
       }
     } catch (Throwable e) {
@@ -79,16 +93,19 @@ abstract class DirectoryProcessor {
   protected abstract boolean isRelevantFileName(String fileName);
 
   private static final class SendCachedEnvelopeHint
-      implements Cached, Retryable, SubmissionResult, Flushable {
+      implements Cached, Retryable, SubmissionResult, Flushable, Enqueable {
     boolean retry = false;
     boolean succeeded = false;
 
     private final CountDownLatch latch;
     private final long flushTimeoutMillis;
     private final @NotNull ILogger logger;
+    private final @NotNull Runnable onEnqueued;
 
-    public SendCachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
+    public SendCachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger,
+      final @NotNull Runnable onEnqueued) {
       this.flushTimeoutMillis = flushTimeoutMillis;
+      this.onEnqueued = onEnqueued;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
     }
@@ -123,6 +140,11 @@ abstract class DirectoryProcessor {
     @Override
     public boolean isSuccess() {
       return succeeded;
+    }
+
+    @Override
+    public void markEnqueued() {
+      onEnqueued.run();
     }
   }
 }

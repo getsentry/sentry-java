@@ -33,11 +33,10 @@ class EnvelopeSenderTest {
 
         fun getSut(): EnvelopeSender {
             return EnvelopeSender(
-                hub!!,
-                serializer!!,
-                logger!!,
-                options.flushTimeoutMillis,
-                options.envelopeDiskCache
+              hub!!,
+              serializer!!,
+              logger!!,
+              options.flushTimeoutMillis
             )
         }
     }

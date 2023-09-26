@@ -11,6 +11,7 @@ import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
@@ -47,7 +48,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final long flushTimeoutMillis) {
-    super(logger, flushTimeoutMillis);
+    super(logger, flushTimeoutMillis, hub.getOptions().getMaxQueueSize());
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
