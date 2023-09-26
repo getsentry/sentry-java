@@ -11,7 +11,6 @@ import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
-import io.sentry.transport.RateLimiter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;

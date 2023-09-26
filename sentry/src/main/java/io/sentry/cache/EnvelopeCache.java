@@ -16,7 +16,6 @@ import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
-import io.sentry.TypeCheckHint;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.SessionEnd;
@@ -362,8 +361,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * @param envelope the SentryEnvelope object
    * @return the file
    */
-  private synchronized @NotNull File getEnvelopeFile(
-      final @NotNull SentryEnvelope envelope) {
+  private synchronized @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
     String fileName;
     if (fileNameMap.containsKey(envelope)) {
       fileName = fileNameMap.get(envelope);

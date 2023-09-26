@@ -105,10 +105,13 @@ public final class AsyncHttpTransport implements ITransport {
             .getClientReportRecorder()
             .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
       } else {
-        HintUtils.runIfHasType(hint, Enqueable.class, enqueable -> {
-          enqueable.markEnqueued();
-          options.getLogger().log(SentryLevel.DEBUG, "Envelope enqueued");
-        });
+        HintUtils.runIfHasType(
+            hint,
+            Enqueable.class,
+            enqueable -> {
+              enqueable.markEnqueued();
+              options.getLogger().log(SentryLevel.DEBUG, "Envelope enqueued");
+            });
       }
     }
   }

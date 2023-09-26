@@ -21,10 +21,12 @@ abstract class DirectoryProcessor {
 
   private final Queue<String> processedEnvelopes;
 
-  DirectoryProcessor(final @NotNull ILogger logger, final long flushTimeoutMillis, final int maxQueueSize) {
+  DirectoryProcessor(
+      final @NotNull ILogger logger, final long flushTimeoutMillis, final int maxQueueSize) {
     this.logger = logger;
     this.flushTimeoutMillis = flushTimeoutMillis;
-    this.processedEnvelopes = SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxQueueSize));
+    this.processedEnvelopes =
+        SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxQueueSize));
   }
 
   public void processDirectory(final @NotNull File directory) {
@@ -66,19 +68,21 @@ abstract class DirectoryProcessor {
         }
 
         final String filePath = file.getAbsolutePath();
-        // if envelope has already been submitted into the transport queue, we don't process it again
+        // if envelope has already been submitted into the transport queue, we don't process it
+        // again
         if (processedEnvelopes.contains(filePath)) {
           logger.log(
-            SentryLevel.DEBUG,
-            "File '%s' has already been processed so it will not be processed again.",
-            filePath);
+              SentryLevel.DEBUG,
+              "File '%s' has already been processed so it will not be processed again.",
+              filePath);
           continue;
         }
 
         logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
 
         final SendCachedEnvelopeHint cachedHint =
-            new SendCachedEnvelopeHint(flushTimeoutMillis, logger, () -> processedEnvelopes.add(filePath));
+            new SendCachedEnvelopeHint(
+                flushTimeoutMillis, logger, () -> processedEnvelopes.add(filePath));
 
         final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
         processFile(file, hint);
@@ -102,8 +106,10 @@ abstract class DirectoryProcessor {
     private final @NotNull ILogger logger;
     private final @NotNull Runnable onEnqueued;
 
-    public SendCachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger,
-      final @NotNull Runnable onEnqueued) {
+    public SendCachedEnvelopeHint(
+        final long flushTimeoutMillis,
+        final @NotNull ILogger logger,
+        final @NotNull Runnable onEnqueued) {
       this.flushTimeoutMillis = flushTimeoutMillis;
       this.onEnqueued = onEnqueued;
       this.latch = new CountDownLatch(1);
