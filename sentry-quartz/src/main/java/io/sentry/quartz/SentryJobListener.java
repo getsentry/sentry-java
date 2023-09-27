@@ -9,6 +9,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import io.sentry.util.TracingUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +49,8 @@ public final class SentryJobListener implements JobListener {
       if (maybeSlug == null) {
         return;
       }
+      hub.pushScope();
+      TracingUtils.startNewTrace(hub);
       final @NotNull String slug = maybeSlug;
       final @NotNull CheckIn checkIn = new CheckIn(slug, CheckInStatus.IN_PROGRESS);
       final @NotNull SentryId checkInId = hub.captureCheckIn(checkIn);
@@ -97,6 +100,8 @@ public final class SentryJobListener implements JobListener {
       hub.getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "Unable to capture check-in in jobWasExecuted.", t);
+    } finally {
+      hub.popScope();
     }
   }
 }
