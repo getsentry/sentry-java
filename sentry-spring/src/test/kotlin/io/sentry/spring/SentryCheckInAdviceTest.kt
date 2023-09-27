@@ -48,7 +48,7 @@ class SentryCheckInAdviceTest {
     }
 
     @Test
-    fun `when class is annotated with @SentryCheckIn, every method call creates two check-ins`() {
+    fun `when method is annotated with @SentryCheckIn, every method call creates two check-ins`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
         whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
@@ -66,7 +66,7 @@ class SentryCheckInAdviceTest {
     }
 
     @Test
-    fun `when class is annotated with @SentryCheckIn, every method call creates two check-ins error`() {
+    fun `when method is annotated with @SentryCheckIn, every method call creates two check-ins error`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
         whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
@@ -85,7 +85,7 @@ class SentryCheckInAdviceTest {
     }
 
     @Test
-    fun `when class is annotated with @SentryCheckIn and heartbeat only, every method call creates only one check-in at the end`() {
+    fun `when method is annotated with @SentryCheckIn and heartbeat only, every method call creates only one check-in at the end`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
         whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
@@ -100,7 +100,7 @@ class SentryCheckInAdviceTest {
     }
 
     @Test
-    fun `when class is annotated with @SentryCheckIn and heartbeat only, every method call creates only one check-in at the end with error`() {
+    fun `when method is annotated with @SentryCheckIn and heartbeat only, every method call creates only one check-in at the end with error`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
         whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
@@ -116,7 +116,7 @@ class SentryCheckInAdviceTest {
     }
 
     @Test
-    fun `when class is annotated with @SentryCheckIn but slug is missing, does not create check-in`() {
+    fun `when method is annotated with @SentryCheckIn but slug is missing, does not create check-in`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
         whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
