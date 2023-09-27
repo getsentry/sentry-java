@@ -26,11 +26,11 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, Object> unknown;
 
   public CheckIn(final @NotNull String monitorSlug, final @NotNull CheckInStatus status) {
-    this(new SentryId(), monitorSlug, status.apiName());
+    this(null, monitorSlug, status.apiName());
   }
 
   public CheckIn(
-      final @NotNull SentryId id,
+      final @Nullable SentryId id,
       final @NotNull String monitorSlug,
       final @NotNull CheckInStatus status) {
     this(id, monitorSlug, status.apiName());
@@ -38,10 +38,10 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
 
   @ApiStatus.Internal
   public CheckIn(
-      final @NotNull SentryId checkInId,
+      final @Nullable SentryId checkInId,
       final @NotNull String monitorSlug,
       final @NotNull String status) {
-    this.checkInId = checkInId;
+    this.checkInId = checkInId == null ? new SentryId() : checkInId;
     this.monitorSlug = monitorSlug;
     this.status = status;
   }

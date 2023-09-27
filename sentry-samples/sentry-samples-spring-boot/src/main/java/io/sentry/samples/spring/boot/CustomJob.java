@@ -1,5 +1,6 @@
 package io.sentry.samples.spring.boot;
 
+import io.sentry.spring.checkin.SentryCheckIn;
 import io.sentry.spring.tracing.SentryTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,8 @@ public class CustomJob {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomJob.class);
 
-  @Scheduled(fixedRate = 3 * 1000L)
+  @Scheduled(fixedRate = 3 * 60 * 1000L)
+  @SentryCheckIn("monitor_slug_2")
   void execute() throws InterruptedException {
     LOGGER.info("Executing scheduled job");
     Thread.sleep(2000L);
