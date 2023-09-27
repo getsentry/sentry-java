@@ -6,7 +6,7 @@
 
 - Add `sendModules` option for disable sending modules ([#2926](https://github.com/getsentry/sentry-java/pull/2926))
 - Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
-- Check-ins (CRONS) support
+- Check-ins (CRONS) support ([#2952](https://github.com/getsentry/sentry-java/pull/2952))
   - Add API for sending check-ins (CRONS) manually ([#2935](https://github.com/getsentry/sentry-java/pull/2935))
   - Support check-ins (CRONS) for Quartz ([#2940](https://github.com/getsentry/sentry-java/pull/2940))
   - `@SentryCheckIn` annotation and advice config for Spring ([#2946](https://github.com/getsentry/sentry-java/pull/2946))
