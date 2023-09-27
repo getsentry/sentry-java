@@ -24,13 +24,14 @@ abstract class DirectoryProcessor {
   private final long flushTimeoutMillis;
   private final Queue<String> processedEnvelopes;
 
-  DirectoryProcessor(final @NotNull IHub hub,
-      final @NotNull ILogger logger, final long flushTimeoutMillis) {
+  DirectoryProcessor(
+      final @NotNull IHub hub, final @NotNull ILogger logger, final long flushTimeoutMillis) {
     this.hub = hub;
     this.logger = logger;
     this.flushTimeoutMillis = flushTimeoutMillis;
     this.processedEnvelopes =
-        SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(hub.getOptions().getMaxQueueSize()));
+        SynchronizedQueue.synchronizedQueue(
+            new CircularFifoQueue<>(hub.getOptions().getMaxQueueSize()));
   }
 
   public void processDirectory(final @NotNull File directory) {
@@ -85,9 +86,7 @@ abstract class DirectoryProcessor {
         // in case there's rate limiting active, skip processing
         final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
         if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
-          logger.log(
-            SentryLevel.INFO,
-            "DirectoryProcessor, rate limiting active.");
+          logger.log(SentryLevel.INFO, "DirectoryProcessor, rate limiting active.");
           return;
         }
 
@@ -102,21 +101,8 @@ abstract class DirectoryProcessor {
 
         // a short delay between processing envelopes to avoid bursting our server and hitting
         // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities
-        try {
-          Thread.sleep(ENVELOPE_PROCESS_DELAY);
-        } catch (InterruptedException e) {
-          try {
-            Thread.currentThread().interrupt();
-          } catch (SecurityException ignored) {
-            logger.log(
-              SentryLevel.INFO,
-              "Failed to interrupt due to SecurityException: %s",
-              e.getMessage());
-            return;
-          }
-          logger.log(SentryLevel.INFO, "Interrupted: %s", e.getMessage());
-          return;
-        }
+        // InterruptedException will be handled by the outer try-catch
+        Thread.sleep(ENVELOPE_PROCESS_DELAY);
       }
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
