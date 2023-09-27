@@ -239,7 +239,7 @@ public final class io/sentry/EnvelopeReader : io/sentry/IEnvelopeReader {
 }
 
 public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/ISerializer;Lio/sentry/ILogger;JLio/sentry/cache/IEnvelopeCache;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/ISerializer;Lio/sentry/ILogger;J)V
 	public synthetic fun processDirectory (Ljava/io/File;)V
 	public fun processEnvelopeFile (Ljava/lang/String;Lio/sentry/Hint;)V
 }
@@ -2478,7 +2478,6 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
-	public static final field SENTRY_CACHED_ENVELOPE_FILE_PATH Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
@@ -2765,6 +2764,10 @@ public abstract interface class io/sentry/hints/Cached {
 
 public abstract interface class io/sentry/hints/DiskFlushNotification {
 	public abstract fun markFlushed ()V
+}
+
+public abstract interface class io/sentry/hints/Enqueable {
+	public abstract fun markEnqueued ()V
 }
 
 public final class io/sentry/hints/EventDropReason : java/lang/Enum {

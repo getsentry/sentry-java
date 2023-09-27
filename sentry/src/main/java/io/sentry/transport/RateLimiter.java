@@ -131,7 +131,7 @@ public final class RateLimiter {
    * @return true if retry after or false otherwise
    */
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-  public boolean isRetryAfter(final @NotNull String itemType) {
+  private boolean isRetryAfter(final @NotNull String itemType) {
     final DataCategory dataCategory = getCategoryFromItemType(itemType);
     return isActiveForCategory(dataCategory);
   }
