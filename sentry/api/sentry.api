@@ -643,8 +643,8 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
-	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;Z)V
-	public abstract fun forceFinish (Lio/sentry/SpanStatus;Z)V
+	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;ZLio/sentry/Hint;)V
+	public abstract fun forceFinish (Lio/sentry/SpanStatus;ZLio/sentry/Hint;)V
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
@@ -954,8 +954,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
-	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;Z)V
-	public fun forceFinish (Lio/sentry/SpanStatus;Z)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;ZLio/sentry/Hint;)V
+	public fun forceFinish (Lio/sentry/SpanStatus;ZLio/sentry/Hint;)V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -2023,8 +2023,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
-	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;Z)V
-	public fun forceFinish (Lio/sentry/SpanStatus;Z)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;ZLio/sentry/Hint;)V
+	public fun forceFinish (Lio/sentry/SpanStatus;ZLio/sentry/Hint;)V
 	public fun getChildren ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData ()Ljava/util/Map;
@@ -2471,8 +2471,10 @@ public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Int
 	public fun uncaughtException (Ljava/lang/Thread;Ljava/lang/Throwable;)V
 }
 
-public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/SessionEnd {
+public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/SessionEnd, io/sentry/hints/TransactionEnd {
 	public fun <init> (JLio/sentry/ILogger;)V
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
 }
 
 public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2723,7 +2725,9 @@ public abstract interface class io/sentry/hints/Cached {
 }
 
 public abstract interface class io/sentry/hints/DiskFlushNotification {
+	public abstract fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public abstract fun markFlushed ()V
+	public abstract fun setFlushable (Lio/sentry/protocol/SentryId;)V
 }
 
 public final class io/sentry/hints/EventDropReason : java/lang/Enum {

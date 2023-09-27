@@ -230,8 +230,16 @@ public final class AsyncHttpTransport implements ITransport {
           hint,
           DiskFlushNotification.class,
           (diskFlushNotification) -> {
-            diskFlushNotification.markFlushed();
-            options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+            if (diskFlushNotification.isFlushable(envelope.getHeader().getEventId())) {
+              diskFlushNotification.markFlushed();
+              options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+            } else {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Not firing envelope flush as there's an ongoing transaction");
+            }
           });
 
       if (transportGate.isConnected()) {

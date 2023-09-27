@@ -1195,7 +1195,7 @@ class SentryTracerTest {
         // and it's finished
         transaction.finish(SpanStatus.OK)
         // but forceFinish is called as well
-        transaction.forceFinish(SpanStatus.ABORTED, false)
+        transaction.forceFinish(SpanStatus.ABORTED, false, null)
 
         // then it should keep it's original status
         assertEquals(SpanStatus.OK, transaction.status)
@@ -1218,7 +1218,7 @@ class SentryTracerTest {
         span0.finish(SpanStatus.OK)
         val span0FinishDate = span0.finishDate
 
-        transaction.forceFinish(SpanStatus.ABORTED, false)
+        transaction.forceFinish(SpanStatus.ABORTED, false, null)
 
         // then the first span should keep it's status
         assertTrue(span0.isFinished)
@@ -1251,7 +1251,7 @@ class SentryTracerTest {
         )
 
         // and force-finished but dropping is disabled
-        transaction.forceFinish(SpanStatus.ABORTED, false)
+        transaction.forceFinish(SpanStatus.ABORTED, false, null)
 
         // then a transaction should be captured with 0 spans
         verify(fixture.hub).captureTransaction(
@@ -1274,7 +1274,7 @@ class SentryTracerTest {
         )
 
         // and force-finish with dropping enabled
-        transaction.forceFinish(SpanStatus.ABORTED, true)
+        transaction.forceFinish(SpanStatus.ABORTED, true, null)
 
         // then the transaction should be captured with 0 spans
         verify(fixture.hub, never()).captureTransaction(

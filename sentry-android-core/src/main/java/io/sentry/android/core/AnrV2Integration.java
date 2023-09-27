@@ -386,6 +386,14 @@ public class AnrV2Integration implements Integration, Closeable {
     public String mechanism() {
       return isBackgroundAnr ? "anr_background" : "anr_foreground";
     }
+
+    @Override
+    public boolean isFlushable(@Nullable SentryId eventId) {
+      return true;
+    }
+
+    @Override
+    public void setFlushable(@NotNull SentryId eventId) {}
   }
 
   static final class ParseResult {

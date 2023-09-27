@@ -12,6 +12,8 @@ import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
 import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
+import io.sentry.hints.DiskFlushNotification
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
@@ -28,6 +30,8 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class AsyncHttpTransportTest {
 
@@ -329,6 +333,54 @@ class AsyncHttpTransportTest {
         sut.close()
 
         verify(fixture.executor).awaitTermination(eq(123), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `when DiskFlushNotification is not flushable, does not flush`() {
+        // given
+        val ev = SentryEvent()
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+
+        var calledFlush = false
+        val sentryHint = object : DiskFlushNotification {
+            override fun markFlushed() {
+                calledFlush = true
+            }
+            override fun isFlushable(eventId: SentryId?): Boolean = false
+            override fun setFlushable(eventId: SentryId) = Unit
+        }
+        val hint = HintUtils.createWithTypeCheckHint(sentryHint)
+
+        // when
+        fixture.getSUT().send(envelope, hint)
+
+        // then
+        assertFalse(calledFlush)
+    }
+
+    @Test
+    fun `when DiskFlushNotification is flushable, marks it as flushed`() {
+        // given
+        val ev = SentryEvent()
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+
+        var calledFlush = false
+        val sentryHint = object : DiskFlushNotification {
+            override fun markFlushed() {
+                calledFlush = true
+            }
+            override fun isFlushable(eventId: SentryId?): Boolean = envelope.header.eventId == eventId
+            override fun setFlushable(eventId: SentryId) = Unit
+        }
+        val hint = HintUtils.createWithTypeCheckHint(sentryHint)
+
+        // when
+        fixture.getSUT().send(envelope, hint)
+
+        // then
+        assertTrue(calledFlush)
     }
 
     private fun createSession(): Session {
