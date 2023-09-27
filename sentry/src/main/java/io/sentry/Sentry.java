@@ -1012,6 +1012,7 @@ public final class Sentry {
     return getCurrentHub().getBaggage();
   }
 
+  @ApiStatus.Experimental
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return getCurrentHub().captureCheckIn(checkIn);
   }

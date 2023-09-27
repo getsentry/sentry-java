@@ -30,12 +30,14 @@ dependencies {
     compileOnly(Config.Libs.springBoot3Starter)
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(projects.sentryGraphql)
+    compileOnly(projects.sentryQuartz)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.springBoot3StarterAop)
     compileOnly(Config.Libs.springBoot3StarterSecurity)
     compileOnly(Config.Libs.springBoot3StarterGraphql)
+    compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
@@ -52,6 +54,7 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryLogback)
+    testImplementation(projects.sentryQuartz)
     testImplementation(projects.sentryApacheHttpClient5)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
@@ -67,6 +70,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
+    testImplementation(Config.Libs.springBoot3StarterQuartz)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     testImplementation(Config.Libs.contextPropagation)
 }

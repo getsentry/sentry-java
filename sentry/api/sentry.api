@@ -320,6 +320,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -348,6 +349,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnabled (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
@@ -1929,6 +1931,7 @@ public class io/sentry/SentryOptions {
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -2035,6 +2038,7 @@ public class io/sentry/SentryOptions {
 	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMainThreadChecker (Lio/sentry/util/thread/IMainThreadChecker;)V
@@ -4308,6 +4312,11 @@ public abstract class io/sentry/transport/TransportResult {
 	public abstract fun getResponseCode ()I
 	public abstract fun isSuccess ()Z
 	public static fun success ()Lio/sentry/transport/TransportResult;
+}
+
+public final class io/sentry/util/CheckInUtils {
+	public fun <init> ()V
+	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 
 public final class io/sentry/util/ClassLoaderUtils {

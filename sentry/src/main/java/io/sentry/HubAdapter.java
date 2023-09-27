@@ -253,6 +253,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return Sentry.captureCheckIn(checkIn);
   }

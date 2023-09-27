@@ -443,6 +443,9 @@ public class SentryOptions {
   /** Whether to send modules containing information about versions. */
   private boolean sendModules = true;
 
+  /** Contains a list of monitor slugs for which check-ins should not be sent. */
+  @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
+
   /**
    * Adds an event processor
    *
@@ -2159,6 +2162,27 @@ public class SentryOptions {
     this.sendModules = sendModules;
   }
 
+  @ApiStatus.Experimental
+  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
+    if (ignoredCheckIns == null) {
+      this.ignoredCheckIns = null;
+    } else {
+      @NotNull final List<String> filteredIgnoredCheckIns = new ArrayList<>();
+      for (String slug : ignoredCheckIns) {
+        if (!slug.isEmpty()) {
+          filteredIgnoredCheckIns.add(slug);
+        }
+      }
+
+      this.ignoredCheckIns = filteredIgnoredCheckIns;
+    }
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable List<String> getIgnoredCheckIns() {
+    return ignoredCheckIns;
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -2406,6 +2430,10 @@ public class SentryOptions {
 
     if (options.isSendModules() != null) {
       setSendModules(options.isSendModules());
+    }
+    if (options.getIgnoredCheckIns() != null) {
+      final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
+      setIgnoredCheckIns(ignoredCheckIns);
     }
   }
 

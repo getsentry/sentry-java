@@ -18,6 +18,7 @@ import io.sentry.checkEvent
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.quartz.SentryJobListener
 import io.sentry.spring.jakarta.ContextTagsEventProcessor
 import io.sentry.spring.jakarta.HttpServletRequestSentryUserProvider
 import io.sentry.spring.jakarta.SentryExceptionResolver
@@ -36,9 +37,11 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.quartz.core.QuartzScheduler
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
@@ -51,6 +54,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.scheduling.quartz.SchedulerFactoryBean
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
@@ -157,7 +161,8 @@ class SentryAutoConfigurationTest {
             "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry",
             "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$",
             "sentry.enabled=false",
-            "sentry.send-modules=false"
+            "sentry.send-modules=false",
+            "sentry.ignored-checkins=slug1,slugB"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -188,6 +193,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
+            assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
         }
     }
 
@@ -721,6 +727,41 @@ class SentryAutoConfigurationTest {
                 assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
                 val options = it.getBean(SentryOptions::class.java)
                 assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `creates quartz config`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .run {
+                assertThat(it).hasSingleBean(SchedulerFactoryBeanCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `does not create quartz config if quartz lib missing`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .withClassLoader(FilteredClassLoader(QuartzScheduler::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `does not create quartz config if spring-quartz lib missing`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .withClassLoader(FilteredClassLoader(SchedulerFactoryBean::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `does not create quartz config if sentry-quartz lib missing`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .withClassLoader(FilteredClassLoader(SentryJobListener::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
             }
     }
 
