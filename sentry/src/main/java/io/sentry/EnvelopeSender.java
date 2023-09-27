@@ -26,7 +26,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final long flushTimeoutMillis) {
-    super(logger, flushTimeoutMillis, hub.getOptions().getMaxQueueSize());
+    super(hub, logger, flushTimeoutMillis);
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");

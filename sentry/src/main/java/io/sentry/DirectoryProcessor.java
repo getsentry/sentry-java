@@ -7,26 +7,30 @@ import io.sentry.hints.Enqueable;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
 import java.io.File;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 abstract class DirectoryProcessor {
 
+  private static final long ENVELOPE_PROCESS_DELAY = 100L;
+  private final @NotNull IHub hub;
   private final @NotNull ILogger logger;
   private final long flushTimeoutMillis;
-
   private final Queue<String> processedEnvelopes;
 
-  DirectoryProcessor(
-      final @NotNull ILogger logger, final long flushTimeoutMillis, final int maxQueueSize) {
+  DirectoryProcessor(final @NotNull IHub hub,
+      final @NotNull ILogger logger, final long flushTimeoutMillis) {
+    this.hub = hub;
     this.logger = logger;
     this.flushTimeoutMillis = flushTimeoutMillis;
     this.processedEnvelopes =
-        SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxQueueSize));
+        SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(hub.getOptions().getMaxQueueSize()));
   }
 
   public void processDirectory(final @NotNull File directory) {
@@ -78,6 +82,15 @@ abstract class DirectoryProcessor {
           continue;
         }
 
+        // in case there's rate limiting active, skip processing
+        final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+        if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+          logger.log(
+            SentryLevel.INFO,
+            "DirectoryProcessor, rate limiting active.");
+          return;
+        }
+
         logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
 
         final SendCachedEnvelopeHint cachedHint =
@@ -86,6 +99,24 @@ abstract class DirectoryProcessor {
 
         final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
         processFile(file, hint);
+
+        // a short delay between processing envelopes to avoid bursting our server and hitting
+        // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities
+        try {
+          Thread.sleep(ENVELOPE_PROCESS_DELAY);
+        } catch (InterruptedException e) {
+          try {
+            Thread.currentThread().interrupt();
+          } catch (SecurityException ignored) {
+            logger.log(
+              SentryLevel.INFO,
+              "Failed to interrupt due to SecurityException: %s",
+              e.getMessage());
+            return;
+          }
+          logger.log(SentryLevel.INFO, "Interrupted: %s", e.getMessage());
+          return;
+        }
       }
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
