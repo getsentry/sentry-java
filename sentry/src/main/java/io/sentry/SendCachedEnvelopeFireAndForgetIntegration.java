@@ -19,6 +19,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   private @Nullable IConnectionStatusProvider connectionStatusProvider;
   private @Nullable IHub hub;
   private @Nullable SentryOptions options;
+  private @Nullable SendFireAndForget sender;
 
   public interface SendFireAndForget {
     void send();
@@ -83,6 +84,8 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     connectionStatusProvider = options.getConnectionStatusProvider();
     connectionStatusProvider.addConnectionStatusObserver(this);
 
+    sender = factory.create(hub, options);
+
     sendCachedEnvelopes(hub, options);
   }
 
@@ -100,7 +103,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     }
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  @SuppressWarnings({"FutureReturnValueIgnored", "NullAway"})
   private synchronized void sendCachedEnvelopes(@NotNull IHub hub, @NotNull SentryOptions options) {
 
     // skip run only if we're certainly disconnected
@@ -124,7 +127,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
       return;
     }
 
-    final SendFireAndForget sender = factory.create(hub, options);
     if (sender == null) {
       options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
       return;

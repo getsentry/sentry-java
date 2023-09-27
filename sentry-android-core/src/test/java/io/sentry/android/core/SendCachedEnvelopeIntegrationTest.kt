@@ -7,6 +7,7 @@ import io.sentry.ILogger
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.transport.RateLimiter
 import io.sentry.util.LazyEvaluator
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
@@ -191,5 +192,19 @@ class SendCachedEnvelopeIntegrationTest {
         whenever(connectionStatusProvider.connectionStatus).thenReturn(ConnectionStatus.NO_PERMISSION)
         sut.onConnectionStatusChanged(ConnectionStatus.NO_PERMISSION)
         verify(fixture.factory, times(3)).create(any(), any())
+    }
+
+    @Test
+    fun `when rate limiter is active, does not send envelopes`() {
+        val sut = fixture.getSut(hasStartupCrashMarker = false)
+        val rateLimiter = mock<RateLimiter> {
+            whenever(mock.isActiveForCategory(any())).thenReturn(true)
+        }
+        whenever(fixture.hub.rateLimiter).thenReturn(rateLimiter)
+
+        sut.register(fixture.hub, fixture.options)
+
+        // no factory call should be done if there's rate limiting active
+        verify(fixture.factory, never()).create(any(), any())
     }
 }

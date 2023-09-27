@@ -46,8 +46,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       final @NotNull IEnvelopeReader envelopeReader,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
-      final long flushTimeoutMillis) {
-    super(hub, logger, flushTimeoutMillis);
+      final long flushTimeoutMillis,
+      final int maxQueueSize) {
+    super(hub, logger, flushTimeoutMillis, maxQueueSize);
     this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");

@@ -18,20 +18,22 @@ import org.jetbrains.annotations.Nullable;
 
 abstract class DirectoryProcessor {
 
-  private static final long ENVELOPE_PROCESS_DELAY = 100L;
+  private static final long ENVELOPE_PROCESSING_DELAY = 100L;
   private final @NotNull IHub hub;
   private final @NotNull ILogger logger;
   private final long flushTimeoutMillis;
   private final Queue<String> processedEnvelopes;
 
   DirectoryProcessor(
-      final @NotNull IHub hub, final @NotNull ILogger logger, final long flushTimeoutMillis) {
+      final @NotNull IHub hub,
+      final @NotNull ILogger logger,
+      final long flushTimeoutMillis,
+      final int maxQueueSize) {
     this.hub = hub;
     this.logger = logger;
     this.flushTimeoutMillis = flushTimeoutMillis;
     this.processedEnvelopes =
-        SynchronizedQueue.synchronizedQueue(
-            new CircularFifoQueue<>(hub.getOptions().getMaxQueueSize()));
+        SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxQueueSize));
   }
 
   public void processDirectory(final @NotNull File directory) {
@@ -93,8 +95,7 @@ abstract class DirectoryProcessor {
         logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
 
         final SendCachedEnvelopeHint cachedHint =
-            new SendCachedEnvelopeHint(
-                flushTimeoutMillis, logger, () -> processedEnvelopes.add(filePath));
+            new SendCachedEnvelopeHint(flushTimeoutMillis, logger, filePath, processedEnvelopes);
 
         final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
         processFile(file, hint);
@@ -102,7 +103,7 @@ abstract class DirectoryProcessor {
         // a short delay between processing envelopes to avoid bursting our server and hitting
         // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities
         // InterruptedException will be handled by the outer try-catch
-        Thread.sleep(ENVELOPE_PROCESS_DELAY);
+        Thread.sleep(ENVELOPE_PROCESSING_DELAY);
       }
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
@@ -121,14 +122,17 @@ abstract class DirectoryProcessor {
     private final CountDownLatch latch;
     private final long flushTimeoutMillis;
     private final @NotNull ILogger logger;
-    private final @NotNull Runnable onEnqueued;
+    private final @NotNull String filePath;
+    private final @NotNull Queue<String> processedEnvelopes;
 
     public SendCachedEnvelopeHint(
         final long flushTimeoutMillis,
         final @NotNull ILogger logger,
-        final @NotNull Runnable onEnqueued) {
+        final @NotNull String filePath,
+        final @NotNull Queue<String> processedEnvelopes) {
       this.flushTimeoutMillis = flushTimeoutMillis;
-      this.onEnqueued = onEnqueued;
+      this.filePath = filePath;
+      this.processedEnvelopes = processedEnvelopes;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
     }
@@ -167,7 +171,7 @@ abstract class DirectoryProcessor {
 
     @Override
     public void markEnqueued() {
-      onEnqueued.run();
+      processedEnvelopes.add(filePath);
     }
   }
 }

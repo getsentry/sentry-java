@@ -30,6 +30,7 @@ final class SendCachedEnvelopeIntegration
   private @Nullable IConnectionStatusProvider connectionStatusProvider;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
+  private @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender;
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
@@ -56,6 +57,8 @@ final class SendCachedEnvelopeIntegration
     connectionStatusProvider = options.getConnectionStatusProvider();
     connectionStatusProvider.addConnectionStatusObserver(this);
 
+    sender = factory.create(hub, options);
+
     sendCachedEnvelopes(hub, this.options);
   }
 
@@ -73,6 +76,7 @@ final class SendCachedEnvelopeIntegration
     }
   }
 
+  @SuppressWarnings({"NullAway"})
   private synchronized void sendCachedEnvelopes(
       final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
 
@@ -91,9 +95,6 @@ final class SendCachedEnvelopeIntegration
           .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, rate limiting active.");
       return;
     }
-
-    final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
-        factory.create(hub, options);
 
     if (sender == null) {
       options.getLogger().log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");
