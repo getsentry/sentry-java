@@ -8,6 +8,7 @@ import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -56,6 +57,9 @@ public class SentryCheckInAdvice implements MethodInterceptor {
       return invocation.proceed();
     }
 
+    hub.pushScope();
+    TracingUtils.startNewTrace(hub);
+
     @Nullable SentryId checkInId = null;
     final long startTime = System.currentTimeMillis();
     boolean didError = false;
@@ -73,6 +77,7 @@ public class SentryCheckInAdvice implements MethodInterceptor {
       CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
       checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
       hub.captureCheckIn(checkIn);
+      hub.popScope();
     }
   }
 }

@@ -10,8 +10,14 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInAdviceConfiguration
 import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -44,6 +50,7 @@ class SentryCheckInAdviceTest {
 
     @BeforeTest
     fun setup() {
+        reset(hub)
         whenever(hub.options).thenReturn(SentryOptions())
     }
 
@@ -63,6 +70,11 @@ class SentryCheckInAdviceTest {
         val doneCheckIn = checkInCaptor.lastValue
         assertEquals("monitor_slug_1", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub, times(2)).captureCheckIn(any())
+        order.verify(hub).popScope()
     }
 
     @Test
@@ -82,6 +94,11 @@ class SentryCheckInAdviceTest {
         val doneCheckIn = checkInCaptor.lastValue
         assertEquals("monitor_slug_1e", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub, times(2)).captureCheckIn(any())
+        order.verify(hub).popScope()
     }
 
     @Test
@@ -97,6 +114,11 @@ class SentryCheckInAdviceTest {
         assertEquals("monitor_slug_2", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub).captureCheckIn(any())
+        order.verify(hub).popScope()
     }
 
     @Test
@@ -113,6 +135,11 @@ class SentryCheckInAdviceTest {
         assertEquals("monitor_slug_2e", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub).captureCheckIn(any())
+        order.verify(hub).popScope()
     }
 
     @Test
@@ -123,6 +150,10 @@ class SentryCheckInAdviceTest {
         val result = sampleServiceNoSlug.hello()
         assertEquals(1, result)
         assertEquals(0, checkInCaptor.allValues.size)
+
+        verify(hub, never()).pushScope()
+        verify(hub, never()).captureCheckIn(any())
+        verify(hub, never()).popScope()
     }
 
     @Configuration
