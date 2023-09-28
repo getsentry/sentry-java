@@ -885,6 +885,28 @@ public final class Hub implements IHub {
     return null;
   }
 
+  @Override
+  @ApiStatus.Experimental
+  public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureCheckIn' call is a no-op.");
+    } else {
+      try {
+        StackItem item = stack.peek();
+        sentryId = item.getClient().captureCheckIn(checkIn, item.getScope(), null);
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
+      }
+    }
+    this.lastEventId = sentryId;
+    return sentryId;
+  }
+
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {

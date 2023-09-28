@@ -46,6 +46,8 @@ public final class DeviceInfoUtil {
   private final @Nullable ContextUtils.SideLoadedInfo sideLoadedInfo;
   private final @NotNull OperatingSystem os;
 
+  private final @Nullable Long totalMem;
+
   public DeviceInfoUtil(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     this.context = context;
@@ -58,6 +60,13 @@ public final class DeviceInfoUtil {
     isEmulator = buildInfoProvider.isEmulator();
     sideLoadedInfo =
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable ActivityManager.MemoryInfo memInfo =
+        ContextUtils.getMemInfo(context, options.getLogger());
+    if (memInfo != null) {
+      totalMem = memInfo.totalMem;
+    } else {
+      totalMem = null;
+    }
   }
 
   @NotNull
@@ -131,6 +140,8 @@ public final class DeviceInfoUtil {
       device.setProcessorCount(cpuFrequencies.size());
     }
 
+    device.setMemorySize(totalMem);
+
     // setting such values require IO hence we don't run for transactions
     if (collectDeviceIO && options.isCollectAdditionalContext()) {
       setDeviceIO(device, collectDynamicData);
@@ -193,15 +204,10 @@ public final class DeviceInfoUtil {
 
     final @Nullable ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());
-    if (memInfo != null) {
+    if (memInfo != null && includeDynamicData) {
       // in bytes
-      device.setMemorySize(memInfo.totalMem);
-      if (includeDynamicData) {
-        device.setFreeMemory(memInfo.availMem);
-        device.setLowMemory(memInfo.lowMemory);
-      }
-      // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
-      // compatibility
+      device.setFreeMemory(memInfo.availMem);
+      device.setLowMemory(memInfo.lowMemory);
     }
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB

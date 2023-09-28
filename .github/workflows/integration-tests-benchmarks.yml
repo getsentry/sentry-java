@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 'Set up Java: 17'
         uses: actions/setup-java@v3
@@ -41,7 +41,7 @@ jobs:
         run: make stop
 
       - name: Run All Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@1c751bae46d3bf910cd10140e5a4e8259acd9fac # pin@v3
+        uses: saucelabs/saucectl-run-action@52ca363cd023900b9867b49abf5791c5ab7eafa9 # pin@v3
         if: github.event_name != 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -51,7 +51,7 @@ jobs:
           config-file: .sauce/sentry-uitest-android-benchmark.yml
 
       - name: Run one test in SauceLab
-        uses: saucelabs/saucectl-run-action@1c751bae46d3bf910cd10140e5a4e8259acd9fac # pin@v3
+        uses: saucelabs/saucectl-run-action@52ca363cd023900b9867b49abf5791c5ab7eafa9 # pin@v3
         if: github.event_name == 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -69,7 +69,7 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 'Set up Java: 17'
         uses: actions/setup-java@v3

@@ -36,6 +36,8 @@ dependencies {
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.springBootStarterGraphql)
     compileOnly(projects.sentryGraphql)
+    compileOnly(Config.Libs.springBootStarterQuartz)
+    compileOnly(projects.sentryQuartz)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

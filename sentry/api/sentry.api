@@ -155,6 +155,57 @@ public final class io/sentry/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
+public final class io/sentry/CheckIn : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Lio/sentry/CheckInStatus;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/CheckInStatus;)V
+	public fun getCheckInId ()Lio/sentry/protocol/SentryId;
+	public fun getContexts ()Lio/sentry/MonitorContexts;
+	public fun getDuration ()Ljava/lang/Double;
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getMonitorConfig ()Lio/sentry/MonitorConfig;
+	public fun getMonitorSlug ()Ljava/lang/String;
+	public fun getRelease ()Ljava/lang/String;
+	public fun getStatus ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDuration (Ljava/lang/Double;)V
+	public fun setEnvironment (Ljava/lang/String;)V
+	public fun setMonitorConfig (Lio/sentry/MonitorConfig;)V
+	public fun setMonitorSlug (Ljava/lang/String;)V
+	public fun setRelease (Ljava/lang/String;)V
+	public fun setStatus (Lio/sentry/CheckInStatus;)V
+	public fun setStatus (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/CheckIn$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/CheckIn;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/CheckIn$JsonKeys {
+	public static final field CHECK_IN_ID Ljava/lang/String;
+	public static final field CONTEXTS Ljava/lang/String;
+	public static final field DURATION Ljava/lang/String;
+	public static final field ENVIRONMENT Ljava/lang/String;
+	public static final field MONITOR_CONFIG Ljava/lang/String;
+	public static final field MONITOR_SLUG Ljava/lang/String;
+	public static final field RELEASE Ljava/lang/String;
+	public static final field STATUS Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/CheckInStatus : java/lang/Enum {
+	public static final field ERROR Lio/sentry/CheckInStatus;
+	public static final field IN_PROGRESS Lio/sentry/CheckInStatus;
+	public static final field OK Lio/sentry/CheckInStatus;
+	public fun apiName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/CheckInStatus;
+	public static fun values ()[Lio/sentry/CheckInStatus;
+}
+
 public final class io/sentry/CpuCollectionData {
 	public fun <init> (JD)V
 	public fun getCpuUsagePercentage ()D
@@ -269,6 +320,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -286,6 +338,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracingOrigins ()Ljava/util/List;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
+	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
@@ -296,6 +349,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnabled (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
@@ -303,6 +357,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setSendClientReports (Ljava/lang/Boolean;)V
+	public fun setSendModules (Ljava/lang/Boolean;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
@@ -353,6 +408,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
+	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
@@ -402,6 +458,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
+	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
@@ -488,6 +545,7 @@ public abstract interface class io/sentry/IHub {
 	public fun addBreadcrumb (Ljava/lang/String;)V
 	public fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun bindClient (Lio/sentry/ISentryClient;)V
+	public abstract fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;)Lio/sentry/protocol/SentryId;
@@ -589,6 +647,7 @@ public abstract interface class io/sentry/IScopeObserver {
 }
 
 public abstract interface class io/sentry/ISentryClient {
+	public abstract fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;)Lio/sentry/protocol/SentryId;
@@ -884,6 +943,99 @@ public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectio
 	public fun removeConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
 }
 
+public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Lio/sentry/MonitorSchedule;)V
+	public fun getCheckinMargin ()Ljava/lang/Long;
+	public fun getMaxRuntime ()Ljava/lang/Long;
+	public fun getSchedule ()Lio/sentry/MonitorSchedule;
+	public fun getTimezone ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setCheckinMargin (Ljava/lang/Long;)V
+	public fun setMaxRuntime (Ljava/lang/Long;)V
+	public fun setSchedule (Lio/sentry/MonitorSchedule;)V
+	public fun setTimezone (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/MonitorConfig$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/MonitorConfig;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/MonitorConfig$JsonKeys {
+	public static final field CHECKIN_MARGIN Ljava/lang/String;
+	public static final field MAX_RUNTIME Ljava/lang/String;
+	public static final field SCHEDULE Ljava/lang/String;
+	public static final field TIMEZONE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/MonitorContexts : java/util/concurrent/ConcurrentHashMap, io/sentry/JsonSerializable {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/MonitorContexts;)V
+	public fun getTrace ()Lio/sentry/SpanContext;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setTrace (Lio/sentry/SpanContext;)V
+}
+
+public final class io/sentry/MonitorContexts$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/MonitorContexts;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/MonitorSchedule : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public static fun crontab (Ljava/lang/String;)Lio/sentry/MonitorSchedule;
+	public fun getType ()Ljava/lang/String;
+	public fun getUnit ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getValue ()Ljava/lang/String;
+	public static fun interval (Ljava/lang/Integer;Lio/sentry/MonitorScheduleUnit;)Lio/sentry/MonitorSchedule;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setType (Ljava/lang/String;)V
+	public fun setUnit (Lio/sentry/MonitorScheduleUnit;)V
+	public fun setUnit (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setValue (Ljava/lang/Integer;)V
+	public fun setValue (Ljava/lang/String;)V
+}
+
+public final class io/sentry/MonitorSchedule$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/MonitorSchedule;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/MonitorSchedule$JsonKeys {
+	public static final field TYPE Ljava/lang/String;
+	public static final field UNIT Ljava/lang/String;
+	public static final field VALUE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/MonitorScheduleType : java/lang/Enum {
+	public static final field CRONTAB Lio/sentry/MonitorScheduleType;
+	public static final field INTERVAL Lio/sentry/MonitorScheduleType;
+	public fun apiName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleType;
+	public static fun values ()[Lio/sentry/MonitorScheduleType;
+}
+
+public final class io/sentry/MonitorScheduleUnit : java/lang/Enum {
+	public static final field DAY Lio/sentry/MonitorScheduleUnit;
+	public static final field HOUR Lio/sentry/MonitorScheduleUnit;
+	public static final field MINUTE Lio/sentry/MonitorScheduleUnit;
+	public static final field MONTH Lio/sentry/MonitorScheduleUnit;
+	public static final field WEEK Lio/sentry/MonitorScheduleUnit;
+	public static final field YEAR Lio/sentry/MonitorScheduleUnit;
+	public fun apiName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleUnit;
+	public static fun values ()[Lio/sentry/MonitorScheduleUnit;
+}
+
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 	public static fun getInstance ()Lio/sentry/NoOpEnvelopeReader;
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
@@ -893,6 +1045,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
+	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
@@ -1368,6 +1521,7 @@ public final class io/sentry/Sentry {
 	public static fun addBreadcrumb (Ljava/lang/String;)V
 	public static fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun bindClient (Lio/sentry/ISentryClient;)V
+	public static fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public static fun captureEvent (Lio/sentry/SentryEvent;)Lio/sentry/protocol/SentryId;
 	public static fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public static fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
@@ -1514,6 +1668,7 @@ public final class io/sentry/SentryBaseEvent$Serializer {
 }
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
+	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
@@ -1589,6 +1744,7 @@ public final class io/sentry/SentryEnvelopeHeader$JsonKeys {
 
 public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromCheckIn (Lio/sentry/ISerializer;Lio/sentry/CheckIn;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromClientReport (Lio/sentry/ISerializer;Lio/sentry/clientreport/ClientReport;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
@@ -1707,6 +1863,7 @@ public final class io/sentry/SentryIntegrationPackageStorage {
 
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field Attachment Lio/sentry/SentryItemType;
+	public static final field CheckIn Lio/sentry/SentryItemType;
 	public static final field ClientReport Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
 	public static final field Profile Lio/sentry/SentryItemType;
@@ -1836,6 +1993,7 @@ public class io/sentry/SentryOptions {
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -1899,6 +2057,7 @@ public class io/sentry/SentryOptions {
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
+	public fun isSendModules ()Z
 	public fun isTraceOptionsRequests ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
@@ -1938,6 +2097,7 @@ public class io/sentry/SentryOptions {
 	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMainThreadChecker (Lio/sentry/util/thread/IMainThreadChecker;)V
@@ -1962,6 +2122,7 @@ public class io/sentry/SentryOptions {
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
 	public fun setSendDefaultPii (Z)V
+	public fun setSendModules (Z)V
 	public fun setSentryClientName (Ljava/lang/String;)V
 	public fun setSerializer (Lio/sentry/ISerializer;)V
 	public fun setServerName (Ljava/lang/String;)V
@@ -4226,6 +4387,11 @@ public abstract class io/sentry/transport/TransportResult {
 	public abstract fun getResponseCode ()I
 	public abstract fun isSuccess ()Z
 	public static fun success ()Lio/sentry/transport/TransportResult;
+}
+
+public final class io/sentry/util/CheckInUtils {
+	public fun <init> ()V
+	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 
 public final class io/sentry/util/ClassLoaderUtils {

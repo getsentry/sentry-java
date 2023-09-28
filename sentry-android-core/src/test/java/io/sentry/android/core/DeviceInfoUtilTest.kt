@@ -34,7 +34,7 @@ class DeviceInfoUtilTest {
     }
 
     @Test
-    fun `provides os and sideloaded info`() {
+    fun `provides os, memory and sideloaded info`() {
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, SentryAndroidOptions())
 
         val os = deviceInfoUtil.operatingSystem
@@ -48,6 +48,7 @@ class DeviceInfoUtilTest {
         assertNotNull(sideLoadedInfo.isSideLoaded)
 
         assertNotNull(deviceInfo.isSimulator)
+        assertNotNull(deviceInfo.memorySize)
     }
 
     @Test
@@ -106,7 +107,6 @@ class DeviceInfoUtilTest {
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
 
-        assertNull(deviceInfo.memorySize)
         assertNull(deviceInfo.storageSize)
         assertNull(deviceInfo.freeStorage)
     }

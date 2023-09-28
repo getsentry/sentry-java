@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.RateLimiter;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,6 +52,13 @@ final class NoOpSentryClient implements ISentryClient {
       @Nullable Scope scope,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  @ApiStatus.Experimental
+  public @NotNull SentryId captureCheckIn(
+      @NotNull CheckIn checkIn, @Nullable Scope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 

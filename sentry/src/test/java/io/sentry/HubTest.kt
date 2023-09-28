@@ -726,6 +726,44 @@ class HubTest {
         }
     }
 
+    //region captureCheckIn tests
+
+    @Test
+    fun `when captureCheckIn is called it is forwarded to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.captureCheckIn(checkIn)
+
+        verify(mockClient).captureCheckIn(
+            check {
+                assertEquals(checkIn.checkInId, it.checkInId)
+                assertEquals(checkIn.monitorSlug, it.monitorSlug)
+                assertEquals(checkIn.status, it.status)
+            },
+            any(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when captureCheckIn is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.close()
+
+        sut.captureCheckIn(checkIn)
+        verify(mockClient, never()).captureCheckIn(any(), any(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureCheckIn is called and client throws, don't crash`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        whenever(mockClient.captureCheckIn(any(), any(), anyOrNull())).doThrow(IllegalArgumentException(""))
+
+        sut.captureCheckIn(checkIn)
+    }
+
+    private val checkIn: CheckIn = CheckIn("some_slug", CheckInStatus.OK)
+
     //endregion
 
     //region close tests

@@ -35,9 +35,11 @@ dependencies {
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
     compileOnly(Config.Libs.springBootStarterGraphql)
+    compileOnly(Config.Libs.springBootStarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryGraphql)
+    compileOnly(projects.sentryQuartz)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -51,6 +53,7 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryLogback)
+    testImplementation(projects.sentryQuartz)
     testImplementation(projects.sentryApacheHttpClient5)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
@@ -64,6 +67,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
+    testImplementation(Config.Libs.springBootStarterQuartz)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 }
 

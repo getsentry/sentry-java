@@ -88,6 +88,38 @@ public final class io/sentry/spring/SpringSecuritySentryUserProvider : io/sentry
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public abstract interface annotation class io/sentry/spring/checkin/SentryCheckIn : java/lang/annotation/Annotation {
+	public abstract fun heartbeat ()Z
+	public abstract fun monitorSlug ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class io/sentry/spring/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/checkin/SentryCheckInAdviceConfiguration {
+	public fun <init> ()V
+	public fun sentryCheckInAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCheckInAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
+}
+
+public class io/sentry/spring/checkin/SentryCheckInPointcutConfiguration {
+	public fun <init> ()V
+	public fun sentryCheckInPointcut ()Lorg/springframework/aop/Pointcut;
+}
+
+public class io/sentry/spring/checkin/SentryQuartzConfiguration {
+	public fun <init> ()V
+	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;
+}
+
+public final class io/sentry/spring/checkin/SentrySchedulerFactoryBeanCustomizer : org/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer {
+	public fun <init> ()V
+	public fun customize (Lorg/springframework/scheduling/quartz/SchedulerFactoryBean;)V
+}
+
 public final class io/sentry/spring/graphql/SentryBatchLoaderRegistry : org/springframework/graphql/execution/BatchLoaderRegistry {
 	public fun forName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
 	public fun forTypePair (Ljava/lang/Class;Ljava/lang/Class;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;

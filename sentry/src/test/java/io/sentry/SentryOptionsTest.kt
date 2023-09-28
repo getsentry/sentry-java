@@ -365,6 +365,9 @@ class SentryOptionsTest {
         externalOptions.bundleIds.addAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411 ", " faa3ab42-b1bd-4659-af8e-1682324aa744"))
         externalOptions.isEnabled = false
         externalOptions.isEnablePrettySerializationOutput = false
+        externalOptions.isSendModules = false
+        externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
+
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -391,6 +394,8 @@ class SentryOptionsTest {
         assertEquals(setOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744"), options.bundleIds)
         assertFalse(options.isEnabled)
         assertFalse(options.isEnablePrettySerializationOutput)
+        assertFalse(options.isSendModules)
+        assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
     }
 
     @Test
@@ -516,5 +521,10 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, enablePrettySerializationOutput is set to true by default`() {
         assertTrue(SentryOptions().isEnablePrettySerializationOutput)
+    }
+
+    @Test
+    fun `when options are initialized, sendModules is set to true by default`() {
+        assertTrue(SentryOptions().isSendModules)
     }
 }

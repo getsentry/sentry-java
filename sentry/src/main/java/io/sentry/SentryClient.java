@@ -11,6 +11,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -69,6 +70,20 @@ public final class SentryClient implements ISentryClient {
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
+      return false;
+    }
+  }
+
+  private boolean shouldApplyScopeData(final @NotNull CheckIn event, final @NotNull Hint hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
+      return true;
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Check-in was cached so not applying scope: %s",
+              event.getCheckInId());
       return false;
     }
   }
@@ -456,6 +471,20 @@ public final class SentryClient implements ISentryClient {
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
 
+  private @NotNull SentryEnvelope buildEnvelope(
+      final @NotNull CheckIn checkIn, final @Nullable TraceContext traceContext) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem checkInItem =
+        SentryEnvelopeItem.fromCheckIn(options.getSerializer(), checkIn);
+    envelopeItems.add(checkInItem);
+
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion(), traceContext);
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
   /**
    * Updates the session data based on the event, hint and scope data
    *
@@ -649,6 +678,70 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  @Override
+  @ApiStatus.Experimental
+  public @NotNull SentryId captureCheckIn(
+      @NotNull CheckIn checkIn, final @Nullable Scope scope, @Nullable Hint hint) {
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    if (checkIn.getEnvironment() == null) {
+      checkIn.setEnvironment(options.getEnvironment());
+    }
+
+    if (checkIn.getRelease() == null) {
+      checkIn.setRelease(options.getRelease());
+    }
+
+    if (shouldApplyScopeData(checkIn, hint)) {
+      checkIn = applyScope(checkIn, scope);
+    }
+
+    if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Check-in was dropped as slug %s is ignored",
+              checkIn.getMonitorSlug());
+      // TODO in a follow up PR with DataCategory.Monitor
+      //      options
+      //        .getClientReportRecorder()
+      //        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+      return SentryId.EMPTY_ID;
+    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());
+
+    SentryId sentryId = checkIn.getCheckInId();
+
+    try {
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        final @Nullable ITransaction transaction = scope.getTransaction();
+        if (transaction != null) {
+          traceContext = transaction.traceContext();
+        } else {
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
+        }
+      }
+
+      final SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
+
+      hint.clear();
+      transport.send(envelope, hint);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
   private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {
     if (attachments == null) {
       return null;
@@ -694,6 +787,23 @@ public final class SentryClient implements ISentryClient {
       event = processEvent(event, hint, scope.getEventProcessors());
     }
     return event;
+  }
+
+  private @NotNull CheckIn applyScope(@NotNull CheckIn checkIn, final @Nullable Scope scope) {
+    if (scope != null) {
+      // Set trace data from active span to connect events with transactions
+      final ISpan span = scope.getSpan();
+      if (checkIn.getContexts().getTrace() == null) {
+        if (span == null) {
+          checkIn
+              .getContexts()
+              .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
+        } else {
+          checkIn.getContexts().setTrace(span.getSpanContext());
+        }
+      }
+    }
+    return checkIn;
   }
 
   private <T extends SentryBaseEvent> @NotNull T applyScope(

@@ -5,6 +5,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.transport.RateLimiter;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -215,6 +216,12 @@ public final class NoOpHub implements IHub {
   @Override
   public @Nullable BaggageHeader getBaggage() {
     return null;
+  }
+
+  @Override
+  @ApiStatus.Experimental
+  public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
+    return SentryId.EMPTY_ID;
   }
 
   @Override

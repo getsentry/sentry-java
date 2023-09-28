@@ -266,6 +266,10 @@ public interface ISentryClient {
     return captureTransaction(transaction, null, null, null);
   }
 
+  @NotNull
+  @ApiStatus.Experimental
+  SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable Scope scope, @Nullable Hint hint);
+
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();

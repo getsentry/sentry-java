@@ -39,6 +39,30 @@ Breaking changes:
   - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
     (E.g. if you're using `-timber`, `-okhttp` or other packages)
 
+## 6.30.0
+
+### Features
+
+- Add `sendModules` option for disable sending modules ([#2926](https://github.com/getsentry/sentry-java/pull/2926))
+- Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
+- Check-ins (CRONS) support ([#2952](https://github.com/getsentry/sentry-java/pull/2952))
+  - Add API for sending check-ins (CRONS) manually ([#2935](https://github.com/getsentry/sentry-java/pull/2935))
+  - Support check-ins (CRONS) for Quartz ([#2940](https://github.com/getsentry/sentry-java/pull/2940))
+  - `@SentryCheckIn` annotation and advice config for Spring ([#2946](https://github.com/getsentry/sentry-java/pull/2946))
+  - Add option for ignoring certain monitor slugs ([#2943](https://github.com/getsentry/sentry-java/pull/2943))
+
+### Fixes
+
+- Always send memory stats for transactions ([#2936](https://github.com/getsentry/sentry-java/pull/2936))
+  - This makes it possible to query transactions by the `device.class` tag on Sentry
+- Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
+
+### Dependencies
+
+- Bump Gradle from v8.2.1 to v8.3.0 ([#2900](https://github.com/getsentry/sentry-java/pull/2900))
+  - [changelog](https://github.com/gradle/gradle/blob/master release-test/CHANGELOG.md#v830)
+  - [diff](https://github.com/gradle/gradle/compare/v8.2.1...v8.3.0)
+
 ## 6.29.0
 
 ### Features

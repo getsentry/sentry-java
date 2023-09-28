@@ -635,6 +635,10 @@ public interface IHub {
   @Nullable
   BaggageHeader getBaggage();
 
+  @ApiStatus.Experimental
+  @NotNull
+  SentryId captureCheckIn(final @NotNull CheckIn checkIn);
+
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();

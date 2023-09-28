@@ -254,6 +254,20 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with sendModules set to false`() {
+        withPropertiesFile("send-modules=false") { options ->
+            assertTrue(options.isSendModules == false)
+        }
+    }
+
+    @Test
+    fun `creates options with ignoredCheckIns`() {
+        withPropertiesFile("ignored-checkins=slugA,slug2") { options ->
+            assertTrue(options.ignoredCheckIns!!.containsAll(listOf("slugA", "slug2")))
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()
