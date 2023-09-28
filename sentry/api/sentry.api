@@ -935,14 +935,6 @@ public final class io/sentry/MemoryCollectionData {
 	public fun getUsedNativeMemory ()J
 }
 
-public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectionStatusProvider {
-	public fun <init> ()V
-	public fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)Z
-	public fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
-	public fun getConnectionType ()Ljava/lang/String;
-	public fun removeConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
-}
-
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/MonitorSchedule;)V
 	public fun getCheckinMargin ()Ljava/lang/Long;
@@ -1034,6 +1026,14 @@ public final class io/sentry/MonitorScheduleUnit : java/lang/Enum {
 	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MonitorScheduleUnit;
 	public static fun values ()[Lio/sentry/MonitorScheduleUnit;
+}
+
+public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectionStatusProvider {
+	public fun <init> ()V
+	public fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)Z
+	public fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
+	public fun getConnectionType ()Ljava/lang/String;
+	public fun removeConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
