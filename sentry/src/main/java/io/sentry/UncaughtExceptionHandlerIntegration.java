@@ -7,11 +7,13 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.EventDropReason;
 import io.sentry.hints.SessionEnd;
+import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -97,6 +99,11 @@ public final class UncaughtExceptionHandlerIntegration
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
 
+        final ITransaction transaction = hub.getTransaction();
+        if (transaction == null && event.getEventId() != null) {
+          // if there's no active transaction on scope, this event can trigger flush notification
+          exceptionHint.setFlushable(event.getEventId());
+        }
         final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
 
         final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
@@ -156,10 +163,24 @@ public final class UncaughtExceptionHandlerIntegration
 
   @Open // open for tests
   @ApiStatus.Internal
-  public static class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd {
+  public static class UncaughtExceptionHint extends BlockingFlushHint
+      implements SessionEnd, TransactionEnd {
+
+    private final AtomicReference<SentryId> flushableEventId = new AtomicReference<>();
 
     public UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       super(flushTimeoutMillis, logger);
+    }
+
+    @Override
+    public boolean isFlushable(final @Nullable SentryId eventId) {
+      final SentryId unwrapped = flushableEventId.get();
+      return unwrapped != null && unwrapped.equals(eventId);
+    }
+
+    @Override
+    public void setFlushable(final @NotNull SentryId eventId) {
+      flushableEventId.set(eventId);
     }
   }
 }

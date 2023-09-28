@@ -1465,7 +1465,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        fixture.transaction.forceFinish(OK, false)
+        fixture.transaction.forceFinish(OK, false, null)
         verify(fixture.activityFramesTracker).setMetrics(activity, fixture.transaction.eventId)
     }
 
