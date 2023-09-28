@@ -4,7 +4,7 @@
 
 ### Features
 
-Breaking changes:
+**Breaking changes:**
 - Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
 - Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
 - Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
@@ -28,7 +28,7 @@ Breaking changes:
 - Capture unfinished transaction on Scope with status `aborted` in case a crash happens ([#2938](https://github.com/getsentry/sentry-java/pull/2938))
   - This will fix the link between transactions and corresponding crashes, you'll be able to see them in a single trace
 
-Breaking changes:
+**Breaking changes:**
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 - Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
 - Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
