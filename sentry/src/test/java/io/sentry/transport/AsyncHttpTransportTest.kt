@@ -13,6 +13,7 @@ import io.sentry.Session
 import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
 import io.sentry.hints.DiskFlushNotification
+import io.sentry.hints.Enqueable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
@@ -381,6 +382,24 @@ class AsyncHttpTransportTest {
 
         // then
         assertTrue(calledFlush)
+    }
+
+    @Test
+    fun `when event is Enqueable, marks it after sending to the queue`() {
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+        whenever(fixture.connection.send(any())).thenReturn(TransportResult.success())
+
+        var called = false
+        val hint = HintUtils.createWithTypeCheckHint(object : Enqueable {
+            override fun markEnqueued() {
+                called = true
+            }
+        })
+        fixture.getSUT().send(envelope, hint)
+
+        assertTrue(called)
     }
 
     private fun createSession(): Session {

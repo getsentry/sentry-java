@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.transport.RateLimiter;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -213,6 +214,11 @@ public final class NoOpHub implements IHub {
 
   @Override
   public @Nullable BaggageHeader getBaggage() {
+    return null;
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
     return null;
   }
 }

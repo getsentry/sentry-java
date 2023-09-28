@@ -425,6 +425,9 @@ public class SentryOptions {
   private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
+  private @NotNull IConnectionStatusProvider connectionStatusProvider =
+      new NoOpConnectionStatusProvider();
+
   /** Whether Sentry should be enabled */
   private boolean enabled = true;
 
@@ -2128,6 +2131,16 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull List<ICollector> getCollectors() {
     return collectors;
+  }
+
+  @NotNull
+  public IConnectionStatusProvider getConnectionStatusProvider() {
+    return connectionStatusProvider;
+  }
+
+  public void setConnectionStatusProvider(
+      final @NotNull IConnectionStatusProvider connectionStatusProvider) {
+    this.connectionStatusProvider = connectionStatusProvider;
   }
 
   /** The BeforeSend callback */

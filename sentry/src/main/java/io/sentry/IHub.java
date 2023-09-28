@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.transport.RateLimiter;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -633,4 +634,8 @@ public interface IHub {
    */
   @Nullable
   BaggageHeader getBaggage();
+
+  @ApiStatus.Internal
+  @Nullable
+  RateLimiter getRateLimiter();
 }

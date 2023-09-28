@@ -48,7 +48,7 @@ public final class RateLimiter {
     // Optimize for/No allocations if no items are under 429
     List<SentryEnvelopeItem> dropItems = null;
     for (SentryEnvelopeItem item : envelope.getItems()) {
-      //       using the raw value of the enum to not expose SentryEnvelopeItemType
+      // using the raw value of the enum to not expose SentryEnvelopeItemType
       if (isRetryAfter(item.getHeader().getType().getItemType())) {
         if (dropItems == null) {
           dropItems = new ArrayList<>();
@@ -87,26 +87,8 @@ public final class RateLimiter {
     return envelope;
   }
 
-  /**
-   * It marks the hint when sending has failed, so it's not necessary to wait the timeout
-   *
-   * @param hint the Hints
-   * @param retry if event should be retried or not
-   */
-  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
-    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
-    HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
-  }
-
-  /**
-   * Check if an itemType is retry after or not
-   *
-   * @param itemType the itemType (eg event, session, etc...)
-   * @return true if retry after or false otherwise
-   */
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-  private boolean isRetryAfter(final @NotNull String itemType) {
-    final DataCategory dataCategory = getCategoryFromItemType(itemType);
+  public boolean isActiveForCategory(final @NotNull DataCategory dataCategory) {
     final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
 
     // check all categories
@@ -129,6 +111,29 @@ public final class RateLimiter {
     }
 
     return false;
+  }
+
+  /**
+   * It marks the hint when sending has failed, so it's not necessary to wait the timeout
+   *
+   * @param hint the Hints
+   * @param retry if event should be retried or not
+   */
+  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
+    HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
+  }
+
+  /**
+   * Check if an itemType is retry after or not
+   *
+   * @param itemType the itemType (eg event, session, etc...)
+   * @return true if retry after or false otherwise
+   */
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  private boolean isRetryAfter(final @NotNull String itemType) {
+    final DataCategory dataCategory = getCategoryFromItemType(itemType);
+    return isActiveForCategory(dataCategory);
   }
 
   /**

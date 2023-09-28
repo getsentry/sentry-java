@@ -16,6 +16,10 @@ Breaking changes:
 - Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
   - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
 - Android only: If global hub mode is enabled, Sentry.getSpan() returns the root span instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
+- Observe network state to upload any unsent envelopes ([#2910](https://github.com/getsentry/sentry-java/pull/2910))
+  - Android: it works out-of-the-box as part of the default `SendCachedEnvelopeIntegration`
+  - JVM: you'd have to install `SendCachedEnvelopeFireAndForgetIntegration` as mentioned in https://docs.sentry.io/platforms/java/configuration/#configuring-offline-caching and provide your own implementation of `IConnectionStatusProvider` via `SentryOptions`
+- Do not try to send and drop cached envelopes when rate-limiting is active ([#2937](https://github.com/getsentry/sentry-java/pull/2937))
 
 ### Fixes
 
