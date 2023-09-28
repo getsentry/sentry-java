@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.30.0
 
 ### Features
 
