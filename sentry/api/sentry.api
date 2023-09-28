@@ -239,7 +239,7 @@ public final class io/sentry/EnvelopeReader : io/sentry/IEnvelopeReader {
 }
 
 public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/ISerializer;Lio/sentry/ILogger;JLio/sentry/cache/IEnvelopeCache;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/ISerializer;Lio/sentry/ILogger;JI)V
 	public synthetic fun processDirectory (Ljava/io/File;)V
 	public fun processEnvelopeFile (Ljava/lang/String;Lio/sentry/Hint;)V
 }
@@ -373,6 +373,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
@@ -422,6 +423,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public static fun getInstance ()Lio/sentry/HubAdapter;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
@@ -515,6 +517,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun getBaggage ()Lio/sentry/BaggageHeader;
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
+	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
 	public abstract fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public abstract fun getTransaction ()Lio/sentry/ITransaction;
@@ -608,6 +611,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun close ()V
 	public abstract fun flush (J)V
+	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun isEnabled ()Z
 }
 
@@ -910,6 +914,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public static fun getInstance ()Lio/sentry/NoOpHub;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
@@ -1070,7 +1075,7 @@ public final class io/sentry/OptionsContainer {
 }
 
 public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/IEnvelopeReader;Lio/sentry/ISerializer;Lio/sentry/ILogger;J)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/IEnvelopeReader;Lio/sentry/ISerializer;Lio/sentry/ILogger;JI)V
 	public synthetic fun processDirectory (Ljava/io/File;)V
 	public fun processEnvelopeFile (Ljava/lang/String;Lio/sentry/Hint;)V
 }
@@ -1516,6 +1521,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
 	public fun flush (J)V
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isEnabled ()Z
 }
 
@@ -2472,7 +2478,6 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
-	public static final field SENTRY_CACHED_ENVELOPE_FILE_PATH Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
@@ -2759,6 +2764,10 @@ public abstract interface class io/sentry/hints/Cached {
 
 public abstract interface class io/sentry/hints/DiskFlushNotification {
 	public abstract fun markFlushed ()V
+}
+
+public abstract interface class io/sentry/hints/Enqueable {
+	public abstract fun markEnqueued ()V
 }
 
 public final class io/sentry/hints/EventDropReason : java/lang/Enum {
@@ -4138,6 +4147,7 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
 	public fun flush (J)V
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 
@@ -4152,6 +4162,7 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
 	public abstract fun flush (J)V
+	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;)V
 	public abstract fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
@@ -4173,6 +4184,7 @@ public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITran
 	public fun close ()V
 	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/transport/NoOpTransport;
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 
@@ -4185,7 +4197,7 @@ public final class io/sentry/transport/RateLimiter {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
-	public fun getRateLimitedUntilFor (Ljava/lang/String;)Ljava/util/Date;
+	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
 
@@ -4203,6 +4215,7 @@ public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITr
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
 	public fun flush (J)V
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 

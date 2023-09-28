@@ -21,6 +21,7 @@ import io.sentry.TraceContext
 import io.sentry.UserFeedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
+import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
@@ -160,6 +161,10 @@ class SessionTrackingIntegrationTest {
             hint: Hint?,
             profilingTraceData: ProfilingTraceData?
         ): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun getRateLimiter(): RateLimiter? {
             TODO("Not yet implemented")
         }
     }

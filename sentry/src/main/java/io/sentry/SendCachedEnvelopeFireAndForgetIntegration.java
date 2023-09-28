@@ -2,6 +2,7 @@ package io.sentry;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.File;
@@ -18,6 +19,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   private @Nullable IConnectionStatusProvider connectionStatusProvider;
   private @Nullable IHub hub;
   private @Nullable SentryOptions options;
+  private @Nullable SendFireAndForget sender;
 
   public interface SendFireAndForget {
     void send();
@@ -82,6 +84,8 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     connectionStatusProvider = options.getConnectionStatusProvider();
     connectionStatusProvider.addConnectionStatusObserver(this);
 
+    sender = factory.create(hub, options);
+
     sendCachedEnvelopes(hub, options);
   }
 
@@ -99,7 +103,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     }
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  @SuppressWarnings({"FutureReturnValueIgnored", "NullAway"})
   private synchronized void sendCachedEnvelopes(@NotNull IHub hub, @NotNull SentryOptions options) {
 
     // skip run only if we're certainly disconnected
@@ -112,7 +116,17 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
       return;
     }
 
-    final SendFireAndForget sender = factory.create(hub, options);
+    // in case there's rate limiting active, skip processing
+    final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+    if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
+      return;
+    }
+
     if (sender == null) {
       options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
       return;

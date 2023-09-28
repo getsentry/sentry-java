@@ -1,11 +1,13 @@
 package io.sentry.android.core;
 
+import io.sentry.DataCategory;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -28,6 +30,7 @@ final class SendCachedEnvelopeIntegration
   private @Nullable IConnectionStatusProvider connectionStatusProvider;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
+  private @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender;
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
@@ -54,6 +57,8 @@ final class SendCachedEnvelopeIntegration
     connectionStatusProvider = options.getConnectionStatusProvider();
     connectionStatusProvider.addConnectionStatusObserver(this);
 
+    sender = factory.create(hub, options);
+
     sendCachedEnvelopes(hub, this.options);
   }
 
@@ -71,6 +76,7 @@ final class SendCachedEnvelopeIntegration
     }
   }
 
+  @SuppressWarnings({"NullAway"})
   private synchronized void sendCachedEnvelopes(
       final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
 
@@ -81,8 +87,14 @@ final class SendCachedEnvelopeIntegration
       return;
     }
 
-    final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
-        factory.create(hub, options);
+    // in case there's rate limiting active, skip processing
+    final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+    if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, rate limiting active.");
+      return;
+    }
 
     if (sender == null) {
       options.getLogger().log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");

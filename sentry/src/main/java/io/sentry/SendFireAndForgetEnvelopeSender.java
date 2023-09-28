@@ -37,7 +37,7 @@ public final class SendFireAndForgetEnvelopeSender
             options.getSerializer(),
             options.getLogger(),
             options.getFlushTimeoutMillis(),
-            options.getEnvelopeDiskCache());
+            options.getMaxQueueSize());
 
     return processDir(envelopeSender, dirPath, options.getLogger());
   }

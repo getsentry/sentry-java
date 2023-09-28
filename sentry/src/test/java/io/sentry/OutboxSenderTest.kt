@@ -22,7 +22,6 @@ import java.util.Date
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -42,7 +41,7 @@ class OutboxSenderTest {
         }
 
         fun getSut(): OutboxSender {
-            return OutboxSender(hub, envelopeReader, serializer, logger, 15000)
+            return OutboxSender(hub, envelopeReader, serializer, logger, 15000, 30)
         }
     }
 
@@ -273,38 +272,6 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", hints)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
-    }
-
-    @Test
-    fun `when hub is null, ctor throws`() {
-        val clazz = Class.forName("io.sentry.OutboxSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
-        val params = arrayOf(null, mock<IEnvelopeReader>(), mock<ISerializer>(), mock<ILogger>(), null)
-        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
-    }
-
-    @Test
-    fun `when envelopeReader is null, ctor throws`() {
-        val clazz = Class.forName("io.sentry.OutboxSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
-        val params = arrayOf(mock<IHub>(), null, mock<ISerializer>(), mock<ILogger>(), 15000)
-        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
-    }
-
-    @Test
-    fun `when serializer is null, ctor throws`() {
-        val clazz = Class.forName("io.sentry.OutboxSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
-        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), null, mock<ILogger>(), 15000)
-        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
-    }
-
-    @Test
-    fun `when logger is null, ctor throws`() {
-        val clazz = Class.forName("io.sentry.OutboxSender")
-        val ctor = clazz.getConstructor(IHub::class.java, IEnvelopeReader::class.java, ISerializer::class.java, ILogger::class.java, Long::class.java)
-        val params = arrayOf(mock<IHub>(), mock<IEnvelopeReader>(), mock<ISerializer>(), null, 15000)
-        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
     @Test

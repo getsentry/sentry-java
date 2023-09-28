@@ -8,7 +8,6 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -63,9 +62,14 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     return getConnectionType(context, logger, buildInfoProvider);
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+  @SuppressLint("NewApi") // we have an if-check for that down below
   @Override
   public boolean addConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
+      logger.log(SentryLevel.DEBUG, "addConnectionStatusObserver requires Android 5+.");
+      return false;
+    }
+
     final ConnectivityManager.NetworkCallback callback =
         new ConnectivityManager.NetworkCallback() {
           @Override
