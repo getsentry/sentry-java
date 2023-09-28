@@ -635,6 +635,7 @@ public interface IHub {
   @Nullable
   BaggageHeader getBaggage();
 
+  @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
 }

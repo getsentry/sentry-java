@@ -264,6 +264,7 @@ public final class HubAdapter implements IHub {
     return Sentry.getBaggage();
   }
 
+  @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return Sentry.getCurrentHub().getRateLimiter();

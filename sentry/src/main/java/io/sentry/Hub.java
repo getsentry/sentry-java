@@ -885,6 +885,7 @@ public final class Hub implements IHub {
     return null;
   }
 
+  @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     final StackItem item = stack.peek();
