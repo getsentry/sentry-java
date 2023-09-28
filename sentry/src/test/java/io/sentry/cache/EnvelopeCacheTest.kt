@@ -1,7 +1,6 @@
 package io.sentry.cache
 
 import io.sentry.DateUtils
-import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.NoOpLogger
 import io.sentry.SentryCrashLastRunState
@@ -75,7 +74,7 @@ class EnvelopeCacheTest {
     fun `tolerates discarding unknown envelope`() {
         val cache = fixture.getSUT()
 
-        cache.discard(SentryEnvelope.from(fixture.options.serializer, createSession(), null), Hint())
+        cache.discard(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
 
         // no exception thrown
     }

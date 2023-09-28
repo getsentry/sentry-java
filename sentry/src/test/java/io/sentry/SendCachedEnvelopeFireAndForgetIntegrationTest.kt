@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.protocol.SdkVersion
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.transport.RateLimiter
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -172,6 +173,20 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         whenever(connectionStatusProvider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION)
         sut.onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION)
         verify(fixture.sender, times(3)).send()
+    }
+
+    @Test
+    fun `when rate limiter is active, does not send envelopes`() {
+        val sut = fixture.getSut()
+        val rateLimiter = mock<RateLimiter> {
+            whenever(mock.isActiveForCategory(any())).thenReturn(true)
+        }
+        whenever(fixture.hub.rateLimiter).thenReturn(rateLimiter)
+
+        sut.register(fixture.hub, fixture.options)
+
+        // no factory call should be done if there's rate limiting active
+        verify(fixture.sender, never()).send()
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {

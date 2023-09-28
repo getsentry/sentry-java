@@ -2,7 +2,6 @@ package io.sentry.transport
 
 import io.sentry.CachedEvent
 import io.sentry.Hint
-import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
@@ -82,7 +81,7 @@ class AsyncHttpTransportTest {
         order.verify(fixture.sentryOptions.envelopeDiskCache).store(eq(envelope), anyOrNull())
 
         order.verify(fixture.connection).send(eq(envelope))
-        order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope), any())
+        order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope))
     }
 
     @Test
@@ -122,7 +121,7 @@ class AsyncHttpTransportTest {
         order.verify(fixture.sentryOptions.envelopeDiskCache).store(eq(envelope), anyOrNull())
 
         order.verify(fixture.connection).send(eq(envelope))
-        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any(), any())
+        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
     }
 
     @Test
@@ -143,7 +142,7 @@ class AsyncHttpTransportTest {
         // then
         val order = inOrder(fixture.connection, fixture.sentryOptions.envelopeDiskCache)
         order.verify(fixture.connection).send(eq(envelope))
-        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any(), any())
+        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
     }
 
     @Test
@@ -158,10 +157,6 @@ class AsyncHttpTransportTest {
 
         // then
         verify(fixture.executor, never()).submit(any())
-
-        Sentry.withScope {
-            val installationId = it.user?.id
-        }
     }
 
     @Test
@@ -202,7 +197,7 @@ class AsyncHttpTransportTest {
         fixture.getSUT().send(envelope, hints)
 
         // then
-        verify(fixture.sentryOptions.envelopeDiskCache).discard(any(), any())
+        verify(fixture.sentryOptions.envelopeDiskCache).discard(any())
     }
 
     @Test
@@ -215,7 +210,7 @@ class AsyncHttpTransportTest {
         fixture.getSUT().send(envelope)
 
         // then
-        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any(), any())
+        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
     }
 
     @Test
@@ -260,7 +255,7 @@ class AsyncHttpTransportTest {
         fixture.getSUT().send(envelope, hints)
 
         // then
-        verify(fixture.sentryOptions.envelopeDiskCache).discard(any(), any())
+        verify(fixture.sentryOptions.envelopeDiskCache).discard(any())
     }
 
     @Test
@@ -274,7 +269,7 @@ class AsyncHttpTransportTest {
         fixture.getSUT().send(envelope)
 
         // then
-        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any(), any())
+        verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
     }
 
     @Test

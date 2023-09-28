@@ -84,7 +84,7 @@ public final class AsyncHttpTransport implements ITransport {
 
     if (filteredEnvelope == null) {
       if (cached) {
-        envelopeCache.discard(envelope, hint);
+        envelopeCache.discard(envelope);
       }
     } else {
       SentryEnvelope envelopeThatMayIncludeClientReport;
@@ -268,7 +268,7 @@ public final class AsyncHttpTransport implements ITransport {
 
           result = connection.send(envelopeWithClientReport);
           if (result.isSuccess()) {
-            envelopeCache.discard(envelope, hint);
+            envelopeCache.discard(envelope);
           } else {
             final String message =
                 "The transport failed to send the envelope with response code "

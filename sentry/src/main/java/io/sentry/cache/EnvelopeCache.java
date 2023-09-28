@@ -335,7 +335,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   @Override
-  public void discard(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
+  public void discard(final @NotNull SentryEnvelope envelope) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     final File envelopeFile = getEnvelopeFile(envelope);
@@ -414,11 +414,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
 
     return ret.iterator();
-  }
-
-  @Override
-  public synchronized boolean containsFile(@NotNull File file) {
-    return fileNameMap.containsValue(file.getAbsolutePath());
   }
 
   private @NotNull File[] allEnvelopeFiles() {

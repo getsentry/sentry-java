@@ -64,7 +64,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
 
   @SuppressLint("NewApi") // we have an if-check for that down below
   @Override
-  public boolean addConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
+  public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
       logger.log(SentryLevel.DEBUG, "addConnectionStatusObserver requires Android 5+.");
       return false;
@@ -98,7 +98,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   }
 
   @Override
-  public void removeConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
+  public void removeConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
     final @Nullable ConnectivityManager.NetworkCallback callback =
         registeredCallbacks.remove(observer);
     if (callback != null) {

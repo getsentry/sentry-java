@@ -41,8 +41,7 @@ final class SendCachedEnvelopeIntegration
 
   @Override
   public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
-    this.hub = hub;
+    this.hub = Objects.requireNonNull(hub, "Hub is required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -70,7 +69,8 @@ final class SendCachedEnvelopeIntegration
   }
 
   @Override
-  public void onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus status) {
+  public void onConnectionStatusChanged(
+      final @NotNull IConnectionStatusProvider.ConnectionStatus status) {
     if (hub != null && options != null) {
       sendCachedEnvelopes(hub, options);
     }

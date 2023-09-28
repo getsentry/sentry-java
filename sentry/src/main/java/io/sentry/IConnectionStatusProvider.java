@@ -20,7 +20,7 @@ public interface IConnectionStatusProvider {
      *
      * @param status the new connection status
      */
-    void onConnectionStatusChanged(ConnectionStatus status);
+    void onConnectionStatusChanged(@NotNull ConnectionStatus status);
   }
 
   /**
