@@ -1,13 +1,14 @@
 package io.sentry
 
+import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.protocol.SdkVersion
+import io.sentry.test.ImmediateExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -19,8 +20,10 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         var hub: IHub = mock()
         var logger: ILogger = mock()
         var options = SentryOptions()
+        val sender = mock<SendFireAndForget>()
         var callback = mock<CustomFactory>().apply {
             whenever(hasValidPath(any(), any())).thenCallRealMethod()
+            whenever(create(any(), any())).thenReturn(sender)
         }
 
         init {
@@ -29,7 +32,10 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
             options.sdkVersion = SdkVersion("test", "1.2.3")
         }
 
-        fun getSut(): SendCachedEnvelopeFireAndForgetIntegration {
+        fun getSut(useImmediateExecutor: Boolean = true): SendCachedEnvelopeFireAndForgetIntegration {
+            if (useImmediateExecutor) {
+                options.executorService = ImmediateExecutorService()
+            }
             return SendCachedEnvelopeFireAndForgetIntegration(callback)
         }
     }
@@ -42,7 +48,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("No cache dir path is defined in options."))
-        verifyNoMoreInteractions(fixture.hub)
+        verify(fixture.sender, never()).send()
     }
 
     @Test
@@ -69,7 +75,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "abc"
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("SendFireAndForget factory is null."))
-        verifyNoMoreInteractions(fixture.hub)
+        verify(fixture.sender, never()).send()
     }
 
     @Test
@@ -89,7 +95,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "cache"
         fixture.options.executorService.close(0)
         whenever(fixture.callback.create(any(), any())).thenReturn(mock())
-        val sut = fixture.getSut()
+        val sut = fixture.getSut(useImmediateExecutor = false)
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?"), any())
     }
@@ -118,7 +124,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         sut.register(fixture.hub, fixture.options)
-        verify(fixture.callback, never()).create(any(), any())
+        verify(fixture.sender, never()).send()
     }
 
     @Test
@@ -133,7 +139,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.callback).create(any(), any())
+        verify(fixture.sender).send()
     }
 
     @Test
@@ -149,23 +155,23 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         // when there's no connection no factory create call should be done
-        verify(fixture.callback, never()).create(any(), any())
+        verify(fixture.sender, never()).send()
 
         // but for any other status processing should be triggered
         // CONNECTED
         whenever(connectionStatusProvider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.CONNECTED)
         sut.onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus.CONNECTED)
-        verify(fixture.callback).create(any(), any())
+        verify(fixture.sender).send()
 
         // UNKNOWN
         whenever(connectionStatusProvider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.UNKNOWN)
         sut.onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus.UNKNOWN)
-        verify(fixture.callback, times(2)).create(any(), any())
+        verify(fixture.sender, times(2)).send()
 
         // NO_PERMISSION
         whenever(connectionStatusProvider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION)
         sut.onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION)
-        verify(fixture.callback, times(3)).create(any(), any())
+        verify(fixture.sender, times(3)).send()
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
