@@ -8,7 +8,6 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
