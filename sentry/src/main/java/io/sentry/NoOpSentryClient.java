@@ -52,4 +52,10 @@ final class NoOpSentryClient implements ISentryClient {
       @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
+
+  @Override
+  public @NotNull SentryId captureCheckIn(
+      @NotNull CheckIn checkIn, @Nullable Scope scope, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
+  }
 }

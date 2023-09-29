@@ -6,6 +6,7 @@ import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
+import io.sentry.internal.modules.NoOpModulesLoader
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
@@ -16,6 +17,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -31,6 +33,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -765,6 +768,37 @@ class SentryTest {
 
         await.untilTrue(triggered)
         assertFalse(previousSessionFile.exists())
+    }
+
+    @Test
+    fun `captureCheckIn gets forwarded to client`() {
+        Sentry.init { it.dsn = dsn }
+
+        val client = mock<ISentryClient>()
+        Sentry.getCurrentHub().bindClient(client)
+
+        val checkIn = CheckIn("some_slug", CheckInStatus.OK)
+        Sentry.captureCheckIn(checkIn)
+
+        verify(client).captureCheckIn(
+            argThat {
+                checkInId == checkIn.checkInId
+            },
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `if send modules is false, uses NoOpModulesLoader`() {
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.isSendModules = false
+            sentryOptions = it
+        }
+
+        assertIs<NoOpModulesLoader>(sentryOptions?.modulesLoader)
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

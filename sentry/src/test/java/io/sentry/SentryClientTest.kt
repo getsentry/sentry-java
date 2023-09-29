@@ -536,6 +536,57 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureCheckIn, envelope is sent`() {
+        val sut = fixture.getSut()
+
+        sut.captureCheckIn(checkIn, null, null)
+
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(checkIn.checkInId, actual.header.eventId)
+                assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
+
+                assertEquals(1, actual.items.count())
+                val item = actual.items.first()
+                assertEquals(SentryItemType.CheckIn, item.header.type)
+                assertEquals("application/json", item.header.contentType)
+
+                assertEnvelopeItemDataForCheckIn(item)
+            },
+            any<Hint>()
+        )
+    }
+
+    private fun assertEnvelopeItemDataForCheckIn(item: SentryEnvelopeItem) {
+        val stream = ByteArrayOutputStream()
+        val writer = stream.bufferedWriter(Charset.forName("UTF-8"))
+        fixture.sentryOptions.serializer.serialize(checkIn, writer)
+        val expectedData = stream.toByteArray()
+        assertTrue(Arrays.equals(expectedData, item.data))
+    }
+
+    @Test
+    fun `when captureCheckIn and connection throws, log exception`() {
+        val sut = fixture.getSut()
+
+        val exception = IOException("No connection")
+        whenever(fixture.transport.send(any(), any())).thenThrow(exception)
+
+        val logger = mock<ILogger>()
+        fixture.sentryOptions.setLogger(logger)
+
+        sut.captureCheckIn(checkIn, null, null)
+
+        verify(logger)
+            .log(
+                SentryLevel.WARNING,
+                exception,
+                "Capturing check-in %s failed.",
+                checkIn.checkInId
+            )
+    }
+
+    @Test
     fun `when hint is Cached, scope is not applied`() {
         val sut = fixture.getSut()
 
@@ -2476,6 +2527,8 @@ class SentryClientTest {
 
             return userFeedback
         }
+
+    private val checkIn = CheckIn("some_slug", CheckInStatus.OK)
 
     internal class CustomTransportGate : ITransportGate {
         override fun isConnected(): Boolean = false
