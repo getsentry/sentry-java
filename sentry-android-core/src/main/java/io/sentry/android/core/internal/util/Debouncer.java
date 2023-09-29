@@ -4,16 +4,19 @@ import io.sentry.transport.ICurrentDateProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 /** A simple time-based debouncing mechanism */
 @ApiStatus.Internal
 public class Debouncer {
 
   private final long waitTimeMs;
   private final @NotNull ICurrentDateProvider timeProvider;
-  private int executions = 0;
+  private final @NotNull AtomicInteger executions = new AtomicInteger(0);
   private final int maxExecutions;
 
-  private Long lastExecutionTime = null;
+  private final @NotNull AtomicLong lastExecutionTime = new AtomicLong(0);
 
   public Debouncer(
       final @NotNull ICurrentDateProvider timeProvider,
@@ -30,16 +33,15 @@ public class Debouncer {
    */
   public boolean checkForDebounce() {
     final long now = timeProvider.getCurrentTimeMillis();
-    if (lastExecutionTime == null || (lastExecutionTime + waitTimeMs) <= now) {
-      executions = 0;
-      lastExecutionTime = now;
+    if ((lastExecutionTime.get() + waitTimeMs) <= now) {
+      executions.set(0);
+      lastExecutionTime.set(now);
       return false;
     }
-    executions++;
-    if (executions < maxExecutions) {
+    if (executions.incrementAndGet() < maxExecutions) {
       return false;
     }
-    executions = 0;
+    executions.set(0);
     return true;
   }
 }
