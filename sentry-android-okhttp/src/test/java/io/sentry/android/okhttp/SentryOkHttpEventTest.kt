@@ -22,7 +22,6 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.test.getProperty
-import okhttp3.Call
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
