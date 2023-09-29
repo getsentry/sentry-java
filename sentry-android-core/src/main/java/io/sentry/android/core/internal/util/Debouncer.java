@@ -1,11 +1,10 @@
 package io.sentry.android.core.internal.util;
 
 import io.sentry.transport.ICurrentDateProvider;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 /** A simple time-based debouncing mechanism */
 @ApiStatus.Internal
