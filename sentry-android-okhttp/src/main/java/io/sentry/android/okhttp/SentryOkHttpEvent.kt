@@ -5,6 +5,7 @@ import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryDate
+import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
@@ -20,6 +21,7 @@ import okhttp3.Request
 import okhttp3.Response
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val PROTOCOL_KEY = "protocol"
@@ -161,11 +163,23 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     } ?: callRootSpan
 
     fun scheduleFinish(timestamp: SentryDate) {
-        hub.options.executorService.schedule({
-            if (!isReadingResponseBody.get() &&
-                (eventSpans.values.all { it.isFinished } || callRootSpan?.isFinished != true)) {
-                finishEvent(timestamp)
-            }
-        }, RESPONSE_BODY_TIMEOUT_MILLIS)
+        try {
+            hub.options.executorService.schedule({
+                if (!isReadingResponseBody.get() &&
+                    (eventSpans.values.all { it.isFinished } || callRootSpan?.isFinished != true)
+                ) {
+                    finishEvent(timestamp)
+                }
+            }, RESPONSE_BODY_TIMEOUT_MILLIS)
+        } catch (e: RejectedExecutionException) {
+            hub.options
+                .logger
+                .log(
+                    SentryLevel.ERROR,
+                    "Failed to call the executor. OkHttp span will not be finished " +
+                        "automatically. Did you call Sentry.close()?",
+                    e
+                )
+        }
     }
 }

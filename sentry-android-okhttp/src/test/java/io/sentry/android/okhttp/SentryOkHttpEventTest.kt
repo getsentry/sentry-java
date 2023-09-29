@@ -22,6 +22,7 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.test.getProperty
+import okhttp3.Call
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -37,6 +38,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.concurrent.Future
+import java.util.concurrent.RejectedExecutionException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -519,6 +521,15 @@ class SentryOkHttpEventTest {
         val timestamp = mock<SentryDate>()
         sut.finishEvent(finishDate = timestamp)
         assertEquals(timestamp, sut.callRootSpan!!.finishDate)
+    }
+
+    @Test
+    fun `scheduleFinish does not throw if executor is shut down`() {
+        val executorService = mock<ISentryExecutorService>()
+        whenever(executorService.schedule(any(), any())).thenThrow(RejectedExecutionException())
+        whenever(fixture.hub.options).thenReturn(SentryOptions().apply { this.executorService = executorService })
+        val sut = fixture.getSut()
+        sut.scheduleFinish(mock())
     }
 
     /** Retrieve all the spans started in the event using reflection. */
