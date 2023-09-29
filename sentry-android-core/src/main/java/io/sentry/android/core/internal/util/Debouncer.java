@@ -27,12 +27,12 @@ public class Debouncer {
   }
 
   /**
-   * @return true if the execution should be debounced due to the last execution being within within
-   *     waitTimeMs, otherwise false.
+   * @return true if the execution should be debounced due to maxExecutions executions being made
+   *     within waitTimeMs, otherwise false.
    */
   public boolean checkForDebounce() {
     final long now = timeProvider.getCurrentTimeMillis();
-    if ((lastExecutionTime.get() + waitTimeMs) <= now) {
+    if (lastExecutionTime.get() == 0 || (lastExecutionTime.get() + waitTimeMs) <= now) {
       executions.set(0);
       lastExecutionTime.set(now);
       return false;
