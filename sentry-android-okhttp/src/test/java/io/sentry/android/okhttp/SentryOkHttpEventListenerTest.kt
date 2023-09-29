@@ -2,6 +2,7 @@ package io.sentry.android.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.IHub
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -20,11 +21,14 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.concurrent.Future
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -52,12 +56,14 @@ class SentryOkHttpEventListenerTest {
             useInterceptor: Boolean = false,
             httpStatusCode: Int = 201,
             sendDefaultPii: Boolean = false,
+            configureOptions: (options: SentryOptions) -> Unit = {},
             eventListener: EventListener? = null,
             eventListenerFactory: EventListener.Factory? = null
         ): OkHttpClient {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
                 isSendDefaultPii = sendDefaultPii
+                configureOptions(this)
             }
             whenever(hub.options).thenReturn(options)
 
@@ -324,6 +330,52 @@ class SentryOkHttpEventListenerTest {
         assertEquals(SpanStatus.fromHttpStatusCode(500), callSpan.status)
         assertEquals(SpanStatus.fromHttpStatusCode(500), responseHeaderSpan.status)
         assertEquals(SpanStatus.fromHttpStatusCode(500), connectionSpan.status)
+    }
+
+    @Test
+    fun `when response is not closed, root call is trimmed to responseHeadersEnd`() {
+        val mockExecutor = mock<ISentryExecutorService>()
+        val captor = argumentCaptor<Runnable>()
+        whenever(mockExecutor.schedule(captor.capture(), any())).then {
+            captor.lastValue.run()
+            mock<Future<Runnable>>()
+        }
+        val sut = fixture.getSut(httpStatusCode = 500, configureOptions = { it.executorService = mockExecutor })
+        val request = getRequest()
+        val call = sut.newCall(request)
+        val response = spy(call.execute())
+        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
+        val callSpan = okHttpEvent?.callRootSpan
+        val responseHeaderSpan =
+            fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_headers" }
+        val responseBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_body" }
+
+        // Response is not finished
+        verify(response, never()).close()
+
+        // response body span is never started
+        assertNull(responseBodySpan)
+
+        assertNotNull(callSpan)
+        assertNotNull(responseHeaderSpan)
+
+        // Call span is trimmed to responseHeader finishTimestamp
+        assertEquals(callSpan.finishDate?.nanoTimestamp(), responseHeaderSpan.finishDate?.nanoTimestamp())
+
+        // All children spans of the root call are finished
+        assertTrue(fixture.sentryTracer.children.all { it.isFinished })
+    }
+
+    @Test
+    fun `responseHeadersEnd schedules event finish`() {
+        val listener = SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener)
+        whenever(fixture.hub.options).thenReturn(SentryOptions())
+        val call = mock<Call>()
+        whenever(call.request()).thenReturn(getRequest())
+        val okHttpEvent = mock<SentryOkHttpEvent>()
+        SentryOkHttpEventListener.eventMap[call] = okHttpEvent
+        listener.responseHeadersEnd(call, mock())
+        verify(okHttpEvent).scheduleFinish(any())
     }
 
     @Test

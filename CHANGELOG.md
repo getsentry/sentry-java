@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
 - Always send memory stats for transactions ([#2936](https://github.com/getsentry/sentry-java/pull/2936))
   - This makes it possible to query transactions by the `device.class` tag on Sentry
 - Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
