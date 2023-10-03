@@ -676,24 +676,10 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
-  @ApiStatus.Internal
   @Override
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
-    return createTransaction(transactionContext, transactionOptions);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope) {
-
-    final TransactionOptions transactionOptions = new TransactionOptions();
-    transactionOptions.setCustomSamplingContext(customSamplingContext);
-    transactionOptions.setBindToScope(bindToScope);
-
     return createTransaction(transactionContext, transactionOptions);
   }
 

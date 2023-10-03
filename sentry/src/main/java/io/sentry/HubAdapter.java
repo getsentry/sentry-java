@@ -189,19 +189,6 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
-    return Sentry.startTransaction(transactionContexts);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope) {
-    return Sentry.startTransaction(transactionContexts, customSamplingContext, bindToScope);
-  }
-
-  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {

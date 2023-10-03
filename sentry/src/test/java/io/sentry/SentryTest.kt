@@ -240,7 +240,7 @@ class SentryTest {
             it.tracesSampleRate = 1.0
         }
 
-        val transaction = Sentry.startTransaction("name", "op", "desc")
+        val transaction = Sentry.startTransaction("name", "op", "desc", TransactionOptions())
         assertEquals("name", transaction.name)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
@@ -823,7 +823,7 @@ class SentryTest {
             it.sampleRate = 1.0
         }, true)
 
-        val transaction = Sentry.startTransaction("name", "op-root", true)
+        val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
         transaction.startChild("op-child")
 
         val span = Sentry.getSpan()!!
@@ -840,7 +840,7 @@ class SentryTest {
             it.sampleRate = 1.0
         }, false)
 
-        val transaction = Sentry.startTransaction("name", "op-root", true)
+        val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
         transaction.startChild("op-child")
 
         val span = Sentry.getSpan()!!
@@ -855,7 +855,7 @@ class SentryTest {
             it.sampleRate = 1.0
         }, false)
 
-        val transaction = Sentry.startTransaction("name", "op-root", true)
+        val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
         transaction.startChild("op-child")
 
         val span = Sentry.getSpan()!!

@@ -1497,7 +1497,7 @@ class HubTest {
     fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
         val hub = generateHub()
 
-        hub.startTransaction("name", "op", false)
+        hub.startTransaction("name", "op", TransactionOptions())
 
         hub.configureScope {
             assertNull(it.span)
@@ -1519,7 +1519,7 @@ class HubTest {
     fun `when startTransaction with bindToScope set to true, transaction is attached to the scope`() {
         val hub = generateHub()
 
-        val transaction = hub.startTransaction("name", "op", true)
+        val transaction = hub.startTransaction("name", "op", TransactionOptions().also { it.isBindToScope = true })
 
         hub.configureScope {
             assertEquals(transaction, it.span)
@@ -1595,7 +1595,7 @@ class HubTest {
 
         val sut = Hub(options)
         sut.addBreadcrumb("Test")
-        sut.startTransaction("test", "test.op", true)
+        sut.startTransaction("test", "test.op", TransactionOptions().also { it.isBindToScope = true })
         sut.close()
 
         // we have to clone the scope, so its isEnabled returns true, but it's still built up from
