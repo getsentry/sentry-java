@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
+
 ### Fixes
 
 - SentryOkHttpEvent report exceptions only on the call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
