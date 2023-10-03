@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- SentryOkHttpEvent report exceptions only on the call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
+
 ## 6.30.0
 
 ### Features

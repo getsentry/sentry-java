@@ -1,6 +1,7 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ISentryExecutorService
 import io.sentry.ISpan
@@ -21,6 +22,7 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEAD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
+import io.sentry.exception.SentryHttpClientException
 import io.sentry.test.getProperty
 import okhttp3.Protocol
 import okhttp3.Request
@@ -28,6 +30,7 @@ import okhttp3.Response
 import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -559,6 +562,33 @@ class SentryOkHttpEventTest {
         whenever(fixture.hub.options).thenReturn(SentryOptions().apply { this.executorService = executorService })
         val sut = fixture.getSut()
         sut.scheduleFinish(mock())
+    }
+
+    @Test
+    fun `setClientErrorResponse will capture the client error on finishEvent`() {
+        val sut = fixture.getSut()
+        val clientErrorResponse = mock<Response>()
+        whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+        sut.setClientErrorResponse(clientErrorResponse)
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        sut.finishEvent()
+        verify(fixture.hub).captureEvent(
+            argThat {
+                throwable is SentryHttpClientException &&
+                    throwable!!.message!!.startsWith("HTTP Client Error with status code: ")
+            },
+            argThat<Hint> {
+                get(TypeCheckHint.OKHTTP_REQUEST) != null &&
+                    get(TypeCheckHint.OKHTTP_RESPONSE) != null
+            }
+        )
+    }
+
+    @Test
+    fun `when setClientErrorResponse is not called, no client error is captured`() {
+        val sut = fixture.getSut()
+        sut.finishEvent()
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 
     /** Retrieve all the spans started in the event using reflection. */

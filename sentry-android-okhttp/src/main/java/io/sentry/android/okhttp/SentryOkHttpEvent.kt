@@ -35,6 +35,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     private val breadcrumb: Breadcrumb
     internal val callRootSpan: ISpan?
     private var response: Response? = null
+    private var clientErrorResponse: Response? = null
     private val isReadingResponseBody = AtomicBoolean(false)
 
     init {
@@ -94,6 +95,10 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         }
     }
 
+    fun setClientErrorResponse(response: Response) {
+        this.clientErrorResponse = response
+    }
+
     /** Sets the [errorMessage] if not null. */
     fun setError(errorMessage: String?) {
         if (errorMessage != null) {
@@ -142,6 +147,11 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
             it.finish()
         }
         beforeFinish?.invoke(callRootSpan)
+        // We report the client error here, after all sub-spans finished, so that it will be bound
+        // to the root call span.
+        clientErrorResponse?.let {
+            SentryOkHttpUtils.captureClientError(hub, it.request, it)
+        }
         if (finishDate != null) {
             callRootSpan.finish(callRootSpan.status, finishDate)
         } else {
