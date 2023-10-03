@@ -4317,6 +4317,7 @@ public abstract class io/sentry/transport/TransportResult {
 public final class io/sentry/util/CheckInUtils {
 	public fun <init> ()V
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
+	public static fun withCheckIn (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 }
 
 public final class io/sentry/util/ClassLoaderUtils {
