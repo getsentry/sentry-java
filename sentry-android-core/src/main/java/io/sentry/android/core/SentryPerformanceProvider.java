@@ -6,55 +6,45 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
-import io.sentry.SentryDate;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Process;
+import android.view.View;
+import android.view.Window;
+import androidx.annotation.NonNull;
+import io.sentry.Hint;
+import io.sentry.IHub;
+import io.sentry.Sentry;
+import io.sentry.SpanContext;
+import io.sentry.SpanId;
+import io.sentry.SpanStatus;
+import io.sentry.TracesSamplingDecision;
+import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
+import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.NextDrawListener;
+import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.android.core.performance.WindowContentChangedCallback;
+import io.sentry.protocol.SentrySpan;
+import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.TransactionInfo;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-/**
- * SentryPerformanceProvider is responsible for collecting data (eg appStart) as early as possible
- * as ContentProvider is the only reliable hook for libraries that works across all the supported
- * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis() We could also use
- * AppComponentFactory but it depends on androidx.core.app.AppComponentFactory
- */
 @ApiStatus.Internal
-public final class SentryPerformanceProvider extends EmptySecureContentProvider
-    implements Application.ActivityLifecycleCallbacks {
+public final class SentryPerformanceProvider extends EmptySecureContentProvider {
 
-  // static to rely on Class load
-  private static @NotNull SentryDate appStartTime = AndroidDateUtils.getCurrentSentryDateTime();
-  // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static long appStartMillis = SystemClock.uptimeMillis();
-
-  private boolean firstActivityCreated = false;
-  private boolean firstActivityResumed = false;
-
-  private @Nullable Application application;
-
-  public SentryPerformanceProvider() {
-    AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
-  }
+  private static final long MAX_APP_START_DURATION_MS = 10000;
 
   @Override
   public boolean onCreate() {
-    Context context = getContext();
-
-    if (context == null) {
-      return false;
-    }
-
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
-
-    if (context instanceof Application) {
-      application = ((Application) context);
-      application.registerActivityLifecycleCallbacks(this);
-    }
-
+    onAppLaunched();
     return true;
   }
 
@@ -74,53 +64,182 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
     return null;
   }
 
-  @TestOnly
-  static void setAppStartTime(
-      final long appStartMillisLong, final @NotNull SentryDate appStartTimeDate) {
-    appStartMillis = appStartMillisLong;
-    appStartTime = appStartTimeDate;
+  private void onAppLaunched() {
+    // Process.getStartUptimeMillis() requires N
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
+      return;
+    }
+    final @Nullable Application app = (Application) getContext();
+    if (app == null) {
+      return;
+    }
+
+    final TimeSpan appStartTimespan = AppStartMetrics.getInstance().getAppStartTimespan();
+    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
+
+    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
+    final Handler handler = new Handler(Looper.getMainLooper());
+    final WeakHashMap<Activity, TimeSpan> activityTimeSpans = new WeakHashMap<>();
+
+    app.registerActivityLifecycleCallbacks(
+        new ActivityLifecycleCallbacksAdapter() {
+          @Override
+          public void onActivityPreCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            final TimeSpan timeSpan = new TimeSpan();
+            timeSpan.start();
+            activityTimeSpans.put(activity, timeSpan);
+          }
+
+          @Override
+          public void onActivityPostCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            final @Nullable TimeSpan timeSpan = activityTimeSpans.get(activity);
+            if (timeSpan != null) {
+              timeSpan.stop();
+              timeSpan.setDescription(activity.getClass().getName());
+            }
+          }
+        });
+
+    app.registerActivityLifecycleCallbacks(
+        new ActivityLifecycleCallbacksAdapter() {
+          @Override
+          public void onActivityCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (firstDrawDone.get()) {
+              return;
+            }
+            @Nullable Window window = activity.getWindow();
+            if (window != null) {
+              @Nullable View decorView = window.peekDecorView();
+              if (decorView != null) {
+                new NextDrawListener(
+                        decorView,
+                        () -> {
+                          handler.postAtFrontOfQueue(
+                              () -> {
+                                appStartTimespan.stop();
+                                firstDrawDone.set(true);
+                                onAppStartDone();
+                              });
+                        })
+                    .safelyRegisterForNextDraw();
+              } else {
+                @Nullable Window.Callback oldCallback = window.getCallback();
+                if (oldCallback == null) {
+                  oldCallback = new NoOpWindowCallback();
+                }
+                window.setCallback(
+                    new WindowContentChangedCallback(
+                        oldCallback,
+                        () -> {
+                          @Nullable View newDecorView = window.peekDecorView();
+                          if (newDecorView != null) {
+                            new NextDrawListener(
+                                    newDecorView,
+                                    () -> {
+                                      handler.postAtFrontOfQueue(
+                                          () -> {
+                                            appStartTimespan.stop();
+                                            firstDrawDone.set(true);
+                                            onAppStartDone();
+                                          });
+                                    })
+                                .safelyRegisterForNextDraw();
+                          }
+                        }));
+              }
+            }
+          }
+        });
   }
 
-  @Override
-  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
-    // Hybrid Apps like RN or Flutter init the Android SDK after the MainActivity of the App
-    // has been created, and some frameworks overwrites the behaviour of activity lifecycle
-    // or it's already too late to get the callback for the very first Activity, hence we
-    // register the ActivityLifecycleCallbacks here, since this Provider is always run first.
-    if (!firstActivityCreated) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      final boolean coldStart = savedInstanceState == null;
-      AppStartState.getInstance().setColdStart(coldStart);
+  private synchronized void onAppStartDone() {
+    final @NotNull IHub hub = Sentry.getCurrentHub();
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
 
-      firstActivityCreated = true;
+    if (metrics.getAppStartTimespan().hasNotStopped()) {
+      // discarding invalid measurement
+      return;
     }
+
+    if (metrics.getAppStartTimespan().getDurationMs() > MAX_APP_START_DURATION_MS) {
+      return;
+    }
+
+    // TODO how to determine tracing sampling decision
+    final SpanContext rootContext =
+        new SpanContext("app.start.cold", new TracesSamplingDecision(true));
+    final List<SentrySpan> appStartSpans = new ArrayList<>();
+    final TransactionInfo transactionInfo = new TransactionInfo("auto.performance");
+
+    final List<TimeSpan> contentProviderTimeSpans = metrics.getContentProviderOnCreateTimeSpans();
+    if (!contentProviderTimeSpans.isEmpty()) {
+      final SentrySpan contentProviderRootSpan =
+          new SentrySpan(
+              contentProviderTimeSpans.get(0).getStartTimestampS(),
+              contentProviderTimeSpans
+                  .get(contentProviderTimeSpans.size() - 1)
+                  .getProjectedStopTimestampS(),
+              rootContext.getTraceId(),
+              new SpanId(),
+              rootContext.getSpanId(),
+              "ui.load",
+              "ContentProvider",
+              SpanStatus.OK,
+              null,
+              Collections.emptyMap(),
+              null);
+
+      appStartSpans.add(contentProviderRootSpan);
+      for (TimeSpan timeSpan : contentProviderTimeSpans) {
+        appStartSpans.add(
+            new SentrySpan(
+                timeSpan.getStartTimestampS(),
+                timeSpan.getProjectedStopTimestampS(),
+                rootContext.getTraceId(),
+                new SpanId(),
+                contentProviderRootSpan.getSpanId(),
+                "ui.load",
+                timeSpan.getDescription(),
+                SpanStatus.OK,
+                null,
+                Collections.emptyMap(),
+                null));
+      }
+    }
+
+    final TimeSpan applicationOnCreateTimeSpan = metrics.getApplicationOnCreateTimeSpan();
+    if (applicationOnCreateTimeSpan.hasStopped()) {
+      appStartSpans.add(
+          new SentrySpan(
+              applicationOnCreateTimeSpan.getStartTimestampS(),
+              applicationOnCreateTimeSpan.getProjectedStopTimestampS(),
+              rootContext.getTraceId(),
+              new SpanId(),
+              rootContext.getSpanId(),
+              "ui.load",
+              applicationOnCreateTimeSpan.getDescription(),
+              SpanStatus.OK,
+              null,
+              Collections.emptyMap(),
+              null));
+    }
+
+    final SentryTransaction transaction =
+        new SentryTransaction(
+            "app.start.cold",
+            metrics.getAppStartTimespan().getStartTimestampS(),
+            metrics.getAppStartTimespan().getProjectedStopTimestampS(),
+            appStartSpans,
+            Collections.emptyMap(),
+            transactionInfo);
+    transaction.getContexts().setTrace(rootContext);
+
+    // TODO maybe use an observer pattern instead and notift
+    final Hint hint = new Hint();
+    hub.captureTransaction(transaction, hint);
+    metrics.clear();
   }
-
-  @Override
-  public void onActivityStarted(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivityResumed(@NotNull Activity activity) {
-    if (!firstActivityResumed) {
-      // sets App start as finished when the very first activity calls onResume
-      firstActivityResumed = true;
-      AppStartState.getInstance().setAppStartEnd();
-    }
-    if (application != null) {
-      application.unregisterActivityLifecycleCallbacks(this);
-    }
-  }
-
-  @Override
-  public void onActivityPaused(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivityStopped(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivitySaveInstanceState(@NotNull Activity activity, @NotNull Bundle outState) {}
-
-  @Override
-  public void onActivityDestroyed(@NotNull Activity activity) {}
 }
