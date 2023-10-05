@@ -134,7 +134,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.VALUES:
             List<ProfileMeasurementValue> values =
-                reader.nextList(logger, new ProfileMeasurementValue.Deserializer());
+                reader.nextListOrNull(logger, new ProfileMeasurementValue.Deserializer());
             if (values != null) {
               data.values = values;
             }

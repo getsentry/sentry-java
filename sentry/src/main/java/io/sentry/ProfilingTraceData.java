@@ -556,7 +556,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.TRANSACTION_LIST:
             List<ProfilingTransactionData> transactions =
-                reader.nextList(logger, new ProfilingTransactionData.Deserializer());
+                reader.nextListOrNull(logger, new ProfilingTransactionData.Deserializer());
             if (transactions != null) {
               data.transactions.addAll(transactions);
             }

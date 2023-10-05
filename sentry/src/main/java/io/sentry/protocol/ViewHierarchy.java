@@ -88,7 +88,7 @@ public final class ViewHierarchy implements JsonUnknown, JsonSerializable {
             renderingSystem = reader.nextStringOrNull();
             break;
           case JsonKeys.WINDOWS:
-            windows = reader.nextList(logger, new ViewHierarchyNode.Deserializer());
+            windows = reader.nextListOrNull(logger, new ViewHierarchyNode.Deserializer());
             break;
           default:
             if (unknown == null) {
