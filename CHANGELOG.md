@@ -6,6 +6,10 @@
 
 - Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
 
+### Fixes
+
+- Fixed crash accessing Choreographer instance ([#2970](https://github.com/getsentry/sentry-java/pull/2970))
+
 ## 6.30.0
 
 ### Features
