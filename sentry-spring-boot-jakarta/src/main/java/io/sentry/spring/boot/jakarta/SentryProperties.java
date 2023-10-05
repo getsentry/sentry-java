@@ -2,6 +2,7 @@ package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.SentryOptions;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +40,9 @@ public class SentryProperties extends SentryOptions {
    * io.sentry.spring.jakarta.tracing.SentrySpan}) to successfully compile to GraalVM
    */
   private boolean enableAotCompatibility = false;
+
+  /** Graphql integration properties. */
+  private @NotNull Graphql graphql = new Graphql();
 
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
@@ -98,6 +102,14 @@ public class SentryProperties extends SentryOptions {
 
   public void setEnableAotCompatibility(boolean enableAotCompatibility) {
     this.enableAotCompatibility = enableAotCompatibility;
+  }
+
+  public @NotNull Graphql getGraphql() {
+    return graphql;
+  }
+
+  public void setGraphql(@NotNull Graphql graphql) {
+    this.graphql = graphql;
   }
 
   @Open
@@ -161,6 +173,22 @@ public class SentryProperties extends SentryOptions {
 
     public void setThreadLocalAccessorEnabled(boolean threadLocalAccessorEnabled) {
       this.threadLocalAccessorEnabled = threadLocalAccessorEnabled;
+    }
+  }
+
+  @Open
+  public static class Graphql {
+
+    /** List of error types the Sentry Graphql integration should ignore. */
+    private @NotNull List<String> ignoredErrorTypes = new ArrayList<>();
+
+    @NotNull
+    public List<String> getIgnoredErrorTypes() {
+      return ignoredErrorTypes;
+    }
+
+    public void setIgnoredErrorTypes(final @NotNull List<String> ignoredErrorTypes) {
+      this.ignoredErrorTypes = ignoredErrorTypes;
     }
   }
 }
