@@ -20,5 +20,6 @@
         "669ff1c1-517b-46dc-a889-131555364a56": "89043294-f6e1-4e2e-b152-1fdf9b1102fc"
     },
     "fragment": "fragment",
-    "body_size": 1000
+    "body_size": 1000,
+    "api_target": "graphql"
 }

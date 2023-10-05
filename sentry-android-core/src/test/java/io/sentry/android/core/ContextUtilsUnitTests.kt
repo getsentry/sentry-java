@@ -19,6 +19,7 @@ import org.robolectric.shadows.ShadowBuild
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -83,8 +84,8 @@ class ContextUtilsUnitTests {
     @Test
     fun `isSideLoaded returns true for test context`() {
         val sideLoadedInfo =
-            ContextUtils.getSideLoadedInfo(context, logger, BuildInfoProvider(logger))
-        assertEquals("true", sideLoadedInfo?.get("isSideLoaded"))
+            ContextUtils.retrieveSideLoadedInfo(context, logger, BuildInfoProvider(logger))
+        assertTrue(sideLoadedInfo!!.isSideLoaded)
     }
 
     @Test
@@ -96,9 +97,9 @@ class ContextUtilsUnitTests {
             whenever(mock.packageManager).thenReturn(mockedPackageManager)
         }
         val sideLoadedInfo =
-            ContextUtils.getSideLoadedInfo(mockedContext, logger, BuildInfoProvider(logger))
-        assertEquals("false", sideLoadedInfo?.get("isSideLoaded"))
-        assertEquals("play.google.com", sideLoadedInfo?.get("installerStore"))
+            ContextUtils.retrieveSideLoadedInfo(mockedContext, logger, BuildInfoProvider(logger))
+        assertFalse(sideLoadedInfo!!.isSideLoaded)
+        assertEquals("play.google.com", sideLoadedInfo.installerStore)
     }
 
     @Test

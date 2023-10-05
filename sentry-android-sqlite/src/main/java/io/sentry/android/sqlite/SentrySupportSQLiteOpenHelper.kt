@@ -34,7 +34,7 @@ class SentrySupportSQLiteOpenHelper private constructor(
     private val delegate: SupportSQLiteOpenHelper
 ) : SupportSQLiteOpenHelper by delegate {
 
-    private val sqLiteSpanManager = SQLiteSpanManager()
+    private val sqLiteSpanManager = SQLiteSpanManager(databaseName = delegate.databaseName)
 
     private val sentryWritableDatabase: SupportSQLiteDatabase by lazy {
         SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)

@@ -10,6 +10,8 @@ import io.sentry.ISpan
 import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
@@ -18,6 +20,7 @@ import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpUtils
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
@@ -46,7 +49,7 @@ class SentryOkHttpInterceptor(
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
-    private val failedRequestTargets: List<String> = listOf(".*")
+    private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor, IntegrationName {
 
     constructor() : this(HubAdapter.getInstance())
@@ -78,6 +81,9 @@ class SentryOkHttpInterceptor(
             span = hub.span?.startChild("http.client", "$method $url")
             isFromEventListener = false
         }
+
+        span?.spanContext?.origin = TRACE_ORIGIN
+
         urlDetails.applyToSpan(span)
 
         var response: Response? = null
@@ -85,21 +91,24 @@ class SentryOkHttpInterceptor(
         var code: Int? = null
         try {
             val requestBuilder = request.newBuilder()
-            if (span != null && !span.isNoOp &&
-                PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url.toString())
-            ) {
-                span.toSentryTrace().let {
-                    requestBuilder.addHeader(it.name, it.value)
-                }
 
-                span.toBaggageHeader(request.headers(BaggageHeader.BAGGAGE_HEADER))?.let {
+            TracingUtils.traceIfAllowed(
+                hub,
+                request.url.toString(),
+                request.headers(BaggageHeader.BAGGAGE_HEADER),
+                span
+            )?.let { tracingHeaders ->
+                requestBuilder.addHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
+                tracingHeaders.baggageHeader?.let {
                     requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
                     requestBuilder.addHeader(it.name, it.value)
                 }
             }
+
             request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code
+            span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, code)
             span?.status = SpanStatus.fromHttpStatusCode(code)
 
             // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
@@ -133,7 +142,7 @@ class SentryOkHttpInterceptor(
         val hint = Hint().also { it.set(OKHTTP_REQUEST, request) }
         response?.let {
             it.body?.contentLength().ifHasValidLength { responseBodySize ->
-                breadcrumb.setData("http.response_content_length", responseBodySize)
+                breadcrumb.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, responseBodySize)
             }
 
             hint[OKHTTP_RESPONSE] = it

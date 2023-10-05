@@ -13,7 +13,9 @@ import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
@@ -35,10 +37,20 @@ import org.jetbrains.annotations.Nullable;
 public final class ViewHierarchyEventProcessor implements EventProcessor, IntegrationName {
 
   private final @NotNull SentryAndroidOptions options;
+  private final @NotNull Debouncer debouncer;
+
   private static final long CAPTURE_TIMEOUT_MS = 1000;
+  private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
+  private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
+    this.debouncer =
+        new Debouncer(
+            AndroidCurrentDateProvider.getInstance(),
+            DEBOUNCE_WAIT_TIME_MS,
+            DEBOUNCE_MAX_EXECUTIONS);
+
     if (options.isAttachViewHierarchy()) {
       addIntegrationToSdkVersion();
     }
@@ -56,6 +68,19 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
     }
 
     if (HintUtils.isFromHybridSdk(hint)) {
+      return event;
+    }
+
+    // skip capturing in case of debouncing (=too many frequent capture requests)
+    // the BeforeCaptureCallback may overrules the debouncing decision
+    final boolean shouldDebounce = debouncer.checkForDebounce();
+    final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
+        options.getBeforeViewHierarchyCaptureCallback();
+    if (beforeCaptureCallback != null) {
+      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+        return event;
+      }
+    } else if (shouldDebounce) {
       return event;
     }
 

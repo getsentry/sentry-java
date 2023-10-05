@@ -14,6 +14,9 @@ class ResponseSerializationTest {
             headers = mapOf("content-type" to "text/html")
             statusCode = 500
             bodySize = 1000
+            data = mapOf(
+                "d9d709db-b666-40cc-bcbb-093bb12aad26" to "1631d0e6-96b7-4632-85f8-ef69e8bcfb16"
+            )
             unknown = mapOf("arbitrary_field" to "arbitrary")
         }
     }

@@ -69,7 +69,8 @@ public final class Baggage {
       final @NotNull ILogger logger) {
 
     if (headerValues != null) {
-      return Baggage.fromHeader(String.join(",", headerValues), includeThirdPartyValues, logger);
+      return Baggage.fromHeader(
+          StringUtils.join(",", headerValues), includeThirdPartyValues, logger);
     } else {
       return Baggage.fromHeader((String) null, includeThirdPartyValues, logger);
     }
@@ -118,13 +119,40 @@ public final class Baggage {
       }
     }
     final String thirdPartyHeader =
-        thirdPartyKeyValueStrings.isEmpty() ? null : String.join(",", thirdPartyKeyValueStrings);
+        thirdPartyKeyValueStrings.isEmpty()
+            ? null
+            : StringUtils.join(",", thirdPartyKeyValueStrings);
     return new Baggage(keyValues, thirdPartyHeader, mutable, logger);
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public static Baggage fromEvent(
+      final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
+    final Baggage baggage = new Baggage(options.getLogger());
+    final SpanContext trace = event.getContexts().getTrace();
+    baggage.setTraceId(trace != null ? trace.getTraceId().toString() : null);
+    baggage.setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    baggage.setRelease(event.getRelease());
+    baggage.setEnvironment(event.getEnvironment());
+    final User user = event.getUser();
+    baggage.setUserSegment(user != null ? getSegment(user) : null);
+    baggage.setTransaction(event.getTransaction());
+    // we don't persist sample rate
+    baggage.setSampleRate(null);
+    baggage.setSampled(null);
+    baggage.freeze();
+    return baggage;
   }
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
     this(new HashMap<>(), null, true, logger);
+  }
+
+  @ApiStatus.Internal
+  public Baggage(final @NotNull Baggage baggage) {
+    this(baggage.keyValues, baggage.thirdPartyHeader, baggage.mutable, baggage.logger);
   }
 
   @ApiStatus.Internal
@@ -303,8 +331,18 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @Nullable String getSampled() {
+    return get(DSCKeys.SAMPLED);
+  }
+
+  @ApiStatus.Internal
   public void setSampleRate(final @Nullable String sampleRate) {
     set(DSCKeys.SAMPLE_RATE, sampleRate);
+  }
+
+  @ApiStatus.Internal
+  public void setSampled(final @Nullable String sampled) {
+    set(DSCKeys.SAMPLED, sampled);
   }
 
   @ApiStatus.Internal
@@ -347,6 +385,21 @@ public final class Baggage {
             ? transaction.getName()
             : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+    setSampled(StringUtils.toString(sampled(samplingDecision)));
+  }
+
+  @ApiStatus.Internal
+  public void setValuesFromScope(final @NotNull Scope scope, final @NotNull SentryOptions options) {
+    final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
+    final @Nullable User user = scope.getUser();
+    setTraceId(propagationContext.getTraceId().toString());
+    setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    setRelease(options.getRelease());
+    setEnvironment(options.getEnvironment());
+    setUserSegment(user != null ? getSegment(user) : null);
+    setTransaction(null);
+    setSampleRate(null);
+    setSampled(null);
   }
 
   private static @Nullable String getSegment(final @NotNull User user) {
@@ -378,6 +431,14 @@ public final class Baggage {
     DecimalFormat df =
         new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
     return df.format(sampleRateAsDouble);
+  }
+
+  private static @Nullable Boolean sampled(@Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getSampled();
   }
 
   private static boolean isHighQualityTransactionName(
@@ -418,7 +479,8 @@ public final class Baggage {
               getUserId(),
               getUserSegment(),
               getTransaction(),
-              getSampleRate());
+              getSampleRate(),
+              getSampled());
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -436,6 +498,7 @@ public final class Baggage {
     public static final String USER_SEGMENT = "sentry-user_segment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
+    public static final String SAMPLED = "sentry-sampled";
 
     public static final List<String> ALL =
         Arrays.asList(
@@ -446,6 +509,7 @@ public final class Baggage {
             ENVIRONMENT,
             USER_SEGMENT,
             TRANSACTION,
-            SAMPLE_RATE);
+            SAMPLE_RATE,
+            SAMPLED);
   }
 }

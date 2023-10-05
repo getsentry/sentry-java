@@ -20,6 +20,7 @@ import io.sentry.TransactionOptions;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.internal.gestures.UiElement;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.TracingUtils;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
@@ -32,6 +33,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class SentryGestureListener implements GestureDetector.OnGestureListener {
 
   static final String UI_ACTION = "ui.action";
+  private static final String TRACE_ORIGIN = "auto.ui.gesture_listener";
 
   private final @NotNull WeakReference<Activity> activityRef;
   private final @NotNull IHub hub;
@@ -185,7 +187,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
+    final UiElement uiElement = activeUiElement;
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
+      if (!(target.equals(uiElement) && eventType.equals(activeEventType))) {
+        TracingUtils.startNewTrace(hub);
+        activeUiElement = target;
+        activeEventType = eventType;
+      }
       return;
     }
 
@@ -196,7 +204,6 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final @Nullable String viewIdentifier = target.getIdentifier();
-    final UiElement uiElement = activeUiElement;
 
     if (activeTransaction != null) {
       if (target.equals(uiElement)
@@ -236,6 +243,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final ITransaction transaction =
         hub.startTransaction(
             new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
+
+    transaction.getSpanContext().setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
 
     hub.configureScope(
         scope -> {

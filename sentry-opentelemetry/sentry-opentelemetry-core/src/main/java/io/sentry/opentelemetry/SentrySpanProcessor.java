@@ -18,6 +18,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.PropagationContext;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
@@ -37,6 +38,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentrySpanProcessor implements SpanProcessor {
+
+  private static final String TRACE_ORIGN = "auto.otel";
 
   private final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
@@ -88,6 +91,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
+      sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
       hub.getOptions()
@@ -105,22 +109,14 @@ public final class SentrySpanProcessor implements SpanProcessor {
       final @NotNull TransactionContext transactionContext =
           traceData.getSentryTraceHeader() == null
               ? new TransactionContext(
-                  transactionName,
-                  op,
-                  new SentryId(traceData.getTraceId()),
-                  spanId,
-                  transactionNameSource,
-                  null,
-                  null,
-                  null)
-              : TransactionContext.fromSentryTrace(
-                  transactionName,
-                  transactionNameSource,
-                  op,
-                  traceData.getSentryTraceHeader(),
-                  traceData.getBaggage(),
-                  spanId);
+                  new SentryId(traceData.getTraceId()), spanId, null, null, null)
+              : TransactionContext.fromPropagationContext(
+                  PropagationContext.fromHeaders(
+                      traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
       ;
+      transactionContext.setName(transactionName);
+      transactionContext.setTransactionNameSource(transactionNameSource);
+      transactionContext.setOperation(op);
       transactionContext.setInstrumenter(Instrumenter.OTEL);
 
       TransactionOptions transactionOptions = new TransactionOptions();
@@ -128,6 +124,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
 
       ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
+      sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }

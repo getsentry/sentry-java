@@ -5,10 +5,14 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 
+private const val TRACE_ORIGIN = "auto.db.sqlite"
+
 internal class SQLiteSpanManager(
-    private val hub: IHub = HubAdapter.getInstance()
+    private val hub: IHub = HubAdapter.getInstance(),
+    private val databaseName: String? = null
 ) {
     private val stackTraceFactory = SentryStackTraceFactory(hub.options)
 
@@ -27,6 +31,7 @@ internal class SQLiteSpanManager(
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
         val span = hub.span?.startChild("db.sql.query", sql)
+        span?.spanContext?.origin = TRACE_ORIGIN
         return try {
             val result = operation()
             span?.status = SpanStatus.OK
@@ -38,10 +43,19 @@ internal class SQLiteSpanManager(
         } finally {
             span?.apply {
                 val isMainThread: Boolean = hub.options.mainThreadChecker.isMainThread
-                setData("blocked_main_thread", isMainThread)
+                setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
                 if (isMainThread) {
-                    setData("call_stack", stackTraceFactory.inAppCallStack)
+                    setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
                 }
+                // if db name is null, then it's an in-memory database as per
+                // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:sqlite/sqlite/src/main/java/androidx/sqlite/db/SupportSQLiteOpenHelper.kt;l=38-42
+                if (databaseName != null) {
+                    setData(SpanDataConvention.DB_SYSTEM_KEY, "sqlite")
+                    setData(SpanDataConvention.DB_NAME_KEY, databaseName)
+                } else {
+                    setData(SpanDataConvention.DB_SYSTEM_KEY, "in-memory")
+                }
+
                 finish()
             }
         }

@@ -4,6 +4,7 @@ import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
@@ -336,6 +337,7 @@ class SentrySpringIntegrationTest {
                     val span = transaction.spans.first()
                     assertThat(span.op).isEqualTo("http.client")
                     assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
+                    assertThat(span.data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY)).isEqualTo(200)
                     assertThat(span.status).isEqualTo(SpanStatus.OK)
                 },
                 anyOrNull()

@@ -88,6 +88,82 @@ public final class io/sentry/spring/jakarta/SpringSecuritySentryUserProvider : i
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public abstract interface annotation class io/sentry/spring/jakarta/checkin/SentryCheckIn : java/lang/annotation/Annotation {
+	public abstract fun heartbeat ()Z
+	public abstract fun monitorSlug ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryCheckInAdviceConfiguration {
+	public fun <init> ()V
+	public fun sentryCheckInAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCheckInAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryCheckInPointcutConfiguration {
+	public fun <init> ()V
+	public fun sentryCheckInPointcut ()Lorg/springframework/aop/Pointcut;
+}
+
+public class io/sentry/spring/jakarta/checkin/SentryQuartzConfiguration {
+	public fun <init> ()V
+	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;
+}
+
+public final class io/sentry/spring/jakarta/checkin/SentrySchedulerFactoryBeanCustomizer : org/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer {
+	public fun <init> ()V
+	public fun customize (Lorg/springframework/scheduling/quartz/SchedulerFactoryBean;)V
+}
+
+public final class io/sentry/spring/jakarta/graphql/SentryBatchLoaderRegistry : org/springframework/graphql/execution/BatchLoaderRegistry {
+	public fun forName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun forTypePair (Ljava/lang/Class;Ljava/lang/Class;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun registerDataLoaders (Lorg/dataloader/DataLoaderRegistry;Lgraphql/GraphQLContext;)V
+}
+
+public final class io/sentry/spring/jakarta/graphql/SentryBatchLoaderRegistry$SentryRegistrationSpec : org/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec {
+	public fun <init> (Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;Ljava/lang/Class;Ljava/lang/Class;)V
+	public fun <init> (Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;Ljava/lang/String;)V
+	public fun registerBatchLoader (Ljava/util/function/BiFunction;)V
+	public fun registerMappedBatchLoader (Ljava/util/function/BiFunction;)V
+	public fun withName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun withOptions (Ljava/util/function/Consumer;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+	public fun withOptions (Lorg/dataloader/DataLoaderOptions;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
+}
+
+public final class io/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter : org/springframework/graphql/execution/DataFetcherExceptionResolverAdapter {
+	public fun <init> ()V
+	public fun isThreadLocalContextAware ()Z
+}
+
+public final class io/sentry/spring/jakarta/graphql/SentryDgsSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {
+	public fun <init> ()V
+	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor {
+	public fun <init> ()V
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/jakarta/graphql/SentryGraphqlConfiguration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sourceBuilderCustomizerWebflux ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sourceBuilderCustomizerWebmvc ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+}
+
+public final class io/sentry/spring/jakarta/graphql/SentrySpringSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {
+	public fun <init> ()V
+	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+}
+
 public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
@@ -191,7 +267,7 @@ public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter :
 	protected fun doOnError (Lio/sentry/ITransaction;Ljava/lang/Throwable;)V
 	protected fun maybeStartTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/ITransaction;
 	protected fun shouldTraceRequest (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Z
-	protected fun startTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/ITransaction;
+	protected fun startTransaction (Lio/sentry/IHub;Lorg/springframework/http/server/reactive/ServerHttpRequest;Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 }
 
 public final class io/sentry/spring/jakarta/webflux/ReactorUtils {
@@ -238,6 +314,7 @@ public class io/sentry/spring/jakarta/webflux/SentryWebFilter : io/sentry/spring
 }
 
 public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLocalAccessor : io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter {
+	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }

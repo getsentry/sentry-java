@@ -19,7 +19,10 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.util.TracingUtils
 import java.lang.ref.WeakReference
+
+private const val TRACE_ORIGIN = "auto.navigation"
 
 /**
  * A [NavController.OnDestinationChangedListener] that captures a [Breadcrumb] and starts an
@@ -33,7 +36,8 @@ import java.lang.ref.WeakReference
 class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
-    private val enableNavigationTracing: Boolean = true
+    private val enableNavigationTracing: Boolean = true,
+    private val traceOriginAppendix: String? = null
 ) : NavController.OnDestinationChangedListener, IntegrationName {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
@@ -96,6 +100,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         arguments: Map<String, Any?>
     ) {
         if (!isPerformanceEnabled) {
+            TracingUtils.startNewTrace(hub)
             return
         }
 
@@ -137,6 +142,10 @@ class SentryNavigationListener @JvmOverloads constructor(
             TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
             transactonOptions
         )
+
+        transaction.spanContext.origin = traceOriginAppendix?.let {
+            "$TRACE_ORIGIN.$traceOriginAppendix"
+        } ?: TRACE_ORIGIN
 
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)

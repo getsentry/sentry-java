@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
+import io.sentry.Attachment;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -20,6 +21,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
@@ -27,8 +29,11 @@ import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,8 +191,10 @@ public class AnrV2Integration implements Integration, Closeable {
         return;
       }
 
-      // report the remainder without enriching
-      reportNonEnrichedHistoricalAnrs(exitInfos, lastReportedAnrTimestamp);
+      if (options.isReportHistoricalAnrs()) {
+        // report the remainder without enriching
+        reportNonEnrichedHistoricalAnrs(exitInfos, lastReportedAnrTimestamp);
+      }
 
       // report the latest ANR with enriching, if contexts are available, otherwise report it
       // non-enriched
@@ -228,7 +235,16 @@ public class AnrV2Integration implements Integration, Closeable {
       final boolean isBackground =
           exitInfo.getImportance() != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 
-      final List<SentryThread> threads = parseThreadDump(exitInfo, isBackground);
+      final ParseResult result = parseThreadDump(exitInfo, isBackground);
+      if (result.type == ParseResult.Type.NO_DUMP) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Not reporting ANR event as there was no thread dump for the ANR %s",
+                exitInfo.toString());
+        return;
+      }
       final AnrV2Hint anrHint =
           new AnrV2Hint(
               options.getFlushTimeoutMillis(),
@@ -240,9 +256,24 @@ public class AnrV2Integration implements Integration, Closeable {
       final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
 
       final SentryEvent event = new SentryEvent();
-      event.setThreads(threads);
-      event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
+      if (result.type == ParseResult.Type.ERROR) {
+        final Message sentryMessage = new Message();
+        sentryMessage.setFormatted(
+            "Sentry Android SDK failed to parse system thread dump for "
+                + "this ANR. We recommend enabling [SentryOptions.isAttachAnrThreadDump] option "
+                + "to attach the thread dump as plain text and report this issue on GitHub.");
+        event.setMessage(sentryMessage);
+      } else if (result.type == ParseResult.Type.DUMP) {
+        event.setThreads(result.threads);
+      }
       event.setLevel(SentryLevel.FATAL);
+      event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
+
+      if (options.isAttachAnrThreadDump()) {
+        if (result.dump != null) {
+          hint.setThreadDump(Attachment.fromThreadDump(result.dump));
+        }
+      }
 
       final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
       final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
@@ -259,20 +290,56 @@ public class AnrV2Integration implements Integration, Closeable {
       }
     }
 
-    private @Nullable List<SentryThread> parseThreadDump(
+    private @NotNull ParseResult parseThreadDump(
         final @NotNull ApplicationExitInfo exitInfo, final boolean isBackground) {
-      List<SentryThread> threads = null;
+      InputStream trace;
+      try {
+        trace = exitInfo.getTraceInputStream();
+        if (trace == null) {
+          return new ParseResult(ParseResult.Type.NO_DUMP);
+        }
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", e);
+        return new ParseResult(ParseResult.Type.NO_DUMP);
+      }
+
+      byte[] dump = null;
+      try {
+        dump = getDumpBytes(trace);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to convert ANR thread dump to byte array", e);
+      }
+
       try (final BufferedReader reader =
-          new BufferedReader(new InputStreamReader(exitInfo.getTraceInputStream()))) {
+          new BufferedReader(new InputStreamReader(new ByteArrayInputStream(dump)))) {
         final Lines lines = Lines.readLines(reader);
 
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
-        threads = threadDumpParser.parse(lines);
+        final List<SentryThread> threads = threadDumpParser.parse(lines);
+        if (threads.isEmpty()) {
+          // if the list is empty this means our regex matching is garbage and this is still error
+          return new ParseResult(ParseResult.Type.ERROR, dump);
+        }
+        return new ParseResult(ParseResult.Type.DUMP, dump, threads);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
+        return new ParseResult(ParseResult.Type.ERROR, dump);
+      }
+    }
+
+    private byte[] getDumpBytes(final @NotNull InputStream trace) throws IOException {
+      final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+      int nRead;
+      final byte[] data = new byte[1024];
+
+      while ((nRead = trace.read(data, 0, data.length)) != -1) {
+        buffer.write(data, 0, nRead);
       }
 
-      return threads;
+      return buffer.toByteArray();
     }
   }
 
@@ -311,6 +378,38 @@ public class AnrV2Integration implements Integration, Closeable {
     @Override
     public String mechanism() {
       return isBackgroundAnr ? "anr_background" : "anr_foreground";
+    }
+  }
+
+  static final class ParseResult {
+
+    enum Type {
+      DUMP,
+      NO_DUMP,
+      ERROR
+    }
+
+    final Type type;
+    final byte[] dump;
+    final @Nullable List<SentryThread> threads;
+
+    ParseResult(final @NotNull Type type) {
+      this.type = type;
+      this.dump = null;
+      this.threads = null;
+    }
+
+    ParseResult(final @NotNull Type type, final byte[] dump) {
+      this.type = type;
+      this.dump = dump;
+      this.threads = null;
+    }
+
+    ParseResult(
+        final @NotNull Type type, final byte[] dump, final @Nullable List<SentryThread> threads) {
+      this.type = type;
+      this.dump = dump;
+      this.threads = threads;
     }
   }
 }

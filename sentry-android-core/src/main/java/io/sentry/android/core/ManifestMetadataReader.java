@@ -92,6 +92,10 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_ROOT_CHECK = "io.sentry.enable-root-check";
 
+  static final String ENABLE_SENTRY = "io.sentry.enabled";
+
+  static final String SEND_MODULES = "io.sentry.send-modules";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -157,13 +161,21 @@ final class ManifestMetadataReader {
                 options.getAnrTimeoutIntervalMillis()));
 
         final String dsn = readString(metadata, logger, DSN, options.getDsn());
-        if (dsn == null) {
+        final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
+
+        if (!enabled || (dsn != null && dsn.isEmpty())) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Sentry enabled flag set to false or DSN is empty: disabling sentry-android");
+        } else if (dsn == null) {
           options
               .getLogger()
               .log(SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
-        } else if (dsn.isEmpty()) {
-          options.getLogger().log(SentryLevel.DEBUG, "DSN is empty, disabling sentry-android");
         }
+
+        options.setEnabled(enabled);
         options.setDsn(dsn);
 
         options.setEnableNdk(readBool(metadata, logger, NDK_ENABLE, options.isEnableNdk()));
@@ -346,6 +358,8 @@ final class ManifestMetadataReader {
 
         options.setEnableRootCheck(
             readBool(metadata, logger, ENABLE_ROOT_CHECK, options.isEnableRootCheck()));
+
+        options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
       }
 
       options

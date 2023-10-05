@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -162,6 +163,8 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public @NotNull SentryTraceHeader traceHeaders() {
     return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
   }
@@ -189,4 +192,26 @@ public final class NoOpHub implements IHub {
 
   @Override
   public void reportFullyDisplayed() {}
+
+  @Override
+  public @Nullable TransactionContext continueTrace(
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
+    return null;
+  }
+
+  @Override
+  public @Nullable SentryTraceHeader getTraceparent() {
+    return null;
+  }
+
+  @Override
+  public @Nullable BaggageHeader getBaggage() {
+    return null;
+  }
+
+  @Override
+  @ApiStatus.Experimental
+  public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
+    return SentryId.EMPTY_ID;
+  }
 }

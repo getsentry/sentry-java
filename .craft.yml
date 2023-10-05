@@ -23,6 +23,8 @@ targets:
       maven:io.sentry:sentry:
       maven:io.sentry:sentry-spring:
       maven:io.sentry:sentry-spring-jakarta:
+      maven:io.sentry:sentry-spring-boot:
+      maven:io.sentry:sentry-spring-boot-jakarta:
       maven:io.sentry:sentry-spring-boot-starter:
       maven:io.sentry:sentry-spring-boot-starter-jakarta:
       maven:io.sentry:sentry-servlet:
@@ -46,6 +48,7 @@ targets:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:
+#      maven:io.sentry:sentry-quartz:
       maven:io.sentry:sentry-android-navigation:
       maven:io.sentry:sentry-compose:
       maven:io.sentry:sentry-compose-android:

@@ -3,9 +3,9 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -109,6 +109,16 @@ public final class Request implements JsonUnknown, JsonSerializable {
   /** The fragment (anchor) of the request URL. */
   private @Nullable String fragment;
 
+  /**
+   * The API target/specification that made the request.
+   *
+   * <p>Values can be `graphql`, `rest`, etc.
+   *
+   * <p>The data field should contain the request and response bodies based on its target
+   * specification.
+   */
+  private @Nullable String apiTarget;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -126,6 +136,7 @@ public final class Request implements JsonUnknown, JsonSerializable {
     this.data = request.data;
     this.fragment = request.fragment;
     this.bodySize = request.bodySize;
+    this.apiTarget = request.apiTarget;
   }
 
   public @Nullable String getUrl() {
@@ -220,12 +231,14 @@ public final class Request implements JsonUnknown, JsonSerializable {
         && Objects.equals(headers, request.headers)
         && Objects.equals(env, request.env)
         && Objects.equals(bodySize, request.bodySize)
-        && Objects.equals(fragment, request.fragment);
+        && Objects.equals(fragment, request.fragment)
+        && Objects.equals(apiTarget, request.apiTarget);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(url, method, queryString, cookies, headers, env, bodySize, fragment);
+    return Objects.hash(
+        url, method, queryString, cookies, headers, env, bodySize, fragment, apiTarget);
   }
 
   // region json
@@ -241,6 +254,14 @@ public final class Request implements JsonUnknown, JsonSerializable {
     this.unknown = unknown;
   }
 
+  public @Nullable String getApiTarget() {
+    return apiTarget;
+  }
+
+  public void setApiTarget(final @Nullable String apiTarget) {
+    this.apiTarget = apiTarget;
+  }
+
   public static final class JsonKeys {
     public static final String URL = "url";
     public static final String METHOD = "method";
@@ -252,10 +273,11 @@ public final class Request implements JsonUnknown, JsonSerializable {
     public static final String OTHER = "other";
     public static final String FRAGMENT = "fragment";
     public static final String BODY_SIZE = "body_size";
+    public static final String API_TARGET = "api_target";
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     if (url != null) {
@@ -286,7 +308,10 @@ public final class Request implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.FRAGMENT).value(logger, fragment);
     }
     if (bodySize != null) {
-      writer.name(Response.JsonKeys.BODY_SIZE).value(logger, bodySize);
+      writer.name(JsonKeys.BODY_SIZE).value(logger, bodySize);
+    }
+    if (apiTarget != null) {
+      writer.name(JsonKeys.API_TARGET).value(logger, apiTarget);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -346,8 +371,11 @@ public final class Request implements JsonUnknown, JsonSerializable {
           case JsonKeys.FRAGMENT:
             request.fragment = reader.nextStringOrNull();
             break;
-          case Response.JsonKeys.BODY_SIZE:
+          case JsonKeys.BODY_SIZE:
             request.bodySize = reader.nextLongOrNull();
+            break;
+          case JsonKeys.API_TARGET:
+            request.apiTarget = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {

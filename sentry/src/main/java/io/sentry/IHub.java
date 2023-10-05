@@ -306,7 +306,11 @@ public interface IHub {
   void popScope();
 
   /**
-   * Runs the callback with a new scope which gets dropped at the end
+   * Runs the callback with a new scope which gets dropped at the end. If you're using the Sentry
+   * SDK in globalHubMode (defaults to true on Android) {@link
+   * Sentry#init(Sentry.OptionsConfiguration, boolean)} calling withScope is discouraged, as scope
+   * changes may be dropped when executed in parallel. Use {@link
+   * IHub#configureScope(ScopeCallback)} instead.
    *
    * @param callback the callback
    */
@@ -524,10 +528,13 @@ public interface IHub {
   }
 
   /**
-   * Returns trace header of active transaction or {@code null} if no transaction is active.
+   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
    *
-   * @return trace header or null
+   * @deprecated please use {@link IHub#getTraceparent()} instead.
+   * @return sentry trace header or null
    */
+  @Deprecated
   @Nullable
   SentryTraceHeader traceHeaders();
 
@@ -589,4 +596,38 @@ public interface IHub {
   default void reportFullDisplayed() {
     reportFullyDisplayed();
   }
+
+  /**
+   * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
+   * trace ID and span ID is created.
+   *
+   * @param sentryTrace "sentry-trace" header
+   * @param baggageHeaders "baggage" headers
+   * @return a transaction context for starting a transaction or null if performance is disabled
+   */
+  @Nullable
+  TransactionContext continueTrace(
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders);
+
+  /**
+   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
+   *
+   * @return sentry trace header or null
+   */
+  @Nullable
+  SentryTraceHeader getTraceparent();
+
+  /**
+   * Returns the "baggage" header that allows tracing across services. Can also be used in
+   * &lt;meta&gt; HTML tags. Also see {@link IHub#getTraceparent()}.
+   *
+   * @return baggage header or null
+   */
+  @Nullable
+  BaggageHeader getBaggage();
+
+  @ApiStatus.Experimental
+  @NotNull
+  SentryId captureCheckIn(final @NotNull CheckIn checkIn);
 }

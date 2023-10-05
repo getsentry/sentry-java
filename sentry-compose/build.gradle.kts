@@ -8,7 +8,7 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-    jacoco
+    id(Config.QualityPlugins.kover)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
     id(Config.BuildPlugins.dokkaPluginAlias)
@@ -110,12 +110,6 @@ android {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
         }
-    }
-}
-
-tasks.withType<Test> {
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = false
     }
 }
 

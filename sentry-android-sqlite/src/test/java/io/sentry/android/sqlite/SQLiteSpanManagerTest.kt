@@ -5,6 +5,7 @@ import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.util.thread.IMainThreadChecker
@@ -25,7 +26,7 @@ class SQLiteSpanManagerTest {
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
 
-        fun getSut(isSpanActive: Boolean = true): SQLiteSpanManager {
+        fun getSut(isSpanActive: Boolean = true, databaseName: String? = null): SQLiteSpanManager {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
             }
@@ -35,7 +36,7 @@ class SQLiteSpanManagerTest {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            return SQLiteSpanManager(hub)
+            return SQLiteSpanManager(hub, databaseName)
         }
     }
 
@@ -60,6 +61,7 @@ class SQLiteSpanManagerTest {
         val span = fixture.sentryTracer.children.firstOrNull()
         assertNotNull(span)
         assertEquals("db.sql.query", span.operation)
+        assertEquals("auto.db.sqlite", span.spanContext.origin)
         assertEquals("sql", span.description)
         assertEquals(SpanStatus.OK, span.status)
         assertTrue(span.isFinished)
@@ -100,8 +102,8 @@ class SQLiteSpanManagerTest {
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
 
-        assertFalse(span.getData("blocked_main_thread") as Boolean)
-        assertNull(span.getData("call_stack"))
+        assertFalse(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
+        assertNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
     }
 
     @Test
@@ -114,7 +116,28 @@ class SQLiteSpanManagerTest {
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
 
-        assertTrue(span.getData("blocked_main_thread") as Boolean)
-        assertNotNull(span.getData("call_stack"))
+        assertTrue(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
+        assertNotNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
+    }
+
+    @Test
+    fun `when databaseName is provided, sets system and name as span data`() {
+        val sut = fixture.getSut(databaseName = "tracks.db")
+
+        sut.performSql("sql") {}
+        val span = fixture.sentryTracer.children.first()
+
+        assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "sqlite")
+        assertEquals(span.data[SpanDataConvention.DB_NAME_KEY], "tracks.db")
+    }
+
+    @Test
+    fun `when databaseName is null, sets system to in-memory`() {
+        val sut = fixture.getSut()
+
+        sut.performSql("sql") {}
+        val span = fixture.sentryTracer.children.first()
+
+        assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "in-memory")
     }
 }

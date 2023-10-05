@@ -1,6 +1,7 @@
 package io.sentry.util;
 
 import io.sentry.ISpan;
+import io.sentry.SpanDataConvention;
 import io.sentry.protocol.Request;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -181,10 +182,10 @@ public final class UrlUtils {
       }
 
       if (query != null) {
-        span.setData("http.query", query);
+        span.setData(SpanDataConvention.HTTP_QUERY_KEY, query);
       }
       if (fragment != null) {
-        span.setData("http.fragment", fragment);
+        span.setData(SpanDataConvention.HTTP_FRAGMENT_KEY, fragment);
       }
     }
   }

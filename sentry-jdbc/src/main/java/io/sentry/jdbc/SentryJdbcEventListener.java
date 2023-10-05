@@ -1,5 +1,8 @@
 package io.sentry.jdbc;
 
+import static io.sentry.SpanDataConvention.DB_NAME_KEY;
+import static io.sentry.SpanDataConvention.DB_SYSTEM_KEY;
+
 import com.jakewharton.nopen.annotation.Open;
 import com.p6spy.engine.common.StatementInformation;
 import com.p6spy.engine.event.SimpleJdbcEventListener;
@@ -17,8 +20,12 @@ import org.jetbrains.annotations.Nullable;
 /** P6Spy JDBC event listener that creates {@link Span}s around database queries. */
 @Open
 public class SentryJdbcEventListener extends SimpleJdbcEventListener {
+  private static final String TRACE_ORIGIN = "auto.db.jdbc";
   private final @NotNull IHub hub;
   private static final @NotNull ThreadLocal<ISpan> CURRENT_SPAN = new ThreadLocal<>();
+
+  private volatile @Nullable DatabaseUtils.DatabaseDetails cachedDatabaseDetails = null;
+  private final @NotNull Object databaseDetailsLock = new Object();
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -35,6 +42,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
     if (parent != null && !parent.isNoOp()) {
       final ISpan span = parent.startChild("db.query", statementInformation.getSql());
       CURRENT_SPAN.set(span);
+      span.getSpanContext().setOrigin(TRACE_ORIGIN);
     }
   }
 
@@ -44,7 +52,10 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       long timeElapsedNanos,
       final @Nullable SQLException e) {
     final ISpan span = CURRENT_SPAN.get();
+
     if (span != null) {
+      applyDatabaseDetailsToSpan(statementInformation, span);
+
       if (e != null) {
         span.setThrowable(e);
         span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -60,5 +71,32 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
     SentryIntegrationPackageStorage.getInstance().addIntegration("JDBC");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
+  }
+
+  private void applyDatabaseDetailsToSpan(
+      final @NotNull StatementInformation statementInformation, final @NotNull ISpan span) {
+    final @NotNull DatabaseUtils.DatabaseDetails databaseDetails =
+        getOrComputeDatabaseDetails(statementInformation);
+
+    if (databaseDetails.getDbSystem() != null) {
+      span.setData(DB_SYSTEM_KEY, databaseDetails.getDbSystem());
+    }
+
+    if (databaseDetails.getDbName() != null) {
+      span.setData(DB_NAME_KEY, databaseDetails.getDbName());
+    }
+  }
+
+  private @NotNull DatabaseUtils.DatabaseDetails getOrComputeDatabaseDetails(
+      final @NotNull StatementInformation statementInformation) {
+    if (cachedDatabaseDetails == null) {
+      synchronized (databaseDetailsLock) {
+        if (cachedDatabaseDetails == null) {
+          cachedDatabaseDetails = DatabaseUtils.readFrom(statementInformation);
+        }
+      }
+    }
+
+    return cachedDatabaseDetails;
   }
 }

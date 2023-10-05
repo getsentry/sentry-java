@@ -264,4 +264,8 @@ public interface ISentryClient {
   default @NotNull SentryId captureTransaction(@NotNull SentryTransaction transaction) {
     return captureTransaction(transaction, null, null, null);
   }
+
+  @NotNull
+  @ApiStatus.Experimental
+  SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable Scope scope, @Nullable Hint hint);
 }

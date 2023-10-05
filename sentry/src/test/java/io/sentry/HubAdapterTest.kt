@@ -73,6 +73,12 @@ class HubAdapterTest {
         verify(hub).captureUserFeedback(eq(userFeedback))
     }
 
+    @Test fun `captureCheckIn calls Hub`() {
+        val checkIn = mock<CheckIn>()
+        HubAdapter.getInstance().captureCheckIn(checkIn)
+        verify(hub).captureCheckIn(eq(checkIn))
+    }
+
     @Test fun `startSession calls Hub`() {
         HubAdapter.getInstance().startSession()
         verify(hub).startSession()

@@ -30,7 +30,6 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryExceptionFactory;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -68,12 +67,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 @WorkerThread
 public final class AnrV2EventProcessor implements BackfillingEventProcessor {
-
-  /**
-   * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
-   * SentryOptions} do not have the environment field set.
-   */
-  static final String DEFAULT_ENVIRONMENT = "production";
 
   private final @NotNull Context context;
 
@@ -152,8 +145,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setTrace(final @NotNull SentryEvent event) {
     final SpanContext spanContext =
         PersistingScopeObserver.read(options, TRACE_FILENAME, SpanContext.class);
-    if (event.getContexts().getTrace() == null && spanContext != null) {
-      event.getContexts().setTrace(spanContext);
+    if (event.getContexts().getTrace() == null) {
+      if (spanContext != null
+          && spanContext.getSpanId() != null
+          && spanContext.getTraceId() != null) {
+        event.getContexts().setTrace(spanContext);
+      }
     }
   }
 
@@ -190,8 +187,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
     final Contexts eventContexts = event.getContexts();
     for (Map.Entry<String, Object> entry : new Contexts(persistedContexts).entrySet()) {
+      final Object value = entry.getValue();
+      if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
+        // we fill it in setTrace later on
+        continue;
+      }
       if (!eventContexts.containsKey(entry.getKey())) {
-        eventContexts.put(entry.getKey(), entry.getValue());
+        eventContexts.put(entry.getKey(), value);
       }
     }
   }
@@ -328,7 +330,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     if (event.getEnvironment() == null) {
       final String environment =
           PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
-      event.setEnvironment(environment != null ? environment : DEFAULT_ENVIRONMENT);
+      event.setEnvironment(environment != null ? environment : options.getEnvironment());
     }
   }
 
@@ -446,7 +448,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
     // and make an exception out of its stacktrace
     final Mechanism mechanism = new Mechanism();
-    mechanism.setType("AppExitInfo");
+    if (!((Backfillable) hint).shouldEnrich()) {
+      // we only enrich the latest ANR in the list, so this is historical
+      mechanism.setType("HistoricalAppExitInfo");
+    } else {
+      mechanism.setType("AppExitInfo");
+    }
 
     final boolean isBackgroundAnr = isBackgroundAnr(hint);
     String message = "ANR";
@@ -510,11 +517,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
-      final Map<String, String> sideLoadedInfo =
-          ContextUtils.getSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+      final ContextUtils.SideLoadedInfo sideLoadedInfo =
+          ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
 
       if (sideLoadedInfo != null) {
-        for (final Map.Entry<String, String> entry : sideLoadedInfo.entrySet()) {
+        final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
+        for (Map.Entry<String, String> entry : tags.entrySet()) {
           event.setTag(entry.getKey(), entry.getValue());
         }
       }

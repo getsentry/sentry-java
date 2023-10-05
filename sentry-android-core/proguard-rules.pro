@@ -37,4 +37,16 @@
 # Also keep method names, as they're e.g. used by native via JNI calls
 -keep class * extends io.sentry.SentryOptions { *; }
 
+-keepnames class io.sentry.android.core.ApplicationNotResponding
+
 ##---------------End: proguard configuration for android-core  ----------
+
+##---------------Begin: proguard configuration for sentry-apollo-3  ----------
+
+# don't warn about missing classes, as it depends on the sentry-apollo-3 jar dependency.
+-dontwarn io.sentry.apollo3.SentryApollo3ClientException
+
+# we don't want this class to be obfuscated, otherwise issue's titles are obfuscated as well.
+-keep class io.sentry.apollo3.SentryApollo3ClientException { <init>(...); }
+
+##---------------End: proguard configuration for sentry-apollo-3  ----------

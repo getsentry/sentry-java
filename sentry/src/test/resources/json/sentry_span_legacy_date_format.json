@@ -7,6 +7,7 @@
   "op": "42e6bd1a-c45e-414d-8066-ed5196fbc686",
   "description": "b026345e-ecd1-4555-8d6c-cd6d9f865c89",
   "status": "already_exists",
+  "origin": "auto.test.unit.span",
   "tags":
   {
     "f1333f3a-916a-47b7-8dd6-d6d15fa96e03": "d4a07684-5b3e-4d08-b605-f9364c398124"

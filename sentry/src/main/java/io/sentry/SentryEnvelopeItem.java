@@ -87,7 +87,8 @@ public final class SentryEnvelopeItem {
         new SentryEnvelopeItemHeader(
             SentryItemType.Session, () -> cachedItem.getBytes().length, "application/json", null);
 
-    // Don't use method reference. This can cause issues on Android
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -124,7 +125,8 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
-    // Don't use method reference. This can cause issues on Android
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -161,7 +163,32 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
-    // Don't use method reference. This can cause issues on Android
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromCheckIn(
+      final @NotNull ISerializer serializer, final @NotNull CheckIn checkIn) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(checkIn, "CheckIn is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(checkIn, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.CheckIn, () -> cachedItem.getBytes().length, "application/json", null);
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -206,7 +233,8 @@ public final class SentryEnvelopeItem {
             attachment.getFilename(),
             attachment.getAttachmentType());
 
-    // Don't use method reference. This can cause issues on Android
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -271,7 +299,8 @@ public final class SentryEnvelopeItem {
             "application-json",
             traceFile.getName());
 
-    // Don't use method reference. This can cause issues on Android
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
@@ -340,7 +369,8 @@ public final class SentryEnvelopeItem {
             "application/json",
             null);
 
-    // Don't use method reference. This can cause issues on Android
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 

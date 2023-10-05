@@ -145,6 +145,8 @@ public final class RateLimiter {
         return DataCategory.Session;
       case "attachment":
         return DataCategory.Attachment;
+      case "profile":
+        return DataCategory.Profile;
       case "transaction":
         return DataCategory.Transaction;
       default:

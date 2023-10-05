@@ -18,6 +18,7 @@ public enum SentryItemType implements JsonSerializable {
   ClientReport("client_report"),
   ReplayEvent("replay_event"),
   ReplayRecording("replay_recording"),
+  CheckIn("check_in"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
@@ -54,7 +55,7 @@ public enum SentryItemType implements JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.value(itemType);
   }

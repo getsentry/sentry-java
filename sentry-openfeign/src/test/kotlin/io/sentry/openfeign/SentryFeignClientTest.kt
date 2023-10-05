@@ -8,9 +8,12 @@ import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import okhttp3.mockwebserver.MockResponse
@@ -18,6 +21,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -39,9 +43,11 @@ class SentryFeignClientTest {
         val sentryOptions = SentryOptions().apply {
             dsn = "http://key@localhost/proj"
         }
+        val scope = Scope(sentryOptions)
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
         }
 
@@ -113,8 +119,18 @@ class SentryFeignClientTest {
     }
 
     @Test
-    fun `when there is no active span, does not add sentry trace header to the request`() {
-        fixture.sentryOptions.isTraceSampling = true
+    fun `when there is no active span, adds sentry trace header to the request from scope`() {
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+        val sut = fixture.getSut(isSpanActive = false)
+        sut.getOk()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is no active span, does not add sentry trace header to the request if host is disallowed`() {
+        fixture.sentryOptions.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut(isSpanActive = false)
         sut.getOk()
@@ -150,7 +166,10 @@ class SentryFeignClientTest {
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("http.client", httpClientSpan.operation)
         assertEquals("GET ${fixture.server.url("/status/200")}", httpClientSpan.description)
+        assertEquals(201, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+        assertEquals("GET", httpClientSpan.data[SpanDataConvention.HTTP_METHOD_KEY])
         assertEquals(SpanStatus.OK, httpClientSpan.status)
+        assertEquals("auto.http.openfeign", httpClientSpan.spanContext.origin)
         assertTrue(httpClientSpan.isFinished)
     }
 
@@ -161,6 +180,7 @@ class SentryFeignClientTest {
             sut.getOk()
         } catch (e: FeignException) {
             val httpClientSpan = fixture.sentryTracer.children.first()
+            assertEquals(400, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             assertEquals(SpanStatus.INVALID_ARGUMENT, httpClientSpan.status)
         }
     }
@@ -172,6 +192,7 @@ class SentryFeignClientTest {
             sut.getOk()
         } catch (e: FeignException) {
             val httpClientSpan = fixture.sentryTracer.children.first()
+            assertEquals(502, httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
             assertNull(httpClientSpan.status)
         }
     }
@@ -234,6 +255,7 @@ class SentryFeignClientTest {
             // ignore
         }
         val httpClientSpan = fixture.sentryTracer.children.first()
+        assertNull(httpClientSpan.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
         assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
         assertTrue(httpClientSpan.throwable is Exception)
     }

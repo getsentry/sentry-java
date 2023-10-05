@@ -11,22 +11,24 @@ import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
-import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.TracingUtils;
 import io.sentry.util.UrlUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** A Feign client that creates a span around each executed HTTP call. */
 public final class SentryFeignClient implements Client {
+  private static final String TRACE_ORIGIN = "auto.http.openfeign";
   private final @NotNull Client delegate;
   private final @NotNull IHub hub;
   private final @Nullable BeforeSpanCallback beforeSpan;
@@ -46,36 +48,26 @@ public final class SentryFeignClient implements Client {
     Response response = null;
     try {
       final ISpan activeSpan = hub.getSpan();
+
       if (activeSpan == null) {
-        return delegate.execute(request, options);
+        final @NotNull Request modifiedRequest = maybeAddTracingHeaders(request, null);
+        return delegate.execute(modifiedRequest, options);
       }
 
       ISpan span = activeSpan.startChild("http.client");
+      span.getSpanContext().setOrigin(TRACE_ORIGIN);
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
-      span.setDescription(request.httpMethod().name() + " " + urlDetails.getUrlOrFallback());
+      final @NotNull String method = request.httpMethod().name();
+      span.setDescription(method + " " + urlDetails.getUrlOrFallback());
+      span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
       urlDetails.applyToSpan(span);
 
-      final RequestWrapper requestWrapper = new RequestWrapper(request);
-
-      if (!span.isNoOp()
-          && PropagationTargetsUtils.contain(
-              hub.getOptions().getTracePropagationTargets(), request.url())) {
-        final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-        final @Nullable Collection<String> requestBaggageHeader =
-            request.headers().get(BaggageHeader.BAGGAGE_HEADER);
-        final @Nullable BaggageHeader baggageHeader =
-            span.toBaggageHeader(
-                requestBaggageHeader != null ? new ArrayList<>(requestBaggageHeader) : null);
-        requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-        if (baggageHeader != null) {
-          requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
-          requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
-        }
-      }
+      final @NotNull Request modifiedRequest = maybeAddTracingHeaders(request, span);
 
       try {
-        response = delegate.execute(requestWrapper.build(), options);
+        response = delegate.execute(modifiedRequest, options);
         // handles both success and error responses
+        span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.status());
         span.setStatus(SpanStatus.fromHttpStatusCode(response.status()));
         return response;
       } catch (Throwable e) {
@@ -100,6 +92,34 @@ public final class SentryFeignClient implements Client {
     } finally {
       addBreadcrumb(request, response);
     }
+  }
+
+  private @NotNull Request maybeAddTracingHeaders(
+      final @NotNull Request request, final @Nullable ISpan span) {
+    final @NotNull RequestWrapper requestWrapper = new RequestWrapper(request);
+    final @Nullable Collection<String> requestBaggageHeaders =
+        request.headers().get(BaggageHeader.BAGGAGE_HEADER);
+
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.traceIfAllowed(
+            hub,
+            request.url(),
+            (requestBaggageHeaders != null ? new ArrayList<>(requestBaggageHeaders) : null),
+            span);
+
+    if (tracingHeaders != null) {
+      requestWrapper.header(
+          tracingHeaders.getSentryTraceHeader().getName(),
+          tracingHeaders.getSentryTraceHeader().getValue());
+
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
+        requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
+      }
+    }
+
+    return requestWrapper.build();
   }
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {

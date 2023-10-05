@@ -29,6 +29,8 @@ dependencies {
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
+    compileOnly(Config.Libs.springBoot3StarterGraphql)
+    compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
@@ -41,9 +43,12 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(projects.sentryGraphql)
+    compileOnly(projects.sentryQuartz)
 
     // tests
     testImplementation(projects.sentryTestSupport)
+    testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
@@ -53,8 +58,10 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
+    testImplementation(Config.Libs.springBoot3StarterGraphql)
     testImplementation(Config.Libs.contextPropagation)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.Libs.graphQlJava)
 }
 
 tasks.withType<KotlinCompile> {

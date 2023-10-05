@@ -128,6 +128,9 @@ public final class io/sentry/android/core/BuildInfoProvider {
 	public fun isEmulator ()Ljava/lang/Boolean;
 }
 
+public final class io/sentry/android/core/ContextUtils {
+}
+
 public class io/sentry/android/core/CurrentActivityHolder {
 	public fun clearActivity ()V
 	public fun getActivity ()Landroid/app/Activity;
@@ -148,6 +151,15 @@ public final class io/sentry/android/core/CurrentActivityIntegration : android/a
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/DeviceInfoUtil {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun collectDeviceInformation (ZZ)Lio/sentry/protocol/Device;
+	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
+	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
+	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public static fun resetInstance ()V
+}
+
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> ()V
 	public fun close ()V
@@ -158,6 +170,13 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
+}
+
+public final class io/sentry/android/core/InternalSentrySdk {
+	public fun <init> ()V
+	public static fun captureEnvelope ([B)Lio/sentry/protocol/SentryId;
+	public static fun getCurrentScope ()Lio/sentry/Scope;
+	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/Scope;)Ljava/util/Map;
 }
 
 public final class io/sentry/android/core/LoadClass {
@@ -207,6 +226,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun <init> ()V
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrTimeoutIntervalMillis ()J
+	public fun getBeforeScreenshotCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
+	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getProfilingTracesHz ()I
@@ -214,6 +235,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
+	public fun isAttachAnrThreadDump ()Z
 	public fun isAttachScreenshot ()Z
 	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
@@ -226,11 +248,15 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableNetworkEventBreadcrumbs ()Z
 	public fun isEnableRootCheck ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
+	public fun isReportHistoricalAnrs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
+	public fun setAttachAnrThreadDump (Z)V
 	public fun setAttachScreenshot (Z)V
 	public fun setAttachViewHierarchy (Z)V
+	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
+	public fun setBeforeViewHierarchyCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setCollectAdditionalContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
@@ -245,6 +271,11 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
+	public fun setReportHistoricalAnrs (Z)V
+}
+
+public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {
+	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;Z)Z
 }
 
 public final class io/sentry/android/core/SentryInitProvider {

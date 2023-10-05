@@ -20,6 +20,9 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBoot3StarterSecurity)
     implementation(Config.Libs.springBoot3StarterWeb)
+    implementation(Config.Libs.springBoot3StarterWebsocket)
+    implementation(Config.Libs.springBoot3StarterGraphql)
+    implementation(Config.Libs.springBoot3StarterQuartz)
     implementation(Config.Libs.springBoot3StarterWebflux)
     implementation(Config.Libs.springBoot3StarterAop)
     implementation(Config.Libs.aspectj)
@@ -29,6 +32,8 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
+    implementation(projects.sentryGraphql)
+    implementation(projects.sentryQuartz)
 
     // database query tracing
     implementation(projects.sentryJdbc)

@@ -4,9 +4,9 @@ import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectWriter;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryTracer;
 import io.sentry.Span;
@@ -86,7 +86,8 @@ public final class SentryTransaction extends SentryBaseEvent
             tracerContext.getOperation(),
             tracerContext.getDescription(),
             tracerContext.getSamplingDecision(),
-            tracerContext.getStatus()));
+            tracerContext.getStatus(),
+            tracerContext.getOrigin()));
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());
     }
@@ -181,7 +182,7 @@ public final class SentryTransaction extends SentryBaseEvent
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     if (transaction != null) {

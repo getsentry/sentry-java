@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 'Set up Java: 17'
         uses: actions/setup-java@v3
@@ -44,7 +44,7 @@ jobs:
         run: make stop
 
       - name: Run Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@f401339df4c4b84945783f16b45fd545ac52a2eb # pin@v3
+        uses: saucelabs/saucectl-run-action@52ca363cd023900b9867b49abf5791c5ab7eafa9 # pin@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

@@ -6,6 +6,7 @@ import androidx.lifecycle.Lifecycle.Event.ON_STOP
 import androidx.lifecycle.LifecycleRegistry
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.CheckIn
 import io.sentry.Hint
 import io.sentry.ISentryClient
 import io.sentry.ProfilingTraceData
@@ -160,6 +161,10 @@ class SessionTrackingIntegrationTest {
             hint: Hint?,
             profilingTraceData: ProfilingTraceData?
         ): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureCheckIn(checkIn: CheckIn, scope: Scope?, hint: Hint?): SentryId {
             TODO("Not yet implemented")
         }
     }

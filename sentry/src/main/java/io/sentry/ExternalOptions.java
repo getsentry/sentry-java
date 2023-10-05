@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,6 +43,12 @@ public final class ExternalOptions {
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
+  private @Nullable Boolean enabled;
+  private @Nullable Boolean enablePrettySerializationOutput;
+
+  private @Nullable List<String> ignoredCheckIns;
+
+  private @Nullable Boolean sendModules;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -114,6 +121,15 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
+
+    options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
+
+    options.setEnablePrettySerializationOutput(
+        propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
+
+    options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
+
+    options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -346,5 +362,40 @@ public final class ExternalOptions {
 
   public void addBundleId(final @NotNull String bundleId) {
     bundleIds.add(bundleId);
+  }
+
+  public @Nullable Boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(final @Nullable Boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  public @Nullable Boolean isEnablePrettySerializationOutput() {
+    return enablePrettySerializationOutput;
+  }
+
+  public void setEnablePrettySerializationOutput(
+      final @Nullable Boolean enablePrettySerializationOutput) {
+    this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
+  public @Nullable Boolean isSendModules() {
+    return sendModules;
+  }
+
+  public void setSendModules(final @Nullable Boolean sendModules) {
+    this.sendModules = sendModules;
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
+    this.ignoredCheckIns = ignoredCheckIns;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable List<String> getIgnoredCheckIns() {
+    return ignoredCheckIns;
   }
 }

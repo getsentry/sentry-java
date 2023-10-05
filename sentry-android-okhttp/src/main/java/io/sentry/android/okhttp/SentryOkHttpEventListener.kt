@@ -2,6 +2,7 @@ package io.sentry.android.okhttp
 
 import io.sentry.HubAdapter
 import io.sentry.IHub
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import okhttp3.Call
 import okhttp3.Connection
@@ -310,10 +311,14 @@ class SentryOkHttpEventListener(
         }
         val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
         okHttpEvent.setResponse(response)
-        okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
-            it.setData("status_code", response.code)
-            it.status = SpanStatus.fromHttpStatusCode(response.code)
+        val responseHeadersSpan = okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
+            it.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.code)
+            // Let's not override the status of a span that was set
+            if (it.status == null) {
+                it.status = SpanStatus.fromHttpStatusCode(response.code)
+            }
         }
+        okHttpEvent.scheduleFinish(responseHeadersSpan?.finishDate ?: hub.options.dateProvider.now())
     }
 
     override fun responseBodyStart(call: Call) {
@@ -334,7 +339,7 @@ class SentryOkHttpEventListener(
         okHttpEvent.setResponseBodySize(byteCount)
         okHttpEvent.finishSpan(RESPONSE_BODY_EVENT) {
             if (byteCount > 0) {
-                it.setData("http.response_content_length", byteCount)
+                it.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, byteCount)
             }
         }
     }
@@ -377,6 +382,26 @@ class SentryOkHttpEventListener(
             it.status = SpanStatus.INTERNAL_ERROR
             it.throwable = ioe
         }
+    }
+
+    override fun canceled(call: Call) {
+        originalEventListener?.canceled(call)
+    }
+
+    override fun satisfactionFailure(call: Call, response: Response) {
+        originalEventListener?.satisfactionFailure(call, response)
+    }
+
+    override fun cacheHit(call: Call, response: Response) {
+        originalEventListener?.cacheHit(call, response)
+    }
+
+    override fun cacheMiss(call: Call) {
+        originalEventListener?.cacheMiss(call)
+    }
+
+    override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
+        originalEventListener?.cacheConditionalHit(call, cachedResponse)
     }
 
     private fun canCreateEventSpan(): Boolean {

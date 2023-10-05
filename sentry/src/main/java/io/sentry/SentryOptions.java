@@ -44,6 +44,8 @@ import org.jetbrains.annotations.TestOnly;
 @Open
 public class SentryOptions {
 
+  @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
+
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
@@ -358,7 +360,7 @@ public class SentryOptions {
   private @Nullable List<String> tracePropagationTargets = null;
 
   private final @NotNull List<String> defaultTracePropagationTargets =
-      Collections.singletonList(".*");
+      Collections.singletonList(DEFAULT_PROPAGATION_TARGETS);
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -431,6 +433,18 @@ public class SentryOptions {
   /** Screen fully displayed reporter, used for time-to-full-display spans. */
   private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
+
+  /** Whether Sentry should be enabled */
+  private boolean enabled = true;
+
+  /** Whether to format serialized data, e.g. events logged to console in debug mode */
+  private boolean enablePrettySerializationOutput = true;
+
+  /** Whether to send modules containing information about versions. */
+  private boolean sendModules = true;
+
+  /** Contains a list of monitor slugs for which check-ins should not be sent. */
+  @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
   /**
    * Adds an event processor
@@ -1781,7 +1795,7 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
     if (tracePropagationTargets == null) {
-      this.tracePropagationTargets = tracePropagationTargets;
+      this.tracePropagationTargets = null;
     } else {
       @NotNull final List<String> filteredTracePropagationTargets = new ArrayList<>();
       for (String target : tracePropagationTargets) {
@@ -2094,6 +2108,81 @@ public class SentryOptions {
     this.traceOptionsRequests = traceOptionsRequests;
   }
 
+  /**
+   * Whether Sentry is enabled.
+   *
+   * @return true if Sentry should be enabled
+   */
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  /**
+   * Whether Sentry should be enabled.
+   *
+   * @param enabled true if Sentry should be enabled
+   */
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  /**
+   * Whether to format serialized data, e.g. events logged to console in debug mode
+   *
+   * @return true if data should be pretty printed
+   */
+  public boolean isEnablePrettySerializationOutput() {
+    return enablePrettySerializationOutput;
+  }
+
+  /**
+   * Whether to send modules containing information about versions.
+   *
+   * @return true if modules should be sent.
+   */
+  public boolean isSendModules() {
+    return sendModules;
+  }
+
+  /**
+   * Whether to format serialized data, e.g. events logged to console in debug mode
+   *
+   * @param enablePrettySerializationOutput true if output should be pretty printed
+   */
+  public void setEnablePrettySerializationOutput(boolean enablePrettySerializationOutput) {
+    this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
+  /**
+   * Whether to send modules containing information about versions.
+   *
+   * @param sendModules true if modules should be sent.
+   */
+  public void setSendModules(boolean sendModules) {
+    this.sendModules = sendModules;
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
+    if (ignoredCheckIns == null) {
+      this.ignoredCheckIns = null;
+    } else {
+      @NotNull final List<String> filteredIgnoredCheckIns = new ArrayList<>();
+      for (String slug : ignoredCheckIns) {
+        if (!slug.isEmpty()) {
+          filteredIgnoredCheckIns.add(slug);
+        }
+      }
+
+      this.ignoredCheckIns = filteredIgnoredCheckIns;
+    }
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable List<String> getIgnoredCheckIns() {
+    return ignoredCheckIns;
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -2330,6 +2419,21 @@ public class SentryOptions {
     }
     for (String bundleId : options.getBundleIds()) {
       addBundleId(bundleId);
+    }
+
+    if (options.isEnabled() != null) {
+      setEnabled(options.isEnabled());
+    }
+    if (options.isEnablePrettySerializationOutput() != null) {
+      setEnablePrettySerializationOutput(options.isEnablePrettySerializationOutput());
+    }
+
+    if (options.isSendModules() != null) {
+      setSendModules(options.isSendModules());
+    }
+    if (options.getIgnoredCheckIns() != null) {
+      final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
+      setIgnoredCheckIns(ignoredCheckIns);
     }
   }
 

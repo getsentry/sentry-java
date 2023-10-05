@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.Iterator;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -155,5 +156,63 @@ public final class StringUtils {
       return PROPER_NIL_UUID;
     }
     return uuidString;
+  }
+
+  /**
+   * Returns a new String joining together given strings using the given delimiter.
+   *
+   * @param delimiter the delimiter that separates elements
+   * @param elements the elements that should be joined together
+   * @return a new String with elements joined using delimiter
+   */
+  public static String join(
+      final @NotNull CharSequence delimiter,
+      final @NotNull Iterable<? extends CharSequence> elements) {
+    final @NotNull StringBuilder stringBuilder = new StringBuilder();
+    final @NotNull Iterator<? extends CharSequence> iterator = elements.iterator();
+
+    if (iterator.hasNext()) {
+      stringBuilder.append(iterator.next());
+      while (iterator.hasNext()) {
+        stringBuilder.append(delimiter);
+        stringBuilder.append(iterator.next());
+      }
+    }
+
+    return stringBuilder.toString();
+  }
+
+  public static @Nullable String toString(final @Nullable Object object) {
+    if (object == null) {
+      return null;
+    }
+
+    return object.toString();
+  }
+
+  public static @NotNull String removePrefix(
+      final @Nullable String string, final @NotNull String prefix) {
+    if (string == null) {
+      return "";
+    }
+    final int index = string.indexOf(prefix);
+    if (index == 0) {
+      return string.substring(prefix.length());
+    } else {
+      return string;
+    }
+  }
+
+  public static @NotNull String substringBefore(
+      final @Nullable String string, final @NotNull String separator) {
+    if (string == null) {
+      return "";
+    }
+    final int index = string.indexOf(separator);
+    if (index >= 0) {
+      return string.substring(0, index);
+    } else {
+      return string;
+    }
   }
 }

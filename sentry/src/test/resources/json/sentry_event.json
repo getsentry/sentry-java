@@ -231,6 +231,10 @@
             },
             "status_code": 500,
             "body_size": 1000,
+            "data":
+            {
+              "d9d709db-b666-40cc-bcbb-093bb12aad26": "1631d0e6-96b7-4632-85f8-ef69e8bcfb16"
+            },
             "arbitrary_field": "arbitrary"
         },
         "runtime":
@@ -247,6 +251,7 @@
             "op": "e481581d-35a4-4e97-8a1c-b554bf49f23e",
             "description": "c204b6c7-9753-4d45-927d-b19789bfc9a5",
             "status": "resource_exhausted",
+            "origin": "auto.test.unit.spancontext",
             "tags":
             {
                 "2a5fa3f5-7b87-487f-aaa5-84567aa73642": "4781d51a-c5af-47f2-a4ed-f030c9b3e194",
@@ -295,7 +300,8 @@
             "669ff1c1-517b-46dc-a889-131555364a56": "89043294-f6e1-4e2e-b152-1fdf9b1102fc"
         },
         "fragment": "fragment",
-        "body_size": 1000
+        "body_size": 1000,
+        "api_target": "graphql"
     },
     "tags":
     {

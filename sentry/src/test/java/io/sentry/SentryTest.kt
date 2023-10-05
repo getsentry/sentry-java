@@ -6,15 +6,18 @@ import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
+import io.sentry.internal.modules.NoOpModulesLoader
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -30,6 +33,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -165,6 +169,49 @@ class SentryTest {
         } finally {
             temporaryFolder.delete()
         }
+    }
+
+    @Test
+    fun `initializes Sentry with enabled=false, thus disabling Sentry even if dsn is set`() {
+        Sentry.init {
+            it.isEnabled = false
+            it.dsn = "http://key@localhost/proj"
+        }
+
+        Sentry.setTag("none", "shouldNotExist")
+
+        var value: String? = null
+        Sentry.getCurrentHub().configureScope {
+            value = it.tags[value]
+        }
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertNull(value)
+    }
+
+    @Test
+    fun `initializes Sentry with enabled=false, thus disabling Sentry even if dsn is null`() {
+        Sentry.init {
+            it.isEnabled = false
+        }
+
+        Sentry.setTag("none", "shouldNotExist")
+
+        var value: String? = null
+        Sentry.getCurrentHub().configureScope {
+            value = it.tags[value]
+        }
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertNull(value)
+    }
+
+    @Test
+    fun `initializes Sentry with dsn = null, throwing IllegalArgumentException`() {
+        val exception =
+            assertThrows(java.lang.IllegalArgumentException::class.java) { Sentry.init() }
+        assertEquals(
+            "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.",
+            exception.message
+        )
     }
 
     @Test
@@ -721,6 +768,37 @@ class SentryTest {
 
         await.untilTrue(triggered)
         assertFalse(previousSessionFile.exists())
+    }
+
+    @Test
+    fun `captureCheckIn gets forwarded to client`() {
+        Sentry.init { it.dsn = dsn }
+
+        val client = mock<ISentryClient>()
+        Sentry.getCurrentHub().bindClient(client)
+
+        val checkIn = CheckIn("some_slug", CheckInStatus.OK)
+        Sentry.captureCheckIn(checkIn)
+
+        verify(client).captureCheckIn(
+            argThat {
+                checkInId == checkIn.checkInId
+            },
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `if send modules is false, uses NoOpModulesLoader`() {
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.isSendModules = false
+            sentryOptions = it
+        }
+
+        assertIs<NoOpModulesLoader>(sentryOptions?.modulesLoader)
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

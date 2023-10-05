@@ -11,15 +11,20 @@ import android.widget.AbsListView
 import android.widget.ListAdapter
 import io.sentry.IHub
 import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
+import io.sentry.SpanContext
+import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -40,6 +45,7 @@ class SentryGestureListenerTracingTest {
         }
         val hub = mock<IHub>()
         val event = mock<MotionEvent>()
+        val scope = mock<Scope>()
         lateinit var target: View
         lateinit var transaction: SentryTracer
 
@@ -79,6 +85,7 @@ class SentryGestureListenerTracingTest {
 
             whenever(hub.startTransaction(any(), any<TransactionOptions>()))
                 .thenReturn(this.transaction)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
 
             return SentryGestureListener(
                 activity,
@@ -303,6 +310,10 @@ class SentryGestureListenerTracingTest {
         val transaction = mock<SentryTracer>()
         val sut = fixture.getSut<View>(transaction = transaction)
 
+        whenever(transaction.spanContext).thenReturn(
+            SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
+        )
+
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub).startTransaction(
@@ -317,6 +328,15 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.transaction).scheduleFinish()
+    }
+
+    @Test
+    fun `captures transaction and sets trace origin`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        assertEquals("auto.ui.gesture_listener.old_view_system", fixture.transaction.spanContext.origin)
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {
