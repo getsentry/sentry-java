@@ -129,22 +129,26 @@ class EnvelopeTests : BaseUiTest() {
                 }.forEach { entry ->
                     val name = entry.key
                     val measurement = entry.value
-
-                    // The last frame measurement could be outside the transaction duration,
-                    //  since when the transaction finishes the frame callback is removed from the activity,
-                    //  but internally it is already cached and will be called anyway in the next frame.
-                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }.dropLast(1)
+                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }
 
                     // There should be no measurement before the profile starts
                     assertTrue(
                         values.first().relativeStartNs.toLong() > 0,
                         "First measurement value for '$name' is <=0"
                     )
-                    // There should be no measurement after the profile ends
-                    assertTrue(
-                        values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
-                        "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
-                    )
+
+                    // The last frame measurements could be outside the transaction duration,
+                    //  since when the transaction finishes, the frame callback is removed from the activity,
+                    //  but internally it is already cached and will be called anyway in the next frame.
+                    //  Also, they are not completely accurate, so they could be flaky.
+                    if (entry.key !in listOf(ProfileMeasurement.ID_FROZEN_FRAME_RENDERS, ProfileMeasurement.ID_SLOW_FRAME_RENDERS)) {
+                        // There should be no measurement after the profile ends
+                        // Due to the nature of frozen frames, they could be measured after the transaction finishes
+                        assertTrue(
+                            values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
+                            "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
+                        )
+                    }
 
                     // Timestamps of measurements should differ at least 10 milliseconds from each other
                     (1 until values.size).forEach { i ->
