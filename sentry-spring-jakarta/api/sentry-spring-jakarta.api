@@ -120,6 +120,29 @@ public final class io/sentry/spring/jakarta/checkin/SentrySchedulerFactoryBeanCu
 	public fun customize (Lorg/springframework/scheduling/quartz/SchedulerFactoryBean;)V
 }
 
+public abstract interface annotation class io/sentry/spring/jakarta/exception/SentryCaptureExceptionParameter : java/lang/annotation/Annotation {
+}
+
+public class io/sentry/spring/jakarta/exception/SentryCaptureExceptionParameterAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/jakarta/exception/SentryCaptureExceptionParameterConfiguration {
+	public fun <init> ()V
+}
+
+public class io/sentry/spring/jakarta/exception/SentryCaptureExceptionParameterPointcutConfiguration {
+	public fun <init> ()V
+	public fun sentryCaptureExceptionParameterPointcut ()Lorg/springframework/aop/Pointcut;
+}
+
+public class io/sentry/spring/jakarta/exception/SentryExceptionParameterAdviceConfiguration {
+	public fun <init> ()V
+	public fun sentryCaptureExceptionParameterAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCaptureExceptionParameterAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
+}
+
 public final class io/sentry/spring/jakarta/graphql/SentryBatchLoaderRegistry : org/springframework/graphql/execution/BatchLoaderRegistry {
 	public fun forName (Ljava/lang/String;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
 	public fun forTypePair (Ljava/lang/Class;Ljava/lang/Class;)Lorg/springframework/graphql/execution/BatchLoaderRegistry$RegistrationSpec;
@@ -170,29 +193,6 @@ public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun sentrySpanAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 	public fun sentryTransactionAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
 	public fun sentryTransactionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
-}
-
-public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameter : java/lang/annotation/Annotation {
-}
-
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameterAdvice : org/aopalliance/intercept/MethodInterceptor {
-	public fun <init> (Lio/sentry/IHub;)V
-	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
-}
-
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameterConfiguration {
-	public fun <init> ()V
-}
-
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameterPointcutConfiguration {
-	public fun <init> ()V
-	public fun sentryCaptureExceptionParameterPointcut ()Lorg/springframework/aop/Pointcut;
-}
-
-public class io/sentry/spring/jakarta/tracing/SentryExceptionParameterAdviceConfiguration {
-	public fun <init> ()V
-	public fun sentryCaptureExceptionParameterAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
-	public fun sentryCaptureExceptionParameterAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
 public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentrySpan : java/lang/annotation/Annotation {

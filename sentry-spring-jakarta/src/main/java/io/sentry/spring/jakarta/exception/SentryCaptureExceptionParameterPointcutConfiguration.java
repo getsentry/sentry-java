@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.tracing;
+package io.sentry.spring.jakarta.exception;
 
 import com.jakewharton.nopen.annotation.Open;
 import org.jetbrains.annotations.NotNull;

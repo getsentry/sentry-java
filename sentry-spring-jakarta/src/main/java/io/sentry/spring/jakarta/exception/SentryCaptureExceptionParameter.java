@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.tracing;
+package io.sentry.spring.jakarta.exception;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

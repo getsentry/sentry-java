@@ -15,8 +15,8 @@ import io.sentry.spring.jakarta.SentryTaskDecorator
 import io.sentry.spring.jakarta.SentryUserFilter
 import io.sentry.spring.jakarta.SentryUserProvider
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider
-import io.sentry.spring.jakarta.tracing.SentryCaptureExceptionParameter
-import io.sentry.spring.jakarta.tracing.SentryCaptureExceptionParameterConfiguration
+import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameter
+import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterConfiguration
 import io.sentry.spring.jakarta.tracing.SentrySpanClientWebRequestFilter
 import io.sentry.spring.jakarta.tracing.SentryTracingConfiguration
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter
