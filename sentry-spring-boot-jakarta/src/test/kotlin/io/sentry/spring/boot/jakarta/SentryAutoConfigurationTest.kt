@@ -492,19 +492,19 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `creates AOP beans to support @SentryCaptureException`() {
+    fun `creates AOP beans to support @SentryCaptureExceptionParameter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).hasSentryExceptionAdviceBeans()
+                assertThat(it).hasSentryExceptionParameterAdviceBeans()
             }
     }
 
     @Test
-    fun `does not create AOP beans to support @SentryCaptureException if AOP class is missing`() {
+    fun `does not create AOP beans to support @SentryCaptureExceptionParameter if AOP class is missing`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
             .run {
-                assertThat(it).doesNotHaveSentryExceptionAdviceBeans()
+                assertThat(it).doesNotHaveSentryExceptionParameterAdviceBeans()
             }
     }
 
@@ -974,17 +974,17 @@ class SentryAutoConfigurationTest {
         return this
     }
 
-    private fun <C : ApplicationContext> ApplicationContextAssert<C>.hasSentryExceptionAdviceBeans(): ApplicationContextAssert<C> {
-        this.hasBean("sentryCaptureExceptionPointcut")
-        this.hasBean("sentryCaptureExceptionAdvice")
-        this.hasBean("sentryCaptureExceptionAdvisor")
+    private fun <C : ApplicationContext> ApplicationContextAssert<C>.hasSentryExceptionParameterAdviceBeans(): ApplicationContextAssert<C> {
+        this.hasBean("sentryCaptureExceptionParameterPointcut")
+        this.hasBean("sentryCaptureExceptionParameterAdvice")
+        this.hasBean("sentryCaptureExceptionParameterAdvisor")
         return this
     }
 
-    private fun <C : ApplicationContext> ApplicationContextAssert<C>.doesNotHaveSentryExceptionAdviceBeans(): ApplicationContextAssert<C> {
-        this.doesNotHaveBean("sentryCaptureExceptionPointcut")
-        this.doesNotHaveBean("sentryCaptureExceptionAdvice")
-        this.doesNotHaveBean("sentryCaptureExceptionAdvisor")
+    private fun <C : ApplicationContext> ApplicationContextAssert<C>.doesNotHaveSentryExceptionParameterAdviceBeans(): ApplicationContextAssert<C> {
+        this.doesNotHaveBean("sentryCaptureExceptionParameterPointcut")
+        this.doesNotHaveBean("sentryCaptureExceptionParameterAdvice")
+        this.doesNotHaveBean("sentryCaptureExceptionParameterAdvisor")
         return this
     }
 

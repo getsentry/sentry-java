@@ -13,14 +13,17 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 
-/** Captures an exception passed to a bean method annotated with {@link SentryCaptureException}. */
+/**
+ * Captures an exception passed to a bean method annotated with {@link
+ * SentryCaptureExceptionParameter}.
+ */
 @ApiStatus.Internal
 @Open
-public class SentryCaptureExceptionAdvice implements MethodInterceptor {
-  private static final String MECHANISM_TYPE = "SentrySpring6CaptureExceptionAdvice";
+public class SentryCaptureExceptionParameterAdvice implements MethodInterceptor {
+  private static final String MECHANISM_TYPE = "SentrySpring6CaptureExceptionParameterAdvice";
   private final @NotNull IHub hub;
 
-  public SentryCaptureExceptionAdvice(final @NotNull IHub hub) {
+  public SentryCaptureExceptionParameterAdvice(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
@@ -28,10 +31,10 @@ public class SentryCaptureExceptionAdvice implements MethodInterceptor {
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final Method mostSpecificMethod =
         AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
-    SentryCaptureException sentryCaptureException =
-        AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCaptureException.class);
+    SentryCaptureExceptionParameter sentryCaptureExceptionParameter =
+        AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCaptureExceptionParameter.class);
 
-    if (sentryCaptureException != null) {
+    if (sentryCaptureExceptionParameter != null) {
       Object[] args = invocation.getArguments();
       for (Object arg : args) {
         if (arg instanceof Exception) {

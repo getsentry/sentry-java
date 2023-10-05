@@ -20,8 +20,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @RunWith(SpringRunner::class)
-@SpringJUnitConfig(SentryCaptureExceptionAdviceTest.Config::class)
-class SentryCaptureExceptionAdviceTest {
+@SpringJUnitConfig(SentryCaptureExceptionParameterAdviceTest.Config::class)
+class SentryCaptureExceptionParameterAdviceTest {
 
     @Autowired
     lateinit var sampleService: SampleService
@@ -43,14 +43,14 @@ class SentryCaptureExceptionAdviceTest {
                 assertTrue(it is ExceptionMechanismException)
                 val mechanismException = it as ExceptionMechanismException
                 assertEquals(exception, mechanismException.throwable)
-                assertEquals("SentrySpring6CaptureExceptionAdvice", mechanismException.exceptionMechanism.type)
+                assertEquals("SentrySpring6CaptureExceptionParameterAdvice", mechanismException.exceptionMechanism.type)
             }
         )
     }
 
     @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
-    @Import(SentryCaptureExceptionConfiguration::class)
+    @Import(SentryCaptureExceptionParameterConfiguration::class)
     open class Config {
 
         @Bean
@@ -62,7 +62,7 @@ class SentryCaptureExceptionAdviceTest {
 
     open class SampleService {
 
-        @SentryCaptureException
+        @SentryCaptureExceptionParameter
         open fun methodTakingAnException(e: Exception) = Unit
     }
 }

@@ -172,27 +172,27 @@ public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun sentryTransactionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
-public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryCaptureException : java/lang/annotation/Annotation {
+public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameter : java/lang/annotation/Annotation {
 }
 
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionAdvice : org/aopalliance/intercept/MethodInterceptor {
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameterAdvice : org/aopalliance/intercept/MethodInterceptor {
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
 
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionConfiguration {
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameterConfiguration {
 	public fun <init> ()V
 }
 
-public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionPointcutConfiguration {
+public class io/sentry/spring/jakarta/tracing/SentryCaptureExceptionParameterPointcutConfiguration {
 	public fun <init> ()V
-	public fun sentryCaptureExceptionPointcut ()Lorg/springframework/aop/Pointcut;
+	public fun sentryCaptureExceptionParameterPointcut ()Lorg/springframework/aop/Pointcut;
 }
 
-public class io/sentry/spring/jakarta/tracing/SentryExceptionAdviceConfiguration {
+public class io/sentry/spring/jakarta/tracing/SentryExceptionParameterAdviceConfiguration {
 	public fun <init> ()V
-	public fun sentryCaptureExceptionAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
-	public fun sentryCaptureExceptionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
+	public fun sentryCaptureExceptionParameterAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCaptureExceptionParameterAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
 public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentrySpan : java/lang/annotation/Annotation {

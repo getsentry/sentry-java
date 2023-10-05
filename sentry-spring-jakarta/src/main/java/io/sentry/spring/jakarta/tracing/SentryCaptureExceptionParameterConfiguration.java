@@ -6,12 +6,12 @@ import org.springframework.context.annotation.Import;
 
 /**
  * Provides infrastructure beans for capturing exceptions passed to bean methods annotated with
- * {@link SentryCaptureException}.
+ * {@link SentryCaptureExceptionParameter}.
  */
 @Configuration
 @Import({
-  SentryExceptionAdviceConfiguration.class,
-  SentryCaptureExceptionPointcutConfiguration.class
+  SentryExceptionParameterAdviceConfiguration.class,
+  SentryCaptureExceptionParameterPointcutConfiguration.class
 })
 @Open
-public class SentryCaptureExceptionConfiguration {}
+public class SentryCaptureExceptionParameterConfiguration {}

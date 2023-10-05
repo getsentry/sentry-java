@@ -9,19 +9,20 @@ import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** AOP pointcut configuration for {@link SentryCaptureException}. */
+/** AOP pointcut configuration for {@link SentryCaptureExceptionParameter}. */
 @Configuration(proxyBeanMethods = false)
 @Open
-public class SentryCaptureExceptionPointcutConfiguration {
+public class SentryCaptureExceptionParameterPointcutConfiguration {
 
   /**
    * Pointcut around which spans are created.
    *
-   * @return pointcut used by {@link SentryCaptureExceptionAdvice}.
+   * @return pointcut used by {@link SentryCaptureExceptionParameterAdvice}.
    */
   @Bean
-  public @NotNull Pointcut sentryCaptureExceptionPointcut() {
-    return new ComposablePointcut(new AnnotationClassFilter(SentryCaptureException.class, true))
-        .union(new AnnotationMatchingPointcut(null, SentryCaptureException.class));
+  public @NotNull Pointcut sentryCaptureExceptionParameterPointcut() {
+    return new ComposablePointcut(
+            new AnnotationClassFilter(SentryCaptureExceptionParameter.class, true))
+        .union(new AnnotationMatchingPointcut(null, SentryCaptureExceptionParameter.class));
   }
 }
