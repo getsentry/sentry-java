@@ -147,19 +147,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
-    return NoOpTransaction.getInstance();
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope) {
-    return NoOpTransaction.getInstance();
-  }
-
-  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {

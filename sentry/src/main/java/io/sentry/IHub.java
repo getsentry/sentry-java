@@ -404,84 +404,8 @@ public interface IHub {
    * @return created transaction
    */
   default @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
-    return startTransaction(transactionContexts, false);
+    return startTransaction(transactionContexts, new TransactionOptions());
   }
-
-  /**
-   * Creates a Transaction and returns the instance.
-   *
-   * @param transactionContexts the transaction contexts
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction
-   */
-  default @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts, boolean bindToScope) {
-    return startTransaction(transactionContexts, null, bindToScope);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed sampling context the
-   * decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param name the transaction name
-   * @param operation the operation
-   * @param customSamplingContext the sampling context
-   * @return created transaction.
-   */
-  default @NotNull ITransaction startTransaction(
-      @NotNull String name,
-      @NotNull String operation,
-      @Nullable CustomSamplingContext customSamplingContext) {
-    return startTransaction(name, operation, customSamplingContext, false);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed sampling context the
-   * decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param name the transaction name
-   * @param operation the operation
-   * @param customSamplingContext the sampling context
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction.
-   */
-  default @NotNull ITransaction startTransaction(
-      @NotNull String name,
-      @NotNull String operation,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope) {
-    return startTransaction(
-        new TransactionContext(name, operation), customSamplingContext, bindToScope);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
-   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param transactionContexts the transaction context
-   * @param customSamplingContext the sampling context
-   * @return created transaction.
-   */
-  default @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext) {
-    return startTransaction(transactionContexts, customSamplingContext, false);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
-   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param transactionContexts the transaction context
-   * @param customSamplingContext the sampling context
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction.
-   */
-  @NotNull
-  ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope);
 
   /**
    * Creates a Transaction and returns the instance. Based on the {@link
@@ -494,7 +418,24 @@ public interface IHub {
    */
   default @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull String operation) {
-    return startTransaction(name, operation, null);
+    return startTransaction(name, operation, new TransactionOptions());
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Based on the {@link
+   * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
+   * {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param transactionOptions the transaction options
+   * @return created transaction
+   */
+  default @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull TransactionOptions transactionOptions) {
+    return startTransaction(new TransactionContext(name, operation), transactionOptions);
   }
 
   /**
@@ -510,21 +451,6 @@ public interface IHub {
   ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions);
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the {@link
-   * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
-   * {@link TracesSampler}.
-   *
-   * @param name the transaction name
-   * @param operation the operation
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction
-   */
-  default @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
-    return startTransaction(name, operation, (CustomSamplingContext) null, bindToScope);
-  }
 
   /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
