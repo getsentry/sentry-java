@@ -1,9 +1,7 @@
-package io.sentry.spring.jakarta.tracing
+package io.sentry.spring.jakarta.exception
 
 import io.sentry.IHub
 import io.sentry.exception.ExceptionMechanismException
-import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameter
-import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterConfiguration
 import org.junit.runner.RunWith
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
