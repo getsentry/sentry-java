@@ -5,6 +5,9 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.view.PixelCopy;
 import android.view.View;
 import androidx.annotation.Nullable;
 import io.sentry.ILogger;
@@ -38,13 +41,13 @@ public class ScreenshotUtils {
 
     if (!isActivityValid(activity, buildInfoProvider)
         || activity.getWindow() == null
-        || activity.getWindow().getDecorView() == null
-        || activity.getWindow().getDecorView().getRootView() == null) {
+        || activity.getWindow().peekDecorView() == null
+        || activity.getWindow().peekDecorView().getRootView() == null) {
       logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
       return null;
     }
 
-    final View view = activity.getWindow().getDecorView().getRootView();
+    final View view = activity.getWindow().peekDecorView().getRootView();
     if (view.getWidth() <= 0 || view.getHeight() <= 0) {
       logger.log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
       return null;
@@ -55,20 +58,53 @@ public class ScreenshotUtils {
       final Bitmap bitmap =
           Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
 
-      final Canvas canvas = new Canvas(bitmap);
-      if (mainThreadChecker.isMainThread()) {
-        view.draw(canvas);
+      final @NotNull CountDownLatch latch = new CountDownLatch(1);
+
+      // Use Pixel Copy API on new devices, fallback to canvas rendering on older ones
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+        final HandlerThread thread = new HandlerThread("screenshot");
+        thread.start();
+
+        boolean success = false;
+        try {
+          final Handler handler = new Handler(thread.getLooper());
+
+          // TODO: handle copyResult to avoid sending empty bitmaps
+          PixelCopy.request(
+              activity.getWindow(),
+              bitmap,
+              (PixelCopy.OnPixelCopyFinishedListener) copyResult -> latch.countDown(),
+              handler);
+
+          success = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+          // ignored
+        } finally {
+          thread.quit();
+        }
+
+        if (!success) {
+          return null;
+        }
       } else {
-        final @NotNull CountDownLatch latch = new CountDownLatch(1);
-        activity.runOnUiThread(
-            () -> {
-              try {
-                view.draw(canvas);
-                latch.countDown();
-              } catch (Throwable e) {
-                logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
-              }
-            });
+        final Canvas canvas = new Canvas(bitmap);
+        if (mainThreadChecker.isMainThread()) {
+          view.draw(canvas);
+          latch.countDown();
+        } else {
+          activity.runOnUiThread(
+              () -> {
+                try {
+                  view.draw(canvas);
+                } catch (Throwable e) {
+                  logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
+                } finally {
+                  latch.countDown();
+                }
+              });
+        }
+
         if (!latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
           return null;
         }
