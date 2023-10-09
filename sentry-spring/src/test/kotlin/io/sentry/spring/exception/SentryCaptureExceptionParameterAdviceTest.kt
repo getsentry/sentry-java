@@ -43,7 +43,7 @@ class SentryCaptureExceptionParameterAdviceTest {
                 assertTrue(it is ExceptionMechanismException)
                 val mechanismException = it as ExceptionMechanismException
                 assertEquals(exception, mechanismException.throwable)
-                assertEquals("SentrySpring6CaptureExceptionParameterAdvice", mechanismException.exceptionMechanism.type)
+                assertEquals("SentrySpring5CaptureExceptionParameterAdvice", mechanismException.exceptionMechanism.type)
             }
         )
     }
