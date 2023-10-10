@@ -1,3 +1,16 @@
+public final class io/sentry/android/core/ActivityBreadcrumbIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/app/Application;)V
+	public fun close ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
 public final class io/sentry/android/core/ActivityFramesTracker {
 	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/MainLooperHandler;)V
@@ -21,6 +34,13 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public class io/sentry/android/core/ActivityLifecycleIntegration$ScreenSpans {
+	public final field startUptimeMs J
+	public field ttfd Lio/sentry/ISpan;
+	public field ttid Lio/sentry/ISpan;
+	public fun <init> (J)V
 }
 
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/ICollector {
@@ -93,17 +113,6 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AppStartState {
-	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
-	public fun getAppStartInterval ()Ljava/lang/Long;
-	public fun getAppStartMillis ()Ljava/lang/Long;
-	public fun getAppStartTime ()Lio/sentry/SentryDate;
-	public static fun getInstance ()Lio/sentry/android/core/AppStartState;
-	public fun isColdStart ()Ljava/lang/Boolean;
-	public fun reset ()V
-	public fun setAppStartMillis (J)V
-}
-
 public final class io/sentry/android/core/AppState {
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
 	public fun isInBackground ()Ljava/lang/Boolean;
@@ -129,6 +138,7 @@ public final class io/sentry/android/core/BuildInfoProvider {
 }
 
 public final class io/sentry/android/core/ContextUtils {
+	public static fun isForegroundImportance (Landroid/content/Context;)Z
 }
 
 public class io/sentry/android/core/CurrentActivityHolder {
@@ -304,17 +314,12 @@ public final class io/sentry/android/core/SentryLogcatAdapter {
 	public static fun wtf (Ljava/lang/String;Ljava/lang/Throwable;)I
 }
 
-public final class io/sentry/android/core/SentryPerformanceProvider : android/app/Application$ActivityLifecycleCallbacks {
+public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
+	public fun getActivityCallback ()Landroid/app/Application$ActivityLifecycleCallbacks;
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
-	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityDestroyed (Landroid/app/Activity;)V
-	public fun onActivityPaused (Landroid/app/Activity;)V
-	public fun onActivityResumed (Landroid/app/Activity;)V
-	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityStarted (Landroid/app/Activity;)V
-	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun onAppLaunched ()V
 	public fun onCreate ()Z
 }
 
@@ -363,5 +368,88 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+}
+
+public class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {
+	public fun <init> ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+}
+
+public class io/sentry/android/core/performance/ActivityLifecycleTimeSpan : java/lang/Comparable {
+	public final field onCreate Lio/sentry/android/core/performance/TimeSpan;
+	public final field onStart Lio/sentry/android/core/performance/TimeSpan;
+	public fun <init> ()V
+	public fun compareTo (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+}
+
+public class io/sentry/android/core/performance/AppStartMetrics {
+	public fun <init> ()V
+	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
+	public fun clear ()V
+	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
+	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
+	public fun isAppLaunchedInForeground ()Z
+	public static fun onApplicationCreate (Landroid/app/Application;)V
+	public static fun onApplicationPostCreate (Landroid/app/Application;)V
+	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
+	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
+	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
+}
+
+public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
+	public static final field COLD Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+	public static final field UNKNOWN Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+	public static final field WARM Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+	public static fun values ()[Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+}
+
+public class io/sentry/android/core/performance/NextDrawListener : android/view/View$OnAttachStateChangeListener, android/view/ViewTreeObserver$OnDrawListener {
+	public fun <init> (Landroid/view/View;Ljava/lang/Runnable;)V
+	public fun onDraw ()V
+	public fun onViewAttachedToWindow (Landroid/view/View;)V
+	public fun onViewDetachedFromWindow (Landroid/view/View;)V
+	public fun safelyRegisterForNextDraw ()V
+}
+
+public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable {
+	public fun <init> ()V
+	public fun compareTo (Lio/sentry/android/core/performance/TimeSpan;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun getDescription ()Ljava/lang/String;
+	public fun getDurationMs ()J
+	public fun getProjectedStopTimestampMs ()J
+	public fun getProjectedStopTimestampS ()D
+	public fun getStartTimestamp ()Lio/sentry/SentryDate;
+	public fun getStartTimestampMs ()J
+	public fun getStartTimestampS ()D
+	public fun getStartUptimeMs ()J
+	public fun hasNotStarted ()Z
+	public fun hasNotStopped ()Z
+	public fun hasStarted ()Z
+	public fun hasStopped ()Z
+	public fun reset ()V
+	public fun setDescription (Ljava/lang/String;)V
+	public fun setStartUnixTimeMs (J)V
+	public fun setStartedAt (J)V
+	public fun setStoppedAt (J)V
+	public fun start ()V
+	public fun stop ()V
+}
+
+public class io/sentry/android/core/performance/WindowContentChangedCallback : io/sentry/android/core/internal/gestures/WindowCallbackAdapter {
+	public fun <init> (Landroid/view/Window$Callback;Ljava/lang/Runnable;)V
+	public fun onContentChanged ()V
 }
 

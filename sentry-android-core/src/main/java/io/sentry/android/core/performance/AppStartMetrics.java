@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.ContentProvider;
 import android.os.SystemClock;
 import androidx.annotation.Nullable;
+import io.sentry.android.core.ContextUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,17 +13,27 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A storage provider for app start relevant metrics. As the SDK isn't initialized during early app
- * start, we can't use transactions or spans directly. Thus simple TimeSpans are used and later
- * transformed into SDK specific data structures.
+ * An in-memory representation for app-metrics during app start. As the SDK can't be initialized
+ * that early, we can't use transactions or spans directly. Thus simple TimeSpans are used and later
+ * transformed into SDK specific txn/span data structures.
  */
 public class AppStartMetrics {
 
+  public enum AppStartType {
+    UNKNOWN,
+    COLD,
+    WARM
+  }
+
   private static volatile @Nullable AppStartMetrics instance;
+
+  private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
+  private boolean appLaunchedInForeground = false;
 
   private final @NotNull TimeSpan appStartSpan;
   private final @NotNull TimeSpan applicationOnCreate;
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
+  private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
 
   public static @NotNull AppStartMetrics getInstance() {
 
@@ -41,9 +52,10 @@ public class AppStartMetrics {
     appStartSpan = new TimeSpan();
     applicationOnCreate = new TimeSpan();
     contentProviderOnCreates = new HashMap<>();
+    activityLifecycles = new ArrayList<>();
   }
 
-  public @NotNull TimeSpan getAppStartTimespan() {
+  public @NotNull TimeSpan getAppStartTimeSpan() {
     return appStartSpan;
   }
 
@@ -51,8 +63,20 @@ public class AppStartMetrics {
     return applicationOnCreate;
   }
 
+  public void setAppStartType(final @NotNull AppStartType appStartType) {
+    this.appStartType = appStartType;
+  }
+
+  public @NotNull AppStartType getAppStartType() {
+    return appStartType;
+  }
+
+  public boolean isAppLaunchedInForeground() {
+    return appLaunchedInForeground;
+  }
+
   /**
-   * provides all collected content provider onCreate time spans
+   * Provides all collected content provider onCreate time spans
    *
    * @return A sorted list of all onCreate calls
    */
@@ -62,7 +86,18 @@ public class AppStartMetrics {
     return measurements;
   }
 
+  public @NotNull List<ActivityLifecycleTimeSpan> getActivityLifecycleTimeSpans() {
+    final List<ActivityLifecycleTimeSpan> measurements = new ArrayList<>(activityLifecycles);
+    Collections.sort(measurements);
+    return measurements;
+  }
+
+  public void addActivityLifecycleTimeSpans(final @NotNull ActivityLifecycleTimeSpan timeSpan) {
+    activityLifecycles.add(timeSpan);
+  }
+
   public void clear() {
+    appStartType = AppStartType.UNKNOWN;
     appStartSpan.reset();
     applicationOnCreate.reset();
     contentProviderOnCreates.clear();
@@ -77,9 +112,10 @@ public class AppStartMetrics {
   public static void onApplicationCreate(final @NotNull Application application) {
     final long now = SystemClock.uptimeMillis();
 
-    final AppStartMetrics instance = getInstance();
+    final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
+      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance(application);
     }
   }
 
@@ -92,9 +128,9 @@ public class AppStartMetrics {
   public static void onApplicationPostCreate(final @NotNull Application application) {
     final long now = SystemClock.uptimeMillis();
 
-    final AppStartMetrics instance = getInstance();
+    final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStopped()) {
-      instance.applicationOnCreate.setDescription(application.getClass().getName());
+      instance.applicationOnCreate.setDescription(application.getClass().getName() + ".onCreate");
       instance.applicationOnCreate.setStoppedAt(now);
     }
   }
@@ -125,7 +161,7 @@ public class AppStartMetrics {
     final @Nullable TimeSpan measurement =
         getInstance().contentProviderOnCreates.get(contentProvider);
     if (measurement != null && measurement.hasNotStopped()) {
-      measurement.setDescription(contentProvider.getClass().getName());
+      measurement.setDescription(contentProvider.getClass().getName() + ".onCreate");
       measurement.setStoppedAt(now);
     }
   }

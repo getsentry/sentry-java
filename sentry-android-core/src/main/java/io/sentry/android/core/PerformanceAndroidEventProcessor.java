@@ -9,12 +9,11 @@ import io.sentry.Hint;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
+import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
-import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,16 +61,17 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
     // the app start measurement is only sent once and only if the transaction has
     // the app.start span, which is automatically created by the SDK.
-    if (!sentStartMeasurement && hasAppStartSpan(transaction.getSpans())) {
-      final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
+    if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
+      final long appStartUpInterval =
+          AppStartMetrics.getInstance().getAppStartTimeSpan().getDurationMs();
       // if appStartUpInterval is null, metrics are not ready to be sent
-      if (appStartUpInterval != null) {
+      if (appStartUpInterval != 0) {
         final MeasurementValue value =
             new MeasurementValue(
                 (float) appStartUpInterval, MeasurementUnit.Duration.MILLISECOND.apiName());
 
         final String appStartKey =
-            AppStartState.getInstance().isColdStart()
+            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
                 ? MeasurementValue.KEY_APP_START_COLD
                 : MeasurementValue.KEY_APP_START_WARM;
 
@@ -99,13 +99,10 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     return transaction;
   }
 
-  private boolean hasAppStartSpan(final @NotNull List<SentrySpan> spans) {
-    for (final SentrySpan span : spans) {
-      if (span.getOp().contentEquals(APP_START_COLD)
-          || span.getOp().contentEquals(APP_START_WARM)) {
-        return true;
-      }
-    }
-    return false;
+  private boolean hasAppStartSpan(final @NotNull SentryTransaction txn) {
+    final @Nullable SpanContext context = txn.getContexts().getTrace();
+    return context != null
+        && (context.getOperation().equals(APP_START_COLD)
+            || context.getOperation().equals(APP_START_WARM));
   }
 }

@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
-import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -10,11 +9,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.View;
 import androidx.annotation.NonNull;
-import io.sentry.Breadcrumb;
+import io.sentry.DateUtils;
 import io.sentry.FullyDisplayedReporter;
-import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
@@ -24,11 +23,15 @@ import io.sentry.NoOpTransaction;
 import io.sentry.Scope;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLongDate;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
@@ -36,11 +39,13 @@ import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -48,6 +53,16 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
+
+  public static class ScreenSpans {
+    public final long startUptimeMs;
+    public @Nullable ISpan ttid;
+    public @Nullable ISpan ttfd;
+
+    public ScreenSpans(final long startUptimeMs) {
+      this.startUptimeMs = startUptimeMs;
+    }
+  }
 
   static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_WARM = "app.start.warm";
@@ -63,19 +78,19 @@ public final class ActivityLifecycleIntegration
   private @Nullable SentryAndroidOptions options;
 
   private boolean performanceEnabled = false;
-
   private boolean timeToFullDisplaySpanEnabled = false;
-
   private boolean isAllActivityCallbacksAvailable;
 
   private boolean firstActivityCreated = false;
-  private final boolean foregroundImportance;
+  private final @NotNull AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
-  private @Nullable ISpan appStartSpan;
-  private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
-  private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
-  private @NotNull SentryDate lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
+
+  private final @NotNull WeakHashMap<Activity, ScreenSpans> activitySpanMap = new WeakHashMap<>();
+
+  private SentryDate lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
+  private long lastPausedUptimeMs;
+
   private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
@@ -99,10 +114,6 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
-
-    // we only track app start for processes that will show an Activity (full launch).
-    // Here we check the process importance which will tell us that.
-    foregroundImportance = ContextUtils.isForegroundImportance(this.application);
   }
 
   @Override
@@ -113,13 +124,6 @@ public final class ActivityLifecycleIntegration
             "SentryAndroidOptions is required");
 
     this.hub = Objects.requireNonNull(hub, "Hub is required");
-
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "ActivityLifecycleIntegration enabled: %s",
-            this.options.isEnableActivityLifecycleBreadcrumbs());
 
     performanceEnabled = isPerformanceEnabled(this.options);
     fullyDisplayedReporter = this.options.getFullyDisplayedReporter();
@@ -145,22 +149,6 @@ public final class ActivityLifecycleIntegration
     activityFramesTracker.stop();
   }
 
-  private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {
-    if (options != null && hub != null && options.isEnableActivityLifecycleBreadcrumbs()) {
-      final Breadcrumb breadcrumb = new Breadcrumb();
-      breadcrumb.setType("navigation");
-      breadcrumb.setData("state", state);
-      breadcrumb.setData("screen", getActivityName(activity));
-      breadcrumb.setCategory("ui.lifecycle");
-      breadcrumb.setLevel(SentryLevel.INFO);
-
-      final Hint hint = new Hint();
-      hint.set(ANDROID_ACTIVITY, activity);
-
-      hub.addBreadcrumb(breadcrumb, hint);
-    }
-  }
-
   private @NotNull String getActivityName(final @NotNull Activity activity) {
     return activity.getClass().getSimpleName();
   }
@@ -169,122 +157,232 @@ public final class ActivityLifecycleIntegration
     for (final Map.Entry<Activity, ITransaction> entry :
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
-      final ISpan ttidSpan = ttidSpanMap.get(entry.getKey());
-      final ISpan ttfdSpan = ttfdSpanMap.get(entry.getKey());
-      finishTransaction(transaction, ttidSpan, ttfdSpan);
+      finishTransaction(transaction, activitySpanMap.get(entry.getKey()));
     }
   }
 
   private void startTracing(final @NotNull Activity activity) {
-    WeakReference<Activity> weakActivity = new WeakReference<>(activity);
-    if (hub != null && !isRunningTransactionOrTrace(activity)) {
-      if (!performanceEnabled) {
-        activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        TracingUtils.startNewTrace(hub);
-      } else if (performanceEnabled) {
-        // as we allow a single transaction running on the bound Scope, we finish the previous ones
-        stopPreviousTransactions();
+    if (hub == null) {
+      return;
+    }
+    if (options == null) {
+      return;
+    }
 
-        final String activityName = getActivityName(activity);
+    if (isRunningTransactionOrTrace(activity)) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Skipping trace start, because there's a running transaction/trace for this activity already.");
+      return;
+    }
 
-        final SentryDate appStartTime =
-            foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
-        final Boolean coldStart = AppStartState.getInstance().isColdStart();
+    // TwP: just create a new trace, but not a new txn
+    if (!performanceEnabled) {
+      activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
+      TracingUtils.startNewTrace(hub);
+      return;
+    }
 
-        final TransactionOptions transactionOptions = new TransactionOptions();
-        if (options.isEnableActivityLifecycleTracingAutoFinish()) {
-          transactionOptions.setIdleTimeout(options.getIdleTimeout());
-          transactionOptions.setTrimEnd(true);
-        }
-        transactionOptions.setWaitForChildren(true);
-        transactionOptions.setTransactionFinishedCallback(
-            (finishingTransaction) -> {
-              @Nullable Activity unwrappedActivity = weakActivity.get();
-              if (unwrappedActivity != null) {
-                activityFramesTracker.setMetrics(
-                    unwrappedActivity, finishingTransaction.getEventId());
-              } else {
-                if (options != null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.WARNING,
-                          "Unable to track activity frames as the Activity %s has been destroyed.",
-                          activityName);
-                }
-              }
-            });
+    // as we allow a single transaction running on the bound Scope, we finish the previous ones
+    stopPreviousTransactions();
 
-        // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
-        final @NotNull SentryDate ttidStartTime;
+    final WeakReference<Activity> weakActivity = new WeakReference<>(activity);
+    final String activityName = getActivityName(activity);
+    final AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final SentryDate appStartTime =
+        new SentryLongDate(
+            DateUtils.millisToNanos(appStartMetrics.getAppStartTimeSpan().getStartTimestampMs()));
+    final AppStartMetrics.AppStartType appStartType = appStartMetrics.getAppStartType();
 
-        if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          // The first activity ttid/ttfd spans should start at the app start time
-          ttidStartTime = appStartTime;
-        } else {
-          // The ttid/ttfd spans should start when the previous activity called its onPause method
-          ttidStartTime = lastPausedTime;
-        }
-        transactionOptions.setStartTimestamp(ttidStartTime);
-
-        // we can only bind to the scope if there's no running transaction
-        ITransaction transaction =
-            hub.startTransaction(
-                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
-                transactionOptions);
-        setSpanOrigin(transaction);
-
-        // in case appStartTime isn't available, we don't create a span for it.
-        if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          // start specific span for app start
-          appStartSpan =
-              transaction.startChild(
-                  getAppStartOp(coldStart),
-                  getAppStartDesc(coldStart),
-                  appStartTime,
-                  Instrumenter.SENTRY);
-          setSpanOrigin(appStartSpan);
-
-          // in case there's already an end time (e.g. due to deferred SDK init)
-          // we can finish the app-start span
-          finishAppStartSpan();
-        }
-        final @NotNull ISpan ttidSpan =
-            transaction.startChild(
-                TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-        ttidSpanMap.put(activity, ttidSpan);
-        setSpanOrigin(ttidSpan);
-
-        if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
-          final @NotNull ISpan ttfdSpan =
-              transaction.startChild(
-                  TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-          setSpanOrigin(ttfdSpan);
-          try {
-            ttfdSpanMap.put(activity, ttfdSpan);
-            ttfdAutoCloseFuture =
-                options
-                    .getExecutorService()
-                    .schedule(
-                        () -> finishExceededTtfdSpan(ttfdSpan, ttidSpan), TTFD_TIMEOUT_MILLIS);
-          } catch (RejectedExecutionException e) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.ERROR,
-                    "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
-                    e);
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    if (options.isEnableActivityLifecycleTracingAutoFinish()) {
+      transactionOptions.setIdleTimeout(options.getIdleTimeout());
+      transactionOptions.setTrimEnd(true);
+    }
+    transactionOptions.setWaitForChildren(true);
+    transactionOptions.setTransactionFinishedCallback(
+        (finishingTransaction) -> {
+          @Nullable Activity unwrappedActivity = weakActivity.get();
+          if (unwrappedActivity != null) {
+            activityFramesTracker.setMetrics(unwrappedActivity, finishingTransaction.getEventId());
+          } else {
+            if (options != null) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Unable to track activity frames as the Activity %s has been destroyed.",
+                      activityName);
+            }
           }
-        }
+        });
 
-        // lets bind to the scope so other integrations can pick it up
-        hub.configureScope(
-            scope -> {
-              applyScope(scope, transaction);
-            });
+    final long spanStartUptimeMs;
+    if (firstActivityCreated) {
+      // The ttid/ttfd spans should start when the previous activity called its onPause method
+      spanStartUptimeMs = lastPausedUptimeMs;
+      transactionOptions.setStartTimestamp(lastPausedTime);
+    } else {
+      // The first activity ttid / ttfd spans should start at the app start time
+      transactionOptions.setStartTimestamp(appStartTime);
+      spanStartUptimeMs = appStartMetrics.getAppStartTimeSpan().getStartUptimeMs();
+    }
 
-        activitiesWithOngoingTransactions.put(activity, transaction);
+    // we can only bind to the scope if there's no running transaction
+    final String transactionOp;
+    if (appStartType == AppStartMetrics.AppStartType.COLD) {
+      transactionOp = APP_START_COLD;
+    } else if (appStartType == AppStartMetrics.AppStartType.WARM) {
+      transactionOp = APP_START_WARM;
+    } else {
+      transactionOp = UI_LOAD_OP;
+    }
+
+    final @NotNull ITransaction transaction =
+        hub.startTransaction(
+            new TransactionContext(activityName, TransactionNameSource.COMPONENT, transactionOp),
+            transactionOptions);
+    setSpanOrigin(transaction);
+
+    final ScreenSpans screenSpans = new ScreenSpans(spanStartUptimeMs);
+    activitySpanMap.put(activity, screenSpans);
+
+    final @NotNull ISpan ttidSpan =
+        transaction.startChild(
+            TTID_OP, getTtidDesc(activityName), transaction.getStartDate(), Instrumenter.SENTRY);
+    setSpanOrigin(ttidSpan);
+    screenSpans.ttid = ttidSpan;
+
+    if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
+      final @NotNull ISpan ttfdSpan =
+          transaction.startChild(
+              TTFD_OP, getTtfdDesc(activityName), transaction.getStartDate(), Instrumenter.SENTRY);
+      setSpanOrigin(ttfdSpan);
+      screenSpans.ttfd = ttfdSpan;
+
+      try {
+        ttfdAutoCloseFuture =
+            options
+                .getExecutorService()
+                .schedule(() -> finishExceededTtfdSpan(ttfdSpan, ttidSpan), TTFD_TIMEOUT_MILLIS);
+      } catch (RejectedExecutionException e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
+                e);
       }
+    }
+
+    // lets bind to the scope so other integrations can pick it up
+    hub.configureScope(
+        scope -> {
+          applyScope(scope, transaction);
+        });
+
+    activitiesWithOngoingTransactions.put(activity, transaction);
+  }
+
+  private static void attachAppStartMetrics(
+      final @NotNull AppStartMetrics appStartMetrics, final @NonNull ISpan parentSpan) {
+    if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+      return;
+    }
+
+    // Application.onCreate
+    final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
+    if (appOnCreate.hasStopped()) {
+      final @NotNull ISpan span =
+          parentSpan.startChild(
+              "ui.load",
+              appOnCreate.getDescription(),
+              new SentryLongDate(DateUtils.millisToNanos(appOnCreate.getStartTimestampMs())),
+              Instrumenter.SENTRY);
+      span.finish(
+          SpanStatus.OK,
+          new SentryLongDate(DateUtils.millisToNanos(appOnCreate.getProjectedStopTimestampMs())));
+    }
+
+    // Content Provider
+    final @NotNull List<TimeSpan> contentProviderOnCreates =
+        appStartMetrics.getContentProviderOnCreateTimeSpans();
+    if (!contentProviderOnCreates.isEmpty()) {
+      final @NotNull ISpan contentProviderRootSpan =
+          parentSpan.startChild(
+              "ui.load",
+              "ContentProvider",
+              new SentryLongDate(
+                  DateUtils.millisToNanos(contentProviderOnCreates.get(0).getStartTimestampMs())),
+              Instrumenter.SENTRY);
+      for (TimeSpan contentProvider : contentProviderOnCreates) {
+        final @NotNull ISpan contentProviderSpan =
+            contentProviderRootSpan.startChild(
+                "ui.load",
+                contentProvider.getDescription(),
+                new SentryLongDate(DateUtils.millisToNanos(contentProvider.getStartTimestampMs())),
+                Instrumenter.SENTRY);
+        contentProviderSpan.finish(
+            SpanStatus.OK,
+            new SentryLongDate(
+                DateUtils.millisToNanos(contentProvider.getProjectedStopTimestampMs())));
+      }
+      contentProviderRootSpan.finish(
+          SpanStatus.OK,
+          new SentryLongDate(
+              DateUtils.millisToNanos(
+                  contentProviderOnCreates
+                      .get(contentProviderOnCreates.size() - 1)
+                      .getProjectedStopTimestampMs())));
+    }
+
+    // Activities
+    final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycleTimeSpans =
+        appStartMetrics.getActivityLifecycleTimeSpans();
+    if (!activityLifecycleTimeSpans.isEmpty()) {
+      final @NotNull ISpan activityRootSpan =
+          parentSpan.startChild(
+              "ui.load",
+              "Activity",
+              new SentryLongDate(
+                  DateUtils.millisToNanos(
+                      activityLifecycleTimeSpans.get(0).onCreate.getStartTimestampMs())),
+              Instrumenter.SENTRY);
+      for (ActivityLifecycleTimeSpan activityTimeSpan : activityLifecycleTimeSpans) {
+        final @NotNull ISpan onCreateSpan =
+            activityRootSpan.startChild(
+                "ui.load",
+                activityTimeSpan.onCreate.getDescription(),
+                new SentryLongDate(
+                    DateUtils.millisToNanos(activityTimeSpan.onCreate.getStartTimestampMs())),
+                Instrumenter.SENTRY);
+        onCreateSpan.finish(
+            SpanStatus.OK,
+            new SentryLongDate(
+                DateUtils.millisToNanos(activityTimeSpan.onCreate.getProjectedStopTimestampMs())));
+
+        final @NotNull ISpan onStartSpan =
+            activityRootSpan.startChild(
+                "ui.load",
+                activityTimeSpan.onStart.getDescription(),
+                new SentryLongDate(
+                    DateUtils.millisToNanos(activityTimeSpan.onStart.getStartTimestampMs())),
+                Instrumenter.SENTRY);
+        onStartSpan.finish(
+            SpanStatus.OK,
+            new SentryLongDate(
+                DateUtils.millisToNanos(activityTimeSpan.onStart.getProjectedStopTimestampMs())));
+      }
+      activityRootSpan.finish(
+          SpanStatus.OK,
+          new SentryLongDate(
+              DateUtils.millisToNanos(
+                  activityLifecycleTimeSpans
+                      .get(activityLifecycleTimeSpans.size() - 1)
+                      .onStart
+                      .getProjectedStopTimestampMs())));
     }
   }
 
@@ -330,14 +428,16 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction, null, null);
+      finishTransaction(transaction, activitySpanMap.get(activity));
     }
   }
 
   private void finishTransaction(
-      final @Nullable ITransaction transaction,
-      final @Nullable ISpan ttidSpan,
-      final @Nullable ISpan ttfdSpan) {
+      final @Nullable ITransaction transaction, final @Nullable ScreenSpans spans) {
+
+    @Nullable ISpan ttidSpan = spans != null ? spans.ttid : null;
+    @Nullable ISpan ttfdSpan = spans != null ? spans.ttfd : null;
+
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
@@ -370,14 +470,12 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    setColdStart(savedInstanceState);
-    addBreadcrumb(activity, "created");
     startTracing(activity);
-    final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
-
     firstActivityCreated = true;
 
     if (fullyDisplayedReporter != null) {
+      final @Nullable ScreenSpans spans = activitySpanMap.get(activity);
+      final @Nullable ISpan ttfdSpan = spans != null ? spans.ttfd : null;
       fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn(ttfdSpan));
     }
   }
@@ -393,38 +491,33 @@ public final class ActivityLifecycleIntegration
       // working. Moving this to onActivityStarted fixes the problem.
       activityFramesTracker.addActivity(activity);
     }
-    addBreadcrumb(activity, "started");
+  }
+
+  @Override
+  public void onActivityStopped(@NonNull Activity activity) {
+    // no-op
+  }
+
+  @Override
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+    // no-op
   }
 
   @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (performanceEnabled) {
-      // app start span
-      @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
-      @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
-      // in case the SentryPerformanceProvider is disabled it does not set the app start times,
-      // and we need to set the end time manually here,
-      // the start time gets set manually in SentryAndroid.init()
-      if (appStartStartTime != null && appStartEndTime == null) {
-        AppStartState.getInstance().setAppStartEnd();
-      }
-      finishAppStartSpan();
-
-      final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
-      final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
       final View rootView = activity.findViewById(android.R.id.content);
       if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
           && rootView != null) {
         FirstDrawDoneListener.registerForNextDraw(
-            rootView, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
+            rootView, () -> onFirstFrameDrawn(activity), buildInfoProvider);
       } else {
         // Posting a task to the main thread's handler will make it executed after it finished
         // its current job. That is, right after the activity draws the layout.
-        mainHandler.post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
+        mainHandler.post(() -> onFirstFrameDrawn(activity));
       }
     }
-    addBreadcrumb(activity, "resumed");
   }
 
   @Override
@@ -441,6 +534,7 @@ public final class ActivityLifecycleIntegration
       } else {
         lastPausedTime = hub.getOptions().getDateProvider().now();
       }
+      lastPausedUptimeMs = SystemClock.uptimeMillis();
     }
   }
 
@@ -453,33 +547,19 @@ public final class ActivityLifecycleIntegration
       } else {
         lastPausedTime = hub.getOptions().getDateProvider().now();
       }
+      lastPausedUptimeMs = SystemClock.uptimeMillis();
     }
-    addBreadcrumb(activity, "paused");
-  }
-
-  @Override
-  public synchronized void onActivityStopped(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "stopped");
-  }
-
-  @Override
-  public synchronized void onActivitySaveInstanceState(
-      final @NotNull Activity activity, final @NotNull Bundle outState) {
-    addBreadcrumb(activity, "saveInstanceState");
   }
 
   @Override
   public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
-    if (performanceEnabled || options.isEnableActivityLifecycleBreadcrumbs()) {
-      addBreadcrumb(activity, "destroyed");
-
-      // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
-      // memory leak
-      finishSpan(appStartSpan, SpanStatus.CANCELLED);
+    if (performanceEnabled) {
 
       // we finish the ttidSpan as cancelled in case it isn't completed yet
-      final ISpan ttidSpan = ttidSpanMap.get(activity);
-      final ISpan ttfdSpan = ttfdSpanMap.get(activity);
+      final @Nullable ScreenSpans spans = activitySpanMap.get(activity);
+
+      final ISpan ttidSpan = spans != null ? spans.ttid : null;
+      final ISpan ttfdSpan = spans != null ? spans.ttfd : null;
       finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
 
       // we finish the ttfdSpan as deadline_exceeded in case it isn't completed yet
@@ -491,9 +571,7 @@ public final class ActivityLifecycleIntegration
       stopTracing(activity, true);
 
       // set it to null in case its been just finished as cancelled
-      appStartSpan = null;
-      ttidSpanMap.remove(activity);
-      ttfdSpanMap.remove(activity);
+      activitySpanMap.remove(activity);
     }
 
     // clear it up, so we don't start again for the same activity if the activity is in the
@@ -539,24 +617,56 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
-    if (options != null && ttidSpan != null) {
-      final SentryDate endDate = options.getDateProvider().now();
-      final long durationNanos = endDate.diff(ttidSpan.getStartDate());
-      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-      ttidSpan.setMeasurement(
-          MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
+  private void onFirstFrameDrawn(final @NotNull Activity activity) {
+    final long nowUptimeMs = SystemClock.uptimeMillis();
 
-      if (ttfdSpan != null && ttfdSpan.isFinished()) {
-        ttfdSpan.updateEndDate(endDate);
-        // If the ttfd span was finished before the first frame we adjust the measurement, too
-        ttidSpan.setMeasurement(
-            MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
-      }
-      finishSpan(ttidSpan, endDate);
-    } else {
-      finishSpan(ttidSpan);
+    if (options == null) {
+      return;
     }
+
+    final @Nullable ScreenSpans spans = activitySpanMap.get(activity);
+    if (spans == null) {
+      return;
+    }
+
+    final boolean wasFirstDraw = firstDrawDone.compareAndSet(false, true);
+
+    final @Nullable ISpan ttidSpan = spans.ttid;
+    final @Nullable ISpan ttfdSpan = spans.ttfd;
+
+    if (ttidSpan == null) {
+      return;
+    }
+
+    long durationMillis = 0;
+    // attach the app start metrics only once, to the first drawn activity
+    if (wasFirstDraw) {
+      final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+      attachAppStartMetrics(appStartMetrics, ttidSpan);
+      appStartMetrics.clear();
+
+      if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+        durationMillis = appStartMetrics.getAppStartTimeSpan().getDurationMs();
+      }
+    }
+
+    if (durationMillis == 0) {
+      durationMillis = nowUptimeMs - spans.startUptimeMs;
+    }
+    // project the end date, to keep being monotonic
+    final SentryDate endDate =
+        new SentryLongDate(
+            ttidSpan.getStartDate().nanoTimestamp() + DateUtils.millisToNanos(durationMillis));
+    ttidSpan.setMeasurement(
+        MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
+
+    // If the ttfd span was finished before the first frame we adjust the measurement, too
+    if (ttfdSpan != null && ttfdSpan.isFinished()) {
+      ttfdSpan.updateEndDate(endDate);
+      ttidSpan.setMeasurement(
+          MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+    }
+    finishSpan(ttidSpan, endDate);
   }
 
   private void onFullFrameDrawn(final @Nullable ISpan ttfdSpan) {
@@ -599,29 +709,9 @@ public final class ActivityLifecycleIntegration
   }
 
   @TestOnly
-  @Nullable
-  ISpan getAppStartSpan() {
-    return appStartSpan;
-  }
-
-  @TestOnly
   @NotNull
-  WeakHashMap<Activity, ISpan> getTtidSpanMap() {
-    return ttidSpanMap;
-  }
-
-  @TestOnly
-  @NotNull
-  WeakHashMap<Activity, ISpan> getTtfdSpanMap() {
-    return ttfdSpanMap;
-  }
-
-  private void setColdStart(final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      AppStartState.getInstance().setColdStart(savedInstanceState == null);
-    }
+  WeakHashMap<Activity, ScreenSpans> getScreenSpans() {
+    return activitySpanMap;
   }
 
   private @NotNull String getTtidDesc(final @NotNull String activityName) {
@@ -639,26 +729,19 @@ public final class ActivityLifecycleIntegration
     return ttfdSpan.getDescription() + " - Deadline Exceeded";
   }
 
-  private @NotNull String getAppStartDesc(final boolean coldStart) {
-    if (coldStart) {
+  private @NotNull String getAppStartDesc(final AppStartMetrics.AppStartType appStartType) {
+    if (appStartType == AppStartMetrics.AppStartType.COLD) {
       return "Cold Start";
     } else {
       return "Warm Start";
     }
   }
 
-  private @NotNull String getAppStartOp(final boolean coldStart) {
-    if (coldStart) {
+  private @NotNull String getAppStartOp(final AppStartMetrics.AppStartType appStartType) {
+    if (appStartType == AppStartMetrics.AppStartType.COLD) {
       return APP_START_COLD;
     } else {
       return APP_START_WARM;
-    }
-  }
-
-  private void finishAppStartSpan() {
-    final @Nullable SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
-    if (performanceEnabled && appStartEndTime != null) {
-      finishSpan(appStartSpan, appStartEndTime);
     }
   }
 }

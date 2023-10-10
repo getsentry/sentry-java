@@ -233,6 +233,7 @@ final class AndroidOptionsInitializer {
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
+      options.addIntegration(new ActivityBreadcrumbIntegration((Application) context));
       options.addIntegration(
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));

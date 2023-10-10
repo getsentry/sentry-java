@@ -3,11 +3,13 @@ package io.sentry.android.core
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.MeasurementUnit
-import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
+import io.sentry.SpanContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
+import io.sentry.android.core.performance.AppStartMetrics
+import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryTransaction
 import org.mockito.kotlin.any
@@ -40,14 +42,14 @@ class PerformanceAndroidEventProcessorTest {
 
     @BeforeTest
     fun `reset instance`() {
-        AppStartState.getInstance().resetInstance()
+        AppStartMetrics.getInstance().clear()
     }
 
     @Test
     fun `add cold start measurement`() {
         val sut = fixture.getSut()
 
-        var tr = getTransaction()
+        var tr = getTransaction(AppStartType.COLD)
         setAppStart()
 
         tr = sut.process(tr, Hint())
@@ -59,7 +61,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `add warm start measurement`() {
         val sut = fixture.getSut()
 
-        var tr = getTransaction("app.start.warm")
+        var tr = getTransaction(AppStartType.WARM)
         setAppStart(false)
 
         tr = sut.process(tr, Hint())
@@ -71,7 +73,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `set app cold start unit measurement`() {
         val sut = fixture.getSut()
 
-        var tr = getTransaction()
+        var tr = getTransaction(AppStartType.COLD)
         setAppStart()
 
         tr = sut.process(tr, Hint())
@@ -84,12 +86,12 @@ class PerformanceAndroidEventProcessorTest {
     fun `do not add app start metric twice`() {
         val sut = fixture.getSut()
 
-        var tr1 = getTransaction()
+        var tr1 = getTransaction(AppStartType.COLD)
         setAppStart(false)
 
         tr1 = sut.process(tr1, Hint())
 
-        var tr2 = getTransaction()
+        var tr2 = getTransaction(AppStartType.UNKNOWN)
         tr2 = sut.process(tr2, Hint())
 
         assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
@@ -100,7 +102,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `do not add app start metric if its not ready`() {
         val sut = fixture.getSut()
 
-        var tr = getTransaction()
+        var tr = getTransaction(AppStartType.UNKNOWN)
 
         tr = sut.process(tr, Hint())
 
@@ -111,7 +113,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `do not add app start metric if performance is disabled`() {
         val sut = fixture.getSut(tracesSampleRate = null)
 
-        var tr = getTransaction()
+        var tr = getTransaction(AppStartType.COLD)
 
         tr = sut.process(tr, Hint())
 
@@ -122,7 +124,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `do not add app start metric if no app_start span`() {
         val sut = fixture.getSut(tracesSampleRate = null)
 
-        var tr = getTransaction("task")
+        var tr = getTransaction(AppStartType.UNKNOWN)
 
         tr = sut.process(tr, Hint())
 
@@ -132,7 +134,7 @@ class PerformanceAndroidEventProcessorTest {
     @Test
     fun `do not add slow and frozen frames if not auto transaction`() {
         val sut = fixture.getSut()
-        var tr = getTransaction("task")
+        var tr = getTransaction(AppStartType.UNKNOWN)
 
         tr = sut.process(tr, Hint())
 
@@ -142,7 +144,7 @@ class PerformanceAndroidEventProcessorTest {
     @Test
     fun `do not add slow and frozen frames if tracing is disabled`() {
         val sut = fixture.getSut(null)
-        var tr = getTransaction("task")
+        var tr = getTransaction(AppStartType.UNKNOWN)
 
         tr = sut.process(tr, Hint())
 
@@ -165,13 +167,26 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     private fun setAppStart(coldStart: Boolean = true) {
-        AppStartState.getInstance().setColdStart(coldStart)
-        AppStartState.getInstance().setAppStartTime(0, SentryNanotimeDate())
-        AppStartState.getInstance().setAppStartEnd()
+        AppStartMetrics.getInstance().apply {
+            appStartType = when (coldStart) {
+                true -> AppStartMetrics.AppStartType.COLD
+                false -> AppStartMetrics.AppStartType.WARM
+            }
+            appStartTimeSpan.apply {
+                setStartedAt(1)
+                setStoppedAt(2)
+            }
+        }
     }
 
-    private fun getTransaction(op: String = "app.start.cold"): SentryTransaction {
-        fixture.tracer.startChild(op)
-        return SentryTransaction(fixture.tracer)
+    private fun getTransaction(type: AppStartType): SentryTransaction {
+        val op = when (type) {
+            AppStartType.COLD -> "app.start.cold"
+            AppStartType.WARM -> "app.start.warm"
+            AppStartType.UNKNOWN -> "ui.load"
+        }
+        val txn = SentryTransaction(fixture.tracer)
+        txn.contexts.trace = SpanContext(op, TracesSamplingDecision(false))
+        return txn
     }
 }

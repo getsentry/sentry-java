@@ -1,14 +1,19 @@
 package io.sentry.android.core.performance;
 
 import android.os.SystemClock;
+import io.sentry.DateUtils;
+import io.sentry.SentryDate;
+import io.sentry.SentryLongDate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * A measurement for time critical components on a macro (ms) level. Based on {@link
  * SystemClock#uptimeMillis()} to ensure linear time progression (as opposed to a syncable clock).
- * To provide real world unix time information, the start time is used and translated into unix
- * time. The stop unix time only gets projected based on the start time + duration of the time span.
+ * To provide real world unix time information, the start uptime time is stored alongside the unix
+ * time. The stop unix time is artificial, it gets projected based on the start time + duration of
+ * the time span.
  */
 public class TimeSpan implements Comparable<TimeSpan> {
 
@@ -65,10 +70,27 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   /**
+   * @return the start timestamp of this measurement, as uptime, in ms
+   */
+  public long getStartUptimeMs() {
+    return startUptimeMs;
+  }
+
+  /**
    * @return the start timestamp of this measurement, unix time, in ms
    */
   public long getStartTimestampMs() {
     return startUnixTimeMs;
+  }
+
+  /**
+   * @return the start timestamp of this measurement, unix time
+   */
+  public @Nullable SentryDate getStartTimestamp() {
+    if (hasStarted()) {
+      return new SentryLongDate(DateUtils.millisToNanos(getStartTimestampMs()));
+    }
+    return null;
   }
 
   /**
@@ -105,6 +127,11 @@ public class TimeSpan implements Comparable<TimeSpan> {
     }
   }
 
+  @TestOnly
+  public void setStartUnixTimeMs(long startUnixTimeMs) {
+    this.startUnixTimeMs = startUnixTimeMs;
+  }
+
   public @Nullable String getDescription() {
     return description;
   }
@@ -114,6 +141,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   public void reset() {
+    description = null;
     startUptimeMs = 0;
     stopUptimeMs = 0;
     startUnixTimeMs = 0;

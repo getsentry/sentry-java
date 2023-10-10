@@ -3,6 +3,7 @@ package io.sentry.samples.android;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
@@ -260,6 +261,7 @@ public class MainActivity extends AppCompatActivity {
     if (span != null) {
       span.setMeasurement("screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
     }
-    Sentry.reportFullyDisplayed();
+
+    new Handler(Looper.getMainLooper()).postDelayed(Sentry::reportFullyDisplayed, 100);
   }
 }

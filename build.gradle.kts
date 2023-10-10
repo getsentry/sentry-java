@@ -22,6 +22,7 @@ plugins {
 buildscript {
     repositories {
         google()
+        mavenLocal()
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
@@ -78,6 +79,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()

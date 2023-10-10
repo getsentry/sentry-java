@@ -16,6 +16,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
@@ -97,7 +98,9 @@ public final class InternalSentrySdk {
       if (app == null) {
         app = new App();
         app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
-        app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
+        app.setAppStartTime(
+            DateUtils.toUtilDate(
+                AppStartMetrics.getInstance().getAppStartTimeSpan().getStartTimestamp()));
 
         final @NotNull BuildInfoProvider buildInfoProvider =
             new BuildInfoProvider(options.getLogger());

@@ -1,13 +1,11 @@
 package io.sentry.android.core;
 
 import android.content.Context;
-import android.os.SystemClock;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
-import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
@@ -20,12 +18,6 @@ import org.jetbrains.annotations.NotNull;
 
 /** Sentry initialization class */
 public final class SentryAndroid {
-
-  // static to rely on Class load init.
-  private static final @NotNull SentryDate appStartTime =
-      AndroidDateUtils.getCurrentSentryDateTime();
-  // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long appStart = SystemClock.uptimeMillis();
 
   static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
       "io.sentry.android.fragment.FragmentLifecycleIntegration";
@@ -81,9 +73,6 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
-    // if SentryPerformanceProvider was disabled or removed, we set the App Start when
-    // the SDK is called.
-    AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
 
     try {
       Sentry.init(

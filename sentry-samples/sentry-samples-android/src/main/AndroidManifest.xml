@@ -28,6 +28,10 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
+      <provider
+        android:authorities="MyContentProvider"
+        android:name=".MyContentProvider" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -150,6 +154,6 @@
 
         <!--    how to disable sentry -->
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
-      
+
     </application>
 </manifest>
