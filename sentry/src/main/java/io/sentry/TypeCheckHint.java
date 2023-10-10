@@ -98,7 +98,8 @@ public final class TypeCheckHint {
   /** Used for Spring WebFlux exception handler. */
   public static final String WEBFLUX_EXCEPTION_HANDLER_REQUEST = "webFluxExceptionHandler:request";
   /** Used for Spring WebFlux exception handler. */
-  public static final String WEBFLUX_EXCEPTION_HANDLER_EXCHANGE = "webFluxExceptionHandler:exchange";
+  public static final String WEBFLUX_EXCEPTION_HANDLER_EXCHANGE =
+      "webFluxExceptionHandler:exchange";
 
   /** Used for Spring WebFlux filter breadcrumbs. */
   public static final String WEBFLUX_FILTER_RESPONSE = "webFluxFilter:response";

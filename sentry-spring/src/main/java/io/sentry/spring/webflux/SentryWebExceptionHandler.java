@@ -1,8 +1,8 @@
 package io.sentry.spring.webflux;
 
+import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_EXCHANGE;
 import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_REQUEST;
 import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_RESPONSE;
-import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_EXCHANGE;
 
 import io.sentry.Hint;
 import io.sentry.IHub;
