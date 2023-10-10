@@ -8,6 +8,12 @@
 - Add `@SentryCaptureExceptionParameter` annotation which captures exceptions passed into an annotated method ([#2764](https://github.com/getsentry/sentry-java/pull/2764))
   - This can be used to replace `Sentry.captureException` calls in `@ExceptionHandler` of a `@ControllerAdvice`
 
+### Dependencies
+
+- Bump Native SDK from v0.6.5 to v0.6.6 ([#2975](https://github.com/getsentry/sentry-java/pull/2975))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#066)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.5...0.6.6)
+
 ## 6.30.0
 
 ### Features
