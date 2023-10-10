@@ -118,6 +118,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
    *     this integration for query and mutation operations. This can be used to prevent unnecessary
    *     work by not adding the request body when another integration will add it anyways, as is the
    *     case with our spring integration for WebMVC.
+   * @param ignoredErrorTypes list of error types that should not be captured and sent to Sentry
    */
   public SentryInstrumentation(
       final @Nullable BeforeSpanCallback beforeSpan,
@@ -197,8 +198,6 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                 final @NotNull List<GraphQLError> errors = result.getErrors();
                 if (errors != null) {
                   for (GraphQLError error : errors) {
-                    // not capturing INTERNAL_ERRORS as they should be reported via graphQlContext
-                    // above
                     String errorType = getErrorType(error);
                     if (!isIgnored(errorType)) {
                       exceptionReporter.captureThrowable(
@@ -225,6 +224,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       return false;
     }
 
+    // not capturing INTERNAL_ERRORS as they should be reported via graphQlContext above
+    // also not capturing error types explicitly ignored by users
     return ERROR_TYPES_HANDLED_BY_DATA_FETCHERS.contains(errorType)
         || ignoredErrorTypes.contains(errorType);
   }

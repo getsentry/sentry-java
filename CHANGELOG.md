@@ -5,6 +5,9 @@
 ### Features
 
 - Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
+- Allow filtering GraphQL errors ([#2967](https://github.com/getsentry/sentry-java/pull/2967))
+  - This list can be set directly when calling the constructor of `SentryInstrumentation`
+  - For Spring Boot it can also be set in `application.properties` as `sentry.graphql.ignored-error-types=SOME_ERROR,ANOTHER_ERROR`
 
 ## 6.30.0
 
