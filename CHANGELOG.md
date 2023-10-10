@@ -5,6 +5,8 @@
 ### Features
 
 - Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
+- Add `@SentryCaptureExceptionParameter` annotation which captures exceptions passed into an annotated method ([#2764](https://github.com/getsentry/sentry-java/pull/2764))
+  - This can be used to replace `Sentry.captureException` calls in `@ExceptionHandler` of a `@ControllerAdvice`
 - Allow filtering GraphQL errors ([#2967](https://github.com/getsentry/sentry-java/pull/2967))
   - This list can be set directly when calling the constructor of `SentryInstrumentation`
   - For Spring Boot it can also be set in `application.properties` as `sentry.graphql.ignored-error-types=SOME_ERROR,ANOTHER_ERROR`

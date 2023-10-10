@@ -26,6 +26,8 @@ import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider;
 import io.sentry.spring.jakarta.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
+import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
+import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
@@ -302,6 +304,22 @@ public class SentryAutoConfiguration {
         return new SentryExceptionResolver(
             sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
       }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(ProceedingJoinPoint.class)
+    @ConditionalOnProperty(
+        value = "sentry.enable-aot-compatibility",
+        havingValue = "false",
+        matchIfMissing = true)
+    @Import(SentryExceptionParameterAdviceConfiguration.class)
+    @Open
+    static class SentryErrorAspectsConfiguration {
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnMissingBean(name = "sentryCaptureExceptionParameterPointcut")
+      @Import(SentryCaptureExceptionParameterPointcutConfiguration.class)
+      @Open
+      static class SentryCaptureExceptionParameterPointcutAutoConfiguration {}
     }
 
     @Configuration(proxyBeanMethods = false)
