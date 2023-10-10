@@ -2594,6 +2594,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field SPRING_REQUEST_INTERCEPTOR_RESPONSE Ljava/lang/String;
 	public static final field SPRING_RESOLVER_REQUEST Ljava/lang/String;
 	public static final field SPRING_RESOLVER_RESPONSE Ljava/lang/String;
+	public static final field WEBFLUX_EXCEPTION_HANDLER_EXCHANGE Ljava/lang/String;
 	public static final field WEBFLUX_EXCEPTION_HANDLER_REQUEST Ljava/lang/String;
 	public static final field WEBFLUX_EXCEPTION_HANDLER_RESPONSE Ljava/lang/String;
 	public static final field WEBFLUX_FILTER_REQUEST Ljava/lang/String;
