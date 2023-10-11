@@ -18,6 +18,14 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#066)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.6.5...0.6.6)
 
+### Fixes
+
+- Fix json parsing of nullable/empty fields for Hybrid SDKs ([#2968](https://github.com/getsentry/sentry-java/pull/2968))
+  - (Internal) Rename `nextList` to `nextListOrNull` to actually match what the method does
+  - (Hybrid) Check if there's any object in a collection before trying to parse it (which prevents the "Failed to deserilize object in list" log message)
+  - (Hybrid) If a date can't be parsed as an ISO timestamp, attempts to parse it as millis silently, without printing a log message
+  - (Hybrid) If `op` is not defined as part of `SpanContext`, fallback to an empty string, because the filed is optional in the spec
+
 ## 6.30.0
 
 ### Features

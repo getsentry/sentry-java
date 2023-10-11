@@ -245,7 +245,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.PACKAGES:
             List<SentryPackage> deserializedPackages =
-                reader.nextList(logger, new SentryPackage.Deserializer());
+                reader.nextListOrNull(logger, new SentryPackage.Deserializer());
             if (deserializedPackages != null) {
               packages.addAll(deserializedPackages);
             }

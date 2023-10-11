@@ -1,7 +1,10 @@
 package io.sentry
 
 import org.junit.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import java.io.StringReader
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -142,8 +145,22 @@ class JsonObjectReaderTest {
             Deserializable("foo", "bar"),
             Deserializable("fooo", "baar")
         )
-        val actual = reader.nextList(logger, Deserializable.Deserializer())
+        val actual = reader.nextListOrNull(logger, Deserializable.Deserializer())
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `returns empty list for empty list`() {
+        val jsonString = "{\"deserializable\": []}"
+        val reader = fixture.getSut(jsonString)
+        val logger = mock<ILogger>()
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = emptyList<Deserializable>()
+        val actual = reader.nextListOrNull(logger, Deserializable.Deserializer())
+        assertEquals(expected, actual)
+        verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
     }
 
     // nextMap
@@ -173,6 +190,19 @@ class JsonObjectReaderTest {
         )
         val actual = reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer())
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `returns empty map`() {
+        val jsonString = "{\"deserializable\": {}}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = mapOf<String, Deserializable>()
+        val actual = reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer())
+        assertEquals(expected, actual)
+        verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
     }
 
     // nextDateOrNull
@@ -211,6 +241,7 @@ class JsonObjectReaderTest {
         val expected = DateUtils.getDateTimeWithMillisPrecision(dateTimestampFormat)
         val actual = reader.nextDateOrNull(fixture.logger)
         assertEquals(expected, actual)
+        verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
     }
 
     @Test
@@ -224,6 +255,7 @@ class JsonObjectReaderTest {
         val expected = DateUtils.getDateTimeWithMillisPrecision(dateTimestampWithMillis)
         val actual = reader.nextDateOrNull(fixture.logger)
         assertEquals(expected, actual)
+        verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
     }
 
     // nextTimeZoneOrNull

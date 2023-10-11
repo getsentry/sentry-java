@@ -244,7 +244,7 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
             node.alpha = reader.nextDoubleOrNull();
             break;
           case JsonKeys.CHILDREN:
-            node.children = reader.nextList(logger, this);
+            node.children = reader.nextListOrNull(logger, this);
             break;
           default:
             if (unknown == null) {

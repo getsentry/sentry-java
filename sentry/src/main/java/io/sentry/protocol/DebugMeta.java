@@ -109,7 +109,7 @@ public final class DebugMeta implements JsonUnknown, JsonSerializable {
             debugMeta.sdkInfo = reader.nextOrNull(logger, new SdkInfo.Deserializer());
             break;
           case JsonKeys.IMAGES:
-            debugMeta.images = reader.nextList(logger, new DebugImage.Deserializer());
+            debugMeta.images = reader.nextListOrNull(logger, new DebugImage.Deserializer());
             break;
           default:
             if (unknown == null) {

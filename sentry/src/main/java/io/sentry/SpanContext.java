@@ -358,10 +358,13 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       }
 
       if (op == null) {
-        String message = "Missing required field \"" + JsonKeys.OP + "\"";
-        Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
-        throw exception;
+        /*
+         This is the case for hybrid SDKs. In fact, 'op' field is not required as part of the
+         trace context, but we utilise this class heavily also for transactions and spans, so it
+         would be a lot of changes to make it optional and we just duct-tape it here.
+         See doc https://develop.sentry.dev/sdk/event-payloads/contexts/#trace-context
+        */
+        op = "";
       }
 
       SpanContext spanContext = new SpanContext(traceId, spanId, op, parentSpanId, null);

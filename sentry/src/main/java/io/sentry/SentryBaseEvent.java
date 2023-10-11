@@ -435,7 +435,7 @@ public abstract class SentryBaseEvent {
           baseEvent.dist = reader.nextStringOrNull();
           return true;
         case JsonKeys.BREADCRUMBS:
-          baseEvent.breadcrumbs = reader.nextList(logger, new Breadcrumb.Deserializer());
+          baseEvent.breadcrumbs = reader.nextListOrNull(logger, new Breadcrumb.Deserializer());
           return true;
         case JsonKeys.DEBUG_META:
           baseEvent.debugMeta = reader.nextOrNull(logger, new DebugMeta.Deserializer());
