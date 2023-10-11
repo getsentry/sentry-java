@@ -26,6 +26,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanStatus;
 import io.sentry.util.StringUtils;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +52,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   private final @NotNull SentrySubscriptionHandler subscriptionHandler;
 
   private final @NotNull ExceptionReporter exceptionReporter;
+
+  private final @NotNull List<String> ignoredErrorTypes;
 
   /**
    * @deprecated please use a constructor that takes a {@link SentrySubscriptionHandler} instead.
@@ -104,17 +107,41 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     this(
         beforeSpan,
         subscriptionHandler,
-        new ExceptionReporter(captureRequestBodyForNonSubscriptions));
+        new ExceptionReporter(captureRequestBodyForNonSubscriptions),
+        new ArrayList<>());
+  }
+
+  /**
+   * @param beforeSpan callback when a span is created
+   * @param subscriptionHandler can report subscription errors
+   * @param captureRequestBodyForNonSubscriptions false if request bodies should not be captured by
+   *     this integration for query and mutation operations. This can be used to prevent unnecessary
+   *     work by not adding the request body when another integration will add it anyways, as is the
+   *     case with our spring integration for WebMVC.
+   * @param ignoredErrorTypes list of error types that should not be captured and sent to Sentry
+   */
+  public SentryInstrumentation(
+      final @Nullable BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final boolean captureRequestBodyForNonSubscriptions,
+      final @NotNull List<String> ignoredErrorTypes) {
+    this(
+        beforeSpan,
+        subscriptionHandler,
+        new ExceptionReporter(captureRequestBodyForNonSubscriptions),
+        ignoredErrorTypes);
   }
 
   @TestOnly
   public SentryInstrumentation(
       final @Nullable BeforeSpanCallback beforeSpan,
       final @NotNull SentrySubscriptionHandler subscriptionHandler,
-      final @NotNull ExceptionReporter exceptionReporter) {
+      final @NotNull ExceptionReporter exceptionReporter,
+      final @NotNull List<String> ignoredErrorTypes) {
     this.beforeSpan = beforeSpan;
     this.subscriptionHandler = subscriptionHandler;
     this.exceptionReporter = exceptionReporter;
+    this.ignoredErrorTypes = ignoredErrorTypes;
     SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL");
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
@@ -171,11 +198,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                 final @NotNull List<GraphQLError> errors = result.getErrors();
                 if (errors != null) {
                   for (GraphQLError error : errors) {
-                    // not capturing INTERNAL_ERRORS as they should be reported via graphQlContext
-                    // above
                     String errorType = getErrorType(error);
-                    if (errorType == null
-                        || !ERROR_TYPES_HANDLED_BY_DATA_FETCHERS.contains(errorType)) {
+                    if (!isIgnored(errorType)) {
                       exceptionReporter.captureThrowable(
                           new RuntimeException(error.getMessage()),
                           new ExceptionReporter.ExceptionDetails(
@@ -193,6 +217,17 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                     null);
               }
             });
+  }
+
+  private boolean isIgnored(final @Nullable String errorType) {
+    if (errorType == null) {
+      return false;
+    }
+
+    // not capturing INTERNAL_ERRORS as they should be reported via graphQlContext above
+    // also not capturing error types explicitly ignored by users
+    return ERROR_TYPES_HANDLED_BY_DATA_FETCHERS.contains(errorType)
+        || ignoredErrorTypes.contains(errorType);
   }
 
   private @Nullable String getErrorType(final @Nullable GraphQLError error) {

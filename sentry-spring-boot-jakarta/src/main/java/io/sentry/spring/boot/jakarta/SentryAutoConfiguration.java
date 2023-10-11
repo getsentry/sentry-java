@@ -14,6 +14,7 @@ import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
+import io.sentry.spring.boot.jakarta.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.jakarta.ContextTagsEventProcessor;
 import io.sentry.spring.jakarta.SentryExceptionResolver;
 import io.sentry.spring.jakarta.SentryRequestResolver;
@@ -27,7 +28,6 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
-import io.sentry.spring.jakarta.graphql.SentryGraphqlConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
@@ -166,7 +166,7 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @Import(SentryGraphqlConfiguration.class)
+    @Import(SentryGraphqlAutoConfiguration.class)
     @Open
     @ConditionalOnClass({
       SentryGraphqlExceptionHandler.class,

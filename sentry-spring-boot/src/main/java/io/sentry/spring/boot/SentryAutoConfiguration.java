@@ -22,12 +22,12 @@ import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
+import io.sentry.spring.boot.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.exception.SentryExceptionParameterAdviceConfiguration;
-import io.sentry.spring.graphql.SentryGraphqlConfiguration;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
@@ -166,7 +166,7 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @Import(SentryGraphqlConfiguration.class)
+    @Import(SentryGraphqlAutoConfiguration.class)
     @Open
     @ConditionalOnClass({
       SentryGraphqlExceptionHandler.class,
