@@ -29,6 +29,10 @@
   - (Hybrid) If a date can't be parsed as an ISO timestamp, attempts to parse it as millis silently, without printing a log message
   - (Hybrid) If `op` is not defined as part of `SpanContext`, fallback to an empty string, because the filed is optional in the spec
 
+### Fixes
+
+- Always attach OkHttp errors and Http Client Errors only to call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
+
 ## 6.30.0
 
 ### Features

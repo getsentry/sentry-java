@@ -64,3 +64,8 @@ public abstract interface class io/sentry/android/okhttp/SentryOkHttpInterceptor
 	public abstract fun execute (Lio/sentry/ISpan;Lokhttp3/Request;Lokhttp3/Response;)Lio/sentry/ISpan;
 }
 
+public final class io/sentry/android/okhttp/SentryOkHttpUtils {
+	public static final field INSTANCE Lio/sentry/android/okhttp/SentryOkHttpUtils;
+	public final fun captureClientError (Lio/sentry/IHub;Lokhttp3/Request;Lokhttp3/Response;)V
+}
+
