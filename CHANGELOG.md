@@ -6,6 +6,7 @@
 - Cleanup `startTransaction` overloads ([#2964](https://github.com/getsentry/sentry-java/pull/2964))
   - We have reduce the number of overloads by allowing to pass in `TransactionOptions` instead of having separate parameters for certain options.
   - `TransactionOptions` has defaults set and can be customized
+- Raw logback message and parameters are now guarded by `sendDefaultPii` if an `encoder` has been configured ([#2976](https://github.com/getsentry/sentry-java/pull/2976))
 
 ## 7.0.0-beta.1
 

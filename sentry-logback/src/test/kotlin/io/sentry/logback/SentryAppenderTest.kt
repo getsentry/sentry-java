@@ -35,7 +35,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null) {
+    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null, sendDefaultPii: Boolean = false) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -47,6 +47,7 @@ class SentryAppenderTest {
             val appender = SentryAppender()
             val options = SentryOptions()
             options.dsn = dsn
+            options.isSendDefaultPii = sendDefaultPii
             contextTags?.forEach { options.addContextTag(it) }
             appender.setOptions(options)
             appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
@@ -118,14 +119,35 @@ class SentryAppenderTest {
     fun `encodes message`() {
         var encoder = PatternLayoutEncoder()
         encoder.pattern = "encoderadded %msg"
-        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
-        fixture.logger.info("testing encoding")
+        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, sendDefaultPii = true)
+        fixture.logger.info("testing encoding {}", "param1")
 
         verify(fixture.transport).send(
             checkEvent { event ->
                 assertNotNull(event.message) { message ->
-                    assertEquals("encoderadded testing encoding", message.formatted)
-                    assertEquals("testing encoding", message.message)
+                    assertEquals("encoderadded testing encoding param1", message.formatted)
+                    assertEquals("testing encoding {}", message.message)
+                    assertEquals(listOf("param1"), message.params)
+                }
+                assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `if encoder is set treats raw message and params as PII`() {
+        var encoder = PatternLayoutEncoder()
+        encoder.pattern = "encoderadded %msg"
+        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, sendDefaultPii = false)
+        fixture.logger.info("testing encoding {}", "param1")
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.message) { message ->
+                    assertEquals("encoderadded testing encoding param1", message.formatted)
+                    assertNull(message.message)
+                    assertNull(message.params)
                 }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             },
@@ -151,7 +173,7 @@ class SentryAppenderTest {
     @Test
     fun `fallsback when encoder throws`() {
         var encoder = ThrowingEncoder()
-        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
+        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, sendDefaultPii = true)
         fixture.logger.info("testing when encoder throws")
 
         verify(fixture.transport).send(
