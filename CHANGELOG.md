@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- SentryOkHttpEvent report exceptions only on the call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
+- Always attach OkHttp errors and Http Client Errors only to call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
 
 ## 6.30.0
 
