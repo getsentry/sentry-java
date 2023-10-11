@@ -33,6 +33,10 @@
 
 - Always attach OkHttp errors and Http Client Errors only to call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
 
+### Fixes
+
+- Fixed crash accessing Choreographer instance ([#2970](https://github.com/getsentry/sentry-java/pull/2970))
+
 ## 6.30.0
 
 ### Features
