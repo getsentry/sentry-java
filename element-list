@@ -24,11 +24,15 @@ io.sentry.servlet
 io.sentry.servlet.jakarta
 io.sentry.spring
 io.sentry.spring.boot
+io.sentry.spring.boot.graphql
 io.sentry.spring.boot.jakarta
+io.sentry.spring.boot.jakarta.graphql
 io.sentry.spring.checkin
+io.sentry.spring.exception
 io.sentry.spring.graphql
 io.sentry.spring.jakarta
 io.sentry.spring.jakarta.checkin
+io.sentry.spring.jakarta.exception
 io.sentry.spring.jakarta.graphql
 io.sentry.spring.jakarta.tracing
 io.sentry.spring.jakarta.webflux
