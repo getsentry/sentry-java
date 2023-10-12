@@ -4,6 +4,7 @@
 
 ### Features
 
+- Improve default debouncing mechanism ([#2945](https://github.com/getsentry/sentry-java/pull/2945))
 - Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
 - Add `@SentryCaptureExceptionParameter` annotation which captures exceptions passed into an annotated method ([#2764](https://github.com/getsentry/sentry-java/pull/2764))
   - This can be used to replace `Sentry.captureException` calls in `@ExceptionHandler` of a `@ControllerAdvice`
@@ -14,6 +15,7 @@
 
 ### Fixes
 
+- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
 - Fix json parsing of nullable/empty fields for Hybrid SDKs ([#2968](https://github.com/getsentry/sentry-java/pull/2968))
   - (Internal) Rename `nextList` to `nextListOrNull` to actually match what the method does
   - (Hybrid) Check if there's any object in a collection before trying to parse it (which prevents the "Failed to deserilize object in list" log message)
@@ -46,7 +48,6 @@
 
 ### Fixes
 
-- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
 - Always send memory stats for transactions ([#2936](https://github.com/getsentry/sentry-java/pull/2936))
   - This makes it possible to query transactions by the `device.class` tag on Sentry
 - Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))
