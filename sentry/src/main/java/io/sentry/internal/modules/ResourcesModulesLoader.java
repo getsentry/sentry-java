@@ -4,6 +4,7 @@ import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,9 +29,8 @@ public final class ResourcesModulesLoader extends ModulesLoader {
   @Override
   protected Map<String, String> loadModules() {
     final Map<String, String> modules = new TreeMap<>();
-    try {
-      final InputStream resourcesStream =
-          classLoader.getResourceAsStream(EXTERNAL_MODULES_FILENAME);
+    try (final InputStream resourcesStream =
+        classLoader.getResourceAsStream(EXTERNAL_MODULES_FILENAME)) {
 
       if (resourcesStream == null) {
         logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
@@ -40,6 +40,8 @@ public final class ResourcesModulesLoader extends ModulesLoader {
       return parseStream(resourcesStream);
     } catch (SecurityException e) {
       logger.log(SentryLevel.INFO, "Access to resources denied.", e);
+    } catch (IOException e) {
+      logger.log(SentryLevel.INFO, "Access to resources failed.", e);
     }
     return modules;
   }

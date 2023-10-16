@@ -116,6 +116,7 @@ public final class SentryFileOutputStream extends FileOutputStream {
   @Override
   public void close() throws IOException {
     spanManager.finish(delegate);
+    super.close();
   }
 
   private static FileDescriptor getFileDescriptor(final @NotNull FileOutputStream stream)

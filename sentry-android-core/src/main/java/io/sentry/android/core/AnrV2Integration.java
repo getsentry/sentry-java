@@ -292,24 +292,16 @@ public class AnrV2Integration implements Integration, Closeable {
 
     private @NotNull ParseResult parseThreadDump(
         final @NotNull ApplicationExitInfo exitInfo, final boolean isBackground) {
-      InputStream trace;
-      try {
-        trace = exitInfo.getTraceInputStream();
+      final byte[] dump;
+
+      try (final InputStream trace = exitInfo.getTraceInputStream()) {
         if (trace == null) {
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
+        dump = getDumpBytes(trace);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", e);
         return new ParseResult(ParseResult.Type.NO_DUMP);
-      }
-
-      byte[] dump = null;
-      try {
-        dump = getDumpBytes(trace);
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Failed to convert ANR thread dump to byte array", e);
       }
 
       try (final BufferedReader reader =
@@ -330,16 +322,17 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     private byte[] getDumpBytes(final @NotNull InputStream trace) throws IOException {
-      final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
 
-      int nRead;
-      final byte[] data = new byte[1024];
+        int nRead;
+        final byte[] data = new byte[1024];
 
-      while ((nRead = trace.read(data, 0, data.length)) != -1) {
-        buffer.write(data, 0, nRead);
+        while ((nRead = trace.read(data, 0, data.length)) != -1) {
+          buffer.write(data, 0, nRead);
+        }
+
+        return buffer.toByteArray();
       }
-
-      return buffer.toByteArray();
     }
   }
 

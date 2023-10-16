@@ -30,19 +30,23 @@ public final class ResourcesDebugMetaLoader implements IDebugMetaLoader {
 
   @Override
   public @Nullable Properties loadDebugMeta() {
-    InputStream debugMetaStream = classLoader.getResourceAsStream(DEBUG_META_PROPERTIES_FILENAME);
-    if (debugMetaStream == null) {
-      logger.log(SentryLevel.INFO, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
-    } else {
-      try (final InputStream is = new BufferedInputStream(debugMetaStream)) {
-        final Properties properties = new Properties();
-        properties.load(is);
-        return properties;
-      } catch (IOException e) {
-        logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
-      } catch (RuntimeException e) {
-        logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
+    try (InputStream debugMetaStream =
+        classLoader.getResourceAsStream(DEBUG_META_PROPERTIES_FILENAME)) {
+      if (debugMetaStream == null) {
+        logger.log(SentryLevel.INFO, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
+      } else {
+        try (final InputStream is = new BufferedInputStream(debugMetaStream)) {
+          final Properties properties = new Properties();
+          properties.load(is);
+          return properties;
+        } catch (IOException e) {
+          logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
+        } catch (RuntimeException e) {
+          logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
+        }
       }
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
     }
 
     return null;
