@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Set export flag on Android receivers on API 33+ ([#2990](https://github.com/getsentry/sentry-java/pull/2990))
+
 ## 6.31.0
 
 ### Features
