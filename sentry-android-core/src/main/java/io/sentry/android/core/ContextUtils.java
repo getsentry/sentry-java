@@ -2,11 +2,15 @@ package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.content.Context.ACTIVITY_SERVICE;
+import static android.content.Context.RECEIVER_EXPORTED;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -16,6 +20,7 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.App;
 import java.io.BufferedReader;
 import java.io.File;
@@ -343,6 +348,33 @@ public final class ContextUtils {
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
+    }
+  }
+
+  /** Register a not exported BroadcastReceiver, independently from platform version. */
+  static @Nullable Intent registerReceiver(
+      final @NotNull Context context,
+      final @NotNull SentryOptions options,
+      final @Nullable BroadcastReceiver receiver,
+      final @NotNull IntentFilter filter) {
+    return registerReceiver(context, new BuildInfoProvider(options.getLogger()), receiver, filter);
+  }
+
+  /** Register a not exported BroadcastReceiver, independently from platform version. */
+  @SuppressLint({"NewApi", "UnspecifiedRegisterReceiverFlag"})
+  static @Nullable Intent registerReceiver(
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable BroadcastReceiver receiver,
+      final @NotNull IntentFilter filter) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
+      // From https://developer.android.com/guide/components/broadcasts#context-registered-receivers
+      // If this receiver is listening for broadcasts sent from the system or from other apps, even
+      // other apps that you own—use the RECEIVER_EXPORTED flag. If instead this receiver is
+      // listening only for broadcasts sent by your app, use the RECEIVER_NOT_EXPORTED flag.
+      return context.registerReceiver(receiver, filter, RECEIVER_EXPORTED);
+    } else {
+      return context.registerReceiver(receiver, filter);
     }
   }
 
