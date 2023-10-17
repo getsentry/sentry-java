@@ -8,7 +8,8 @@
 
 ### Fixes
 
-- Set export flag on Android receivers on API 33+ ([#2990](https://github.com/getsentry/sentry-java/pull/2990))
+- Make `SystemEventsBroadcastReceiver` exported on API 33+ ([#2990](https://github.com/getsentry/sentry-java/pull/2990))
+  - This will fix the `SystemEventsBreadcrumbsIntegration` crashes that you might have encountered on Play Console
 
 ## 6.31.0
 
