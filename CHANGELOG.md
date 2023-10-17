@@ -4,7 +4,7 @@
 
 ### Features
 
-- Make DebugImagesLoader public ([#2993](https://github.com/getsentry/sentry-java/pull/2993))
+- Make `DebugImagesLoader` public ([#2993](https://github.com/getsentry/sentry-java/pull/2993))
 
 ## 6.31.0
 
