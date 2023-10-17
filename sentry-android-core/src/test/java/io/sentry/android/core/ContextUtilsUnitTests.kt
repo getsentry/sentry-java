@@ -29,6 +29,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@Config(sdk = [33])
 @RunWith(AndroidJUnit4::class)
 class ContextUtilsUnitTests {
 
@@ -177,9 +178,7 @@ class ContextUtilsUnitTests {
         ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
         verify(context).registerReceiver(eq(receiver), eq(filter))
     }
-/*
-    context.registerReceiver(BroadcastReceiver, IntentFilter, int) throws with NoSuchMethod exception in tests
-    Re-enable this test when possible
+
     @Test
     fun `registerReceiver calls context_registerReceiver with exported flag on API 33+`() {
         val buildInfo = mock<BuildInfoProvider>()
@@ -188,6 +187,6 @@ class ContextUtilsUnitTests {
         val context = mock<Context>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
         ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
-        verify(context).registerReceiver(eq(receiver), eq(filter), eq(RECEIVER_NOT_EXPORTED))
-    }*/
+        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_EXPORTED))
+    }
 }
