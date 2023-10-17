@@ -17,7 +17,6 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
-import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -172,44 +171,6 @@ class EnvelopeTests : BaseUiTest() {
     }
 
     @Test
-    fun checkProfileNotSentIfEmpty() {
-        initSentry(true) { options: SentryAndroidOptions ->
-            options.tracesSampleRate = 1.0
-            options.profilesSampleRate = 1.0
-        }
-        relayIdlingResource.increment()
-        val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
-        val transaction = Sentry.startTransaction("emptyProfileTransaction", "test empty")
-
-        var finished = false
-        Thread {
-            while (!finished) {
-                // Let's modify the trace file to be empty, so that the profile will actually be empty.
-                val origProfileFile = File(profilesDirPath!!).listFiles()?.maxByOrNull { f -> f.lastModified() }
-                origProfileFile?.writeBytes(ByteArray(0))
-            }
-        }.start()
-        transaction.finish()
-        // The profiler is stopped in background on the executor service, so we can stop deleting the trace file
-        // only after the profiler is stopped. This means we have to stop the deletion in the executorService
-        Sentry.getCurrentHub().options.executorService.submit {
-            finished = true
-        }
-
-        relay.assert {
-            findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "emptyProfileTransaction"
-            }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("emptyProfileTransaction", transactionItem.transaction)
-            }
-            assertNoOtherEnvelopes()
-            assertNoOtherRequests()
-        }
-    }
-
-    @Test
     fun checkTimedOutProfile() {
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
@@ -235,7 +196,7 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals("timedOutProfile", transactionItem.transaction)
                 assertEquals("timedOutProfile", profilingTraceData.transactionName)
                 // The profile should timeout after 30 seconds
-                assertTrue(profilingTraceData.durationNs.toLong() < TimeUnit.SECONDS.toNanos(31))
+                assertTrue(profilingTraceData.durationNs.toLong() < TimeUnit.SECONDS.toNanos(31), "Profile duration expected to be less than 31 seconds. It was ${profilingTraceData.durationNs.toLong()} ns")
                 assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()

@@ -307,11 +307,32 @@ class SentryEnvelopeItemTest {
         assertFailsWith<SentryEnvelopeException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
             SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
         }
+    }
+
+    @Test
+    fun `fromProfilingTrace with unreadable file throws`() {
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
         file.writeBytes(fixture.bytes)
-        assertNotNull(SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data)
         file.setReadable(false)
         assertFailsWith<SentryEnvelopeException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
             SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
+        }
+    }
+
+    @Test
+    fun `fromProfilingTrace with empty file throws`() {
+        val file = File(fixture.pathname)
+        file.writeBytes(ByteArray(0))
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        val traceData = SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
+        assertFailsWith<SentryEnvelopeException>("Profiling trace file is empty") {
+            traceData.data
         }
     }
 
