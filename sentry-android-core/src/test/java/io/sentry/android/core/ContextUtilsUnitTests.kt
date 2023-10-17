@@ -2,15 +2,20 @@ package io.sentry.android.core
 
 import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.IntentFilter
+import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.NoOpLogger
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
@@ -24,6 +29,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@Config(sdk = [33])
 @RunWith(AndroidJUnit4::class)
 class ContextUtilsUnitTests {
 
@@ -160,5 +166,27 @@ class ContextUtilsUnitTests {
     fun `when memory info is not specified, returns null`() {
         val memInfo = ContextUtils.getMemInfo(mock(), logger)
         assertNull(memInfo)
+    }
+
+    @Test
+    fun `registerReceiver calls context_registerReceiver without exported flag on API 32-`() {
+        val buildInfo = mock<BuildInfoProvider>()
+        val receiver = mock<BroadcastReceiver>()
+        val filter = mock<IntentFilter>()
+        val context = mock<Context>()
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
+        ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
+        verify(context).registerReceiver(eq(receiver), eq(filter))
+    }
+
+    @Test
+    fun `registerReceiver calls context_registerReceiver with exported flag on API 33+`() {
+        val buildInfo = mock<BuildInfoProvider>()
+        val receiver = mock<BroadcastReceiver>()
+        val filter = mock<IntentFilter>()
+        val context = mock<Context>()
+        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
+        ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
+        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_EXPORTED))
     }
 }
