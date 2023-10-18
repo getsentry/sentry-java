@@ -37,6 +37,7 @@ class SentryWrapperTest {
         val callableFuture =
             CompletableFuture.supplyAsync(
                 SentryWrapper.wrapSupplier {
+                    Thread.sleep(20)
                     Sentry.addBreadcrumb("MyClonedBreadcrumb")
                     Sentry.captureMessage("ClonedMessage")
                     "Result 1"
@@ -47,6 +48,7 @@ class SentryWrapperTest {
         val callableFuture2 =
             CompletableFuture.supplyAsync(
                 SentryWrapper.wrapSupplier {
+                    Thread.sleep(10)
                     Sentry.addBreadcrumb("MyClonedBreadcrumb2")
                     Sentry.captureMessage("ClonedMessage2")
                     "Result 2"
@@ -87,6 +89,7 @@ class SentryWrapperTest {
 
         val future1 = executor.submit(
             SentryWrapper.wrapCallable {
+                Thread.sleep(20)
                 Sentry.addBreadcrumb("MyClonedBreadcrumb")
                 Sentry.captureMessage("ClonedMessage")
                 "Result 1"
@@ -95,6 +98,7 @@ class SentryWrapperTest {
 
         val future2 = executor.submit(
             SentryWrapper.wrapCallable {
+                Thread.sleep(10)
                 Sentry.addBreadcrumb("MyClonedBreadcrumb2")
                 Sentry.captureMessage("ClonedMessage2")
                 "Result 2"

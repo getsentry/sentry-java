@@ -40,8 +40,8 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val perfProfilingSdkResult = perfProfilingSdkResults.getSummaryResult()
         perfProfilingSdkResult.printResults()
 
-        assertTrue(simpleSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100))
-        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100))
+        assertTrue(simpleSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100), "Expected ${simpleSdkResult.cpuTimeIncreaseNanos} to be in range 0 < x < 100000000")
+        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100), "Expected ${perfProfilingSdkResult.cpuTimeIncreaseNanos} to be in range 0 < x < 100000000")
     }
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(
