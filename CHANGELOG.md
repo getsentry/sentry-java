@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
+
 ## 6.32.0
 
 ### Features
