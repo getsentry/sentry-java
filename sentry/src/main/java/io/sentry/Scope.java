@@ -464,6 +464,7 @@ public final class Scope {
     level = null;
     user = null;
     request = null;
+    screen = null;
     fingerprint.clear();
     clearBreadcrumbs();
     tags.clear();
