@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Tag all spans with main thread flag ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
+
 ## 6.32.0
 
 ### Features
