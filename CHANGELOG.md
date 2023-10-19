@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Make sure to close all Closeable resources ([#3000](https://github.com/getsentry/sentry-java/pull/3000)
+
 ## 6.32.0
 
 ### Features
