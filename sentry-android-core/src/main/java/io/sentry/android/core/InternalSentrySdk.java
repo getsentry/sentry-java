@@ -96,19 +96,19 @@ public final class InternalSentrySdk {
       @Nullable App app = scope.getContexts().getApp();
       if (app == null) {
         app = new App();
-        app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
-        app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
-
-        final @NotNull BuildInfoProvider buildInfoProvider =
-            new BuildInfoProvider(options.getLogger());
-        final @Nullable PackageInfo packageInfo =
-            ContextUtils.getPackageInfo(
-                context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
-        if (packageInfo != null) {
-          ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
-        }
-        scope.getContexts().setApp(app);
       }
+      app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+      app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
+
+      final @NotNull BuildInfoProvider buildInfoProvider =
+          new BuildInfoProvider(options.getLogger());
+      final @Nullable PackageInfo packageInfo =
+          ContextUtils.getPackageInfo(
+              context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
+      if (packageInfo != null) {
+        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+      }
+      scope.getContexts().setApp(app);
 
       writer.name("user").value(logger, scope.getUser());
       writer.name("contexts").value(logger, scope.getContexts());

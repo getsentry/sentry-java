@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.TransactionNameSource;
@@ -32,6 +33,9 @@ public final class Scope {
 
   /** Scope's user */
   private @Nullable User user;
+
+  /** Scope's screen */
+  private @Nullable String screen;
 
   /** Scope's request */
   private @Nullable Request request;
@@ -97,6 +101,7 @@ public final class Scope {
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
+    this.screen = scope.screen;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -256,6 +261,39 @@ public final class Scope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setUser(user);
+    }
+  }
+
+  /**
+   * Returns the Scope's current screen, previously set by {@link Scope#setScreen(String)}
+   *
+   * @return the name of the screen
+   */
+  public @Nullable String getScreen() {
+    return screen;
+  }
+
+  /**
+   * Sets the Scope's current screen
+   *
+   * @param screen the name of the screen
+   */
+  public void setScreen(final @Nullable String screen) {
+    this.screen = screen;
+
+    final @NotNull Contexts contexts = getContexts();
+    @Nullable App app = contexts.getApp();
+    if (app == null) {
+      app = new App();
+      contexts.setApp(app);
+    }
+
+    if (screen == null) {
+      app.setViewNames(null);
+    } else {
+      final @NotNull List<String> viewNames = new ArrayList<>(1);
+      viewNames.add(screen);
+      app.setViewNames(viewNames);
     }
   }
 
