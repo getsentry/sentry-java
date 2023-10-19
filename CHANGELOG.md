@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.32.0
+
+### Features
+
+- Make `DebugImagesLoader` public ([#2993](https://github.com/getsentry/sentry-java/pull/2993))
+
+### Fixes
+
+- Make `SystemEventsBroadcastReceiver` exported on API 33+ ([#2990](https://github.com/getsentry/sentry-java/pull/2990))
+  - This will fix the `SystemEventsBreadcrumbsIntegration` crashes that you might have encountered on Play Console
+
 ## 6.31.0
 
 ### Features
