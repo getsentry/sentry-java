@@ -1236,4 +1236,10 @@ class SentryTracerTest {
         assertTrue(tracer.isFinished)
         verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
+
+    @Test
+    fun `when a span is launched, the main thread flag is set as span data`() {
+        val tracer = fixture.getSut()
+        assertNotNull(tracer.startChild("span.op").getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY))
+    }
 }

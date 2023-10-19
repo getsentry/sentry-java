@@ -7,6 +7,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
+import io.sentry.util.thread.MainThreadChecker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -384,6 +385,8 @@ public final class SentryTracer implements ITransaction {
               }
             });
     span.setDescription(description);
+    span.setData(
+        SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, MainThreadChecker.getInstance().isMainThread());
     this.children.add(span);
     return span;
   }
