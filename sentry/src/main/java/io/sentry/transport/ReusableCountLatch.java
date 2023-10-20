@@ -23,7 +23,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * <p>A synchronization aid that allows one or more threads to wait until a set of operations being
+ * A synchronization aid that allows one or more threads to wait until a set of operations being
  * performed in other threads completes.
  *
  * <p>A {@code ReusableCountLatch} is initialized with a given <em>count</em>. The {@link
