@@ -15,7 +15,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Process;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
@@ -27,7 +26,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -172,7 +170,7 @@ public final class ContextUtils {
   static boolean isForegroundImportance() {
     try {
       final ActivityManager.RunningAppProcessInfo appProcessInfo =
-        new ActivityManager.RunningAppProcessInfo();
+          new ActivityManager.RunningAppProcessInfo();
       ActivityManager.getMyMemoryState(appProcessInfo);
       return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
     } catch (Throwable ignored) {
