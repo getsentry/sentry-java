@@ -1,9 +1,22 @@
-package io.sentry.vendor.gson.internal.bind.util;
+/*
+ * Adapted from https://github.com/FasterXML/jackson-databind/blob/c1e92435c6942386394a2a7733065bb047773107/src/test/java/com/fasterxml/jackson/databind/util/ISO8601UtilsTest.java
+ *
+ * Copyright (C) 2007-, Tatu Saloranta
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-// Source: https://github.com/google/gson
-// Tag: gson-parent-2.8.9
-// Commit Hash: 6a368d89da37917be7714c3072b8378f4120110a
-// Changes: --
+package io.sentry.vendor.gson.internal.bind.util;
 
 import org.junit.Test;
 
