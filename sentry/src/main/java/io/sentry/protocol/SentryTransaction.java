@@ -281,7 +281,7 @@ public final class SentryTransaction extends SentryBaseEvent
             break;
           case JsonKeys.SPANS:
             List<SentrySpan> deserializedSpans =
-                reader.nextList(logger, new SentrySpan.Deserializer());
+                reader.nextListOrNull(logger, new SentrySpan.Deserializer());
             if (deserializedSpans != null) {
               transaction.spans.addAll(deserializedSpans);
             }

@@ -170,7 +170,7 @@ class SentryInstrumentationTest {
         val subscriptionHandler = mock<SentrySubscriptionHandler>()
         whenever(subscriptionHandler.onSubscriptionResult(any(), any(), any(), any())).thenReturn("result modified by subscription handler")
         val operation = OperationDefinition.Operation.SUBSCRIPTION
-        val instrumentation = SentryInstrumentation(null, subscriptionHandler, exceptionReporter)
+        val instrumentation = SentryInstrumentation(null, subscriptionHandler, exceptionReporter, emptyList())
         val dataFetcher = mock<DataFetcher<Any?>>()
         whenever(dataFetcher.get(any())).thenReturn("raw result")
         val graphQLContext = GraphQLContext.newContext().build()

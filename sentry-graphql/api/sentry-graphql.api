@@ -53,8 +53,9 @@ public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/i
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
 	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
-	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;)V
+	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;)V
 	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
+	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;ZLjava/util/List;)V
 	public fun <init> (Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
 	public fun beginExecuteOperation (Lgraphql/execution/instrumentation/parameters/InstrumentationExecuteOperationParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;
 	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;

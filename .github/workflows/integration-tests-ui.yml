@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # pin@0.11.0
+        uses: styfle/cancel-workflow-action@01ce38bf961b4e243a6342cbade0dbc8ba3f0432 # pin@0.12.0
         with:
           access_token: ${{ github.token }}
 
@@ -44,7 +44,7 @@ jobs:
         run: make stop
 
       - name: Run Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@52ca363cd023900b9867b49abf5791c5ab7eafa9 # pin@v3
+        uses: saucelabs/saucectl-run-action@cac550018c2e54c6f16a3be57b113649b2a37ec3 # pin@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

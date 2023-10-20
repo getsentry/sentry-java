@@ -311,13 +311,14 @@ class SentryOkHttpEventListener(
         }
         val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
         okHttpEvent.setResponse(response)
-        okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
+        val responseHeadersSpan = okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
             it.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.code)
             // Let's not override the status of a span that was set
             if (it.status == null) {
                 it.status = SpanStatus.fromHttpStatusCode(response.code)
             }
         }
+        okHttpEvent.scheduleFinish(responseHeadersSpan?.finishDate ?: hub.options.dateProvider.now())
     }
 
     override fun responseBodyStart(call: Call) {
@@ -381,6 +382,26 @@ class SentryOkHttpEventListener(
             it.status = SpanStatus.INTERNAL_ERROR
             it.throwable = ioe
         }
+    }
+
+    override fun canceled(call: Call) {
+        originalEventListener?.canceled(call)
+    }
+
+    override fun satisfactionFailure(call: Call, response: Response) {
+        originalEventListener?.satisfactionFailure(call, response)
+    }
+
+    override fun cacheHit(call: Call, response: Response) {
+        originalEventListener?.cacheHit(call, response)
+    }
+
+    override fun cacheMiss(call: Call) {
+        originalEventListener?.cacheMiss(call)
+    }
+
+    override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
+        originalEventListener?.cacheConditionalHit(call, cachedResponse)
     }
 
     private fun canCreateEventSpan(): Boolean {

@@ -30,7 +30,7 @@ object Config {
     }
 
     object Android {
-        private val sdkVersion = 33
+        private val sdkVersion = 34
 
         val minSdkVersion = 19
         val minSdkVersionOkHttp = 21
@@ -181,10 +181,10 @@ object Config {
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
         val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.2"
-        val androidxJunit = "androidx.test.ext:junit:1.1.3"
+        val androidxJunit = "androidx.test.ext:junit:1.1.5"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
-        val robolectric = "org.robolectric:robolectric:4.7.3"
-        val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.0.0"
+        val robolectric = "org.robolectric:robolectric:4.10.3"
+        val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.1.0"
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"

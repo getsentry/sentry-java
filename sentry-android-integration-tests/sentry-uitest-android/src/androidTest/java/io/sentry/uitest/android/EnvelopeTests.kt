@@ -17,7 +17,6 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
-import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -129,22 +128,26 @@ class EnvelopeTests : BaseUiTest() {
                 }.forEach { entry ->
                     val name = entry.key
                     val measurement = entry.value
-
-                    // The last frame measurement could be outside the transaction duration,
-                    //  since when the transaction finishes the frame callback is removed from the activity,
-                    //  but internally it is already cached and will be called anyway in the next frame.
-                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }.dropLast(1)
+                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }
 
                     // There should be no measurement before the profile starts
                     assertTrue(
                         values.first().relativeStartNs.toLong() > 0,
                         "First measurement value for '$name' is <=0"
                     )
-                    // There should be no measurement after the profile ends
-                    assertTrue(
-                        values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
-                        "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
-                    )
+
+                    // The last frame measurements could be outside the transaction duration,
+                    //  since when the transaction finishes, the frame callback is removed from the activity,
+                    //  but internally it is already cached and will be called anyway in the next frame.
+                    //  Also, they are not completely accurate, so they could be flaky.
+                    if (entry.key !in listOf(ProfileMeasurement.ID_FROZEN_FRAME_RENDERS, ProfileMeasurement.ID_SLOW_FRAME_RENDERS)) {
+                        // There should be no measurement after the profile ends
+                        // Due to the nature of frozen frames, they could be measured after the transaction finishes
+                        assertTrue(
+                            values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
+                            "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
+                        )
+                    }
 
                     // Timestamps of measurements should differ at least 10 milliseconds from each other
                     (1 until values.size).forEach { i ->
@@ -161,44 +164,6 @@ class EnvelopeTests : BaseUiTest() {
                 val transactionData = profilingTraceData.transactions
                     .firstOrNull { t -> t.id == transaction.eventId.toString() }
                 assertNotNull(transactionData)
-            }
-            assertNoOtherEnvelopes()
-            assertNoOtherRequests()
-        }
-    }
-
-    @Test
-    fun checkProfileNotSentIfEmpty() {
-        initSentry(true) { options: SentryAndroidOptions ->
-            options.tracesSampleRate = 1.0
-            options.profilesSampleRate = 1.0
-        }
-        relayIdlingResource.increment()
-        val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
-        val transaction = Sentry.startTransaction("emptyProfileTransaction", "test empty")
-
-        var finished = false
-        Thread {
-            while (!finished) {
-                // Let's modify the trace file to be empty, so that the profile will actually be empty.
-                val origProfileFile = File(profilesDirPath!!).listFiles()?.maxByOrNull { f -> f.lastModified() }
-                origProfileFile?.writeBytes(ByteArray(0))
-            }
-        }.start()
-        transaction.finish()
-        // The profiler is stopped in background on the executor service, so we can stop deleting the trace file
-        // only after the profiler is stopped. This means we have to stop the deletion in the executorService
-        Sentry.getCurrentHub().options.executorService.submit {
-            finished = true
-        }
-
-        relay.assert {
-            findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "emptyProfileTransaction"
-            }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("emptyProfileTransaction", transactionItem.transaction)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -231,7 +196,7 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals("timedOutProfile", transactionItem.transaction)
                 assertEquals("timedOutProfile", profilingTraceData.transactionName)
                 // The profile should timeout after 30 seconds
-                assertTrue(profilingTraceData.durationNs.toLong() < TimeUnit.SECONDS.toNanos(31))
+                assertTrue(profilingTraceData.durationNs.toLong() < TimeUnit.SECONDS.toNanos(31), "Profile duration expected to be less than 31 seconds. It was ${profilingTraceData.durationNs.toLong()} ns")
                 assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()

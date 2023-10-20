@@ -15,6 +15,8 @@ import io.sentry.spring.jakarta.SentryTaskDecorator
 import io.sentry.spring.jakarta.SentryUserFilter
 import io.sentry.spring.jakarta.SentryUserProvider
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider
+import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameter
+import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterConfiguration
 import io.sentry.spring.jakarta.tracing.SentrySpanClientWebRequestFilter
 import io.sentry.spring.jakarta.tracing.SentryTracingConfiguration
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter
@@ -97,6 +99,9 @@ class SentrySpringIntegrationTest {
 
     @Autowired
     lateinit var someService: SomeService
+
+    @Autowired
+    lateinit var anotherService: AnotherService
 
     @Autowired
     lateinit var hub: IHub
@@ -216,6 +221,30 @@ class SentrySpringIntegrationTest {
     }
 
     @Test
+    fun `calling a method annotated with @SentryCaptureException captures exception`() {
+        val exception = java.lang.RuntimeException("test exception")
+        anotherService.aMethodThatTakesAnException(exception)
+        verify(transport).send(
+            checkEvent {
+                assertThat(it.exceptions!!.first().value).isEqualTo(exception.message)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `calling a method annotated with @SentryCaptureException captures exception in later param`() {
+        val exception = java.lang.RuntimeException("test exception")
+        anotherService.aMethodThatTakesAnExceptionAsLaterParam("a", "b", exception)
+        verify(transport).send(
+            checkEvent {
+                assertThat(it.exceptions!!.first().value).isEqualTo(exception.message)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `calling a method annotated with @SentryTransaction creates transaction`() {
         someService.aMethod()
         verify(transport).send(
@@ -319,7 +348,7 @@ class SentrySpringIntegrationTest {
 
 @SpringBootApplication
 @EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, maxRequestBodySize = SentryOptions.RequestSize.MEDIUM)
-@Import(SentryTracingConfiguration::class)
+@Import(SentryTracingConfiguration::class, SentryCaptureExceptionParameterConfiguration::class)
 open class App {
 
     @Bean
@@ -370,6 +399,15 @@ open class App {
             )
             .filter(SentrySpanClientWebRequestFilter(hub)).build()
     }
+}
+
+@Service
+open class AnotherService {
+    @SentryCaptureExceptionParameter
+    open fun aMethodThatTakesAnException(e: Exception) {}
+
+    @SentryCaptureExceptionParameter
+    open fun aMethodThatTakesAnExceptionAsLaterParam(a: String, b: String, e: Exception) {}
 }
 
 @Service

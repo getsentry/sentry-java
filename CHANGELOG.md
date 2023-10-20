@@ -4,8 +4,8 @@
 
 **Breaking changes:**
 - Cleanup `startTransaction` overloads ([#2964](https://github.com/getsentry/sentry-java/pull/2964))
-  - We have reduce the number of overloads by allowing to pass in `TransactionOptions` instead of having separate parameters for certain options.
-  - `TransactionOptions` has defaults set and can be customized
+    - We have reduce the number of overloads by allowing to pass in `TransactionOptions` instead of having separate parameters for certain options.
+    - `TransactionOptions` has defaults set and can be customized
 - Raw logback message and parameters are now guarded by `sendDefaultPii` if an `encoder` has been configured ([#2976](https://github.com/getsentry/sentry-java/pull/2976))
 
 ## 7.0.0-beta.1
@@ -16,17 +16,17 @@
 - Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
 - Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
 - Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
-  - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
+    - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
 - Reduce timeout of AsyncHttpTransport to avoid ANR ([#2879](https://github.com/getsentry/sentry-java/pull/2879))
 - Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
-  - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s
+    - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s
 - Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
 - Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
-  - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
+    - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
 - Android only: If global hub mode is enabled, Sentry.getSpan() returns the root span instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
 - Observe network state to upload any unsent envelopes ([#2910](https://github.com/getsentry/sentry-java/pull/2910))
-  - Android: it works out-of-the-box as part of the default `SendCachedEnvelopeIntegration`
-  - JVM: you'd have to install `SendCachedEnvelopeFireAndForgetIntegration` as mentioned in https://docs.sentry.io/platforms/java/configuration/#configuring-offline-caching and provide your own implementation of `IConnectionStatusProvider` via `SentryOptions`
+    - Android: it works out-of-the-box as part of the default `SendCachedEnvelopeIntegration`
+    - JVM: you'd have to install `SendCachedEnvelopeFireAndForgetIntegration` as mentioned in https://docs.sentry.io/platforms/java/configuration/#configuring-offline-caching and provide your own implementation of `IConnectionStatusProvider` via `SentryOptions`
 - Do not try to send and drop cached envelopes when rate-limiting is active ([#2937](https://github.com/getsentry/sentry-java/pull/2937))
 
 ### Fixes
@@ -34,18 +34,62 @@
 - Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
 - Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
 - Capture unfinished transaction on Scope with status `aborted` in case a crash happens ([#2938](https://github.com/getsentry/sentry-java/pull/2938))
-  - This will fix the link between transactions and corresponding crashes, you'll be able to see them in a single trace
+    - This will fix the link between transactions and corresponding crashes, you'll be able to see them in a single trace
 
 **Breaking changes:**
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 - Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
 - Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
 - Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
-  - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
+    - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
 - Migrate from `default` interface methods to proper implementations in each interface implementor ([#2847](https://github.com/getsentry/sentry-java/pull/2847))
-  - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
-  - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
-    (E.g. if you're using `-timber`, `-okhttp` or other packages)
+    - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
+    - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
+      (E.g. if you're using `-timber`, `-okhttp` or other packages)
+
+## 6.32.0
+
+### Features
+
+- Make `DebugImagesLoader` public ([#2993](https://github.com/getsentry/sentry-java/pull/2993))
+
+### Fixes
+
+- Make `SystemEventsBroadcastReceiver` exported on API 33+ ([#2990](https://github.com/getsentry/sentry-java/pull/2990))
+  - This will fix the `SystemEventsBreadcrumbsIntegration` crashes that you might have encountered on Play Console
+
+## 6.31.0
+
+### Features
+
+- Improve default debouncing mechanism ([#2945](https://github.com/getsentry/sentry-java/pull/2945))
+- Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
+- Add `@SentryCaptureExceptionParameter` annotation which captures exceptions passed into an annotated method ([#2764](https://github.com/getsentry/sentry-java/pull/2764))
+  - This can be used to replace `Sentry.captureException` calls in `@ExceptionHandler` of a `@ControllerAdvice`
+- Add `ServerWebExchange` to `Hint` for WebFlux as `WEBFLUX_EXCEPTION_HANDLER_EXCHANGE` ([#2977](https://github.com/getsentry/sentry-java/pull/2977))
+- Allow filtering GraphQL errors ([#2967](https://github.com/getsentry/sentry-java/pull/2967))
+  - This list can be set directly when calling the constructor of `SentryInstrumentation`
+  - For Spring Boot it can also be set in `application.properties` as `sentry.graphql.ignored-error-types=SOME_ERROR,ANOTHER_ERROR`
+
+### Fixes
+
+- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
+- Fix json parsing of nullable/empty fields for Hybrid SDKs ([#2968](https://github.com/getsentry/sentry-java/pull/2968))
+  - (Internal) Rename `nextList` to `nextListOrNull` to actually match what the method does
+  - (Hybrid) Check if there's any object in a collection before trying to parse it (which prevents the "Failed to deserilize object in list" log message)
+  - (Hybrid) If a date can't be parsed as an ISO timestamp, attempts to parse it as millis silently, without printing a log message
+  - (Hybrid) If `op` is not defined as part of `SpanContext`, fallback to an empty string, because the filed is optional in the spec
+- Always attach OkHttp errors and Http Client Errors only to call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
+- Fixed crash accessing Choreographer instance ([#2970](https://github.com/getsentry/sentry-java/pull/2970))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.5 to v0.6.6 ([#2975](https://github.com/getsentry/sentry-java/pull/2975))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#066)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.5...0.6.6)
+- Bump Gradle from v8.3.0 to v8.4.0 ([#2966](https://github.com/getsentry/sentry-java/pull/2966))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v840)
+  - [diff](https://github.com/gradle/gradle/compare/v8.3.0...v8.4.0)
 
 ## 6.30.0
 

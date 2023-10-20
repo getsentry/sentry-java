@@ -31,6 +31,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
   private final @NotNull Debouncer debouncer;
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
+  private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
 
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
@@ -38,7 +39,11 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
-    this.debouncer = new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS);
+    this.debouncer =
+        new Debouncer(
+            AndroidCurrentDateProvider.getInstance(),
+            DEBOUNCE_WAIT_TIME_MS,
+            DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion(getClass());

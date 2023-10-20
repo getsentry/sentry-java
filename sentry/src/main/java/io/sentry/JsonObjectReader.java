@@ -81,7 +81,7 @@ public final class JsonObjectReader extends JsonReader {
     }
   }
 
-  public <T> @Nullable List<T> nextList(
+  public <T> @Nullable List<T> nextListOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
     if (peek() == JsonToken.NULL) {
       nextNull();
@@ -89,13 +89,15 @@ public final class JsonObjectReader extends JsonReader {
     }
     beginArray();
     List<T> list = new ArrayList<>();
-    do {
-      try {
-        list.add(deserializer.deserialize(this, logger));
-      } catch (Exception e) {
-        logger.log(SentryLevel.ERROR, "Failed to deserialize object in list.", e);
-      }
-    } while (peek() == JsonToken.BEGIN_OBJECT);
+    if (hasNext()) {
+      do {
+        try {
+          list.add(deserializer.deserialize(this, logger));
+        } catch (Exception e) {
+          logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+        }
+      } while (peek() == JsonToken.BEGIN_OBJECT);
+    }
     endArray();
     return list;
   }
@@ -108,14 +110,16 @@ public final class JsonObjectReader extends JsonReader {
     }
     beginObject();
     Map<String, T> map = new HashMap<>();
-    do {
-      try {
-        String key = nextName();
-        map.put(key, deserializer.deserialize(this, logger));
-      } catch (Exception e) {
-        logger.log(SentryLevel.ERROR, "Failed to deserialize object in map.", e);
-      }
-    } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
+    if (hasNext()) {
+      do {
+        try {
+          String key = nextName();
+          map.put(key, deserializer.deserialize(this, logger));
+        } catch (Exception e) {
+          logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+        }
+      } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
+    }
 
     endObject();
     return map;
@@ -144,16 +148,12 @@ public final class JsonObjectReader extends JsonReader {
     }
     try {
       return DateUtils.getDateTime(dateString);
-    } catch (Exception e) {
-      logger.log(
-          SentryLevel.DEBUG,
-          "Error when deserializing UTC timestamp format, it might be millis timestamp format.",
-          e);
-    }
-    try {
-      return DateUtils.getDateTimeWithMillisPrecision(dateString);
-    } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);
+    } catch (Exception ignored) {
+      try {
+        return DateUtils.getDateTimeWithMillisPrecision(dateString);
+      } catch (Exception e) {
+        logger.log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);
+      }
     }
     return null;
   }

@@ -162,7 +162,8 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.FRAMES:
-            sentryStackTrace.frames = reader.nextList(logger, new SentryStackFrame.Deserializer());
+            sentryStackTrace.frames =
+                reader.nextListOrNull(logger, new SentryStackFrame.Deserializer());
             break;
           case JsonKeys.REGISTERS:
             sentryStackTrace.registers =

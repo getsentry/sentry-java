@@ -84,4 +84,14 @@ class NoOpHubTest {
 
     @Test
     fun `reportFullyDrawn doesnt throw`() = sut.reportFullyDisplayed()
+
+    @Test
+    fun `getBaggage returns null`() {
+        assertNull(sut.baggage)
+    }
+
+    @Test
+    fun `captureCheckIn returns empty id`() {
+        assertEquals(SentryId.EMPTY_ID, sut.captureCheckIn(mock()))
+    }
 }

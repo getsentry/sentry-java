@@ -1,8 +1,11 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.ISentryExecutorService
 import io.sentry.ISpan
+import io.sentry.SentryDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.Span
@@ -19,6 +22,7 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEAD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
+import io.sentry.exception.SentryHttpClientException
 import io.sentry.test.getProperty
 import okhttp3.Protocol
 import okhttp3.Request
@@ -26,11 +30,18 @@ import okhttp3.Response
 import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.concurrent.Future
+import java.util.concurrent.RejectedExecutionException
+import kotlin.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -475,6 +486,7 @@ class SentryOkHttpEventTest {
         sut.finishSpan(REQUEST_HEADERS_EVENT) { it.status = SpanStatus.INTERNAL_ERROR }
         sut.finishSpan("random event") { it.status = SpanStatus.DEADLINE_EXCEEDED }
         sut.finishSpan(CONNECTION_EVENT)
+        sut.finishEvent()
         val spans = sut.getEventSpans()
         val connectionSpan = spans[CONNECTION_EVENT] as Span?
         val requestHeadersSpan = spans[REQUEST_HEADERS_EVENT] as Span?
@@ -490,6 +502,93 @@ class SentryOkHttpEventTest {
         assertEquals(SpanStatus.INTERNAL_ERROR, connectionSpan.status)
         // random event was finished last with DEADLINE_EXCEEDED, and it propagates to root call
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, sut.callRootSpan!!.status)
+    }
+
+    @Test
+    fun `finishEvent moves throwables from inner span to call root span`() {
+        val sut = fixture.getSut()
+        val throwable = RuntimeException()
+        sut.startSpan(CONNECTION_EVENT)
+        sut.startSpan("random event")
+        sut.finishSpan("random event") { it.status = SpanStatus.DEADLINE_EXCEEDED }
+        sut.finishSpan(CONNECTION_EVENT) {
+            it.status = SpanStatus.INTERNAL_ERROR
+            it.throwable = throwable
+        }
+        sut.finishEvent()
+        val spans = sut.getEventSpans()
+        val connectionSpan = spans[CONNECTION_EVENT] as Span?
+        val randomEventSpan = spans["random event"] as Span?
+        assertNotNull(connectionSpan)
+        assertNotNull(randomEventSpan)
+        // randomEventSpan was finished with DEADLINE_EXCEEDED
+        assertEquals(SpanStatus.DEADLINE_EXCEEDED, randomEventSpan.status)
+        // connectionSpan was finished with INTERNAL_ERROR
+        assertEquals(SpanStatus.INTERNAL_ERROR, connectionSpan.status)
+
+        // connectionSpan was finished last with INTERNAL_ERROR and a throwable, and it's moved to the root call
+        assertEquals(SpanStatus.INTERNAL_ERROR, sut.callRootSpan!!.status)
+        assertEquals(throwable, sut.callRootSpan.throwable)
+        assertNull(connectionSpan.throwable)
+    }
+
+    @Test
+    fun `scheduleFinish schedules finishEvent`() {
+        val mockExecutor = mock<ISentryExecutorService>()
+        val captor = argumentCaptor<Runnable>()
+        whenever(mockExecutor.schedule(captor.capture(), any())).then {
+            captor.lastValue.run()
+            mock<Future<Runnable>>()
+        }
+        fixture.hub.options.executorService = mockExecutor
+        val sut = spy(fixture.getSut())
+        val timestamp = mock<SentryDate>()
+        sut.scheduleFinish(timestamp)
+        verify(sut).finishEvent(eq(timestamp), anyOrNull())
+    }
+
+    @Test
+    fun `finishEvent with timestamp trims call root span`() {
+        val sut = fixture.getSut()
+        val timestamp = mock<SentryDate>()
+        sut.finishEvent(finishDate = timestamp)
+        assertEquals(timestamp, sut.callRootSpan!!.finishDate)
+    }
+
+    @Test
+    fun `scheduleFinish does not throw if executor is shut down`() {
+        val executorService = mock<ISentryExecutorService>()
+        whenever(executorService.schedule(any(), any())).thenThrow(RejectedExecutionException())
+        whenever(fixture.hub.options).thenReturn(SentryOptions().apply { this.executorService = executorService })
+        val sut = fixture.getSut()
+        sut.scheduleFinish(mock())
+    }
+
+    @Test
+    fun `setClientErrorResponse will capture the client error on finishEvent`() {
+        val sut = fixture.getSut()
+        val clientErrorResponse = mock<Response>()
+        whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+        sut.setClientErrorResponse(clientErrorResponse)
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        sut.finishEvent()
+        verify(fixture.hub).captureEvent(
+            argThat {
+                throwable is SentryHttpClientException &&
+                    throwable!!.message!!.startsWith("HTTP Client Error with status code: ")
+            },
+            argThat<Hint> {
+                get(TypeCheckHint.OKHTTP_REQUEST) != null &&
+                    get(TypeCheckHint.OKHTTP_RESPONSE) != null
+            }
+        )
+    }
+
+    @Test
+    fun `when setClientErrorResponse is not called, no client error is captured`() {
+        val sut = fixture.getSut()
+        sut.finishEvent()
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 
     /** Retrieve all the spans started in the event using reflection. */
