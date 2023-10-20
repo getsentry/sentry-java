@@ -30,7 +30,7 @@ class ManifestMetadataReaderTest {
         val buildInfoProvider = mock<BuildInfoProvider>()
 
         fun getContext(metaData: Bundle = Bundle()): Context {
-            return ContextUtilsTest.mockMetaData(metaData = metaData)
+            return ContextUtilsHelper.mockMetaData(metaData = metaData)
         }
     }
 

@@ -169,28 +169,12 @@ public final class ContextUtils {
    *
    * @return true if IMPORTANCE_FOREGROUND and false otherwise
    */
-  static boolean isForegroundImportance(final @NotNull Context context) {
+  static boolean isForegroundImportance() {
     try {
-      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
-      if (service instanceof ActivityManager) {
-        final ActivityManager activityManager = (ActivityManager) service;
-        final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
-            activityManager.getRunningAppProcesses();
-
-        if (runningAppProcesses != null) {
-          final int myPid = Process.myPid();
-          for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
-            if (processInfo.pid == myPid) {
-              if (processInfo.importance == IMPORTANCE_FOREGROUND) {
-                return true;
-              }
-              break;
-            }
-          }
-        }
-      }
-    } catch (SecurityException ignored) {
-      // happens for isolated processes
+      final ActivityManager.RunningAppProcessInfo appProcessInfo =
+        new ActivityManager.RunningAppProcessInfo();
+      ActivityManager.getMyMemoryState(appProcessInfo);
+      return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
     } catch (Throwable ignored) {
       // should never happen
     }

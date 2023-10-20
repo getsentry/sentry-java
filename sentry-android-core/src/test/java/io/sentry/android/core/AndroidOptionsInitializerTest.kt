@@ -55,13 +55,13 @@ class AndroidOptionsInitializerTest {
             assets: AssetManager? = null
         ) {
             mockContext = if (metadata != null) {
-                ContextUtilsTest.mockMetaData(
-                    mockContext = ContextUtilsTest.createMockContext(hasAppContext),
+                ContextUtilsHelper.mockMetaData(
+                    mockContext = ContextUtilsHelper.createMockContext(hasAppContext),
                     metaData = metadata,
                     assets = assets
                 )
             } else {
-                ContextUtilsTest.createMockContext(hasAppContext)
+                ContextUtilsHelper.createMockContext(hasAppContext)
             }
             whenever(mockContext.cacheDir).thenReturn(file)
             if (mockContext.applicationContext != null) {
@@ -101,8 +101,8 @@ class AndroidOptionsInitializerTest {
             isFragmentAvailable: Boolean = false,
             isTimberAvailable: Boolean = false
         ) {
-            mockContext = ContextUtilsTest.mockMetaData(
-                mockContext = ContextUtilsTest.createMockContext(hasAppContext = true),
+            mockContext = ContextUtilsHelper.mockMetaData(
+                mockContext = ContextUtilsHelper.createMockContext(hasAppContext = true),
                 metaData = Bundle().apply {
                     putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
                 }
