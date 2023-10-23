@@ -1,9 +1,11 @@
 package io.sentry.transport
 
+import io.sentry.ILogger
 import io.sentry.ISerializer
 import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.Proxy
 import io.sentry.Session
@@ -19,6 +21,7 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy.Type
 import java.net.URL
+import java.nio.charset.Charset
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLSocketFactory
@@ -40,6 +43,7 @@ class HttpConnectionTest {
         var sslSocketFactory: SSLSocketFactory? = null
         var hostnameVerifier: HostnameVerifier? = null
         val requestDetails = mock<RequestDetails>()
+        val options = SentryOptions()
 
         init {
             whenever(connection.outputStream).thenReturn(mock())
@@ -54,7 +58,6 @@ class HttpConnectionTest {
         }
 
         fun getSUT(): HttpConnection {
-            val options = SentryOptions()
             options.setSerializer(serializer)
             options.proxy = proxy
             options.sslSocketFactory = sslSocketFactory
@@ -185,6 +188,34 @@ class HttpConnectionTest {
         transport.send(createEnvelope())
 
         verify(fixture.connection, never()).hostnameVerifier = any()
+    }
+
+    @Test
+    fun `When connection error message contains formatting symbols, does not crash the logger`() {
+        fixture.options.isDebug = true
+        fixture.options.setLogger(object : ILogger {
+            override fun log(level: SentryLevel, message: String, vararg args: Any?) =
+                println(String.format(message, args))
+
+            override fun log(level: SentryLevel, message: String, throwable: Throwable?) =
+                println(message)
+
+            override fun log(
+                level: SentryLevel,
+                throwable: Throwable?,
+                message: String,
+                vararg args: Any?
+            ) = println(String.format(message))
+
+            override fun isEnabled(level: SentryLevel?): Boolean = true
+        })
+
+        // when error message contains funky formatting symbols
+        whenever(fixture.connection.errorStream).thenReturn("Something is off %d, %s, %s\n".byteInputStream(Charset.forName("UTF-8")))
+        val transport = fixture.getSUT()
+
+        // it should not crash
+        transport.send(createEnvelope())
     }
 
     @Test
