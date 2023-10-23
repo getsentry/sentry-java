@@ -9,6 +9,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.PixelCopy;
 import android.view.View;
+import android.view.Window;
+
 import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -17,6 +19,8 @@ import io.sentry.util.thread.IMainThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +51,8 @@ public class ScreenshotUtils {
       return null;
     }
 
-    final View view = activity.getWindow().peekDecorView().getRootView();
+    final Window window = activity.getWindow();
+    final View view = window.peekDecorView().getRootView();
     if (view.getWidth() <= 0 || view.getHeight() <= 0) {
       logger.log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
       return null;
@@ -69,15 +74,17 @@ public class ScreenshotUtils {
         boolean success = false;
         try {
           final Handler handler = new Handler(thread.getLooper());
+          final AtomicBoolean copyResultSuccess = new AtomicBoolean(false);
 
-          // TODO: handle copyResult to avoid sending empty bitmaps
           PixelCopy.request(
-              activity.getWindow(),
-              bitmap,
-              (PixelCopy.OnPixelCopyFinishedListener) copyResult -> latch.countDown(),
-              handler);
+            window,
+            bitmap, copyResult -> {
+              copyResultSuccess.set(copyResult == PixelCopy.SUCCESS);
+              latch.countDown();
+            },
+            handler);
 
-          success = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+          success = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS) && copyResultSuccess.get();
         } catch (InterruptedException e) {
           // ignored
         } finally {
