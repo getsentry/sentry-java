@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
@@ -47,6 +48,8 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowActivityManager
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
@@ -68,7 +71,6 @@ class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
-        val am = mock<ActivityManager>()
         val hub = mock<Hub>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -78,6 +80,7 @@ class ActivityLifecycleIntegrationTest {
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
+        lateinit var shadowActivityManager: ShadowActivityManager
 
         // we init the transaction with a mock to avoid errors when finishing it after tests that don't start it
         var transaction: SentryTracer = mock()
@@ -101,14 +104,11 @@ class ActivityLifecycleIntegrationTest {
             }
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
 
-            whenever(application.getSystemService(any())).thenReturn(am)
-
             val process = RunningAppProcessInfo().apply {
                 this.importance = importance
             }
             val processes = mutableListOf(process)
-
-            whenever(am.runningAppProcesses).thenReturn(processes)
+            shadowActivityManager.setProcesses(processes)
 
             return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
         }
@@ -126,10 +126,15 @@ class ActivityLifecycleIntegrationTest {
     }
 
     private val fixture = Fixture()
+    private lateinit var context: Context
 
     @BeforeTest
     fun `reset instance`() {
         AppStartState.getInstance().resetInstance()
+
+        context = ApplicationProvider.getApplicationContext()
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+        fixture.shadowActivityManager = Shadow.extract(activityManager)
     }
 
     @AfterTest
