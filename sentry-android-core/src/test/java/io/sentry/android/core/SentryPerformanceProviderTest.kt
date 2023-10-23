@@ -37,7 +37,7 @@ class SentryPerformanceProviderTest {
     fun `provider sets app start`() {
         val providerInfo = ProviderInfo()
 
-        val mockContext = ContextUtilsTest.createMockContext()
+        val mockContext = ContextUtilsTestHelper.createMockContext()
         providerInfo.authority = AUTHORITY
 
         val providerAppStartMillis = 10L
@@ -59,7 +59,7 @@ class SentryPerformanceProviderTest {
     fun `provider sets first activity as cold start`() {
         val providerInfo = ProviderInfo()
 
-        val mockContext = ContextUtilsTest.createMockContext()
+        val mockContext = ContextUtilsTestHelper.createMockContext()
         providerInfo.authority = AUTHORITY
 
         val provider = SentryPerformanceProvider()
@@ -74,7 +74,7 @@ class SentryPerformanceProviderTest {
     fun `provider sets first activity as warm start`() {
         val providerInfo = ProviderInfo()
 
-        val mockContext = ContextUtilsTest.createMockContext()
+        val mockContext = ContextUtilsTestHelper.createMockContext()
         providerInfo.authority = AUTHORITY
 
         val provider = SentryPerformanceProvider()
@@ -89,7 +89,7 @@ class SentryPerformanceProviderTest {
     fun `provider sets app start end on first activity resume, and unregisters afterwards`() {
         val providerInfo = ProviderInfo()
 
-        val mockContext = ContextUtilsTest.createMockContext(true)
+        val mockContext = ContextUtilsTestHelper.createMockContext(true)
         providerInfo.authority = AUTHORITY
 
         val provider = SentryPerformanceProvider(

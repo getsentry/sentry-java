@@ -57,6 +57,7 @@ class SentryOkHttpInterceptor(
             .addPackage("maven:io.sentry:sentry-android-okhttp", BuildConfig.VERSION_NAME)
     }
 
+    @Suppress("LongMethod")
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
