@@ -4,7 +4,8 @@
 
 ### Features
 
-- Tag all spans with main thread flag ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
+- Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
+- Add thread information to spans ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
 
 ## 6.32.0
 
