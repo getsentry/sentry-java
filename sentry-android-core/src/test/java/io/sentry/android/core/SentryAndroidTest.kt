@@ -83,7 +83,7 @@ class SentryAndroidTest {
                 putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
                 putBoolean(ManifestMetadataReader.AUTO_INIT, autoInit)
             }
-            val mockContext = context ?: ContextUtilsHelper.mockMetaData(metaData = metadata)
+            val mockContext = context ?: ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
                 logger != null -> SentryAndroid.init(mockContext, logger)
                 options != null -> SentryAndroid.init(mockContext, options)
@@ -268,7 +268,7 @@ class SentryAndroidTest {
     fun `When initializing Sentry manually and changing both cache dir and dsn, the corresponding options should reflect that change`() {
         var options: SentryOptions? = null
 
-        val mockContext = ContextUtilsHelper.createMockContext(true)
+        val mockContext = ContextUtilsTestHelper.createMockContext(true)
         val cacheDirPath = Files.createTempDirectory("new_cache").absolutePathString()
         SentryAndroid.init(mockContext) {
             it.dsn = "https://key@sentry.io/123"
@@ -303,7 +303,7 @@ class SentryAndroidTest {
         inForeground: Boolean,
         callback: (session: Session?) -> Unit
     ) {
-        val context = ContextUtilsHelper.createMockContext()
+        val context = ContextUtilsTestHelper.createMockContext()
 
         Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }

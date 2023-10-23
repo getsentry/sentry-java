@@ -11,7 +11,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.FileNotFoundException
 
-object ContextUtilsHelper {
+object ContextUtilsTestHelper {
     fun mockMetaData(mockContext: Context = createMockContext(hasAppContext = false), metaData: Bundle, assets: AssetManager? = null): Context {
         val mockPackageManager = mock<PackageManager>()
         val mockApplicationInfo = mock<ApplicationInfo>()
