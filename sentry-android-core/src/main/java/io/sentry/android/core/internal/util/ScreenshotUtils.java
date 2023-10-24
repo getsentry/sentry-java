@@ -10,7 +10,6 @@ import android.os.HandlerThread;
 import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
-
 import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -20,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -77,14 +75,16 @@ public class ScreenshotUtils {
           final AtomicBoolean copyResultSuccess = new AtomicBoolean(false);
 
           PixelCopy.request(
-            window,
-            bitmap, copyResult -> {
-              copyResultSuccess.set(copyResult == PixelCopy.SUCCESS);
-              latch.countDown();
-            },
-            handler);
+              window,
+              bitmap,
+              copyResult -> {
+                copyResultSuccess.set(copyResult == PixelCopy.SUCCESS);
+                latch.countDown();
+              },
+              handler);
 
-          success = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS) && copyResultSuccess.get();
+          success =
+              latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS) && copyResultSuccess.get();
         } catch (InterruptedException e) {
           // ignored
         } finally {
