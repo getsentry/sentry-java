@@ -71,6 +71,12 @@
       android:text="@string/out_of_memory" />
 
     <Button
+      android:id="@+id/stack_overflow"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/stack_overflow" />
+
+    <Button
       android:id="@+id/native_crash"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"

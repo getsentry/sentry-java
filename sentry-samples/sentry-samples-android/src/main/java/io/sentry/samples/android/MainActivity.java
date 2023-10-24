@@ -164,6 +164,8 @@ public class MainActivity extends AppCompatActivity {
           latch.countDown();
         });
 
+    binding.stackOverflow.setOnClickListener(view -> stackOverflow());
+
     binding.nativeCrash.setOnClickListener(view -> NativeSample.crash());
 
     binding.nativeCapture.setOnClickListener(view -> NativeSample.message());
@@ -250,6 +252,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
+  }
+
+  private void stackOverflow() {
+    stackOverflow();
   }
 
   @Override
