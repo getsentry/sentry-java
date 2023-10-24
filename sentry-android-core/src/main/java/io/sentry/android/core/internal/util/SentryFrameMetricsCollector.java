@@ -94,7 +94,20 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt
 
     // The Choreographer instance must be accessed on the main thread
-    new Handler(Looper.getMainLooper()).post(() -> choreographer = Choreographer.getInstance());
+    new Handler(Looper.getMainLooper())
+        .post(
+            () -> {
+              try {
+                choreographer = Choreographer.getInstance();
+              } catch (Throwable e) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.ERROR,
+                        "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
+                        e);
+              }
+            });
     // Let's get the last frame timestamp from the choreographer private field
     try {
       choreographerLastFrameTimeField = Choreographer.class.getDeclaredField("mLastFrameTimeNanos");

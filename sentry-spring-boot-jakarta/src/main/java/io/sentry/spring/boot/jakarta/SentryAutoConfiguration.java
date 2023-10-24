@@ -14,6 +14,7 @@ import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
+import io.sentry.spring.boot.jakarta.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.jakarta.ContextTagsEventProcessor;
 import io.sentry.spring.jakarta.SentryExceptionResolver;
 import io.sentry.spring.jakarta.SentryRequestResolver;
@@ -25,7 +26,8 @@ import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider;
 import io.sentry.spring.jakarta.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
-import io.sentry.spring.jakarta.graphql.SentryGraphqlConfiguration;
+import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
+import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
@@ -164,7 +166,7 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @Import(SentryGraphqlConfiguration.class)
+    @Import(SentryGraphqlAutoConfiguration.class)
     @Open
     @ConditionalOnClass({
       SentryGraphqlExceptionHandler.class,
@@ -302,6 +304,22 @@ public class SentryAutoConfiguration {
         return new SentryExceptionResolver(
             sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
       }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(ProceedingJoinPoint.class)
+    @ConditionalOnProperty(
+        value = "sentry.enable-aot-compatibility",
+        havingValue = "false",
+        matchIfMissing = true)
+    @Import(SentryExceptionParameterAdviceConfiguration.class)
+    @Open
+    static class SentryErrorAspectsConfiguration {
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnMissingBean(name = "sentryCaptureExceptionParameterPointcut")
+      @Import(SentryCaptureExceptionParameterPointcutConfiguration.class)
+      @Open
+      static class SentryCaptureExceptionParameterPointcutAutoConfiguration {}
     }
 
     @Configuration(proxyBeanMethods = false)

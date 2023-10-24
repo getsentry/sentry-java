@@ -134,7 +134,7 @@ public final class JsonSerializer implements ISerializer {
           return (T) jsonObjectReader.nextObjectOrNull();
         }
 
-        return (T) jsonObjectReader.nextList(options.getLogger(), elementDeserializer);
+        return (T) jsonObjectReader.nextListOrNull(options.getLogger(), elementDeserializer);
       } else {
         return (T) jsonObjectReader.nextObjectOrNull();
       }

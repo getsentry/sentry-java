@@ -1,5 +1,6 @@
 package io.sentry.graphql
 
+import graphql.ErrorClassification
 import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResultImpl
@@ -68,7 +69,7 @@ class SentryInstrumentationAnotherTest {
         val query = """query greeting(name: "somename")"""
         val variables = mapOf("variableA" to "value a")
 
-        fun getSut(isTransactionActive: Boolean = true, operation: OperationDefinition.Operation = OperationDefinition.Operation.QUERY, graphQLContextParam: Map<Any?, Any?>? = null, addTransactionToTracingState: Boolean = true): SentryInstrumentation {
+        fun getSut(isTransactionActive: Boolean = true, operation: OperationDefinition.Operation = OperationDefinition.Operation.QUERY, graphQLContextParam: Map<Any?, Any?>? = null, addTransactionToTracingState: Boolean = true, ignoredErrors: List<String> = emptyList()): SentryInstrumentation {
             whenever(hub.options).thenReturn(SentryOptions())
             activeSpan = SentryTracer(TransactionContext("name", "op"), hub)
 
@@ -86,7 +87,7 @@ class SentryInstrumentationAnotherTest {
             exceptionReporter = mock<ExceptionReporter>()
             subscriptionHandler = mock<SentrySubscriptionHandler>()
             whenever(subscriptionHandler.onSubscriptionResult(any(), any(), any(), any())).thenReturn("result modified by subscription handler")
-            val instrumentation = SentryInstrumentation(null, subscriptionHandler, exceptionReporter)
+            val instrumentation = SentryInstrumentation(null, subscriptionHandler, exceptionReporter, ignoredErrors)
             dataFetcher = mock<DataFetcher<Any?>>()
             whenever(dataFetcher.get(any())).thenReturn("raw result")
             graphQLContext = GraphQLContext.newContext()
@@ -326,6 +327,19 @@ class SentryInstrumentationAnotherTest {
     }
 
     @Test
+    fun `does not invoke exceptionReporter for ignored errors`() {
+        val instrumentation = fixture.getSut(ignoredErrors = listOf("SOME_ERROR"))
+        val executionResult = ExecutionResultImpl.newExecutionResult()
+            .data("raw result")
+            .addError(GraphqlErrorException.newErrorException().message("exception message").errorClassification(SomeErrorClassification.SOME_ERROR).build())
+            .build()
+        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters)
+        verify(fixture.exceptionReporter, never()).captureThrowable(any(), any(), any())
+        val result = resultFuture.get()
+        assertSame(executionResult, result)
+    }
+
+    @Test
     fun `never invokes exceptionReporter if no errors`() {
         val instrumentation = fixture.getSut()
         val executionResult = ExecutionResultImpl.newExecutionResult()
@@ -343,4 +357,8 @@ class SentryInstrumentationAnotherTest {
     }
 
     data class Show(val id: Int)
+
+    enum class SomeErrorClassification : ErrorClassification {
+        SOME_ERROR;
+    }
 }

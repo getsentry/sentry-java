@@ -545,4 +545,21 @@ class SentryOkHttpInterceptorTest {
         assertNull(httpClientSpan)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
+
+    @Test
+    fun `when a call is not captured by SentryOkHttpEventListener, client error is reported`() {
+        val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 500)
+        val call = sut.newCall(getRequest())
+        call.execute()
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
+    }
+
+    @Test
+    fun `when a call is captured by SentryOkHttpEventListener no client error is reported`() {
+        val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 500)
+        val call = sut.newCall(getRequest())
+        SentryOkHttpEventListener.eventMap[call] = mock()
+        call.execute()
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+    }
 }

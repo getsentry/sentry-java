@@ -46,7 +46,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         comparisonResult.printResults()
 
         // Currently we just want to assert the cpu overhead
-        assertTrue(comparisonResult.cpuTimeIncreasePercentage in -2F..2F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in -2F..2F, "Expected ${comparisonResult.cpuTimeIncreasePercentage} to be in range -2 < x < 2")
         // The fps decrease comparison is skipped, due to approximation: 59.51 and 59.49 fps are considered 60 and 59,
         // respectively. Also, if the average fps is 20 or 60, a difference of 1 fps becomes 5% or 1.66% respectively.
     }
@@ -90,7 +90,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         comparisonResult.printResults()
 
         // Currently we just want to assert the cpu overhead
-        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F, "Expected ${comparisonResult.cpuTimeIncreasePercentage} to be in range 0 < x < 5")
     }
 
     /**

@@ -89,7 +89,7 @@ public final class ClientReport implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.DISCARDED_EVENTS:
             List<DiscardedEvent> deserializedDiscardedEvents =
-                reader.nextList(logger, new DiscardedEvent.Deserializer());
+                reader.nextListOrNull(logger, new DiscardedEvent.Deserializer());
             discardedEvents.addAll(deserializedDiscardedEvents);
             break;
           default:

@@ -770,7 +770,7 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextFloat ()Ljava/lang/Float;
 	public fun nextFloatOrNull ()Ljava/lang/Float;
 	public fun nextIntegerOrNull ()Ljava/lang/Integer;
-	public fun nextList (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
+	public fun nextListOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public fun nextLongOrNull ()Ljava/lang/Long;
 	public fun nextMapOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/Map;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
@@ -2594,6 +2594,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field SPRING_REQUEST_INTERCEPTOR_RESPONSE Ljava/lang/String;
 	public static final field SPRING_RESOLVER_REQUEST Ljava/lang/String;
 	public static final field SPRING_RESOLVER_RESPONSE Ljava/lang/String;
+	public static final field WEBFLUX_EXCEPTION_HANDLER_EXCHANGE Ljava/lang/String;
 	public static final field WEBFLUX_EXCEPTION_HANDLER_REQUEST Ljava/lang/String;
 	public static final field WEBFLUX_EXCEPTION_HANDLER_RESPONSE Ljava/lang/String;
 	public static final field WEBFLUX_FILTER_REQUEST Ljava/lang/String;

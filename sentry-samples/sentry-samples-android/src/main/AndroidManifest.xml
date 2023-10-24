@@ -150,6 +150,6 @@
 
         <!--    how to disable sentry -->
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
-      
+
     </application>
 </manifest>

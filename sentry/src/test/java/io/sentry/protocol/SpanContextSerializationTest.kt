@@ -57,6 +57,16 @@ class SpanContextSerializationTest {
         assertEquals(expectedJson, actualJson)
     }
 
+    @Test
+    fun deserializeNullOp() {
+        val expectedJson = sanitizedFile("json/span_context_null_op.json")
+        val actual = deserialize(expectedJson)
+        assertNull(actual.sampled)
+        assertNull(actual.profileSampled)
+        assertNotNull(actual.tags)
+        assertEquals("", actual.operation)
+    }
+
     // Helper
 
     private fun sanitizedFile(path: String): String {

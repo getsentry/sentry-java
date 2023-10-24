@@ -338,14 +338,15 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
             reader.beginObject();
             reader.nextName(); // SentryValues.JsonKeys.VALUES
             event.threads =
-                new SentryValues<>(reader.nextList(logger, new SentryThread.Deserializer()));
+                new SentryValues<>(reader.nextListOrNull(logger, new SentryThread.Deserializer()));
             reader.endObject();
             break;
           case JsonKeys.EXCEPTION:
             reader.beginObject();
             reader.nextName(); // SentryValues.JsonKeys.VALUES
             event.exception =
-                new SentryValues<>(reader.nextList(logger, new SentryException.Deserializer()));
+                new SentryValues<>(
+                    reader.nextListOrNull(logger, new SentryException.Deserializer()));
             reader.endObject();
             break;
           case JsonKeys.LEVEL:

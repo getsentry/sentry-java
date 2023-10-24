@@ -1,4 +1,6 @@
 /*
+ * Adapted from https://github.com/apache/commons-collections/blob/fce46cdcc6fa33ba9472921d4b3ec3f548d8cbcc/src/main/java/org/apache/commons/collections4/collection/SynchronizedCollection.java
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.

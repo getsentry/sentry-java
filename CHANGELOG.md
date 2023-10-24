@@ -2,15 +2,60 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
+- Cap max number of stack frames to 100 to not exceed payload size limit ([#3009](https://github.com/getsentry/sentry-java/pull/3009))
+  - This will ensure we report errors with a big number of frames such as `StackOverflowError`
+
+## 6.32.0
+
 ### Features
 
+- Make `DebugImagesLoader` public ([#2993](https://github.com/getsentry/sentry-java/pull/2993))
+
+### Fixes
+
+- Make `SystemEventsBroadcastReceiver` exported on API 33+ ([#2990](https://github.com/getsentry/sentry-java/pull/2990))
+  - This will fix the `SystemEventsBreadcrumbsIntegration` crashes that you might have encountered on Play Console
+
+## 6.31.0
+
+### Features
+
+- Improve default debouncing mechanism ([#2945](https://github.com/getsentry/sentry-java/pull/2945))
 - Add `CheckInUtils.withCheckIn` which abstracts away some of the manual check-ins complexity ([#2959](https://github.com/getsentry/sentry-java/pull/2959))
+- Add `@SentryCaptureExceptionParameter` annotation which captures exceptions passed into an annotated method ([#2764](https://github.com/getsentry/sentry-java/pull/2764))
+  - This can be used to replace `Sentry.captureException` calls in `@ExceptionHandler` of a `@ControllerAdvice`
+- Add `ServerWebExchange` to `Hint` for WebFlux as `WEBFLUX_EXCEPTION_HANDLER_EXCHANGE` ([#2977](https://github.com/getsentry/sentry-java/pull/2977))
+- Allow filtering GraphQL errors ([#2967](https://github.com/getsentry/sentry-java/pull/2967))
+  - This list can be set directly when calling the constructor of `SentryInstrumentation`
+  - For Spring Boot it can also be set in `application.properties` as `sentry.graphql.ignored-error-types=SOME_ERROR,ANOTHER_ERROR`
+
+### Fixes
+
+- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
+- Fix json parsing of nullable/empty fields for Hybrid SDKs ([#2968](https://github.com/getsentry/sentry-java/pull/2968))
+  - (Internal) Rename `nextList` to `nextListOrNull` to actually match what the method does
+  - (Hybrid) Check if there's any object in a collection before trying to parse it (which prevents the "Failed to deserilize object in list" log message)
+  - (Hybrid) If a date can't be parsed as an ISO timestamp, attempts to parse it as millis silently, without printing a log message
+  - (Hybrid) If `op` is not defined as part of `SpanContext`, fallback to an empty string, because the filed is optional in the spec
+- Always attach OkHttp errors and Http Client Errors only to call root span ([#2961](https://github.com/getsentry/sentry-java/pull/2961))
+- Fixed crash accessing Choreographer instance ([#2970](https://github.com/getsentry/sentry-java/pull/2970))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.5 to v0.6.6 ([#2975](https://github.com/getsentry/sentry-java/pull/2975))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#066)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.5...0.6.6)
+- Bump Gradle from v8.3.0 to v8.4.0 ([#2966](https://github.com/getsentry/sentry-java/pull/2966))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v840)
+  - [diff](https://github.com/gradle/gradle/compare/v8.3.0...v8.4.0)
 
 ## 6.30.0
 
 ### Features
 
-- Improve default debouncing mechanism ([#2945](https://github.com/getsentry/sentry-java/pull/2945))
 - Add `sendModules` option for disable sending modules ([#2926](https://github.com/getsentry/sentry-java/pull/2926))
 - Send `db.system` and `db.name` in span data for androidx.sqlite spans ([#2928](https://github.com/getsentry/sentry-java/pull/2928))
 - Check-ins (CRONS) support ([#2952](https://github.com/getsentry/sentry-java/pull/2952))
@@ -21,7 +66,6 @@
 
 ### Fixes
 
-- Add OkHttp span auto-close when response body is not read ([#2923](https://github.com/getsentry/sentry-java/pull/2923))
 - Always send memory stats for transactions ([#2936](https://github.com/getsentry/sentry-java/pull/2936))
   - This makes it possible to query transactions by the `device.class` tag on Sentry
 - Add `sentry.enable-aot-compatibility` property to SpringBoot Jakarta `SentryAutoConfiguration` to enable building for GraalVM ([#2915](https://github.com/getsentry/sentry-java/pull/2915))

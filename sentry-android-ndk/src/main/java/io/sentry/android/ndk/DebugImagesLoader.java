@@ -12,7 +12,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-final class DebugImagesLoader implements IDebugImagesLoader {
+/**
+ * Class used for loading the list of debug images from sentry-native. Using this class requires
+ * manually initializing the SDK.
+ */
+public final class DebugImagesLoader implements IDebugImagesLoader {
 
   private final @NotNull SentryOptions options;
 
@@ -23,7 +27,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
   /** we need to lock it because it could be called from different threads */
   private static final @NotNull Object debugImagesLock = new Object();
 
-  DebugImagesLoader(
+  public DebugImagesLoader(
       final @NotNull SentryAndroidOptions options,
       final @NotNull NativeModuleListLoader moduleListLoader) {
     this.options = Objects.requireNonNull(options, "The SentryAndroidOptions is required.");
