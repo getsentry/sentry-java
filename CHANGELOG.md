@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Features
+
 - Use PixelCopy API for capturing screenshots on API level 24+ ([#3008](https://github.com/getsentry/sentry-java/pull/3008))
 
 ### Fixes
