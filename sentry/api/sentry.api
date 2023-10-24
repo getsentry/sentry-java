@@ -2399,6 +2399,8 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field HTTP_QUERY_KEY Ljava/lang/String;
 	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
+	public static final field THREAD_ID Ljava/lang/String;
+	public static final field THREAD_NAME Ljava/lang/String;
 }
 
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {
