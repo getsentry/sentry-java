@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Features
+- Use PixelCopy API for capturing screenshots on API level 24+ ([#3008](https://github.com/getsentry/sentry-java/pull/3008))
+
 ### Fixes
 
 - Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
