@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add thread information to spans ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
+
 ### Fixes
 
 - Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
