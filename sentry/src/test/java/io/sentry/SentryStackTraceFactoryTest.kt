@@ -276,6 +276,17 @@ class SentryStackTraceFactoryTest {
         assertEquals("com.example.myapp.MainActivity", callStack[1].module)
     }
 
+    @Test
+    fun `caps number of stack frames to STACKTRACE_FRAME_LIMIT to not exceed payload size limit`() {
+        val exception = Exception()
+        exception.stackTrace = arrayOf()
+        repeat(120) { exception.stackTrace += generateStackTrace("com.me.stackoverflow") }
+
+        val sut = SentryStackTraceFactory(SentryOptions())
+        val sentryFrames = sut.getStackFrames(exception.stackTrace)
+
+        assertEquals(100, sentryFrames!!.size)
+    }
     private fun generateStackTrace(className: String?) =
         StackTraceElement(className, "method", "fileName", 10)
 }
