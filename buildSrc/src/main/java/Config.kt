@@ -10,7 +10,7 @@ object Config {
     val springBoot3Version = "3.0.3"
     val kotlinCompatibleLanguageVersion = "1.4"
 
-    val composeVersion = "1.3.0"
+    val composeVersion = "1.5.3"
     val androidComposeCompilerVersion = "1.4.0"
 
     object BuildPlugins {
