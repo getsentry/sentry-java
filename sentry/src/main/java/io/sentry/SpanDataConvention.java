@@ -15,4 +15,6 @@ public interface SpanDataConvention {
   String HTTP_RESPONSE_CONTENT_LENGTH_KEY = "http.response_content_length";
   String BLOCKED_MAIN_THREAD_KEY = "blocked_main_thread";
   String CALL_STACK_KEY = "call_stack";
+  String THREAD_ID = "thread.id";
+  String THREAD_NAME = "thread.name";
 }
