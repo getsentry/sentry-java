@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import java.lang.RuntimeException
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.Arrays
@@ -1218,6 +1219,28 @@ class SentryClientTest {
             scope.withSession {
                 assertEquals(Session.State.Crashed, it!!.status)
                 assertEquals(1, it.errorCount())
+            }
+        }
+    }
+
+    @Test
+    fun `when ignore exception list contains a parent exception class, and passed throwable is a child class`() {
+        fixture.sentryOptions.sampleRate = 1.0
+        fixture.sentryOptions.addIgnoredExceptionForType(RuntimeException::class.java)
+        val sut = fixture.getSut()
+
+        val event = SentryEvent().apply {
+            exceptions = createNonHandledException()
+            throwable = java.lang.IllegalArgumentException()
+        }
+        val scope = Scope(fixture.sentryOptions)
+        val sessionPair = scope.startSession()
+        assertNotNull(sessionPair) {
+            val sentryId = sut.captureEvent(event, scope, null)
+            assertEquals(SentryId.EMPTY_ID, sentryId)
+            scope.withSession {
+                assertEquals(Session.State.Ok, it!!.status)
+                assertEquals(0, it.errorCount())
             }
         }
     }
