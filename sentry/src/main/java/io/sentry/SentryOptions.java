@@ -1533,7 +1533,12 @@ public class SentryOptions {
    * @return if the type of exception is ignored
    */
   boolean containsIgnoredExceptionForType(final @NotNull Throwable throwable) {
-    return this.ignoredExceptionsForType.contains(throwable.getClass());
+    for (Class<? extends Throwable> ignoredException : this.ignoredExceptionsForType) {
+      if (ignoredException.isInstance(throwable)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
