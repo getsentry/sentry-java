@@ -269,6 +269,7 @@ public final class Scope {
    *
    * @return the name of the screen
    */
+  @ApiStatus.Internal
   public @Nullable String getScreen() {
     return screen;
   }
@@ -278,6 +279,7 @@ public final class Scope {
    *
    * @param screen the name of the screen
    */
+  @ApiStatus.Internal
   public void setScreen(final @Nullable String screen) {
     this.screen = screen;
 
