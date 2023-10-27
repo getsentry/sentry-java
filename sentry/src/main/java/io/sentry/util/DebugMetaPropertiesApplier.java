@@ -2,6 +2,7 @@ package io.sentry.util;
 
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import java.util.List;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,23 +12,26 @@ public final class DebugMetaPropertiesApplier {
   public static @NotNull String DEBUG_META_PROPERTIES_FILENAME = "sentry-debug-meta.properties";
 
   public static void applyToOptions(
-      final @NotNull SentryOptions options, final @Nullable Properties debugMetaProperties) {
+      final @NotNull SentryOptions options, final @Nullable List<Properties> debugMetaProperties) {
     if (debugMetaProperties != null) {
-      applyProguardUuid(options, debugMetaProperties);
       applyBundleIds(options, debugMetaProperties);
+      for (Properties properties : debugMetaProperties) {
+        applyProguardUuid(options, properties);
+      }
     }
   }
 
   private static void applyBundleIds(
-      final @NotNull SentryOptions options, final @NotNull Properties debugMetaProperties) {
+      final @NotNull SentryOptions options, final @NotNull List<Properties> debugMetaProperties) {
     if (options.getBundleIds().isEmpty()) {
-      final @Nullable String bundleIdStrings =
-          debugMetaProperties.getProperty("io.sentry.bundle-ids");
-      options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
-      if (bundleIdStrings != null) {
-        final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
-        for (final String bundleId : bundleIds) {
-          options.addBundleId(bundleId);
+      for (Properties properties : debugMetaProperties) {
+        final @Nullable String bundleIdStrings = properties.getProperty("io.sentry.bundle-ids");
+        options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
+        if (bundleIdStrings != null) {
+          final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
+          for (final String bundleId : bundleIds) {
+            options.addBundleId(bundleId);
+          }
         }
       }
     }

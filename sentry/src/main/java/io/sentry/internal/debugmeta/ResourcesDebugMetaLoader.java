@@ -5,9 +5,11 @@ import static io.sentry.util.DebugMetaPropertiesApplier.DEBUG_META_PROPERTIES_FI
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -29,22 +31,24 @@ public final class ResourcesDebugMetaLoader implements IDebugMetaLoader {
   }
 
   @Override
-  public @Nullable Properties loadDebugMeta() {
-    InputStream debugMetaStream = classLoader.getResourceAsStream(DEBUG_META_PROPERTIES_FILENAME);
-    if (debugMetaStream == null) {
-      logger.log(SentryLevel.INFO, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
-    } else {
-      try (final InputStream is = new BufferedInputStream(debugMetaStream)) {
-        final Properties properties = new Properties();
-        properties.load(is);
-        return properties;
-      } catch (IOException e) {
-        logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
-      } catch (RuntimeException e) {
-        logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
+  public @Nullable List<Properties> loadDebugMeta() {
+    List<Properties> debugPropertyList = new ArrayList<>();
+    try {
+      Enumeration<URL> resourceUrls = classLoader.getResources(DEBUG_META_PROPERTIES_FILENAME);
+
+      while (resourceUrls.hasMoreElements()) {
+        URL currenturl = resourceUrls.nextElement();
+        Properties currentProperties = new Properties();
+        currentProperties.load(currenturl.openStream());
+        debugPropertyList.add(currentProperties);
       }
+
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
+    } catch (RuntimeException e) {
+      logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
     }
 
-    return null;
+    return debugPropertyList.isEmpty() ? null : debugPropertyList;
   }
 }
