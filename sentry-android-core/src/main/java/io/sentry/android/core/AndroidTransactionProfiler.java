@@ -33,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 final class AndroidTransactionProfiler implements ITransactionProfiler {
-  private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull IHub hub;
@@ -218,7 +217,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             transaction.getName(),
             transaction.getSpanContext().getTraceId().toString());
 
-    if (transactionsCounter != 0 && !isTimeout) {
+    if (transactionsCounter != 0) {
       // We notify the data referring to this transaction that it finished
       if (currentProfilingTransactionData != null) {
         currentProfilingTransactionData.notifyFinish(
@@ -237,7 +236,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
 
     long transactionDurationNanos = endData.endNanos - transactionStartNanos;
-
 
     List<ProfilingTransactionData> transactionList = new ArrayList<>(1);
     final ProfilingTransactionData txData = currentProfilingTransactionData;
@@ -284,7 +282,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         options.getProguardUuid(),
         options.getRelease(),
         options.getEnvironment(),
-        isTimeout
+        (endData.didTimeout || isTimeout)
             ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
             : ProfilingTraceData.TRUNCATION_REASON_NORMAL,
         measurementsMap);

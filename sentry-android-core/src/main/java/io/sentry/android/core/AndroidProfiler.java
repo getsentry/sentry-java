@@ -47,16 +47,19 @@ public class AndroidProfiler {
     public final long endCpuMillis;
     public final @NotNull File traceFile;
     public final @NotNull Map<String, ProfileMeasurement> measurementsMap;
+    public final boolean didTimeout;
 
     public ProfileEndData(
-      long endNanos,
-      long endCpuMillis,
-      @NotNull File traceFile,
-      @NotNull Map<String, ProfileMeasurement> measurementsMap) {
+      final long endNanos,
+      final long endCpuMillis,
+      final boolean didTimeout,
+      final @NotNull File traceFile,
+      final @NotNull Map<String, ProfileMeasurement> measurementsMap) {
       this.endNanos = endNanos;
       this.traceFile = traceFile;
       this.endCpuMillis = endCpuMillis;
       this.measurementsMap = measurementsMap;
+      this.didTimeout = didTimeout;
     }
   }
 
@@ -262,6 +265,7 @@ public class AndroidProfiler {
     return new ProfileEndData(
       transactionEndNanos,
       transactionEndCpuMillis,
+      isTimeout,
       traceFile,
       measurementsMap
     );
