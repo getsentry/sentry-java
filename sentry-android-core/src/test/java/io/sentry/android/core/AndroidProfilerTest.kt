@@ -9,14 +9,11 @@ import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
-import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -30,8 +27,9 @@ import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -88,7 +86,7 @@ class AndroidProfilerTest {
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
         fun getSut(interval: Int = 1, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidProfiler {
-            return AndroidProfiler(options.profilingTracesDirPath!!, interval, frameMetricsCollector, options, buildInfoProvider);
+            return AndroidProfiler(options.profilingTracesDirPath!!, interval, frameMetricsCollector, options, buildInfoProvider)
         }
     }
 

@@ -13,7 +13,6 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.util.Objects;
-
 import java.io.File;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -70,6 +69,7 @@ public class AndroidProfiler {
    * in the future if we notice that traces are being truncated in some applications.
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
+
   private static final int PROFILING_TIMEOUT_MILLIS = 30_000;
   private long transactionStartNanos = 0;
   private final @NotNull File traceFilesDir;
@@ -96,13 +96,14 @@ public class AndroidProfiler {
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    this.traceFilesDir = new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
+    this.traceFilesDir =
+        new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
     this.frameMetricsCollector =
-      Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
+        Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
     this.buildInfoProvider =
-      Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
+        Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
   }
 
   @SuppressLint("NewApi")
@@ -110,20 +111,16 @@ public class AndroidProfiler {
     // intervalUs is 0 only if there was a problem in the init
     if (intervalUs == 0) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING,
-          "Disabling profiling because intervaUs is set to %d",
-          intervalUs);
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Disabling profiling because intervaUs is set to %d",
+              intervalUs);
       return null;
     }
 
     if (isRunning) {
-      options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING,
-          "Profiling has already started...");
+      options.getLogger().log(SentryLevel.WARNING, "Profiling has already started...");
       return null;
     }
 
