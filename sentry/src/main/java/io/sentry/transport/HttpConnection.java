@@ -182,8 +182,10 @@ final class HttpConnection {
         options.getLogger().log(ERROR, "Request failed, API returned %s", responseCode);
         // double check because call is expensive
         if (options.isDebug()) {
-          String errorMessage = getErrorMessageFromStream(connection);
-          options.getLogger().log(ERROR, errorMessage);
+          final @NotNull String errorMessage = getErrorMessageFromStream(connection);
+          // the error message may contain anything (including formatting symbols), so provide it as
+          // an argument itself
+          options.getLogger().log(ERROR, "%s", errorMessage);
         }
 
         return TransportResult.error(responseCode);

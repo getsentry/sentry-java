@@ -2,6 +2,7 @@
   <string name="app_name">Sentry sample</string>
   <string name="crash_from_java">Crash from Java (UncaughtException)</string>
   <string name="out_of_memory">Out of Memory (Mulithreaded)</string>
+  <string name="stack_overflow">Stack Overflow</string>
   <string name="send_message">Send Message</string>
   <string name="send_message_from_inner_fragment">Send Message from inner fragment</string>
   <string name="add_attachment">Add Attachment</string>

@@ -1,3 +1,21 @@
+/*
+ * Adapted from https://github.com/FasterXML/jackson-databind/blob/c1e92435c6942386394a2a7733065bb047773107/src/main/java/com/fasterxml/jackson/databind/util/ISO8601Utils.java
+ *
+ * Copyright (C) 2007-, Tatu Saloranta
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.sentry.vendor.gson.internal.bind.util;
 
 import org.jetbrains.annotations.ApiStatus;
@@ -19,8 +37,6 @@ import java.util.*;
  *
  * @see <a href="http://www.w3.org/TR/NOTE-datetime">this specification</a>
  */
-//Date parsing code from Jackson databind ISO8601Utils.java
-// https://github.com/FasterXML/jackson-databind/blob/master/src/main/java/com/fasterxml/jackson/databind/util/ISO8601Utils.java
 @SuppressWarnings({"TryWithIdenticalCatches", "UnusedAssignment", "MagicConstant"}) // Ignore warnings to preserve original code.
 @ApiStatus.Internal
 public class ISO8601Utils

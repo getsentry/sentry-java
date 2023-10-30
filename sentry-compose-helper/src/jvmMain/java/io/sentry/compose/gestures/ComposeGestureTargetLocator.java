@@ -87,6 +87,15 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
                 }
               }
             }
+          } else {
+            // Newer Jetpack Compose 1.5 uses Node modifiers for clicks/scrolls
+            final @Nullable String type = modifierInfo.getModifier().getClass().getCanonicalName();
+            if ("androidx.compose.foundation.ClickableElement".equals(type)
+                || "androidx.compose.foundation.CombinedClickableElement".equals(type)) {
+              isClickable = true;
+            } else if ("androidx.compose.foundation.ScrollingLayoutElement".equals(type)) {
+              isScrollable = true;
+            }
           }
         }
 
