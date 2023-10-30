@@ -12,6 +12,8 @@ import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
+import io.sentry.util.Objects;
+
 import java.io.File;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -68,12 +70,10 @@ public class AndroidProfiler {
    * in the future if we notice that traces are being truncated in some applications.
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
-
   private static final int PROFILING_TIMEOUT_MILLIS = 30_000;
   private long transactionStartNanos = 0;
-  private long profileStartCpuMillis = 0;
-  private @NotNull File traceFilesDir;
-  private int intervalUs;
+  private final @NotNull File traceFilesDir;
+  private final int intervalUs;
   private @Nullable Future<?> scheduledFinish = null;
   private @Nullable File traceFile = null;
   private @Nullable String frameMetricsCollectorId;
@@ -88,6 +88,7 @@ public class AndroidProfiler {
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
+  private boolean isRunning = false;
 
   public AndroidProfiler(
       final @NotNull String tracesFilesDirPath,
@@ -95,20 +96,39 @@ public class AndroidProfiler {
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    this.traceFilesDir = new File(tracesFilesDirPath);
+    this.traceFilesDir = new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
-    this.frameMetricsCollector = frameMetricsCollector;
-    this.options = sentryAndroidOptions;
-    this.buildInfoProvider = buildInfoProvider;
+    this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
+    this.frameMetricsCollector =
+      Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
+    this.buildInfoProvider =
+      Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
   }
 
   @SuppressLint("NewApi")
   public @Nullable ProfileStartData start() {
-    // intervalUs is 0 only if there was a problem in the init, but
-    // we already logged that
+    // intervalUs is 0 only if there was a problem in the init
     if (intervalUs == 0) {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "Disabling profiling because intervaUs is set to %d",
+          intervalUs);
       return null;
     }
+
+    if (isRunning) {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "Profiling has already started...");
+      return null;
+    }
+
+    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
 
     // We create a file with a uuid name, so no need to check if it already exists
     traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
@@ -180,7 +200,7 @@ public class AndroidProfiler {
     }
 
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();
-    profileStartCpuMillis = Process.getElapsedCpuTime();
+    long profileStartCpuMillis = Process.getElapsedCpuTime();
 
     // We don't make any check on the file existence or writeable state, because we don't want to
     // make file IO in the main thread.
@@ -190,10 +210,12 @@ public class AndroidProfiler {
       // If there is any problem with the file this method will throw (but it will not throw in
       // tests)
       Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
+      isRunning = true;
       return new ProfileStartData(transactionStartNanos, profileStartCpuMillis);
     } catch (Throwable e) {
       endAndCollect(false, null);
       options.getLogger().log(SentryLevel.ERROR, "Unable to start a profile: ", e);
+      isRunning = false;
       return null;
     }
   }
@@ -207,7 +229,11 @@ public class AndroidProfiler {
       return timedOutProfilingData;
     }
 
-    // onTransactionStart() is only available since Lollipop
+    if (!isRunning) {
+      options.getLogger().log(SentryLevel.WARNING, "Profiler not running");
+      return null;
+    }
+
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
 
@@ -218,6 +244,8 @@ public class AndroidProfiler {
       Debug.stopMethodTracing();
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
+    } finally {
+      isRunning = false;
     }
     frameMetricsCollector.stopCollection(frameMetricsCollectorId);
 
@@ -261,6 +289,11 @@ public class AndroidProfiler {
     if (scheduledFinish != null) {
       scheduledFinish.cancel(true);
       scheduledFinish = null;
+    }
+
+    // stop profiling if running
+    if (isRunning) {
+      endAndCollect(true, null);
     }
   }
 

@@ -374,6 +374,7 @@ class AndroidTransactionProfilerTest {
         assertEquals(fixture.options.release, profilingTraceData.release)
     }
 
+    @Test
     fun `profiler starts collecting frame metrics when the first transaction starts`() {
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)

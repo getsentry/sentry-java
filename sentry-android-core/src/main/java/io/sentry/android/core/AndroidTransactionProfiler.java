@@ -281,12 +281,14 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public void close() {
-    if (profiler != null) {
-      profiler.close();
-    }
     // we stop profiling
     if (currentTransaction != null) {
       onTransactionFinish(currentTransaction, true, null);
+    }
+
+    // we have to first stop profiling otherwise we would lost the last profile
+    if (profiler != null) {
+      profiler.close();
     }
   }
 
