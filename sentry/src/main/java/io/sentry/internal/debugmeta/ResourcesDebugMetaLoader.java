@@ -30,7 +30,7 @@ public final class ResourcesDebugMetaLoader implements IDebugMetaLoader {
 
   @Override
   public @Nullable Properties loadDebugMeta() {
-    try (InputStream debugMetaStream =
+    try (final InputStream debugMetaStream =
         classLoader.getResourceAsStream(DEBUG_META_PROPERTIES_FILENAME)) {
       if (debugMetaStream == null) {
         logger.log(SentryLevel.INFO, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
