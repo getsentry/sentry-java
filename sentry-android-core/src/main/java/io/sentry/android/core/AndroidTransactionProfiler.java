@@ -9,7 +9,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
-
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
@@ -22,12 +21,10 @@ import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.util.Objects;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -106,13 +103,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return;
     }
 
-    profiler = new AndroidProfiler(
-      tracesFilesDirPath,
-      (int) SECONDS.toMicros(1) / intervalHz,
-      frameMetricsCollector,
-      options,
-      buildInfoProvider
-    );
+    profiler =
+        new AndroidProfiler(
+            tracesFilesDirPath,
+            (int) SECONDS.toMicros(1) / intervalHz,
+            frameMetricsCollector,
+            options,
+            buildInfoProvider);
   }
 
   @Override
@@ -229,7 +226,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    final AndroidProfiler.ProfileEndData endData = profiler.endAndCollect(false, performanceCollectionData);
+    final AndroidProfiler.ProfileEndData endData =
+        profiler.endAndCollect(false, performanceCollectionData);
     // check if profiler end successfully
     if (endData == null) {
       return null;
@@ -258,10 +256,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // Some may not have been really finished, in case of a timeout
     for (ProfilingTransactionData t : transactionList) {
       t.notifyFinish(
-          endData.endNanos,
-          transactionStartNanos,
-          endData.endCpuMillis,
-          profileStartCpuMillis);
+          endData.endNanos, transactionStartNanos, endData.endCpuMillis, profileStartCpuMillis);
     }
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be

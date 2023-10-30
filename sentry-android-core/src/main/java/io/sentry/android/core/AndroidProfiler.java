@@ -5,11 +5,13 @@ import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
-
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.CpuCollectionData;
+import io.sentry.MemoryCollectionData;
+import io.sentry.PerformanceCollectionData;
+import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.profilemeasurements.ProfileMeasurement;
+import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import java.io.File;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -19,14 +21,9 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import io.sentry.CpuCollectionData;
-import io.sentry.MemoryCollectionData;
-import io.sentry.PerformanceCollectionData;
-import io.sentry.SentryLevel;
-import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
-import io.sentry.profilemeasurements.ProfileMeasurement;
-import io.sentry.profilemeasurements.ProfileMeasurementValue;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public class AndroidProfiler {
@@ -34,9 +31,7 @@ public class AndroidProfiler {
     public final long startNanos;
     public final long startCpuMillis;
 
-    public ProfileStartData(
-      final long startNanos,
-      final long startCpuMillis) {
+    public ProfileStartData(final long startNanos, final long startCpuMillis) {
       this.startNanos = startNanos;
       this.startCpuMillis = startCpuMillis;
     }
@@ -50,11 +45,11 @@ public class AndroidProfiler {
     public final boolean didTimeout;
 
     public ProfileEndData(
-      final long endNanos,
-      final long endCpuMillis,
-      final boolean didTimeout,
-      final @NotNull File traceFile,
-      final @NotNull Map<String, ProfileMeasurement> measurementsMap) {
+        final long endNanos,
+        final long endCpuMillis,
+        final boolean didTimeout,
+        final @NotNull File traceFile,
+        final @NotNull Map<String, ProfileMeasurement> measurementsMap) {
       this.endNanos = endNanos;
       this.traceFile = traceFile;
       this.endCpuMillis = endCpuMillis;
@@ -83,24 +78,23 @@ public class AndroidProfiler {
   private @Nullable File traceFile = null;
   private @Nullable String frameMetricsCollectorId;
   private volatile @Nullable ProfileEndData timedOutProfilingData = null;
-  private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;  private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
-    new ArrayDeque<>();
+  private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
+  private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
+      new ArrayDeque<>();
   private final @NotNull ArrayDeque<ProfileMeasurementValue> slowFrameRenderMeasurements =
-    new ArrayDeque<>();
+      new ArrayDeque<>();
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
-    new ArrayDeque<>();
+      new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
 
-
   public AndroidProfiler(
-    final @NotNull String tracesFilesDirPath,
-    final int intervalUs,
-    final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-    final @NotNull SentryAndroidOptions sentryAndroidOptions,
-    final @NotNull BuildInfoProvider buildInfoProvider
-  ) {
+      final @NotNull String tracesFilesDirPath,
+      final int intervalUs,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull SentryAndroidOptions sentryAndroidOptions,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.traceFilesDir = new File(tracesFilesDirPath);
     this.intervalUs = intervalUs;
     this.frameMetricsCollector = frameMetricsCollector;
@@ -125,64 +119,64 @@ public class AndroidProfiler {
     frozenFrameRenderMeasurements.clear();
 
     frameMetricsCollectorId =
-      frameMetricsCollector.startCollection(
-        new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
-          final long nanosInSecond = TimeUnit.SECONDS.toNanos(1);
-          final long frozenFrameThresholdNanos = TimeUnit.MILLISECONDS.toNanos(700);
-          float lastRefreshRate = 0;
+        frameMetricsCollector.startCollection(
+            new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
+              final long nanosInSecond = TimeUnit.SECONDS.toNanos(1);
+              final long frozenFrameThresholdNanos = TimeUnit.MILLISECONDS.toNanos(700);
+              float lastRefreshRate = 0;
 
-          @Override
-          public void onFrameMetricCollected(
-            final long frameEndNanos, final long durationNanos, float refreshRate) {
-            // transactionStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
-            // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
-            // relative to transactionStartNanos
-            final long frameTimestampRelativeNanos =
-              frameEndNanos
-                - System.nanoTime()
-                + SystemClock.elapsedRealtimeNanos()
-                - transactionStartNanos;
+              @Override
+              public void onFrameMetricCollected(
+                  final long frameEndNanos, final long durationNanos, float refreshRate) {
+                // transactionStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
+                // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
+                // relative to transactionStartNanos
+                final long frameTimestampRelativeNanos =
+                    frameEndNanos
+                        - System.nanoTime()
+                        + SystemClock.elapsedRealtimeNanos()
+                        - transactionStartNanos;
 
-            // We don't allow negative relative timestamps.
-            // So we add a check, even if this should never happen.
-            if (frameTimestampRelativeNanos < 0) {
-              return;
-            }
-            // Most frames take just a few nanoseconds longer than the optimal calculated
-            // duration.
-            // Therefore we subtract one, because otherwise almost all frames would be slow.
-            boolean isSlow = durationNanos > nanosInSecond / (refreshRate - 1);
-            float newRefreshRate = (int) (refreshRate * 100) / 100F;
-            if (durationNanos > frozenFrameThresholdNanos) {
-              frozenFrameRenderMeasurements.addLast(
-                new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
-            } else if (isSlow) {
-              slowFrameRenderMeasurements.addLast(
-                new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
-            }
-            if (newRefreshRate != lastRefreshRate) {
-              lastRefreshRate = newRefreshRate;
-              screenFrameRateMeasurements.addLast(
-                new ProfileMeasurementValue(frameTimestampRelativeNanos, newRefreshRate));
-            }
-          }
-        });
+                // We don't allow negative relative timestamps.
+                // So we add a check, even if this should never happen.
+                if (frameTimestampRelativeNanos < 0) {
+                  return;
+                }
+                // Most frames take just a few nanoseconds longer than the optimal calculated
+                // duration.
+                // Therefore we subtract one, because otherwise almost all frames would be slow.
+                boolean isSlow = durationNanos > nanosInSecond / (refreshRate - 1);
+                float newRefreshRate = (int) (refreshRate * 100) / 100F;
+                if (durationNanos > frozenFrameThresholdNanos) {
+                  frozenFrameRenderMeasurements.addLast(
+                      new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
+                } else if (isSlow) {
+                  slowFrameRenderMeasurements.addLast(
+                      new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
+                }
+                if (newRefreshRate != lastRefreshRate) {
+                  lastRefreshRate = newRefreshRate;
+                  screenFrameRateMeasurements.addLast(
+                      new ProfileMeasurementValue(frameTimestampRelativeNanos, newRefreshRate));
+                }
+              }
+            });
 
     // We stop profiling after a timeout to avoid huge profiles to be sent
     try {
       scheduledFinish =
-        options
-          .getExecutorService()
-          .schedule(
-            () -> timedOutProfilingData = endAndCollect(true, null),
-            PROFILING_TIMEOUT_MILLIS);
+          options
+              .getExecutorService()
+              .schedule(
+                  () -> timedOutProfilingData = endAndCollect(true, null),
+                  PROFILING_TIMEOUT_MILLIS);
     } catch (RejectedExecutionException e) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.ERROR,
-          "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
-          e);
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
+              e);
     }
 
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();
@@ -196,10 +190,7 @@ public class AndroidProfiler {
       // If there is any problem with the file this method will throw (but it will not throw in
       // tests)
       Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
-      return new ProfileStartData(
-        transactionStartNanos,
-        profileStartCpuMillis
-      );
+      return new ProfileStartData(transactionStartNanos, profileStartCpuMillis);
     } catch (Throwable e) {
       endAndCollect(false, null);
       options.getLogger().log(SentryLevel.ERROR, "Unable to start a profile: ", e);
@@ -209,9 +200,8 @@ public class AndroidProfiler {
 
   @SuppressLint("NewApi")
   public @Nullable ProfileEndData endAndCollect(
-    final boolean isTimeout,
-    final @Nullable List<PerformanceCollectionData> performanceCollectionData
-  ) {
+      final boolean isTimeout,
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     // check if profiling timed out
     if (timedOutProfilingData != null) {
       return timedOutProfilingData;
@@ -241,19 +231,19 @@ public class AndroidProfiler {
 
     if (!slowFrameRenderMeasurements.isEmpty()) {
       measurementsMap.put(
-        ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
-        new ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
+          ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
+          new ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
     }
     if (!frozenFrameRenderMeasurements.isEmpty()) {
       measurementsMap.put(
-        ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
-        new ProfileMeasurement(
-          ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
+          ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
+          new ProfileMeasurement(
+              ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
     }
     if (!screenFrameRateMeasurements.isEmpty()) {
       measurementsMap.put(
-        ProfileMeasurement.ID_SCREEN_FRAME_RATES,
-        new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+          ProfileMeasurement.ID_SCREEN_FRAME_RATES,
+          new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
     }
     putPerformanceCollectionDataInMeasurements(performanceCollectionData);
 
@@ -263,12 +253,7 @@ public class AndroidProfiler {
     }
 
     return new ProfileEndData(
-      transactionEndNanos,
-      transactionEndCpuMillis,
-      isTimeout,
-      traceFile,
-      measurementsMap
-    );
+        transactionEndNanos, transactionEndCpuMillis, isTimeout, traceFile, measurementsMap);
   }
 
   public void close() {
@@ -281,7 +266,7 @@ public class AndroidProfiler {
 
   @SuppressLint("NewApi")
   private void putPerformanceCollectionDataInMeasurements(
-    final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -293,52 +278,52 @@ public class AndroidProfiler {
     // terms of System.currentTimeMillis() and measurements timestamps require the nanoseconds since
     // the beginning, expressed with SystemClock.elapsedRealtimeNanos()
     long timestampDiff =
-      SystemClock.elapsedRealtimeNanos()
-        - transactionStartNanos
-        - TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
+        SystemClock.elapsedRealtimeNanos()
+            - transactionStartNanos
+            - TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
     if (performanceCollectionData != null) {
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
-        new ArrayDeque<>(performanceCollectionData.size());
+          new ArrayDeque<>(performanceCollectionData.size());
       final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
-        new ArrayDeque<>(performanceCollectionData.size());
+          new ArrayDeque<>(performanceCollectionData.size());
       final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements =
-        new ArrayDeque<>(performanceCollectionData.size());
+          new ArrayDeque<>(performanceCollectionData.size());
       for (PerformanceCollectionData performanceData : performanceCollectionData) {
         CpuCollectionData cpuData = performanceData.getCpuData();
         MemoryCollectionData memoryData = performanceData.getMemoryData();
         if (cpuData != null) {
           cpuUsageMeasurements.add(
-            new ProfileMeasurementValue(
-              TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
-              cpuData.getCpuUsagePercentage()));
+              new ProfileMeasurementValue(
+                  TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
+                  cpuData.getCpuUsagePercentage()));
         }
         if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
           memoryUsageMeasurements.add(
-            new ProfileMeasurementValue(
-              TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-              memoryData.getUsedHeapMemory()));
+              new ProfileMeasurementValue(
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                  memoryData.getUsedHeapMemory()));
         }
         if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
           nativeMemoryUsageMeasurements.add(
-            new ProfileMeasurementValue(
-              TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-              memoryData.getUsedNativeMemory()));
+              new ProfileMeasurementValue(
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                  memoryData.getUsedNativeMemory()));
         }
       }
       if (!cpuUsageMeasurements.isEmpty()) {
         measurementsMap.put(
-          ProfileMeasurement.ID_CPU_USAGE,
-          new ProfileMeasurement(ProfileMeasurement.UNIT_PERCENT, cpuUsageMeasurements));
+            ProfileMeasurement.ID_CPU_USAGE,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_PERCENT, cpuUsageMeasurements));
       }
       if (!memoryUsageMeasurements.isEmpty()) {
         measurementsMap.put(
-          ProfileMeasurement.ID_MEMORY_FOOTPRINT,
-          new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, memoryUsageMeasurements));
+            ProfileMeasurement.ID_MEMORY_FOOTPRINT,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, memoryUsageMeasurements));
       }
       if (!nativeMemoryUsageMeasurements.isEmpty()) {
         measurementsMap.put(
-          ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT,
-          new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, nativeMemoryUsageMeasurements));
+            ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, nativeMemoryUsageMeasurements));
       }
     }
   }
