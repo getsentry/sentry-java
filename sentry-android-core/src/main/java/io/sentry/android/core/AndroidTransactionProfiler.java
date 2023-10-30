@@ -38,7 +38,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private int transactionsCounter = 0;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable ProfilingTransactionData currentProfilingTransactionData;
-  private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
 
   private @Nullable ITransaction currentTransaction = null;
   private @Nullable AndroidProfiler profiler = null;
@@ -280,7 +279,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         (endData.didTimeout || isTimeout)
             ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
             : ProfilingTraceData.TRUNCATION_REASON_NORMAL,
-        measurementsMap);
+        endData.measurementsMap);
   }
 
   @Override

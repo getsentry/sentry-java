@@ -442,7 +442,8 @@ class AndroidTransactionProfilerTest {
         assertNull(profiler.currentTransaction)
 
         // The timeout scheduled job should be cleared
-        val scheduledJob = profiler.getProperty<Future<*>?>("scheduledFinish")
+        val androidProfiler = profiler.getProperty<AndroidProfiler?>("profiler")
+        val scheduledJob = androidProfiler?.getProperty<Future<*>?>("scheduledFinish")
         assertNull(scheduledJob)
 
         // Calling transaction finish returns null, as the profiler was stopped
