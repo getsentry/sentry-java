@@ -5,6 +5,7 @@
 ### Features
 
 - Add thread information to spans ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
+- Use PixelCopy API for capturing screenshots on API level 24+ ([#3008](https://github.com/getsentry/sentry-java/pull/3008))
 
 ### Fixes
 
