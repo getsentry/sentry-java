@@ -11,6 +11,7 @@ import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
@@ -35,22 +36,36 @@ public class ScreenshotUtils {
         activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.O)
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IMainThreadChecker mainThreadChecker,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
 
-    if (!isActivityValid(activity, buildInfoProvider)
-        || activity.getWindow() == null
-        || activity.getWindow().peekDecorView() == null
-        || activity.getWindow().peekDecorView().getRootView() == null) {
+    if (!isActivityValid(activity, buildInfoProvider)) {
       logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
       return null;
     }
 
-    final Window window = activity.getWindow();
-    final View view = window.peekDecorView().getRootView();
+    final @Nullable Window window = activity.getWindow();
+    if (window == null) {
+      logger.log(SentryLevel.DEBUG, "Activity window is null, not taking screenshot.");
+      return null;
+    }
+
+    final @Nullable View decorView = window.peekDecorView();
+    if (decorView == null) {
+      logger.log(SentryLevel.DEBUG, "DecorView is null, not taking screenshot.");
+      return null;
+    }
+
+    final @Nullable View view = decorView.getRootView();
+    if (view == null) {
+      logger.log(SentryLevel.DEBUG, "Root view is null, not taking screenshot.");
+      return null;
+    }
+
     if (view.getWidth() <= 0 || view.getHeight() <= 0) {
       logger.log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
       return null;
@@ -64,9 +79,9 @@ public class ScreenshotUtils {
       final @NotNull CountDownLatch latch = new CountDownLatch(1);
 
       // Use Pixel Copy API on new devices, fallback to canvas rendering on older ones
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
 
-        final HandlerThread thread = new HandlerThread("screenshot");
+        final HandlerThread thread = new HandlerThread("SentryScreenshot");
         thread.start();
 
         boolean success = false;
@@ -85,8 +100,9 @@ public class ScreenshotUtils {
 
           success =
               latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS) && copyResultSuccess.get();
-        } catch (InterruptedException e) {
+        } catch (Throwable e) {
           // ignored
+          logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
         } finally {
           thread.quit();
         }
