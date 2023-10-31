@@ -11,7 +11,6 @@ import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
@@ -36,7 +35,7 @@ public class ScreenshotUtils {
         activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.O)
+  @SuppressLint("NewApi")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IMainThreadChecker mainThreadChecker,
