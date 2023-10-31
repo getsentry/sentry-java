@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Features
+
+- Add thread information to spans ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
 - Use PixelCopy API for capturing screenshots on API level 24+ ([#3008](https://github.com/getsentry/sentry-java/pull/3008))
 
 ### Fixes
@@ -10,6 +12,8 @@
 - Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
 - Cap max number of stack frames to 100 to not exceed payload size limit ([#3009](https://github.com/getsentry/sentry-java/pull/3009))
   - This will ensure we report errors with a big number of frames such as `StackOverflowError`
+- Fix user interaction tracking not working for Jetpack Compose 1.5+ ([#3010](https://github.com/getsentry/sentry-java/pull/3010))
+- Make sure to close all Closeable resources ([#3000](https://github.com/getsentry/sentry-java/pull/3000)
 
 ## 6.32.0
 

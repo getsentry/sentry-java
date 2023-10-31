@@ -9,12 +9,17 @@
     private androidx.compose.ui.node.LayoutNodeLayoutDelegate layoutDelegate;
 }
 
+-keepnames class androidx.compose.foundation.ClickableElement
+-keepnames class androidx.compose.foundation.CombinedClickableElement
+-keepnames class androidx.compose.foundation.ScrollingLayoutElement
+
 # R8 will warn about missing classes if people don't have androidx.compose-navigation on their
 # classpath, but this is fine, these classes are used in an internal class which is only used when
 # someone is using withSentryObservableEffect extension function (which, in turn, cannot be used
 # without having androidx.compose-navigation on the classpath)
 -dontwarn androidx.navigation.NavController$OnDestinationChangedListener
 -dontwarn androidx.navigation.NavController
+-dontwarn androidx.compose.foundation.*
 
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
