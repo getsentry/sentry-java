@@ -6,6 +6,7 @@ import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
@@ -20,7 +21,7 @@ class SentryExceptionFactoryTest {
 
         fun getSut(
             stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(
-                SentryOptions().apply { addInAppExclude("io.sentry") }
+                SentryOptions()
             )
         ): SentryExceptionFactory {
             return SentryExceptionFactory(stackTraceFactory)
@@ -50,7 +51,7 @@ class SentryExceptionFactoryTest {
     @Test
     fun `when frames are null, do not set a stack trace object`() {
         val stackTraceFactory = mock<SentryStackTraceFactory>()
-        whenever(stackTraceFactory.getStackFrames(any())).thenReturn(null)
+        whenever(stackTraceFactory.getStackFrames(any(), eq(false))).thenReturn(null)
 
         val sut = fixture.getSut(stackTraceFactory)
         val exception = Exception("Exception")
@@ -63,7 +64,7 @@ class SentryExceptionFactoryTest {
     @Test
     fun `when frames are empty, do not set a stack trace object`() {
         val stackTraceFactory = mock<SentryStackTraceFactory>()
-        whenever(stackTraceFactory.getStackFrames(any())).thenReturn(emptyList())
+        whenever(stackTraceFactory.getStackFrames(any(), eq(false))).thenReturn(emptyList())
 
         val sut = fixture.getSut(stackTraceFactory)
         val exception = Exception("Exception")
@@ -144,6 +145,25 @@ class SentryExceptionFactoryTest {
         val queue = fixture.getSut().extractExceptionQueue(throwable)
 
         assertEquals(thread.id, queue.first.threadId)
+    }
+
+    @Test
+    fun `when exception has an unhandled mechanism, it should include sentry frames`() {
+        val exception = Exception("message")
+        val mechanism = Mechanism().apply {
+            isHandled = false
+            type = "UncaughtExceptionHandler"
+        }
+        val thread = Thread()
+        val throwable = ExceptionMechanismException(mechanism, exception, thread)
+
+        val queue = fixture.getSut().extractExceptionQueue(throwable)
+
+        assertTrue(
+            queue.first.stacktrace!!.frames!!.any {
+                it.module != null && it.module!!.startsWith("io.sentry")
+            }
+        )
     }
 
     @Test

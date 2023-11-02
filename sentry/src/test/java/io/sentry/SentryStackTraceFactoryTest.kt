@@ -16,38 +16,38 @@ class SentryStackTraceFactoryTest {
         val stacktrace = Thread.currentThread().stackTrace
         // count the stack traces but ignores the test class which is io.sentry package
         val count = stacktrace.size - 1
-        assertEquals(count, sut.getStackFrames(stacktrace)!!.count())
+        assertEquals(count, sut.getStackFrames(stacktrace, false)!!.count())
     }
 
     @Test
     fun `when line number is negative, not added to sentry stacktrace`() {
         val stacktrace = StackTraceElement("class", "method", "fileName", -2)
-        val actual = sut.getStackFrames(arrayOf(stacktrace))
+        val actual = sut.getStackFrames(arrayOf(stacktrace), false)
         assertNull(actual!![0].lineno)
     }
 
     @Test
     fun `when line number is positive, gets added to sentry stacktrace`() {
         val stacktrace = StackTraceElement("class", "method", "fileName", 1)
-        val actual = sut.getStackFrames(arrayOf(stacktrace))
+        val actual = sut.getStackFrames(arrayOf(stacktrace), false)
         assertEquals(stacktrace.lineNumber, actual!![0].lineno)
     }
 
     @Test
     fun `when getStackFrames is called passing empty elements, return null`() {
-        assertNull(sut.getStackFrames(arrayOf()))
+        assertNull(sut.getStackFrames(arrayOf(), false))
     }
 
     @Test
     fun `when getStackFrames is called passing null, return null`() {
-        assertNull(sut.getStackFrames(null))
+        assertNull(sut.getStackFrames(null, false))
     }
 
     @Test
     fun `when getStackFrames is called passing a valid array, fields should be set`() {
         val element = generateStackTrace("class")
         val stacktrace = arrayOf(element)
-        val stackFrames = sut.getStackFrames(stacktrace)
+        val stackFrames = sut.getStackFrames(stacktrace, false)
         assertEquals("class", stackFrames!![0].module)
         assertEquals("method", stackFrames[0].function)
         assertEquals("fileName", stackFrames[0].filename)
@@ -63,7 +63,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(
             SentryOptions().apply { addInAppExclude("io.mysentry") }
         )
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertFalse(sentryElements!!.first().isInApp!!)
     }
@@ -76,7 +76,7 @@ class SentryStackTraceFactoryTest {
             SentryOptions().apply { addInAppExclude("io.mysentry") }
 
         )
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertNull(sentryElements!!.first().isInApp)
     }
@@ -86,7 +86,7 @@ class SentryStackTraceFactoryTest {
         val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(SentryOptions())
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertNull(sentryElements!!.first().isInApp)
     }
@@ -100,7 +100,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(
             SentryOptions().apply { addInAppInclude("io.mysentry") }
         )
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertTrue(sentryElements!!.first().isInApp!!)
     }
@@ -112,7 +112,7 @@ class SentryStackTraceFactoryTest {
         val sentryStackTraceFactory = SentryStackTraceFactory(
             SentryOptions().apply { addInAppInclude("io.mysentry") }
         )
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertNull(sentryElements!!.first().isInApp)
     }
@@ -122,7 +122,7 @@ class SentryStackTraceFactoryTest {
         val element = generateStackTrace("io.mysentry.MyActivity")
         val elements = arrayOf(element)
         val sentryStackTraceFactory = SentryStackTraceFactory(SentryOptions())
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertNull(sentryElements!!.first().isInApp)
     }
@@ -138,7 +138,7 @@ class SentryStackTraceFactoryTest {
                 addInAppInclude("io.mysentry")
             }
         )
-        val sentryElements = sentryStackTraceFactory.getStackFrames(elements)
+        val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
         assertTrue(sentryElements!!.first().isInApp!!)
     }
@@ -173,7 +173,20 @@ class SentryStackTraceFactoryTest {
         stacktrace = stacktrace.plusElement(sentryElement)
 
         assertNull(
-            sut.getStackFrames(stacktrace)!!.find {
+            sut.getStackFrames(stacktrace, false)!!.find {
+                it.module != null && it.module!!.startsWith("io.sentry")
+            }
+        )
+    }
+
+    @Test
+    fun `when getStackFrames is called with includeSentryFrames, does not remove sentry classes`() {
+        var stacktrace = Thread.currentThread().stackTrace
+        val sentryElement = StackTraceElement("io.sentry.element", "test", "test.java", 1)
+        stacktrace = stacktrace.plusElement(sentryElement)
+
+        assertTrue(
+            sut.getStackFrames(stacktrace, true)!!.any {
                 it.module != null && it.module!!.startsWith("io.sentry")
             }
         )
@@ -186,7 +199,7 @@ class SentryStackTraceFactoryTest {
         stacktrace = stacktrace.plusElement(sentryElement)
 
         assertNotNull(
-            sut.getStackFrames(stacktrace)!!.find {
+            sut.getStackFrames(stacktrace, false)!!.find {
                 it.module != null && it.module!!.startsWith("io.sentry")
             }
         )
@@ -199,7 +212,7 @@ class SentryStackTraceFactoryTest {
         stacktrace = stacktrace.plusElement(sentryElement)
 
         assertNotNull(
-            sut.getStackFrames(stacktrace)!!.find {
+            sut.getStackFrames(stacktrace, false)!!.find {
                 it.module != null && it.module!!.startsWith("io.sentry")
             }
         )
