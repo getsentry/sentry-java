@@ -4,6 +4,8 @@
 
 ### Features
 
+- Do not filter out Sentry SDK frames in case of uncaught exceptions ([#3021](https://github.com/getsentry/sentry-java/pull/3021))
+
 **Breaking changes:**
 - Cleanup `startTransaction` overloads ([#2964](https://github.com/getsentry/sentry-java/pull/2964))
     - We have reduce the number of overloads by allowing to pass in `TransactionOptions` instead of having separate parameters for certain options.
