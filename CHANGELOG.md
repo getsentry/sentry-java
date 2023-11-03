@@ -1,12 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
+
 ## 6.33.0
 
 ### Features
 
 - Add thread information to spans ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
 - Use PixelCopy API for capturing screenshots on API level 24+ ([#3008](https://github.com/getsentry/sentry-java/pull/3008))
-- (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
 
 ### Fixes
 
