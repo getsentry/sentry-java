@@ -26,8 +26,7 @@ public final class AssetsModulesLoader extends ModulesLoader {
   protected Map<String, String> loadModules() {
     final Map<String, String> modules = new TreeMap<>();
 
-    try {
-      final InputStream stream = context.getAssets().open(EXTERNAL_MODULES_FILENAME);
+    try (final InputStream stream = context.getAssets().open(EXTERNAL_MODULES_FILENAME)) {
       return parseStream(stream);
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);

@@ -22,6 +22,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -142,10 +143,10 @@ public final class InternalSentrySdk {
     final @NotNull IHub hub = HubAdapter.getInstance();
     final @NotNull SentryOptions options = hub.getOptions();
 
-    try {
+    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
       final @NotNull ISerializer serializer = options.getSerializer();
       final @Nullable SentryEnvelope envelope =
-          options.getEnvelopeReader().read(new ByteArrayInputStream(envelopeData));
+          options.getEnvelopeReader().read(envelopeInputStream);
       if (envelope == null) {
         return null;
       }
