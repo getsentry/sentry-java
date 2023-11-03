@@ -107,7 +107,7 @@ public class AndroidProfiler {
   }
 
   @SuppressLint("NewApi")
-  public @Nullable ProfileStartData start() {
+  public synchronized @Nullable ProfileStartData start() {
     // intervalUs is 0 only if there was a problem in the init
     if (intervalUs == 0) {
       options
@@ -218,7 +218,7 @@ public class AndroidProfiler {
   }
 
   @SuppressLint("NewApi")
-  public @Nullable ProfileEndData endAndCollect(
+  public synchronized @Nullable ProfileEndData endAndCollect(
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     // check if profiling timed out
@@ -281,7 +281,7 @@ public class AndroidProfiler {
         transactionEndNanos, transactionEndCpuMillis, isTimeout, traceFile, measurementsMap);
   }
 
-  public void close() {
+  public synchronized void close() {
     // we cancel any scheduled work
     if (scheduledFinish != null) {
       scheduledFinish.cancel(true);
