@@ -335,18 +335,21 @@ public final class Sentry {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
-      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+      final long timestamp = System.currentTimeMillis();
 
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
+                  final File[] oldTracesDirContent = profilingTracesDir.listFiles();
                   if (oldTracesDirContent == null) return;
                   // Method trace files are normally deleted at the end of traces, but if that fails
                   // for some reason we try to clear any old files here.
                   for (File f : oldTracesDirContent) {
-                    FileUtils.deleteRecursively(f);
+                    if (f.lastModified() < timestamp) {
+                      FileUtils.deleteRecursively(f);
+                    }
                   }
                 });
       } catch (RejectedExecutionException e) {
