@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Do not register `sentrySpringFilter` in ServletContext for Spring Boot ([#3027](https://github.com/getsentry/sentry-java/pull/3027))
+
 ## 6.33.0
 
 ### Features
