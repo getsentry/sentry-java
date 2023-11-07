@@ -1,0 +1,11 @@
+comment: no
+codecov:
+  require_ci_to_pass: no
+
+coverage:
+  range: 78...100
+  precision: 3
+  round: down
+
+ignore:
+  - "**/src/test/*"
