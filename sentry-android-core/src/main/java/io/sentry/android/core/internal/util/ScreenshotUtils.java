@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.util;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -43,7 +44,7 @@ public class ScreenshotUtils {
     // We are keeping BuildInfoProvider param for compatibility, as it's being used by
     // cross-platform SDKs
 
-    if (!isActivityValid(activity, buildInfoProvider)) {
+    if (!isActivityValid(activity)) {
       logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
       return null;
     }
