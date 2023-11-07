@@ -59,10 +59,3 @@ jobs:
             ./*/build/distributions/*.zip
             ./sentry-opentelemetry/*/build/distributions/*.zip
             ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
-
-      - name: Upload coverage to Codecov
-        # We need coverage data from only one the builds
-        if: runner.os == 'Linux' && matrix.java == '17'
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@v3
-        with:
-          name: sentry-java
