@@ -35,7 +35,7 @@ class AutomaticSpansTest : BaseUiTest() {
 
         relay.assert {
             assertFirstEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
+                val transactionItem: SentryTransaction = it.assertTransaction()
                 assertTrue("TTID span missing") {
                     transactionItem.spans.any { span ->
                         span.op == "ui.load.initial_display"
