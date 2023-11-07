@@ -327,7 +327,7 @@ public final class ContextUtils {
     }
   }
 
-  /** Register a not exported BroadcastReceiver, independently from platform version. */
+  /** Register an exported BroadcastReceiver, independently from platform version. */
   static @Nullable Intent registerReceiver(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -336,7 +336,7 @@ public final class ContextUtils {
     return registerReceiver(context, new BuildInfoProvider(options.getLogger()), receiver, filter);
   }
 
-  /** Register a not exported BroadcastReceiver, independently from platform version. */
+  /** Register an exported BroadcastReceiver, independently from platform version. */
   @SuppressLint({"NewApi", "UnspecifiedRegisterReceiverFlag"})
   static @Nullable Intent registerReceiver(
       final @NotNull Context context,

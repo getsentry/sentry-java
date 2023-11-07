@@ -56,6 +56,12 @@
     - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
       (E.g. if you're using `-timber`, `-okhttp` or other packages)
 
+## 6.33.1
+
+### Fixes
+
+- Do not register `sentrySpringFilter` in ServletContext for Spring Boot ([#3027](https://github.com/getsentry/sentry-java/pull/3027))
+
 ## 6.33.0
 
 ### Features

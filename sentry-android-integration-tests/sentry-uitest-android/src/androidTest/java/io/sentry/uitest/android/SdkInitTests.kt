@@ -6,7 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.assertEnvelopeItem
+import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import kotlin.test.Test
@@ -61,11 +61,11 @@ class SdkInitTests : BaseUiTest() {
 
         relay.assert {
             findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests2"
+                assertEnvelopeTransaction(it.items.toList()).transaction == "e2etests2"
             }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
+                val transactionItem: SentryTransaction = it.assertTransaction()
                 // Profiling uses executorService, so if the executorService is shutdown it would fail
-                val profilingTraceData: ProfilingTraceData = it.assertItem()
+                val profilingTraceData: ProfilingTraceData = it.assertProfile()
                 it.assertNoOtherItems()
                 assertEquals("e2etests2", transactionItem.transaction)
                 assertEquals("e2etests2", profilingTraceData.transactionName)
