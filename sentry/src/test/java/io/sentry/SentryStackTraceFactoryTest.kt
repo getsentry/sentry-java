@@ -296,7 +296,7 @@ class SentryStackTraceFactoryTest {
         repeat(120) { exception.stackTrace += generateStackTrace("com.me.stackoverflow") }
 
         val sut = SentryStackTraceFactory(SentryOptions())
-        val sentryFrames = sut.getStackFrames(exception.stackTrace)
+        val sentryFrames = sut.getStackFrames(exception.stackTrace, false)
 
         assertEquals(100, sentryFrames!!.size)
     }
