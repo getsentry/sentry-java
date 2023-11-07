@@ -6,6 +6,7 @@ import static io.sentry.util.DebugMetaPropertiesApplier.DEBUG_META_PROPERTIES_FI
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -32,23 +33,31 @@ public final class ResourcesDebugMetaLoader implements IDebugMetaLoader {
 
   @Override
   public @Nullable List<Properties> loadDebugMeta() {
-    List<Properties> debugPropertyList = new ArrayList<>();
+    final @NotNull List<Properties> debugPropertyList = new ArrayList<>();
     try {
-      Enumeration<URL> resourceUrls = classLoader.getResources(DEBUG_META_PROPERTIES_FILENAME);
+      final @NotNull Enumeration<URL> resourceUrls =
+          classLoader.getResources(DEBUG_META_PROPERTIES_FILENAME);
 
       while (resourceUrls.hasMoreElements()) {
-        URL currenturl = resourceUrls.nextElement();
-        Properties currentProperties = new Properties();
-        currentProperties.load(currenturl.openStream());
-        debugPropertyList.add(currentProperties);
+        final @NotNull URL currentUrl = resourceUrls.nextElement();
+        try (final InputStream is = currentUrl.openStream()) {
+          final @NotNull Properties currentProperties = new Properties();
+          currentProperties.load(is);
+          debugPropertyList.add(currentProperties);
+          logger.log(SentryLevel.INFO, "Debug Meta Data Properties loaded from %s", currentUrl);
+        } catch (RuntimeException e) {
+          logger.log(SentryLevel.ERROR, e, "%s file is malformed.", currentUrl);
+        }
       }
-
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
-    } catch (RuntimeException e) {
-      logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
     }
 
-    return debugPropertyList.isEmpty() ? null : debugPropertyList;
+    if (debugPropertyList.isEmpty()) {
+      logger.log(SentryLevel.INFO, "No %s file was found.", DEBUG_META_PROPERTIES_FILENAME);
+      return null;
+    }
+
+    return debugPropertyList;
   }
 }

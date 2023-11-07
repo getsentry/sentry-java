@@ -37,11 +37,15 @@ public final class DebugMetaPropertiesApplier {
 
   private static void applyProguardUuid(
       final @NotNull SentryOptions options, final @NotNull List<Properties> debugMetaProperties) {
-    if (options.getProguardUuid() == null && debugMetaProperties.size() > 0) {
-      final @Nullable String proguardUuid =
-          debugMetaProperties.get(0).getProperty("io.sentry.ProguardUuids");
-      options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
-      options.setProguardUuid(proguardUuid);
+    if (options.getProguardUuid() == null) {
+      for (Properties properties : debugMetaProperties) {
+        final @Nullable String proguardUuid = properties.getProperty("io.sentry.ProguardUuids");
+        if (proguardUuid != null) {
+          options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
+          options.setProguardUuid(proguardUuid);
+          break;
+        }
+      }
     }
   }
 }

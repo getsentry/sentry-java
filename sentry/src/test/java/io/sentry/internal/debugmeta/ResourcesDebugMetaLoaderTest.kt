@@ -36,6 +36,10 @@ class ResourcesDebugMetaLoaderTest {
                         it.second.byteInputStream(Charset.defaultCharset())
                     )
                 }
+            } else {
+                whenever(classLoader.getResources(fileName)).thenReturn(
+                    Collections.emptyEnumeration()
+                )
             }
             return ResourcesDebugMetaLoader(logger, classLoader)
         }
