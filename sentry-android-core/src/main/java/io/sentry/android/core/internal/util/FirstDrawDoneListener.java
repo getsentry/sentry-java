@@ -1,3 +1,21 @@
+/*
+ * https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/util/FirstDrawDoneListener.java
+ *
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.sentry.android.core.internal.util;
 
 import android.os.Build;
@@ -12,10 +30,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
  * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
- *
- * <p>Adapted from <a
- * href="https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/util/FirstDrawDoneListener.java">Firebase</a>
- * under the Apache License, Version 2.0.
  */
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final @NotNull Handler mainThreadHandler = new Handler(Looper.getMainLooper());

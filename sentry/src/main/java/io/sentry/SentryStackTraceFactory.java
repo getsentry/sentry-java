@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryStackTraceFactory {
 
+  private static final int STACKTRACE_FRAME_LIMIT = 100;
   private final @NotNull SentryOptions options;
 
   public SentryStackTraceFactory(final @NotNull SentryOptions options) {
@@ -57,6 +58,11 @@ public final class SentryStackTraceFactory {
           }
           sentryStackFrame.setNative(item.isNativeMethod());
           sentryStackFrames.add(sentryStackFrame);
+
+          // hard cap to not exceed payload size limit
+          if (sentryStackFrames.size() >= STACKTRACE_FRAME_LIMIT) {
+            break;
+          }
         }
       }
       Collections.reverse(sentryStackFrames);

@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
+import io.sentry.util.thread.IMainThreadChecker
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -11,12 +12,14 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -1302,5 +1305,31 @@ class SentryTracerTest {
 
         assertTrue(tracer.isFinished)
         verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when a span is launched on the main thread, the thread info should be set correctly`() {
+        val mainThreadChecker = mock<IMainThreadChecker>()
+        whenever(mainThreadChecker.isMainThread).thenReturn(true)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.mainThreadChecker = mainThreadChecker
+        })
+        val span = tracer.startChild("span.op")
+        assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
+        assertEquals("main", span.getData(SpanDataConvention.THREAD_NAME))
+    }
+
+    @Test
+    fun `when a span is launched on the background thread, the thread info should be set correctly`() {
+        val mainThreadChecker = mock<IMainThreadChecker>()
+        whenever(mainThreadChecker.isMainThread).thenReturn(false)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.mainThreadChecker = mainThreadChecker
+        })
+        val span = tracer.startChild("span.op")
+        assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
+        assertNotEquals("main", span.getData(SpanDataConvention.THREAD_NAME))
     }
 }

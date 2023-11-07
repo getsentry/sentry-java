@@ -14,6 +14,7 @@ import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
@@ -338,7 +339,13 @@ public final class Hub implements IHub {
       try {
         for (Integration integration : options.getIntegrations()) {
           if (integration instanceof Closeable) {
-            ((Closeable) integration).close();
+            try {
+              ((Closeable) integration).close();
+            } catch (IOException e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
+            }
           }
         }
 

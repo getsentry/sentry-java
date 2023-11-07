@@ -46,6 +46,7 @@ class ScreenshotEventProcessorTest {
             whenever(rootView.height).thenReturn(1)
             whenever(view.rootView).thenReturn(rootView)
             whenever(window.decorView).thenReturn(view)
+            whenever(window.peekDecorView()).thenReturn(view)
             whenever(activity.window).thenReturn(window)
             whenever(activity.runOnUiThread(any())).then {
                 it.getArgument<Runnable>(0).run()

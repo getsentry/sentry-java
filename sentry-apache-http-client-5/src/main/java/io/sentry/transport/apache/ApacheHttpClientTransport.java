@@ -199,10 +199,11 @@ public final class ApacheHttpClientTransport implements ITransport {
     options.getLogger().log(DEBUG, "Shutting down");
     try {
       httpclient.awaitShutdown(TimeValue.ofSeconds(1));
-      httpclient.close(CloseMode.GRACEFUL);
     } catch (InterruptedException e) {
       options.getLogger().log(DEBUG, "Thread interrupted while closing the connection.");
       Thread.currentThread().interrupt();
+    } finally {
+      httpclient.close(CloseMode.GRACEFUL);
     }
   }
 

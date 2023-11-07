@@ -15,7 +15,7 @@
 ### Fixes
 
 - Use `getMyMemoryState()` instead of `getRunningAppProcesses()` to retrieve process importance ([#3004](https://github.com/getsentry/sentry-java/pull/3004))
-  - This should prevent some app stores from flagging apps as violating their privacy
+    - This should prevent some app stores from flagging apps as violating their privacy
 
 ## 7.0.0-beta.1
 
@@ -55,6 +55,21 @@
     - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
     - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
       (E.g. if you're using `-timber`, `-okhttp` or other packages)
+
+## 6.33.0
+
+### Features
+
+- Add thread information to spans ([#2998](https://github.com/getsentry/sentry-java/pull/2998))
+- Use PixelCopy API for capturing screenshots on API level 24+ ([#3008](https://github.com/getsentry/sentry-java/pull/3008))
+
+### Fixes
+
+- Fix crash when HTTP connection error message contains formatting symbols ([#3002](https://github.com/getsentry/sentry-java/pull/3002))
+- Cap max number of stack frames to 100 to not exceed payload size limit ([#3009](https://github.com/getsentry/sentry-java/pull/3009))
+  - This will ensure we report errors with a big number of frames such as `StackOverflowError`
+- Fix user interaction tracking not working for Jetpack Compose 1.5+ ([#3010](https://github.com/getsentry/sentry-java/pull/3010))
+- Make sure to close all Closeable resources ([#3000](https://github.com/getsentry/sentry-java/pull/3000))
 
 ## 6.32.0
 
