@@ -3,7 +3,12 @@
 ## Unreleased
 
 ### Features
+
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+
+### Fixes
+
+- Do not register `sentrySpringFilter` in ServletContext for Spring Boot ([#3027](https://github.com/getsentry/sentry-java/pull/3027))
 
 ## 6.33.0
 
