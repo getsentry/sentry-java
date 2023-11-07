@@ -64,18 +64,17 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       return;
     }
 
-    final SendFireAndForget sender = factory.create(hub, options);
-
-    if (sender == null) {
-      options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
-      return;
-    }
-
     try {
       options
           .getExecutorService()
           .submit(
               () -> {
+                final SendFireAndForget sender = factory.create(hub, options);
+
+                if (sender == null) {
+                  options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+                  return;
+                }
                 try {
                   sender.send();
                 } catch (Throwable e) {

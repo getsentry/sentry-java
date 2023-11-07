@@ -37,25 +37,39 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       logger.log(
           SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
-      final OutboxSender outboxSender =
-          new OutboxSender(
-              hub,
-              options.getEnvelopeReader(),
-              options.getSerializer(),
-              logger,
-              options.getFlushTimeoutMillis());
-
-      observer =
-          new EnvelopeFileObserver(path, outboxSender, logger, options.getFlushTimeoutMillis());
       try {
-        observer.startWatching();
-        logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+        options.getExecutorService().submit(() -> startOutboxSender(hub, options, path));
       } catch (Throwable e) {
-        // it could throw eg NoSuchFileException or NullPointerException
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
+        logger.log(
+            SentryLevel.DEBUG,
+            "Failed to start EnvelopeFileObserverIntegration on executor thread. Starting on the calling thread.",
+            e);
+        startOutboxSender(hub, options, path);
       }
+    }
+  }
+
+  private void startOutboxSender(
+      final @NotNull IHub hub, final @NotNull SentryOptions options, final @NotNull String path) {
+    final OutboxSender outboxSender =
+        new OutboxSender(
+            hub,
+            options.getEnvelopeReader(),
+            options.getSerializer(),
+            options.getLogger(),
+            options.getFlushTimeoutMillis());
+
+    observer =
+        new EnvelopeFileObserver(
+            path, outboxSender, options.getLogger(), options.getFlushTimeoutMillis());
+    try {
+      observer.startWatching();
+      options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+    } catch (Throwable e) {
+      // it could throw eg NoSuchFileException or NullPointerException
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
     }
   }
 

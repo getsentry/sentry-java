@@ -1,9 +1,11 @@
 package io.sentry
 
 import io.sentry.protocol.SdkVersion
+import io.sentry.test.ImmediateExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -65,6 +67,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     fun `when Factory returns null, register logs and exit`() {
         val sut = SendCachedEnvelopeFireAndForgetIntegration(CustomFactory())
         fixture.options.cacheDirPath = "abc"
+        fixture.options.executorService = ImmediateExecutorService()
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("SendFireAndForget factory is null."))
         verifyNoMoreInteractions(fixture.hub)
@@ -90,6 +93,24 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?"), any())
+    }
+
+    @Test
+    fun `register runs on executor service`() {
+        fixture.options.executorService = ImmediateExecutorService()
+        fixture.options.cacheDirPath = "cache"
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.callback).create(eq(fixture.hub), eq(fixture.options))
+    }
+
+    @Test
+    fun `does not register on fake executor service`() {
+        fixture.options.executorService = mock()
+        fixture.options.cacheDirPath = "cache"
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.callback, never()).create(any(), any())
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
