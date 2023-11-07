@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
+ 
 ## 6.33.1
 
 ### Fixes
