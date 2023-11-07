@@ -1,7 +1,11 @@
 package io.sentry.uitest.android.mockservers
 
+import io.sentry.ProfilingTraceData
 import io.sentry.SentryEnvelope
 import io.sentry.assertEnvelopeItem
+import io.sentry.assertEnvelopeProfile
+import io.sentry.assertEnvelopeTransaction
+import io.sentry.protocol.SentryTransaction
 import okhttp3.mockwebserver.MockResponse
 
 /**
@@ -17,6 +21,24 @@ class EnvelopeAsserter(val envelope: SentryEnvelope, val response: MockResponse)
      * The asserted item is then removed from internal list of unasserted items.
      */
     inline fun <reified T> assertItem(): T = assertEnvelopeItem(unassertedItems) { index, item ->
+        unassertedItems.removeAt(index)
+        return item
+    }
+
+    /**
+     * Asserts a transaction exists and returns the first one.
+     * It is then removed from internal list of unasserted items.
+     */
+    inline fun assertTransaction(): SentryTransaction = assertEnvelopeTransaction(unassertedItems) { index, item ->
+        unassertedItems.removeAt(index)
+        return item
+    }
+
+    /**
+     * Asserts a profile exists and returns the first one.
+     * It is then removed from internal list of unasserted items.
+     */
+    inline fun assertProfile(): ProfilingTraceData = assertEnvelopeProfile(unassertedItems) { index, item ->
         unassertedItems.removeAt(index)
         return item
     }
