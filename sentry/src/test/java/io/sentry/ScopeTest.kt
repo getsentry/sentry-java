@@ -6,6 +6,7 @@ import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import org.junit.Assert.assertArrayEquals
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -994,6 +995,22 @@ class ScopeTest {
             screen = "MainActivity"
         }
         assertEquals(listOf("MainActivity"), scope.contexts.app!!.viewNames)
+    }
+
+    @Test
+    fun `when setting the screen, app context change is propagated`() {
+        val options = SentryOptions()
+        val observer = mock<IScopeObserver>()
+        options.addScopeObserver(observer)
+
+        Scope(options).apply {
+            screen = "MainActivity"
+        }
+        verify(observer).setContexts(
+            check { contexts ->
+                assertEquals("MainActivity", contexts.app?.viewNames?.first())
+            }
+        )
     }
 
     private fun eventProcessor(): EventProcessor {

@@ -297,6 +297,10 @@ public final class Scope {
       viewNames.add(screen);
       app.setViewNames(viewNames);
     }
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
   }
 
   /**
