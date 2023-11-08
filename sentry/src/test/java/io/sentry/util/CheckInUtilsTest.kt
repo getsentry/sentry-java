@@ -117,7 +117,7 @@ class CheckInUtilsTest {
     }
 
     @Test
-    fun `sends check-in for wrapped supplier with upser`() {
+    fun `sends check-in for wrapped supplier with upsert`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val hub = mock<IHub>()
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
