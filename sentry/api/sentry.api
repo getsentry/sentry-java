@@ -1385,6 +1385,7 @@ public final class io/sentry/Scope {
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRequest ()Lio/sentry/protocol/Request;
+	public fun getScreen ()Ljava/lang/String;
 	public fun getSession ()Lio/sentry/Session;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTags ()Ljava/util/Map;
@@ -1406,6 +1407,7 @@ public final class io/sentry/Scope {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
+	public fun setScreen (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
@@ -3107,6 +3109,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getInForeground ()Ljava/lang/Boolean;
 	public fun getPermissions ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun getViewNames ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAppBuild (Ljava/lang/String;)V
@@ -3119,6 +3122,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setInForeground (Ljava/lang/Boolean;)V
 	public fun setPermissions (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
+	public fun setViewNames (Ljava/util/List;)V
 }
 
 public final class io/sentry/protocol/App$Deserializer : io/sentry/JsonDeserializer {
@@ -3137,6 +3141,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEVICE_APP_HASH Ljava/lang/String;
 	public static final field IN_FOREGROUND Ljava/lang/String;
+	public static final field VIEW_NAMES Ljava/lang/String;
 	public fun <init> ()V
 }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
+
 ## 6.33.1
 
 ### Fixes
