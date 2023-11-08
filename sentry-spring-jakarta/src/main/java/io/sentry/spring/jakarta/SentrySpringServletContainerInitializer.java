@@ -1,5 +1,7 @@
 package io.sentry.spring.jakarta;
 
+import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
+
 import com.jakewharton.nopen.annotation.Open;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterRegistration;
@@ -20,10 +22,17 @@ public class SentrySpringServletContainerInitializer implements ServletContainer
   @Override
   public void onStartup(final @Nullable Set<Class<?>> c, final @NotNull ServletContext ctx)
       throws ServletException {
-    final FilterRegistration.Dynamic dynamic =
-        ctx.addFilter("sentrySpringFilter", SentrySpringFilter.class);
-    if (dynamic != null) {
-      dynamic.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
+    try {
+      Class.forName(
+          "org.springframework.boot.SpringApplication",
+          false,
+          classLoaderOrDefault(getClass().getClassLoader()));
+    } catch (ClassNotFoundException e) {
+      final FilterRegistration.Dynamic dynamic =
+          ctx.addFilter("sentrySpringFilter", SentrySpringFilter.class);
+      if (dynamic != null) {
+        dynamic.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
+      }
     }
   }
 }
