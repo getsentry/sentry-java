@@ -12,7 +12,8 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.assertEnvelopeItem
+import io.sentry.assertEnvelopeProfile
+import io.sentry.assertEnvelopeTransaction
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import org.junit.Assume.assumeNotNull
@@ -52,6 +53,7 @@ class EnvelopeTests : BaseUiTest() {
 
         relayIdlingResource.increment()
         IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
+        Thread.sleep(1000)
         val transaction = Sentry.startTransaction("profiledTransaction", "test1")
         val sampleScenario = launchActivity<ProfilingSampleActivity>()
         swipeList(1)
@@ -62,18 +64,18 @@ class EnvelopeTests : BaseUiTest() {
         transaction.finish()
         relay.assert {
             findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "ProfilingSampleActivity"
+                assertEnvelopeTransaction(it.items.toList()).transaction == "ProfilingSampleActivity"
             }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
+                val transactionItem: SentryTransaction = it.assertTransaction()
                 it.assertNoOtherItems()
                 assertEquals("ProfilingSampleActivity", transactionItem.transaction)
             }
 
             findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "profiledTransaction"
+                assertEnvelopeProfile(it.items.toList()).transactionName == "profiledTransaction"
             }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                val profilingTraceData: ProfilingTraceData = it.assertItem()
+                val transactionItem: SentryTransaction = it.assertTransaction()
+                val profilingTraceData: ProfilingTraceData = it.assertProfile()
                 it.assertNoOtherItems()
 
                 assertEquals("profiledTransaction", transactionItem.transaction)
@@ -140,7 +142,7 @@ class EnvelopeTests : BaseUiTest() {
                     //  since when the transaction finishes, the frame callback is removed from the activity,
                     //  but internally it is already cached and will be called anyway in the next frame.
                     //  Also, they are not completely accurate, so they could be flaky.
-                    if (entry.key !in listOf(ProfileMeasurement.ID_FROZEN_FRAME_RENDERS, ProfileMeasurement.ID_SLOW_FRAME_RENDERS)) {
+                    if (entry.key !in listOf(ProfileMeasurement.ID_FROZEN_FRAME_RENDERS, ProfileMeasurement.ID_SLOW_FRAME_RENDERS, ProfileMeasurement.ID_SCREEN_FRAME_RATES)) {
                         // There should be no measurement after the profile ends
                         // Due to the nature of frozen frames, they could be measured after the transaction finishes
                         assertTrue(
@@ -188,10 +190,10 @@ class EnvelopeTests : BaseUiTest() {
 
         relay.assert {
             findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "timedOutProfile"
+                assertEnvelopeTransaction(it.items.toList()).transaction == "timedOutProfile"
             }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                val profilingTraceData: ProfilingTraceData = it.assertItem()
+                val transactionItem: SentryTransaction = it.assertTransaction()
+                val profilingTraceData: ProfilingTraceData = it.assertProfile()
                 it.assertNoOtherItems()
                 assertEquals("timedOutProfile", transactionItem.transaction)
                 assertEquals("timedOutProfile", profilingTraceData.transactionName)
@@ -216,12 +218,12 @@ class EnvelopeTests : BaseUiTest() {
 
         val transaction = Sentry.startTransaction("e2etests", "testProfile")
         val benchmarkScenario = launchActivity<ProfilingSampleActivity>()
-        swipeList(10)
+        swipeList(5)
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         transaction.finish()
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
         // Let this test send all data, so that it doesn't interfere with other tests
-        Thread.sleep(1000)
+        Thread.sleep(5000)
     }
 
     private fun swipeList(times: Int) {

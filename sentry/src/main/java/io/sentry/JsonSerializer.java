@@ -126,8 +126,7 @@ public final class JsonSerializer implements ISerializer {
       @NotNull Reader reader,
       @NotNull Class<T> clazz,
       @Nullable JsonDeserializer<R> elementDeserializer) {
-    try {
-      JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
+    try (JsonObjectReader jsonObjectReader = new JsonObjectReader(reader)) {
       if (Collection.class.isAssignableFrom(clazz)) {
         if (elementDeserializer == null) {
           // if the object has no known deserializer we do best effort and deserialize it as map
@@ -147,8 +146,7 @@ public final class JsonSerializer implements ISerializer {
   @SuppressWarnings("unchecked")
   @Override
   public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
-    try {
-      JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
+    try (JsonObjectReader jsonObjectReader = new JsonObjectReader(reader)) {
       JsonDeserializer<?> deserializer = deserializersByClass.get(clazz);
       if (deserializer != null) {
         Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
