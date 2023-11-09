@@ -658,6 +658,7 @@ class CanvasDelegate(
         // TAG,
         // "drawText: text: CharArray, index: Int, count: Int, x: Float, y: Float, paint: Paint"
         // )
+        // Compose doesn't use this
         recorder.drawText(text.toString(), 0, text.size, x, y, paint)
     }
 
@@ -721,6 +722,7 @@ class CanvasDelegate(
         isRtl: Boolean,
         paint: Paint
     ) {
+        // Jetpack Compose uses this
         Log.d(TAG, "drawTextRun: ")
         // original.drawTextRun(text, index, count, contextIndex, contextCount, x, y, isRtl, paint)
     }

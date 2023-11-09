@@ -79,6 +79,7 @@ allprojects {
         google()
         mavenCentral()
         maven(url = "https://jitpack.io")
+        maven(url = "https://storage.googleapis.com/logrocket-maven/")
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()

@@ -39,6 +39,7 @@ object ViewHelper {
     fun executeOnDraw(view: View, canvas: Canvas) {
         // performs drawing operations for a view, without their childs
         view.background?.draw(canvas)
+        // for Compose we have to call view.dispatchDraw()
         onDrawMethod.invoke(view, canvas)
     }
 

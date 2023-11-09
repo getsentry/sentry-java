@@ -24,6 +24,22 @@ android {
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+
+        ndk {
+            abiFilters.addAll(Config.Android.abiFilters)
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments.add(0, "-DANDROID_STL=c++_static")
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path("CMakeLists.txt")
+        }
     }
 
     buildTypes {

@@ -113,6 +113,7 @@ dependencies {
     implementation(projects.sentryCompose)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
+    implementation("com.logrocket:logrocket:[1.0, 2.0)")
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {

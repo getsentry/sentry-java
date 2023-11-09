@@ -4,10 +4,13 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.CanvasDelegate
+import android.graphics.RenderNode
+import android.graphics.RenderNodeHelper
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.FrameMetrics
 import android.view.MotionEvent
 import android.view.View
@@ -49,7 +52,7 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         }
     }
 
-    fun stopRecording() : Pair<SentryReplayEvent, Hint> {
+    fun stopRecording(): Pair<SentryReplayEvent, Hint> {
         activity?.window?.removeOnFrameMetricsAvailableListener(this)
         activity = null
 
@@ -88,6 +91,16 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         dropCountSinceLastInvocation: Int
     ) {
         val view = activity?.window?.decorView
+//        val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
+//        nativeRenderNodeField.isAccessible = true
+//        val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
+//        RenderNodeHelper.fetchDisplayList(nativeRenderNode)
+//        val renderNode = RenderNodeHelper("replay_node")
+//        val displayMetrics = activity?.resources?.displayMetrics
+//        renderNode.setPosition(0, 0, displayMetrics!!.widthPixels, displayMetrics!!.heightPixels)
+//        val recordingCanvas = renderNode.beginRecording()
+//        view?.draw(recordingCanvas)
+//        renderNode.endRecording()
         view?.let {
             captureFrame(it)
         }
@@ -122,7 +135,7 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         }
 
         // reset the canvas first, as it will be re-used for clipping operations
-        canvas!!.restoreToCount(1)
+//        canvas!!.restoreToCount(1)
         recorder.beginFrame(System.currentTimeMillis(), view.width, view.height)
 
         val location = IntArray(2)
@@ -136,17 +149,23 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                 } else if (item is ViewGroup && item.willNotDraw()) {
                     // skip layouts which don't draw anything
                 } else {
-                    item.getLocationOnScreen(location)
-                    val x = location[0].toFloat() + item.translationX
-                    val y = location[1].toFloat() + item.translationY
-
-                    val saveCount = canvasDelegate!!.save()
-                    recorder.translate(
-                        x,
-                        y
-                    )
-                    ViewHelper.executeOnDraw(item, canvasDelegate!!)
-                    canvasDelegate!!.restoreToCount(saveCount)
+                    val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
+                    renderNodeField.isAccessible = true
+                    val renderNode = renderNodeField.get(item)
+                    val outputMethod = RenderNode::class.java.getDeclaredMethod("output")
+                    outputMethod.isAccessible = true
+                    outputMethod.invoke(renderNode)
+//                    item.getLocationOnScreen(location)
+//                    val x = location[0].toFloat() + item.translationX
+//                    val y = location[1].toFloat() + item.translationY
+//
+//                    val saveCount = canvasDelegate!!.save()
+//                    recorder.translate(
+//                        x,
+//                        y
+//                    )
+//                    ViewHelper.executeOnDraw(item, canvasDelegate!!)
+//                    canvasDelegate!!.restoreToCount(saveCount)
                 }
 
                 if (item is ViewGroup) {
