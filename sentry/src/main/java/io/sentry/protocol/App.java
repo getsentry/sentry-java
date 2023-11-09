@@ -11,6 +11,7 @@ import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +40,8 @@ public final class App implements JsonUnknown, JsonSerializable {
   private @Nullable String appBuild;
   /** Application permissions in the form of "permission_name" : "granted|not_granted" */
   private @Nullable Map<String, String> permissions;
+  /** The list of the visibile UI screens * */
+  private @Nullable List<String> viewNames;
   /**
    * A flag indicating whether the app is in foreground or not. An app is in foreground when it's
    * visible to the user.
@@ -57,6 +60,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.deviceAppHash = app.deviceAppHash;
     this.permissions = CollectionUtils.newConcurrentHashMap(app.permissions);
     this.inForeground = app.inForeground;
+    this.viewNames = CollectionUtils.newArrayList(app.viewNames);
     this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
@@ -138,6 +142,15 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.inForeground = inForeground;
   }
 
+  @Nullable
+  public List<String> getViewNames() {
+    return viewNames;
+  }
+
+  public void setViewNames(final @Nullable List<String> viewNames) {
+    this.viewNames = viewNames;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -149,13 +162,25 @@ public final class App implements JsonUnknown, JsonSerializable {
         && Objects.equals(buildType, app.buildType)
         && Objects.equals(appName, app.appName)
         && Objects.equals(appVersion, app.appVersion)
-        && Objects.equals(appBuild, app.appBuild);
+        && Objects.equals(appBuild, app.appBuild)
+        && Objects.equals(permissions, app.permissions)
+        && Objects.equals(inForeground, app.inForeground)
+        && Objects.equals(viewNames, app.viewNames);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        appIdentifier, appStartTime, deviceAppHash, buildType, appName, appVersion, appBuild);
+        appIdentifier,
+        appStartTime,
+        deviceAppHash,
+        buildType,
+        appName,
+        appVersion,
+        appBuild,
+        permissions,
+        inForeground,
+        viewNames);
   }
 
   // region json
@@ -181,6 +206,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     public static final String APP_BUILD = "app_build";
     public static final String APP_PERMISSIONS = "permissions";
     public static final String IN_FOREGROUND = "in_foreground";
+    public static final String VIEW_NAMES = "view_names";
   }
 
   @Override
@@ -213,6 +239,9 @@ public final class App implements JsonUnknown, JsonSerializable {
     }
     if (inForeground != null) {
       writer.name(JsonKeys.IN_FOREGROUND).value(inForeground);
+    }
+    if (viewNames != null) {
+      writer.name(JsonKeys.VIEW_NAMES).value(logger, viewNames);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -262,6 +291,12 @@ public final class App implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.IN_FOREGROUND:
             app.inForeground = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.VIEW_NAMES:
+            final @Nullable List<String> viewNames = (List<String>) reader.nextObjectOrNull();
+            if (viewNames != null) {
+              app.setViewNames(viewNames);
+            }
             break;
           default:
             if (unknown == null) {

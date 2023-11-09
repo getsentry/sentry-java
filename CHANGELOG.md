@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
+
 ### Fixes
 
 - Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))

@@ -28,6 +28,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.TransactionNameSource;
@@ -372,6 +373,10 @@ public final class ActivityLifecycleIntegration
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
+    if (hub != null) {
+      final @Nullable String activityClassName = ClassUtil.getClassName(activity);
+      hub.configureScope(scope -> scope.setScreen(activityClassName));
+    }
     startTracing(activity);
     final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
 
