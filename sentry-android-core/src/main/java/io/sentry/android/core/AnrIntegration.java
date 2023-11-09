@@ -55,27 +55,42 @@ public final class AnrIntegration implements Integration, Closeable {
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
 
     if (options.isAnrEnabled()) {
-      synchronized (watchDogLock) {
-        if (anrWatchDog == null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "ANR timeout in milliseconds: %d",
-                  options.getAnrTimeoutIntervalMillis());
+      addIntegrationToSdkVersion();
+      try {
+        options.getExecutorService().submit(() -> startAnrWatchdog(hub, options));
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Failed to start AnrIntegration on executor thread. Starting on the calling thread.",
+                e);
+        startAnrWatchdog(hub, options);
+      }
+    }
+  }
 
-          anrWatchDog =
-              new ANRWatchDog(
-                  options.getAnrTimeoutIntervalMillis(),
-                  options.isAnrReportInDebug(),
-                  error -> reportANR(hub, options, error),
-                  options.getLogger(),
-                  context);
-          anrWatchDog.start();
+  private void startAnrWatchdog(
+      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
+    synchronized (watchDogLock) {
+      if (anrWatchDog == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "ANR timeout in milliseconds: %d",
+                options.getAnrTimeoutIntervalMillis());
 
-          options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
-          addIntegrationToSdkVersion();
-        }
+        anrWatchDog =
+            new ANRWatchDog(
+                options.getAnrTimeoutIntervalMillis(),
+                options.isAnrReportInDebug(),
+                error -> reportANR(hub, options, error),
+                options.getLogger(),
+                context);
+        anrWatchDog.start();
+
+        options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
       }
     }
   }

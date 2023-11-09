@@ -6,6 +6,7 @@ import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.android.core.AnrIntegration.AnrHint
 import io.sentry.exception.ExceptionMechanismException
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -23,7 +24,7 @@ class AnrIntegrationTest {
     private class Fixture {
         val context = mock<Context>()
         val hub = mock<IHub>()
-        val options = SentryAndroidOptions().apply {
+        var options: SentryAndroidOptions = SentryAndroidOptions().apply {
             setLogger(mock())
         }
 
@@ -44,12 +45,23 @@ class AnrIntegrationTest {
 
     @Test
     fun `When ANR is enabled, ANR watch dog should be started`() {
+        fixture.options.executorService = ImmediateExecutorService()
         val sut = fixture.getSut()
 
         sut.register(fixture.hub, fixture.options)
 
         assertNotNull(sut.anrWatchDog)
         assertTrue((sut.anrWatchDog as ANRWatchDog).isAlive)
+    }
+
+    @Test
+    fun `ANR watch dog should be started in the executorService`() {
+        fixture.options.executorService = mock()
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNull(sut.anrWatchDog)
     }
 
     @Test
@@ -82,6 +94,7 @@ class AnrIntegrationTest {
     @Test
     fun `When ANR integration is closed, watch dog should stop`() {
         val sut = fixture.getSut()
+        fixture.options.executorService = ImmediateExecutorService()
 
         sut.register(fixture.hub, fixture.options)
 

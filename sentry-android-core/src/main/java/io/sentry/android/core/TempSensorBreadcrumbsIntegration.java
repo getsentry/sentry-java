@@ -34,7 +34,6 @@ public final class TempSensorBreadcrumbsIntegration
     this.context = Objects.requireNonNull(context, "Context is required");
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     this.hub = Objects.requireNonNull(hub, "Hub is required");
@@ -51,29 +50,40 @@ public final class TempSensorBreadcrumbsIntegration
             this.options.isEnableSystemEventBreadcrumbs());
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
-      try {
-        sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
-        if (sensorManager != null) {
-          final Sensor defaultSensor =
-              sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
-          if (defaultSensor != null) {
-            sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
-            options
-                .getLogger()
-                .log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-            addIntegrationToSdkVersion();
-          } else {
-            this.options
-                .getLogger()
-                .log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
-          }
-        } else {
-          this.options.getLogger().log(SentryLevel.INFO, "SENSOR_SERVICE is not available.");
-        }
+      try {
+        options.getExecutorService().submit(() -> startSensorListener(options));
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, e, "Failed to init. the SENSOR_SERVICE.");
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Failed to start TempSensorBreadcrumbsIntegration on executor thread. Starting on the calling thread.",
+                e);
+        startSensorListener(options);
       }
+    }
+  }
+
+  private void startSensorListener(final @NotNull SentryOptions options) {
+    try {
+      sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
+      if (sensorManager != null) {
+        final Sensor defaultSensor =
+            sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+        if (defaultSensor != null) {
+          sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
+          options.getLogger().log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
+          addIntegrationToSdkVersion();
+        } else {
+          options.getLogger().log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
+        }
+      } else {
+        options.getLogger().log(SentryLevel.INFO, "SENSOR_SERVICE is not available.");
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Failed to init. the SENSOR_SERVICE.");
     }
   }
 

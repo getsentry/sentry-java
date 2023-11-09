@@ -24,5 +24,6 @@ public final class io/sentry/test/ReflectionKt {
 	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Z
 	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Z
 	public static final fun getCtor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
+	public static final fun getDeclaredCtor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
 }
 

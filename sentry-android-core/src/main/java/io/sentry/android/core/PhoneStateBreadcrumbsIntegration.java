@@ -28,7 +28,6 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
     this.context = Objects.requireNonNull(context, "Context is required");
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
@@ -46,22 +45,38 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
 
     if (this.options.isEnableSystemEventBreadcrumbs()
         && Permissions.hasPermission(context, READ_PHONE_STATE)) {
-      telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-      if (telephonyManager != null) {
-        try {
-          listener = new PhoneStateChangeListener(hub);
-          telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
-
-          options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
-          addIntegrationToSdkVersion();
-        } catch (Throwable e) {
-          this.options
-              .getLogger()
-              .log(SentryLevel.INFO, e, "TelephonyManager is not available or ready to use.");
-        }
-      } else {
-        this.options.getLogger().log(SentryLevel.INFO, "TelephonyManager is not available");
+      try {
+        options.getExecutorService().submit(() -> startTelephonyListener(hub, options));
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Failed to start PhoneStateBreadcrumbsIntegration on executor thread. Starting on the calling thread.",
+                e);
+        startTelephonyListener(hub, options);
       }
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  private void startTelephonyListener(
+      final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+    if (telephonyManager != null) {
+      try {
+        listener = new PhoneStateChangeListener(hub);
+        telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+
+        options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
+        addIntegrationToSdkVersion();
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.INFO, e, "TelephonyManager is not available or ready to use.");
+      }
+    } else {
+      options.getLogger().log(SentryLevel.INFO, "TelephonyManager is not available");
     }
   }
 
