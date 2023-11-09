@@ -88,7 +88,7 @@ class DsnTest {
     }
 
     @Test
-    fun `http or https protocol are accepted`() {
+    fun `both http and https protocols are accepted`() {
         Dsn("http://publicKey:secretKey@host/path/id")
         Dsn("https://publicKey:secretKey@host/path/id")
 
