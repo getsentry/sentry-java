@@ -54,7 +54,7 @@ final class Dsn {
       final URI uri = new URI(dsn).normalize();
       final String scheme = uri.getScheme();
       if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
-        throw new IllegalArgumentException("Invalid DSN scheme: " + uri.getScheme());
+        throw new IllegalArgumentException("Invalid DSN scheme: " + scheme);
       }
 
       String userInfo = uri.getUserInfo();
