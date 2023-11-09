@@ -80,4 +80,19 @@ class DsnTest {
         val dsn = Dsn("http://key@host//id")
         assertEquals("http://host/api/id", dsn.sentryUri.toURL().toString())
     }
+
+    @Test
+    fun `non http protocols are not accepted`() {
+        assertFailsWith<IllegalArgumentException> { Dsn("ftp://publicKey:secretKey@host/path/id") }
+        assertFailsWith<IllegalArgumentException> { Dsn("jar://publicKey:secretKey@host/path/id") }
+    }
+
+    @Test
+    fun `http or https protocol are accepted`() {
+        Dsn("http://publicKey:secretKey@host/path/id")
+        Dsn("https://publicKey:secretKey@host/path/id")
+
+        Dsn("HTTP://publicKey:secretKey@host/path/id")
+        Dsn("HTTPS://publicKey:secretKey@host/path/id")
+    }
 }
