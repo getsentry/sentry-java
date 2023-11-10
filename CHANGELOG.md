@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Ensure DSN uses http/https protocol ([#3044](https://github.com/getsentry/sentry-java/pull/3044))
+
 ### Features
 
 - Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
