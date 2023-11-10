@@ -18,6 +18,8 @@ class AppTest {
         app.appVersion = "app version"
         app.buildType = "build type"
         app.deviceAppHash = "device app hash"
+        app.permissions = mapOf(Pair("internet", "granted"))
+        app.viewNames = listOf("MainActivity")
         app.inForeground = true
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.unknown = unknown
@@ -27,6 +29,8 @@ class AppTest {
         assertNotNull(clone)
         assertNotSame(app, clone)
         assertNotSame(app.appStartTime, clone.appStartTime)
+        assertNotSame(app.permissions, clone.permissions)
+        assertNotSame(app.viewNames, clone.viewNames)
 
         assertNotSame(app.unknown, clone.unknown)
     }
@@ -42,6 +46,8 @@ class AppTest {
         app.appVersion = "app version"
         app.buildType = "build type"
         app.deviceAppHash = "device app hash"
+        app.permissions = mapOf(Pair("internet", "granted"))
+        app.viewNames = listOf("MainActivity")
         app.inForeground = true
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.unknown = unknown
@@ -57,6 +63,9 @@ class AppTest {
         assertEquals("app version", clone.appVersion)
         assertEquals("build type", clone.buildType)
         assertEquals("device app hash", clone.deviceAppHash)
+        assertEquals(mapOf(Pair("internet", "granted")), clone.permissions)
+        assertEquals(listOf("MainActivity"), clone.viewNames)
+
         assertEquals(true, clone.inForeground)
         assertNotNull(clone.unknown) {
             assertEquals("unknown", it["unknown"])
