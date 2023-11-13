@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Native SDK from v0.6.6 to v0.6.7 ([#3048](https://github.com/getsentry/sentry-java/pull/3048))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#067)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.6...0.6.7)
+  - This fixes SIGSEV, SIGABRT, SIGBUS crashes happening after/around the August Google Play System update, see [#2955](https://github.com/getsentry/sentry-java/issues/2955) for more details
+
 ## 6.33.1
 
 ### Fixes
