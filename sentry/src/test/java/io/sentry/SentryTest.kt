@@ -21,6 +21,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -799,6 +800,28 @@ class SentryTest {
         }
 
         assertIs<NoOpModulesLoader>(sentryOptions?.modulesLoader)
+    }
+
+    @Test
+    fun `if Sentry is disabled through options with scope callback is executed`() {
+        Sentry.init {
+            it.isEnabled = false
+        }
+
+        val scopeCallback = mock<ScopeCallback>()
+
+        Sentry.withScope(scopeCallback)
+
+        verify(scopeCallback).run(any())
+    }
+
+    @Test
+    fun `if Sentry is not initialized with scope callback is executed`() {
+        val scopeCallback = mock<ScopeCallback>()
+
+        Sentry.withScope(scopeCallback)
+
+        verify(scopeCallback).run(any())
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

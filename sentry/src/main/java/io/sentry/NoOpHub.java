@@ -117,7 +117,9 @@ public final class NoOpHub implements IHub {
   public void popScope() {}
 
   @Override
-  public void withScope(@NotNull ScopeCallback callback) {}
+  public void withScope(@NotNull ScopeCallback callback) {
+    callback.run(new Scope(new SentryOptions()));
+  }
 
   @Override
   public void configureScope(@NotNull ScopeCallback callback) {}
