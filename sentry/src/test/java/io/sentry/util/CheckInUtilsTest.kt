@@ -123,7 +123,7 @@ class CheckInUtilsTest {
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
             val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
-                return@withCheckIn "test1"
+                "test1"
             }
 
             assertEquals("test1", returnValue)
