@@ -9,6 +9,7 @@ import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
+import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
@@ -41,7 +42,7 @@ class AndroidProfilerTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.AndroidProfiler"
-    private val ctorTypes = arrayOf(String::class.java, Int::class.java, SentryFrameMetricsCollector::class.java, SentryAndroidOptions::class.java, BuildInfoProvider::class.java)
+    private val ctorTypes = arrayOf(String::class.java, Int::class.java, SentryFrameMetricsCollector::class.java, ISentryExecutorService::class.java, ILogger::class.java, BuildInfoProvider::class.java)
     private val fixture = Fixture()
 
     private class Fixture {
@@ -142,16 +143,19 @@ class AndroidProfilerTest {
         val ctor = className.getCtor(ctorTypes)
 
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf(null, 0, mock(), mock<SentryAndroidOptions>(), mock()))
+            ctor.newInstance(arrayOf(null, 0, mock(), mock<SentryExecutorService>(), mock<AndroidLogger>(), mock()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, null, mock<SentryAndroidOptions>(), mock()))
+            ctor.newInstance(arrayOf("mock", 0, null, mock<SentryExecutorService>(), mock<AndroidLogger>(), mock()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, mock(), null, mock()))
+            ctor.newInstance(arrayOf("mock", 0, mock(), null, mock<AndroidLogger>(), mock()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryAndroidOptions>(), null))
+            ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryExecutorService>(), null, mock()))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryExecutorService>(), mock<AndroidLogger>(), null))
         }
     }
 
