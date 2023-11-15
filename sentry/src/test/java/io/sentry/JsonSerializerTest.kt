@@ -1037,7 +1037,7 @@ class JsonSerializerTest {
             .log(
                 eq(SentryLevel.ERROR),
                 eq("Failed to create envelope item. Dropping it."),
-                any<SentryEnvelopeException>()
+                any<IOException>()
             )
     }
 
