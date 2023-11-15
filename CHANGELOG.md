@@ -4,13 +4,13 @@
 
 ### Fixes
 
-- (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
-- (Internal) Remove SentryOptions dependency from AndroidProfiler ([#3051](https://github.com/getsentry/sentry-java/pull/3051))
 - Ensure DSN uses http/https protocol ([#3044](https://github.com/getsentry/sentry-java/pull/3044))
 
 ### Features
 
 - Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
+- (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
+- (Internal) Remove SentryOptions dependency from AndroidProfiler ([#3051](https://github.com/getsentry/sentry-java/pull/3051))
 
 ## 6.33.1
 
