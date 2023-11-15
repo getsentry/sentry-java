@@ -4365,6 +4365,7 @@ public final class io/sentry/util/ExceptionUtils {
 public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
 	public static fun deleteRecursively (Ljava/io/File;)Z
+	public static fun readBytesFromFile (Ljava/lang/String;J)[B
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
 }
 
