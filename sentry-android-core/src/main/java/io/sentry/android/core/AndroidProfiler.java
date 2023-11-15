@@ -24,8 +24,6 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -118,9 +116,7 @@ public class AndroidProfiler {
     // intervalUs is 0 only if there was a problem in the init
     if (intervalUs == 0) {
       logger.log(
-              SentryLevel.WARNING,
-              "Disabling profiling because intervaUs is set to %d",
-              intervalUs);
+          SentryLevel.WARNING, "Disabling profiling because intervaUs is set to %d", intervalUs);
       return null;
     }
 
@@ -188,13 +184,12 @@ public class AndroidProfiler {
     try {
       scheduledFinish =
           executorService.schedule(
-                  () -> timedOutProfilingData = endAndCollect(true, null),
-                  PROFILING_TIMEOUT_MILLIS);
+              () -> timedOutProfilingData = endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
-              e);
+          SentryLevel.ERROR,
+          "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
+          e);
     }
 
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();

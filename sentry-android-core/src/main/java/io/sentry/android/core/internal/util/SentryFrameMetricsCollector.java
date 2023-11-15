@@ -13,7 +13,6 @@ import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
 import androidx.annotation.RequiresApi;
-
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -58,19 +57,19 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
-    final @NotNull Context context,
-    final @NotNull ILogger logger,
-    final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
   @SuppressWarnings("deprecation")
   @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
   public SentryFrameMetricsCollector(
-    final @NotNull Context context,
-    final @NotNull SentryOptions options,
-    final @NotNull BuildInfoProvider buildInfoProvider,
-    final @NotNull WindowFrameMetricsManager windowFrameMetricsManager) {
+      final @NotNull Context context,
+      final @NotNull SentryOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull WindowFrameMetricsManager windowFrameMetricsManager) {
     this(context, options.getLogger(), buildInfoProvider, windowFrameMetricsManager);
   }
 
@@ -101,8 +100,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     HandlerThread handlerThread =
         new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
     handlerThread.setUncaughtExceptionHandler(
-        (thread, e) ->
-            logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
+        (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
     handlerThread.start();
     handler = new Handler(handlerThread.getLooper());
 
@@ -121,9 +119,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                 choreographer = Choreographer.getInstance();
               } catch (Throwable e) {
                 logger.log(
-                        SentryLevel.ERROR,
-                        "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
-                        e);
+                    SentryLevel.ERROR,
+                    "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
+                    e);
               }
             });
     // Let's get the last frame timestamp from the choreographer private field
@@ -131,7 +129,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       choreographerLastFrameTimeField = Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
       choreographerLastFrameTimeField.setAccessible(true);
     } catch (NoSuchFieldException e) {
-      logger.log(SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
+      logger.log(
+          SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
     }
     frameMetricsAvailableListener =
         (window, frameMetrics, dropCountSinceLastInvocation) -> {
