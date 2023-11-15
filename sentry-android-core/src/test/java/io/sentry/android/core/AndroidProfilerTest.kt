@@ -92,7 +92,8 @@ class AndroidProfilerTest {
                 frameMetricsCollector,
                 options.executorService,
                 options.logger,
-                buildInfoProvider)
+                buildInfoProvider
+            )
         }
     }
 
