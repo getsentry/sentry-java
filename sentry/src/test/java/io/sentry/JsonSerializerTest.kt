@@ -1,6 +1,5 @@
 package io.sentry
 
-import io.sentry.exception.SentryEnvelopeException
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.profilemeasurements.ProfileMeasurementValue
 import io.sentry.protocol.Device
