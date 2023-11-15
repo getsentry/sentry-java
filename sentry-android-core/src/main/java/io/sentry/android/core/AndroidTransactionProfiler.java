@@ -104,7 +104,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             tracesFilesDirPath,
             (int) SECONDS.toMicros(1) / intervalHz,
             frameMetricsCollector,
-            options,
+            options.getExecutorService(),
+            options.getLogger(),
             buildInfoProvider);
   }
 

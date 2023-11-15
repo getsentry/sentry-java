@@ -86,7 +86,13 @@ class AndroidProfilerTest {
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
         fun getSut(interval: Int = 1, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidProfiler {
-            return AndroidProfiler(options.profilingTracesDirPath!!, interval, frameMetricsCollector, options, buildInfoProvider)
+            return AndroidProfiler(
+                options.profilingTracesDirPath!!,
+                interval,
+                frameMetricsCollector,
+                options.executorService,
+                options.logger,
+                buildInfoProvider)
         }
     }
 

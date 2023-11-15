@@ -1,5 +1,6 @@
 package io.sentry;
 
+import static io.sentry.util.FileUtils.readBytesFromFile;
 import static io.sentry.vendor.Base64.NO_PADDING;
 import static io.sentry.vendor.Base64.NO_WRAP;
 
@@ -263,15 +264,15 @@ public final class SentryEnvelopeItem {
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
-              if (!traceFile.exists()) {
-                throw new SentryEnvelopeException(
-                    String.format(
-                        "Dropping profiling trace data, because the file '%s' doesn't exists",
-                        traceFile.getName()));
-              }
               // The payload of the profile item is a json including the trace file encoded with
               // base64
-              byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
+              byte[] traceFileBytes;
+              try {
+                traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
+              } catch (IOException | SecurityException e) {
+                throw new SentryEnvelopeException(
+                  String.format("Dropping profiling envelope. Trace file read error.\n%s", e.getMessage()));
+              }
               String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
               if (base64Trace.isEmpty()) {
                 throw new SentryEnvelopeException("Profiling trace file is empty");
@@ -302,48 +303,6 @@ public final class SentryEnvelopeItem {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
-  }
-
-  private static byte[] readBytesFromFile(String pathname, long maxFileLength)
-      throws SentryEnvelopeException {
-    try {
-      File file = new File(pathname);
-
-      if (!file.isFile()) {
-        throw new SentryEnvelopeException(
-            String.format(
-                "Reading the item %s failed, because the file located at the path is not a file.",
-                pathname));
-      }
-
-      if (!file.canRead()) {
-        throw new SentryEnvelopeException(
-            String.format("Reading the item %s failed, because can't read the file.", pathname));
-      }
-
-      if (file.length() > maxFileLength) {
-        throw new SentryEnvelopeException(
-            String.format(
-                "Dropping item, because its size located at '%s' with %d bytes is bigger "
-                    + "than the maximum allowed size of %d bytes.",
-                pathname, file.length(), maxFileLength));
-      }
-
-      try (FileInputStream fileInputStream = new FileInputStream(pathname);
-          BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
-          ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-        byte[] bytes = new byte[1024];
-        int length;
-        int offset = 0;
-        while ((length = inputStream.read(bytes)) != -1) {
-          outputStream.write(bytes, offset, length);
-        }
-        return outputStream.toByteArray();
-      }
-    } catch (IOException | SecurityException exception) {
-      throw new SentryEnvelopeException(
-          String.format("Reading the item %s failed.\n%s", pathname, exception.getMessage()));
-    }
   }
 
   public static @NotNull SentryEnvelopeItem fromClientReport(

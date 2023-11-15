@@ -1,11 +1,16 @@
 package io.sentry.util;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+
+import io.sentry.exception.SentryEnvelopeException;
 
 @ApiStatus.Internal
 public final class FileUtils {
@@ -59,5 +64,58 @@ public final class FileUtils {
       }
     }
     return contentBuilder.toString();
+  }
+
+  /**
+   * Reads the content of a path into a byte array. If the path is does not exists,
+   * it's not a file, can't be read or is larger than max size allowed IOException
+   * is thrown. Do not use with large files, as the byte array is kept in memory!
+   *
+   * @param pathname file to read
+   * @return a byte array containing all the content of the file
+   * @throws IOException In case of error reading the file
+   */
+  public static byte[] readBytesFromFile(String pathname, long maxFileLength)
+    throws IOException, SecurityException {
+    File file = new File(pathname);
+
+    if (!file.exists()) {
+      throw new IOException(
+        String.format(
+          "File '%s' doesn't exists",
+          file.getName()));
+    }
+
+    if (!file.isFile()) {
+      throw new IOException(
+        String.format(
+          "Reading path %s failed, because it's not a file.",
+          pathname));
+    }
+
+    if (!file.canRead()) {
+      throw new IOException(
+        String.format("Reading the item %s failed, because can't read the file.", pathname));
+    }
+
+    if (file.length() > maxFileLength) {
+      throw new IOException(
+        String.format(
+          "Reading file failed, because size located at '%s' with %d bytes is bigger "
+            + "than the maximum allowed size of %d bytes.",
+          pathname, file.length(), maxFileLength));
+    }
+
+    try (FileInputStream fileInputStream = new FileInputStream(pathname);
+         BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+         ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+      byte[] bytes = new byte[1024];
+      int length;
+      int offset = 0;
+      while ((length = inputStream.read(bytes)) != -1) {
+        outputStream.write(bytes, offset, length);
+      }
+      return outputStream.toByteArray();
+    }
   }
 }
