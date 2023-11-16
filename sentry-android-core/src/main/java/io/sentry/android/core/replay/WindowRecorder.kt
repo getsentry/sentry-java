@@ -91,19 +91,22 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         dropCountSinceLastInvocation: Int
     ) {
         val view = activity?.window?.decorView
-//        val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
-//        nativeRenderNodeField.isAccessible = true
-//        val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
-//        RenderNodeHelper.fetchDisplayList(nativeRenderNode)
+        val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
+        renderNodeField.isAccessible = true
+        val renderNode = renderNodeField.get(view)
+        val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
+        nativeRenderNodeField.isAccessible = true
+        val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
+        RenderNodeHelper.fetchDisplayList(nativeRenderNode)
 //        val renderNode = RenderNodeHelper("replay_node")
 //        val displayMetrics = activity?.resources?.displayMetrics
 //        renderNode.setPosition(0, 0, displayMetrics!!.widthPixels, displayMetrics!!.heightPixels)
 //        val recordingCanvas = renderNode.beginRecording()
 //        view?.draw(recordingCanvas)
 //        renderNode.endRecording()
-        view?.let {
-            captureFrame(it)
-        }
+//        view?.let {
+//            captureFrame(it)
+//        }
     }
 
     private fun captureFrame(view: View) {
