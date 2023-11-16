@@ -4,8 +4,15 @@
 
 ### Fixes
 
+-  Fix SIGSEV, SIGABRT and SIGBUS crashes happening after/around the August Google Play System update, see [#2955](https://github.com/getsentry/sentry-java/issues/2955) for more details (fix provided by Native SDK bump)
 - (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
 - Ensure DSN uses http/https protocol ([#3044](https://github.com/getsentry/sentry-java/pull/3044))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.6 to v0.6.7 ([#3048](https://github.com/getsentry/sentry-java/pull/3048))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#067)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.6...0.6.7)
 
 ## 6.33.2-beta.1
 
