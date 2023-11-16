@@ -10,6 +10,8 @@
 ### Features
 
 - Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
+- Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
+  - This makes it easier to automatically create or update (upsert) monitors.
 
 ## 6.33.1
 
