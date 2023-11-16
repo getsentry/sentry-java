@@ -13,6 +13,12 @@
 - Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
   - This makes it easier to automatically create or update (upsert) monitors.
 
+### Dependencies
+
+- Bump Native SDK from v0.6.6 to v0.6.7 ([#3048](https://github.com/getsentry/sentry-java/pull/3048))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#067)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.6...0.6.7)
+
 ## 6.33.1
 
 ### Fixes
