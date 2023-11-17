@@ -3,8 +3,9 @@ project(Sentry-Android-Replay LANGUAGES C CXX)
 
 # Add sentry-android shared library
 add_library(sentry-android-replay SHARED src/main/jni/sentry-replay.cpp)
+add_library(sentry-android-replay-headers SHARED src/main/jni/sentry-replay-with-headers.cpp)
 
-target_include_directories(sentry-android-replay PUBLIC "/Users/romtsn/Workspace/android-platform-headers/android-14.0.0_r11/frameworks/base/libs/hwui")
+target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/android-platform-headers/android-14.0.0_r11/frameworks/base/libs/hwui")
 #target_include_directories(sentry-android-replay PUBLIC "/Users/romtsn/Workspace/aosp/external/skia/include/core")
 #target_include_directories(sentry-android-replay PUBLIC "/Users/romtsn/Workspace/aosp/external/skia/include")
 #target_include_directories(sentry-android-replay PUBLIC "/Users/romtsn/Workspace/aosp/external/skia")
