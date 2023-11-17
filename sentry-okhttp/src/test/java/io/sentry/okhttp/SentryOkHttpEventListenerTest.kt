@@ -1,4 +1,4 @@
-package io.sentry.android.okhttp
+package io.sentry.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.IHub

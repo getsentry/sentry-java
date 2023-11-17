@@ -1,5 +1,11 @@
 # Changelog
 
+## Unrelease
+
+### Features
+
+- Add `sentry-okhttp` module to support instrumenting OkHttp in non-Android projects
+
 ## 7.0.0-rc.1
 
 ### Features
