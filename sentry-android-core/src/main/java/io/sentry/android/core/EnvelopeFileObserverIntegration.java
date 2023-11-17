@@ -16,6 +16,8 @@ import org.jetbrains.annotations.TestOnly;
 public abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
   private @Nullable EnvelopeFileObserver observer;
   private @Nullable ILogger logger;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public static @NotNull EnvelopeFileObserverIntegration getOutboxFileObserver() {
     return new OutboxEnvelopeFileObserverIntegration();
@@ -38,13 +40,21 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
           SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
       try {
-        options.getExecutorService().submit(() -> startOutboxSender(hub, options, path));
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startOutboxSender(hub, options, path);
+                    }
+                  }
+                });
       } catch (Throwable e) {
         logger.log(
             SentryLevel.DEBUG,
             "Failed to start EnvelopeFileObserverIntegration on executor thread. Starting on the calling thread.",
             e);
-        startOutboxSender(hub, options, path);
       }
     }
   }
@@ -75,6 +85,9 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
   @Override
   public void close() {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     if (observer != null) {
       observer.stopWatching();
 

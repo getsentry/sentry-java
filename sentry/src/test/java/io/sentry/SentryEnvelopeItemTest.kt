@@ -13,6 +13,7 @@ import org.mockito.kotlin.whenever
 import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.charset.Charset
 import kotlin.test.AfterTest
@@ -120,7 +121,7 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
-        assertFailsWith<SentryEnvelopeException>(
+        assertFailsWith<IOException>(
             "Reading the attachment ${attachment.pathname} failed, because the file located at " +
                 "the path is not a file."
         ) {
@@ -140,7 +141,7 @@ class SentryEnvelopeItemTest {
 
             val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
-            assertFailsWith<SentryEnvelopeException>(
+            assertFailsWith<IOException>(
                 "Reading the attachment ${attachment.pathname} failed, " +
                     "because can't read the file."
             ) {
@@ -163,7 +164,7 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
-        assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed.") {
+        assertFailsWith<SecurityException>("Reading the attachment ${attachment.pathname} failed.") {
             item.data
         }
 
@@ -244,12 +245,12 @@ class SentryEnvelopeItemTest {
         file.writeBytes(fixture.bytesTooBig)
         val attachment = Attachment(file.path)
 
-        val exception = assertFailsWith<SentryEnvelopeException> {
+        val exception = assertFailsWith<IOException> {
             SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize).data
         }
 
         assertEquals(
-            "Dropping item, because its size located at " +
+            "Reading file failed, because size located at " +
                 "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
                 "allowed size of ${fixture.maxAttachmentSize} bytes.",
             exception.message
@@ -317,7 +318,7 @@ class SentryEnvelopeItemTest {
         }
         file.writeBytes(fixture.bytes)
         file.setReadable(false)
-        assertFailsWith<SentryEnvelopeException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
+        assertFailsWith<IOException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
             SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
         }
     }
@@ -344,12 +345,12 @@ class SentryEnvelopeItemTest {
             whenever(it.traceFile).thenReturn(file)
         }
 
-        val exception = assertFailsWith<SentryEnvelopeException> {
+        val exception = assertFailsWith<IOException> {
             SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
         }
 
         assertEquals(
-            "Dropping item, because its size located at " +
+            "Reading file failed, because size located at " +
                 "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
                 "allowed size of ${fixture.maxAttachmentSize} bytes.",
             exception.message

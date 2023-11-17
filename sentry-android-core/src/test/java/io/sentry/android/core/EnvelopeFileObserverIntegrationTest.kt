@@ -6,6 +6,7 @@ import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
@@ -76,6 +77,18 @@ class EnvelopeFileObserverIntegrationTest {
 //        verify(integrationMock).register(expected, options)
         hub.close()
         verify(integrationMock).close()
+    }
+
+    @Test
+    fun `when hub is closed right after start, integration is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val integration = fixture.getSut {
+            it.executorService = deferredExecutorService
+        }
+        integration.register(fixture.hub, fixture.hub.options)
+        integration.close()
+        deferredExecutorService.runAll()
+        verify(fixture.logger, never()).log(eq(SentryLevel.DEBUG), eq("EnvelopeFileObserverIntegration installed."))
     }
 
     @Test

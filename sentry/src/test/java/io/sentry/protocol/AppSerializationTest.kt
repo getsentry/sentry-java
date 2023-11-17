@@ -30,6 +30,7 @@ class AppSerializationTest {
                 "CAMERA" to "granted"
             )
             inForeground = true
+            viewNames = listOf("MainActivity", "SidebarActivity")
         }
     }
     private val fixture = Fixture()
