@@ -4,6 +4,7 @@ import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
 import io.sentry.IHub;
+import io.sentry.MonitorConfig;
 import io.sentry.Sentry;
 import io.sentry.protocol.SentryId;
 import java.util.List;
@@ -18,12 +19,17 @@ public final class CheckInUtils {
   /**
    * Helper method to send monitor check-ins for a {@link Callable}
    *
+   * @param monitorSlug - the slug of the monitor
+   * @param monitorConfig - configuration of the monitor, can be used for upserting schedule
    * @param callable - the {@link Callable} to be called
    * @return the return value of the {@link Callable}
    * @param <U> - the result type of the {@link Callable}
    */
   public static <U> U withCheckIn(
-      final @NotNull String monitorSlug, final @NotNull Callable<U> callable) throws Exception {
+      final @NotNull String monitorSlug,
+      final @Nullable MonitorConfig monitorConfig,
+      final @NotNull Callable<U> callable)
+      throws Exception {
     final @NotNull IHub hub = Sentry.getCurrentHub();
     final long startTime = System.currentTimeMillis();
     boolean didError = false;
@@ -31,8 +37,11 @@ public final class CheckInUtils {
     hub.pushScope();
     TracingUtils.startNewTrace(hub);
 
-    @Nullable
-    SentryId checkInId = hub.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
+    CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
+    if (monitorConfig != null) {
+      inProgressCheckIn.setMonitorConfig(monitorConfig);
+    }
+    @Nullable SentryId checkInId = hub.captureCheckIn(inProgressCheckIn);
     try {
       return callable.call();
     } catch (Throwable t) {
@@ -45,6 +54,19 @@ public final class CheckInUtils {
       hub.captureCheckIn(checkIn);
       hub.popScope();
     }
+  }
+
+  /**
+   * Helper method to send monitor check-ins for a {@link Callable}
+   *
+   * @param monitorSlug - the slug of the monitor
+   * @param callable - the {@link Callable} to be called
+   * @return the return value of the {@link Callable}
+   * @param <U> - the result type of the {@link Callable}
+   */
+  public static <U> U withCheckIn(
+      final @NotNull String monitorSlug, final @NotNull Callable<U> callable) throws Exception {
+    return withCheckIn(monitorSlug, null, callable);
   }
 
   /** Checks if a check-in for a monitor (CRON) has been ignored. */
