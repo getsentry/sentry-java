@@ -27,6 +27,8 @@ import org.jetbrains.annotations.TestOnly;
 public final class AnrIntegration implements Integration, Closeable {
 
   private final @NotNull Context context;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public AnrIntegration(final @NotNull Context context) {
     this.context = context;
@@ -57,7 +59,16 @@ public final class AnrIntegration implements Integration, Closeable {
     if (options.isAnrEnabled()) {
       addIntegrationToSdkVersion();
       try {
-        options.getExecutorService().submit(() -> startAnrWatchdog(hub, options));
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startAnrWatchdog(hub, options);
+                    }
+                  }
+                });
       } catch (Throwable e) {
         options
             .getLogger()
@@ -141,6 +152,9 @@ public final class AnrIntegration implements Integration, Closeable {
 
   @Override
   public void close() throws IOException {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     synchronized (watchDogLock) {
       if (anrWatchDog != null) {
         anrWatchDog.interrupt();

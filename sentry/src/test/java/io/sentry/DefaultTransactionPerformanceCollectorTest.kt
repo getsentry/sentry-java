@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
@@ -13,9 +14,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.Timer
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
-import java.util.concurrent.FutureTask
 import java.util.concurrent.RejectedExecutionException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,18 +36,7 @@ class DefaultTransactionPerformanceCollectorTest {
         val hub: IHub = mock()
         val options = SentryOptions()
         var mockTimer: Timer? = null
-        var lastScheduledRunnable: Runnable? = null
-
-        val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> = mock()
-            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-                lastScheduledRunnable = runnable
-                return FutureTask {}
-            }
-            override fun close(timeoutMillis: Long) {}
-            override fun isClosed() = false
-        }
+        val deferredExecutorService = DeferredExecutorService()
 
         val mockCpuCollector: ICollector = object : ICollector {
             override fun setup() {}
@@ -62,7 +49,7 @@ class DefaultTransactionPerformanceCollectorTest {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector, executorService: ISentryExecutorService = mockExecutorService): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = executorService
             if (cpuCollector != null) {
@@ -173,7 +160,7 @@ class DefaultTransactionPerformanceCollectorTest {
         verify(fixture.mockTimer, never())!!.cancel()
 
         // Let the timeout job stop the collector
-        fixture.lastScheduledRunnable?.run()
+        fixture.deferredExecutorService.runAll()
         verify(fixture.mockTimer)!!.cancel()
 
         // Data is deleted after the collector times out

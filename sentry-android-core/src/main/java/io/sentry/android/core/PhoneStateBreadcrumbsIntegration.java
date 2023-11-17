@@ -23,6 +23,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   private @Nullable SentryAndroidOptions options;
   @TestOnly @Nullable PhoneStateChangeListener listener;
   private @Nullable TelephonyManager telephonyManager;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public PhoneStateBreadcrumbsIntegration(final @NotNull Context context) {
     this.context = Objects.requireNonNull(context, "Context is required");
@@ -46,7 +48,16 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
     if (this.options.isEnableSystemEventBreadcrumbs()
         && Permissions.hasPermission(context, READ_PHONE_STATE)) {
       try {
-        options.getExecutorService().submit(() -> startTelephonyListener(hub, options));
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startTelephonyListener(hub, options);
+                    }
+                  }
+                });
       } catch (Throwable e) {
         options
             .getLogger()
@@ -83,6 +94,9 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @SuppressWarnings("deprecation")
   @Override
   public void close() throws IOException {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     if (telephonyManager != null && listener != null) {
       telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_NONE);
       listener = null;

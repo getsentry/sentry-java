@@ -23,6 +23,7 @@ import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BOD
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.android.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
 import io.sentry.exception.SentryHttpClientException
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.getProperty
 import okhttp3.Protocol
 import okhttp3.Request
@@ -31,7 +32,6 @@ import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -39,7 +39,6 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
 import kotlin.RuntimeException
 import kotlin.test.Test
@@ -534,13 +533,7 @@ class SentryOkHttpEventTest {
 
     @Test
     fun `scheduleFinish schedules finishEvent`() {
-        val mockExecutor = mock<ISentryExecutorService>()
-        val captor = argumentCaptor<Runnable>()
-        whenever(mockExecutor.schedule(captor.capture(), any())).then {
-            captor.lastValue.run()
-            mock<Future<Runnable>>()
-        }
-        fixture.hub.options.executorService = mockExecutor
+        fixture.hub.options.executorService = ImmediateExecutorService()
         val sut = spy(fixture.getSut())
         val timestamp = mock<SentryDate>()
         sut.scheduleFinish(timestamp)

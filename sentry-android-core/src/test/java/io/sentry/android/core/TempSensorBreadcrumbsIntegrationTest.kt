@@ -11,6 +11,7 @@ import io.sentry.IHub
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.getDeclaredCtor
 import io.sentry.test.injectForField
@@ -82,6 +83,17 @@ class TempSensorBreadcrumbsIntegrationTest {
         sut.register(hub, fixture.options)
         sut.close()
         verify(fixture.manager).unregisterListener(any<SensorEventListener>())
+        assertNull(sut.sensorManager)
+    }
+
+    @Test
+    fun `when hub is closed right after start, integration is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(executorService = deferredExecutorService)
+        sut.register(mock(), fixture.options)
+        assertNull(sut.sensorManager)
+        sut.close()
+        deferredExecutorService.runAll()
         assertNull(sut.sensorManager)
     }
 

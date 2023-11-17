@@ -65,6 +65,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   private @Nullable SentryAndroidOptions options;
 
   private final @NotNull List<String> actions;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActions());
@@ -96,7 +98,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       try {
         options
             .getExecutorService()
-            .submit(() -> startSystemEventsReceiver(hub, (SentryAndroidOptions) options));
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
+                    }
+                  }
+                });
       } catch (Throwable e) {
         options
             .getLogger()
@@ -180,6 +189,9 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   @Override
   public void close() throws IOException {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     if (receiver != null) {
       context.unregisterReceiver(receiver);
       receiver = null;

@@ -7,6 +7,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -76,6 +77,17 @@ class PhoneStateBreadcrumbsIntegrationTest {
         sut.register(hub, fixture.options)
         sut.close()
         verify(fixture.manager).listen(any(), eq(PhoneStateListener.LISTEN_NONE))
+        assertNull(sut.listener)
+    }
+
+    @Test
+    fun `when hub is closed right after start, integration is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(executorService = deferredExecutorService)
+        sut.register(mock(), fixture.options)
+        assertNull(sut.listener)
+        sut.close()
+        deferredExecutorService.runAll()
         assertNull(sut.listener)
     }
 

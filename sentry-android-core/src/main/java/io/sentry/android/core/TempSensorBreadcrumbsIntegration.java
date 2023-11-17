@@ -29,6 +29,8 @@ public final class TempSensorBreadcrumbsIntegration
   private @Nullable SentryAndroidOptions options;
 
   @TestOnly @Nullable SensorManager sensorManager;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public TempSensorBreadcrumbsIntegration(final @NotNull Context context) {
     this.context = Objects.requireNonNull(context, "Context is required");
@@ -52,7 +54,16 @@ public final class TempSensorBreadcrumbsIntegration
     if (this.options.isEnableSystemEventBreadcrumbs()) {
 
       try {
-        options.getExecutorService().submit(() -> startSensorListener(options));
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startSensorListener(options);
+                    }
+                  }
+                });
       } catch (Throwable e) {
         options
             .getLogger()
@@ -89,6 +100,9 @@ public final class TempSensorBreadcrumbsIntegration
 
   @Override
   public void close() throws IOException {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
       sensorManager = null;

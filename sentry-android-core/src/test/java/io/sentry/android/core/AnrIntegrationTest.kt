@@ -6,6 +6,7 @@ import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.android.core.AnrIntegration.AnrHint
 import io.sentry.exception.ExceptionMechanismException
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
@@ -102,6 +103,18 @@ class AnrIntegrationTest {
 
         sut.close()
 
+        assertNull(sut.anrWatchDog)
+    }
+
+    @Test
+    fun `when hub is closed right after start, integration is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut()
+        fixture.options.executorService = deferredExecutorService
+        sut.register(fixture.hub, fixture.options)
+        assertNull(sut.anrWatchDog)
+        sut.close()
+        deferredExecutorService.runAll()
         assertNull(sut.anrWatchDog)
     }
 
