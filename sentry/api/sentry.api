@@ -4334,6 +4334,7 @@ public abstract class io/sentry/transport/TransportResult {
 public final class io/sentry/util/CheckInUtils {
 	public fun <init> ()V
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
+	public static fun withCheckIn (Ljava/lang/String;Lio/sentry/MonitorConfig;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 	public static fun withCheckIn (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 }
 
@@ -4374,6 +4375,7 @@ public final class io/sentry/util/ExceptionUtils {
 public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
 	public static fun deleteRecursively (Ljava/io/File;)Z
+	public static fun readBytesFromFile (Ljava/lang/String;J)[B
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
 }
 
