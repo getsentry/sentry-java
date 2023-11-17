@@ -10,6 +10,7 @@
 
 ### Fixes
 
+- Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
 -  Fix SIGSEV, SIGABRT and SIGBUS crashes happening after/around the August Google Play System update, see [#2955](https://github.com/getsentry/sentry-java/issues/2955) for more details (fix provided by Native SDK bump)
 - Ensure DSN uses http/https protocol ([#3044](https://github.com/getsentry/sentry-java/pull/3044))
 
@@ -36,10 +37,6 @@
 - Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
 - Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
   - This makes it easier to automatically create or update (upsert) monitors.
-
-### Fixes
-
-- Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
  
 ## 6.33.1
 
