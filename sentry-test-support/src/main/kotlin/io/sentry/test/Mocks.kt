@@ -17,3 +17,22 @@ class ImmediateExecutorService : ISentryExecutorService {
     override fun close(timeoutMillis: Long) {}
     override fun isClosed(): Boolean = false
 }
+
+class DeferredExecutorService : ISentryExecutorService {
+
+    private val runnables = ArrayList<Runnable>()
+
+    fun runAll() {
+        runnables.forEach { it.run() }
+    }
+
+    override fun submit(runnable: Runnable): Future<*> {
+        runnables.add(runnable)
+        return mock()
+    }
+
+    override fun <T> submit(callable: Callable<T>): Future<T> = mock()
+    override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = mock()
+    override fun close(timeoutMillis: Long) {}
+    override fun isClosed(): Boolean = false
+}
