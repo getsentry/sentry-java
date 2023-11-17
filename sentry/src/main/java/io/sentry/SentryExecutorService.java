@@ -6,10 +6,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
-final class SentryExecutorService implements ISentryExecutorService {
+@ApiStatus.Internal
+public final class SentryExecutorService implements ISentryExecutorService {
 
   private final @NotNull ScheduledExecutorService executorService;
 
@@ -18,7 +20,7 @@ final class SentryExecutorService implements ISentryExecutorService {
     this.executorService = executorService;
   }
 
-  SentryExecutorService() {
+  public SentryExecutorService() {
     this(Executors.newSingleThreadScheduledExecutor(new SentryExecutorServiceThreadFactory()));
   }
 

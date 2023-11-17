@@ -6,6 +6,8 @@ import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.CpuCollectionData;
+import io.sentry.ILogger;
+import io.sentry.ISentryExecutorService;
 import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryLevel;
@@ -86,20 +88,23 @@ public class AndroidProfiler {
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
-  private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
+  private final @NotNull ISentryExecutorService executorService;
+  private final @NotNull ILogger logger;
   private boolean isRunning = false;
 
   public AndroidProfiler(
       final @NotNull String tracesFilesDirPath,
       final int intervalUs,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull SentryAndroidOptions sentryAndroidOptions,
+      final @NotNull ISentryExecutorService executorService,
+      final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
     this.traceFilesDir =
         new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
-    this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
+    this.logger = Objects.requireNonNull(logger, "Logger is required");
+    this.executorService = Objects.requireNonNull(executorService, "ExecutorService is required.");
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
     this.buildInfoProvider =
@@ -110,17 +115,13 @@ public class AndroidProfiler {
   public synchronized @Nullable ProfileStartData start() {
     // intervalUs is 0 only if there was a problem in the init
     if (intervalUs == 0) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Disabling profiling because intervaUs is set to %d",
-              intervalUs);
+      logger.log(
+          SentryLevel.WARNING, "Disabling profiling because intervaUs is set to %d", intervalUs);
       return null;
     }
 
     if (isRunning) {
-      options.getLogger().log(SentryLevel.WARNING, "Profiling has already started...");
+      logger.log(SentryLevel.WARNING, "Profiling has already started...");
       return null;
     }
 
@@ -182,18 +183,13 @@ public class AndroidProfiler {
     // We stop profiling after a timeout to avoid huge profiles to be sent
     try {
       scheduledFinish =
-          options
-              .getExecutorService()
-              .schedule(
-                  () -> timedOutProfilingData = endAndCollect(true, null),
-                  PROFILING_TIMEOUT_MILLIS);
+          executorService.schedule(
+              () -> timedOutProfilingData = endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
     } catch (RejectedExecutionException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
-              e);
+      logger.log(
+          SentryLevel.ERROR,
+          "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
+          e);
     }
 
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();
@@ -211,7 +207,7 @@ public class AndroidProfiler {
       return new ProfileStartData(transactionStartNanos, profileStartCpuMillis);
     } catch (Throwable e) {
       endAndCollect(false, null);
-      options.getLogger().log(SentryLevel.ERROR, "Unable to start a profile: ", e);
+      logger.log(SentryLevel.ERROR, "Unable to start a profile: ", e);
       isRunning = false;
       return null;
     }
@@ -227,7 +223,7 @@ public class AndroidProfiler {
     }
 
     if (!isRunning) {
-      options.getLogger().log(SentryLevel.WARNING, "Profiler not running");
+      logger.log(SentryLevel.WARNING, "Profiler not running");
       return null;
     }
 
@@ -240,7 +236,7 @@ public class AndroidProfiler {
       // throws)
       Debug.stopMethodTracing();
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
+      logger.log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
     } finally {
       isRunning = false;
     }
@@ -250,7 +246,7 @@ public class AndroidProfiler {
     long transactionEndCpuMillis = Process.getElapsedCpuTime();
 
     if (traceFile == null) {
-      options.getLogger().log(SentryLevel.ERROR, "Trace file does not exists");
+      logger.log(SentryLevel.ERROR, "Trace file does not exists");
       return null;
     }
 

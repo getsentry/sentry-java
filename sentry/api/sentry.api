@@ -1782,6 +1782,15 @@ public final class io/sentry/SentryExceptionFactory {
 	public fun getSentryExceptionsFromThread (Lio/sentry/protocol/SentryThread;Lio/sentry/protocol/Mechanism;Ljava/lang/Throwable;)Ljava/util/List;
 }
 
+public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorService {
+	public fun <init> ()V
+	public fun close (J)V
+	public fun isClosed ()Z
+	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
 public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
 	public fun <init> ()V
 	public fun <init> (Ljava/time/Instant;)V
