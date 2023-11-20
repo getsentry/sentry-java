@@ -7,6 +7,7 @@
 - (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
 - (Internal) Remove SentryOptions dependency from AndroidProfiler ([#3051](https://github.com/getsentry/sentry-java/pull/3051))
 - (Internal) Add `readBytesFromFile` for use in Hybrid SDKs ([#3052](https://github.com/getsentry/sentry-java/pull/3052))
+- (Internal) Add `getProguardUuid` for use in Hybrid SDKs ([#3054](https://github.com/getsentry/sentry-java/pull/3054))
 
 ### Fixes
 
