@@ -4,6 +4,9 @@
 
 ### Features
 
+- Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
+- Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
+  - This makes it easier to automatically create or update (upsert) monitors.
 - (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
 - (Internal) Remove SentryOptions dependency from AndroidProfiler ([#3051](https://github.com/getsentry/sentry-java/pull/3051))
 - (Internal) Add `readBytesFromFile` for use in Hybrid SDKs ([#3052](https://github.com/getsentry/sentry-java/pull/3052))
@@ -31,12 +34,6 @@
 - Bump Native SDK from v0.6.6 to v0.6.7 ([#3048](https://github.com/getsentry/sentry-java/pull/3048))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#067)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.6.6...0.6.7)
-
-### Features
-
-- Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
-- Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
-  - This makes it easier to automatically create or update (upsert) monitors.
 
 ## 6.33.1
 
