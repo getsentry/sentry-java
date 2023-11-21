@@ -91,22 +91,15 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         dropCountSinceLastInvocation: Int
     ) {
         val view = activity?.window?.decorView
-        val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
-        renderNodeField.isAccessible = true
-        val renderNode = renderNodeField.get(view)
-        val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
-        nativeRenderNodeField.isAccessible = true
-        val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
-        RenderNodeHelper.fetchDisplayList(nativeRenderNode)
 //        val renderNode = RenderNodeHelper("replay_node")
 //        val displayMetrics = activity?.resources?.displayMetrics
 //        renderNode.setPosition(0, 0, displayMetrics!!.widthPixels, displayMetrics!!.heightPixels)
 //        val recordingCanvas = renderNode.beginRecording()
 //        view?.draw(recordingCanvas)
 //        renderNode.endRecording()
-//        view?.let {
-//            captureFrame(it)
-//        }
+        view?.let {
+            captureFrame(it)
+        }
     }
 
     private fun captureFrame(view: View) {
@@ -122,20 +115,20 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         }
         lastCapturedAtMs = now
 
-        if (canvasDelegate == null) {
-            val displayMetrics = DisplayMetrics()
-            activity!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
-            val bitmap = Bitmap.createBitmap(
-                displayMetrics.widthPixels,
-                displayMetrics.heightPixels,
-                Bitmap.Config.ARGB_8888
-            )
-            canvas = Canvas(bitmap)
-            canvasDelegate = CanvasDelegate(
-                recorder,
-                canvas!!
-            )
-        }
+//        if (canvasDelegate == null) {
+//            val displayMetrics = DisplayMetrics()
+//            activity!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
+//            val bitmap = Bitmap.createBitmap(
+//                displayMetrics.widthPixels,
+//                displayMetrics.heightPixels,
+//                Bitmap.Config.ARGB_8888
+//            )
+//            canvas = Canvas(bitmap)
+//            canvasDelegate = CanvasDelegate(
+//                recorder,
+//                canvas!!
+//            )
+//        }
 
         // reset the canvas first, as it will be re-used for clipping operations
 //        canvas!!.restoreToCount(1)
@@ -155,9 +148,21 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                     val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
                     renderNodeField.isAccessible = true
                     val renderNode = renderNodeField.get(item)
-                    val outputMethod = RenderNode::class.java.getDeclaredMethod("output")
-                    outputMethod.isAccessible = true
-                    outputMethod.invoke(renderNode)
+                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
+                    nativeRenderNodeField.isAccessible = true
+                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
+                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
+                    // TODO: uncomment this to invoke the "output" command
+//                    val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
+//                    renderNodeField.isAccessible = true
+//                    val renderNode = renderNodeField.get(item)
+//                    val outputMethod = RenderNode::class.java.getDeclaredMethod("output")
+//                    outputMethod.isAccessible = true
+//                    outputMethod.invoke(renderNode)
+                    // TODO: end
+
+
+
 //                    item.getLocationOnScreen(location)
 //                    val x = location[0].toFloat() + item.translationX
 //                    val y = location[1].toFloat() + item.translationY
