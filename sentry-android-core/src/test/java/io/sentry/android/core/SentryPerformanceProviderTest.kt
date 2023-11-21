@@ -1,100 +1,115 @@
 package io.sentry.android.core
 
-import android.app.Application
 import android.content.pm.ProviderInfo
+import android.os.Build
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.SentryNanotimeDate
+import io.sentry.android.core.performance.AppStartMetrics
+import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import java.util.Date
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+@Implements(android.os.Process::class)
+class SentryShadowProcess {
+
+    companion object {
+
+        private var startupTimeMillis: Long = 0
+
+        fun setStartUptimeMillis(value: Long) {
+            startupTimeMillis = value
+        }
+
+        @Suppress("unused")
+        @Implementation
+        @JvmStatic
+        fun getStartUptimeMillis(): Long {
+            return startupTimeMillis
+        }
+    }
+}
+
 @RunWith(AndroidJUnit4::class)
+@Config(
+    sdk = [Build.VERSION_CODES.N],
+    shadows = [SentryShadowProcess::class]
+)
 class SentryPerformanceProviderTest {
 
     @BeforeTest
     fun `set up`() {
-        AppStartState.getInstance().resetInstance()
+        AppStartMetrics.getInstance().clear()
+        SentryShadowProcess.setStartUptimeMillis(1234)
     }
 
     @Test
-    fun `provider sets app start`() {
-        val providerInfo = ProviderInfo()
-
-        val mockContext = ContextUtilsTest.createMockContext()
-        providerInfo.authority = AUTHORITY
-
-        val providerAppStartMillis = 10L
-        val providerAppStartTime = SentryNanotimeDate(Date(0), 0)
-        SentryPerformanceProvider.setAppStartTime(providerAppStartMillis, providerAppStartTime)
-
-        val provider = SentryPerformanceProvider()
-        provider.attachInfo(mockContext, providerInfo)
-
-        // done by ActivityLifecycleIntegration so forcing it here
-        val lifecycleAppEndMillis = 20L
-        AppStartState.getInstance().setAppStartEnd(lifecycleAppEndMillis)
-        AppStartState.getInstance().setColdStart(true)
-
-        assertEquals(10L, AppStartState.getInstance().appStartInterval)
+    fun `provider starts appStartTimeSpan`() {
+        assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasNotStarted())
+        setupProvider()
+        assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasStarted())
     }
 
     @Test
-    fun `provider sets first activity as cold start`() {
-        val providerInfo = ProviderInfo()
+    fun `provider sets cold start based on first activity`() {
+        val provider = setupProvider()
 
-        val mockContext = ContextUtilsTest.createMockContext()
-        providerInfo.authority = AUTHORITY
+        // up until this point app start is not known
+        assertEquals(AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
 
-        val provider = SentryPerformanceProvider()
-        provider.attachInfo(mockContext, providerInfo)
-
-        provider.onActivityCreated(mock(), null)
-
-        assertTrue(AppStartState.getInstance().isColdStart!!)
+        // when there's no saved state
+        provider.activityCallback!!.onActivityCreated(mock(), null)
+        // then app start should be cold
+        assertEquals(AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
     }
 
     @Test
-    fun `provider sets first activity as warm start`() {
-        val providerInfo = ProviderInfo()
+    fun `provider sets warm start based on first activity`() {
+        val provider = setupProvider()
 
-        val mockContext = ContextUtilsTest.createMockContext()
-        providerInfo.authority = AUTHORITY
+        // up until this point app start is not known
+        assertEquals(AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
 
-        val provider = SentryPerformanceProvider()
-        provider.attachInfo(mockContext, providerInfo)
+        // when there's a saved state
+        provider.activityCallback!!.onActivityCreated(mock(), Bundle())
 
-        provider.onActivityCreated(mock(), Bundle())
-
-        assertFalse(AppStartState.getInstance().isColdStart!!)
+        // then app start should be warm
+        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
     }
 
     @Test
-    fun `provider sets app start end on first activity resume, and unregisters afterwards`() {
+    fun `provider sets keeps startup state even if multiple activities are launched`() {
+        val provider = setupProvider()
+
+        // when there's a saved state
+        provider.activityCallback!!.onActivityCreated(mock(), Bundle())
+
+        // then app start should be warm
+        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+
+        // when another activity is launched cold
+        provider.activityCallback!!.onActivityCreated(mock(), null)
+
+        // then app start should remain warm
+        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+    }
+
+    private fun setupProvider(): SentryPerformanceProvider {
         val providerInfo = ProviderInfo()
 
         val mockContext = ContextUtilsTest.createMockContext(true)
         providerInfo.authority = AUTHORITY
 
+        // calls onCreate
         val provider = SentryPerformanceProvider()
         provider.attachInfo(mockContext, providerInfo)
-
-        provider.onActivityCreated(mock(), Bundle())
-        provider.onActivityResumed(mock())
-
-        assertNotNull(AppStartState.getInstance().appStartInterval)
-        assertNotNull(AppStartState.getInstance().appStartEndTime)
-
-        verify((mockContext.applicationContext as Application))
-            .unregisterActivityLifecycleCallbacks(any())
+        return provider
     }
 
     companion object {

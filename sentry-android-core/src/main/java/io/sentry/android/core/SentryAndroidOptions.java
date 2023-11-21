@@ -203,6 +203,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachAnrThreadDump = false;
 
+  private boolean enableStarfish;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -546,5 +548,15 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setAttachAnrThreadDump(final boolean attachAnrThreadDump) {
     this.attachAnrThreadDump = attachAnrThreadDump;
+  }
+
+  @ApiStatus.Internal
+  public boolean isEnableStarfish() {
+    return enableStarfish;
+  }
+
+  @ApiStatus.Internal
+  public void setEnableStarfish(final boolean enableStarfish) {
+    this.enableStarfish = enableStarfish;
   }
 }

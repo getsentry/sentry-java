@@ -9,9 +9,10 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
-import io.sentry.android.core.AppStartState;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.FileUtils;
@@ -52,10 +53,15 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
 
-    final Long appStartTime = AppStartState.getInstance().getAppStartMillis();
+    final TimeSpan appStartTimeSpan =
+        options.isEnableStarfish()
+            ? AppStartMetrics.getInstance().getAppStartTimeSpan()
+            : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
-        && appStartTime != null) {
-      long timeSinceSdkInit = currentDateProvider.getCurrentTimeMillis() - appStartTime;
+        && appStartTimeSpan.hasStarted()) {
+      long timeSinceSdkInit =
+          currentDateProvider.getCurrentTimeMillis() - appStartTimeSpan.getStartTimestampMs();
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
             .getLogger()

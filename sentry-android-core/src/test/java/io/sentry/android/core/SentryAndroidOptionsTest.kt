@@ -133,6 +133,19 @@ class SentryAndroidOptionsTest {
         assertNull(sentryOptions.nativeSdkName)
     }
 
+    @Test
+    fun `starfish is disabled by default`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertFalse(sentryOptions.isEnableStarfish)
+    }
+
+    @Test
+    fun `starfish can be enabled`() {
+        val sentryOptions = SentryAndroidOptions()
+        sentryOptions.isEnableStarfish = true
+        assertTrue(sentryOptions.isEnableStarfish)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}

@@ -6,55 +6,36 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Process;
 import android.os.SystemClock;
-import io.sentry.SentryDate;
+import androidx.annotation.NonNull;
+import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.NextDrawListener;
+import io.sentry.android.core.performance.TimeSpan;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-/**
- * SentryPerformanceProvider is responsible for collecting data (eg appStart) as early as possible
- * as ContentProvider is the only reliable hook for libraries that works across all the supported
- * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis() We could also use
- * AppComponentFactory but it depends on androidx.core.app.AppComponentFactory
- */
 @ApiStatus.Internal
-public final class SentryPerformanceProvider extends EmptySecureContentProvider
-    implements Application.ActivityLifecycleCallbacks {
+public final class SentryPerformanceProvider extends EmptySecureContentProvider {
 
   // static to rely on Class load
-  private static @NotNull SentryDate appStartTime = AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static long appStartMillis = SystemClock.uptimeMillis();
+  private static final long legacyAppStartMillis = SystemClock.uptimeMillis();
 
-  private boolean firstActivityCreated = false;
-  private boolean firstActivityResumed = false;
-
-  private @Nullable Application application;
-
-  public SentryPerformanceProvider() {
-    AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
-  }
+  private @Nullable Application app;
+  private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
 
   @Override
   public boolean onCreate() {
-    Context context = getContext();
-
-    if (context == null) {
-      return false;
-    }
-
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
-
-    if (context instanceof Application) {
-      application = ((Application) context);
-      application.registerActivityLifecycleCallbacks(this);
-    }
-
+    onAppLaunched();
     return true;
   }
 
@@ -74,53 +55,145 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
     return null;
   }
 
+  @ApiStatus.Internal
+  public void onAppLaunched() {
+    // pre-starfish: use static field init as app start time
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final @NotNull TimeSpan legacyAppStartSpan = appStartMetrics.getLegacyAppStartTimeSpan();
+    legacyAppStartSpan.setStartedAt(legacyAppStartMillis);
+
+    // starfish: Use Process.getStartUptimeMillis()
+    // Process.getStartUptimeMillis() requires API level 24+
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
+      return;
+    }
+
+    @Nullable Context context = getContext();
+    if (context != null) {
+      context = context.getApplicationContext();
+    }
+    if (context instanceof Application) {
+      app = (Application) context;
+    }
+    if (app == null) {
+      return;
+    }
+
+    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
+
+    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
+    final Handler handler = new Handler(Looper.getMainLooper());
+
+    activityCallback =
+        new ActivityLifecycleCallbacksAdapter() {
+          final WeakHashMap<Activity, ActivityLifecycleTimeSpan> activityLifecycleMap =
+              new WeakHashMap<>();
+
+          @Override
+          public void onActivityPreCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            final long now = SystemClock.uptimeMillis();
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+
+            final ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
+            timeSpan.onCreate.setStartedAt(now);
+            activityLifecycleMap.put(activity, timeSpan);
+          }
+
+          @Override
+          public void onActivityCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+              appStartMetrics.setAppStartType(
+                  savedInstanceState == null
+                      ? AppStartMetrics.AppStartType.COLD
+                      : AppStartMetrics.AppStartType.WARM);
+            }
+          }
+
+          @Override
+          public void onActivityPostCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.onCreate.stop();
+              timeSpan.onCreate.setDescription(activity.getClass().getName() + ".onCreate");
+            }
+          }
+
+          @Override
+          public void onActivityPreStarted(@NonNull Activity activity) {
+            final long now = SystemClock.uptimeMillis();
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.onStart.setStartedAt(now);
+            }
+          }
+
+          @Override
+          public void onActivityStarted(@NonNull Activity activity) {
+            if (firstDrawDone.get()) {
+              return;
+            }
+            NextDrawListener.forActivity(
+                activity,
+                () -> {
+                  handler.postAtFrontOfQueue(
+                      () -> {
+                        if (firstDrawDone.compareAndSet(false, true)) {
+                          onAppStartDone();
+                        }
+                      });
+                });
+          }
+
+          @Override
+          public void onActivityPostStarted(@NonNull Activity activity) {
+            final @Nullable ActivityLifecycleTimeSpan timeSpan =
+                activityLifecycleMap.remove(activity);
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+            if (timeSpan != null) {
+              timeSpan.onStart.stop();
+              timeSpan.onStart.setDescription(activity.getClass().getName() + ".onStart");
+
+              appStartMetrics.addActivityLifecycleTimeSpans(timeSpan);
+            }
+          }
+
+          @Override
+          public void onActivityDestroyed(@NonNull Activity activity) {
+            // safety net for activities which were created but never stopped
+            activityLifecycleMap.remove(activity);
+          }
+        };
+
+    app.registerActivityLifecycleCallbacks(activityCallback);
+  }
+
+  private synchronized void onAppStartDone() {
+    AppStartMetrics.getInstance().getAppStartTimeSpan().stop();
+
+    if (app != null) {
+      if (activityCallback != null) {
+        app.unregisterActivityLifecycleCallbacks(activityCallback);
+      }
+    }
+  }
+
   @TestOnly
-  static void setAppStartTime(
-      final long appStartMillisLong, final @NotNull SentryDate appStartTimeDate) {
-    appStartMillis = appStartMillisLong;
-    appStartTime = appStartTimeDate;
+  public @Nullable Application.ActivityLifecycleCallbacks getActivityCallback() {
+    return activityCallback;
   }
-
-  @Override
-  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
-    // Hybrid Apps like RN or Flutter init the Android SDK after the MainActivity of the App
-    // has been created, and some frameworks overwrites the behaviour of activity lifecycle
-    // or it's already too late to get the callback for the very first Activity, hence we
-    // register the ActivityLifecycleCallbacks here, since this Provider is always run first.
-    if (!firstActivityCreated) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      final boolean coldStart = savedInstanceState == null;
-      AppStartState.getInstance().setColdStart(coldStart);
-
-      firstActivityCreated = true;
-    }
-  }
-
-  @Override
-  public void onActivityStarted(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivityResumed(@NotNull Activity activity) {
-    if (!firstActivityResumed) {
-      // sets App start as finished when the very first activity calls onResume
-      firstActivityResumed = true;
-      AppStartState.getInstance().setAppStartEnd();
-    }
-    if (application != null) {
-      application.unregisterActivityLifecycleCallbacks(this);
-    }
-  }
-
-  @Override
-  public void onActivityPaused(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivityStopped(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivitySaveInstanceState(@NotNull Activity activity, @NotNull Bundle outState) {}
-
-  @Override
-  public void onActivityDestroyed(@NotNull Activity activity) {}
 }

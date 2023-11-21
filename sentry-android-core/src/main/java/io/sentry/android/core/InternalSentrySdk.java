@@ -16,6 +16,8 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
@@ -99,7 +101,14 @@ public final class InternalSentrySdk {
         app = new App();
       }
       app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
-      app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
+
+      final @NotNull TimeSpan appStartTimeSpan =
+          options.isEnableStarfish()
+              ? AppStartMetrics.getInstance().getAppStartTimeSpan()
+              : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+      if (appStartTimeSpan.hasStarted()) {
+        app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
+      }
 
       final @NotNull BuildInfoProvider buildInfoProvider =
           new BuildInfoProvider(options.getLogger());

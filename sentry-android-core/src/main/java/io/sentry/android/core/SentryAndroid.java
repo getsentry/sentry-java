@@ -1,16 +1,18 @@
 package io.sentry.android.core;
 
 import android.content.Context;
+import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
-import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
@@ -21,9 +23,6 @@ import org.jetbrains.annotations.NotNull;
 /** Sentry initialization class */
 public final class SentryAndroid {
 
-  // static to rely on Class load init.
-  private static final @NotNull SentryDate appStartTime =
-      AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long appStart = SystemClock.uptimeMillis();
 
@@ -81,9 +80,6 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
-    // if SentryPerformanceProvider was disabled or removed, we set the App Start when
-    // the SDK is called.
-    AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
 
     try {
       Sentry.init(
@@ -123,6 +119,24 @@ public final class SentryAndroid {
                 isTimberAvailable);
 
             configuration.configure(options);
+
+            // if SentryPerformanceProvider was disabled or removed, we set the App Start when
+            // the SDK is called.
+            // pre-starfish: fill-back the app start time to the SDK init time
+            if (options.isEnableStarfish()) {
+              final @NotNull TimeSpan appStartTimeSpan =
+                  AppStartMetrics.getInstance().getAppStartTimeSpan();
+              if (appStartTimeSpan.hasNotStarted()
+                  && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
+              }
+            } else {
+              final @NotNull TimeSpan appStartTime =
+                  AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+              if (appStartTime.hasNotStarted()) {
+                appStartTime.setStartedAt(appStart);
+              }
+            }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
                 options, context, buildInfoProvider, loadClass, activityFramesTracker);

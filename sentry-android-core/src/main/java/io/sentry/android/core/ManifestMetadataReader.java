@@ -96,6 +96,8 @@ final class ManifestMetadataReader {
 
   static final String SEND_MODULES = "io.sentry.send-modules";
 
+  static final String ENABLE_STARFISH = "io.sentry.starfish.enable";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -360,6 +362,9 @@ final class ManifestMetadataReader {
             readBool(metadata, logger, ENABLE_ROOT_CHECK, options.isEnableRootCheck()));
 
         options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
+
+        options.setEnableStarfish(
+            readBool(metadata, logger, ENABLE_STARFISH, options.isEnableStarfish()));
       }
 
       options

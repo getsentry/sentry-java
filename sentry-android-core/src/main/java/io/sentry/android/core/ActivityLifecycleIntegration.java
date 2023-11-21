@@ -30,6 +30,8 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
@@ -70,7 +72,6 @@ public final class ActivityLifecycleIntegration
   private boolean isAllActivityCallbacksAvailable;
 
   private boolean firstActivityCreated = false;
-  private final boolean foregroundImportance;
 
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
@@ -100,10 +101,6 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
-
-    // we only track app start for processes that will show an Activity (full launch).
-    // Here we check the process importance which will tell us that.
-    foregroundImportance = ContextUtils.isForegroundImportance(this.application);
   }
 
   @Override
@@ -182,15 +179,27 @@ public final class ActivityLifecycleIntegration
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
         TracingUtils.startNewTrace(hub);
-      } else if (performanceEnabled) {
+      } else {
         // as we allow a single transaction running on the bound Scope, we finish the previous ones
         stopPreviousTransactions();
 
         final String activityName = getActivityName(activity);
 
-        final SentryDate appStartTime =
-            foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
-        final Boolean coldStart = AppStartState.getInstance().isColdStart();
+        final @Nullable SentryDate appStartTime;
+        final @Nullable Boolean coldStart;
+        final TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+
+        // we only track app start for processes that will show an Activity (full launch).
+        // Here we check the process importance which will tell us that.
+        final boolean foregroundImportance = ContextUtils.isForegroundImportance(this.application);
+        if (foregroundImportance && appStartTimeSpan.hasStarted()) {
+          appStartTime = appStartTimeSpan.getStartTimestamp();
+          coldStart =
+              AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD;
+        } else {
+          appStartTime = null;
+          coldStart = null;
+        }
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
@@ -406,13 +415,13 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (performanceEnabled) {
       // app start span
-      @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
-      @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+      final @NotNull TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+
       // in case the SentryPerformanceProvider is disabled it does not set the app start times,
       // and we need to set the end time manually here,
       // the start time gets set manually in SentryAndroid.init()
-      if (appStartStartTime != null && appStartEndTime == null) {
-        AppStartState.getInstance().setAppStartEnd();
+      if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
+        appStartTimeSpan.stop();
       }
       finishAppStartSpan();
 
@@ -625,7 +634,15 @@ public final class ActivityLifecycleIntegration
     if (!firstActivityCreated) {
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      AppStartState.getInstance().setColdStart(savedInstanceState == null);
+      // SentryPerformanceProvider sets this already
+      // pre-starfish: back-fill with best guess
+      if (options != null && !options.isEnableStarfish()) {
+        AppStartMetrics.getInstance()
+            .setAppStartType(
+                savedInstanceState == null
+                    ? AppStartMetrics.AppStartType.COLD
+                    : AppStartMetrics.AppStartType.WARM);
+      }
     }
   }
 
@@ -661,9 +678,18 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan() {
-    final @Nullable SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+    final @NotNull TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+    final @Nullable SentryDate appStartEndTime = appStartTimeSpan.getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
     }
+  }
+
+  private @NotNull TimeSpan getAppStartTimeSpan() {
+    final @NotNull TimeSpan appStartTimeSpan =
+        options.isEnableStarfish()
+            ? AppStartMetrics.getInstance().getAppStartTimeSpan()
+            : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+    return appStartTimeSpan;
   }
 }

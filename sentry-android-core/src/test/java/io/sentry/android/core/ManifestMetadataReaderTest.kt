@@ -1318,4 +1318,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isSendModules)
     }
+
+    @Test
+    fun `applyMetadata reads starfish flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_STARFISH to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableStarfish)
+    }
+
+    @Test
+    fun `applyMetadata reads starfish flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableStarfish)
+    }
 }

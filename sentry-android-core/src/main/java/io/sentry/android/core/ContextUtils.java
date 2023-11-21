@@ -169,7 +169,7 @@ public final class ContextUtils {
    *
    * @return true if IMPORTANCE_FOREGROUND and false otherwise
    */
-  static boolean isForegroundImportance(final @NotNull Context context) {
+  public static boolean isForegroundImportance(final @NotNull Context context) {
     try {
       final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
       if (service instanceof ActivityManager) {
