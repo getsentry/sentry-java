@@ -81,7 +81,7 @@
         <!--    <meta-data android:name="io.sentry.anr.enable" android:value="false" />-->
 
         <!--    how to disable the auto-init-->
-        <!--    <meta-data android:name="io.sentry.auto-init" android:value="false" />-->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
 
         <!--    how to disable the NDK-->
         <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
