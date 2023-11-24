@@ -40,6 +40,7 @@ import java.net.Proxy
     "Use SentryOkHttpEventListener from sentry-okhttp instead",
     ReplaceWith("SentryOkHttpEventListener", "io.sentry.okhttp.SentryOkHttpEventListener")
 )
+@Suppress("TooManyFunctions")
 class SentryOkHttpEventListener(
     hub: IHub = HubAdapter.getInstance(),
     originalEventListenerCreator: ((call: Call) -> EventListener)? = null
