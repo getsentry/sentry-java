@@ -1,10 +1,12 @@
 # Changelog
 
-## Unrelease
+## Unreleased
 
 ### Features
 
 - Add `sentry-okhttp` module to support instrumenting OkHttp in non-Android projects
+  - This deprecates `sentry-android-okhttp` classes. Make sure to replace `io.sentry.android.okhttp` package name with `io.sentry.okhttp` before the next major, where the classes will be removed
+  - `SentryOkHttpUtils` was removed from public API as it's been exposed by mistake
 
 ## 7.0.0-rc.1
 
