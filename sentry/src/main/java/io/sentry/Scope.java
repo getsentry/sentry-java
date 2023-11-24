@@ -393,7 +393,7 @@ public final class Scope {
   }
 
   /**
-   * Adds a breadcrumb to the breadcrumbs queue It also executes the BeforeBreadcrumb callback if
+   * Adds a breadcrumb to the breadcrumbs queue. It also executes the BeforeBreadcrumb callback if
    * set
    *
    * @param breadcrumb the breadcrumb
@@ -737,7 +737,7 @@ public final class Scope {
     return cloneSession;
   }
 
-  /** the IWithSession callback */
+  /** The IWithSession callback */
   interface IWithSession {
 
     /**
@@ -785,14 +785,14 @@ public final class Scope {
   /** The SessionPair class */
   static final class SessionPair {
 
-    /** the previous session if exists */
+    /** The previous session if exists */
     private final @Nullable Session previous;
 
     /** The current Session */
     private final @NotNull Session current;
 
     /**
-     * The SessionPar ctor
+     * The SessionPair ctor
      *
      * @param current the current session
      * @param previous the previous sessions if exists or null
@@ -803,7 +803,7 @@ public final class Scope {
     }
 
     /**
-     * REturns the previous session
+     * Returns the previous session
      *
      * @return the previous sessions if exists or null
      */
@@ -880,7 +880,7 @@ public final class Scope {
     }
   }
 
-  /** the IWithTransaction callback */
+  /** The IWithTransaction callback */
   @ApiStatus.Internal
   public interface IWithTransaction {
 
