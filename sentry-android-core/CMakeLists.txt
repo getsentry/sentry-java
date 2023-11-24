@@ -22,6 +22,7 @@ target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/W
 target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/system/core/libutils/binder/include/utils")
 target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/system/core/libcutils/include")
 target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/system/core/libcutils/include/cutils")
+target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/external/skia/src/base")
 target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/external/skia/include/android")
 target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/external/skia/include/core")
 target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/Workspace/aosp/external/skia/include/config")

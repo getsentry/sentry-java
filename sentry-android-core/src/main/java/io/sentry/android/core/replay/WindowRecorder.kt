@@ -91,12 +91,6 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         dropCountSinceLastInvocation: Int
     ) {
         val view = activity?.window?.decorView
-//        val renderNode = RenderNodeHelper("replay_node")
-//        val displayMetrics = activity?.resources?.displayMetrics
-//        renderNode.setPosition(0, 0, displayMetrics!!.widthPixels, displayMetrics!!.heightPixels)
-//        val recordingCanvas = renderNode.beginRecording()
-//        view?.draw(recordingCanvas)
-//        renderNode.endRecording()
         view?.let {
             captureFrame(it)
         }
@@ -115,23 +109,23 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         }
         lastCapturedAtMs = now
 
-//        if (canvasDelegate == null) {
-//            val displayMetrics = DisplayMetrics()
-//            activity!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
-//            val bitmap = Bitmap.createBitmap(
-//                displayMetrics.widthPixels,
-//                displayMetrics.heightPixels,
-//                Bitmap.Config.ARGB_8888
-//            )
-//            canvas = Canvas(bitmap)
-//            canvasDelegate = CanvasDelegate(
-//                recorder,
-//                canvas!!
-//            )
-//        }
+        if (canvasDelegate == null) {
+            val displayMetrics = DisplayMetrics()
+            activity!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
+            val bitmap = Bitmap.createBitmap(
+                displayMetrics.widthPixels,
+                displayMetrics.heightPixels,
+                Bitmap.Config.ARGB_8888
+            )
+            canvas = Canvas(bitmap)
+            canvasDelegate = CanvasDelegate(
+                recorder,
+                canvas!!
+            )
+        }
 
         // reset the canvas first, as it will be re-used for clipping operations
-//        canvas!!.restoreToCount(1)
+        canvas!!.restoreToCount(1)
         recorder.beginFrame(System.currentTimeMillis(), view.width, view.height)
 
         val location = IntArray(2)
@@ -145,35 +139,30 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                 } else if (item is ViewGroup && item.willNotDraw()) {
                     // skip layouts which don't draw anything
                 } else {
-                    val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
-                    renderNodeField.isAccessible = true
-                    val renderNode = renderNodeField.get(item)
-                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
-                    nativeRenderNodeField.isAccessible = true
-                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
-                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
-                    // TODO: uncomment this to invoke the "output" command
 //                    val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
 //                    renderNodeField.isAccessible = true
 //                    val renderNode = renderNodeField.get(item)
+//
 //                    val outputMethod = RenderNode::class.java.getDeclaredMethod("output")
 //                    outputMethod.isAccessible = true
 //                    outputMethod.invoke(renderNode)
-                    // TODO: end
-
-
-
-//                    item.getLocationOnScreen(location)
-//                    val x = location[0].toFloat() + item.translationX
-//                    val y = location[1].toFloat() + item.translationY
 //
-//                    val saveCount = canvasDelegate!!.save()
-//                    recorder.translate(
-//                        x,
-//                        y
-//                    )
-//                    ViewHelper.executeOnDraw(item, canvasDelegate!!)
-//                    canvasDelegate!!.restoreToCount(saveCount)
+//                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
+//                    nativeRenderNodeField.isAccessible = true
+//                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
+//                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
+
+                    item.getLocationOnScreen(location)
+                    val x = location[0].toFloat() + item.translationX
+                    val y = location[1].toFloat() + item.translationY
+
+                    val saveCount = canvasDelegate!!.save()
+                    recorder.translate(
+                        x,
+                        y
+                    )
+                    ViewHelper.executeOnDraw(item, canvasDelegate!!)
+                    canvasDelegate!!.restoreToCount(saveCount)
                 }
 
                 if (item is ViewGroup) {

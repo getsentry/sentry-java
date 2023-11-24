@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <stdlib.h>
 #include <RenderNode.h>
 #include <SkRRect.h>
 #include <SkTextBlob.h>
@@ -10,31 +11,67 @@ namespace {
 //        return r.left() == SK_ScalarInfinity ? nullptr : &r;
 //    }
 //
-//#define X(T) T,
-//    enum class Type : uint8_t {
-//#include "DisplayListOps.in"
-//    };
-//#undef X
+#define X(T) T,
+    enum class Type : uint8_t {
+        X(Flush)
+        X(Save)
+        X(Restore)
+        X(SaveLayer)
+        X(SaveBehind)
+        X(Concat)
+        X(SetMatrix)
+        X(Scale)
+        X(Translate)
+        X(ClipPath)
+        X(ClipRect)
+        X(ClipRRect)
+        X(ClipRegion)
+        X(ResetClip)
+        X(DrawPaint)
+        X(DrawBehind)
+        X(DrawPath)
+        X(DrawRect)
+        X(DrawRegion)
+        X(DrawOval)
+        X(DrawArc)
+        X(DrawRRect)
+        X(DrawDRRect)
+        X(DrawAnnotation)
+        X(DrawDrawable)
+        X(DrawPicture)
+        X(DrawImage)
+        X(DrawImageRect)
+        X(DrawImageLattice)
+        X(DrawTextBlob)
+        X(DrawPatch)
+        X(DrawPoints)
+        X(DrawVertices)
+        X(DrawAtlas)
+        X(DrawShadowRec)
+        X(DrawVectorDrawable)
+        X(DrawRippleDrawable)
+        X(DrawWebView)
+        X(DrawSkMesh)
+        X(DrawMesh)
+    };
+#undef X
 //
     struct Op {
         uint32_t type : 8;
         uint32_t skip : 24;
     };
-//    static_assert(sizeof(Op) == 4, "");
+    static_assert(sizeof(Op) == 4, "");
 //
-//    struct Flush final : Op {
-//        static const auto kType = Type::Flush;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->flush(); }
-//    };
+    struct Flush final : Op {
+        static const auto kType = Type::Flush;
+    };
 //
-//    struct Save final : Op {
-//        static const auto kType = Type::Save;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->save(); }
-//    };
-//    struct Restore final : Op {
-//        static const auto kType = Type::Restore;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->restore(); }
-//    };
+    struct Save final : Op {
+        static const auto kType = Type::Save;
+    };
+    struct Restore final : Op {
+        static const auto kType = Type::Restore;
+    };
 //    struct SaveLayer final : Op {
 //        static const auto kType = Type::SaveLayer;
 //        SaveLayer(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
@@ -87,12 +124,11 @@ namespace {
 //        SkScalar sx, sy;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->scale(sx, sy); }
 //    };
-//    struct Translate final : Op {
-//        static const auto kType = Type::Translate;
-//        Translate(SkScalar dx, SkScalar dy) : dx(dx), dy(dy) {}
-//        SkScalar dx, dy;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->translate(dx, dy); }
-//    };
+    struct Translate final : Op {
+        static const auto kType = Type::Translate;
+        Translate(SkScalar dx, SkScalar dy) : dx(dx), dy(dy) {}
+        SkScalar dx, dy;
+    };
 //
 //    struct ClipPath final : Op {
 //        static const auto kType = Type::ClipPath;
@@ -381,7 +417,21 @@ namespace {
                     std::string mIdent;
                 };
 
-    extern "C" JNIEXPORT void
+                jobject getProperties(JNIEnv *env, const char *op, jobject args) {
+                    jclass hashMapClass = env->FindClass("java/util/HashMap");
+                    jmethodID hashMapConstructor = env->GetMethodID(hashMapClass, "<init>",
+                                                                    "(I)V");
+                    jobject hashMap = env->NewObject(hashMapClass, hashMapConstructor, 2);
+
+                    jmethodID hashMapPut = env->GetMethodID(hashMapClass, "put",
+                                                            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+                    env->CallObjectMethod(hashMap, hashMapPut, env->NewStringUTF("property"), env->NewStringUTF(op));
+                    env->CallObjectMethod(hashMap, hashMapPut, env->NewStringUTF("args"), args);
+                    return hashMap;
+                }
+
+    extern "C" JNIEXPORT jobject
     JNICALL
     Java_android_graphics_RenderNodeHelper_nGetDisplayList2(JNIEnv *env,
                                                             jclass clazz,
@@ -393,16 +443,115 @@ namespace {
 //        VirtualCanvas canvas(*displayList);
 //        AutoCanvasRestore acr(&canvas, false);
 
+        jclass arrayListClass = env->FindClass("java/util/ArrayList");
+        jmethodID arrayListConstructor = env->GetMethodID(arrayListClass, "<init>", "()V");
+        jmethodID arrayListConstructorWithI = env->GetMethodID(arrayListClass, "<init>", "(I)V");
+        jobject arrayList = env->NewObject(arrayListClass, arrayListConstructor);
+
+        jmethodID arrayListAdd = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
+
         if (data->fBytes.get() != nullptr) {
             auto end = data->fBytes.get() + data->fUsed;
+            // TODO use (end / skip) as a fixed jarray size
             for (const uint8_t* ptr = data->fBytes.get(); ptr < end;) {
                 auto op = (const Op*)ptr;
-                auto type = op->type;
+                auto type = (const Type)op->type;
                 auto skip = op->skip;
+                switch(type) {
+                    case Type::Flush:
+                        // do nothing
+                        break;
+                    case Type::Translate: {
+                        auto translate = (const Translate*) op;
+                        jfloat x = translate->dx;
+                        jobject args = env->NewObject(arrayListClass, arrayListConstructorWithI, 2);
+                        env->CallBooleanMethod(args, arrayListAdd, x);
+                        jobject props = getProperties(env, "translate", args);
+                        env->CallBooleanMethod(arrayList, arrayListAdd, props);
+                        break;
+                    }
+                    case Type::Save: {
+                        jobject props = getProperties(env, "translate", nullptr);
+                        break;
+                    }
+                    case Type::Restore:
+                        break;
+                    case Type::SaveLayer:
+                        break;
+                    case Type::SaveBehind:
+                        break;
+                    case Type::Concat:
+                        break;
+                    case Type::SetMatrix:
+                        break;
+                    case Type::Scale:
+                        break;
+                    case Type::ClipPath:
+                        break;
+                    case Type::ClipRect:
+                        break;
+                    case Type::ClipRRect:
+                        break;
+                    case Type::ClipRegion:
+                        break;
+                    case Type::ResetClip:
+                        break;
+                    case Type::DrawPaint:
+                        break;
+                    case Type::DrawBehind:
+                        break;
+                    case Type::DrawPath:
+                        break;
+                    case Type::DrawRect:
+                        break;
+                    case Type::DrawRegion:
+                        break;
+                    case Type::DrawOval:
+                        break;
+                    case Type::DrawArc:
+                        break;
+                    case Type::DrawRRect:
+                        break;
+                    case Type::DrawDRRect:
+                        break;
+                    case Type::DrawAnnotation:
+                        break;
+                    case Type::DrawDrawable:
+                        break;
+                    case Type::DrawPicture:
+                        break;
+                    case Type::DrawImage:
+                        break;
+                    case Type::DrawImageRect:
+                        break;
+                    case Type::DrawImageLattice:
+                        break;
+                    case Type::DrawTextBlob:
+                        break;
+                    case Type::DrawPatch:
+                        break;
+                    case Type::DrawPoints:
+                        break;
+                    case Type::DrawVertices:
+                        break;
+                    case Type::DrawAtlas:
+                        break;
+                    case Type::DrawShadowRec:
+                        break;
+                    case Type::DrawVectorDrawable:
+                        break;
+                    case Type::DrawRippleDrawable:
+                        break;
+                    case Type::DrawWebView:
+                        break;
+                    case Type::DrawSkMesh:
+                        break;
+                    case Type::DrawMesh:
+                        break;
+                }
                 ptr += skip;
             }
         }
-//        VirtualCanvas canvas(*displayList);
-//        displayList->draw(reinterpret_cast<SkCanvas *>(&canvas));
+        return arrayList;
     }
 }
