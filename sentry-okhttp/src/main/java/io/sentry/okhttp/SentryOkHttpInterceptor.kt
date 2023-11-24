@@ -1,7 +1,16 @@
 package io.sentry.okhttp
 
-import io.sentry.*
+import io.sentry.BaggageHeader
+import io.sentry.Breadcrumb
+import io.sentry.Hint
+import io.sentry.HttpStatusCodeRange
+import io.sentry.HubAdapter
+import io.sentry.IHub
+import io.sentry.ISpan
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
+import io.sentry.SpanDataConvention
+import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback

@@ -15,6 +15,7 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
+import io.sentry.exception.SentryHttpClientException
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECTION_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECT_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.REQUEST_BODY_EVENT
@@ -22,7 +23,6 @@ import io.sentry.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEADERS_EVEN
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
-import io.sentry.exception.SentryHttpClientException
 import io.sentry.test.getProperty
 import okhttp3.Protocol
 import okhttp3.Request
