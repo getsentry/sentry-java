@@ -13,9 +13,9 @@ import okhttp3.Headers
 import okhttp3.Request
 import okhttp3.Response
 
-public object SentryOkHttpUtils {
+internal object SentryOkHttpUtils {
 
-    public fun captureClientError(hub: IHub, request: Request, response: Response) {
+    internal fun captureClientError(hub: IHub, request: Request, response: Response) {
         // not possible to get a parameterized url, but we remove at least the
         // query string and the fragment.
         // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query

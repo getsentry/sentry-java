@@ -3,7 +3,7 @@ public final class io/sentry/okhttp/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
-public final class io/sentry/okhttp/SentryOkHttpEventListener : okhttp3/EventListener {
+public class io/sentry/okhttp/SentryOkHttpEventListener : okhttp3/EventListener {
 	public static final field Companion Lio/sentry/okhttp/SentryOkHttpEventListener$Companion;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;)V
@@ -48,7 +48,7 @@ public final class io/sentry/okhttp/SentryOkHttpEventListener : okhttp3/EventLis
 public final class io/sentry/okhttp/SentryOkHttpEventListener$Companion {
 }
 
-public final class io/sentry/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
+public class io/sentry/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;)V
@@ -59,10 +59,5 @@ public final class io/sentry/okhttp/SentryOkHttpInterceptor : okhttp3/Intercepto
 
 public abstract interface class io/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback {
 	public abstract fun execute (Lio/sentry/ISpan;Lokhttp3/Request;Lokhttp3/Response;)Lio/sentry/ISpan;
-}
-
-public final class io/sentry/okhttp/SentryOkHttpUtils {
-	public static final field INSTANCE Lio/sentry/okhttp/SentryOkHttpUtils;
-	public final fun captureClientError (Lio/sentry/IHub;Lokhttp3/Request;Lokhttp3/Response;)V
 }
 

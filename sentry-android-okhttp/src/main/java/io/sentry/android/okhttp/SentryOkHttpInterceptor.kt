@@ -32,40 +32,25 @@ import okhttp3.Response
 )
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
-    private val beforeSpan: io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback? = null,
+    private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = true,
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
-) : io.sentry.okhttp.SentryOkHttpInterceptor(
+) : Interceptor by io.sentry.okhttp.SentryOkHttpInterceptor(
     hub,
-    beforeSpan,
+    { span, request, response ->
+        beforeSpan?.execute(span, request, response)
+    },
     captureFailedRequests,
     failedRequestStatusCodes,
     failedRequestTargets
-), Interceptor {
+) {
 
     constructor() : this(HubAdapter.getInstance())
-    constructor(hub: IHub) : this(hub, null as io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback?)
+    constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
-    constructor(
-        hub: IHub,
-        beforeSpan: BeforeSpanCallback? = null,
-        captureFailedRequests: Boolean = false,
-        failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
-            HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
-        ),
-        failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
-    ) : this(
-        hub,
-        io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback { span, request, response ->
-            beforeSpan?.execute(span, request, response)
-        },
-        captureFailedRequests,
-        failedRequestStatusCodes,
-        failedRequestTargets
-    )
 
     init {
         addIntegrationToSdkVersion(javaClass)
