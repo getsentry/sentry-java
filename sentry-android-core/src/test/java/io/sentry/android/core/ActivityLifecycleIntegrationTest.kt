@@ -1423,8 +1423,29 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).configureScope(any())
+        // once for the screen, and once for the tracing propagation context
+        verify(fixture.hub, times(2)).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
+    }
+
+    @Test
+    fun `sets the activity as the current screen`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.enableTracing = false
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = mock<Scope>()
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        // once for the screen, and once for the tracing propagation context
+        verify(fixture.hub, times(2)).configureScope(any())
+        verify(scope).setScreen(any())
     }
 
     @Test
@@ -1443,21 +1464,25 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).configureScope(any())
+        // once for the screen, and once for the tracing propagation context
+        verify(fixture.hub, times(2)).configureScope(any())
+
         val propagationContextAfterNewTrace = scope.propagationContext
         assertNotSame(propagationContextAtStart, propagationContextAfterNewTrace)
 
         clearInvocations(fixture.hub)
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub, never()).configureScope(any())
+        // once for the screen, but not for the tracing propagation context
+        verify(fixture.hub).configureScope(any())
         assertSame(propagationContextAfterNewTrace, scope.propagationContext)
 
         sut.onActivityDestroyed(activity)
 
         clearInvocations(fixture.hub)
         sut.onActivityCreated(activity, fixture.bundle)
-        verify(fixture.hub).configureScope(any())
+        // once for the screen, and once for the tracing propagation context
+        verify(fixture.hub, times(2)).configureScope(any())
         assertNotSame(propagationContextAfterNewTrace, scope.propagationContext)
     }
 

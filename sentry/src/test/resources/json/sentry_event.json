@@ -151,7 +151,8 @@
               "WRITE_EXTERNAL_STORAGE": "not_granted",
               "CAMERA": "granted"
             },
-            "in_foreground": true
+            "in_foreground": true,
+            "view_names": ["MainActivity", "SidebarActivity"]
         },
         "browser":
         {
