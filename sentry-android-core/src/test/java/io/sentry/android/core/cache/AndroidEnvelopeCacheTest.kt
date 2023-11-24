@@ -49,8 +49,13 @@ class AndroidEnvelopeCacheTest {
 
             if (appStartMillis != null) {
                 AppStartMetrics.getInstance().apply {
-                    appStartTimeSpan.setStartedAt(appStartMillis)
-                    appStartTimeSpan.setStartUnixTimeMs(appStartMillis)
+                    if (options.isEnableStarfish) {
+                        appStartTimeSpan.setStartedAt(appStartMillis)
+                        appStartTimeSpan.setStartUnixTimeMs(appStartMillis)
+                    } else {
+                        legacyAppStartTimeSpan.setStartedAt(appStartMillis)
+                        legacyAppStartTimeSpan.setStartUnixTimeMs(appStartMillis)
+                    }
                 }
             }
             if (currentTimeMillis != null) {
