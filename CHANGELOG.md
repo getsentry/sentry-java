@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- (Internal, Experimental) Attach spans for Application, ContentProvider, and Activities to app-start ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
+
 ## 6.34.0
 
 ### Features
