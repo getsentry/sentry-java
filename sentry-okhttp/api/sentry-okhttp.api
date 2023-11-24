@@ -1,12 +1,10 @@
-public final class io/sentry/android/okhttp/BuildConfig {
-	public static final field BUILD_TYPE Ljava/lang/String;
-	public static final field DEBUG Z
-	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+public final class io/sentry/okhttp/BuildConfig {
+	public static final field SENTRY_OKHTTP_SDK_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
-	public fun <init> ()V
 }
 
-public final class io/sentry/android/okhttp/SentryOkHttpEventListener : okhttp3/EventListener {
+public class io/sentry/okhttp/SentryOkHttpEventListener : okhttp3/EventListener {
+	public static final field Companion Lio/sentry/okhttp/SentryOkHttpEventListener$Companion;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -47,16 +45,19 @@ public final class io/sentry/android/okhttp/SentryOkHttpEventListener : okhttp3/
 	public fun secureConnectStart (Lokhttp3/Call;)V
 }
 
-public final class io/sentry/android/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
+public final class io/sentry/okhttp/SentryOkHttpEventListener$Companion {
+}
+
+public class io/sentry/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Lio/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;)V
 	public fun intercept (Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 }
 
-public abstract interface class io/sentry/android/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback {
+public abstract interface class io/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback {
 	public abstract fun execute (Lio/sentry/ISpan;Lokhttp3/Request;Lokhttp3/Response;)Lio/sentry/ISpan;
 }
 
