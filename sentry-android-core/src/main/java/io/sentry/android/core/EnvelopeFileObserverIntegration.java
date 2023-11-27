@@ -16,6 +16,8 @@ import org.jetbrains.annotations.TestOnly;
 public abstract class EnvelopeFileObserverIntegration implements Integration, Closeable {
   private @Nullable EnvelopeFileObserver observer;
   private @Nullable ILogger logger;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public static @NotNull EnvelopeFileObserverIntegration getOutboxFileObserver() {
     return new OutboxEnvelopeFileObserverIntegration();
@@ -37,31 +39,56 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       logger.log(
           SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
 
-      final OutboxSender outboxSender =
-          new OutboxSender(
-              hub,
-              options.getEnvelopeReader(),
-              options.getSerializer(),
-              logger,
-              options.getFlushTimeoutMillis(),
-              options.getMaxQueueSize());
-
-      observer =
-          new EnvelopeFileObserver(path, outboxSender, logger, options.getFlushTimeoutMillis());
       try {
-        observer.startWatching();
-        logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
-      } catch (Throwable e) {
-        // it could throw eg NoSuchFileException or NullPointerException
         options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
+            .getExecutorService()
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startOutboxSender(hub, options, path);
+                    }
+                  }
+                });
+      } catch (Throwable e) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "Failed to start EnvelopeFileObserverIntegration on executor thread.",
+            e);
       }
+    }
+  }
+
+  private void startOutboxSender(
+      final @NotNull IHub hub, final @NotNull SentryOptions options, final @NotNull String path) {
+    final OutboxSender outboxSender =
+        new OutboxSender(
+            hub,
+            options.getEnvelopeReader(),
+            options.getSerializer(),
+            options.getLogger(),
+            options.getFlushTimeoutMillis(),
+            options.getMaxQueueSize());
+
+    observer =
+        new EnvelopeFileObserver(
+            path, outboxSender, options.getLogger(), options.getFlushTimeoutMillis());
+    try {
+      observer.startWatching();
+      options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+    } catch (Throwable e) {
+      // it could throw eg NoSuchFileException or NullPointerException
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
     }
   }
 
   @Override
   public void close() {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     if (observer != null) {
       observer.stopWatching();
 

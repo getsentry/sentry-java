@@ -16,7 +16,6 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
-import io.sentry.ISentryExecutorService
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -34,6 +33,7 @@ import io.sentry.TransactionFinishedCallback
 import io.sentry.TransactionOptions
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
@@ -52,9 +52,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import java.util.Date
-import java.util.concurrent.Callable
 import java.util.concurrent.Future
-import java.util.concurrent.FutureTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -1115,20 +1113,10 @@ class ActivityLifecycleIntegrationTest {
     @Test
     fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is not called, ttfd span is finished automatically with timeout`() {
         val sut = fixture.getSut()
-        var lastScheduledRunnable: Runnable? = null
-        val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> = mock()
-            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-                lastScheduledRunnable = runnable
-                return FutureTask {}
-            }
-            override fun close(timeoutMillis: Long) {}
-            override fun isClosed() = false
-        }
+        val deferredExecutorService = DeferredExecutorService()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        fixture.options.executorService = mockExecutorService
+        fixture.options.executorService = deferredExecutorService
         sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -1137,10 +1125,10 @@ class ActivityLifecycleIntegrationTest {
         // Assert the ttfd span is running and a timeout autoCancel task has been scheduled
         assertNotNull(ttfdSpan)
         assertFalse(ttfdSpan.isFinished)
-        assertNotNull(lastScheduledRunnable)
+        assertTrue(deferredExecutorService.scheduledRunnables.isNotEmpty())
 
         // Run the autoClose task and assert the ttfd span is finished with deadlineExceeded
-        lastScheduledRunnable!!.run()
+        deferredExecutorService.runAll()
         assertTrue(ttfdSpan.isFinished)
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
 
@@ -1342,20 +1330,10 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
         val view = fixture.createView()
-        var lastScheduledRunnable: Runnable? = null
-        val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> = mock()
-            override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-                lastScheduledRunnable = runnable
-                return FutureTask {}
-            }
-            override fun close(timeoutMillis: Long) {}
-            override fun isClosed() = false
-        }
+        val deferredExecutorService = DeferredExecutorService()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        fixture.options.executorService = mockExecutorService
+        fixture.options.executorService = deferredExecutorService
         sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityResumed(activity)
@@ -1374,7 +1352,7 @@ class ActivityLifecycleIntegrationTest {
 
         // Run the autoClose task 1 ms after finishing the ttid span and assert the ttfd span is finished
         Thread.sleep(1)
-        lastScheduledRunnable!!.run()
+        deferredExecutorService.runAll()
         assertTrue(ttfdSpan.isFinished)
 
         // the ttfd span should be trimmed to be equal to the ttid span, and the description should end with "-exceeded"

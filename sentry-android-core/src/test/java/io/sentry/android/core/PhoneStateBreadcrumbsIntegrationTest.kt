@@ -5,7 +5,10 @@ import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
+import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -23,8 +26,10 @@ class PhoneStateBreadcrumbsIntegrationTest {
     private class Fixture {
         val context = mock<Context>()
         val manager = mock<TelephonyManager>()
+        val options = SentryAndroidOptions()
 
-        fun getSut(): PhoneStateBreadcrumbsIntegration {
+        fun getSut(executorService: ISentryExecutorService = ImmediateExecutorService()): PhoneStateBreadcrumbsIntegration {
+            options.executorService = executorService
             whenever(context.getSystemService(eq(Context.TELEPHONY_SERVICE))).thenReturn(manager)
 
             return PhoneStateBreadcrumbsIntegration(context)
@@ -36,21 +41,31 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When system events breadcrumb is enabled, it registers callback`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
         val hub = mock<IHub>()
-        sut.register(hub, options)
+        sut.register(hub, fixture.options)
         verify(fixture.manager).listen(any(), eq(PhoneStateListener.LISTEN_CALL_STATE))
         assertNotNull(sut.listener)
     }
 
     @Test
+    fun `Phone state callback is registered in the executorService`() {
+        val sut = fixture.getSut(mock())
+        val hub = mock<IHub>()
+        sut.register(hub, fixture.options)
+
+        assertNull(sut.listener)
+    }
+
+    @Test
     fun `When system events breadcrumb is disabled, it doesn't register callback`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions().apply {
-            isEnableSystemEventBreadcrumbs = false
-        }
         val hub = mock<IHub>()
-        sut.register(hub, options)
+        sut.register(
+            hub,
+            fixture.options.apply {
+                isEnableSystemEventBreadcrumbs = false
+            }
+        )
         verify(fixture.manager, never()).listen(any(), any())
         assertNull(sut.listener)
     }
@@ -58,20 +73,29 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When ActivityBreadcrumbsIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
         val hub = mock<IHub>()
-        sut.register(hub, options)
+        sut.register(hub, fixture.options)
         sut.close()
         verify(fixture.manager).listen(any(), eq(PhoneStateListener.LISTEN_NONE))
         assertNull(sut.listener)
     }
 
     @Test
+    fun `when hub is closed right after start, integration is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(executorService = deferredExecutorService)
+        sut.register(mock(), fixture.options)
+        assertNull(sut.listener)
+        sut.close()
+        deferredExecutorService.runAll()
+        assertNull(sut.listener)
+    }
+
+    @Test
     fun `When on call state received, added breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
         val hub = mock<IHub>()
-        sut.register(hub, options)
+        sut.register(hub, fixture.options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_RINGING, null)
 
         verify(hub).addBreadcrumb(
@@ -87,9 +111,8 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When on idle state received, added breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
         val hub = mock<IHub>()
-        sut.register(hub, options)
+        sut.register(hub, fixture.options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_IDLE, null)
         verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
@@ -97,9 +120,8 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When on offhook state received, added breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
         val hub = mock<IHub>()
-        sut.register(hub, options)
+        sut.register(hub, fixture.options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_OFFHOOK, null)
         verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
     }

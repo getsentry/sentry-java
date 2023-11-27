@@ -80,6 +80,8 @@ Similarly, if you have a Sentry SDK (e.g. `sentry-android-core`) dependency on o
 - Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
 - Migrate from `default` interface methods to proper implementations in each interface implementor ([#2847](https://github.com/getsentry/sentry-java/pull/2847))
     - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
+- Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
+- Move Integrations registration to background on init ([#3043](https://github.com/getsentry/sentry-java/pull/3043))
 
 ## 6.34.0
 

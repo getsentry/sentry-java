@@ -74,6 +74,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     fun `when Factory returns null, register logs and exit`() {
         val sut = SendCachedEnvelopeFireAndForgetIntegration(CustomFactory())
         fixture.options.cacheDirPath = "abc"
+        fixture.options.executorService = ImmediateExecutorService()
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("SendFireAndForget factory is null."))
         verify(fixture.sender, never()).send()
@@ -187,6 +188,24 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
 
         // no factory call should be done if there's rate limiting active
         verify(fixture.sender, never()).send()
+    }
+
+    @Test
+    fun `register runs on executor service`() {
+        fixture.options.executorService = ImmediateExecutorService()
+        fixture.options.cacheDirPath = "cache"
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.callback).create(eq(fixture.hub), eq(fixture.options))
+    }
+
+    @Test
+    fun `does not register on fake executor service`() {
+        fixture.options.executorService = mock()
+        fixture.options.cacheDirPath = "cache"
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.callback, never()).create(any(), any())
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {

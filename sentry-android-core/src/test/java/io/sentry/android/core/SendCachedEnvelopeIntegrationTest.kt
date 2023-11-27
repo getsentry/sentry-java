@@ -4,9 +4,11 @@ import io.sentry.IConnectionStatusProvider
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.ISentryExecutorService
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryOptions
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.RateLimiter
 import io.sentry.util.LazyEvaluator
@@ -38,14 +40,12 @@ class SendCachedEnvelopeIntegrationTest {
             hasSender: Boolean = true,
             delaySend: Long = 0L,
             taskFails: Boolean = false,
-            useImmediateExecutor: Boolean = false
+            mockExecutorService: ISentryExecutorService? = null
         ): SendCachedEnvelopeIntegration {
-            if (useImmediateExecutor) {
-                options.executorService = ImmediateExecutorService()
-            }
             options.cacheDirPath = cacheDirPath
             options.setLogger(logger)
             options.isDebug = true
+            options.executorService = mockExecutorService ?: SentryOptions().executorService
 
             whenever(sender.send()).then {
                 Thread.sleep(delaySend)
@@ -80,7 +80,7 @@ class SendCachedEnvelopeIntegrationTest {
 
     @Test
     fun `when factory returns null, does nothing`() {
-        val sut = fixture.getSut(hasSender = false)
+        val sut = fixture.getSut(hasSender = false, mockExecutorService = ImmediateExecutorService())
 
         sut.register(fixture.hub, fixture.options)
 
@@ -90,12 +90,21 @@ class SendCachedEnvelopeIntegrationTest {
 
     @Test
     fun `when has factory and cacheDirPath set, submits task into queue`() {
-        val sut = fixture.getSut()
+        val sut = fixture.getSut(mockExecutorService = ImmediateExecutorService())
 
         sut.register(fixture.hub, fixture.options)
 
         await.untilFalse(fixture.flag)
         verify(fixture.sender).send()
+    }
+
+    @Test
+    fun `when executorService is fake, does nothing`() {
+        val sut = fixture.getSut(mockExecutorService = mock())
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.factory, never()).create(any(), any())
+        verify(fixture.sender, never()).send()
     }
 
     @Test
@@ -170,7 +179,7 @@ class SendCachedEnvelopeIntegrationTest {
 
     @Test
     fun `whenever network connection status changes, retries sending for relevant statuses`() {
-        val sut = fixture.getSut(hasStartupCrashMarker = false, useImmediateExecutor = true)
+        val sut = fixture.getSut(hasStartupCrashMarker = false, mockExecutorService = ImmediateExecutorService())
 
         val connectionStatusProvider = mock<IConnectionStatusProvider>()
         fixture.options.connectionStatusProvider = connectionStatusProvider
