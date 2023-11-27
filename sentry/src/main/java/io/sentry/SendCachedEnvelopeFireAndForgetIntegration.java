@@ -111,8 +111,10 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
                 try {
                   if (isClosed.get()) {
                     options
-                      .getLogger()
-                      .log(SentryLevel.INFO, "SendCachedEnvelopeFireAndForgetIntegration, not trying to send after closing.");
+                        .getLogger()
+                        .log(
+                            SentryLevel.INFO,
+                            "SendCachedEnvelopeFireAndForgetIntegration, not trying to send after closing.");
                     return;
                   }
 
@@ -125,11 +127,13 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
                   // skip run only if we're certainly disconnected
                   if (connectionStatusProvider != null
-                    && connectionStatusProvider.getConnectionStatus()
-                    == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+                      && connectionStatusProvider.getConnectionStatus()
+                          == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
                     options
-                      .getLogger()
-                      .log(SentryLevel.INFO, "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
+                        .getLogger()
+                        .log(
+                            SentryLevel.INFO,
+                            "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
                     return;
                   }
 
@@ -137,15 +141,17 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
                   final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
                   if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
                     options
-                      .getLogger()
-                      .log(
-                        SentryLevel.INFO,
-                        "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
+                        .getLogger()
+                        .log(
+                            SentryLevel.INFO,
+                            "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
                     return;
                   }
 
                   if (sender == null) {
-                    options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+                    options
+                        .getLogger()
+                        .log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
                     return;
                   }
 

@@ -86,8 +86,10 @@ final class SendCachedEnvelopeIntegration
                     try {
                       if (isClosed.get()) {
                         options
-                          .getLogger()
-                          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, not trying to send after closing.");
+                            .getLogger()
+                            .log(
+                                SentryLevel.INFO,
+                                "SendCachedEnvelopeIntegration, not trying to send after closing.");
                         return;
                       }
 
@@ -99,23 +101,32 @@ final class SendCachedEnvelopeIntegration
                       }
 
                       if (connectionStatusProvider != null
-                        && connectionStatusProvider.getConnectionStatus()
-                        == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
-                        options.getLogger().log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
+                          && connectionStatusProvider.getConnectionStatus()
+                              == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+                        options
+                            .getLogger()
+                            .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
                         return;
                       }
 
                       // in case there's rate limiting active, skip processing
                       final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
-                      if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+                      if (rateLimiter != null
+                          && rateLimiter.isActiveForCategory(DataCategory.All)) {
                         options
-                          .getLogger()
-                          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, rate limiting active.");
+                            .getLogger()
+                            .log(
+                                SentryLevel.INFO,
+                                "SendCachedEnvelopeIntegration, rate limiting active.");
                         return;
                       }
 
                       if (sender == null) {
-                        options.getLogger().log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");
+                        options
+                            .getLogger()
+                            .log(
+                                SentryLevel.ERROR,
+                                "SendCachedEnvelopeIntegration factory is null.");
                         return;
                       }
 
