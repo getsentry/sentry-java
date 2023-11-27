@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
@@ -19,9 +18,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryDate
-import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
-import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.Span
 import io.sentry.SpanStatus
@@ -140,7 +137,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb is enabled, it registers callback`() {
+    fun `When ActivityLifecycleIntegration is registered, it registers activity callback`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
@@ -148,75 +145,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When activity lifecycle breadcrumb and tracing are disabled, it still registers callback`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-
-        sut.register(fixture.hub, fixture.options)
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `When activity lifecycle breadcrumb is disabled but tracing is enabled, it registers callback`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-        fixture.options.enableTracing = true
-
-        sut.register(fixture.hub, fixture.options)
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `When activity lifecycle breadcrumb is disabled and tracesSampleRate is set but tracing is disabled, it still registers callback`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-        fixture.options.tracesSampleRate = 1.0
-        fixture.options.enableTracing = false
-
-        sut.register(fixture.hub, fixture.options)
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `When activity lifecycle breadcrumb is disabled but tracing sample rate is enabled, it registers callback`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-        fixture.options.tracesSampleRate = 1.0
-
-        sut.register(fixture.hub, fixture.options)
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `When activity lifecycle breadcrumb is disabled but tracing sample callback is enabled, it registers callback`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-        fixture.options.tracesSampler = SentryOptions.TracesSamplerCallback { 1.0 }
-
-        sut.register(fixture.hub, fixture.options)
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `When activity lifecycle breadcrumb and tracing activity flag are disabled, its still registers callback`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableActivityLifecycleBreadcrumbs = false
-        fixture.options.tracesSampleRate = 1.0
-        fixture.options.tracesSampler = SentryOptions.TracesSamplerCallback { 1.0 }
-        fixture.options.isEnableAutoActivityLifecycleTracing = false
-
-        sut.register(fixture.hub, fixture.options)
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `When ActivityBreadcrumbsIntegration is closed, it should unregister the callback`() {
+    fun `When ActivityLifecycleIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
@@ -226,109 +155,13 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When ActivityBreadcrumbsIntegration is closed, it should close the ActivityFramesTracker`() {
+    fun `When ActivityLifecycleIntegration is closed, it should close the ActivityFramesTracker`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
         sut.close()
 
         verify(fixture.activityFramesTracker).stop()
-    }
-
-    @Test
-    fun `When breadcrumb is added, type and category should be set`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, fixture.bundle)
-
-        verify(fixture.hub).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("ui.lifecycle", it.category)
-                assertEquals("navigation", it.type)
-                assertEquals(SentryLevel.INFO, it.level)
-                // cant assert data, its not a public API
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `When activity is created, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, fixture.bundle)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
-    }
-
-    @Test
-    fun `When activity is started, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityStarted(activity)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
-    }
-
-    @Test
-    fun `When activity is resumed, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityResumed(activity)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
-    }
-
-    @Test
-    fun `When activity is paused, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityPaused(activity)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
-    }
-
-    @Test
-    fun `When activity is stopped, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityStopped(activity)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
-    }
-
-    @Test
-    fun `When activity is save instance, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivitySaveInstanceState(activity, fixture.bundle)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
-    }
-
-    @Test
-    fun `When activity is destroyed, it should add a breadcrumb`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityDestroyed(activity)
-
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test

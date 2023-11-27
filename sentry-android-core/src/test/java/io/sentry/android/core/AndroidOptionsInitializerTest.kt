@@ -412,6 +412,15 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `When given Context is not an Application class, do not add ActivityBreadcrumbsIntegration`() {
+        fixture.initSut(hasAppContext = false)
+
+        val actual = fixture.sentryOptions.integrations
+            .firstOrNull { it is ActivityBreadcrumbsIntegration }
+        assertNull(actual)
+    }
+
+    @Test
     fun `When given Context is not an Application class, do not add UserInteractionIntegration`() {
         fixture.initSut(hasAppContext = false)
 
