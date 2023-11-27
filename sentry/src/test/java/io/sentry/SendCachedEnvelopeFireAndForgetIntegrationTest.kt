@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.protocol.SdkVersion
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.RateLimiter
 import org.mockito.kotlin.any
@@ -33,10 +34,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
             options.sdkVersion = SdkVersion("test", "1.2.3")
         }
 
-        fun getSut(useImmediateExecutor: Boolean = true): SendCachedEnvelopeFireAndForgetIntegration {
-            if (useImmediateExecutor) {
-                options.executorService = ImmediateExecutorService()
-            }
+        fun getSut(): SendCachedEnvelopeFireAndForgetIntegration {
             return SendCachedEnvelopeFireAndForgetIntegration(callback)
         }
     }
@@ -97,7 +95,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "cache"
         fixture.options.executorService.close(0)
         whenever(fixture.callback.create(any(), any())).thenReturn(mock())
-        val sut = fixture.getSut(useImmediateExecutor = false)
+        val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?"), any())
     }
@@ -105,6 +103,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     @Test
     fun `registers for network connection changes`() {
         val connectionStatusProvider = mock<IConnectionStatusProvider>()
+        fixture.options.executorService = ImmediateExecutorService()
         fixture.options.connectionStatusProvider = connectionStatusProvider
         fixture.options.cacheDirPath = "cache"
 
@@ -135,6 +134,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         whenever(connectionStatusProvider.connectionStatus).thenReturn(
             IConnectionStatusProvider.ConnectionStatus.UNKNOWN
         )
+        fixture.options.executorService = ImmediateExecutorService()
         fixture.options.connectionStatusProvider = connectionStatusProvider
         fixture.options.cacheDirPath = "cache"
 
@@ -150,6 +150,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         whenever(connectionStatusProvider.connectionStatus).thenReturn(
             IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
         )
+        fixture.options.executorService = ImmediateExecutorService()
         fixture.options.connectionStatusProvider = connectionStatusProvider
         fixture.options.cacheDirPath = "cache"
 
@@ -206,6 +207,20 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
         verify(fixture.callback, never()).create(any(), any())
+    }
+
+    @Test
+    fun `when closed after register, does nothing`() {
+        val deferredExecutorService = DeferredExecutorService()
+        fixture.options.executorService = deferredExecutorService
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.sender, never()).send()
+        sut.close()
+
+        deferredExecutorService.runAll()
+        verify(fixture.sender, never()).send()
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {

@@ -9,6 +9,7 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.RateLimiter
 import io.sentry.util.LazyEvaluator
@@ -138,7 +139,7 @@ class SendCachedEnvelopeIntegrationTest {
 
     @Test
     fun `registers for network connection changes`() {
-        val sut = fixture.getSut(hasStartupCrashMarker = false)
+        val sut = fixture.getSut(hasStartupCrashMarker = false, mockExecutorService = ImmediateExecutorService())
 
         val connectionStatusProvider = mock<IConnectionStatusProvider>()
         fixture.options.connectionStatusProvider = connectionStatusProvider
@@ -164,7 +165,7 @@ class SendCachedEnvelopeIntegrationTest {
 
     @Test
     fun `when the network is not disconnected the factory is initialized`() {
-        val sut = fixture.getSut(hasStartupCrashMarker = false)
+        val sut = fixture.getSut(hasStartupCrashMarker = false, mockExecutorService = ImmediateExecutorService())
 
         val connectionStatusProvider = mock<IConnectionStatusProvider>()
         fixture.options.connectionStatusProvider = connectionStatusProvider
@@ -219,6 +220,19 @@ class SendCachedEnvelopeIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         // no factory call should be done if there's rate limiting active
+        verify(fixture.sender, never()).send()
+    }
+
+    @Test
+    fun `when closed after register, does nothing`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(mockExecutorService = deferredExecutorService)
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.sender, never()).send()
+        sut.close()
+
+        deferredExecutorService.runAll()
         verify(fixture.sender, never()).send()
     }
 }
