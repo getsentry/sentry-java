@@ -421,40 +421,51 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
-    Objects.requireNonNull(parentSpanId, "parentSpanId is required");
-    Objects.requireNonNull(operation, "operation is required");
-    cancelIdleTimer();
-    final Span span =
+    if (children.size() < hub.getOptions().getMaxSpans()) {
+      Objects.requireNonNull(parentSpanId, "parentSpanId is required");
+      Objects.requireNonNull(operation, "operation is required");
+      cancelIdleTimer();
+      final Span span =
         new Span(
-            root.getTraceId(),
-            parentSpanId,
-            this,
-            operation,
-            this.hub,
-            timestamp,
-            spanOptions,
-            __ -> {
-              final FinishStatus finishStatus = this.finishStatus;
-              if (transactionOptions.getIdleTimeout() != null) {
-                // if it's an idle transaction, no matter the status, we'll reset the timeout here
-                // so the transaction will either idle and finish itself, or a new child will be
-                // added and we'll wait for it again
-                if (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished()) {
-                  scheduleFinish();
-                }
-              } else if (finishStatus.isFinishing) {
-                finish(finishStatus.spanStatus);
+          root.getTraceId(),
+          parentSpanId,
+          this,
+          operation,
+          this.hub,
+          timestamp,
+          spanOptions,
+          __ -> {
+            final FinishStatus finishStatus = this.finishStatus;
+            if (transactionOptions.getIdleTimeout() != null) {
+              // if it's an idle transaction, no matter the status, we'll reset the timeout here
+              // so the transaction will either idle and finish itself, or a new child will be
+              // added and we'll wait for it again
+              if (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished()) {
+                scheduleFinish();
               }
-            });
-    span.setDescription(description);
-    span.setData(SpanDataConvention.THREAD_ID, String.valueOf(Thread.currentThread().getId()));
-    span.setData(
+            } else if (finishStatus.isFinishing) {
+              finish(finishStatus.spanStatus);
+            }
+          });
+      span.setDescription(description);
+      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(Thread.currentThread().getId()));
+      span.setData(
         SpanDataConvention.THREAD_NAME,
         hub.getOptions().getMainThreadChecker().isMainThread()
-            ? "main"
-            : Thread.currentThread().getName());
-    this.children.add(span);
-    return span;
+          ? "main"
+          : Thread.currentThread().getName());
+      this.children.add(span);
+      return span;
+    } else {
+      hub.getOptions()
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+          operation,
+          description);
+      return NoOpSpan.getInstance();
+    }
   }
 
   @Override
