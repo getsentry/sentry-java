@@ -9,7 +9,9 @@ Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes.
 - Multiple improvements to reduce probability of the SDK causing ANRs
 - New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps 
 
-**Note: The v7 version of the Android/Java SDK requires a self-hosted version of Sentry 22.12.0 or higher. If you are using a version of [self-hosted Sentry](https://develop.sentry.dev/self-hosted/) (aka onpremise) older than `22.12.0` then you will need to [upgrade](https://develop.sentry.dev/self-hosted/releases/). If you're using `sentry.io` no action needed.**
+## Sentry Self-hosted Compatibility
+
+This SDK version is compatible with a self-hosted version of Sentry `22.12.0` or higher. If you are using an older version of [self-hosted Sentry](https://develop.sentry.dev/self-hosted/) (aka onpremise), you will need to [upgrade](https://develop.sentry.dev/self-hosted/releases/). If you're using `sentry.io` no action is required.
 
 ## Sentry Integrations Version Compatibility
 
@@ -38,7 +40,8 @@ Similarly, if you have a Sentry SDK (e.g. `sentry-android-core`) dependency on o
 ## Behavioural Changes
 
 - Android only: `Sentry.getSpan()` returns the root span/transaction instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
-- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+- Capture failed HTTP and GraphQL (Apollo) requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+    - This can increase your event consumption and may affect your quota, because we will report failed network requests as Sentry events by default, if you're using the `sentry-android-okhttp` or `sentry-apollo-3` integrations. You can customize what errors you want/don't want to have reported for [OkHttp](https://docs.sentry.io/platforms/android/integrations/okhttp#http-client-errors) and [Apollo3](https://docs.sentry.io/platforms/android/integrations/apollo3#graphql-client-errors) respectively.
 - Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
 - Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
     - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
