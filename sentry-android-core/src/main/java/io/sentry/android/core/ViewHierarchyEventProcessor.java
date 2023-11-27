@@ -15,6 +15,7 @@ import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchy;
@@ -240,10 +241,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor, Integr
   private static ViewHierarchyNode viewToNode(@NotNull final View view) {
     @NotNull final ViewHierarchyNode node = new ViewHierarchyNode();
 
-    @Nullable String className = view.getClass().getCanonicalName();
-    if (className == null) {
-      className = view.getClass().getSimpleName();
-    }
+    @Nullable String className = ClassUtil.getClassName(view);
     node.setType(className);
 
     try {

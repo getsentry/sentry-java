@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.TransactionNameSource;
@@ -32,6 +33,9 @@ public final class Scope {
 
   /** Scope's user */
   private @Nullable User user;
+
+  /** Scope's screen */
+  private @Nullable String screen;
 
   /** Scope's request */
   private @Nullable Request request;
@@ -97,6 +101,7 @@ public final class Scope {
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
+    this.screen = scope.screen;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -260,6 +265,45 @@ public final class Scope {
   }
 
   /**
+   * Returns the Scope's current screen, previously set by {@link Scope#setScreen(String)}
+   *
+   * @return the name of the screen
+   */
+  @ApiStatus.Internal
+  public @Nullable String getScreen() {
+    return screen;
+  }
+
+  /**
+   * Sets the Scope's current screen
+   *
+   * @param screen the name of the screen
+   */
+  @ApiStatus.Internal
+  public void setScreen(final @Nullable String screen) {
+    this.screen = screen;
+
+    final @NotNull Contexts contexts = getContexts();
+    @Nullable App app = contexts.getApp();
+    if (app == null) {
+      app = new App();
+      contexts.setApp(app);
+    }
+
+    if (screen == null) {
+      app.setViewNames(null);
+    } else {
+      final @NotNull List<String> viewNames = new ArrayList<>(1);
+      viewNames.add(screen);
+      app.setViewNames(viewNames);
+    }
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
+  }
+
+  /**
    * Returns the Scope's request
    *
    * @return the request
@@ -349,7 +393,7 @@ public final class Scope {
   }
 
   /**
-   * Adds a breadcrumb to the breadcrumbs queue It also executes the BeforeBreadcrumb callback if
+   * Adds a breadcrumb to the breadcrumbs queue. It also executes the BeforeBreadcrumb callback if
    * set
    *
    * @param breadcrumb the breadcrumb
@@ -426,6 +470,7 @@ public final class Scope {
     level = null;
     user = null;
     request = null;
+    screen = null;
     fingerprint.clear();
     clearBreadcrumbs();
     tags.clear();
@@ -692,7 +737,7 @@ public final class Scope {
     return cloneSession;
   }
 
-  /** the IWithSession callback */
+  /** The IWithSession callback */
   interface IWithSession {
 
     /**
@@ -740,14 +785,14 @@ public final class Scope {
   /** The SessionPair class */
   static final class SessionPair {
 
-    /** the previous session if exists */
+    /** The previous session if exists */
     private final @Nullable Session previous;
 
     /** The current Session */
     private final @NotNull Session current;
 
     /**
-     * The SessionPar ctor
+     * The SessionPair ctor
      *
      * @param current the current session
      * @param previous the previous sessions if exists or null
@@ -758,7 +803,7 @@ public final class Scope {
     }
 
     /**
-     * REturns the previous session
+     * Returns the previous session
      *
      * @return the previous sessions if exists or null
      */
@@ -835,7 +880,7 @@ public final class Scope {
     }
   }
 
-  /** the IWithTransaction callback */
+  /** The IWithTransaction callback */
   @ApiStatus.Internal
   public interface IWithTransaction {
 
