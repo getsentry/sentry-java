@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-Version 7 of the Sentry Java/Android SDK brings a variety of features and fixes. The most notable changes are:
+Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 - Bumping `minSdk` level to 19 (Android 4.4)
 - The SDK will now listen to connectivity changes and try to re-upload cached events when internet connection is re-established additionally to uploading events on app restart 
 - `Sentry.getSpan` now returns the root transaction, which should improve the span hierarchy and make it leaner
