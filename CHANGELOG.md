@@ -5,6 +5,7 @@
 ### Features
 
 - (Internal, Experimental) Attach spans for Application, ContentProvider, and Activities to app-start ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
+- (Internal) Extract Activity Breadcrumbs generation into own Integration ([#3064](https://github.com/getsentry/sentry-java/pull/3064))
 
 ## 6.34.0
 
