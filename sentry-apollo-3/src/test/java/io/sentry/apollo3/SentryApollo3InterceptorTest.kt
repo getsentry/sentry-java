@@ -61,7 +61,7 @@ class SentryApollo3InterceptorTest {
             whenever(it.options).thenReturn(options)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
         }
-        private var httpInterceptor = SentryApollo3HttpInterceptor(hub)
+        private var httpInterceptor = SentryApollo3HttpInterceptor(hub, captureFailedRequests = false)
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -93,7 +93,7 @@ class SentryApollo3InterceptorTest {
             )
 
             if (beforeSpan != null) {
-                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan)
+                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan, captureFailedRequests = false)
             }
 
             val builder = ApolloClient.Builder()
