@@ -271,6 +271,42 @@ class SentryTest {
     }
 
     @Test
+    fun `only old profiles in profilingTracesDirPath should be cleared when profiling is enabled`() {
+        val tempPath = getTempPath()
+        val options = SentryOptions().also {
+            it.dsn = dsn
+            it.cacheDirPath = tempPath
+        }
+        val dir = File(options.profilingTracesDirPath!!)
+        val oldProfile = File(dir, "oldProfile")
+        val newProfile = File(dir, "newProfile")
+
+        // Create all files
+        dir.mkdirs()
+        oldProfile.createNewFile()
+        newProfile.createNewFile()
+        // Make the old profile look like it's created earlier
+        oldProfile.setLastModified(System.currentTimeMillis() - 10000)
+        // Make the new profile look like it's created later
+        newProfile.setLastModified(System.currentTimeMillis() + 10000)
+
+        // Assert both file exist
+        assertTrue(oldProfile.exists())
+        assertTrue(newProfile.exists())
+
+        Sentry.init {
+            it.dsn = dsn
+            it.profilesSampleRate = 1.0
+            it.cacheDirPath = tempPath
+            it.executorService = ImmediateExecutorService()
+        }
+
+        // Assert only the new profile exists
+        assertFalse(oldProfile.exists())
+        assertTrue(newProfile.exists())
+    }
+
+    @Test
     fun `profilingTracesDirPath should not be created and cleared when profiling is disabled`() {
         val tempPath = getTempPath()
         var sentryOptions: SentryOptions? = null

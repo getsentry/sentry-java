@@ -40,20 +40,21 @@ final class SendCachedEnvelopeIntegration implements Integration {
       return;
     }
 
-    final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
-        factory.create(hub, androidOptions);
-
-    if (sender == null) {
-      androidOptions.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
-      return;
-    }
-
     try {
       Future<?> future =
           androidOptions
               .getExecutorService()
               .submit(
                   () -> {
+                    final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
+                        factory.create(hub, androidOptions);
+
+                    if (sender == null) {
+                      androidOptions
+                          .getLogger()
+                          .log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+                      return;
+                    }
                     try {
                       sender.send();
                     } catch (Throwable e) {
