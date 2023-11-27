@@ -5,7 +5,7 @@
 ### Fixes
 
 - Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
-- Move Integrations registration to background on init ([#3043](https://github.com/getsentry/sentry-java/pull/3043))
+  - Move Integrations registration to background on init ([#3043](https://github.com/getsentry/sentry-java/pull/3043))
 
 ## 6.34.0
 
