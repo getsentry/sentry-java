@@ -31,6 +31,8 @@ final class SendCachedEnvelopeIntegration
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
   private @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender;
+  private final AtomicBoolean isInitialized = new AtomicBoolean(false);
+  private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
@@ -53,16 +55,12 @@ final class SendCachedEnvelopeIntegration
       return;
     }
 
-    connectionStatusProvider = options.getConnectionStatusProvider();
-    connectionStatusProvider.addConnectionStatusObserver(this);
-
-    sender = factory.create(hub, options);
-
     sendCachedEnvelopes(hub, this.options);
   }
 
   @Override
   public void close() throws IOException {
+    isClosed.set(true);
     if (connectionStatusProvider != null) {
       connectionStatusProvider.removeConnectionStatusObserver(this);
     }
@@ -79,44 +77,48 @@ final class SendCachedEnvelopeIntegration
   @SuppressWarnings({"NullAway"})
   private synchronized void sendCachedEnvelopes(
       final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
-
-    if (connectionStatusProvider != null
-        && connectionStatusProvider.getConnectionStatus()
-            == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
-      options.getLogger().log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
-      return;
-    }
-
-    // in case there's rate limiting active, skip processing
-    final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
-    if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
-      options
-          .getLogger()
-          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, rate limiting active.");
-      return;
-    }
-
-    if (sender == null) {
-      options.getLogger().log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");
-      return;
-    }
-
     try {
       final Future<?> future =
           options
               .getExecutorService()
               .submit(
                   () -> {
-                    final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
-                        factory.create(hub, androidOptions);
-
-                    if (sender == null) {
-                      androidOptions
-                          .getLogger()
-                          .log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
-                      return;
-                    }
                     try {
+                      if (isClosed.get()) {
+                        options
+                          .getLogger()
+                          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, not trying to send after closing.");
+                        return;
+                      }
+
+                      if (!isInitialized.getAndSet(true)) {
+                        connectionStatusProvider = options.getConnectionStatusProvider();
+                        connectionStatusProvider.addConnectionStatusObserver(this);
+
+                        sender = factory.create(hub, options);
+                      }
+
+                      if (connectionStatusProvider != null
+                        && connectionStatusProvider.getConnectionStatus()
+                        == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+                        options.getLogger().log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
+                        return;
+                      }
+
+                      // in case there's rate limiting active, skip processing
+                      final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+                      if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+                        options
+                          .getLogger()
+                          .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, rate limiting active.");
+                        return;
+                      }
+
+                      if (sender == null) {
+                        options.getLogger().log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");
+                        return;
+                      }
+
                       sender.send();
                     } catch (Throwable e) {
                       options
