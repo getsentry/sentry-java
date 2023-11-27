@@ -6,7 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.Hub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -143,7 +143,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope correctly creates top level map`() {
         val options = SentryAndroidOptions()
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.user = User().apply {
             name = "John"
@@ -183,7 +183,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope returns empty map in case scope serialization fails`() {
         val options = SentryAndroidOptions()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
 
         whenever(scope.contexts).thenReturn(Contexts())
         whenever(scope.user).thenThrow(IllegalStateException("something is off"))
@@ -195,7 +195,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope provides fallback user if none is set`() {
         val options = SentryAndroidOptions()
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.user = null
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
@@ -205,7 +205,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope does not override user-id`() {
         val options = SentryAndroidOptions()
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.user = User().apply { id = "abc" }
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
@@ -215,7 +215,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope provides fallback app data if none is set`() {
         val options = SentryAndroidOptions()
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.setContexts("app", null)
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
@@ -286,7 +286,7 @@ class InternalSentrySdkTest {
         assertEquals(Session.State.Crashed, capturedSession.status)
 
         // and the local session should be marked as crashed too
-        val scopeRef = AtomicReference<Scope>()
+        val scopeRef = AtomicReference<IScope>()
         Sentry.configureScope { scope ->
             scopeRef.set(scope)
         }

@@ -3,8 +3,8 @@ package io.sentry.android.core;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import io.sentry.Hint;
+import io.sentry.IScope;
 import io.sentry.ISpan;
-import io.sentry.Scope;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
@@ -77,8 +77,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *
-   * The transaction is automatically bound to the {@link Scope}, but only if there's no transaction
-   * already bound to the Scope.
+   * The transaction is automatically bound to the {@link IScope}, but only if there's no
+   * transaction already bound to the Scope.
    */
   private boolean enableAutoActivityLifecycleTracing = true;
 
@@ -192,7 +192,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * reporting only the latest one.
    *
    * <p>These events do not affect ANR rate nor are they enriched with additional information from
-   * {@link Scope} like breadcrumbs. The events are reported with 'HistoricalAppExitInfo' {@link
+   * {@link IScope} like breadcrumbs. The events are reported with 'HistoricalAppExitInfo' {@link
    * Mechanism}.
    */
   private boolean reportHistoricalAnrs = false;

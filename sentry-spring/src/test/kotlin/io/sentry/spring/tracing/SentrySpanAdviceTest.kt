@@ -1,7 +1,7 @@
 package io.sentry.spring.tracing
 
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
@@ -45,7 +45,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when class is annotated with @SentrySpan, every method call attaches span to existing transaction`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val tx = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         scope.setTransaction(tx)
 
@@ -60,7 +60,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when class is annotated with @SentrySpan with operation set, every method call attaches span to existing transaction`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val tx = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         scope.setTransaction(tx)
 
@@ -74,7 +74,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when method is annotated with @SentrySpan with properties set, attaches span to existing transaction`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val tx = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         scope.setTransaction(tx)
 
@@ -88,7 +88,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when method is annotated with @SentrySpan without properties set, attaches span to existing transaction and sets Span description as className dot methodName`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val tx = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         scope.setTransaction(tx)
 
@@ -102,7 +102,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when method is annotated with @SentrySpan and returns, attached span has status OK`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val tx = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         scope.setTransaction(tx)
 
@@ -113,7 +113,7 @@ class SentrySpanAdviceTest {
 
     @Test
     fun `when method is annotated with @SentrySpan and throws exception, attached span has throwable set and INTERNAL_ERROR status`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val tx = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         scope.setTransaction(tx)
 

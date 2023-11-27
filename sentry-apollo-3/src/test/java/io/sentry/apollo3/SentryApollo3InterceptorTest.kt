@@ -10,8 +10,8 @@ import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.ITransaction
-import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
@@ -54,7 +54,7 @@ class SentryApollo3InterceptorTest {
                 setTracePropagationTargets(listOf(DEFAULT_PROPAGATION_TARGETS))
                 sdkVersion = SdkVersion("test", "1.2.3")
             }
-        val scope = Scope(options)
+        val scope = IScope(options)
         val hub = mock<IHub>().also {
             whenever(it.options).thenReturn(options)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())

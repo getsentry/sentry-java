@@ -7,6 +7,7 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -50,7 +51,7 @@ class SentryOkHttpInterceptorTest {
         val server = MockWebServer()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
-        lateinit var scope: Scope
+        lateinit var scope: IScope
 
         @SuppressWarnings("LongParameterList")
         fun getSut(

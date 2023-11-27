@@ -1,26 +1,19 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
+import io.sentry.protocol.Request;
+import io.sentry.protocol.User;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import io.sentry.protocol.App;
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Request;
-import io.sentry.protocol.TransactionNameSource;
-import io.sentry.protocol.User;
-import io.sentry.util.CollectionUtils;
-
 public interface IScope {
-  @Nullable SentryLevel getLevel();
+  @Nullable
+  SentryLevel getLevel();
 
   /**
    * Sets the Scope's SentryLevel Level from scope exceptionally take precedence over the event
@@ -34,7 +27,8 @@ public interface IScope {
    *
    * @return the transaction
    */
-  @Nullable String getTransactionName();
+  @Nullable
+  String getTransactionName();
 
   /**
    * Sets the Scope's transaction.
@@ -63,7 +57,8 @@ public interface IScope {
    *
    * @return the user
    */
-  @Nullable User getUser();
+  @Nullable
+  User getUser();
 
   /**
    * Sets the Scope's user
@@ -73,12 +68,13 @@ public interface IScope {
   void setUser(final @Nullable User user);
 
   /**
-   * Returns the Scope's current screen, previously set by {@link Scope#setScreen(String)}
+   * Returns the Scope's current screen, previously set by {@link IScope#setScreen(String)}
    *
    * @return the name of the screen
    */
   @ApiStatus.Internal
-  @Nullable String getScreen();
+  @Nullable
+  String getScreen();
 
   /**
    * Sets the Scope's current screen
@@ -93,7 +89,8 @@ public interface IScope {
    *
    * @return the request
    */
-  @Nullable Request getRequest();
+  @Nullable
+  Request getRequest();
 
   /**
    * Sets the Scope's request
@@ -101,7 +98,6 @@ public interface IScope {
    * @param request the request
    */
   void setRequest(final @Nullable Request request);
-
 
   /**
    * Returns the Scope's fingerprint list
@@ -127,7 +123,6 @@ public interface IScope {
   @ApiStatus.Internal
   @NotNull
   Queue<Breadcrumb> getBreadcrumbs();
-
 
   /**
    * Adds a breadcrumb to the breadcrumbs queue. It also executes the BeforeBreadcrumb callback if
@@ -170,7 +165,8 @@ public interface IScope {
    */
   @ApiStatus.Internal
   @SuppressWarnings("NullAway") // tags are never null
-  @NotNull Map<String, String> getTags();
+  @NotNull
+  Map<String, String> getTags();
 
   /**
    * Sets a tag to Scope's tags
@@ -216,7 +212,8 @@ public interface IScope {
    *
    * @return the contexts
    */
-  @NotNull Contexts getContexts();
+  @NotNull
+  Contexts getContexts();
 
   /**
    * Sets the Scope's contexts
@@ -300,7 +297,6 @@ public interface IScope {
   /** Clear all attachments. */
   void clearAttachments();
 
-
   /**
    * Returns the Scope's event processors
    *
@@ -333,7 +329,6 @@ public interface IScope {
   @Nullable
   Scope.SessionPair startSession();
 
-
   /**
    * Ends a session, unbinds it from the scope and returns it.
    *
@@ -354,17 +349,17 @@ public interface IScope {
   SentryOptions getOptions();
 
   @ApiStatus.Internal
-  @Nullable Session getSession();
+  @Nullable
+  Session getSession();
 
   @ApiStatus.Internal
   void setPropagationContext(final @NotNull PropagationContext propagationContext);
 
   @ApiStatus.Internal
-  @NotNull PropagationContext getPropagationContext();
+  @NotNull
+  PropagationContext getPropagationContext();
 
   @ApiStatus.Internal
-  @NotNull PropagationContext withPropagationContext(
-    final @NotNull Scope.IWithPropagationContext callback);
-
-
+  @NotNull
+  PropagationContext withPropagationContext(final @NotNull Scope.IWithPropagationContext callback);
 }

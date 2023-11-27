@@ -3,7 +3,7 @@ package io.sentry.spring.boot.jakarta
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -42,7 +42,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val transaction: SentryTracer
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
         val url = mockServer.url("/test/123").toString()
-        val scope = Scope(sentryOptions)
+        val scope = IScope(sentryOptions)
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)

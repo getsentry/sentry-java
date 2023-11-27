@@ -2,7 +2,7 @@ package io.sentry.spring.jakarta
 
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.RequestSize.ALWAYS
@@ -39,11 +39,11 @@ class SentrySpringFilterTest {
         val hub = mock<IHub>()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
-        lateinit var scope: Scope
+        lateinit var scope: IScope
         lateinit var request: HttpServletRequest
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
-            scope = Scope(options)
+            scope = IScope(options)
             whenever(hub.options).thenReturn(options)
             whenever(hub.isEnabled).thenReturn(true)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())

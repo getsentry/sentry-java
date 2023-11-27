@@ -3,7 +3,7 @@ package io.sentry.spring.boot
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -37,7 +37,7 @@ import kotlin.test.assertNull
 class SentrySpanWebClientCustomizerTest {
     class Fixture {
         lateinit var sentryOptions: SentryOptions
-        lateinit var scope: Scope
+        lateinit var scope: IScope
         val hub = mock<IHub>()
         var mockServer = MockWebServer()
         lateinit var transaction: SentryTracer
@@ -52,7 +52,7 @@ class SentrySpanWebClientCustomizerTest {
                 }
                 dsn = "http://key@localhost/proj"
             }
-            scope = Scope(sentryOptions)
+            scope = IScope(sentryOptions)
             whenever(hub.options).thenReturn(sentryOptions)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(
                 any()
@@ -63,7 +63,7 @@ class SentrySpanWebClientCustomizerTest {
             val webClient = webClientBuilder.build()
 
             if (isTransactionActive) {
-                val scope = Scope(sentryOptions)
+                val scope = IScope(sentryOptions)
                 scope.transaction = transaction
                 whenever(hub.span).thenReturn(transaction)
             }

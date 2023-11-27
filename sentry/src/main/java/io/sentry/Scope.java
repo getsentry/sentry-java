@@ -92,7 +92,7 @@ public final class Scope implements IScope {
   }
 
   @ApiStatus.Internal
-  public Scope(final @NotNull Scope scope) {
+  public Scope(final @NotNull IScope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
     this.session = scope.session;
@@ -273,7 +273,7 @@ public final class Scope implements IScope {
   }
 
   /**
-   * Returns the Scope's current screen, previously set by {@link Scope#setScreen(String)}
+   * Returns the Scope's current screen, previously set by {@link IScope#setScreen(String)}
    *
    * @return the name of the screen
    */
@@ -706,7 +706,7 @@ public final class Scope implements IScope {
    * @return the attachments
    */
   @NotNull
-  List<Attachment> getAttachments() {
+  public List<Attachment> getAttachments() {
     return new CopyOnWriteArrayList<>(attachments);
   }
 
@@ -743,7 +743,7 @@ public final class Scope implements IScope {
    * @return the event processors list
    */
   @NotNull
-  List<EventProcessor> getEventProcessors() {
+  public List<EventProcessor> getEventProcessors() {
     return eventProcessors;
   }
 
@@ -764,7 +764,7 @@ public final class Scope implements IScope {
    * @return a clone of the Session after executing the callback and mutating the session
    */
   @Nullable
-  Session withSession(final @NotNull IWithSession sessionCallback) {
+  public Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     synchronized (sessionLock) {
       sessionCallback.accept(session);
@@ -793,7 +793,7 @@ public final class Scope implements IScope {
    * @return the SessionPair with the previous closed session if exists and the current session
    */
   @Nullable
-  SessionPair startSession() {
+  public SessionPair startSession() {
     Session previousSession;
     SessionPair pair = null;
     synchronized (sessionLock) {
@@ -866,7 +866,7 @@ public final class Scope implements IScope {
    * @return the previous session
    */
   @Nullable
-  Session endSession() {
+  public Session endSession() {
     Session previousSession = null;
     synchronized (sessionLock) {
       if (session != null) {
@@ -892,7 +892,7 @@ public final class Scope implements IScope {
   }
 
   @NotNull
-  SentryOptions getOptions() {
+  public SentryOptions getOptions() {
     return options;
   }
 

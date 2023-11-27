@@ -25,7 +25,7 @@ class ScopeTest {
 
     @Test
     fun `copying scope wont have the same references`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val level = SentryLevel.DEBUG
         scope.level = level
 
@@ -74,7 +74,7 @@ class ScopeTest {
         scope.setContexts("key", "value")
         scope.addAttachment(Attachment("file name"))
 
-        val clone = Scope(scope)
+        val clone = IScope(scope)
 
         assertNotNull(clone)
         assertNotSame(scope, clone)
@@ -91,7 +91,7 @@ class ScopeTest {
 
     @Test
     fun `copying scope will have the same values`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val level = SentryLevel.DEBUG
         scope.level = level
 
@@ -124,7 +124,7 @@ class ScopeTest {
 
         scope.setContexts("contexts", "contexts")
 
-        val clone = Scope(scope)
+        val clone = IScope(scope)
 
         assertEquals(SentryLevel.DEBUG, clone.level)
 
@@ -154,7 +154,7 @@ class ScopeTest {
 
     @Test
     fun `copying scope and changing the original values wont change the clone values`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val level = SentryLevel.DEBUG
         scope.level = level
 
@@ -183,7 +183,7 @@ class ScopeTest {
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
 
-        val clone = Scope(scope)
+        val clone = IScope(scope)
 
         scope.level = SentryLevel.FATAL
         user.id = "456"
@@ -241,7 +241,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             maxBreadcrumbs = 10000
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
         for (i in 0 until options.maxBreadcrumbs) {
             scope.addBreadcrumb(Breadcrumb.info("item"))
         }
@@ -255,7 +255,7 @@ class ScopeTest {
 
         // clone in the meantime
         while (scope.breadcrumbs.isNotEmpty()) {
-            Scope(scope)
+            IScope(scope)
         }
 
         // expect no exception to be thrown ¯\_(ツ)_/¯
@@ -263,7 +263,7 @@ class ScopeTest {
 
     @Test
     fun `clear scope resets scope to default state`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         scope.level = SentryLevel.WARNING
         scope.setTransaction(SentryTracer(TransactionContext("", "op"), NoOpHub.getInstance()))
         scope.user = User()
@@ -297,7 +297,7 @@ class ScopeTest {
             setBeforeBreadcrumb { breadcrumb, _ -> breadcrumb }
         }
 
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.addBreadcrumb(Breadcrumb())
         assertEquals(1, scope.breadcrumbs.count())
     }
@@ -308,7 +308,7 @@ class ScopeTest {
             setBeforeBreadcrumb { _, _ -> null }
         }
 
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.addBreadcrumb(Breadcrumb())
         assertEquals(0, scope.breadcrumbs.count())
     }
@@ -321,7 +321,7 @@ class ScopeTest {
             setBeforeBreadcrumb { _, _ -> throw exception }
         }
 
-        val scope = Scope(options)
+        val scope = IScope(options)
         val actual = Breadcrumb()
         scope.addBreadcrumb(actual)
 
@@ -332,7 +332,7 @@ class ScopeTest {
     fun `when adding breadcrumb, executeBreadcrumb wont be executed as its not set, but it will be added`() {
         val options = SentryOptions()
 
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.addBreadcrumb(Breadcrumb())
         assertEquals(1, scope.breadcrumbs.count())
     }
@@ -340,7 +340,7 @@ class ScopeTest {
     @Test
     fun `when adding eventProcessor, eventProcessor should be in the list`() {
         val processor = CustomEventProcessor()
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         scope.addEventProcessor(processor)
         assertEquals(processor, scope.eventProcessors.first())
     }
@@ -354,7 +354,7 @@ class ScopeTest {
         options.environment = "env"
         val user = User()
 
-        val scope = Scope(options)
+        val scope = IScope(options)
         scope.user = user
 
         val sessionPair = scope.startSession()
@@ -372,7 +372,7 @@ class ScopeTest {
             release = "0.0.1"
         }
 
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.startSession()
         val session = scope.endSession()
@@ -384,7 +384,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val session = scope.endSession()
         assertNull(session)
@@ -395,7 +395,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.startSession()
         scope.withSession {
@@ -408,7 +408,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.withSession {
             assertNull(it)
@@ -420,7 +420,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -433,7 +433,7 @@ class ScopeTest {
     @Test
     fun `when release is not set, startSession returns null`() {
         val options = SentryOptions()
-        val scope = Scope(options)
+        val scope = IScope(options)
         assertNull(scope.startSession())
     }
 
@@ -442,7 +442,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -464,7 +464,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -486,7 +486,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -507,7 +507,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -528,7 +528,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -547,7 +547,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -568,7 +568,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -590,7 +590,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val user = User()
         scope.user = user
@@ -603,7 +603,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val breadcrumb = Breadcrumb()
         scope.addBreadcrumb(breadcrumb)
@@ -625,7 +625,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         val breadcrumb = Breadcrumb()
         scope.addBreadcrumb(breadcrumb)
@@ -641,7 +641,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.setTag("a", "b")
         verify(observer).setTag(eq("a"), eq("b"))
@@ -658,7 +658,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.setTag("a", "b")
         assertFalse(scope.tags.isEmpty())
@@ -674,7 +674,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.setExtra("a", "b")
         verify(observer).setExtra(eq("a"), eq("b"))
@@ -691,7 +691,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.setExtra("a", "b")
         assertFalse(scope.extras.isEmpty())
@@ -707,7 +707,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.level = WARNING
         verify(observer).setLevel(eq(WARNING))
@@ -719,7 +719,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.setTransaction("main")
         verify(observer).setTransaction(eq("main"))
@@ -731,7 +731,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.transaction = mock {
             whenever(mock.name).thenReturn("main")
@@ -747,7 +747,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.transaction = null
         verify(observer).setTransaction(null)
@@ -760,7 +760,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.transaction = mock {
             whenever(mock.name).thenReturn("main")
@@ -780,7 +780,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.request = Request().apply { url = "https://google.com" }
         verify(observer).setRequest(argThat { url == "https://google.com" })
@@ -792,7 +792,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         scope.fingerprint = listOf("finger", "print")
         verify(observer).setFingerprint(
@@ -808,7 +808,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             addScopeObserver(observer)
         }
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         data class Obj(val stuff: Int)
         scope.setContexts("test", Obj(3))
@@ -821,7 +821,7 @@ class ScopeTest {
 
     @Test
     fun `Scope getTransaction returns the transaction if there is no active span`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
         assertEquals(transaction, scope.span)
@@ -829,7 +829,7 @@ class ScopeTest {
 
     @Test
     fun `Scope getTransaction returns the current span if there is an unfinished span`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
         val span = transaction.startChild("op")
@@ -838,7 +838,7 @@ class ScopeTest {
 
     @Test
     fun `Scope getTransaction returns the current span if there is a finished span`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
         val span = transaction.startChild("op")
@@ -848,7 +848,7 @@ class ScopeTest {
 
     @Test
     fun `Scope getTransaction returns the latest span if there is a list of active span`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
         val span = transaction.startChild("op")
@@ -858,7 +858,7 @@ class ScopeTest {
 
     @Test
     fun `Scope setTransaction sets transaction name`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
         scope.setTransaction("new-name")
@@ -870,7 +870,7 @@ class ScopeTest {
 
     @Test
     fun `Scope setTransaction with null does not clear transaction`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
         scope.callMethod("setTransaction", String::class.java, null)
@@ -880,19 +880,19 @@ class ScopeTest {
 
     @Test
     fun `attachments are thread safe`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         assertTrue(scope.attachments is CopyOnWriteArrayList)
 
         scope.clear()
         assertTrue(scope.attachments is CopyOnWriteArrayList)
 
-        val cloned = Scope(scope)
+        val cloned = IScope(scope)
         assertTrue(cloned.attachments is CopyOnWriteArrayList)
     }
 
     @Test
     fun `getAttachments returns new instance`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         scope.addAttachment(Attachment(""))
 
         assertNotSame(
@@ -904,7 +904,7 @@ class ScopeTest {
 
     @Test
     fun `clearAttachments clears all attachments`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         scope.addAttachment(Attachment(""))
         scope.addAttachment(Attachment(""))
 
@@ -915,7 +915,7 @@ class ScopeTest {
 
     @Test
     fun `setting null fingerprint do not overwrite current value`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         // sanity check
         assertNotNull(scope.fingerprint)
 
@@ -926,7 +926,7 @@ class ScopeTest {
 
     @Test
     fun `when transaction is not started, sets transaction name on the field`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         scope.setTransaction("transaction-name")
         assertEquals("transaction-name", scope.transactionName)
         assertNull(scope.transaction)
@@ -934,7 +934,7 @@ class ScopeTest {
 
     @Test
     fun `when transaction is started, sets transaction name on the transaction object`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val sentryTransaction =
             SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
         scope.transaction = sentryTransaction
@@ -947,7 +947,7 @@ class ScopeTest {
 
     @Test
     fun `when transaction is set after transaction name is set, clearing transaction does not bring back old transaction name`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         scope.setTransaction("transaction-a")
         val sentryTransaction =
             SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
@@ -959,7 +959,7 @@ class ScopeTest {
 
     @Test
     fun `withTransaction returns the current Transaction bound to the Scope`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
         val sentryTransaction =
             SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
         scope.setTransaction(sentryTransaction)
@@ -971,7 +971,7 @@ class ScopeTest {
 
     @Test
     fun `withTransaction returns null if no transaction bound to the Scope`() {
-        val scope = Scope(SentryOptions())
+        val scope = IScope(SentryOptions())
 
         scope.withTransaction {
             assertNull(it)
@@ -980,7 +980,7 @@ class ScopeTest {
 
     @Test
     fun `when setFingerprints receives immutable list as an argument, its still possible to add more fingerprints`() {
-        val scope = Scope(SentryOptions()).apply {
+        val scope = IScope(SentryOptions()).apply {
             fingerprint = listOf("a", "b")
             fingerprint.add("c")
         }
@@ -991,7 +991,7 @@ class ScopeTest {
 
     @Test
     fun `when setting the screen, it's stored in the app context as well`() {
-        val scope = Scope(SentryOptions()).apply {
+        val scope = IScope(SentryOptions()).apply {
             screen = "MainActivity"
         }
         assertEquals(listOf("MainActivity"), scope.contexts.app!!.viewNames)
@@ -1003,7 +1003,7 @@ class ScopeTest {
         val observer = mock<IScopeObserver>()
         options.addScopeObserver(observer)
 
-        Scope(options).apply {
+        IScope(options).apply {
             screen = "MainActivity"
         }
         verify(observer).setContexts(

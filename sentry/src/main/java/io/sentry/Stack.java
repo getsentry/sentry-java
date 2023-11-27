@@ -11,12 +11,12 @@ final class Stack {
   static final class StackItem {
     private final SentryOptions options;
     private volatile @NotNull ISentryClient client;
-    private volatile @NotNull Scope scope;
+    private volatile @NotNull IScope scope;
 
     StackItem(
         final @NotNull SentryOptions options,
         final @NotNull ISentryClient client,
-        final @NotNull Scope scope) {
+        final @NotNull IScope scope) {
       this.client = Objects.requireNonNull(client, "ISentryClient is required.");
       this.scope = Objects.requireNonNull(scope, "Scope is required.");
       this.options = Objects.requireNonNull(options, "Options is required");
@@ -36,7 +36,7 @@ final class Stack {
       this.client = client;
     }
 
-    public @NotNull Scope getScope() {
+    public @NotNull IScope getScope() {
       return scope;
     }
 

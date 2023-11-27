@@ -2,8 +2,8 @@ package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.IpAddressUtils;
-import io.sentry.Scope;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import jakarta.servlet.FilterChain;
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Sets the {@link User} on the {@link Scope} with information retrieved from {@link
+ * Sets the {@link User} on the {@link IScope} with information retrieved from {@link
  * SentryUserProvider}s.
  */
 @Open

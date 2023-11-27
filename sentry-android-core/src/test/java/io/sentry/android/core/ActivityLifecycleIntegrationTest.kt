@@ -14,8 +14,8 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
+import io.sentry.IScope
 import io.sentry.ISentryExecutorService
-import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryDate
@@ -413,7 +413,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
 
             sut.applyScope(scope, fixture.transaction)
 
@@ -432,7 +432,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
             val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.hub)
             scope.transaction = previousTransaction
 
@@ -1055,7 +1055,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
 
             scope.transaction = fixture.transaction
 
@@ -1396,7 +1396,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.enableTracing = false
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-        val scope = Scope(fixture.options)
+        val scope = IScope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
@@ -1417,7 +1417,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.enableTracing = false
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
         }
@@ -1437,7 +1437,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.enableTracing = false
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-        val scope = Scope(fixture.options)
+        val scope = IScope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)

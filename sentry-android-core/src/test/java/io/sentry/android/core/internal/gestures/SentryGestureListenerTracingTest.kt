@@ -10,7 +10,7 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
@@ -45,7 +45,7 @@ class SentryGestureListenerTracingTest {
         }
         val hub = mock<IHub>()
         val event = mock<MotionEvent>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         lateinit var target: View
         lateinit var transaction: SentryTracer
 
@@ -138,7 +138,7 @@ class SentryGestureListenerTracingTest {
         val sut = fixture.getSut<View>()
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
 
             sut.applyScope(scope, fixture.transaction)
 
@@ -153,7 +153,7 @@ class SentryGestureListenerTracingTest {
         val sut = fixture.getSut<View>()
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
             val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.hub)
             scope.transaction = previousTransaction
 
@@ -171,14 +171,14 @@ class SentryGestureListenerTracingTest {
         val expectedStatus = SpanStatus.CANCELLED
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
 
             sut.applyScope(scope, fixture.transaction)
         }
         sut.onSingleTapUp(fixture.event)
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
-            val scope = Scope(fixture.options)
+            val scope = IScope(fixture.options)
 
             scope.transaction = fixture.transaction
 

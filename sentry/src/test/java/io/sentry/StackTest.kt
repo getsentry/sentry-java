@@ -11,7 +11,7 @@ class StackTest {
     private class Fixture {
         val options = SentryOptions()
         val client = mock<ISentryClient>()
-        val scope = Scope(options)
+        val scope = IScope(options)
 
         lateinit var rootItem: StackItem
 
@@ -20,7 +20,7 @@ class StackTest {
             return Stack(options.logger, rootItem)
         }
 
-        fun createStackItem(scope: Scope = Scope(options)) =
+        fun createStackItem(scope: IScope = IScope(options)) =
             StackItem(this.options, this.client, scope)
     }
 
@@ -68,14 +68,14 @@ class StackTest {
     fun `cloning stack clones stack items`() {
         val stack = fixture.getSut(
             fixture.createStackItem(
-                Scope(fixture.options).apply {
+                IScope(fixture.options).apply {
                     this.setTag("rootTag", "value")
                 }
             )
         )
         stack.push(
             fixture.createStackItem(
-                Scope(fixture.options).apply {
+                IScope(fixture.options).apply {
                     this.setTag("childTag", "value")
                 }
             )

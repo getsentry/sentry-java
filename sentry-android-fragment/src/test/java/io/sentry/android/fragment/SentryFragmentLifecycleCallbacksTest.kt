@@ -6,9 +6,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import io.sentry.Breadcrumb
 import io.sentry.Hub
+import io.sentry.IScope
 import io.sentry.ISpan
 import io.sentry.ITransaction
-import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -35,7 +35,7 @@ class SentryFragmentLifecycleCallbacksTest {
         val hub = mock<Hub>()
         val fragment = mock<Fragment>()
         val context = mock<Context>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         val transaction = mock<ITransaction>()
         val span = mock<ISpan>()
 

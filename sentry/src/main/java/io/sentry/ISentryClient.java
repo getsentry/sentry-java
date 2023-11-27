@@ -26,7 +26,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event.
    */
   @NotNull
-  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Scope scope, @Nullable Hint hint);
+  SentryId captureEvent(@NotNull SentryEvent event, @Nullable IScope scope, @Nullable Hint hint);
 
   /** Flushes out the queue for up to timeout seconds and disable the client. */
   void close();
@@ -55,7 +55,7 @@ public interface ISentryClient {
    * @param scope An optional scope to be applied to the event.
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Scope scope) {
+  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable IScope scope) {
     return captureEvent(event, scope, null);
   }
 
@@ -79,7 +79,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureMessage(
-      @NotNull String message, @NotNull SentryLevel level, @Nullable Scope scope) {
+      @NotNull String message, @NotNull SentryLevel level, @Nullable IScope scope) {
     SentryEvent event = new SentryEvent();
     Message sentryMessage = new Message();
     sentryMessage.setFormatted(message);
@@ -119,7 +119,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureException(
-      @NotNull Throwable throwable, @Nullable Scope scope, @Nullable Hint hint) {
+      @NotNull Throwable throwable, @Nullable IScope scope, @Nullable Hint hint) {
     SentryEvent event = new SentryEvent(throwable);
     return captureEvent(event, scope, hint);
   }
@@ -142,7 +142,7 @@ public interface ISentryClient {
    * @param scope An optional scope to be applied to the event.
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Scope scope) {
+  default @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable IScope scope) {
     return captureException(throwable, scope, null);
   }
 
@@ -202,7 +202,7 @@ public interface ISentryClient {
    */
   @NotNull
   default SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Hint hint) {
+      @NotNull SentryTransaction transaction, @Nullable IScope scope, @Nullable Hint hint) {
     return captureTransaction(transaction, null, scope, hint);
   }
 
@@ -218,7 +218,7 @@ public interface ISentryClient {
   default SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
-      @Nullable Scope scope,
+      @Nullable IScope scope,
       @Nullable Hint hint) {
     return captureTransaction(transaction, traceContext, scope, hint, null);
   }
@@ -238,7 +238,7 @@ public interface ISentryClient {
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
-      @Nullable Scope scope,
+      @Nullable IScope scope,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData);
 
@@ -267,5 +267,5 @@ public interface ISentryClient {
 
   @NotNull
   @ApiStatus.Experimental
-  SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable Scope scope, @Nullable Hint hint);
+  SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
 }

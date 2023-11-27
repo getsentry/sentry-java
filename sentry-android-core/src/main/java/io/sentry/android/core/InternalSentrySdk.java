@@ -7,9 +7,9 @@ import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScope;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
-import io.sentry.Scope;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -40,12 +40,12 @@ public final class InternalSentrySdk {
    * @return a copy of the current hub's topmost scope, or null in case the hub is disabled
    */
   @Nullable
-  public static Scope getCurrentScope() {
-    final @NotNull AtomicReference<Scope> scopeRef = new AtomicReference<>();
+  public static IScope getCurrentScope() {
+    final @NotNull AtomicReference<IScope> scopeRef = new AtomicReference<>();
     HubAdapter.getInstance()
         .configureScope(
             scope -> {
-              scopeRef.set(new Scope(scope));
+              scopeRef.set(new IScope(scope));
             });
     return scopeRef.get();
   }
@@ -64,7 +64,7 @@ public final class InternalSentrySdk {
   public static Map<String, Object> serializeScope(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
-      final @Nullable Scope scope) {
+      final @Nullable IScope scope) {
 
     final @NotNull Map<String, Object> data = new HashMap<>();
     if (scope == null) {

@@ -8,7 +8,7 @@ import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -43,7 +43,7 @@ class SentryFeignClientTest {
         val sentryOptions = SentryOptions().apply {
             dsn = "http://key@localhost/proj"
         }
-        val scope = Scope(sentryOptions)
+        val scope = IScope(sentryOptions)
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
