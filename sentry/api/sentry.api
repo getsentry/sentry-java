@@ -4365,6 +4365,7 @@ public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/Properties;)V
+	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/ExceptionUtils {

@@ -1,17 +1,26 @@
-# Changelog
+# Changelog# Changelog
 
 ## Unreleased
-
-### Features
-
-- (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
-- (Internal) Remove SentryOptions dependency from AndroidProfiler ([#3051](https://github.com/getsentry/sentry-java/pull/3051))
-- (Internal) Add `readBytesFromFile` for use in Hybrid SDKs ([#3052](https://github.com/getsentry/sentry-java/pull/3052))
 
 ### Fixes
 
 - Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
 - Move Integrations registration to background on init ([#3043](https://github.com/getsentry/sentry-java/pull/3043))
+
+## 6.34.0
+
+### Features
+
+- Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
+- Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
+  - This makes it easier to automatically create or update (upsert) monitors.
+- (Internal) Extract Android Profiler and Measurements for Hybrid SDKs ([#3016](https://github.com/getsentry/sentry-java/pull/3016))
+- (Internal) Remove SentryOptions dependency from AndroidProfiler ([#3051](https://github.com/getsentry/sentry-java/pull/3051))
+- (Internal) Add `readBytesFromFile` for use in Hybrid SDKs ([#3052](https://github.com/getsentry/sentry-java/pull/3052))
+- (Internal) Add `getProguardUuid` for use in Hybrid SDKs ([#3054](https://github.com/getsentry/sentry-java/pull/3054))
+
+### Fixes
+
 -  Fix SIGSEV, SIGABRT and SIGBUS crashes happening after/around the August Google Play System update, see [#2955](https://github.com/getsentry/sentry-java/issues/2955) for more details (fix provided by Native SDK bump)
 - Ensure DSN uses http/https protocol ([#3044](https://github.com/getsentry/sentry-java/pull/3044))
 
@@ -33,12 +42,6 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#067)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.6.6...0.6.7)
 
-### Features
-
-- Add current activity name to app context ([#2999](https://github.com/getsentry/sentry-java/pull/2999))
-- Add `MonitorConfig` param to `CheckInUtils.withCheckIn` ([#3038](https://github.com/getsentry/sentry-java/pull/3038))
-  - This makes it easier to automatically create or update (upsert) monitors.
- 
 ## 6.33.1
 
 ### Fixes
