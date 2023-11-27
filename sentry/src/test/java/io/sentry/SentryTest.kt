@@ -285,6 +285,8 @@ class SentryTest {
         dir.mkdirs()
         oldProfile.createNewFile()
         newProfile.createNewFile()
+        // Make the old profile look like it's created earlier
+        oldProfile.setLastModified(System.currentTimeMillis() - 10000)
         // Make the new profile look like it's created later
         newProfile.setLastModified(System.currentTimeMillis() + 10000)
 

@@ -65,6 +65,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   private @Nullable SentryAndroidOptions options;
 
   private final @NotNull List<String> actions;
+  private boolean isClosed = false;
+  private final @NotNull Object startLock = new Object();
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActions());
@@ -92,24 +94,47 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             this.options.isEnableSystemEventBreadcrumbs());
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
-      receiver = new SystemEventsBroadcastReceiver(hub, this.options.getLogger());
-      final IntentFilter filter = new IntentFilter();
-      for (String item : actions) {
-        filter.addAction(item);
-      }
+
       try {
-        // registerReceiver can throw SecurityException but it's not documented in the official docs
-        ContextUtils.registerReceiver(context, options, receiver, filter);
-        this.options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion();
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  synchronized (startLock) {
+                    if (!isClosed) {
+                      startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
+                    }
+                  }
+                });
       } catch (Throwable e) {
-        this.options.setEnableSystemEventBreadcrumbs(false);
-        this.options
+        options
             .getLogger()
-            .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
+            .log(
+                SentryLevel.DEBUG,
+                "Failed to start SystemEventsBreadcrumbsIntegration on executor thread. Starting on the calling thread.",
+                e);
+        startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
       }
+    }
+  }
+
+  private void startSystemEventsReceiver(
+      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
+    receiver = new SystemEventsBroadcastReceiver(hub, options.getLogger());
+    final IntentFilter filter = new IntentFilter();
+    for (String item : actions) {
+      filter.addAction(item);
+    }
+    try {
+      // registerReceiver can throw SecurityException but it's not documented in the official docs
+      ContextUtils.registerReceiver(context, options, receiver, filter);
+      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+      addIntegrationToSdkVersion();
+    } catch (Throwable e) {
+      options.setEnableSystemEventBreadcrumbs(false);
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
     }
   }
 
@@ -164,6 +189,9 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   @Override
   public void close() throws IOException {
+    synchronized (startLock) {
+      isClosed = true;
+    }
     if (receiver != null) {
       context.unregisterReceiver(receiver);
       receiver = null;

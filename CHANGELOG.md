@@ -11,6 +11,7 @@
 ### Fixes
 
 - Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
+- Move Integrations registration to background on init ([#3043](https://github.com/getsentry/sentry-java/pull/3043))
 -  Fix SIGSEV, SIGABRT and SIGBUS crashes happening after/around the August Google Play System update, see [#2955](https://github.com/getsentry/sentry-java/issues/2955) for more details (fix provided by Native SDK bump)
 - Ensure DSN uses http/https protocol ([#3044](https://github.com/getsentry/sentry-java/pull/3044))
 

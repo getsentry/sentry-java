@@ -363,7 +363,6 @@ class SentryAndroidTest {
             // this is necessary to delay the AnrV2Integration processing to execute the configure
             // scope block below (otherwise it won't be possible as hub is no-op before .init)
             it.executorService.submit {
-                Thread.sleep(2000L)
                 Sentry.configureScope { scope ->
                     // make sure the scope values changed to test that we're still using previously
                     // persisted values for the old ANR events
@@ -380,7 +379,7 @@ class SentryAndroidTest {
             .untilTrue(asserted)
 
         // assert that persisted values have changed
-        options.executorService.close(1000L) // finalizes all enqueued persisting tasks
+        options.executorService.close(5000L) // finalizes all enqueued persisting tasks
         assertEquals(
             "TestActivity",
             PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String::class.java)

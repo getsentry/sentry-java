@@ -2,13 +2,13 @@ package io.sentry.android.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.IHub
-import io.sentry.ISentryExecutorService
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.test.ImmediateExecutorService
 import okhttp3.Call
 import okhttp3.EventListener
 import okhttp3.OkHttpClient
@@ -21,14 +21,12 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.concurrent.Future
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -334,13 +332,10 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `when response is not closed, root call is trimmed to responseHeadersEnd`() {
-        val mockExecutor = mock<ISentryExecutorService>()
-        val captor = argumentCaptor<Runnable>()
-        whenever(mockExecutor.schedule(captor.capture(), any())).then {
-            captor.lastValue.run()
-            mock<Future<Runnable>>()
-        }
-        val sut = fixture.getSut(httpStatusCode = 500, configureOptions = { it.executorService = mockExecutor })
+        val sut = fixture.getSut(
+            httpStatusCode = 500,
+            configureOptions = { it.executorService = ImmediateExecutorService() }
+        )
         val request = getRequest()
         val call = sut.newCall(request)
         val response = spy(call.execute())
