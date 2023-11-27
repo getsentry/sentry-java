@@ -1332,4 +1332,19 @@ class SentryTracerTest {
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
         assertNotEquals("main", span.getData(SpanDataConvention.THREAD_NAME))
     }
+
+    @Test
+    fun `maxSpans is respected by nested child spans`() {
+        val tracer = fixture.getSut(optionsConfiguration = { it.maxSpans = 5 })
+
+        val nested = tracer.startChild("task", "parent span")
+        repeat(10) {
+            val child = nested.startChild("task", "span number $it")
+            child.finish()
+        }
+        nested.finish()
+        tracer.finish()
+
+        assertEquals(5, tracer.children.size)
+    }
 }
