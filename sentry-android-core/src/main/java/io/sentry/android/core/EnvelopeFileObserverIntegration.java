@@ -53,7 +53,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       } catch (Throwable e) {
         logger.log(
             SentryLevel.DEBUG,
-            "Failed to start EnvelopeFileObserverIntegration on executor thread. Starting on the calling thread.",
+            "Failed to start EnvelopeFileObserverIntegration on executor thread.",
             e);
       }
     }

@@ -72,11 +72,7 @@ public final class AnrIntegration implements Integration, Closeable {
       } catch (Throwable e) {
         options
             .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Failed to start AnrIntegration on executor thread. Starting on the calling thread.",
-                e);
-        startAnrWatchdog(hub, options);
+            .log(SentryLevel.DEBUG, "Failed to start AnrIntegration on executor thread.", e);
       }
     }
   }

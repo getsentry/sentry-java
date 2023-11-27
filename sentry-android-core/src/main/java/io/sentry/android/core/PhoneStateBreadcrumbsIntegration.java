@@ -63,9 +63,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Failed to start PhoneStateBreadcrumbsIntegration on executor thread. Starting on the calling thread.",
+                "Failed to start PhoneStateBreadcrumbsIntegration on executor thread.",
                 e);
-        startTelephonyListener(hub, options);
       }
     }
   }

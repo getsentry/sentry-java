@@ -69,9 +69,8 @@ public final class TempSensorBreadcrumbsIntegration
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Failed to start TempSensorBreadcrumbsIntegration on executor thread. Starting on the calling thread.",
+                "Failed to start TempSensorBreadcrumbsIntegration on executor thread.",
                 e);
-        startSensorListener(options);
       }
     }
   }

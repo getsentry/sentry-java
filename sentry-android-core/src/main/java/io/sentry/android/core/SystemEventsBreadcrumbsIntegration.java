@@ -111,9 +111,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Failed to start SystemEventsBreadcrumbsIntegration on executor thread. Starting on the calling thread.",
+                "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.",
                 e);
-        startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
       }
     }
   }
