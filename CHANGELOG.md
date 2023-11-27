@@ -2,67 +2,80 @@
 
 ## Unreleased
 
-### Features
+Version 7 of the Sentry Java/Android SDK brings a variety of features and fixes. The most notable changes are:
+- Bumping `minSdk` level to 19 (Android 4.4)
+- The SDK will now listen to connectivity changes and try to re-upload cached events when internet connection is re-established additionally to uploading events on app restart 
+- `Sentry.getSpan` now returns the root transaction, which should improve the span hierarchy and make it leaner
+- Multiple improvements to reduce probability of the SDK causing ANRs
+- New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps 
 
-- Add `sentry-okhttp` module to support instrumenting OkHttp in non-Android projects ([#3005](https://github.com/getsentry/sentry-java/pull/3005))
-  - This deprecates `sentry-android-okhttp` classes. Make sure to replace `io.sentry.android.okhttp` package name with `io.sentry.okhttp` before the next major, where the classes will be removed
-  - `SentryOkHttpUtils` was removed from public API as it's been exposed by mistake
+**Note: The v7 version of the Android/Java SDK requires a self-hosted version of Sentry 22.12.0 or higher. If you are using a version of [self-hosted Sentry](https://develop.sentry.dev/self-hosted/) (aka onpremise) older than `22.12.0` then you will need to [upgrade](https://develop.sentry.dev/self-hosted/releases/). If you're using `sentry.io` no action needed.**
 
-## 7.0.0-rc.1
+## Sentry Integrations Version Compatibility
 
-### Features
+Make sure to align _all_ Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility. (E.g. if you're using `-timber`, `-okhttp` or other packages)
 
-- Do not filter out Sentry SDK frames in case of uncaught exceptions ([#3021](https://github.com/getsentry/sentry-java/pull/3021))
+For example, if you're using the [Sentry Android Gradle plugin](https://github.com/getsentry/sentry-android-gradle-plugin) with the `autoInstallation` [feature](https://docs.sentry.io/platforms/android/configuration/gradle/#auto-installation) (enabled by default), make sure to use version 4.+ of the gradle plugin together with version 7.+ of the SDK. If you can't do that for some reason, you can specify sentry version via the plugin config block:
 
-**Breaking changes:**
-- Cleanup `startTransaction` overloads ([#2964](https://github.com/getsentry/sentry-java/pull/2964))
-    - We have reduce the number of overloads by allowing to pass in `TransactionOptions` instead of having separate parameters for certain options.
-    - `TransactionOptions` has defaults set and can be customized
+```kotlin
+sentry {
+  autoInstallation {
+    sentryVersion.set("7.0.0")
+  }
+}
+```
+
+Similarly, if you have a Sentry SDK (e.g. `sentry-android-core`) dependency on one of your Gradle modules and you're updating it to 7.+, make sure the Gradle plugin is at 4.+ or specify the SDK version as shown in the snippet above.
+
+## Breaking Changes
+
+- Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
+- If you're using `sentry-kotlin-extensions`, it requires `kotlinx-coroutines-core` version `1.6.1` or higher now ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
+- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
+- Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
+- `SentryOkHttpUtils` was removed from public API as it's been exposed by mistake ([#3005](https://github.com/getsentry/sentry-java/pull/3005))
+
+## Behavioural Changes
+
+- Android only: `Sentry.getSpan()` returns the root span/transaction instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
+- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
+- Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
+- Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
+    - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
+- Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
+    - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s, meaning the automatic transaction will be force-finished with status `deadline_exceeded` when reaching the deadline 
+- Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
+    - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
 - Raw logback message and parameters are now guarded by `sendDefaultPii` if an `encoder` has been configured ([#2976](https://github.com/getsentry/sentry-java/pull/2976))
+
+## Deprecations
+
+- `sentry-android-okhttp` was deprecated in favour of the new `sentry-okhttp` module. Make sure to replace `io.sentry.android.okhttp` package name with `io.sentry.okhttp` before the next major, where the classes will be removed ([#3005](https://github.com/getsentry/sentry-java/pull/3005))
+
+## Other Changes
+
+### Features
+
+- Observe network state to upload any unsent envelopes ([#2910](https://github.com/getsentry/sentry-java/pull/2910))
+    - Android: it works out-of-the-box as part of the default `SendCachedEnvelopeIntegration`
+    - JVM: you'd have to install `SendCachedEnvelopeFireAndForgetIntegration` as mentioned in https://docs.sentry.io/platforms/java/configuration/#configuring-offline-caching and provide your own implementation of `IConnectionStatusProvider` via `SentryOptions`
+- Add `sentry-okhttp` module to support instrumenting OkHttp in non-Android projects ([#3005](https://github.com/getsentry/sentry-java/pull/3005))
+- Do not filter out Sentry SDK frames in case of uncaught exceptions ([#3021](https://github.com/getsentry/sentry-java/pull/3021))
+- Do not try to send and drop cached envelopes when rate-limiting is active ([#2937](https://github.com/getsentry/sentry-java/pull/2937))
 
 ### Fixes
 
 - Use `getMyMemoryState()` instead of `getRunningAppProcesses()` to retrieve process importance ([#3004](https://github.com/getsentry/sentry-java/pull/3004))
     - This should prevent some app stores from flagging apps as violating their privacy
-
-## 7.0.0-beta.1
-
-### Features
-
-**Breaking changes:**
-- Capture failed HTTP requests by default ([#2794](https://github.com/getsentry/sentry-java/pull/2794))
 - Reduce flush timeout to 4s on Android to avoid ANRs ([#2858](https://github.com/getsentry/sentry-java/pull/2858))
-- Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
-    - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
 - Reduce timeout of AsyncHttpTransport to avoid ANR ([#2879](https://github.com/getsentry/sentry-java/pull/2879))
-- Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
-    - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s
-- Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
-- Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
-    - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
-- Android only: If global hub mode is enabled, Sentry.getSpan() returns the root span instead of the latest span ([#2855](https://github.com/getsentry/sentry-java/pull/2855))
-- Observe network state to upload any unsent envelopes ([#2910](https://github.com/getsentry/sentry-java/pull/2910))
-    - Android: it works out-of-the-box as part of the default `SendCachedEnvelopeIntegration`
-    - JVM: you'd have to install `SendCachedEnvelopeFireAndForgetIntegration` as mentioned in https://docs.sentry.io/platforms/java/configuration/#configuring-offline-caching and provide your own implementation of `IConnectionStatusProvider` via `SentryOptions`
-- Do not try to send and drop cached envelopes when rate-limiting is active ([#2937](https://github.com/getsentry/sentry-java/pull/2937))
-
-### Fixes
-
-- Measure AppStart time till First Draw instead of `onResume` ([#2851](https://github.com/getsentry/sentry-java/pull/2851))
 - Do not overwrite UI transaction status if set by the user ([#2852](https://github.com/getsentry/sentry-java/pull/2852))
 - Capture unfinished transaction on Scope with status `aborted` in case a crash happens ([#2938](https://github.com/getsentry/sentry-java/pull/2938))
     - This will fix the link between transactions and corresponding crashes, you'll be able to see them in a single trace
-
-**Breaking changes:**
-- Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
-- Fix Coroutine Context Propagation using CopyableThreadContextElement, requires `kotlinx-coroutines-core` version `1.6.1` or higher ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
-- Bump min API to 19 ([#2883](https://github.com/getsentry/sentry-java/pull/2883))
+- Fix Coroutine Context Propagation using CopyableThreadContextElement ([#2838](https://github.com/getsentry/sentry-java/pull/2838))
 - Fix don't overwrite the span status of unfinished spans ([#2859](https://github.com/getsentry/sentry-java/pull/2859))
-    - If you're using a self hosted version of sentry, sentry self hosted >= 22.12.0 is required
 - Migrate from `default` interface methods to proper implementations in each interface implementor ([#2847](https://github.com/getsentry/sentry-java/pull/2847))
     - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
-    - Make sure to align Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility.
-      (E.g. if you're using `-timber`, `-okhttp` or other packages)
 
 ## 6.34.0
 
