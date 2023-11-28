@@ -4,10 +4,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.graphql.execution.BatchLoaderRegistry;
-import org.springframework.stereotype.Component;
 
 @ApiStatus.Internal
-@Component
 public final class SentryGraphqlBeanPostProcessor implements BeanPostProcessor {
   @Override
   public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
