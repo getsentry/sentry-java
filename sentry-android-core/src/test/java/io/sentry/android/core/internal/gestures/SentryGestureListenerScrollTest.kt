@@ -14,6 +14,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.IScope
 import io.sentry.PropagationContext
+import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
@@ -77,7 +78,7 @@ class SentryGestureListenerScrollTest {
             }
             whenever(activity.window).thenReturn(window)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
-            doAnswer { (it.arguments[0] as IScope.IWithPropagationContext).accept(propagationContext); propagationContext }.whenever(scope).withPropagationContext(any())
+            doAnswer { (it.arguments[0] as Scope.IWithPropagationContext).accept(propagationContext); propagationContext }.whenever(scope).withPropagationContext(any())
             return SentryGestureListener(
                 activity,
                 hub,

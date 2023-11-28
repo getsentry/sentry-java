@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.IScope.IWithPropagationContext
+import io.sentry.Scope.IWithPropagationContext
 import io.sentry.Session.State.Crashed
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
@@ -332,7 +332,7 @@ class SentryClientTest {
     fun `when breadcrumbs are not empty, sort them out by date`() {
         val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
         val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
-        val scope = IScope(SentryOptions()).apply {
+        val scope = Scope(SentryOptions()).apply {
             addBreadcrumb(b2)
             addBreadcrumb(b1)
         }
@@ -629,7 +629,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = IScope(SentryOptions())
+        val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
         val hints = HintUtils.createWithTypeCheckHint(mock<Cached>())
@@ -643,7 +643,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = IScope(SentryOptions())
+        val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
         val hints = HintUtils.createWithTypeCheckHint(Object())
@@ -657,7 +657,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = IScope(SentryOptions())
+        val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
         val hints = HintUtils.createWithTypeCheckHint(mock<ApplyScopeData>())
@@ -671,7 +671,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = IScope(SentryOptions())
+        val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
         val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
@@ -1031,7 +1031,7 @@ class SentryClientTest {
 
     @Test
     fun `When event is non handled, mark session as Crashed`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.startSession()
 
         val event = SentryEvent().apply {
@@ -1045,7 +1045,7 @@ class SentryClientTest {
 
     @Test
     fun `When event is non handled, end the session`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.startSession()
 
         val event = SentryEvent().apply {
@@ -1060,7 +1060,7 @@ class SentryClientTest {
 
     @Test
     fun `When event is handled, keep level as it is`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
             val session = it.current
@@ -1077,7 +1077,7 @@ class SentryClientTest {
 
     @Test
     fun `When event is non handled, increase errorCount`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.startSession()
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
@@ -1090,7 +1090,7 @@ class SentryClientTest {
 
     @Test
     fun `When event is Errored, increase errorCount`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.startSession()
         val exceptions = mutableListOf<SentryException>()
         exceptions.add(SentryException())
@@ -1105,7 +1105,7 @@ class SentryClientTest {
 
     @Test
     fun `When event is handled and not errored, do not increase errorsCount`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
             val session = it.current
@@ -1153,7 +1153,7 @@ class SentryClientTest {
 
     @Test
     fun `When event has userAgent, set it into session`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
             val event = SentryEvent().apply {
@@ -1174,7 +1174,7 @@ class SentryClientTest {
 
     @Test
     fun `When event has no userAgent, keep as it is`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
             val session = it.current
@@ -1195,7 +1195,7 @@ class SentryClientTest {
 
     @Test
     fun `When capture an event and there's no session, do nothing`() {
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val event = SentryEvent()
         fixture.getSut().updateSessionData(event, Hint(), scope)
         scope.withSession {
@@ -1211,7 +1211,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
         }
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
             sut.captureEvent(event, scope, null)
@@ -1226,7 +1226,7 @@ class SentryClientTest {
     fun `when context property is missing on the event, property from scope contexts is applied`() {
         val sut = fixture.getSut()
 
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.setContexts("key", "abc")
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -1249,7 +1249,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
         }
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         val sessionPair = scope.startSession()
         scope.withSession { it!!.update(Crashed, null, false) }
 
@@ -1270,7 +1270,7 @@ class SentryClientTest {
 
         val event = SentryEvent()
         event.contexts["key"] = "event value"
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.setContexts("key", "scope value")
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
@@ -1290,7 +1290,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         val event = SentryEvent()
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.setContexts("boolean", true)
         scope.setContexts("string", "test")
         scope.setContexts("number", 1)
@@ -1339,7 +1339,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         sut.captureTransaction(
             SentryTransaction(fixture.sentryTracer),
-            IScope(fixture.sentryOptions),
+            Scope(fixture.sentryOptions),
             null
         )
         verify(fixture.transport).send(
@@ -1402,7 +1402,7 @@ class SentryClientTest {
     @Test
     fun `when captureTransaction scope is applied to transaction`() {
         val sut = fixture.getSut()
-        val scope = IScope(fixture.sentryOptions)
+        val scope = Scope(fixture.sentryOptions)
         scope.setTag("tag1", "value1")
         scope.setContexts("context-key", "context-value")
         scope.request = Request().apply {
@@ -2495,7 +2495,7 @@ class SentryClientTest {
     }
 
     private fun createScope(options: SentryOptions = SentryOptions()): IScope {
-        return IScope(options).apply {
+        return Scope(options).apply {
             addBreadcrumb(
                 Breadcrumb().apply {
                     message = "message"

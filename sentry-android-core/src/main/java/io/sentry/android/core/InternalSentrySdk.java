@@ -10,6 +10,7 @@ import io.sentry.ILogger;
 import io.sentry.IScope;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.Scope;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -45,7 +46,7 @@ public final class InternalSentrySdk {
     HubAdapter.getInstance()
         .configureScope(
             scope -> {
-              scopeRef.set(new IScope(scope));
+              scopeRef.set(Scope.fromScope(scope));
             });
     return scopeRef.get();
   }

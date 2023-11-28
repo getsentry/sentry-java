@@ -12,8 +12,8 @@ import android.widget.RadioButton
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.IScope
-import io.sentry.IScope.IWithPropagationContext
 import io.sentry.PropagationContext
+import io.sentry.Scope.IWithPropagationContext
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions

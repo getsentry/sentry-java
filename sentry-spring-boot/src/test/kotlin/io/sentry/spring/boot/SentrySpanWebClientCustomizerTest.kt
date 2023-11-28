@@ -4,6 +4,7 @@ import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -52,7 +53,7 @@ class SentrySpanWebClientCustomizerTest {
                 }
                 dsn = "http://key@localhost/proj"
             }
-            scope = IScope(sentryOptions)
+            scope = Scope(sentryOptions)
             whenever(hub.options).thenReturn(sentryOptions)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(
                 any()
@@ -63,7 +64,7 @@ class SentrySpanWebClientCustomizerTest {
             val webClient = webClientBuilder.build()
 
             if (isTransactionActive) {
-                val scope = IScope(sentryOptions)
+                val scope = Scope(sentryOptions)
                 scope.transaction = transaction
                 whenever(hub.span).thenReturn(transaction)
             }

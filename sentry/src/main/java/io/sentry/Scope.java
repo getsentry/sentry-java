@@ -91,8 +91,16 @@ public final class Scope implements IScope {
     this.propagationContext = new PropagationContext();
   }
 
-  @ApiStatus.Internal
-  public Scope(final @NotNull IScope scope) {
+  public static IScope fromScope(final @NotNull IScope scope) {
+    if (scope instanceof Scope) {
+      Scope scopeImpl = (Scope) scope;
+      return new Scope(scopeImpl);
+    } else {
+      return NoOpScope.getInstance();
+    }
+  }
+
+  private Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
     this.session = scope.session;
@@ -705,7 +713,9 @@ public final class Scope implements IScope {
    *
    * @return the attachments
    */
+  @ApiStatus.Internal
   @NotNull
+  @Override
   public List<Attachment> getAttachments() {
     return new CopyOnWriteArrayList<>(attachments);
   }
@@ -742,7 +752,9 @@ public final class Scope implements IScope {
    *
    * @return the event processors list
    */
+  @ApiStatus.Internal
   @NotNull
+  @Override
   public List<EventProcessor> getEventProcessors() {
     return eventProcessors;
   }
@@ -763,7 +775,9 @@ public final class Scope implements IScope {
    * @param sessionCallback the IWithSession callback
    * @return a clone of the Session after executing the callback and mutating the session
    */
+  @ApiStatus.Internal
   @Nullable
+  @Override
   public Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     synchronized (sessionLock) {
@@ -792,7 +806,9 @@ public final class Scope implements IScope {
    *
    * @return the SessionPair with the previous closed session if exists and the current session
    */
+  @ApiStatus.Internal
   @Nullable
+  @Override
   public SessionPair startSession() {
     Session previousSession;
     SessionPair pair = null;
@@ -865,7 +881,9 @@ public final class Scope implements IScope {
    *
    * @return the previous session
    */
+  @ApiStatus.Internal
   @Nullable
+  @Override
   public Session endSession() {
     Session previousSession = null;
     synchronized (sessionLock) {
@@ -891,7 +909,9 @@ public final class Scope implements IScope {
     }
   }
 
+  @ApiStatus.Internal
   @NotNull
+  @Override
   public SentryOptions getOptions() {
     return options;
   }

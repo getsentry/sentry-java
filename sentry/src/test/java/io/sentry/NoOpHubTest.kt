@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.protocol.SentryId
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -93,5 +94,13 @@ class NoOpHubTest {
     @Test
     fun `captureCheckIn returns empty id`() {
         assertEquals(SentryId.EMPTY_ID, sut.captureCheckIn(mock()))
+    }
+
+    @Test
+    fun `withScopeCallback is executed on NoOpScope`() {
+        val scopeCallback = mock<ScopeCallback>()
+
+        sut.withScope(scopeCallback)
+        verify(scopeCallback).run(NoOpScope.getInstance())
     }
 }

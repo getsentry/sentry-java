@@ -9,7 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.IScope
-import io.sentry.IScope.IWithTransaction
+import io.sentry.Scope
+import io.sentry.Scope.IWithTransaction
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -356,7 +357,7 @@ class SentryNavigationListenerTest {
         val sut = fixture.getSut(enableTracing = false)
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-        val scope = IScope(fixture.options)
+        val scope = Scope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)

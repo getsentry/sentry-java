@@ -2,8 +2,8 @@ package io.sentry.util
 
 import io.sentry.Baggage
 import io.sentry.IHub
-import io.sentry.IScope
 import io.sentry.NoOpSpan
+import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -30,7 +30,7 @@ class TracingUtilsTest {
             dsn = "https://key@sentry.io/proj"
         }
         val hub = mock<IHub>()
-        val scope = IScope(options)
+        val scope = Scope(options)
         lateinit var span: Span
         val preExistingBaggage = listOf("some-baggage-key=some-baggage-value")
 

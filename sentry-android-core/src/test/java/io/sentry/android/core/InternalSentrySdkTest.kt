@@ -7,6 +7,7 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.Hub
 import io.sentry.IScope
+import io.sentry.Scope
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -143,7 +144,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope correctly creates top level map`() {
         val options = SentryAndroidOptions()
-        val scope = IScope(options)
+        val scope = Scope(options)
 
         scope.user = User().apply {
             name = "John"
@@ -195,7 +196,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope provides fallback user if none is set`() {
         val options = SentryAndroidOptions()
-        val scope = IScope(options)
+        val scope = Scope(options)
         scope.user = null
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
@@ -205,7 +206,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope does not override user-id`() {
         val options = SentryAndroidOptions()
-        val scope = IScope(options)
+        val scope = Scope(options)
         scope.user = User().apply { id = "abc" }
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
@@ -215,7 +216,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope provides fallback app data if none is set`() {
         val options = SentryAndroidOptions()
-        val scope = IScope(options)
+        val scope = Scope(options)
         scope.setContexts("app", null)
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)

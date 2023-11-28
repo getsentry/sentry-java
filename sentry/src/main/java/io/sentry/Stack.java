@@ -25,7 +25,7 @@ final class Stack {
     StackItem(final @NotNull StackItem item) {
       options = item.options;
       client = item.client;
-      scope = new Scope(item.scope);
+      scope = Scope.fromScope(item.scope);
     }
 
     public @NotNull ISentryClient getClient() {

@@ -787,14 +787,14 @@ class HubTest {
 
     //region withScope tests
     @Test
-    fun `when withScope is called on disabled client, do nothing`() {
+    fun `when withScope is called on disabled client, execute on NoOpScope`() {
         val (sut) = getEnabledHub()
 
         val scopeCallback = mock<ScopeCallback>()
         sut.close()
 
         sut.withScope(scopeCallback)
-        verify(scopeCallback, never()).run(any())
+        verify(scopeCallback).run(NoOpScope.getInstance())
     }
 
     @Test

@@ -118,7 +118,7 @@ public final class NoOpHub implements IHub {
 
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
-    callback.run(new Scope(new SentryOptions()));
+    callback.run(NoOpScope.getInstance());
   }
 
   @Override
