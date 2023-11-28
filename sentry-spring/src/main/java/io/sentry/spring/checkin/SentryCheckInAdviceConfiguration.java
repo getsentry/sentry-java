@@ -24,8 +24,8 @@ public class SentryCheckInAdviceConfiguration {
 
   @Bean
   public @NotNull Advisor sentryCheckInAdvisor(
-    final @NotNull @Qualifier("sentryCheckInPointcut") Pointcut sentryCheckInPointcut,
-    final @NotNull @Qualifier("sentryCheckInAdvice") Advice sentryCheckInAdvice) {
+      final @NotNull @Qualifier("sentryCheckInPointcut") Pointcut sentryCheckInPointcut,
+      final @NotNull @Qualifier("sentryCheckInAdvice") Advice sentryCheckInAdvice) {
     return new DefaultPointcutAdvisor(sentryCheckInPointcut, sentryCheckInAdvice);
   }
 }
