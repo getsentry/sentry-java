@@ -8,6 +8,7 @@ import androidx.navigation.NavDestination
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.Scope.IWithTransaction
 import io.sentry.ScopeCallback
@@ -44,7 +45,7 @@ class SentryNavigationListenerTest {
 
         val context = mock<Context>()
         val resources = mock<Resources>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         lateinit var options: SentryOptions
 
         lateinit var transaction: SentryTracer

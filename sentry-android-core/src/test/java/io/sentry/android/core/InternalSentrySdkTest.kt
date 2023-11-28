@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.Hub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
@@ -188,7 +189,7 @@ class InternalSentrySdkTest {
     @Test
     fun `serializeScope returns empty map in case scope serialization fails`() {
         val options = SentryAndroidOptions()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
 
         whenever(scope.contexts).thenReturn(Contexts())
         whenever(scope.user).thenThrow(IllegalStateException("something is off"))
@@ -291,7 +292,7 @@ class InternalSentrySdkTest {
         assertEquals(Session.State.Crashed, capturedSession.status)
 
         // and the local session should be marked as crashed too
-        val scopeRef = AtomicReference<Scope>()
+        val scopeRef = AtomicReference<IScope>()
         Sentry.configureScope { scope ->
             scopeRef.set(scope)
         }

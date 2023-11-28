@@ -389,7 +389,8 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public void setValuesFromScope(final @NotNull Scope scope, final @NotNull SentryOptions options) {
+  public void setValuesFromScope(
+      final @NotNull IScope scope, final @NotNull SentryOptions options) {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
     final @Nullable User user = scope.getUser();
     setTraceId(propagationContext.getTraceId().toString());

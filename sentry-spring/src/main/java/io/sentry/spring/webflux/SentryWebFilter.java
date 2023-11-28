@@ -8,6 +8,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.CustomSamplingContext;
 import io.sentry.Hint;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.ITransaction;
 import io.sentry.NoOpHub;
 import io.sentry.Sentry;
@@ -30,7 +31,7 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-/** Manages {@link io.sentry.Scope} in Webflux request processing. */
+/** Manages {@link IScope} in Webflux request processing. */
 @ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_HUB_KEY = "sentry-hub";

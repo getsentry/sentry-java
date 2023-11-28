@@ -840,6 +840,28 @@ class SentryTest {
     }
 
     @Test
+    fun `if Sentry is disabled through options with scope callback is executed`() {
+        Sentry.init {
+            it.isEnabled = false
+        }
+
+        val scopeCallback = mock<ScopeCallback>()
+
+        Sentry.withScope(scopeCallback)
+
+        verify(scopeCallback).run(any())
+    }
+
+    @Test
+    fun `if Sentry is not initialized with scope callback is executed`() {
+        val scopeCallback = mock<ScopeCallback>()
+
+        Sentry.withScope(scopeCallback)
+
+        verify(scopeCallback).run(any())
+    }
+
+    @Test
     fun `getSpan calls hub getSpan`() {
         val hub = mock<IHub>()
         Sentry.init({

@@ -4,7 +4,7 @@ import androidx.lifecycle.LifecycleOwner
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IHub
-import io.sentry.Scope
+import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.Session
@@ -42,7 +42,7 @@ class LifecycleWatcherTest {
             session: Session? = null
         ): LifecycleWatcher {
             val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-            val scope = mock<Scope>()
+            val scope = mock<IScope>()
             whenever(scope.session).thenReturn(session)
             whenever(hub.configureScope(argumentCaptor.capture())).thenAnswer {
                 argumentCaptor.value.run(scope)

@@ -10,6 +10,7 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
@@ -47,7 +48,7 @@ class SentryGestureListenerTracingTest {
         }
         val hub = mock<IHub>()
         val event = mock<MotionEvent>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         lateinit var target: View
         lateinit var transaction: SentryTracer
 

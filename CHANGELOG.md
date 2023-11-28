@@ -36,6 +36,7 @@ Similarly, if you have a Sentry SDK (e.g. `sentry-android-core`) dependency on o
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 - Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
 - `SentryOkHttpUtils` was removed from public API as it's been exposed by mistake ([#3005](https://github.com/getsentry/sentry-java/pull/3005))
+- `IScope` and `NoOpScope` were introduced. ([#3066](https://github.com/getsentry/sentry-java/pull/3066))
 
 ## Behavioural Changes
 
@@ -51,6 +52,7 @@ Similarly, if you have a Sentry SDK (e.g. `sentry-android-core`) dependency on o
     - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
 - Raw logback message and parameters are now guarded by `sendDefaultPii` if an `encoder` has been configured ([#2976](https://github.com/getsentry/sentry-java/pull/2976))
 - The `maxSpans` setting (defaults to 1000) is enforced for nested child spans which means a single transaction can have `maxSpans` number of children (nested or not) at most ([#3065](https://github.com/getsentry/sentry-java/pull/3065))
+- The `ScopeCallback` in `withScope` is now always executed ([#3066](https://github.com/getsentry/sentry-java/pull/3066))
 
 ## Deprecations
 

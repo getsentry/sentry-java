@@ -16,6 +16,7 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -1414,7 +1415,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.enableTracing = false
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
         }

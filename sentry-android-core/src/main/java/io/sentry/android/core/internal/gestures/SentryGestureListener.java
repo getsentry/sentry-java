@@ -11,8 +11,8 @@ import android.view.Window;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.ITransaction;
-import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -292,7 +292,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   @VisibleForTesting
-  void clearScope(final @NotNull Scope scope) {
+  void clearScope(final @NotNull IScope scope) {
     scope.withTransaction(
         transaction -> {
           if (transaction == activeTransaction) {
@@ -302,7 +302,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   @VisibleForTesting
-  void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+  void applyScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
           // we'd not like to overwrite existent transactions bound to the Scope manually

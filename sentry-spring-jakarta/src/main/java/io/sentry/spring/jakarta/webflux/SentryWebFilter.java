@@ -2,6 +2,7 @@ package io.sentry.spring.jakarta.webflux;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,7 +13,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-/** Manages {@link io.sentry.Scope} in Webflux request processing. */
+/** Manages {@link IScope} in Webflux request processing. */
 @ApiStatus.Experimental
 @Open
 public class SentryWebFilter extends AbstractSentryWebFilter {

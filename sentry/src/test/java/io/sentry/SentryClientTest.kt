@@ -239,7 +239,7 @@ class SentryClientTest {
             parameterTypes = arrayOf(
                 String::class.java,
                 SentryLevel::class.java,
-                Scope::class.java
+                IScope::class.java
             ),
             actual,
             null,
@@ -2246,7 +2246,7 @@ class SentryClientTest {
         whenever(transaction.spanContext).thenReturn(spanContext)
 
         // scope
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(scope.transaction).thenReturn(transaction)
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
@@ -2323,7 +2323,7 @@ class SentryClientTest {
         whenever(transaction.spanContext).thenReturn(spanContext)
 
         // scope
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(scope.transaction).thenReturn(transaction)
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
@@ -2354,7 +2354,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         // scope
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
@@ -2387,7 +2387,7 @@ class SentryClientTest {
         whenever(transaction.spanContext).thenReturn(spanContext)
 
         // scope
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(scope.transaction).thenReturn(transaction)
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
@@ -2422,7 +2422,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         // scope
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
@@ -2456,7 +2456,7 @@ class SentryClientTest {
         whenever(transaction.traceContext()).thenReturn(transactionTraceContext)
 
         // scope
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(scope.transaction).thenReturn(transaction)
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
@@ -2480,7 +2480,7 @@ class SentryClientTest {
         )
     }
 
-    private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {
+    private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {
         val scope = createScope(fixture.sentryOptions)
         scope.startSession()
 
@@ -2511,19 +2511,19 @@ class SentryClientTest {
         assertEquals(transactionCount, envelopeItemTypes.count { it == SentryItemType.Transaction })
     }
 
-    private fun thenSessionIsStillOK(scope: Scope) {
+    private fun thenSessionIsStillOK(scope: IScope) {
         val sessionAfterCapture = scope.withSession { }!!
         assertEquals(0, sessionAfterCapture.errorCount())
         assertEquals(Session.State.Ok, sessionAfterCapture.status)
     }
 
-    private fun thenSessionIsErrored(scope: Scope) {
+    private fun thenSessionIsErrored(scope: IScope) {
         val sessionAfterCapture = scope.withSession { }!!
         assertTrue(sessionAfterCapture.errorCount() > 0)
         assertEquals(Session.State.Ok, sessionAfterCapture.status)
     }
 
-    private fun thenSessionIsCrashed(scope: Scope) {
+    private fun thenSessionIsCrashed(scope: IScope) {
         val sessionAfterCapture = scope.withSession { }!!
         assertTrue(sessionAfterCapture.errorCount() > 0)
         assertEquals(Session.State.Crashed, sessionAfterCapture.status)
@@ -2538,7 +2538,7 @@ class SentryClientTest {
         }
     }
 
-    private fun createScope(options: SentryOptions = SentryOptions()): Scope {
+    private fun createScope(options: SentryOptions = SentryOptions()): IScope {
         return Scope(options).apply {
             addBreadcrumb(
                 Breadcrumb().apply {
@@ -2558,7 +2558,7 @@ class SentryClientTest {
         }
     }
 
-    private fun createScopeWithAttachments(): Scope {
+    private fun createScopeWithAttachments(): IScope {
         return createScope().apply {
             addAttachment(fixture.attachment)
             addAttachment(fixture.attachment)

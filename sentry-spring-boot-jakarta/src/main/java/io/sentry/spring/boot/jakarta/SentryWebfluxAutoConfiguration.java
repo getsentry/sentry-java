@@ -2,6 +2,7 @@ package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.spring.jakarta.webflux.SentryScheduleHook;
 import io.sentry.spring.jakarta.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.jakarta.webflux.SentryWebFilter;
@@ -40,7 +41,7 @@ public class SentryWebfluxAutoConfiguration {
   static class SentryWebfluxFilterThreadLocalAccessorConfiguration {
 
     /**
-     * Configures a filter that sets up Sentry {@link io.sentry.Scope} for each request.
+     * Configures a filter that sets up Sentry {@link IScope} for each request.
      *
      * <p>Makes use of newer reactor-core and context-propagation library feature
      * ThreadLocalAccessor to propagate the Sentry hub.
@@ -67,7 +68,7 @@ public class SentryWebfluxAutoConfiguration {
       };
     }
 
-    /** Configures a filter that sets up Sentry {@link io.sentry.Scope} for each request. */
+    /** Configures a filter that sets up Sentry {@link IScope} for each request. */
     @Bean
     @Order(SENTRY_SPRING_FILTER_PRECEDENCE)
     public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IHub hub) {

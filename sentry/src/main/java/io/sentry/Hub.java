@@ -68,7 +68,7 @@ public final class Hub implements IHub {
 
   private static StackItem createRootStackItem(final @NotNull SentryOptions options) {
     validateOptions(options);
-    final Scope scope = new Scope(options);
+    final IScope scope = new Scope(options);
     final ISentryClient client = new SentryClient(options);
     return new StackItem(options, client, scope);
   }
@@ -109,7 +109,7 @@ public final class Hub implements IHub {
         assignTraceContext(event);
         final StackItem item = stack.peek();
 
-        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final IScope scope = buildLocalScope(item.getScope(), scopeCallback);
 
         sentryId = item.getClient().captureEvent(event, scope, hint);
         this.lastEventId = sentryId;
@@ -154,7 +154,7 @@ public final class Hub implements IHub {
       try {
         final StackItem item = stack.peek();
 
-        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final IScope scope = buildLocalScope(item.getScope(), scopeCallback);
 
         sentryId = item.getClient().captureMessage(message, level, scope);
       } catch (Throwable e) {
@@ -226,7 +226,7 @@ public final class Hub implements IHub {
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
 
-        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final IScope scope = buildLocalScope(item.getScope(), scopeCallback);
 
         sentryId = item.getClient().captureEvent(event, scope, hint);
       } catch (Throwable e) {
@@ -515,8 +515,7 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      final StackItem newItem =
-          new StackItem(options, item.getClient(), new Scope(item.getScope()));
+      final StackItem newItem = new StackItem(options, item.getClient(), item.getScope().clone());
       stack.push(newItem);
     }
   }
@@ -553,9 +552,12 @@ public final class Hub implements IHub {
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'withScope' call is a no-op.");
+      try {
+        callback.run(NoOpScope.getInstance());
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+      }
+
     } else {
       pushScope();
       try {
@@ -811,11 +813,11 @@ public final class Hub implements IHub {
     return null;
   }
 
-  private Scope buildLocalScope(
-      final @NotNull Scope scope, final @Nullable ScopeCallback callback) {
+  private IScope buildLocalScope(
+      final @NotNull IScope scope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
       try {
-        final Scope localScope = new Scope(scope);
+        final IScope localScope = scope.clone();
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {

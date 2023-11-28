@@ -16,12 +16,12 @@ import io.sentry.Breadcrumb;
 import io.sentry.FullyDisplayedReporter;
 import io.sentry.Hint;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.NoOpTransaction;
-import io.sentry.Scope;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -299,7 +299,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @VisibleForTesting
-  void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+  void applyScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
           // we'd not like to overwrite existent transactions bound to the Scope
@@ -318,7 +318,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @VisibleForTesting
-  void clearScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+  void clearScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
           if (scopeTransaction == transaction) {

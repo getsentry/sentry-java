@@ -91,12 +91,12 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val hub = Hub(options)
-        var firstScope: Scope? = null
+        var firstScope: IScope? = null
         hub.configureScope {
             firstScope = it
             it.setTag("hub", "a")
         }
-        var cloneScope: Scope? = null
+        var cloneScope: IScope? = null
         val clone = hub.clone()
         clone.configureScope {
             cloneScope = it
@@ -419,7 +419,7 @@ class HubTest {
     @Test
     fun `when captureEvent is called with a ScopeCallback then subsequent calls to captureEvent send the unmodified Scope to the client`() {
         val (sut, mockClient) = getEnabledHub()
-        val argumentCaptor = argumentCaptor<Scope>()
+        val argumentCaptor = argumentCaptor<IScope>()
 
         sut.captureEvent(SentryEvent(), null) {
             it.setTag("test", "testValue")
@@ -512,7 +512,7 @@ class HubTest {
     @Test
     fun `when captureMessage is called with a ScopeCallback then subsequent calls to captureMessage send the unmodified Scope to the client`() {
         val (sut, mockClient) = getEnabledHub()
-        val argumentCaptor = argumentCaptor<Scope>()
+        val argumentCaptor = argumentCaptor<IScope>()
 
         sut.captureMessage("testMessage") {
             it.setTag("test", "testValue")
@@ -644,7 +644,7 @@ class HubTest {
     @Test
     fun `when captureException is called with a ScopeCallback then subsequent calls to captureException send the unmodified Scope to the client`() {
         val (sut, mockClient) = getEnabledHub()
-        val argumentCaptor = argumentCaptor<Scope>()
+        val argumentCaptor = argumentCaptor<IScope>()
 
         sut.captureException(Throwable(), null) {
             it.setTag("test", "testValue")
@@ -787,14 +787,14 @@ class HubTest {
 
     //region withScope tests
     @Test
-    fun `when withScope is called on disabled client, do nothing`() {
+    fun `when withScope is called on disabled client, execute on NoOpScope`() {
         val (sut) = getEnabledHub()
 
         val scopeCallback = mock<ScopeCallback>()
         sut.close()
 
         sut.withScope(scopeCallback)
-        verify(scopeCallback, never()).run(any())
+        verify(scopeCallback).run(NoOpScope.getInstance())
     }
 
     @Test
@@ -885,7 +885,7 @@ class HubTest {
     @Test
     fun `when setLevel is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -898,7 +898,7 @@ class HubTest {
     @Test
     fun `when setLevel is called, level is set`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -912,7 +912,7 @@ class HubTest {
     @Test
     fun `when setTransaction is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -925,7 +925,7 @@ class HubTest {
     @Test
     fun `when setTransaction is called, and transaction is not set, transaction name is changed`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -937,7 +937,7 @@ class HubTest {
     @Test
     fun `when setTransaction is called, and transaction is set, transaction name is changed`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -988,7 +988,7 @@ class HubTest {
     @Test
     fun `when setUser is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1001,7 +1001,7 @@ class HubTest {
     @Test
     fun `when setUser is called, user is set`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1016,7 +1016,7 @@ class HubTest {
     @Test
     fun `when setFingerprint is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1030,7 +1030,7 @@ class HubTest {
     @Test
     fun `when setFingerprint is called with null parameter, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1042,7 +1042,7 @@ class HubTest {
     @Test
     fun `when setFingerprint is called, fingerprint is set`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1057,7 +1057,7 @@ class HubTest {
     @Test
     fun `when clearBreadcrumbs is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1072,7 +1072,7 @@ class HubTest {
     @Test
     fun `when clearBreadcrumbs is called, clear breadcrumbs`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1088,7 +1088,7 @@ class HubTest {
     @Test
     fun `when setTag is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1101,7 +1101,7 @@ class HubTest {
     @Test
     fun `when setTag is called with null parameters, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1113,7 +1113,7 @@ class HubTest {
     @Test
     fun `when setTag is called, tag is set`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1127,7 +1127,7 @@ class HubTest {
     @Test
     fun `when setExtra is called on disabled client, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1140,7 +1140,7 @@ class HubTest {
     @Test
     fun `when setExtra is called with null parameters, do nothing`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1152,7 +1152,7 @@ class HubTest {
     @Test
     fun `when setExtra is called, extra is set`() {
         val hub = generateHub()
-        var scope: Scope? = null
+        var scope: IScope? = null
         hub.configureScope {
             scope = it
         }
@@ -1601,7 +1601,7 @@ class HubTest {
         // we have to clone the scope, so its isEnabled returns true, but it's still built up from
         // the old scope preserving its data
         val clone = sut.clone()
-        var oldScope: Scope? = null
+        var oldScope: IScope? = null
         clone.configureScope { scope -> oldScope = scope }
         assertNull(oldScope!!.transaction)
         assertTrue(oldScope!!.breadcrumbs.isEmpty())

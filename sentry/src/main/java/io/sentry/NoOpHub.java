@@ -121,7 +121,9 @@ public final class NoOpHub implements IHub {
   public void popScope() {}
 
   @Override
-  public void withScope(@NotNull ScopeCallback callback) {}
+  public void withScope(@NotNull ScopeCallback callback) {
+    callback.run(NoOpScope.getInstance());
+  }
 
   @Override
   public void configureScope(@NotNull ScopeCallback callback) {}
