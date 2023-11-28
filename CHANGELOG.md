@@ -13,7 +13,7 @@ Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes.
 
 This SDK version is compatible with a self-hosted version of Sentry `22.12.0` or higher. If you are using an older version of [self-hosted Sentry](https://develop.sentry.dev/self-hosted/) (aka onpremise), you will need to [upgrade](https://develop.sentry.dev/self-hosted/releases/). If you're using `sentry.io` no action is required.
 
-## Sentry Integrations Version Compatibility
+## Sentry Integrations Version Compatibility (Android)
 
 Make sure to align _all_ Sentry dependencies to the same version when bumping the SDK to 7.+, otherwise it will crash at runtime due to binary incompatibility. (E.g. if you're using `-timber`, `-okhttp` or other packages)
 
@@ -36,7 +36,17 @@ Similarly, if you have a Sentry SDK (e.g. `sentry-android-core`) dependency on o
 - Move enableNdk from SentryOptions to SentryAndroidOptions ([#2793](https://github.com/getsentry/sentry-java/pull/2793))
 - Apollo v2 BeforeSpanCallback now allows returning null ([#2890](https://github.com/getsentry/sentry-java/pull/2890))
 - `SentryOkHttpUtils` was removed from public API as it's been exposed by mistake ([#3005](https://github.com/getsentry/sentry-java/pull/3005))
-- `IScope` and `NoOpScope` were introduced. ([#3066](https://github.com/getsentry/sentry-java/pull/3066))
+- `Scope` now implements the `IScope` interface, therefore some methods like `ScopeCallback.run` accept `IScope` now ([#3066](https://github.com/getsentry/sentry-java/pull/3066))
+- Cleanup `startTransaction` overloads ([#2964](https://github.com/getsentry/sentry-java/pull/2964))
+    - We have reduced the number of overloads by allowing to pass in a `TransactionOptions` object instead of having separate parameters for certain options
+    - `TransactionOptions` has defaults set and can be customized, for example:
+
+```kotlin
+// old
+val transaction = Sentry.startTransaction("name", "op", bindToScope = true)
+// new
+val transaction = Sentry.startTransaction("name", "op", TransactionOptions().apply { isBindToScope = true })
+```
 
 ## Behavioural Changes
 
