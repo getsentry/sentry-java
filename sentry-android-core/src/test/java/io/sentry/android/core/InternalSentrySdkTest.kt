@@ -24,6 +24,7 @@ import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.transport.ITransport
+import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -63,6 +64,10 @@ class InternalSentrySdkTest {
 
                         override fun flush(timeoutMillis: Long) {
                             // no-op
+                        }
+
+                        override fun getRateLimiter(): RateLimiter? {
+                            return null
                         }
                     }
                 }

@@ -68,7 +68,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             )
 
             return ApolloClient.Builder().serverUrl(server.url("/").toString())
-                .sentryTracing(hub = hub, beforeSpan = beforeSpan)
+                .sentryTracing(hub = hub, beforeSpan = beforeSpan, captureFailedRequests = false)
                 .build()
         }
     }

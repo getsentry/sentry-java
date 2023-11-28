@@ -9,7 +9,9 @@ import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.NoOpModulesLoader
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
@@ -238,7 +240,7 @@ class SentryTest {
             it.tracesSampleRate = 1.0
         }
 
-        val transaction = Sentry.startTransaction("name", "op", "desc")
+        val transaction = Sentry.startTransaction("name", "op", "desc", TransactionOptions())
         assertEquals("name", transaction.name)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
@@ -268,6 +270,42 @@ class SentryTest {
 
         assertTrue(File(sentryOptions?.profilingTracesDirPath!!).exists())
         assertTrue(File(sentryOptions?.profilingTracesDirPath!!).list()!!.isEmpty())
+    }
+
+    @Test
+    fun `only old profiles in profilingTracesDirPath should be cleared when profiling is enabled`() {
+        val tempPath = getTempPath()
+        val options = SentryOptions().also {
+            it.dsn = dsn
+            it.cacheDirPath = tempPath
+        }
+        val dir = File(options.profilingTracesDirPath!!)
+        val oldProfile = File(dir, "oldProfile")
+        val newProfile = File(dir, "newProfile")
+
+        // Create all files
+        dir.mkdirs()
+        oldProfile.createNewFile()
+        newProfile.createNewFile()
+        // Make the old profile look like it's created earlier
+        oldProfile.setLastModified(System.currentTimeMillis() - 10000)
+        // Make the new profile look like it's created later
+        newProfile.setLastModified(System.currentTimeMillis() + 10000)
+
+        // Assert both file exist
+        assertTrue(oldProfile.exists())
+        assertTrue(newProfile.exists())
+
+        Sentry.init {
+            it.dsn = dsn
+            it.profilesSampleRate = 1.0
+            it.cacheDirPath = tempPath
+            it.executorService = ImmediateExecutorService()
+        }
+
+        // Assert only the new profile exists
+        assertFalse(oldProfile.exists())
+        assertTrue(newProfile.exists())
     }
 
     @Test
@@ -823,6 +861,65 @@ class SentryTest {
         verify(scopeCallback).run(any())
     }
 
+    @Test
+    fun `getSpan calls hub getSpan`() {
+        val hub = mock<IHub>()
+        Sentry.init({
+            it.dsn = dsn
+        }, false)
+        Sentry.setCurrentHub(hub)
+        Sentry.getSpan()
+        verify(hub).span
+    }
+
+    @Test
+    fun `getSpan calls returns root span if globalhub mode is enabled on Android`() {
+        PlatformTestManipulator.pretendIsAndroid(true)
+        Sentry.init({
+            it.dsn = dsn
+            it.enableTracing = true
+            it.sampleRate = 1.0
+        }, true)
+
+        val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
+        transaction.startChild("op-child")
+
+        val span = Sentry.getSpan()!!
+        assertEquals("op-root", span.operation)
+        PlatformTestManipulator.pretendIsAndroid(false)
+    }
+
+    @Test
+    fun `getSpan calls returns child span if globalhub mode is enabled, but the platform is not Android`() {
+        PlatformTestManipulator.pretendIsAndroid(false)
+        Sentry.init({
+            it.dsn = dsn
+            it.enableTracing = true
+            it.sampleRate = 1.0
+        }, false)
+
+        val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
+        transaction.startChild("op-child")
+
+        val span = Sentry.getSpan()!!
+        assertEquals("op-child", span.operation)
+    }
+
+    @Test
+    fun `getSpan calls returns child span if globalhub mode is disabled`() {
+        Sentry.init({
+            it.dsn = dsn
+            it.enableTracing = true
+            it.sampleRate = 1.0
+        }, false)
+
+        val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
+        transaction.startChild("op-child")
+
+        val span = Sentry.getSpan()!!
+        assertEquals("op-child", span.operation)
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set
@@ -864,6 +961,9 @@ class SentryTest {
 
     private class CustomMainThreadChecker : IMainThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
+        override fun isMainThread(thread: Thread): Boolean = false
+        override fun isMainThread(): Boolean = false
+        override fun isMainThread(sentryThread: SentryThread): Boolean = false
     }
 
     private class CustomMemoryCollector : ICollector {

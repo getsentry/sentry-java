@@ -7,6 +7,7 @@ import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -380,6 +381,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    addBreadcrumb(breadcrumb, new Hint());
+  }
+
+  @Override
   public void setLevel(final @Nullable SentryLevel level) {
     if (!isEnabled()) {
       options
@@ -679,24 +685,10 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
-  @ApiStatus.Internal
   @Override
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
-    return createTransaction(transactionContext, transactionOptions);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope) {
-
-    final TransactionOptions transactionOptions = new TransactionOptions();
-    transactionOptions.setCustomSamplingContext(customSamplingContext);
-    transactionOptions.setBindToScope(bindToScope);
-
     return createTransaction(transactionContext, transactionOptions);
   }
 
@@ -767,6 +759,22 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
       span = stack.peek().getScope().getSpan();
+    }
+    return span;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @Nullable ITransaction getTransaction() {
+    ITransaction span = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'getTransaction' call is a no-op.");
+    } else {
+      span = stack.peek().getScope().getTransaction();
     }
     return span;
   }
@@ -892,5 +900,12 @@ public final class Hub implements IHub {
     }
     this.lastEventId = sentryId;
     return sentryId;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    final StackItem item = stack.peek();
+    return item.getClient().getRateLimiter();
   }
 }

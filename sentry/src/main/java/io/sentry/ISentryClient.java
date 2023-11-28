@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.transport.RateLimiter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -268,4 +269,8 @@ public interface ISentryClient {
   @NotNull
   @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
+
+  @ApiStatus.Internal
+  @Nullable
+  RateLimiter getRateLimiter();
 }

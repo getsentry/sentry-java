@@ -1,11 +1,15 @@
 package io.sentry
 
 import io.sentry.hints.ApplyScopeData
-import io.sentry.protocol.User
+import io.sentry.hints.Enqueable
+import io.sentry.hints.Retryable
+import io.sentry.transport.RateLimiter
 import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argWhere
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -34,8 +38,31 @@ class DirectoryProcessorTest {
             options.setLogger(logger)
         }
 
-        fun getSut(): OutboxSender {
-            return OutboxSender(hub, envelopeReader, serializer, logger, 15000)
+        fun getSut(isRetryable: Boolean = false, isRateLimitingActive: Boolean = false): OutboxSender {
+            val hintCaptor = argumentCaptor<Hint>()
+            whenever(hub.captureEvent(any(), hintCaptor.capture())).then {
+                HintUtils.runIfHasType(
+                    hintCaptor.firstValue,
+                    Enqueable::class.java
+                ) { enqueable: Enqueable ->
+                    enqueable.markEnqueued()
+
+                    // activate rate limiting when a first envelope was processed
+                    if (isRateLimitingActive) {
+                        val rateLimiter = mock<RateLimiter> {
+                            whenever(mock.isActiveForCategory(any())).thenReturn(true)
+                        }
+                        whenever(hub.rateLimiter).thenReturn(rateLimiter)
+                    }
+                }
+                HintUtils.runIfHasType(
+                    hintCaptor.firstValue,
+                    Retryable::class.java
+                ) { retryable ->
+                    retryable.isRetry = isRetryable
+                }
+            }
+            return OutboxSender(hub, envelopeReader, serializer, logger, 500, 30)
         }
     }
 
@@ -57,9 +84,6 @@ class DirectoryProcessorTest {
     fun `process directory folder has a non ApplyScopeData hint`() {
         val path = getTempEnvelope("envelope-event-attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-//        val session = createSession()
-//        whenever(fixture.envelopeReader.read(any())).thenReturn(SentryEnvelope.from(fixture.serializer, session, null))
-//        whenever(fixture.serializer.deserializeSession(any())).thenReturn(session)
         val event = SentryEvent()
         val envelope = SentryEnvelope.from(fixture.serializer, event, null)
 
@@ -79,15 +103,50 @@ class DirectoryProcessorTest {
         verify(fixture.hub, never()).captureEnvelope(any(), any())
     }
 
+    @Test
+    fun `when envelope has already been submitted to the queue, does not process it again`() {
+        getTempEnvelope("envelope-event-attachment.txt")
+
+        val event = SentryEvent()
+        val envelope = SentryEnvelope.from(fixture.serializer, event, null)
+
+        whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
+
+        // make it retryable so it doesn't get deleted
+        val sut = fixture.getSut(isRetryable = true)
+        sut.processDirectory(file)
+
+        // process it once again
+        sut.processDirectory(file)
+
+        // should only capture once
+        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
+    }
+
+    @Test
+    fun `when rate limiting gets active in the middle of processing, stops processing`() {
+        getTempEnvelope("envelope-event-attachment.txt")
+        getTempEnvelope("envelope-event-attachment.txt")
+
+        val event = SentryEvent()
+        val envelope = SentryEnvelope.from(fixture.serializer, event, null)
+
+        whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
+
+        val sut = fixture.getSut(isRateLimitingActive = true)
+        sut.processDirectory(file)
+
+        // should only capture once
+        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
+    }
+
     private fun getTempEnvelope(fileName: String): String {
         val testFile = this::class.java.classLoader.getResource(fileName)
         val testFileBytes = testFile!!.readBytes()
         val targetFile = File.createTempFile("temp-envelope", ".tmp", file)
         Files.write(Paths.get(targetFile.toURI()), testFileBytes)
         return targetFile.absolutePath
-    }
-
-    private fun createSession(): Session {
-        return Session("123", User(), "env", "release")
     }
 }

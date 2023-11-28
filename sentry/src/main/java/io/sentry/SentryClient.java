@@ -4,11 +4,13 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -224,14 +226,19 @@ public final class SentryClient implements ISentryClient {
       sentryId = SentryId.EMPTY_ID;
     }
 
-    // if we encountered an abnormal exit finish tracing in order to persist and send
+    // if we encountered a crash/abnormal exit finish tracing in order to persist and send
     // any running transaction / profiling data
     if (scope != null) {
-      @Nullable ITransaction transaction = scope.getTransaction();
+      final @Nullable ITransaction transaction = scope.getTransaction();
       if (transaction != null) {
-        // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
         if (HintUtils.hasType(hint, TransactionEnd.class)) {
-          transaction.forceFinish(SpanStatus.ABORTED, false);
+          final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+          if (sentrySdkHint instanceof DiskFlushNotification) {
+            ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
+            transaction.forceFinish(SpanStatus.ABORTED, false, hint);
+          } else {
+            transaction.forceFinish(SpanStatus.ABORTED, false, null);
+          }
         }
       }
     }
@@ -927,6 +934,11 @@ public final class SentryClient implements ISentryClient {
   @Override
   public void flush(final long timeoutMillis) {
     transport.flush(timeoutMillis);
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return transport.getRateLimiter();
   }
 
   private boolean sample() {

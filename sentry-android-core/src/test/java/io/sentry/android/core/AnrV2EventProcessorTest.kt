@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
 import android.content.Context
+import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
@@ -84,7 +85,7 @@ class AnrV2EventProcessorTest {
 
         fun getSut(
             dir: TemporaryFolder,
-            currentSdk: Int = 21,
+            currentSdk: Int = Build.VERSION_CODES.LOLLIPOP,
             populateScopeCache: Boolean = false,
             populateOptionsCache: Boolean = false
         ): AnrV2EventProcessor {
@@ -406,6 +407,10 @@ class AnrV2EventProcessorTest {
             debugMeta = DebugMeta().apply {
                 images = listOf(DebugImage().apply { type = DebugImage.PROGUARD; uuid = "uuid1" })
             }
+            user = User().apply {
+                id = "42"
+                ipAddress = "2.4.8.16"
+            }
         }
 
         assertEquals("NotAndroid", processed.platform)
@@ -427,6 +432,9 @@ class AnrV2EventProcessorTest {
         assertEquals(2, processed.debugMeta!!.images!!.size)
         assertEquals("uuid1", processed.debugMeta!!.images!![0].uuid)
         assertEquals("uuid", processed.debugMeta!!.images!![1].uuid)
+
+        assertEquals("42", processed.user!!.id)
+        assertEquals("2.4.8.16", processed.user!!.ipAddress)
     }
 
     @Test
@@ -543,6 +551,8 @@ class AnrV2EventProcessorTest {
 
     internal class AbnormalExitHint(val mechanism: String? = null) : AbnormalExit, Backfillable {
         override fun mechanism(): String? = mechanism
+        override fun ignoreCurrentThread(): Boolean = false
+        override fun timestamp(): Long? = null
         override fun shouldEnrich(): Boolean = true
     }
 

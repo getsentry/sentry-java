@@ -11,6 +11,7 @@ import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
+import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
@@ -2259,7 +2260,50 @@ class SentryClientTest {
 
         sut.captureEvent(SentryEvent(), scope, transactionEndHint)
 
-        verify(transaction).forceFinish(SpanStatus.ABORTED, false)
+        verify(transaction).forceFinish(SpanStatus.ABORTED, false, null)
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+    }
+
+    @Test
+    fun `when event has DiskFlushNotification, TransactionEnds set transaction id as flushable`() {
+        val sut = fixture.getSut()
+
+        // build up a running transaction
+        val spanContext = SpanContext("op.load")
+        val transaction = mock<ITransaction>()
+        whenever(transaction.name).thenReturn("transaction")
+        whenever(transaction.eventId).thenReturn(SentryId())
+        whenever(transaction.spanContext).thenReturn(spanContext)
+
+        // scope
+        val scope = mock<Scope>()
+        whenever(scope.transaction).thenReturn(transaction)
+        whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+        whenever(scope.extras).thenReturn(emptyMap())
+        whenever(scope.contexts).thenReturn(Contexts())
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        var capturedEventId: SentryId? = null
+        val transactionEnd = object : TransactionEnd, DiskFlushNotification {
+            override fun markFlushed() {}
+            override fun isFlushable(eventId: SentryId?): Boolean = true
+            override fun setFlushable(eventId: SentryId) {
+                capturedEventId = eventId
+            }
+        }
+        val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
+
+        sut.captureEvent(SentryEvent(), scope, transactionEndHint)
+
+        assertEquals(transaction.eventId, capturedEventId)
+        verify(transaction).forceFinish(SpanStatus.ABORTED, false, transactionEndHint)
         verify(fixture.transport).send(
             check {
                 assertEquals(1, it.items.count())
@@ -2648,6 +2692,8 @@ class SentryClientTest {
 
     private class AbnormalHint(private val mechanism: String? = null) : AbnormalExit {
         override fun mechanism(): String? = mechanism
+        override fun ignoreCurrentThread(): Boolean = false
+        override fun timestamp(): Long? = null
     }
 
     private fun eventProcessorThrows(): EventProcessor {

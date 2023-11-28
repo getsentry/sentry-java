@@ -1,6 +1,7 @@
 package io.sentry.android.core.internal.util
 
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -31,7 +32,7 @@ class FirstDrawDoneListenerTest {
         val buildInfo = mock<BuildInfoProvider>()
         lateinit var onDrawListeners: ArrayList<ViewTreeObserver.OnDrawListener>
 
-        fun getSut(apiVersion: Int = 26): View {
+        fun getSut(apiVersion: Int = Build.VERSION_CODES.O): View {
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
             val view = View(application)
 
@@ -52,7 +53,7 @@ class FirstDrawDoneListenerTest {
 
     @Test
     fun `registerForNextDraw adds listener on attach state changed on sdk 25-`() {
-        val view = fixture.getSut(25)
+        val view = fixture.getSut(Build.VERSION_CODES.N_MR1)
 
         // OnDrawListener is not registered, it is delayed for later
         FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)

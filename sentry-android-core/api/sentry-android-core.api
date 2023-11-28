@@ -85,6 +85,7 @@ public final class io/sentry/android/core/AnrIntegrationFactory {
 public final class io/sentry/android/core/AnrV2EventProcessor : io/sentry/BackfillingEventProcessor {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, java/io/Closeable {
@@ -95,7 +96,10 @@ public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, ja
 
 public final class io/sentry/android/core/AnrV2Integration$AnrV2Hint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/AbnormalExit, io/sentry/hints/Backfillable {
 	public fun <init> (JLio/sentry/ILogger;JZZ)V
+	public fun ignoreCurrentThread ()Z
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public fun mechanism ()Ljava/lang/String;
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
 	public fun shouldEnrich ()Z
 	public fun timestamp ()Ljava/lang/Long;
 }
@@ -227,9 +231,10 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor, io/sentry/IntegrationName {
+public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public final class io/sentry/android/core/SentryAndroid {
@@ -267,8 +272,10 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableFramesTracking ()Z
+	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
 	public fun isEnableRootCheck ()Z
+	public fun isEnableScopeSync ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isReportHistoricalAnrs ()Z
 	public fun setAnrEnabled (Z)V
@@ -287,8 +294,10 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableFramesTracking (Z)V
+	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
 	public fun setEnableRootCheck (Z)V
+	public fun setEnableScopeSync (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
@@ -368,9 +377,10 @@ public final class io/sentry/android/core/UserInteractionIntegration : android/a
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor, io/sentry/IntegrationName {
+public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 	public static fun snapshotViewHierarchy (Landroid/app/Activity;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchy (Landroid/app/Activity;Ljava/util/List;Lio/sentry/util/thread/IMainThreadChecker;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchy (Landroid/view/View;)Lio/sentry/protocol/ViewHierarchy;

@@ -1497,7 +1497,7 @@ class HubTest {
     fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
         val hub = generateHub()
 
-        hub.startTransaction("name", "op", false)
+        hub.startTransaction("name", "op", TransactionOptions())
 
         hub.configureScope {
             assertNull(it.span)
@@ -1519,7 +1519,7 @@ class HubTest {
     fun `when startTransaction with bindToScope set to true, transaction is attached to the scope`() {
         val hub = generateHub()
 
-        val transaction = hub.startTransaction("name", "op", true)
+        val transaction = hub.startTransaction("name", "op", TransactionOptions().also { it.isBindToScope = true })
 
         hub.configureScope {
             assertEquals(transaction, it.span)
@@ -1595,7 +1595,7 @@ class HubTest {
 
         val sut = Hub(options)
         sut.addBreadcrumb("Test")
-        sut.startTransaction("test", "test.op", true)
+        sut.startTransaction("test", "test.op", TransactionOptions().also { it.isBindToScope = true })
         sut.close()
 
         // we have to clone the scope, so its isEnabled returns true, but it's still built up from
@@ -1645,15 +1645,32 @@ class HubTest {
     @Test
     fun `when there is no active transaction, getSpan returns null`() {
         val hub = generateHub()
-        assertNull(hub.getSpan())
+        assertNull(hub.span)
     }
 
     @Test
-    fun `when there is active transaction bound to the scope, getSpan returns active transaction`() {
+    fun `when there is no active transaction, getTransaction returns null`() {
+        val hub = generateHub()
+        assertNull(hub.transaction)
+    }
+
+    @Test
+    fun `when there is active transaction bound to the scope, getTransaction and getSpan return active transaction`() {
         val hub = generateHub()
         val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
-        assertEquals(tx, hub.getSpan())
+        hub.configureScope { it.transaction = tx }
+
+        assertEquals(tx, hub.transaction)
+        assertEquals(tx, hub.span)
+    }
+
+    @Test
+    fun `when there is a transaction but the hub is closed, getTransaction returns null`() {
+        val hub = generateHub()
+        hub.startTransaction("name", "op")
+        hub.close()
+
+        assertNull(hub.transaction)
     }
 
     @Test
@@ -1663,6 +1680,8 @@ class HubTest {
         hub.configureScope { it.setTransaction(tx) }
         hub.configureScope { it.setTransaction(tx) }
         val span = tx.startChild("op")
+
+        assertEquals(tx, hub.transaction)
         assertEquals(span, hub.span)
     }
     // endregion

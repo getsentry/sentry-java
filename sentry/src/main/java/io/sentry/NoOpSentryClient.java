@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.transport.RateLimiter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,5 +60,10 @@ final class NoOpSentryClient implements ISentryClient {
   public @NotNull SentryId captureCheckIn(
       @NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return null;
   }
 }
