@@ -131,7 +131,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private void attachColdAppStartSpans(
       final @NotNull AppStartMetrics appStartMetrics, final @NotNull SentryTransaction txn) {
 
-    // data will be filled anyway only for cold app starts
+    // data will be filled only for cold app starts
     if (appStartMetrics.getAppStartType() != AppStartMetrics.AppStartType.COLD) {
       return;
     }
@@ -145,19 +145,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // Application.onCreate
     final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
     if (appOnCreate.hasStopped()) {
-      final SentrySpan span =
-          new SentrySpan(
-              appOnCreate.getStartTimestampS(),
-              appOnCreate.getProjectedStopTimestampS(),
-              traceId,
-              new SpanId(),
-              null,
-              UI_LOAD_OP,
-              appOnCreate.getDescription(),
-              SpanStatus.OK,
-              APP_METRICS_ORIGN,
-              new HashMap<>(),
-              null);
+      final SentrySpan span = timeSpanToSentrySpan(appOnCreate, null, traceId);
       txn.getSpans().add(span);
     }
 
@@ -175,27 +163,17 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
               new SpanId(),
               null,
               UI_LOAD_OP,
-              "ContentProvider",
+              "Content Providers",
               SpanStatus.OK,
               APP_METRICS_ORIGN,
               new HashMap<>(),
               null);
       txn.getSpans().add(contentProviderRootSpan);
       for (final @NotNull TimeSpan contentProvider : contentProviderOnCreates) {
-        final SentrySpan contentProviderSpan =
-            new SentrySpan(
-                contentProvider.getStartTimestampS(),
-                contentProvider.getProjectedStopTimestampS(),
-                traceId,
-                new SpanId(),
-                contentProviderRootSpan.getSpanId(),
-                UI_LOAD_OP,
-                contentProvider.getDescription(),
-                SpanStatus.OK,
-                APP_METRICS_ORIGN,
-                new HashMap<>(),
-                null);
-        txn.getSpans().add(contentProviderSpan);
+        txn.getSpans()
+            .add(
+                timeSpanToSentrySpan(
+                    contentProvider, contentProviderRootSpan.getSpanId(), traceId));
       }
     }
 
@@ -214,7 +192,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
               new SpanId(),
               null,
               UI_LOAD_OP,
-              "Activity",
+              "Activities",
               SpanStatus.OK,
               APP_METRICS_ORIGN,
               new HashMap<>(),
@@ -223,38 +201,37 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
       for (ActivityLifecycleTimeSpan activityTimeSpan : activityLifecycleTimeSpans) {
         if (activityTimeSpan.onCreate.hasStarted() && activityTimeSpan.onCreate.hasStopped()) {
-          final SentrySpan onCreateSpan =
-              new SentrySpan(
-                  activityTimeSpan.onCreate.getStartTimestampS(),
-                  activityTimeSpan.onCreate.getProjectedStopTimestampS(),
-                  traceId,
-                  new SpanId(),
-                  activityRootSpan.getSpanId(),
-                  UI_LOAD_OP,
-                  activityTimeSpan.onCreate.getDescription(),
-                  SpanStatus.OK,
-                  APP_METRICS_ORIGN,
-                  new HashMap<>(),
-                  null);
-          txn.getSpans().add(onCreateSpan);
+          txn.getSpans()
+              .add(
+                  timeSpanToSentrySpan(
+                      activityTimeSpan.onCreate, activityRootSpan.getSpanId(), traceId));
         }
         if (activityTimeSpan.onStart.hasStarted() && activityTimeSpan.onStart.hasStopped()) {
-          final SentrySpan onStartSpan =
-              new SentrySpan(
-                  activityTimeSpan.onStart.getStartTimestampS(),
-                  activityTimeSpan.onStart.getProjectedStopTimestampS(),
-                  traceId,
-                  new SpanId(),
-                  activityRootSpan.getSpanId(),
-                  UI_LOAD_OP,
-                  activityTimeSpan.onStart.getDescription(),
-                  SpanStatus.OK,
-                  APP_METRICS_ORIGN,
-                  new HashMap<>(),
-                  null);
-          txn.getSpans().add(onStartSpan);
+          txn.getSpans()
+              .add(
+                  timeSpanToSentrySpan(
+                      activityTimeSpan.onStart, activityRootSpan.getSpanId(), traceId));
         }
       }
     }
+  }
+
+  @NotNull
+  private static SentrySpan timeSpanToSentrySpan(
+      final @NotNull TimeSpan span,
+      final @Nullable SpanId parentSpanId,
+      final @NotNull SentryId traceId) {
+    return new SentrySpan(
+        span.getStartTimestampS(),
+        span.getProjectedStopTimestampS(),
+        traceId,
+        new SpanId(),
+        parentSpanId,
+        ActivityLifecycleIntegration.UI_LOAD_OP,
+        span.getDescription(),
+        SpanStatus.OK,
+        APP_METRICS_ORIGN,
+        new HashMap<>(),
+        null);
   }
 }
