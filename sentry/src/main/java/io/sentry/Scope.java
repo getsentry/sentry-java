@@ -91,15 +91,6 @@ public final class Scope implements IScope {
     this.propagationContext = new PropagationContext();
   }
 
-  public static IScope fromScope(final @NotNull IScope scope) {
-    if (scope instanceof Scope) {
-      Scope scopeImpl = (Scope) scope;
-      return new Scope(scopeImpl);
-    } else {
-      return NoOpScope.getInstance();
-    }
-  }
-
   private Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
@@ -942,6 +933,16 @@ public final class Scope implements IScope {
       callback.accept(propagationContext);
       return new PropagationContext(propagationContext);
     }
+  }
+
+  /**
+   * Clones the Scope
+   *
+   * @return the cloned Scope
+   */
+  @Override
+  public @NotNull IScope clone() {
+    return new Scope(this);
   }
 
   /** The IWithTransaction callback */

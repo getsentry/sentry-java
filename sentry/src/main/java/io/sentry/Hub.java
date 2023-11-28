@@ -509,8 +509,7 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      final StackItem newItem =
-          new StackItem(options, item.getClient(), Scope.fromScope(item.getScope()));
+      final StackItem newItem = new StackItem(options, item.getClient(), item.getScope().clone());
       stack.push(newItem);
     }
   }
@@ -810,7 +809,7 @@ public final class Hub implements IHub {
       final @NotNull IScope scope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
       try {
-        final IScope localScope = Scope.fromScope(scope);
+        final IScope localScope = scope.clone();
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {

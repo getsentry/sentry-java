@@ -362,4 +362,12 @@ public interface IScope {
   @ApiStatus.Internal
   @NotNull
   PropagationContext withPropagationContext(final @NotNull Scope.IWithPropagationContext callback);
+
+  /**
+   * Clones the Scope
+   *
+   * @return the cloned Scope
+   */
+  @NotNull
+  IScope clone();
 }

@@ -609,6 +609,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun clearAttachments ()V
 	public abstract fun clearBreadcrumbs ()V
 	public abstract fun clearTransaction ()V
+	public abstract fun clone ()Lio/sentry/IScope;
 	public abstract fun endSession ()Lio/sentry/Session;
 	public abstract fun getAttachments ()Ljava/util/List;
 	public abstract fun getBreadcrumbs ()Ljava/util/Queue;
@@ -1124,6 +1125,8 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
 	public fun clearTransaction ()V
+	public fun clone ()Lio/sentry/IScope;
+	public synthetic fun clone ()Ljava/lang/Object;
 	public fun endSession ()Lio/sentry/Session;
 	public fun getAttachments ()Ljava/util/List;
 	public fun getBreadcrumbs ()Ljava/util/Queue;
@@ -1484,8 +1487,9 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
 	public fun clearTransaction ()V
+	public fun clone ()Lio/sentry/IScope;
+	public synthetic fun clone ()Ljava/lang/Object;
 	public fun endSession ()Lio/sentry/Session;
-	public static fun fromScope (Lio/sentry/IScope;)Lio/sentry/IScope;
 	public fun getAttachments ()Ljava/util/List;
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;

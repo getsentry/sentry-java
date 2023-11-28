@@ -235,4 +235,14 @@ public final class NoOpScope implements IScope {
       Scope.@NotNull IWithPropagationContext callback) {
     return new PropagationContext();
   }
+
+  /**
+   * Clones the Scope
+   *
+   * @return the cloned Scope
+   */
+  @Override
+  public @NotNull IScope clone() {
+    return NoOpScope.getInstance();
+  }
 }

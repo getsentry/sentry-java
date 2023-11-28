@@ -25,7 +25,7 @@ final class Stack {
     StackItem(final @NotNull StackItem item) {
       options = item.options;
       client = item.client;
-      scope = Scope.fromScope(item.scope);
+      scope = item.scope.clone();
     }
 
     public @NotNull ISentryClient getClient() {

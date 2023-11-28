@@ -8,6 +8,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 
 class NoOpScopeTest {
     private var sut: NoOpScope = NoOpScope.getInstance()
@@ -117,4 +118,7 @@ class NoOpScopeTest {
         sut.withPropagationContext(withPropagationContextCallback)
         verify(withPropagationContextCallback, never()).accept(any())
     }
+
+    @Test
+    fun `clone returns the same instance`() = assertSame(NoOpScope.getInstance(), sut.clone())
 }
