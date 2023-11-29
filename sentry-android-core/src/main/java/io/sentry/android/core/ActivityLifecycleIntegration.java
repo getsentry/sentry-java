@@ -237,10 +237,21 @@ public final class ActivityLifecycleIntegration
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
 
+        // starfish: for cold/warm app starts we want to use app.start.* ops instead of ui.load
+        @NotNull String transactionOp = UI_LOAD_OP;
+        if (options.isEnableStarfish() && !firstActivityCreated) {
+          if (Boolean.TRUE.equals(coldStart)) {
+            transactionOp = APP_START_COLD;
+          } else if (Boolean.FALSE.equals(coldStart)) {
+            transactionOp = APP_START_WARM;
+          }
+        }
+
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
             hub.startTransaction(
-                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
+                new TransactionContext(
+                    activityName, TransactionNameSource.COMPONENT, transactionOp),
                 transactionOptions);
         setSpanOrigin(transaction);
 

@@ -76,7 +76,6 @@ class ActivityLifecycleIntegrationTest {
             dsn = "https://key@sentry.io/proj"
         }
         val bundle = mock<Bundle>()
-        val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
@@ -95,9 +94,10 @@ class ActivityLifecycleIntegrationTest {
             whenever(hub.options).thenReturn(options)
 
             // We let the ActivityLifecycleIntegration create the proper transaction here
-            val argumentCaptor = argumentCaptor<TransactionOptions>()
-            whenever(hub.startTransaction(any(), argumentCaptor.capture())).thenAnswer {
-                val t = SentryTracer(context, hub, argumentCaptor.lastValue)
+            val optionCaptor = argumentCaptor<TransactionOptions>()
+            val contextCaptor = argumentCaptor<TransactionContext>()
+            whenever(hub.startTransaction(contextCaptor.capture(), optionCaptor.capture())).thenAnswer {
+                val t = SentryTracer(contextCaptor.lastValue, hub, optionCaptor.lastValue)
                 transaction = t
                 return@thenAnswer t
             }
@@ -1033,6 +1033,66 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When firstActivityCreated is true, txn op is app start cold for starfish`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableStarfish = true
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+        AppStartMetrics.getInstance().appStartType = AppStartType.COLD
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, null)
+
+        val txn = fixture.transaction
+        assertEquals("app.start.cold", txn.operation)
+    }
+
+    @Test
+    fun `When firstActivityCreated is true, txn op is app start warm for starfish`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableStarfish = true
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+        AppStartMetrics.getInstance().appStartType = AppStartType.WARM
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, null)
+
+        val txn = fixture.transaction
+        assertEquals("app.start.warm", txn.operation)
+    }
+
+    @Test
+    fun `When firstActivityCreated is false, txn op is ui load for starfish`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableStarfish = true
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+        AppStartMetrics.getInstance().appStartType = AppStartType.WARM
+
+        val activity = mock<Activity>()
+        // First invocation: we expect to start a transaction with the appStartTime
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityPostResumed(activity)
+        sut.onActivityDestroyed(activity)
+
+        val newActivity = mock<Activity>()
+        // Second invocation: we expect to start a transaction with a different start timestamp
+        sut.onActivityCreated(newActivity, fixture.bundle)
+        val txn = fixture.transaction
+        assertEquals("ui.load", txn.operation)
+    }
+
+    @Test
     fun `When firstActivityCreated is false, start transaction but not with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -1498,8 +1558,13 @@ class ActivityLifecycleIntegrationTest {
 
     private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(1), 0)) {
         // set by SentryPerformanceProvider so forcing it here
-        val appStartTimeSpan = AppStartMetrics.getInstance().legacyAppStartTimeSpan
+        val legacyAppStartTimeSpan = AppStartMetrics.getInstance().legacyAppStartTimeSpan
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         val millis = DateUtils.nanosToMillis(date.nanoTimestamp().toDouble()).toLong()
+
+        legacyAppStartTimeSpan.setStartedAt(millis)
+        legacyAppStartTimeSpan.setStartUnixTimeMs(millis)
+        legacyAppStartTimeSpan.setStoppedAt(0)
 
         appStartTimeSpan.setStartedAt(millis)
         appStartTimeSpan.setStartUnixTimeMs(millis)
