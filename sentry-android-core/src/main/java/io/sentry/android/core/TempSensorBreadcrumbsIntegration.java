@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static io.sentry.TypeCheckHint.ANDROID_SENSOR_EVENT;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -85,7 +86,7 @@ public final class TempSensorBreadcrumbsIntegration
           sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
           options.getLogger().log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-          addIntegrationToSdkVersion();
+          addIntegrationToSdkVersion(getClass());
         } else {
           options.getLogger().log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
         }

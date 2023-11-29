@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import io.sentry.Hint;
@@ -57,7 +59,7 @@ public final class AnrIntegration implements Integration, Closeable {
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
 
     if (options.isAnrEnabled()) {
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
       try {
         options
             .getExecutorService()
@@ -185,6 +187,11 @@ public final class AnrIntegration implements Integration, Closeable {
     @Override
     public boolean ignoreCurrentThread() {
       return true;
+    }
+
+    @Override
+    public @Nullable Long timestamp() {
+      return null;
     }
   }
 }

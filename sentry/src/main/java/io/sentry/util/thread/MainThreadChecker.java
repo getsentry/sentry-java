@@ -1,6 +1,8 @@
 package io.sentry.util.thread;
 
+import io.sentry.protocol.SentryThread;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Class that checks if a given thread is the Main/UI thread. The Main thread is denoted by the
@@ -24,5 +26,21 @@ public final class MainThreadChecker implements IMainThreadChecker {
   @Override
   public boolean isMainThread(long threadId) {
     return mainThreadId == threadId;
+  }
+
+  @Override
+  public boolean isMainThread(final @NotNull Thread thread) {
+    return isMainThread(thread.getId());
+  }
+
+  @Override
+  public boolean isMainThread() {
+    return isMainThread(Thread.currentThread());
+  }
+
+  @Override
+  public boolean isMainThread(final @NotNull SentryThread sentryThread) {
+    final Long threadId = sentryThread.getId();
+    return threadId != null && isMainThread(threadId);
   }
 }

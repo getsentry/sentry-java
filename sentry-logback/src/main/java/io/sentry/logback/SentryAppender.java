@@ -99,9 +99,14 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   protected @NotNull SentryEvent createEvent(@NotNull ILoggingEvent loggingEvent) {
     final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeStamp()));
     final Message message = new Message();
-    message.setMessage(loggingEvent.getMessage());
+
+    // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
+    if (encoder == null || options.isSendDefaultPii()) {
+      message.setMessage(loggingEvent.getMessage());
+      message.setParams(toParams(loggingEvent.getArgumentArray()));
+    }
+
     message.setFormatted(formatted(loggingEvent));
-    message.setParams(toParams(loggingEvent.getArgumentArray()));
     event.setMessage(message);
     event.setLogger(loggingEvent.getLoggerName());
     event.setLevel(formatLevel(loggingEvent.getLevel()));

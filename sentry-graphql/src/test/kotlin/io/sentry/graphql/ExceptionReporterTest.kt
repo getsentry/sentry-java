@@ -13,6 +13,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -41,7 +42,7 @@ class ExceptionReporterTest {
         val hub = mock<IHub>()
         lateinit var instrumentationExecutionParameters: InstrumentationExecutionParameters
         lateinit var executionResult: ExecutionResult
-        lateinit var scope: Scope
+        lateinit var scope: IScope
         val query = """query greeting(name: "somename")"""
         val variables = mapOf("variableA" to "value a")
 

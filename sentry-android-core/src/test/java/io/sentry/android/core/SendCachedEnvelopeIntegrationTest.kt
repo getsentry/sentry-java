@@ -1,5 +1,7 @@
 package io.sentry.android.core
 
+import io.sentry.IConnectionStatusProvider
+import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
@@ -7,13 +9,16 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.transport.RateLimiter
 import io.sentry.util.LazyEvaluator
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.concurrent.ExecutionException
@@ -130,5 +135,104 @@ class SendCachedEnvelopeIntegrationTest {
         // then wait until the async send finishes in background
         await.untilFalse(fixture.flag)
         verify(fixture.sender).send()
+    }
+
+    @Test
+    fun `registers for network connection changes`() {
+        val sut = fixture.getSut(hasStartupCrashMarker = false, mockExecutorService = ImmediateExecutorService())
+
+        val connectionStatusProvider = mock<IConnectionStatusProvider>()
+        fixture.options.connectionStatusProvider = connectionStatusProvider
+
+        sut.register(fixture.hub, fixture.options)
+        verify(connectionStatusProvider).addConnectionStatusObserver(any())
+    }
+
+    @Test
+    fun `when theres no network connection does nothing`() {
+        val sut = fixture.getSut(hasStartupCrashMarker = false)
+
+        val connectionStatusProvider = mock<IConnectionStatusProvider>()
+        fixture.options.connectionStatusProvider = connectionStatusProvider
+
+        whenever(connectionStatusProvider.connectionStatus).thenReturn(
+            ConnectionStatus.DISCONNECTED
+        )
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.sender, never()).send()
+    }
+
+    @Test
+    fun `when the network is not disconnected the factory is initialized`() {
+        val sut = fixture.getSut(hasStartupCrashMarker = false, mockExecutorService = ImmediateExecutorService())
+
+        val connectionStatusProvider = mock<IConnectionStatusProvider>()
+        fixture.options.connectionStatusProvider = connectionStatusProvider
+
+        whenever(connectionStatusProvider.connectionStatus).thenReturn(
+            ConnectionStatus.UNKNOWN
+        )
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.factory).create(any(), any())
+    }
+
+    @Test
+    fun `whenever network connection status changes, retries sending for relevant statuses`() {
+        val sut = fixture.getSut(hasStartupCrashMarker = false, mockExecutorService = ImmediateExecutorService())
+
+        val connectionStatusProvider = mock<IConnectionStatusProvider>()
+        fixture.options.connectionStatusProvider = connectionStatusProvider
+        whenever(connectionStatusProvider.connectionStatus).thenReturn(
+            ConnectionStatus.DISCONNECTED
+        )
+        sut.register(fixture.hub, fixture.options)
+
+        // when there's no connection no factory create call should be done
+        verify(fixture.sender, never()).send()
+
+        // but for any other status processing should be triggered
+        // CONNECTED
+        whenever(connectionStatusProvider.connectionStatus).thenReturn(ConnectionStatus.CONNECTED)
+        sut.onConnectionStatusChanged(ConnectionStatus.CONNECTED)
+        verify(fixture.sender).send()
+
+        // UNKNOWN
+        whenever(connectionStatusProvider.connectionStatus).thenReturn(ConnectionStatus.UNKNOWN)
+        sut.onConnectionStatusChanged(ConnectionStatus.UNKNOWN)
+        verify(fixture.sender, times(2)).send()
+
+        // NO_PERMISSION
+        whenever(connectionStatusProvider.connectionStatus).thenReturn(ConnectionStatus.NO_PERMISSION)
+        sut.onConnectionStatusChanged(ConnectionStatus.NO_PERMISSION)
+        verify(fixture.sender, times(3)).send()
+    }
+
+    @Test
+    fun `when rate limiter is active, does not send envelopes`() {
+        val sut = fixture.getSut(hasStartupCrashMarker = false)
+        val rateLimiter = mock<RateLimiter> {
+            whenever(mock.isActiveForCategory(any())).thenReturn(true)
+        }
+        whenever(fixture.hub.rateLimiter).thenReturn(rateLimiter)
+
+        sut.register(fixture.hub, fixture.options)
+
+        // no factory call should be done if there's rate limiting active
+        verify(fixture.sender, never()).send()
+    }
+
+    @Test
+    fun `when closed after register, does nothing`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(mockExecutorService = deferredExecutorService)
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.sender, never()).send()
+        sut.close()
+
+        deferredExecutorService.runAll()
+        verify(fixture.sender, never()).send()
     }
 }

@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -16,7 +18,7 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TypeCheckHint;
-import io.sentry.android.core.internal.util.ConnectivityChecker;
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -69,7 +71,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
       networkCallback = new NetworkBreadcrumbsNetworkCallback(hub, buildInfoProvider);
       final boolean registered =
-          ConnectivityChecker.registerNetworkCallback(
+          AndroidConnectionStatusProvider.registerNetworkCallback(
               context, logger, buildInfoProvider, networkCallback);
 
       // The specific error is logged in the ConnectivityChecker method
@@ -79,14 +81,14 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
       logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
   }
 
   @Override
   public void close() throws IOException {
     if (networkCallback != null) {
-      ConnectivityChecker.unregisterNetworkCallback(
+      AndroidConnectionStatusProvider.unregisterNetworkCallback(
           context, logger, buildInfoProvider, networkCallback);
       logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration remove.");
     }
@@ -208,7 +210,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       this.signalStrength = strength > -100 ? strength : 0;
       this.isVpn = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN);
       String connectionType =
-          ConnectivityChecker.getConnectionType(networkCapabilities, buildInfoProvider);
+          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities, buildInfoProvider);
       this.type = connectionType != null ? connectionType : "";
     }
 

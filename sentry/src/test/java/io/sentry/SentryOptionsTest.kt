@@ -210,11 +210,6 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, enableScopeSync is false`() {
-        assertFalse(SentryOptions().isEnableScopeSync)
-    }
-
-    @Test
     fun `when options is initialized, isProfilingEnabled is false`() {
         assertFalse(SentryOptions().isProfilingEnabled)
     }
@@ -494,6 +489,31 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options are initialized, connectionStatusProvider is not null and default to noop`() {
+        assertNotNull(SentryOptions().connectionStatusProvider)
+        assertTrue(SentryOptions().connectionStatusProvider is NoOpConnectionStatusProvider)
+    }
+
+    @Test
+    fun `when connectionStatusProvider is set, its returned as well`() {
+        val options = SentryOptions()
+        val customProvider = object : IConnectionStatusProvider {
+            override fun getConnectionStatus(): IConnectionStatusProvider.ConnectionStatus {
+                return IConnectionStatusProvider.ConnectionStatus.UNKNOWN
+            }
+
+            override fun getConnectionType(): String? = null
+
+            override fun addConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) = false
+
+            override fun removeConnectionStatusObserver(observer: IConnectionStatusProvider.IConnectionStatusObserver) {
+                // no-op
+            }
+        }
+        options.connectionStatusProvider = customProvider
+        assertEquals(customProvider, options.connectionStatusProvider)
+    }
+
     fun `when options are initialized, enabled is set to true by default`() {
         assertTrue(SentryOptions().isEnabled)
     }

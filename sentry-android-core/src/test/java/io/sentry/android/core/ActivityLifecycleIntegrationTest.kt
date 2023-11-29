@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
@@ -14,6 +16,7 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.Hub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -47,6 +50,8 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowActivityManager
 import java.util.Date
 import java.util.concurrent.Future
 import kotlin.test.AfterTest
@@ -66,7 +71,6 @@ class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
-        val am = mock<ActivityManager>()
         val hub = mock<Hub>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -76,13 +80,14 @@ class ActivityLifecycleIntegrationTest {
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
+        lateinit var shadowActivityManager: ShadowActivityManager
 
         // we init the transaction with a mock to avoid errors when finishing it after tests that don't start it
         var transaction: SentryTracer = mock()
         val buildInfo = mock<BuildInfoProvider>()
 
         fun getSut(
-            apiVersion: Int = 29,
+            apiVersion: Int = Build.VERSION_CODES.Q,
             importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
             initializer: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null
         ): ActivityLifecycleIntegration {
@@ -99,14 +104,11 @@ class ActivityLifecycleIntegrationTest {
             }
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
 
-            whenever(application.getSystemService(any())).thenReturn(am)
-
             val process = RunningAppProcessInfo().apply {
                 this.importance = importance
             }
             val processes = mutableListOf(process)
-
-            whenever(am.runningAppProcesses).thenReturn(processes)
+            shadowActivityManager.setProcesses(processes)
 
             return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
         }
@@ -124,10 +126,15 @@ class ActivityLifecycleIntegrationTest {
     }
 
     private val fixture = Fixture()
+    private lateinit var context: Context
 
     @BeforeTest
     fun `reset instance`() {
         AppStartState.getInstance().resetInstance()
+
+        context = ApplicationProvider.getApplicationContext()
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+        fixture.shadowActivityManager = Shadow.extract(activityManager)
     }
 
     @AfterTest
@@ -352,7 +359,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `Transaction op is ui_load`() {
+    fun `Transaction op is ui_load and idle+deadline timeouts are set`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -363,11 +370,14 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(
-            check {
+            check<TransactionContext> {
                 assertEquals("ui.load", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            check<TransactionOptions> { transactionOptions ->
+                assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
+                assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, transactionOptions.deadlineTimeout)
+            }
         )
     }
 
@@ -714,7 +724,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `do not stop transaction on resumed if API less than 29 and ttid and ttfd are finished`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut(Build.VERSION_CODES.P)
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
         sut.register(fixture.hub, fixture.options)
@@ -730,7 +740,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `start transaction on created if API less than 29`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut(Build.VERSION_CODES.P)
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -778,7 +788,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `App start is Cold when savedInstanceState is null`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -790,7 +800,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `App start is Warm when savedInstanceState is not null`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -803,7 +813,7 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `Do not overwrite App start type after set`() {
-        val sut = fixture.getSut(14)
+        val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
@@ -887,13 +897,17 @@ class ActivityLifecycleIntegrationTest {
         AppStartState.getInstance().setColdStart(false)
 
         // when activity is created
+        val view = fixture.createView()
         val activity = mock<Activity>()
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
         sut.onActivityCreated(activity, fixture.bundle)
         // then app-start end time should still be null
         assertNull(AppStartState.getInstance().appStartEndTime)
 
         // when activity is resumed
         sut.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
         // end-time should be set
         assertNotNull(AppStartState.getInstance().appStartEndTime)
     }
@@ -934,10 +948,14 @@ class ActivityLifecycleIntegrationTest {
         AppStartState.getInstance().setColdStart(false)
 
         // when activity is created, started and resumed multiple times
+        val view = fixture.createView()
         val activity = mock<Activity>()
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityStarted(activity)
         sut.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
 
         val firstAppStartEndTime = AppStartState.getInstance().appStartEndTime
 
@@ -946,6 +964,8 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityStopped(activity)
         sut.onActivityStarted(activity)
         sut.onActivityResumed(activity)
+        Thread.sleep(1)
+        runFirstDraw(view)
 
         // then the end time should not be overwritten
         assertEquals(
@@ -1395,7 +1415,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.enableTracing = false
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
         }
@@ -1455,7 +1475,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        fixture.transaction.forceFinish(OK, false)
+        fixture.transaction.forceFinish(OK, false, null)
         verify(fixture.activityFramesTracker).setMetrics(activity, fixture.transaction.eventId)
     }
 

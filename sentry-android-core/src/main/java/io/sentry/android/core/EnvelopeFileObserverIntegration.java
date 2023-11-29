@@ -67,7 +67,8 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
             options.getEnvelopeReader(),
             options.getSerializer(),
             options.getLogger(),
-            options.getFlushTimeoutMillis());
+            options.getFlushTimeoutMillis(),
+            options.getMaxQueueSize());
 
     observer =
         new EnvelopeFileObserver(

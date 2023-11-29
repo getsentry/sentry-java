@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
@@ -7,7 +8,10 @@ import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.View;
+import io.sentry.NoOpLogger;
 import io.sentry.SentryDate;
+import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,8 +37,22 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
 
   private @Nullable Application application;
 
+  private final @NotNull BuildInfoProvider buildInfoProvider;
+
+  private final @NotNull MainLooperHandler mainHandler;
+
   public SentryPerformanceProvider() {
     AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
+    buildInfoProvider = new BuildInfoProvider(NoOpLogger.getInstance());
+    mainHandler = new MainLooperHandler();
+  }
+
+  SentryPerformanceProvider(
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull MainLooperHandler mainHandler) {
+    AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
+    this.buildInfoProvider = buildInfoProvider;
+    this.mainHandler = mainHandler;
   }
 
   @Override
@@ -100,12 +118,21 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
   @Override
   public void onActivityStarted(@NotNull Activity activity) {}
 
+  @SuppressLint("NewApi")
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
     if (!firstActivityResumed) {
       // sets App start as finished when the very first activity calls onResume
       firstActivityResumed = true;
-      AppStartState.getInstance().setAppStartEnd();
+      final View rootView = activity.findViewById(android.R.id.content);
+      if (rootView != null) {
+        FirstDrawDoneListener.registerForNextDraw(
+            rootView, () -> AppStartState.getInstance().setAppStartEnd(), buildInfoProvider);
+      } else {
+        // Posting a task to the main thread's handler will make it executed after it finished
+        // its current job. That is, right after the activity draws the layout.
+        mainHandler.post(() -> AppStartState.getInstance().setAppStartEnd());
+      }
     }
     if (application != null) {
       application.unregisterActivityLifecycleCallbacks(this);

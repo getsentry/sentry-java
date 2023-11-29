@@ -13,33 +13,33 @@ import org.jetbrains.annotations.Nullable;
  * subscribe to only those properties, that they are interested in.
  */
 public interface IScopeObserver {
-  default void setUser(@Nullable User user) {}
+  void setUser(@Nullable User user);
 
-  default void addBreadcrumb(@NotNull Breadcrumb crumb) {}
+  void addBreadcrumb(@NotNull Breadcrumb crumb);
 
-  default void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {}
+  void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs);
 
-  default void setTag(@NotNull String key, @NotNull String value) {}
+  void setTag(@NotNull String key, @NotNull String value);
 
-  default void removeTag(@NotNull String key) {}
+  void removeTag(@NotNull String key);
 
-  default void setTags(@NotNull Map<String, @NotNull String> tags) {}
+  void setTags(@NotNull Map<String, @NotNull String> tags);
 
-  default void setExtra(@NotNull String key, @NotNull String value) {}
+  void setExtra(@NotNull String key, @NotNull String value);
 
-  default void removeExtra(@NotNull String key) {}
+  void removeExtra(@NotNull String key);
 
-  default void setExtras(@NotNull Map<String, @NotNull Object> extras) {}
+  void setExtras(@NotNull Map<String, @NotNull Object> extras);
 
-  default void setRequest(@Nullable Request request) {}
+  void setRequest(@Nullable Request request);
 
-  default void setFingerprint(@NotNull Collection<String> fingerprint) {}
+  void setFingerprint(@NotNull Collection<String> fingerprint);
 
-  default void setLevel(@Nullable SentryLevel level) {}
+  void setLevel(@Nullable SentryLevel level);
 
-  default void setContexts(@NotNull Contexts contexts) {}
+  void setContexts(@NotNull Contexts contexts);
 
-  default void setTransaction(@Nullable String transaction) {}
+  void setTransaction(@Nullable String transaction);
 
-  default void setTrace(@Nullable SpanContext spanContext) {}
+  void setTrace(@Nullable SpanContext spanContext);
 }

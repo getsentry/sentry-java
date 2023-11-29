@@ -11,15 +11,15 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface IOptionsObserver {
 
-  default void setRelease(@Nullable String release) {}
+  void setRelease(@Nullable String release);
 
-  default void setProguardUuid(@Nullable String proguardUuid) {}
+  void setProguardUuid(@Nullable String proguardUuid);
 
-  default void setSdkVersion(@Nullable SdkVersion sdkVersion) {}
+  void setSdkVersion(@Nullable SdkVersion sdkVersion);
 
-  default void setEnvironment(@Nullable String environment) {}
+  void setEnvironment(@Nullable String environment);
 
-  default void setDist(@Nullable String dist) {}
+  void setDist(@Nullable String dist);
 
-  default void setTags(@NotNull Map<String, @NotNull String> tags) {}
+  void setTags(@NotNull Map<String, @NotNull String> tags);
 }

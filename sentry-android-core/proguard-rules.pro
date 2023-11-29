@@ -31,7 +31,22 @@
 -keepattributes LineNumberTable,SourceFile
 
 # Keep Classnames for integrations
--keepnames class * implements io.sentry.IntegrationName
+-keepnames class * implements io.sentry.Integration
+
+-dontwarn io.sentry.apollo.SentryApolloInterceptor
+-keepnames class io.sentry.apollo.SentryApolloInterceptor
+
+-dontwarn io.sentry.apollo3.SentryApollo3HttpInterceptor
+-keepnames class io.sentry.apollo3.SentryApollo3HttpInterceptor
+
+-dontwarn io.sentry.android.okhttp.SentryOkHttpInterceptor
+-keepnames class io.sentry.android.okhttp.SentryOkHttpInterceptor
+
+-dontwarn io.sentry.android.navigation.SentryNavigationListener
+-keepnames class io.sentry.android.navigation.SentryNavigationListener
+
+-keepnames class io.sentry.android.core.ScreenshotEventProcessor
+-keepnames class io.sentry.android.core.ViewHierarchyEventProcessor
 
 # Keep any custom option classes like SentryAndroidOptions, as they're loaded via reflection
 # Also keep method names, as they're e.g. used by native via JNI calls

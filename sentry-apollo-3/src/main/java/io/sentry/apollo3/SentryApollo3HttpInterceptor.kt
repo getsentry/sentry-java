@@ -14,7 +14,6 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.IntegrationName
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
@@ -29,6 +28,8 @@ import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.util.HttpUtils
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
@@ -44,10 +45,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
-) : HttpInterceptor, IntegrationName {
+) : HttpInterceptor {
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion("Apollo3")
         if (captureFailedRequests) {
             SentryIntegrationPackageStorage.getInstance()
                 .addIntegration("Apollo3ClientError")
@@ -64,7 +65,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         request: HttpRequest,
         chain: HttpInterceptorChain
     ): HttpResponse {
-        val activeSpan = hub.span
+        val activeSpan = if (Platform.isAndroid()) hub.transaction else hub.span
 
         val operationName = getHeader(HEADER_APOLLO_OPERATION_NAME, request.headers)
         val operationType = decodeHeaderValue(request, SENTRY_APOLLO_3_OPERATION_TYPE)
@@ -133,10 +134,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         }
 
         return requestBuilder.build()
-    }
-
-    override fun getIntegrationName(): String {
-        return super.getIntegrationName().replace("Http", "")
     }
 
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
@@ -449,6 +446,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     companion object {
         const val SENTRY_APOLLO_3_VARIABLES = "SENTRY-APOLLO-3-VARIABLES"
         const val SENTRY_APOLLO_3_OPERATION_TYPE = "SENTRY-APOLLO-3-OPERATION-TYPE"
-        const val DEFAULT_CAPTURE_FAILED_REQUESTS = false
+        const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
     }
 }

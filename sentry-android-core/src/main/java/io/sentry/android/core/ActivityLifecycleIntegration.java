@@ -2,8 +2,8 @@ package io.sentry.android.core;
 
 import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
@@ -16,12 +16,12 @@ import io.sentry.Breadcrumb;
 import io.sentry.FullyDisplayedReporter;
 import io.sentry.Hint;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.NoOpTransaction;
-import io.sentry.Scope;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -103,7 +103,7 @@ public final class ActivityLifecycleIntegration
 
     // we only track app start for processes that will show an Activity (full launch).
     // Here we check the process importance which will tell us that.
-    foregroundImportance = ContextUtils.isForegroundImportance(this.application);
+    foregroundImportance = ContextUtils.isForegroundImportance();
   }
 
   @Override
@@ -128,7 +128,7 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-    addIntegrationToSdkVersion();
+    addIntegrationToSdkVersion(getClass());
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {
@@ -193,6 +193,9 @@ public final class ActivityLifecycleIntegration
         final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
         final TransactionOptions transactionOptions = new TransactionOptions();
+        transactionOptions.setDeadlineTimeout(
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+
         if (options.isEnableActivityLifecycleTracingAutoFinish()) {
           transactionOptions.setIdleTimeout(options.getIdleTimeout());
           transactionOptions.setTrimEnd(true);
@@ -296,7 +299,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @VisibleForTesting
-  void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+  void applyScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
           // we'd not like to overwrite existent transactions bound to the Scope
@@ -315,7 +318,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @VisibleForTesting
-  void clearScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+  void clearScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
           if (scopeTransaction == transaction) {
@@ -401,26 +404,13 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "started");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (performanceEnabled) {
-      // app start span
-      @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
-      @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
-      // in case the SentryPerformanceProvider is disabled it does not set the app start times,
-      // and we need to set the end time manually here,
-      // the start time gets set manually in SentryAndroid.init()
-      if (appStartStartTime != null && appStartEndTime == null) {
-        AppStartState.getInstance().setAppStartEnd();
-      }
-      finishAppStartSpan();
-
       final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
       final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
       final View rootView = activity.findViewById(android.R.id.content);
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
-          && rootView != null) {
+      if (rootView != null) {
         FirstDrawDoneListener.registerForNextDraw(
             rootView, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
       } else {
@@ -545,6 +535,17 @@ public final class ActivityLifecycleIntegration
   }
 
   private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
+    // app start span
+    @Nullable final SentryDate appStartStartTime = AppStartState.getInstance().getAppStartTime();
+    @Nullable final SentryDate appStartEndTime = AppStartState.getInstance().getAppStartEndTime();
+    // in case the SentryPerformanceProvider is disabled it does not set the app start times,
+    // and we need to set the end time manually here,
+    // the start time gets set manually in SentryAndroid.init()
+    if (appStartStartTime != null && appStartEndTime == null) {
+      AppStartState.getInstance().setAppStartEnd();
+    }
+    finishAppStartSpan();
+
     if (options != null && ttidSpan != null) {
       final SentryDate endDate = options.getDateProvider().now();
       final long durationNanos = endDate.diff(ttidSpan.getStartDate());

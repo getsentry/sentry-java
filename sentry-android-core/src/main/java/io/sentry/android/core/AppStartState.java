@@ -45,6 +45,10 @@ public final class AppStartState {
 
   @TestOnly
   void setAppStartEnd(final long appStartEndMillis) {
+    if (this.appStartEndMillis != null) {
+      // only set app start end once
+      return;
+    }
     this.appStartEndMillis = appStartEndMillis;
   }
 
