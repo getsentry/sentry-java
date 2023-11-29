@@ -6,6 +6,7 @@ import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import org.junit.Assert.assertArrayEquals
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -65,13 +66,15 @@ class ScopeTest {
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
 
+        scope.screen = "MainActivity"
+
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
 
         scope.setContexts("key", "value")
         scope.addAttachment(Attachment("file name"))
 
-        val clone = Scope(scope)
+        val clone = scope.clone()
 
         assertNotNull(clone)
         assertNotSame(scope, clone)
@@ -117,9 +120,11 @@ class ScopeTest {
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
 
+        scope.screen = "MainActivity"
+
         scope.setContexts("contexts", "contexts")
 
-        val clone = Scope(scope)
+        val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
 
@@ -133,6 +138,8 @@ class ScopeTest {
         assertEquals("transaction-name", (clone.span as SentryTracer).name)
 
         assertEquals("tag", clone.tags["tag"])
+        assertEquals("MainActivity", clone.screen)
+
         assertEquals("extra", clone.extras["extra"])
         assertEquals("contexts", (clone.contexts["contexts"] as HashMap<*, *>)["value"])
         assertEquals(transaction, clone.span)
@@ -168,6 +175,7 @@ class ScopeTest {
         scope.addBreadcrumb(breadcrumb)
         scope.setTag("tag", "tag")
         scope.setExtra("extra", "extra")
+        scope.screen = "MainActivity"
 
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
@@ -175,7 +183,7 @@ class ScopeTest {
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
 
-        val clone = Scope(scope)
+        val clone = scope.clone()
 
         scope.level = SentryLevel.FATAL
         user.id = "456"
@@ -198,6 +206,7 @@ class ScopeTest {
         scope.setTag("otherTag", "otherTag")
         scope.setExtra("extra", "newExtra")
         scope.setExtra("otherExtra", "otherExtra")
+        scope.screen = "LoginActivity"
 
         scope.addEventProcessor(processor)
 
@@ -216,6 +225,7 @@ class ScopeTest {
         assertEquals("tag", clone.tags["tag"])
         assertEquals(1, clone.tags.size)
         assertEquals("extra", clone.extras["extra"])
+        assertEquals("MainActivity", clone.screen)
         assertEquals(1, clone.extras.size)
         assertEquals(1, clone.eventProcessors.size)
         assertNull(clone.span)
@@ -245,7 +255,7 @@ class ScopeTest {
 
         // clone in the meantime
         while (scope.breadcrumbs.isNotEmpty()) {
-            Scope(scope)
+            scope.clone()
         }
 
         // expect no exception to be thrown ¯\_(ツ)_/¯
@@ -261,6 +271,7 @@ class ScopeTest {
         scope.fingerprint = mutableListOf("finger")
         scope.addBreadcrumb(Breadcrumb())
         scope.setTag("some", "tag")
+        scope.screen = "MainActivity"
         scope.setExtra("some", "extra")
         scope.addEventProcessor(eventProcessor())
         scope.addAttachment(Attachment("path"))
@@ -271,6 +282,7 @@ class ScopeTest {
         assertNull(scope.transaction)
         assertNull(scope.user)
         assertNull(scope.request)
+        assertNull(scope.screen)
         assertEquals(0, scope.fingerprint.size)
         assertEquals(0, scope.breadcrumbs.size)
         assertEquals(0, scope.tags.size)
@@ -874,7 +886,7 @@ class ScopeTest {
         scope.clear()
         assertTrue(scope.attachments is CopyOnWriteArrayList)
 
-        val cloned = Scope(scope)
+        val cloned = scope.clone()
         assertTrue(cloned.attachments is CopyOnWriteArrayList)
     }
 
@@ -975,6 +987,30 @@ class ScopeTest {
         assertNotNull(scope.fingerprint) {
             assertEquals(listOf("a", "b", "c"), it)
         }
+    }
+
+    @Test
+    fun `when setting the screen, it's stored in the app context as well`() {
+        val scope = Scope(SentryOptions()).apply {
+            screen = "MainActivity"
+        }
+        assertEquals(listOf("MainActivity"), scope.contexts.app!!.viewNames)
+    }
+
+    @Test
+    fun `when setting the screen, app context change is propagated`() {
+        val options = SentryOptions()
+        val observer = mock<IScopeObserver>()
+        options.addScopeObserver(observer)
+
+        Scope(options).apply {
+            screen = "MainActivity"
+        }
+        verify(observer).setContexts(
+            check { contexts ->
+                assertEquals("MainActivity", contexts.app?.viewNames?.first())
+            }
+        )
     }
 
     private fun eventProcessor(): EventProcessor {

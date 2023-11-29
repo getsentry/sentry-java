@@ -37,7 +37,8 @@ public final class SendFireAndForgetOutboxSender
             options.getEnvelopeReader(),
             options.getSerializer(),
             options.getLogger(),
-            options.getFlushTimeoutMillis());
+            options.getFlushTimeoutMillis(),
+            options.getMaxQueueSize());
 
     return processDir(outboxSender, dirPath, options.getLogger());
   }

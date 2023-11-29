@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.transport.RateLimiter;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -79,6 +80,9 @@ public final class NoOpHub implements IHub {
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {}
 
   @Override
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {}
+
+  @Override
   public void setLevel(@Nullable SentryLevel level) {}
 
   @Override
@@ -117,7 +121,9 @@ public final class NoOpHub implements IHub {
   public void popScope() {}
 
   @Override
-  public void withScope(@NotNull ScopeCallback callback) {}
+  public void withScope(@NotNull ScopeCallback callback) {
+    callback.run(NoOpScope.getInstance());
+  }
 
   @Override
   public void configureScope(@NotNull ScopeCallback callback) {}
@@ -143,19 +149,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
-    return NoOpTransaction.getInstance();
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope) {
-    return NoOpTransaction.getInstance();
-  }
-
-  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
@@ -177,6 +170,11 @@ public final class NoOpHub implements IHub {
 
   @Override
   public @Nullable ISpan getSpan() {
+    return null;
+  }
+
+  @Override
+  public @Nullable ITransaction getTransaction() {
     return null;
   }
 
@@ -213,5 +211,10 @@ public final class NoOpHub implements IHub {
   @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return null;
   }
 }

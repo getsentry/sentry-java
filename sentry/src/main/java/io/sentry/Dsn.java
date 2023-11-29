@@ -51,7 +51,12 @@ final class Dsn {
   Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
       Objects.requireNonNull(dsn, "The DSN is required.");
-      URI uri = new URI(dsn).normalize();
+      final URI uri = new URI(dsn).normalize();
+      final String scheme = uri.getScheme();
+      if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+        throw new IllegalArgumentException("Invalid DSN scheme: " + scheme);
+      }
+
       String userInfo = uri.getUserInfo();
       if (userInfo == null || userInfo.isEmpty()) {
         throw new IllegalArgumentException("Invalid DSN: No public key provided.");
@@ -78,13 +83,7 @@ final class Dsn {
       }
       sentryUri =
           new URI(
-              uri.getScheme(),
-              null,
-              uri.getHost(),
-              uri.getPort(),
-              path + "api/" + projectId,
-              null,
-              null);
+              scheme, null, uri.getHost(), uri.getPort(), path + "api/" + projectId, null, null);
     } catch (Throwable e) {
       throw new IllegalArgumentException(e);
     }

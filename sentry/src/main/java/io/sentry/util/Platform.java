@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class Platform {
-  private static boolean isAndroid;
+  static boolean isAndroid;
   static boolean isJavaNinePlus;
 
   static {

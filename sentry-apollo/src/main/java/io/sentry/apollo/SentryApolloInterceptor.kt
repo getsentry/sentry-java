@@ -18,13 +18,13 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.TracingUtils
 import java.util.Locale
 import java.util.concurrent.Executor
@@ -34,18 +34,18 @@ private const val TRACE_ORIGIN = "auto.graphql.apollo"
 class SentryApolloInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
-) : ApolloInterceptor, IntegrationName {
+) : ApolloInterceptor {
 
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion(javaClass)
         SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
-        val activeSpan = hub.span
+        val activeSpan = if (io.sentry.util.Platform.isAndroid()) hub.transaction else hub.span
         if (activeSpan == null) {
             val headers = addTracingHeaders(request, null)
             val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
@@ -149,7 +149,7 @@ class SentryApolloInterceptor(
     }
 
     private fun finish(span: ISpan, request: InterceptorRequest, response: InterceptorResponse? = null) {
-        var newSpan: ISpan = span
+        var newSpan: ISpan? = span
         if (beforeSpan != null) {
             try {
                 newSpan = beforeSpan.execute(span, request, response)
@@ -157,7 +157,12 @@ class SentryApolloInterceptor(
                 hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
             }
         }
-        newSpan.finish()
+        if (newSpan == null) {
+            // span is dropped
+            span.spanContext.sampled = false
+        } else {
+            span.finish()
+        }
 
         response?.let {
             if (it.httpResponse.isPresent) {
@@ -173,9 +178,9 @@ class SentryApolloInterceptor(
                     breadcrumb.setData("response_body_size", contentLength)
                 }
 
-                val hint = Hint().also {
-                    it.set(APOLLO_REQUEST, httpRequest)
-                    it.set(APOLLO_RESPONSE, httpResponse)
+                val hint = Hint().apply {
+                    set(APOLLO_REQUEST, httpRequest)
+                    set(APOLLO_RESPONSE, httpResponse)
                 }
                 hub.addBreadcrumb(breadcrumb, hint)
             }
@@ -199,6 +204,6 @@ class SentryApolloInterceptor(
          * @param request the HTTP request executed by okHttp
          * @param response the HTTP response received by okHttp
          */
-        fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan
+        fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan?
     }
 }

@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import io.sentry.SentryInstantDate
+import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import java.util.Date
 import kotlin.test.BeforeTest
@@ -56,6 +57,18 @@ class AppStartStateTest {
         sut.setAppStartTime(1, SentryInstantDate())
 
         assertSame(date, sut.appStartTime)
+    }
+
+    @Test
+    fun `do not overwrite app start end time if already set`() {
+        val sut = AppStartState.getInstance()
+
+        sut.setColdStart(true)
+        sut.setAppStartTime(1, SentryLongDate(1000000))
+        sut.setAppStartEnd(2)
+        sut.setAppStartEnd(3)
+
+        assertEquals(0, SentryLongDate(2000000).compareTo(sut.appStartEndTime!!))
     }
 
     @Test

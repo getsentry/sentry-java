@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.TransactionNameSource;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Scope data to be sent with the event */
-public final class Scope {
+public final class Scope implements IScope {
 
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
@@ -32,6 +33,9 @@ public final class Scope {
 
   /** Scope's user */
   private @Nullable User user;
+
+  /** Scope's screen */
+  private @Nullable String screen;
 
   /** Scope's request */
   private @Nullable Request request;
@@ -87,8 +91,7 @@ public final class Scope {
     this.propagationContext = new PropagationContext();
   }
 
-  @ApiStatus.Internal
-  public Scope(final @NotNull Scope scope) {
+  private Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
     this.session = scope.session;
@@ -97,6 +100,7 @@ public final class Scope {
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
+    this.screen = scope.screen;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -150,6 +154,7 @@ public final class Scope {
    *
    * @return the SentryLevel
    */
+  @Override
   public @Nullable SentryLevel getLevel() {
     return level;
   }
@@ -159,6 +164,7 @@ public final class Scope {
    *
    * @param level the SentryLevel
    */
+  @Override
   public void setLevel(final @Nullable SentryLevel level) {
     this.level = level;
 
@@ -172,6 +178,7 @@ public final class Scope {
    *
    * @return the transaction
    */
+  @Override
   public @Nullable String getTransactionName() {
     final ITransaction tx = this.transaction;
     return tx != null ? tx.getName() : transactionName;
@@ -182,6 +189,7 @@ public final class Scope {
    *
    * @param transaction the transaction
    */
+  @Override
   public void setTransaction(final @NotNull String transaction) {
     if (transaction != null) {
       final ITransaction tx = this.transaction;
@@ -204,6 +212,7 @@ public final class Scope {
    * @return current active Span or Transaction or null if transaction has not been set.
    */
   @Nullable
+  @Override
   public ISpan getSpan() {
     final ITransaction tx = transaction;
     if (tx != null) {
@@ -221,6 +230,7 @@ public final class Scope {
    *
    * @param transaction the transaction
    */
+  @Override
   public void setTransaction(final @Nullable ITransaction transaction) {
     synchronized (transactionLock) {
       this.transaction = transaction;
@@ -242,6 +252,7 @@ public final class Scope {
    *
    * @return the user
    */
+  @Override
   public @Nullable User getUser() {
     return user;
   }
@@ -251,6 +262,7 @@ public final class Scope {
    *
    * @param user the user
    */
+  @Override
   public void setUser(final @Nullable User user) {
     this.user = user;
 
@@ -260,10 +272,52 @@ public final class Scope {
   }
 
   /**
+   * Returns the Scope's current screen, previously set by {@link IScope#setScreen(String)}
+   *
+   * @return the name of the screen
+   */
+  @ApiStatus.Internal
+  @Override
+  public @Nullable String getScreen() {
+    return screen;
+  }
+
+  /**
+   * Sets the Scope's current screen
+   *
+   * @param screen the name of the screen
+   */
+  @ApiStatus.Internal
+  @Override
+  public void setScreen(final @Nullable String screen) {
+    this.screen = screen;
+
+    final @NotNull Contexts contexts = getContexts();
+    @Nullable App app = contexts.getApp();
+    if (app == null) {
+      app = new App();
+      contexts.setApp(app);
+    }
+
+    if (screen == null) {
+      app.setViewNames(null);
+    } else {
+      final @NotNull List<String> viewNames = new ArrayList<>(1);
+      viewNames.add(screen);
+      app.setViewNames(viewNames);
+    }
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
+  }
+
+  /**
    * Returns the Scope's request
    *
    * @return the request
    */
+  @Override
   public @Nullable Request getRequest() {
     return request;
   }
@@ -273,6 +327,7 @@ public final class Scope {
    *
    * @param request the request
    */
+  @Override
   public void setRequest(final @Nullable Request request) {
     this.request = request;
 
@@ -288,6 +343,7 @@ public final class Scope {
    */
   @ApiStatus.Internal
   @NotNull
+  @Override
   public List<String> getFingerprint() {
     return fingerprint;
   }
@@ -297,6 +353,7 @@ public final class Scope {
    *
    * @param fingerprint the fingerprint list
    */
+  @Override
   public void setFingerprint(final @NotNull List<String> fingerprint) {
     if (fingerprint == null) {
       return;
@@ -315,6 +372,7 @@ public final class Scope {
    */
   @ApiStatus.Internal
   @NotNull
+  @Override
   public Queue<Breadcrumb> getBreadcrumbs() {
     return breadcrumbs;
   }
@@ -349,12 +407,13 @@ public final class Scope {
   }
 
   /**
-   * Adds a breadcrumb to the breadcrumbs queue It also executes the BeforeBreadcrumb callback if
+   * Adds a breadcrumb to the breadcrumbs queue. It also executes the BeforeBreadcrumb callback if
    * set
    *
    * @param breadcrumb the breadcrumb
    * @param hint the hint
    */
+  @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     if (breadcrumb == null) {
       return;
@@ -385,11 +444,13 @@ public final class Scope {
    *
    * @param breadcrumb the breadcrumb
    */
+  @Override
   public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
     addBreadcrumb(breadcrumb, null);
   }
 
   /** Clear all the breadcrumbs */
+  @Override
   public void clearBreadcrumbs() {
     breadcrumbs.clear();
 
@@ -399,6 +460,7 @@ public final class Scope {
   }
 
   /** Clears the transaction. */
+  @Override
   public void clearTransaction() {
     synchronized (transactionLock) {
       transaction = null;
@@ -417,15 +479,18 @@ public final class Scope {
    * @return the transaction
    */
   @Nullable
+  @Override
   public ITransaction getTransaction() {
     return this.transaction;
   }
 
   /** Resets the Scope to its default state */
+  @Override
   public void clear() {
     level = null;
     user = null;
     request = null;
+    screen = null;
     fingerprint.clear();
     clearBreadcrumbs();
     tags.clear();
@@ -442,6 +507,7 @@ public final class Scope {
    */
   @ApiStatus.Internal
   @SuppressWarnings("NullAway") // tags are never null
+  @Override
   public @NotNull Map<String, String> getTags() {
     return CollectionUtils.newConcurrentHashMap(tags);
   }
@@ -452,6 +518,7 @@ public final class Scope {
    * @param key the key
    * @param value the value
    */
+  @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     this.tags.put(key, value);
 
@@ -466,6 +533,7 @@ public final class Scope {
    *
    * @param key the key
    */
+  @Override
   public void removeTag(final @NotNull String key) {
     this.tags.remove(key);
 
@@ -482,6 +550,7 @@ public final class Scope {
    */
   @ApiStatus.Internal
   @NotNull
+  @Override
   public Map<String, Object> getExtras() {
     return extra;
   }
@@ -492,6 +561,7 @@ public final class Scope {
    * @param key the key
    * @param value the value
    */
+  @Override
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     this.extra.put(key, value);
 
@@ -506,6 +576,7 @@ public final class Scope {
    *
    * @param key the key
    */
+  @Override
   public void removeExtra(final @NotNull String key) {
     this.extra.remove(key);
 
@@ -520,6 +591,7 @@ public final class Scope {
    *
    * @return the contexts
    */
+  @Override
   public @NotNull Contexts getContexts() {
     return contexts;
   }
@@ -530,6 +602,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull Object value) {
     this.contexts.put(key, value);
 
@@ -544,6 +617,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull Boolean value) {
     final Map<String, Boolean> map = new HashMap<>();
     map.put("value", value);
@@ -556,6 +630,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull String value) {
     final Map<String, String> map = new HashMap<>();
     map.put("value", value);
@@ -568,6 +643,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull Number value) {
     final Map<String, Number> map = new HashMap<>();
     map.put("value", value);
@@ -580,6 +656,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull Collection<?> value) {
     final Map<String, Collection<?>> map = new HashMap<>();
     map.put("value", value);
@@ -592,6 +669,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull Object[] value) {
     final Map<String, Object[]> map = new HashMap<>();
     map.put("value", value);
@@ -604,6 +682,7 @@ public final class Scope {
    * @param key the context key
    * @param value the context value
    */
+  @Override
   public void setContexts(final @NotNull String key, final @NotNull Character value) {
     final Map<String, Character> map = new HashMap<>();
     map.put("value", value);
@@ -615,6 +694,7 @@ public final class Scope {
    *
    * @param key the Key
    */
+  @Override
   public void removeContexts(final @NotNull String key) {
     contexts.remove(key);
   }
@@ -624,8 +704,10 @@ public final class Scope {
    *
    * @return the attachments
    */
+  @ApiStatus.Internal
   @NotNull
-  List<Attachment> getAttachments() {
+  @Override
+  public List<Attachment> getAttachments() {
     return new CopyOnWriteArrayList<>(attachments);
   }
 
@@ -635,11 +717,13 @@ public final class Scope {
    *
    * @param attachment The attachment to add to the Scope's list of attachments.
    */
+  @Override
   public void addAttachment(final @NotNull Attachment attachment) {
     attachments.add(attachment);
   }
 
   /** Clear all attachments. */
+  @Override
   public void clearAttachments() {
     attachments.clear();
   }
@@ -659,8 +743,10 @@ public final class Scope {
    *
    * @return the event processors list
    */
+  @ApiStatus.Internal
   @NotNull
-  List<EventProcessor> getEventProcessors() {
+  @Override
+  public List<EventProcessor> getEventProcessors() {
     return eventProcessors;
   }
 
@@ -669,6 +755,7 @@ public final class Scope {
    *
    * @param eventProcessor the event processor
    */
+  @Override
   public void addEventProcessor(final @NotNull EventProcessor eventProcessor) {
     eventProcessors.add(eventProcessor);
   }
@@ -679,8 +766,10 @@ public final class Scope {
    * @param sessionCallback the IWithSession callback
    * @return a clone of the Session after executing the callback and mutating the session
    */
+  @ApiStatus.Internal
   @Nullable
-  Session withSession(final @NotNull IWithSession sessionCallback) {
+  @Override
+  public Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     synchronized (sessionLock) {
       sessionCallback.accept(session);
@@ -692,7 +781,7 @@ public final class Scope {
     return cloneSession;
   }
 
-  /** the IWithSession callback */
+  /** The IWithSession callback */
   interface IWithSession {
 
     /**
@@ -708,8 +797,10 @@ public final class Scope {
    *
    * @return the SessionPair with the previous closed session if exists and the current session
    */
+  @ApiStatus.Internal
   @Nullable
-  SessionPair startSession() {
+  @Override
+  public SessionPair startSession() {
     Session previousSession;
     SessionPair pair = null;
     synchronized (sessionLock) {
@@ -740,14 +831,14 @@ public final class Scope {
   /** The SessionPair class */
   static final class SessionPair {
 
-    /** the previous session if exists */
+    /** The previous session if exists */
     private final @Nullable Session previous;
 
     /** The current Session */
     private final @NotNull Session current;
 
     /**
-     * The SessionPar ctor
+     * The SessionPair ctor
      *
      * @param current the current session
      * @param previous the previous sessions if exists or null
@@ -758,7 +849,7 @@ public final class Scope {
     }
 
     /**
-     * REturns the previous session
+     * Returns the previous session
      *
      * @return the previous sessions if exists or null
      */
@@ -781,8 +872,10 @@ public final class Scope {
    *
    * @return the previous session
    */
+  @ApiStatus.Internal
   @Nullable
-  Session endSession() {
+  @Override
+  public Session endSession() {
     Session previousSession = null;
     synchronized (sessionLock) {
       if (session != null) {
@@ -800,33 +893,40 @@ public final class Scope {
    * @param callback the IWithTransaction callback
    */
   @ApiStatus.Internal
+  @Override
   public void withTransaction(final @NotNull IWithTransaction callback) {
     synchronized (transactionLock) {
       callback.accept(transaction);
     }
   }
 
+  @ApiStatus.Internal
   @NotNull
-  SentryOptions getOptions() {
+  @Override
+  public SentryOptions getOptions() {
     return options;
   }
 
   @ApiStatus.Internal
+  @Override
   public @Nullable Session getSession() {
     return session;
   }
 
   @ApiStatus.Internal
+  @Override
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
     this.propagationContext = propagationContext;
   }
 
   @ApiStatus.Internal
+  @Override
   public @NotNull PropagationContext getPropagationContext() {
     return propagationContext;
   }
 
   @ApiStatus.Internal
+  @Override
   public @NotNull PropagationContext withPropagationContext(
       final @NotNull IWithPropagationContext callback) {
     synchronized (propagationContextLock) {
@@ -835,7 +935,17 @@ public final class Scope {
     }
   }
 
-  /** the IWithTransaction callback */
+  /**
+   * Clones the Scope
+   *
+   * @return the cloned Scope
+   */
+  @Override
+  public @NotNull IScope clone() {
+    return new Scope(this);
+  }
+
+  /** The IWithTransaction callback */
   @ApiStatus.Internal
   public interface IWithTransaction {
 

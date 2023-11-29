@@ -6,6 +6,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class StdoutTransport implements ITransport {
 
@@ -31,6 +32,11 @@ public final class StdoutTransport implements ITransport {
   @Override
   public void flush(long timeoutMillis) {
     System.out.println("Flushing");
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return null;
   }
 
   @Override

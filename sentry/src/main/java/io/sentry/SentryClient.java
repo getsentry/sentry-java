@@ -4,11 +4,13 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
+import io.sentry.transport.RateLimiter;
 import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -88,7 +90,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, final @Nullable Scope scope, @Nullable Hint hint) {
+      @NotNull SentryEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
     if (hint == null) {
@@ -224,14 +226,19 @@ public final class SentryClient implements ISentryClient {
       sentryId = SentryId.EMPTY_ID;
     }
 
-    // if we encountered an abnormal exit finish tracing in order to persist and send
+    // if we encountered a crash/abnormal exit finish tracing in order to persist and send
     // any running transaction / profiling data
     if (scope != null) {
-      @Nullable ITransaction transaction = scope.getTransaction();
+      final @Nullable ITransaction transaction = scope.getTransaction();
       if (transaction != null) {
-        // TODO if we want to do the same for crashes, e.g. check for event.isCrashed()
         if (HintUtils.hasType(hint, TransactionEnd.class)) {
-          transaction.forceFinish(SpanStatus.ABORTED, false);
+          final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+          if (sentrySdkHint instanceof DiskFlushNotification) {
+            ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
+            transaction.forceFinish(SpanStatus.ABORTED, false, hint);
+          } else {
+            transaction.forceFinish(SpanStatus.ABORTED, false, null);
+          }
         }
       }
     }
@@ -239,7 +246,7 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private void addScopeAttachmentsToHint(@Nullable Scope scope, @NotNull Hint hint) {
+  private void addScopeAttachmentsToHint(@Nullable IScope scope, @NotNull Hint hint) {
     if (scope != null) {
       hint.addAttachments(scope.getAttachments());
     }
@@ -488,7 +495,7 @@ public final class SentryClient implements ISentryClient {
   @TestOnly
   @Nullable
   Session updateSessionData(
-      final @NotNull SentryEvent event, final @NotNull Hint hint, final @Nullable Scope scope) {
+      final @NotNull SentryEvent event, final @NotNull Hint hint, final @Nullable IScope scope) {
     Session clonedSession = null;
 
     if (HintUtils.shouldApplyScopeData(hint)) {
@@ -592,7 +599,7 @@ public final class SentryClient implements ISentryClient {
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
-      final @Nullable Scope scope,
+      final @Nullable IScope scope,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -674,7 +681,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(
-      @NotNull CheckIn checkIn, final @Nullable Scope scope, @Nullable Hint hint) {
+      @NotNull CheckIn checkIn, final @Nullable IScope scope, @Nullable Hint hint) {
     if (hint == null) {
       hint = new Hint();
     }
@@ -751,7 +758,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEvent applyScope(
-      @NotNull SentryEvent event, final @Nullable Scope scope, final @NotNull Hint hint) {
+      @NotNull SentryEvent event, final @Nullable IScope scope, final @NotNull Hint hint) {
     if (scope != null) {
       applyScope(event, scope);
 
@@ -782,7 +789,7 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
-  private @NotNull CheckIn applyScope(@NotNull CheckIn checkIn, final @Nullable Scope scope) {
+  private @NotNull CheckIn applyScope(@NotNull CheckIn checkIn, final @Nullable IScope scope) {
     if (scope != null) {
       // Set trace data from active span to connect events with transactions
       final ISpan span = scope.getSpan();
@@ -800,7 +807,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private <T extends SentryBaseEvent> @NotNull T applyScope(
-      final @NotNull T sentryBaseEvent, final @Nullable Scope scope) {
+      final @NotNull T sentryBaseEvent, final @Nullable IScope scope) {
     if (scope != null) {
       if (sentryBaseEvent.getRequest() == null) {
         sentryBaseEvent.setRequest(scope.getRequest());
@@ -927,6 +934,11 @@ public final class SentryClient implements ISentryClient {
   @Override
   public void flush(final long timeoutMillis) {
     transport.flush(timeoutMillis);
+  }
+
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return transport.getRateLimiter();
   }
 
   private boolean sample() {

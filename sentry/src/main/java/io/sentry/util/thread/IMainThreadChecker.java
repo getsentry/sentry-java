@@ -15,18 +15,14 @@ public interface IMainThreadChecker {
    * @param thread the Thread
    * @return true if it is the main thread or false otherwise
    */
-  default boolean isMainThread(Thread thread) {
-    return isMainThread(thread.getId());
-  }
+  boolean isMainThread(final @NotNull Thread thread);
 
   /**
    * Checks if the calling/current thread is the Main/UI thread
    *
    * @return true if it is the main thread or false otherwise
    */
-  default boolean isMainThread() {
-    return isMainThread(Thread.currentThread());
-  }
+  boolean isMainThread();
 
   /**
    * Checks if a given thread is the Main/UI thread
@@ -34,8 +30,5 @@ public interface IMainThreadChecker {
    * @param sentryThread the SentryThread
    * @return true if it is the main thread or false otherwise
    */
-  default boolean isMainThread(final @NotNull SentryThread sentryThread) {
-    final Long threadId = sentryThread.getId();
-    return threadId != null && isMainThread(threadId);
-  }
+  boolean isMainThread(final @NotNull SentryThread sentryThread);
 }

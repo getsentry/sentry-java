@@ -78,14 +78,6 @@ class EnvelopeTests : BaseUiTest() {
                 val profilingTraceData: ProfilingTraceData = it.assertProfile()
                 it.assertNoOtherItems()
 
-                assertEquals("profiledTransaction", transactionItem.transaction)
-                assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
-                assertEquals("profiledTransaction", profilingTraceData.transactionName)
-                assertTrue(profilingTraceData.environment.isNotEmpty())
-                assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
-                assertTrue(profilingTraceData.transactions.isNotEmpty())
-                assertTrue(profilingTraceData.measurementsMap.isNotEmpty())
-
                 // We check the measurements have been collected with expected units
                 val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]
                 val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]
@@ -96,6 +88,14 @@ class EnvelopeTests : BaseUiTest() {
 
                 // Frame rate could be null in headless emulator tests (agp-matrix workflow)
                 assumeNotNull(frameRates)
+
+                assertEquals("profiledTransaction", transactionItem.transaction)
+                assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
+                assertEquals("profiledTransaction", profilingTraceData.transactionName)
+                assertTrue(profilingTraceData.environment.isNotEmpty())
+                assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
+                assertTrue(profilingTraceData.transactions.isNotEmpty())
+                assertTrue(profilingTraceData.measurementsMap.isNotEmpty())
 
                 // Slow and frozen frames can be null (in case there were none)
                 if (slowFrames != null) {

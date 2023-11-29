@@ -2,6 +2,7 @@ package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.spring.webflux.SentryScheduleHook;
 import io.sentry.spring.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.webflux.SentryWebFilter;
@@ -35,7 +36,7 @@ public class SentryWebfluxAutoConfiguration {
     };
   }
 
-  /** Configures a filter that sets up Sentry {@link io.sentry.Scope} for each request. */
+  /** Configures a filter that sets up Sentry {@link IScope} for each request. */
   @Bean
   @Order(SENTRY_SPRING_FILTER_PRECEDENCE)
   public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IHub hub) {

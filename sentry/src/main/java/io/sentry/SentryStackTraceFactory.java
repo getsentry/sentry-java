@@ -27,7 +27,8 @@ public final class SentryStackTraceFactory {
    * @return list of SentryStackFrames or null if none
    */
   @Nullable
-  public List<SentryStackFrame> getStackFrames(@Nullable final StackTraceElement[] elements) {
+  public List<SentryStackFrame> getStackFrames(
+      @Nullable final StackTraceElement[] elements, final boolean includeSentryFrames) {
     List<SentryStackFrame> sentryStackFrames = null;
 
     if (elements != null && elements.length > 0) {
@@ -37,9 +38,10 @@ public final class SentryStackTraceFactory {
 
           // we don't want to add our own frames
           final String className = item.getClassName();
-          if (className.startsWith("io.sentry.")
-              && !className.startsWith("io.sentry.samples.")
-              && !className.startsWith("io.sentry.mobile.")) {
+          if (!includeSentryFrames
+              && (className.startsWith("io.sentry.")
+                  && !className.startsWith("io.sentry.samples.")
+                  && !className.startsWith("io.sentry.mobile."))) {
             continue;
           }
 
@@ -108,7 +110,7 @@ public final class SentryStackTraceFactory {
   @NotNull
   List<SentryStackFrame> getInAppCallStack(final @NotNull Throwable exception) {
     final StackTraceElement[] stacktrace = exception.getStackTrace();
-    final List<SentryStackFrame> frames = getStackFrames(stacktrace);
+    final List<SentryStackFrame> frames = getStackFrames(stacktrace, false);
     if (frames == null) {
       return Collections.emptyList();
     }

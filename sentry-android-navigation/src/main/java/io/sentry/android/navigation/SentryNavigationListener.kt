@@ -9,7 +9,6 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ITransaction
-import io.sentry.IntegrationName
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -19,6 +18,7 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.TracingUtils
 import java.lang.ref.WeakReference
 
@@ -38,7 +38,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private val enableNavigationBreadcrumbs: Boolean = true,
     private val enableNavigationTracing: Boolean = true,
     private val traceOriginAppendix: String? = null
-) : NavController.OnDestinationChangedListener, IntegrationName {
+) : NavController.OnDestinationChangedListener {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
     private var previousArgs: Bundle? = null
@@ -48,7 +48,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var activeTransaction: ITransaction? = null
 
     init {
-        addIntegrationToSdkVersion()
+        addIntegrationToSdkVersion(javaClass)
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }
@@ -132,15 +132,16 @@ class SentryNavigationListener @JvmOverloads constructor(
         // we add '/' to the name to match dart and web pattern
         name = "/" + name.substringBefore('/') // strip out arguments from the tx name
 
-        val transactonOptions = TransactionOptions().also {
+        val transactionOptions = TransactionOptions().also {
             it.isWaitForChildren = true
             it.idleTimeout = hub.options.idleTimeout
+            it.deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
             it.isTrimEnd = true
         }
 
         val transaction = hub.startTransaction(
             TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
-            transactonOptions
+            transactionOptions
         )
 
         transaction.spanContext.origin = traceOriginAppendix?.let {

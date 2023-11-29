@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
+import io.sentry.IpAddressUtils;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -93,12 +94,18 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {
-    // userId should be set even if event is Cached as the userId is static and won't change anyway.
-    final User user = event.getUser();
+    @Nullable User user = event.getUser();
     if (user == null) {
-      event.setUser(getDefaultUser(context));
-    } else if (user.getId() == null) {
+      user = new User();
+      event.setUser(user);
+    }
+
+    // userId should be set even if event is Cached as the userId is static and won't change anyway.
+    if (user.getId() == null) {
       user.setId(Installation.id(context));
+    }
+    if (user.getIpAddress() == null) {
+      user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
 

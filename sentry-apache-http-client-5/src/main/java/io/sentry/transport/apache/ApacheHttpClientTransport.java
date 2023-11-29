@@ -190,6 +190,11 @@ public final class ApacheHttpClientTransport implements ITransport {
   }
 
   @Override
+  public @NotNull RateLimiter getRateLimiter() {
+    return rateLimiter;
+  }
+
+  @Override
   public void close() throws IOException {
     options.getLogger().log(DEBUG, "Shutting down");
     try {

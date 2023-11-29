@@ -2,6 +2,7 @@ package io.sentry.spring
 
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -39,7 +40,7 @@ class SentrySpringFilterTest {
         val hub = mock<IHub>()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
-        lateinit var scope: Scope
+        lateinit var scope: IScope
         lateinit var request: HttpServletRequest
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {

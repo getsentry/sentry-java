@@ -12,6 +12,7 @@ import android.widget.ListAdapter
 import androidx.core.view.ScrollingView
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.PropagationContext
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -25,7 +26,6 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -45,7 +45,7 @@ class SentryGestureListenerScrollTest {
             gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
         }
         val hub = mock<IHub>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         val propagationContext = PropagationContext()
 
         val firstEvent = mock<MotionEvent>()
