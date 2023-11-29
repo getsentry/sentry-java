@@ -94,6 +94,7 @@ val transaction = Sentry.startTransaction("name", "op", TransactionOptions().app
     - This prevents issues when using the SDK on older AGP versions (< 4.x.x)
 - Reduce main thread work on init ([#3036](https://github.com/getsentry/sentry-java/pull/3036))
 - Move Integrations registration to background on init ([#3043](https://github.com/getsentry/sentry-java/pull/3043))
+- Fix `SentryOkHttpInterceptor.BeforeSpanCallback` was not finishing span when it was dropped ([#2958](https://github.com/getsentry/sentry-java/pull/2958))
 
 ## 6.34.0
 

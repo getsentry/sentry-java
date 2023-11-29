@@ -169,11 +169,10 @@ public open class SentryOkHttpInterceptor(
             if (result == null) {
                 // span is dropped
                 span.spanContext.sampled = false
-            } else {
-                // The SentryOkHttpEventListener will finish the span itself if used for this call
-                if (!isFromEventListener) {
-                    span.finish()
-                }
+            }
+            // The SentryOkHttpEventListener will finish the span itself if used for this call
+            if (!isFromEventListener) {
+                span.finish()
             }
         } else {
             // The SentryOkHttpEventListener will finish the span itself if used for this call

@@ -41,7 +41,8 @@ class SentryOkHttpInterceptor(
 ) : Interceptor by io.sentry.okhttp.SentryOkHttpInterceptor(
     hub,
     { span, request, response ->
-        beforeSpan?.execute(span, request, response)
+        beforeSpan ?: return@SentryOkHttpInterceptor span
+        beforeSpan.execute(span, request, response)
     },
     captureFailedRequests,
     failedRequestStatusCodes,
