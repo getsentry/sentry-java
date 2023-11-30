@@ -75,3 +75,12 @@ jobs:
           target: 'aosp_atd'
           channel: canary # Necessary for ATDs
           script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results-AGP${{ matrix.agp }}-Integrations${{ matrix.integrations }}
+          path: |
+            **/build/reports/*
+            **/build/outputs/*/connected/*
