@@ -26,11 +26,13 @@ import io.sentry.TransactionContext
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
+import io.sentry.util.Apollo3PlatformTestManipulator
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -59,7 +61,7 @@ class SentryApollo3InterceptorTest {
             whenever(it.options).thenReturn(options)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
         }
-        private var httpInterceptor = SentryApollo3HttpInterceptor(hub)
+        private var httpInterceptor = SentryApollo3HttpInterceptor(hub, captureFailedRequests = false)
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -91,7 +93,7 @@ class SentryApollo3InterceptorTest {
             )
 
             if (beforeSpan != null) {
-                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan)
+                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan, captureFailedRequests = false)
             }
 
             val builder = ApolloClient.Builder()
@@ -112,6 +114,11 @@ class SentryApollo3InterceptorTest {
     }
 
     private val fixture = Fixture()
+
+    @Before
+    fun setup() {
+        Apollo3PlatformTestManipulator.pretendIsAndroid(false)
+    }
 
     @Test
     fun `creates a span around the successful request`() {
@@ -309,6 +316,20 @@ class SentryApollo3InterceptorTest {
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
+    @Test
+    fun `attaches to root transaction on Android`() {
+        Apollo3PlatformTestManipulator.pretendIsAndroid(true)
+        executeQuery(fixture.getSut())
+        verify(fixture.hub).transaction
+    }
+
+    @Test
+    fun `attaches to child span on non-Android`() {
+        Apollo3PlatformTestManipulator.pretendIsAndroid(false)
+        executeQuery(fixture.getSut())
+        verify(fixture.hub).span
+    }
+
     private fun assertTransactionDetails(it: SentryTransaction, httpStatusCode: Int? = 200, contentLength: Long? = 0L) {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
@@ -330,6 +351,7 @@ class SentryApollo3InterceptorTest {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.hub)
+            whenever(fixture.hub.transaction).thenReturn(tx)
             whenever(fixture.hub.span).thenReturn(tx)
         }
 

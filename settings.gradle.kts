@@ -46,6 +46,7 @@ include(
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
     "sentry-quartz",
+    "sentry-okhttp",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-jul",

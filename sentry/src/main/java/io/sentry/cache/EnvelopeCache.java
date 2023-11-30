@@ -67,6 +67,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
 
+  private static final long SESSION_FLUSH_DISK_TIMEOUT_MS = 15000;
+
   private final CountDownLatch previousSessionLatch;
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
@@ -429,7 +431,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   /** Awaits until the previous session (if any) is flushed to its own file. */
   public boolean waitPreviousSessionFlush() {
     try {
-      return previousSessionLatch.await(options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
+      // use fixed timeout instead of configurable options.getFlushTimeoutMillis() to ensure there's
+      // enough time to flush the session to disk
+      return previousSessionLatch.await(SESSION_FLUSH_DISK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       options.getLogger().log(DEBUG, "Timed out waiting for previous session to flush.");

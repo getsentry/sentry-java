@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
@@ -93,7 +95,7 @@ public class AnrV2Integration implements Integration, Closeable {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start AnrProcessor.", e);
       }
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
   }
 
@@ -359,6 +361,11 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     @Override
+    public boolean ignoreCurrentThread() {
+      return false;
+    }
+
+    @Override
     public Long timestamp() {
       return timestamp;
     }
@@ -372,6 +379,14 @@ public class AnrV2Integration implements Integration, Closeable {
     public String mechanism() {
       return isBackgroundAnr ? "anr_background" : "anr_foreground";
     }
+
+    @Override
+    public boolean isFlushable(@Nullable SentryId eventId) {
+      return true;
+    }
+
+    @Override
+    public void setFlushable(@NotNull SentryId eventId) {}
   }
 
   static final class ParseResult {

@@ -30,6 +30,7 @@ body:
         - sentry-quartz
         - sentry-openfeign
         - sentry-apache-http-client-5
+        - sentry-okhttp
         - other
     validations:
       required: true

@@ -130,7 +130,7 @@ public class AppStartMetrics {
     final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
-      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance(application);
+      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance();
     }
   }
 

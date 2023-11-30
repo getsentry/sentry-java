@@ -220,14 +220,13 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {
-    if (options.isSendDefaultPii()) {
-      if (event.getUser() == null) {
-        final User user = new User();
-        user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-        event.setUser(user);
-      } else if (event.getUser().getIpAddress() == null) {
-        event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-      }
+    @Nullable User user = event.getUser();
+    if (user == null) {
+      user = new User();
+      event.setUser(user);
+    }
+    if (user.getIpAddress() == null) {
+      user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
 

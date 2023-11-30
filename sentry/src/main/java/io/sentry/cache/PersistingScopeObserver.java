@@ -3,8 +3,8 @@ package io.sentry.cache;
 import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.Breadcrumb;
-import io.sentry.IScopeObserver;
 import io.sentry.JsonDeserializer;
+import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
@@ -16,7 +16,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class PersistingScopeObserver implements IScopeObserver {
+public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   public static final String SCOPE_CACHE = ".scope-cache";
   public static final String USER_FILENAME = "user.json";

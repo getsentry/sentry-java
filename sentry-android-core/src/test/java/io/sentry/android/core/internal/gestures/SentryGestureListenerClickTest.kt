@@ -11,8 +11,8 @@ import android.widget.CheckBox
 import android.widget.RadioButton
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.PropagationContext
-import io.sentry.Scope
 import io.sentry.Scope.IWithPropagationContext
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
@@ -41,7 +41,7 @@ class SentryGestureListenerClickTest {
             dsn = "https://key@sentry.io/proj"
         }
         val hub = mock<IHub>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         val propagationContext = PropagationContext()
         lateinit var target: View
         lateinit var invalidTarget: View

@@ -3,8 +3,8 @@ package io.sentry.android.core;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import io.sentry.Hint;
+import io.sentry.IScope;
 import io.sentry.ISpan;
-import io.sentry.Scope;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
@@ -77,8 +77,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *
-   * The transaction is automatically bound to the {@link Scope}, but only if there's no transaction
-   * already bound to the Scope.
+   * The transaction is automatically bound to the {@link IScope}, but only if there's no
+   * transaction already bound to the Scope.
    */
   private boolean enableAutoActivityLifecycleTracing = true;
 
@@ -160,6 +160,15 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable BeforeCaptureCallback beforeViewHierarchyCaptureCallback;
 
+  /** Turns NDK on or off. Default is enabled. */
+  private boolean enableNdk = true;
+
+  /**
+   * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
+   * for sentry-android.
+   */
+  private boolean enableScopeSync = true;
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -192,7 +201,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * reporting only the latest one.
    *
    * <p>These events do not affect ANR rate nor are they enriched with additional information from
-   * {@link Scope} like breadcrumbs. The events are reported with 'HistoricalAppExitInfo' {@link
+   * {@link IScope} like breadcrumbs. The events are reported with 'HistoricalAppExitInfo' {@link
    * Mechanism}.
    */
   private boolean reportHistoricalAnrs = false;
@@ -209,9 +218,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
     setAttachServerName(false);
-
-    // enable scope sync for Android by default
-    setEnableScopeSync(true);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -532,6 +538,42 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setBeforeViewHierarchyCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
     this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
+  }
+
+  /**
+   * Check if NDK is ON or OFF Default is ON
+   *
+   * @return true if ON or false otherwise
+   */
+  public boolean isEnableNdk() {
+    return enableNdk;
+  }
+
+  /**
+   * Sets NDK to ON or OFF
+   *
+   * @param enableNdk true if ON or false otherwise
+   */
+  public void setEnableNdk(boolean enableNdk) {
+    this.enableNdk = enableNdk;
+  }
+
+  /**
+   * Returns if the Java to NDK Scope sync is enabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isEnableScopeSync() {
+    return enableScopeSync;
+  }
+
+  /**
+   * Enables or not the Java to NDK Scope sync
+   *
+   * @param enableScopeSync true if enabled or false otherwise
+   */
+  public void setEnableScopeSync(boolean enableScopeSync) {
+    this.enableScopeSync = enableScopeSync;
   }
 
   public boolean isReportHistoricalAnrs() {

@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.transport.RateLimiter;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -85,6 +86,11 @@ public final class HubAdapter implements IHub {
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     Sentry.addBreadcrumb(breadcrumb, hint);
+  }
+
+  @Override
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    addBreadcrumb(breadcrumb, new Hint());
   }
 
   @Override
@@ -183,19 +189,6 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
-    return Sentry.startTransaction(transactionContexts);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope) {
-    return Sentry.startTransaction(transactionContexts, customSamplingContext, bindToScope);
-  }
-
-  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
@@ -219,6 +212,12 @@ public final class HubAdapter implements IHub {
   @Override
   public @Nullable ISpan getSpan() {
     return Sentry.getCurrentHub().getSpan();
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @Nullable ITransaction getTransaction() {
+    return Sentry.getCurrentHub().getTransaction();
   }
 
   @Override
@@ -256,5 +255,11 @@ public final class HubAdapter implements IHub {
   @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return Sentry.captureCheckIn(checkIn);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @Nullable RateLimiter getRateLimiter() {
+    return Sentry.getCurrentHub().getRateLimiter();
   }
 }

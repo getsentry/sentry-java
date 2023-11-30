@@ -52,3 +52,10 @@ fun String.getCtor(ctorTypes: Array<Class<*>>): Constructor<*> {
     val clazz = Class.forName(this)
     return clazz.getConstructor(*ctorTypes)
 }
+
+fun String.getDeclaredCtor(ctorTypes: Array<Class<*>>): Constructor<*> {
+    val clazz = Class.forName(this)
+    val constructor = clazz.getDeclaredConstructor(*ctorTypes)
+    constructor.isAccessible = true
+    return constructor
+}

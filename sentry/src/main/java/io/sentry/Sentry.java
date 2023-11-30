@@ -15,6 +15,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
+import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
@@ -335,18 +336,21 @@ public final class Sentry {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
-      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+      final long timestamp = System.currentTimeMillis();
 
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
+                  final File[] oldTracesDirContent = profilingTracesDir.listFiles();
                   if (oldTracesDirContent == null) return;
                   // Method trace files are normally deleted at the end of traces, but if that fails
                   // for some reason we try to clear any old files here.
                   for (File f : oldTracesDirContent) {
-                    FileUtils.deleteRecursively(f);
+                    if (f.lastModified() < timestamp) {
+                      FileUtils.deleteRecursively(f);
+                    }
                   }
                 });
       } catch (RejectedExecutionException e) {
@@ -763,27 +767,14 @@ public final class Sentry {
    *
    * @param name the transaction name
    * @param operation the operation
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
-    return getCurrentHub().startTransaction(name, operation, bindToScope);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance.
-   *
-   * @param name the transaction name
-   * @param operation the operation
-   * @param description the description
+   * @param transactionOptions options for the transaction
    * @return created transaction
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull String name,
       final @NotNull String operation,
-      final @Nullable String description) {
-    return startTransaction(name, operation, description, false);
+      final @NotNull TransactionOptions transactionOptions) {
+    return getCurrentHub().startTransaction(name, operation, transactionOptions);
   }
 
   /**
@@ -792,15 +783,16 @@ public final class Sentry {
    * @param name the transaction name
    * @param operation the operation
    * @param description the description
-   * @param bindToScope if transaction should be bound to scope
+   * @param transactionOptions options for the transaction
    * @return created transaction
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull String name,
       final @NotNull String operation,
       final @Nullable String description,
-      final boolean bindToScope) {
-    final ITransaction transaction = getCurrentHub().startTransaction(name, operation, bindToScope);
+      final @NotNull TransactionOptions transactionOptions) {
+    final ITransaction transaction =
+        getCurrentHub().startTransaction(name, operation, transactionOptions);
     transaction.setDescription(description);
     return transaction;
   }
@@ -814,83 +806,6 @@ public final class Sentry {
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return getCurrentHub().startTransaction(transactionContexts);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance.
-   *
-   * @param transactionContexts the transaction contexts
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts, boolean bindToScope) {
-    return getCurrentHub().startTransaction(transactionContexts, bindToScope);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed sampling context the
-   * decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param name the transaction name
-   * @param operation the operation
-   * @param customSamplingContext the sampling context
-   * @return created transaction.
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull String name,
-      final @NotNull String operation,
-      final @NotNull CustomSamplingContext customSamplingContext) {
-    return getCurrentHub().startTransaction(name, operation, customSamplingContext);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed sampling context the
-   * decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param name the transaction name
-   * @param operation the operation
-   * @param customSamplingContext the sampling context
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction.
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull String name,
-      final @NotNull String operation,
-      final @NotNull CustomSamplingContext customSamplingContext,
-      final boolean bindToScope) {
-    return getCurrentHub().startTransaction(name, operation, customSamplingContext, bindToScope);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
-   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param transactionContexts the transaction context
-   * @param customSamplingContext the sampling context
-   * @return created transaction.
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @NotNull CustomSamplingContext customSamplingContext) {
-    return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
-   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * @param transactionContexts the transaction context
-   * @param customSamplingContext the sampling context
-   * @param bindToScope if transaction should be bound to scope
-   * @return created transaction.
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope) {
-    return getCurrentHub()
-        .startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
   /**
@@ -922,10 +837,16 @@ public final class Sentry {
   /**
    * Gets the current active transaction or span.
    *
-   * @return the active span or null when no active transaction is running
+   * @return the active span or null when no active transaction is running. In case of
+   *     globalHubMode=true, always the active transaction is returned, rather than the last active
+   *     span.
    */
   public static @Nullable ISpan getSpan() {
-    return getCurrentHub().getSpan();
+    if (globalHubMode && Platform.isAndroid()) {
+      return getCurrentHub().getTransaction();
+    } else {
+      return getCurrentHub().getSpan();
+    }
   }
 
   /**

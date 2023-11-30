@@ -5,9 +5,11 @@ import io.sentry.hints.Retryable
 import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -32,7 +34,13 @@ class EnvelopeSenderTest {
         }
 
         fun getSut(): EnvelopeSender {
-            return EnvelopeSender(hub!!, serializer!!, logger!!, options.flushTimeoutMillis)
+            return EnvelopeSender(
+                hub!!,
+                serializer!!,
+                logger!!,
+                options.flushTimeoutMillis,
+                options.maxQueueSize
+            )
         }
     }
 
@@ -74,7 +82,7 @@ class EnvelopeSenderTest {
         sut.processDirectory(File(tempDirectory.toUri()))
         testFile.deleteOnExit()
         verify(fixture.logger)!!.log(eq(SentryLevel.DEBUG), eq("File '%s' doesn't match extension expected."), any<Any>())
-        verifyNoMoreInteractions(fixture.hub)
+        verify(fixture.hub, never())!!.captureEnvelope(any(), anyOrNull())
     }
 
     @Test
