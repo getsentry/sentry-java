@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
@@ -68,6 +69,10 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
+@Config(
+    sdk = [Build.VERSION_CODES.N],
+    shadows = [SentryShadowProcess::class]
+)
 class SentryAndroidTest {
 
     @get:Rule
@@ -426,6 +431,19 @@ class SentryAndroidTest {
             }
         }
         assertEquals(0, optionsRef.integrations.size)
+    }
+
+    @Test
+    fun `init sets app start times span if starfish is enabled`() {
+        AppStartMetrics.getInstance().clear()
+        SentryShadowProcess.setStartUptimeMillis(42)
+
+        fixture.initSut(context = mock<Application>()) { options ->
+            options.dsn = "https://key@sentry.io/123"
+            options.isEnableStarfish = true
+        }
+        assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+        assertTrue(AppStartMetrics.getInstance().sdkAppStartTimeSpan.hasStarted())
     }
 
     private fun prefillScopeCache(cacheDir: String) {

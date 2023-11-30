@@ -4,6 +4,7 @@ import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.SentryDate;
 import io.sentry.SentryLongDate;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.TestOnly;
  * time. The stop unix time is artificial, it gets projected based on the start time + duration of
  * the time span.
  */
+@ApiStatus.Internal
 public class TimeSpan implements Comparable<TimeSpan> {
 
   private @Nullable String description;
@@ -94,9 +96,9 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   /**
-   * @return the start timestamp of this measurement, unix time, in ms
+   * @return the start timestamp of this measurement, unix time, in seconds
    */
-  public double getStartTimestampS() {
+  public double getStartTimestampSecs() {
     return (double) startUnixTimeMs / 1000.0d;
   }
 
@@ -112,12 +114,17 @@ public class TimeSpan implements Comparable<TimeSpan> {
     return 0;
   }
 
-  public double getProjectedStopTimestampS() {
+  /**
+   * @return the projected stop timestamp
+   * @see #getProjectedStopTimestampMs()
+   */
+  public double getProjectedStopTimestampSecs() {
     return (double) getProjectedStopTimestampMs() / 1000.0d;
   }
 
   /**
-   * @return the start timestamp of this measurement, unix time
+   * @return the projected stop timestamp
+   * @see #getProjectedStopTimestampMs()
    */
   public @Nullable SentryDate getProjectedStopTimestamp() {
     if (hasStopped()) {

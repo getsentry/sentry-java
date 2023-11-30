@@ -56,7 +56,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final TimeSpan appStartTimeSpan =
         options.isEnableStarfish()
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
 
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
         && appStartTimeSpan.hasStarted()) {

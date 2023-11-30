@@ -14,32 +14,10 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.Implementation
-import org.robolectric.annotation.Implements
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-
-@Implements(android.os.Process::class)
-class SentryShadowProcess {
-
-    companion object {
-
-        private var startupTimeMillis: Long = 0
-
-        fun setStartUptimeMillis(value: Long) {
-            startupTimeMillis = value
-        }
-
-        @Suppress("unused")
-        @Implementation
-        @JvmStatic
-        fun getStartUptimeMillis(): Long {
-            return startupTimeMillis
-        }
-    }
-}
 
 @RunWith(AndroidJUnit4::class)
 @Config(

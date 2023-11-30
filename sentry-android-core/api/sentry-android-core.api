@@ -396,11 +396,11 @@ public class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapte
 }
 
 public class io/sentry/android/core/performance/ActivityLifecycleTimeSpan : java/lang/Comparable {
-	public final field onCreate Lio/sentry/android/core/performance/TimeSpan;
-	public final field onStart Lio/sentry/android/core/performance/TimeSpan;
 	public fun <init> ()V
 	public fun compareTo (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public final fun getOnCreate ()Lio/sentry/android/core/performance/TimeSpan;
+	public final fun getOnStart ()Lio/sentry/android/core/performance/TimeSpan;
 }
 
 public class io/sentry/android/core/performance/AppStartMetrics {
@@ -413,7 +413,7 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
-	public fun getLegacyAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getSdkAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
@@ -430,15 +430,6 @@ public final class io/sentry/android/core/performance/AppStartMetrics$AppStartTy
 	public static fun values ()[Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 }
 
-public class io/sentry/android/core/performance/NextDrawListener : android/view/View$OnAttachStateChangeListener, android/view/ViewTreeObserver$OnDrawListener {
-	protected fun <init> (Landroid/os/Handler;Ljava/lang/Runnable;)V
-	public static fun forActivity (Landroid/app/Activity;Ljava/lang/Runnable;)Lio/sentry/android/core/performance/NextDrawListener;
-	public fun onDraw ()V
-	public fun onViewAttachedToWindow (Landroid/view/View;)V
-	public fun onViewDetachedFromWindow (Landroid/view/View;)V
-	public fun unregister ()V
-}
-
 public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable {
 	public fun <init> ()V
 	public fun compareTo (Lio/sentry/android/core/performance/TimeSpan;)I
@@ -447,10 +438,10 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 	public fun getDurationMs ()J
 	public fun getProjectedStopTimestamp ()Lio/sentry/SentryDate;
 	public fun getProjectedStopTimestampMs ()J
-	public fun getProjectedStopTimestampS ()D
+	public fun getProjectedStopTimestampSecs ()D
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getStartTimestampMs ()J
-	public fun getStartTimestampS ()D
+	public fun getStartTimestampSecs ()D
 	public fun getStartUptimeMs ()J
 	public fun hasNotStarted ()Z
 	public fun hasNotStopped ()Z

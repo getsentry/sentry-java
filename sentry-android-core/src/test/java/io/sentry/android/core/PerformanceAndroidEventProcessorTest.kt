@@ -261,7 +261,7 @@ class PerformanceAndroidEventProcessorTest {
                 false -> AppStartType.WARM
             }
             val timeSpan =
-                if (options.isEnableStarfish) appStartTimeSpan else legacyAppStartTimeSpan
+                if (options.isEnableStarfish) appStartTimeSpan else sdkAppStartTimeSpan
             timeSpan.apply {
                 setStartedAt(1)
                 setStoppedAt(2)

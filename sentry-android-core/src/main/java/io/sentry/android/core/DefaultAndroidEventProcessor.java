@@ -204,7 +204,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     final @NotNull TimeSpan appStartTimeSpan =
         options.isEnableStarfish()
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
     if (appStartTimeSpan.hasStarted()) {
       app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
     }

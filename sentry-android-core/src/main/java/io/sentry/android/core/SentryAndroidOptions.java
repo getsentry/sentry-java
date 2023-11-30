@@ -592,12 +592,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachAnrThreadDump = attachAnrThreadDump;
   }
 
-  @ApiStatus.Internal
+  @ApiStatus.Experimental
   public boolean isEnableStarfish() {
     return enableStarfish;
   }
 
-  @ApiStatus.Internal
+  @ApiStatus.Experimental
   public void setEnableStarfish(final boolean enableStarfish) {
     this.enableStarfish = enableStarfish;
   }

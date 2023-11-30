@@ -691,7 +691,7 @@ public final class ActivityLifecycleIntegration
     final @NotNull TimeSpan appStartTimeSpan =
         options.isEnableStarfish()
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
     return appStartTimeSpan;
   }
 }

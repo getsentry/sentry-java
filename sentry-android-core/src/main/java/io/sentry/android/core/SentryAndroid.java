@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
@@ -76,6 +77,7 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
+  @SuppressLint("NewApi")
   public static synchronized void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
@@ -127,15 +129,14 @@ public final class SentryAndroid {
               final @NotNull TimeSpan appStartTimeSpan =
                   AppStartMetrics.getInstance().getAppStartTimeSpan();
               if (appStartTimeSpan.hasNotStarted()
-                  && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                  && buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
                 appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
               }
-            } else {
-              final @NotNull TimeSpan appStartTime =
-                  AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
-              if (appStartTime.hasNotStarted()) {
-                appStartTime.setStartedAt(appStart);
-              }
+            }
+            final @NotNull TimeSpan sdkAppStartTime =
+                AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
+            if (sdkAppStartTime.hasNotStarted()) {
+              sdkAppStartTime.setStartedAt(appStart);
             }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(

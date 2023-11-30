@@ -105,7 +105,7 @@ public final class InternalSentrySdk {
       final @NotNull TimeSpan appStartTimeSpan =
           options.isEnableStarfish()
               ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-              : AppStartMetrics.getInstance().getLegacyAppStartTimeSpan();
+              : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
       if (appStartTimeSpan.hasStarted()) {
         app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
       }
