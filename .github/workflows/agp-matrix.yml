@@ -84,3 +84,4 @@ jobs:
           path: |
             **/build/reports/*
             **/build/outputs/*/connected/*
+            **/build/outputs/mapping/release/*

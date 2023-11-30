@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
+import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeProfile
 import io.sentry.assertEnvelopeTransaction
@@ -65,7 +66,7 @@ class EnvelopeTests : BaseUiTest() {
         transaction.finish()
         relay.assert {
             findEnvelope {
-                assertEnvelopeTransaction(it.items.toList()).transaction == "ProfilingSampleActivity"
+                assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "ProfilingSampleActivity"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
                 it.assertNoOtherItems()
@@ -192,7 +193,7 @@ class EnvelopeTests : BaseUiTest() {
         relay.assert {
             findEnvelope {
                 Log.e("ITEMS", it.items.joinToString { item -> item.header.type.itemType })
-                assertEnvelopeTransaction(it.items.toList()).transaction == "timedOutProfile"
+                assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "timedOutProfile"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
                 val profilingTraceData: ProfilingTraceData = it.assertProfile()
