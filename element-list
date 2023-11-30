@@ -15,6 +15,7 @@ io.sentry.jdbc
 io.sentry.jul
 io.sentry.log4j2
 io.sentry.logback
+io.sentry.okhttp
 io.sentry.openfeign
 io.sentry.opentelemetry
 io.sentry.profilemeasurements
