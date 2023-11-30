@@ -12,6 +12,7 @@ import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements

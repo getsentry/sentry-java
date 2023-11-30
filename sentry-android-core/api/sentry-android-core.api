@@ -119,17 +119,6 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AppStartState {
-	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
-	public fun getAppStartInterval ()Ljava/lang/Long;
-	public fun getAppStartMillis ()Ljava/lang/Long;
-	public fun getAppStartTime ()Lio/sentry/SentryDate;
-	public static fun getInstance ()Lio/sentry/android/core/AppStartState;
-	public fun isColdStart ()Ljava/lang/Boolean;
-	public fun reset ()V
-	public fun setAppStartMillis (J)V
-}
-
 public final class io/sentry/android/core/AppState {
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
 	public fun isInBackground ()Ljava/lang/Boolean;
