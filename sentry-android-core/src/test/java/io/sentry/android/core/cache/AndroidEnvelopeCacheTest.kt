@@ -53,8 +53,8 @@ class AndroidEnvelopeCacheTest {
                         appStartTimeSpan.setStartedAt(appStartMillis)
                         appStartTimeSpan.setStartUnixTimeMs(appStartMillis)
                     } else {
-                        legacyAppStartTimeSpan.setStartedAt(appStartMillis)
-                        legacyAppStartTimeSpan.setStartUnixTimeMs(appStartMillis)
+                        sdkAppStartTimeSpan.setStartedAt(appStartMillis)
+                        sdkAppStartTimeSpan.setStartUnixTimeMs(appStartMillis)
                     }
                 }
             }

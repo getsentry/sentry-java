@@ -24,9 +24,7 @@ android {
 
     buildTypes {
         getByName("debug")
-        getByName("release") {
-            consumerProguardFiles("proguard-rules.pro")
-        }
+        getByName("release")
     }
 
     kotlinOptions {
@@ -63,6 +61,7 @@ kotlin {
 
 dependencies {
     api(projects.sentry)
+    api(projects.sentryOkhttp)
 
     compileOnly(Config.Libs.okhttp)
 

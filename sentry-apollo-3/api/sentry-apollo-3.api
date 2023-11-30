@@ -8,7 +8,7 @@ public final class io/sentry/apollo3/SentryApollo3ClientException : java/lang/Ex
 	public final fun getSerialVersionUID ()J
 }
 
-public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollographql/apollo3/network/http/HttpInterceptor, io/sentry/IntegrationName {
+public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollographql/apollo3/network/http/HttpInterceptor {
 	public static final field Companion Lio/sentry/apollo3/SentryApollo3HttpInterceptor$Companion;
 	public static final field DEFAULT_CAPTURE_FAILED_REQUESTS Z
 	public static final field SENTRY_APOLLO_3_OPERATION_TYPE Ljava/lang/String;
@@ -20,7 +20,6 @@ public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollogr
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;)V
 	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun dispose ()V
-	public fun getIntegrationName ()Ljava/lang/String;
 	public fun intercept (Lcom/apollographql/apollo3/api/http/HttpRequest;Lcom/apollographql/apollo3/network/http/HttpInterceptorChain;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

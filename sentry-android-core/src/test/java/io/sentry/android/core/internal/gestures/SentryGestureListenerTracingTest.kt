@@ -10,12 +10,14 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.SpanStatus
+import io.sentry.SpanStatus.OUT_OF_RANGE
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
@@ -27,6 +29,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
@@ -45,7 +48,7 @@ class SentryGestureListenerTracingTest {
         }
         val hub = mock<IHub>()
         val event = mock<MotionEvent>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         lateinit var target: View
         lateinit var transaction: SentryTracer
 
@@ -206,6 +209,24 @@ class SentryGestureListenerTracingTest {
     }
 
     @Test
+    fun `captures transaction and both idle+deadline timeouts are set`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        verify(fixture.hub).startTransaction(
+            any<TransactionContext>(),
+            check<TransactionOptions> { transactionOptions ->
+                assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
+                assertEquals(
+                    TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
+                    transactionOptions.deadlineTimeout
+                )
+            }
+        )
+    }
+
+    @Test
     fun `captures transaction with interaction event type as op`() {
         val sut = fixture.getSut<View>()
 
@@ -314,20 +335,18 @@ class SentryGestureListenerTracingTest {
             SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
         )
 
+        // when the same button is clicked twice
+        sut.onSingleTapUp(fixture.event)
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        // then two transaction should be captured
+        verify(fixture.hub, times(2)).startTransaction(
             check {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
             any<TransactionOptions>()
         )
-
-        // second view interaction
-        sut.onSingleTapUp(fixture.event)
-
-        verify(fixture.transaction).scheduleFinish()
     }
 
     @Test
@@ -337,6 +356,17 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         assertEquals("auto.ui.gesture_listener.old_view_system", fixture.transaction.spanContext.origin)
+    }
+
+    @Test
+    fun `preserves existing transaction status`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        fixture.transaction.status = OUT_OF_RANGE
+        sut.stopTracing(SpanStatus.CANCELLED)
+        assertEquals(OUT_OF_RANGE, fixture.transaction.status)
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {

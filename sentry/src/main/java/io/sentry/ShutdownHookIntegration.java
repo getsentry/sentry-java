@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +35,7 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
       thread = new Thread(() -> hub.flush(options.getFlushTimeoutMillis()));
       runtime.addShutdownHook(thread);
       options.getLogger().log(SentryLevel.DEBUG, "ShutdownHookIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     } else {
       options.getLogger().log(SentryLevel.INFO, "enableShutdownHook is disabled.");
     }

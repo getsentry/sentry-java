@@ -5,10 +5,10 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.Build;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
+import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
@@ -16,6 +16,7 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
@@ -41,6 +42,8 @@ import org.jetbrains.annotations.TestOnly;
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
+
+  static final long DEFAULT_FLUSH_TIMEOUT_MS = 4000;
 
   static final String SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME =
       "io.sentry.compose.gestures.ComposeGestureTargetLocator";
@@ -94,6 +97,9 @@ final class AndroidOptionsInitializer {
 
     options.setDateProvider(new SentryAndroidDateProvider());
 
+    // set a lower flush timeout on Android to avoid ANRs
+    options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
+
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
 
@@ -126,6 +132,11 @@ final class AndroidOptionsInitializer {
       options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
     }
 
+    if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
+      options.setConnectionStatusProvider(
+          new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
+    }
+
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
@@ -133,7 +144,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
-    options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    options.setTransportGate(new AndroidTransportGate(options));
     final SentryFrameMetricsCollector frameMetricsCollector =
         new SentryFrameMetricsCollector(context, options, buildInfoProvider);
     options.setTransactionProfiler(
@@ -208,10 +219,7 @@ final class AndroidOptionsInitializer {
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
-    final Class<?> sentryNdkClass =
-        isNdkAvailable(buildInfoProvider)
-            ? loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger())
-            : null;
+    final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
     options.addIntegration(new NdkIntegration(sentryNdkClass));
 
     // this integration uses android.os.FileObserver, we can't move to sentry
@@ -320,9 +328,5 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
-  }
-
-  private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {
-    return buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN;
   }
 }

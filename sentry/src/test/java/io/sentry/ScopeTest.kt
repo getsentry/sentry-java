@@ -74,7 +74,7 @@ class ScopeTest {
         scope.setContexts("key", "value")
         scope.addAttachment(Attachment("file name"))
 
-        val clone = Scope(scope)
+        val clone = scope.clone()
 
         assertNotNull(clone)
         assertNotSame(scope, clone)
@@ -124,7 +124,7 @@ class ScopeTest {
 
         scope.setContexts("contexts", "contexts")
 
-        val clone = Scope(scope)
+        val clone = scope.clone()
 
         assertEquals(SentryLevel.DEBUG, clone.level)
 
@@ -183,7 +183,7 @@ class ScopeTest {
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
 
-        val clone = Scope(scope)
+        val clone = scope.clone()
 
         scope.level = SentryLevel.FATAL
         user.id = "456"
@@ -255,7 +255,7 @@ class ScopeTest {
 
         // clone in the meantime
         while (scope.breadcrumbs.isNotEmpty()) {
-            Scope(scope)
+            scope.clone()
         }
 
         // expect no exception to be thrown ¯\_(ツ)_/¯
@@ -886,7 +886,7 @@ class ScopeTest {
         scope.clear()
         assertTrue(scope.attachments is CopyOnWriteArrayList)
 
-        val cloned = Scope(scope)
+        val cloned = scope.clone()
         assertTrue(cloned.attachments is CopyOnWriteArrayList)
     }
 

@@ -136,7 +136,7 @@ public final class SentryThreadFactory {
     sentryThread.setCrashed(crashed);
 
     final List<SentryStackFrame> frames =
-        sentryStackTraceFactory.getStackFrames(stackFramesElements);
+        sentryStackTraceFactory.getStackFrames(stackFramesElements, false);
 
     if (options.isAttachStacktrace() && frames != null && !frames.isEmpty()) {
       final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);

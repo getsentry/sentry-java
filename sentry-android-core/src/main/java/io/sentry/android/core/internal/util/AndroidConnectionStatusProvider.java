@@ -7,12 +7,17 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
+import androidx.annotation.NonNull;
+import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Note: ConnectivityManager sometimes throws SecurityExceptions on Android 11. Hence all relevant
@@ -20,27 +25,29 @@ import org.jetbrains.annotations.Nullable;
  * details
  */
 @ApiStatus.Internal
-public final class ConnectivityChecker {
+public final class AndroidConnectionStatusProvider implements IConnectionStatusProvider {
 
-  public enum Status {
-    CONNECTED,
-    NOT_CONNECTED,
-    NO_PERMISSION,
-    UNKNOWN
+  private final @NotNull Context context;
+  private final @NotNull ILogger logger;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
+  private final @NotNull Map<IConnectionStatusObserver, ConnectivityManager.NetworkCallback>
+      registeredCallbacks;
+
+  public AndroidConnectionStatusProvider(
+      @NotNull Context context,
+      @NotNull ILogger logger,
+      @NotNull BuildInfoProvider buildInfoProvider) {
+    this.context = context;
+    this.logger = logger;
+    this.buildInfoProvider = buildInfoProvider;
+    this.registeredCallbacks = new HashMap<>();
   }
 
-  private ConnectivityChecker() {}
-
-  /**
-   * Return the Connection status
-   *
-   * @return the ConnectionStatus
-   */
-  public static @NotNull ConnectivityChecker.Status getConnectionStatus(
-      final @NotNull Context context, final @NotNull ILogger logger) {
+  @Override
+  public @NotNull ConnectionStatus getConnectionStatus() {
     final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
     if (connectivityManager == null) {
-      return Status.UNKNOWN;
+      return ConnectionStatus.UNKNOWN;
     }
     return getConnectionStatus(context, connectivityManager, logger);
     // getActiveNetworkInfo might return null if VPN doesn't specify its
@@ -48,6 +55,55 @@ public final class ConnectivityChecker {
 
     // when min. API 24, use:
     // connectivityManager.registerDefaultNetworkCallback(...)
+  }
+
+  @Override
+  public @Nullable String getConnectionType() {
+    return getConnectionType(context, logger, buildInfoProvider);
+  }
+
+  @SuppressLint("NewApi") // we have an if-check for that down below
+  @Override
+  public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
+      logger.log(SentryLevel.DEBUG, "addConnectionStatusObserver requires Android 5+.");
+      return false;
+    }
+
+    final ConnectivityManager.NetworkCallback callback =
+        new ConnectivityManager.NetworkCallback() {
+          @Override
+          public void onAvailable(@NonNull Network network) {
+            observer.onConnectionStatusChanged(getConnectionStatus());
+          }
+
+          @Override
+          public void onLosing(@NonNull Network network, int maxMsToLive) {
+            observer.onConnectionStatusChanged(getConnectionStatus());
+          }
+
+          @Override
+          public void onLost(@NonNull Network network) {
+            observer.onConnectionStatusChanged(getConnectionStatus());
+          }
+
+          @Override
+          public void onUnavailable() {
+            observer.onConnectionStatusChanged(getConnectionStatus());
+          }
+        };
+
+    registeredCallbacks.put(observer, callback);
+    return registerNetworkCallback(context, logger, buildInfoProvider, callback);
+  }
+
+  @Override
+  public void removeConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
+    final @Nullable ConnectivityManager.NetworkCallback callback =
+        registeredCallbacks.remove(observer);
+    if (callback != null) {
+      unregisterNetworkCallback(context, logger, buildInfoProvider, callback);
+    }
   }
 
   /**
@@ -59,25 +115,27 @@ public final class ConnectivityChecker {
    * @return true if connected or no permission to check, false otherwise
    */
   @SuppressWarnings({"deprecation", "MissingPermission"})
-  private static @NotNull ConnectivityChecker.Status getConnectionStatus(
+  private static @NotNull IConnectionStatusProvider.ConnectionStatus getConnectionStatus(
       final @NotNull Context context,
       final @NotNull ConnectivityManager connectivityManager,
       final @NotNull ILogger logger) {
     if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
       logger.log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
-      return Status.NO_PERMISSION;
+      return ConnectionStatus.NO_PERMISSION;
     }
 
     try {
       final android.net.NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
       if (activeNetworkInfo == null) {
         logger.log(SentryLevel.INFO, "NetworkInfo is null, there's no active network.");
-        return Status.NOT_CONNECTED;
+        return ConnectionStatus.DISCONNECTED;
       }
-      return activeNetworkInfo.isConnected() ? Status.CONNECTED : Status.NOT_CONNECTED;
+      return activeNetworkInfo.isConnected()
+          ? ConnectionStatus.CONNECTED
+          : ConnectionStatus.DISCONNECTED;
     } catch (Throwable t) {
       logger.log(SentryLevel.ERROR, "Could not retrieve Connection Status", t);
-      return Status.UNKNOWN;
+      return ConnectionStatus.UNKNOWN;
     }
   }
 
@@ -272,5 +330,12 @@ public final class ConnectivityChecker {
     } catch (Throwable t) {
       logger.log(SentryLevel.ERROR, "unregisterNetworkCallback failed", t);
     }
+  }
+
+  @TestOnly
+  @NotNull
+  public Map<IConnectionStatusObserver, ConnectivityManager.NetworkCallback>
+      getRegisteredCallbacks() {
+    return registeredCallbacks;
   }
 }

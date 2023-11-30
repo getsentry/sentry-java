@@ -5,6 +5,7 @@ import io.sentry.SentryEnvelope;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** A transport is in charge of sending the event to the Sentry server. */
 public interface ITransport extends Closeable {
@@ -20,4 +21,7 @@ public interface ITransport extends Closeable {
    * @param timeoutMillis time in milliseconds
    */
   void flush(long timeoutMillis);
+
+  @Nullable
+  RateLimiter getRateLimiter();
 }

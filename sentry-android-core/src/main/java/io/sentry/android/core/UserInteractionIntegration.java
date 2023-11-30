@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
@@ -119,7 +121,7 @@ public final class UserInteractionIntegration
       if (isAndroidXAvailable) {
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
-        addIntegrationToSdkVersion();
+        addIntegrationToSdkVersion(getClass());
       } else {
         options
             .getLogger()

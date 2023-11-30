@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
@@ -68,6 +69,10 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
+@Config(
+    sdk = [Build.VERSION_CODES.N],
+    shadows = [SentryShadowProcess::class]
+)
 class SentryAndroidTest {
 
     @get:Rule
@@ -86,7 +91,7 @@ class SentryAndroidTest {
                 putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
                 putBoolean(ManifestMetadataReader.AUTO_INIT, autoInit)
             }
-            val mockContext = context ?: ContextUtilsTest.mockMetaData(metaData = metadata)
+            val mockContext = context ?: ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
                 logger != null -> SentryAndroid.init(mockContext, logger)
                 options != null -> SentryAndroid.init(mockContext, options)
@@ -276,7 +281,7 @@ class SentryAndroidTest {
     fun `When initializing Sentry manually and changing both cache dir and dsn, the corresponding options should reflect that change`() {
         var options: SentryOptions? = null
 
-        val mockContext = ContextUtilsTest.createMockContext(true)
+        val mockContext = ContextUtilsTestHelper.createMockContext(true)
         val cacheDirPath = Files.createTempDirectory("new_cache").absolutePathString()
         SentryAndroid.init(mockContext) {
             it.dsn = "https://key@sentry.io/123"
@@ -311,10 +316,10 @@ class SentryAndroidTest {
         inForeground: Boolean,
         callback: (session: Session?) -> Unit
     ) {
-        val context = ContextUtilsTest.createMockContext()
+        val context = ContextUtilsTestHelper.createMockContext()
 
         Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
-            mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance(context) }
+            mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
             SentryAndroid.init(context) { options ->
                 options.release = "prod"
@@ -371,7 +376,6 @@ class SentryAndroidTest {
             // this is necessary to delay the AnrV2Integration processing to execute the configure
             // scope block below (otherwise it won't be possible as hub is no-op before .init)
             it.executorService.submit {
-                Thread.sleep(2000L)
                 Sentry.configureScope { scope ->
                     // make sure the scope values changed to test that we're still using previously
                     // persisted values for the old ANR events
@@ -388,7 +392,7 @@ class SentryAndroidTest {
             .untilTrue(asserted)
 
         // assert that persisted values have changed
-        options.executorService.close(1000L) // finalizes all enqueued persisting tasks
+        options.executorService.close(5000L) // finalizes all enqueued persisting tasks
         assertEquals(
             "TestActivity",
             PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String::class.java)
@@ -428,6 +432,19 @@ class SentryAndroidTest {
             }
         }
         assertEquals(0, optionsRef.integrations.size)
+    }
+
+    @Test
+    fun `init sets app start times span if starfish is enabled`() {
+        AppStartMetrics.getInstance().clear()
+        SentryShadowProcess.setStartUptimeMillis(42)
+
+        fixture.initSut(context = mock<Application>()) { options ->
+            options.dsn = "https://key@sentry.io/123"
+            options.isEnableStarfish = true
+        }
+        assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+        assertTrue(AppStartMetrics.getInstance().sdkAppStartTimeSpan.hasStarted())
     }
 
     private fun prefillScopeCache(cacheDir: String) {

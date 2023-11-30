@@ -2,8 +2,10 @@ package io.sentry
 
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -206,10 +208,9 @@ class HubAdapterTest {
         val samplingContext = mock<CustomSamplingContext>()
         val transactionOptions = mock<TransactionOptions>()
         HubAdapter.getInstance().startTransaction(transactionContext)
-        verify(hub).startTransaction(eq(transactionContext))
+        verify(hub).startTransaction(eq(transactionContext), any<TransactionOptions>())
 
-        HubAdapter.getInstance().startTransaction(transactionContext, samplingContext, false)
-        verify(hub).startTransaction(eq(transactionContext), eq(samplingContext), eq(false))
+        reset(hub)
 
         HubAdapter.getInstance().startTransaction(transactionContext, transactionOptions)
         verify(hub).startTransaction(eq(transactionContext), eq(transactionOptions))
@@ -230,6 +231,11 @@ class HubAdapterTest {
     @Test fun `getSpan calls Hub`() {
         HubAdapter.getInstance().span
         verify(hub).span
+    }
+
+    @Test fun `getTransaction calls Hub`() {
+        HubAdapter.getInstance().transaction
+        verify(hub).transaction
     }
 
     @Test fun `getOptions calls Hub`() {

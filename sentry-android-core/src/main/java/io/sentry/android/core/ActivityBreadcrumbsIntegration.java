@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -46,7 +47,7 @@ public final class ActivityBreadcrumbsIntegration
     if (enabled) {
       application.registerActivityLifecycleCallbacks(this);
       options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbIntegration installed.");
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
   }
 

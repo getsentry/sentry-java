@@ -1,8 +1,8 @@
 package io.sentry.samples.android
 
 import io.sentry.HttpStatusCodeRange
-import io.sentry.android.okhttp.SentryOkHttpEventListener
-import io.sentry.android.okhttp.SentryOkHttpInterceptor
+import io.sentry.okhttp.SentryOkHttpEventListener
+import io.sentry.okhttp.SentryOkHttpInterceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

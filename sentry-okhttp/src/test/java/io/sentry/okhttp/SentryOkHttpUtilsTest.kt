@@ -1,4 +1,4 @@
-package io.sentry.android.okhttp
+package io.sentry.okhttp
 
 import io.sentry.Hint
 import io.sentry.IHub

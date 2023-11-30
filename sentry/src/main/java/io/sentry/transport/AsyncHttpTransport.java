@@ -13,6 +13,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.Enqueable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -103,6 +104,14 @@ public final class AsyncHttpTransport implements ITransport {
         options
             .getClientReportRecorder()
             .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
+      } else {
+        HintUtils.runIfHasType(
+            hint,
+            Enqueable.class,
+            enqueable -> {
+              enqueable.markEnqueued();
+              options.getLogger().log(SentryLevel.DEBUG, "Envelope enqueued");
+            });
       }
     }
   }
@@ -136,11 +145,16 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   @Override
+  public @NotNull RateLimiter getRateLimiter() {
+    return rateLimiter;
+  }
+
+  @Override
   public void close() throws IOException {
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
-      if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+      if (!executor.awaitTermination(options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
             .log(
@@ -230,8 +244,16 @@ public final class AsyncHttpTransport implements ITransport {
           hint,
           DiskFlushNotification.class,
           (diskFlushNotification) -> {
-            diskFlushNotification.markFlushed();
-            options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+            if (diskFlushNotification.isFlushable(envelope.getHeader().getEventId())) {
+              diskFlushNotification.markFlushed();
+              options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+            } else {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Not firing envelope flush as there's an ongoing transaction");
+            }
           });
 
       if (transportGate.isConnected()) {

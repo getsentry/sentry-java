@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.content.Context
 import android.content.res.AssetManager
+import android.os.Build
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,13 +55,13 @@ class AndroidOptionsInitializerTest {
             assets: AssetManager? = null
         ) {
             mockContext = if (metadata != null) {
-                ContextUtilsTest.mockMetaData(
-                    mockContext = ContextUtilsTest.createMockContext(hasAppContext),
+                ContextUtilsTestHelper.mockMetaData(
+                    mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
                     metaData = metadata,
                     assets = assets
                 )
             } else {
-                ContextUtilsTest.createMockContext(hasAppContext)
+                ContextUtilsTestHelper.createMockContext(hasAppContext)
             }
             whenever(mockContext.cacheDir).thenReturn(file)
             if (mockContext.applicationContext != null) {
@@ -95,13 +96,13 @@ class AndroidOptionsInitializerTest {
         }
 
         fun initSutWithClassLoader(
-            minApi: Int = 16,
+            minApi: Int = Build.VERSION_CODES.KITKAT,
             classesToLoad: List<String> = emptyList(),
             isFragmentAvailable: Boolean = false,
             isTimberAvailable: Boolean = false
         ) {
-            mockContext = ContextUtilsTest.mockMetaData(
-                mockContext = ContextUtilsTest.createMockContext(hasAppContext = true),
+            mockContext = ContextUtilsTestHelper.mockMetaData(
+                mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext = true),
                 metaData = Bundle().apply {
                     putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
                 }
@@ -137,7 +138,7 @@ class AndroidOptionsInitializerTest {
             )
         }
 
-        private fun createBuildInfo(minApi: Int = 16): BuildInfoProvider {
+        private fun createBuildInfo(minApi: Int): BuildInfoProvider {
             val buildInfo = mock<BuildInfoProvider>()
             whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
             return buildInfo
@@ -172,6 +173,20 @@ class AndroidOptionsInitializerTest {
         val innerLogger = loggerField.javaClass.declaredFields.first { it.name == "logger" }
         innerLogger.isAccessible = true
         assertTrue(innerLogger.get(loggerField) is AndroidLogger)
+    }
+
+    @Test
+    fun `flush timeout is set to Android specific default value`() {
+        fixture.initSut()
+        assertEquals(AndroidOptionsInitializer.DEFAULT_FLUSH_TIMEOUT_MS, fixture.sentryOptions.flushTimeoutMillis)
+    }
+
+    @Test
+    fun `flush timeout can be overridden`() {
+        fixture.initSut(configureOptions = {
+            flushTimeoutMillis = 1234
+        })
+        assertEquals(1234, fixture.sentryOptions.flushTimeoutMillis)
     }
 
     @Test
@@ -333,14 +348,6 @@ class AndroidOptionsInitializerTest {
 
         val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
         assertNotNull((actual as NdkIntegration).sentryNdkClass)
-    }
-
-    @Test
-    fun `NdkIntegration won't be enabled because API is lower than 16`() {
-        fixture.initSutWithClassLoader(minApi = 14, classesToLoad = listOfNotNull(NdkIntegration.SENTRY_NDK_CLASS_NAME))
-
-        val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
-        assertNull((actual as NdkIntegration).sentryNdkClass)
     }
 
     @Test

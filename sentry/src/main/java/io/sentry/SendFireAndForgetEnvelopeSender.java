@@ -33,7 +33,11 @@ public final class SendFireAndForgetEnvelopeSender
 
     final EnvelopeSender envelopeSender =
         new EnvelopeSender(
-            hub, options.getSerializer(), options.getLogger(), options.getFlushTimeoutMillis());
+            hub,
+            options.getSerializer(),
+            options.getLogger(),
+            options.getFlushTimeoutMillis(),
+            options.getMaxQueueSize());
 
     return processDir(envelopeSender, dirPath, options.getLogger());
   }

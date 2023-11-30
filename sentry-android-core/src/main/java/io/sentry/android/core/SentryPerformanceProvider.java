@@ -11,10 +11,11 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
+import io.sentry.NoOpLogger;
+import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
-import io.sentry.android.core.performance.NextDrawListener;
 import io.sentry.android.core.performance.TimeSpan;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,7 +29,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   // static to rely on Class load
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long legacyAppStartMillis = SystemClock.uptimeMillis();
+  private static final long sdkAppStartMillis = SystemClock.uptimeMillis();
 
   private @Nullable Application app;
   private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
@@ -59,8 +60,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   public void onAppLaunched() {
     // pre-starfish: use static field init as app start time
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    final @NotNull TimeSpan legacyAppStartSpan = appStartMetrics.getLegacyAppStartTimeSpan();
-    legacyAppStartSpan.setStartedAt(legacyAppStartMillis);
+    final @NotNull TimeSpan sdkAppStartTimeSpan = appStartMetrics.getSdkAppStartTimeSpan();
+    sdkAppStartTimeSpan.setStartedAt(sdkAppStartMillis);
 
     // starfish: Use Process.getStartUptimeMillis()
     // Process.getStartUptimeMillis() requires API level 24+
@@ -99,7 +100,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             }
 
             final ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
-            timeSpan.onCreate.setStartedAt(now);
+            timeSpan.getOnCreate().setStartedAt(now);
             activityLifecycleMap.put(activity, timeSpan);
           }
 
@@ -123,8 +124,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
             final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
             if (timeSpan != null) {
-              timeSpan.onCreate.stop();
-              timeSpan.onCreate.setDescription(activity.getClass().getName() + ".onCreate");
+              timeSpan.getOnCreate().stop();
+              timeSpan.getOnCreate().setDescription(activity.getClass().getName() + ".onCreate");
             }
           }
 
@@ -136,7 +137,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             }
             final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
             if (timeSpan != null) {
-              timeSpan.onStart.setStartedAt(now);
+              timeSpan.getOnStart().setStartedAt(now);
             }
           }
 
@@ -145,16 +146,17 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             if (firstDrawDone.get()) {
               return;
             }
-            NextDrawListener.forActivity(
+            FirstDrawDoneListener.registerForNextDraw(
                 activity,
-                () -> {
-                  handler.postAtFrontOfQueue(
-                      () -> {
-                        if (firstDrawDone.compareAndSet(false, true)) {
-                          onAppStartDone();
-                        }
-                      });
-                });
+                () ->
+                    handler.postAtFrontOfQueue(
+                        () -> {
+                          if (firstDrawDone.compareAndSet(false, true)) {
+                            onAppStartDone();
+                          }
+                        }),
+                // as the SDK isn't initialized yet, we don't have access to SentryOptions
+                new BuildInfoProvider(NoOpLogger.getInstance()));
           }
 
           @Override
@@ -165,8 +167,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
               return;
             }
             if (timeSpan != null) {
-              timeSpan.onStart.stop();
-              timeSpan.onStart.setDescription(activity.getClass().getName() + ".onStart");
+              timeSpan.getOnStart().stop();
+              timeSpan.getOnStart().setDescription(activity.getClass().getName() + ".onStart");
 
               appStartMetrics.addActivityLifecycleTimeSpans(timeSpan);
             }

@@ -1,4 +1,4 @@
-package io.sentry.android.okhttp
+package io.sentry.okhttp
 
 import io.sentry.Hint
 import io.sentry.IHub
@@ -13,9 +13,9 @@ import okhttp3.Headers
 import okhttp3.Request
 import okhttp3.Response
 
-object SentryOkHttpUtils {
+internal object SentryOkHttpUtils {
 
-    fun captureClientError(hub: IHub, request: Request, response: Response) {
+    internal fun captureClientError(hub: IHub, request: Request, response: Response) {
         // not possible to get a parameterized url, but we remove at least the
         // query string and the fragment.
         // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query

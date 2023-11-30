@@ -120,7 +120,7 @@ class SentryApollo3InterceptorClientErrors {
 
     @Test
     fun `does not capture errors if captureFailedRequests is disabled`() {
-        val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+        val sut = fixture.getSut(captureFailedRequests = false, responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
@@ -129,7 +129,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors if captureFailedRequests is enabled`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(any(), any<Hint>())
@@ -141,14 +141,14 @@ class SentryApollo3InterceptorClientErrors {
 
     @Test
     fun `does not add Apollo3ClientError integration if captureFailedRequests is disabled`() {
-        fixture.getSut()
+        fixture.getSut(captureFailedRequests = false)
 
         assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo3ClientError"))
     }
 
     @Test
     fun `adds Apollo3ClientError integration if captureFailedRequests is enabled`() {
-        fixture.getSut(captureFailedRequests = true)
+        fixture.getSut()
 
         assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo3ClientError"))
     }
@@ -160,7 +160,6 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `does not capture errors if failedRequestTargets does not match`() {
         val sut = fixture.getSut(
-            captureFailedRequests = true,
             failedRequestTargets = listOf("nope.com"),
             responseBody = fixture.responseBodyNotOk
         )
@@ -172,7 +171,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors if failedRequestTargets matches`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(any(), any<Hint>())
@@ -185,7 +184,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with SentryApollo3Interceptor mechanism`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -200,7 +199,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with title`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -215,7 +214,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with snapshot flag set`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -232,7 +231,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with request context`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
         val body =
             """
@@ -260,7 +259,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with more request context if sendDefaultPii is enabled`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -278,7 +277,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with response context`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -298,7 +297,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with more response context if sendDefaultPii is enabled`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -316,7 +315,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors with specific fingerprints`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(
@@ -334,7 +333,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors if response code is equal or higher than 400`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk, httpStatusCode = 500)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk, httpStatusCode = 500)
         executeQuery(sut)
 
         // HttpInterceptor does not throw for >= 400
@@ -344,7 +343,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `capture errors swallow any exception during the error transformation`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
 
         whenever(fixture.hub.captureEvent(any(), any<Hint>())).thenThrow(RuntimeException())
 
@@ -358,7 +357,7 @@ class SentryApollo3InterceptorClientErrors {
     @Test
     fun `hints are set when capturing errors`() {
         val sut =
-            fixture.getSut(captureFailedRequests = true, responseBody = fixture.responseBodyNotOk)
+            fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
         verify(fixture.hub).captureEvent(

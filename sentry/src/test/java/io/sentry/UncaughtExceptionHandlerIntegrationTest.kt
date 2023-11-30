@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.EventDropReason.MULTITHREADED_DEDUPLICATION
@@ -247,6 +248,47 @@ class UncaughtExceptionHandlerIntegrationTest {
             any(),
             argThat { startsWith("Timed out") },
             any<Any>()
+        )
+    }
+
+    @Test
+    fun `when there is no active transaction on scope, sets current event id as flushable`() {
+        val eventCaptor = argumentCaptor<SentryEvent>()
+        whenever(fixture.hub.captureEvent(eventCaptor.capture(), any<Hint>()))
+            .thenReturn(SentryId.EMPTY_ID)
+
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(
+            any(),
+            argThat<Hint> {
+                (HintUtils.getSentrySdkHint(this) as UncaughtExceptionHint)
+                    .isFlushable(eventCaptor.firstValue.eventId)
+            }
+        )
+    }
+
+    @Test
+    fun `when there is active transaction on scope, does not set current event id as flushable`() {
+        val eventCaptor = argumentCaptor<SentryEvent>()
+        whenever(fixture.hub.transaction).thenReturn(mock<ITransaction>())
+        whenever(fixture.hub.captureEvent(eventCaptor.capture(), any<Hint>()))
+            .thenReturn(SentryId.EMPTY_ID)
+
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(
+            any(),
+            argThat<Hint> {
+                !(HintUtils.getSentrySdkHint(this) as UncaughtExceptionHint)
+                    .isFlushable(eventCaptor.firstValue.eventId)
+            }
         )
     }
 }

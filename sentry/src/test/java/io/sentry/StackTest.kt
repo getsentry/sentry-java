@@ -20,7 +20,7 @@ class StackTest {
             return Stack(options.logger, rootItem)
         }
 
-        fun createStackItem(scope: Scope = Scope(options)) =
+        fun createStackItem(scope: IScope = Scope(options)) =
             StackItem(this.options, this.client, scope)
     }
 

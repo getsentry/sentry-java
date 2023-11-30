@@ -1,12 +1,13 @@
 @file:Suppress("MaxLineLength")
 
-package io.sentry.android.okhttp
+package io.sentry.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -50,7 +51,7 @@ class SentryOkHttpInterceptorTest {
         val server = MockWebServer()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
-        lateinit var scope: Scope
+        lateinit var scope: IScope
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -61,7 +62,7 @@ class SentryOkHttpInterceptorTest {
             beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
             includeMockServerInTracePropagationTargets: Boolean = true,
             keepDefaultTracePropagationTargets: Boolean = false,
-            captureFailedRequests: Boolean = false,
+            captureFailedRequests: Boolean? = false,
             failedRequestTargets: List<String> = listOf(".*"),
             failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
                 HttpStatusCodeRange(
@@ -97,13 +98,22 @@ class SentryOkHttpInterceptorTest {
                     .setResponseCode(httpStatusCode)
             )
 
-            val interceptor = SentryOkHttpInterceptor(
-                hub,
-                beforeSpan,
-                captureFailedRequests = captureFailedRequests,
-                failedRequestTargets = failedRequestTargets,
-                failedRequestStatusCodes = failedRequestStatusCodes
-            )
+            val interceptor = when (captureFailedRequests) {
+                null -> SentryOkHttpInterceptor(
+                    hub,
+                    beforeSpan,
+                    failedRequestTargets = failedRequestTargets,
+                    failedRequestStatusCodes = failedRequestStatusCodes
+                )
+
+                else -> SentryOkHttpInterceptor(
+                    hub,
+                    beforeSpan,
+                    captureFailedRequests = captureFailedRequests,
+                    failedRequestTargets = failedRequestTargets,
+                    failedRequestStatusCodes = failedRequestStatusCodes
+                )
+            }
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
     }
@@ -361,9 +371,21 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
+        assertTrue(httpClientSpan.isFinished)
         assertNotNull(httpClientSpan.spanContext.sampled) {
             assertFalse(it)
         }
+    }
+
+    @Test
+    fun `captures failed requests by default`() {
+        val sut = fixture.getSut(
+            httpStatusCode = 500,
+            captureFailedRequests = null
+        )
+        sut.newCall(getRequest()).execute()
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test

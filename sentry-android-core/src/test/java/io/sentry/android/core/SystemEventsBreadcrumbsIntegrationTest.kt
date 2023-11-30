@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.Intent
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
+import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -25,9 +28,10 @@ class SystemEventsBreadcrumbsIntegrationTest {
         var options = SentryAndroidOptions()
         val hub = mock<IHub>()
 
-        fun getSut(enableSystemEventBreadcrumbs: Boolean = true): SystemEventsBreadcrumbsIntegration {
+        fun getSut(enableSystemEventBreadcrumbs: Boolean = true, executorService: ISentryExecutorService = ImmediateExecutorService()): SystemEventsBreadcrumbsIntegration {
             options = SentryAndroidOptions().apply {
                 isEnableSystemEventBreadcrumbs = enableSystemEventBreadcrumbs
+                this.executorService = executorService
             }
             return SystemEventsBreadcrumbsIntegration(context)
         }
@@ -43,6 +47,15 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
         verify(fixture.context).registerReceiver(any(), any())
         assertNotNull(sut.receiver)
+    }
+
+    @Test
+    fun `system events callback is registered in the executorService`() {
+        val sut = fixture.getSut(executorService = mock())
+        val hub = mock<IHub>()
+        sut.register(hub, fixture.options)
+
+        assertNull(sut.receiver)
     }
 
     @Test
@@ -63,6 +76,17 @@ class SystemEventsBreadcrumbsIntegrationTest {
         sut.close()
 
         verify(fixture.context).unregisterReceiver(any())
+        assertNull(sut.receiver)
+    }
+
+    @Test
+    fun `when hub is closed right after start, integration is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(executorService = deferredExecutorService)
+        sut.register(fixture.hub, fixture.options)
+        assertNull(sut.receiver)
+        sut.close()
+        deferredExecutorService.runAll()
         assertNull(sut.receiver)
     }
 
