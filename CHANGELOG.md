@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.0.0
 
 ### Features
 
@@ -13,7 +13,7 @@ Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes.
 - The SDK will now listen to connectivity changes and try to re-upload cached events when internet connection is re-established additionally to uploading events on app restart 
 - `Sentry.getSpan` now returns the root transaction, which should improve the span hierarchy and make it leaner
 - Multiple improvements to reduce probability of the SDK causing ANRs
-- New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps 
+- New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps
 
 ## Sentry Self-hosted Compatibility
 
