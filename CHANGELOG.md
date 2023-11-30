@@ -1,12 +1,12 @@
 # Changelog
 
-## 7.0.0
+## Unreleased
 
 ### Features
 
 - (Internal, Experimental) Attach spans for Application, ContentProvider, and Activities to app-start ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
 
-## Unreleased
+## 7.0.0
 
 Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 - Bumping `minSdk` level to 19 (Android 4.4)
