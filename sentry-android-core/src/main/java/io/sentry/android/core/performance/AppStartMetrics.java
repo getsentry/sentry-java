@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
  * that early, we can't use transactions or spans directly. Thus simple TimeSpans are used and later
  * transformed into SDK specific txn/span data structures.
  */
+@ApiStatus.Internal
 public class AppStartMetrics {
 
   public enum AppStartType {
@@ -31,7 +33,7 @@ public class AppStartMetrics {
   private boolean appLaunchedInForeground = false;
 
   private final @NotNull TimeSpan appStartSpan;
-  private final @NotNull TimeSpan legacyAppStartSpan;
+  private final @NotNull TimeSpan sdkAppStartSpan;
   private final @NotNull TimeSpan applicationOnCreate;
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
@@ -51,7 +53,7 @@ public class AppStartMetrics {
 
   public AppStartMetrics() {
     appStartSpan = new TimeSpan();
-    legacyAppStartSpan = new TimeSpan();
+    sdkAppStartSpan = new TimeSpan();
     applicationOnCreate = new TimeSpan();
     contentProviderOnCreates = new HashMap<>();
     activityLifecycles = new ArrayList<>();
@@ -69,8 +71,8 @@ public class AppStartMetrics {
    * @return the app start time span, as measured pre-starfish Uses ContentProvider/Sdk init time as
    *     start timestamp
    */
-  public @NotNull TimeSpan getLegacyAppStartTimeSpan() {
-    return legacyAppStartSpan;
+  public @NotNull TimeSpan getSdkAppStartTimeSpan() {
+    return sdkAppStartSpan;
   }
 
   public @NotNull TimeSpan getApplicationOnCreateTimeSpan() {
@@ -113,9 +115,10 @@ public class AppStartMetrics {
   public void clear() {
     appStartType = AppStartType.UNKNOWN;
     appStartSpan.reset();
-    legacyAppStartSpan.reset();
+    sdkAppStartSpan.reset();
     applicationOnCreate.reset();
     contentProviderOnCreates.clear();
+    activityLifecycles.clear();
   }
 
   /**
@@ -130,7 +133,7 @@ public class AppStartMetrics {
     final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
-      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance(application);
+      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance();
     }
   }
 

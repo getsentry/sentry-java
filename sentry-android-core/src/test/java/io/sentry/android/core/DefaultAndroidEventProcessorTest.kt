@@ -134,18 +134,6 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `when Android version is below JELLY_BEAN, does not add permissions`() {
-        whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-        val sut = fixture.getSut(context)
-
-        assertNotNull(sut.process(SentryEvent(), Hint())) {
-            // assert adds permissions
-            val unknown = it.contexts.app!!.permissions
-            assertNull(unknown)
-        }
-    }
-
-    @Test
     fun `When Transaction and hint is not Cached, data should be applied`() {
         val sut = fixture.getSut(context)
 
@@ -289,6 +277,31 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.user)
             assertNotNull(it.user!!.id)
+        }
+    }
+
+    @Test
+    fun `when event user data does not have ip address set, sets {{auto}} as the ip address`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent().apply {
+            user = User()
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertEquals("{{auto}}", it.ipAddress)
+        }
+    }
+
+    @Test
+    fun `when event has ip address set, keeps original ip address`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent()
+        event.user = User().apply {
+            ipAddress = "192.168.0.1"
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertEquals("192.168.0.1", it.ipAddress)
         }
     }
 

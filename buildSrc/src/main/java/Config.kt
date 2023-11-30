@@ -32,9 +32,9 @@ object Config {
     object Android {
         private val sdkVersion = 34
 
-        val minSdkVersion = 14
+        val minSdkVersion = 19
         val minSdkVersionOkHttp = 21
-        val minSdkVersionNdk = 16
+        val minSdkVersionNdk = 19
         val minSdkVersionCompose = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
@@ -111,7 +111,7 @@ object Config {
         val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
         val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
 
-        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
+        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
@@ -236,6 +236,7 @@ object Config {
         val SENTRY_SERVLET_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet"
         val SENTRY_SERVLET_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet.jakarta"
         val SENTRY_COMPOSE_HELPER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.compose.helper"
+        val SENTRY_OKHTTP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.okhttp"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"

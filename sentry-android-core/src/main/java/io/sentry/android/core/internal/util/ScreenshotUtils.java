@@ -41,8 +41,10 @@ public class ScreenshotUtils {
       final @NotNull IMainThreadChecker mainThreadChecker,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
+    // We are keeping BuildInfoProvider param for compatibility, as it's being used by
+    // cross-platform SDKs
 
-    if (!isActivityValid(activity, buildInfoProvider)) {
+    if (!isActivityValid(activity)) {
       logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
       return null;
     }
@@ -149,13 +151,7 @@ public class ScreenshotUtils {
     return null;
   }
 
-  @SuppressLint("NewApi")
-  private static boolean isActivityValid(
-      final @NotNull Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return !activity.isFinishing() && !activity.isDestroyed();
-    } else {
-      return !activity.isFinishing();
-    }
+  private static boolean isActivityValid(final @NotNull Activity activity) {
+    return !activity.isFinishing() && !activity.isDestroyed();
   }
 }

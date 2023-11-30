@@ -93,7 +93,7 @@ class TimeSpanTest {
     fun `span stop time is 0 if not started`() {
         val span = TimeSpan()
         assertEquals(0, span.projectedStopTimestampMs)
-        assertEquals(0.0, span.projectedStopTimestampS)
+        assertEquals(0.0, span.projectedStopTimestampSecs)
     }
 
     @Test
@@ -102,8 +102,8 @@ class TimeSpanTest {
         span.setStartedAt(1234)
         span.setStoppedAt(1234)
 
-        assertEquals(span.startTimestampMs / 1000.0, span.startTimestampS, 0.001)
-        assertEquals(span.projectedStopTimestampMs / 1000.0, span.projectedStopTimestampS, 0.001)
+        assertEquals(span.startTimestampMs / 1000.0, span.startTimestampSecs, 0.001)
+        assertEquals(span.projectedStopTimestampMs / 1000.0, span.projectedStopTimestampSecs, 0.001)
     }
 
     @Test

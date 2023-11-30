@@ -2,16 +2,17 @@ package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 import static io.sentry.android.core.internal.util.ScreenshotUtils.takeScreenshot;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
-import io.sentry.IntegrationName;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * captured.
  */
 @ApiStatus.Internal
-public final class ScreenshotEventProcessor implements EventProcessor, IntegrationName {
+public final class ScreenshotEventProcessor implements EventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -45,8 +46,17 @@ public final class ScreenshotEventProcessor implements EventProcessor, Integrati
             DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachScreenshot()) {
-      addIntegrationToSdkVersion();
+      addIntegrationToSdkVersion(getClass());
     }
+  }
+
+  @Override
+  public @NotNull SentryTransaction process(
+      @NotNull SentryTransaction transaction, @NotNull Hint hint) {
+    // that's only necessary because on newer versions of Unity, if not overriding this method, it's
+    // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
+    // compilation mismatch
+    return transaction;
   }
 
   @Override

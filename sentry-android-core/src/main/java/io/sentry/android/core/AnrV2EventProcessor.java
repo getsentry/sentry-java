@@ -48,6 +48,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import java.util.ArrayList;
@@ -88,6 +89,15 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
+  }
+
+  @Override
+  public @NotNull SentryTransaction process(
+      @NotNull SentryTransaction transaction, @NotNull Hint hint) {
+    // that's only necessary because on newer versions of Unity, if not overriding this method, it's
+    // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
+    // compilation mismatch
+    return transaction;
   }
 
   @Override
@@ -475,35 +485,19 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {
-    if (options.isSendDefaultPii()) {
-      if (event.getUser() == null) {
-        final User user = new User();
-        user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-        event.setUser(user);
-      } else if (event.getUser().getIpAddress() == null) {
-        event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-      }
+    @Nullable User user = event.getUser();
+    if (user == null) {
+      user = new User();
+      event.setUser(user);
     }
 
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
-    final User user = event.getUser();
-    if (user == null) {
-      event.setUser(getDefaultUser());
-    } else if (user.getId() == null) {
+    if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-  }
-
-  /**
-   * Sets the default user which contains only the userId.
-   *
-   * @return the User object
-   */
-  private @NotNull User getDefaultUser() {
-    User user = new User();
-    user.setId(getDeviceId());
-
-    return user;
+    if (user.getIpAddress() == null) {
+      user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
+    }
   }
 
   private @Nullable String getDeviceId() {
@@ -543,7 +537,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private @NotNull Device getDevice() {
     Device device = new Device();
     if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context, buildInfoProvider));
+      device.setName(ContextUtils.getDeviceName(context));
     }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
@@ -582,13 +576,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     return device;
   }
 
-  @SuppressLint("NewApi")
   private @NotNull Long getMemorySize(final @NotNull ActivityManager.MemoryInfo memInfo) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
-      return memInfo.totalMem;
-    }
-    // using Runtime as a fallback
-    return java.lang.Runtime.getRuntime().totalMemory(); // JVM in bytes too
+    return memInfo.totalMem;
   }
 
   private void mergeOS(final @NotNull SentryBaseEvent event) {

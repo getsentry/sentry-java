@@ -10,13 +10,9 @@ public interface AbnormalExit {
   String mechanism();
 
   /** Whether the current thread should be ignored from being marked as crashed, e.g. a watchdog */
-  default boolean ignoreCurrentThread() {
-    return false;
-  }
+  boolean ignoreCurrentThread();
 
   /** When exactly the abnormal exit happened */
   @Nullable
-  default Long timestamp() {
-    return null;
-  }
+  Long timestamp();
 }

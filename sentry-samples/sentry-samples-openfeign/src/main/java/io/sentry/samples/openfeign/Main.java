@@ -7,6 +7,7 @@ import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
+import io.sentry.TransactionOptions;
 import io.sentry.openfeign.SentryCapability;
 import java.util.List;
 
@@ -40,7 +41,10 @@ public class Main {
             .decoder(new GsonDecoder())
             .target(TodoApi.class, "https://jsonplaceholder.typicode.com/");
 
-    final ITransaction transaction = Sentry.startTransaction("load-todos2", "console", true);
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setBindToScope(true);
+    final ITransaction transaction =
+        Sentry.startTransaction("load-todos2", "console", transactionOptions);
     final List<Todo> all = todoApi.findAll();
     System.out.println("Loaded " + all.size() + " todos");
     System.out.println(todoApi.findById(1L));

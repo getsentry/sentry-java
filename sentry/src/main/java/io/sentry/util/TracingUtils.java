@@ -3,9 +3,9 @@ package io.sentry.util;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IHub;
+import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
-import io.sentry.Scope;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import java.util.List;
@@ -73,7 +73,7 @@ public final class TracingUtils {
   }
 
   public static @NotNull PropagationContext maybeUpdateBaggage(
-      final @NotNull Scope scope, final @NotNull SentryOptions sentryOptions) {
+      final @NotNull IScope scope, final @NotNull SentryOptions sentryOptions) {
     return scope.withPropagationContext(
         propagationContext -> {
           @Nullable Baggage baggage = propagationContext.getBaggage();

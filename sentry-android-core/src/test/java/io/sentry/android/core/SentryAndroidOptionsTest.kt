@@ -134,6 +134,14 @@ class SentryAndroidOptionsTest {
     }
 
     @Test
+    fun `enableScopeSync can be properly disabled`() {
+        val options = SentryAndroidOptions()
+        options.isEnableScopeSync = false
+
+        assertFalse(options.isEnableScopeSync)
+    }
+
+    @Test
     fun `starfish is disabled by default`() {
         val sentryOptions = SentryAndroidOptions()
         assertFalse(sentryOptions.isEnableStarfish)
@@ -144,6 +152,10 @@ class SentryAndroidOptionsTest {
         val sentryOptions = SentryAndroidOptions()
         sentryOptions.isEnableStarfish = true
         assertTrue(sentryOptions.isEnableStarfish)
+    }
+
+    fun `when options is initialized, enableScopeSync is enabled by default`() {
+        assertTrue(SentryAndroidOptions().isEnableScopeSync)
     }
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {

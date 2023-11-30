@@ -18,14 +18,17 @@
 
 package io.sentry.android.core.internal.util;
 
-import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import androidx.annotation.RequiresApi;
+import android.view.Window;
+import androidx.annotation.Nullable;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
+import io.sentry.android.core.performance.WindowContentChangedCallback;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,12 +36,37 @@ import org.jetbrains.annotations.NotNull;
  * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
  * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
  */
-@SuppressLint("ObsoleteSdkInt")
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final @NotNull Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final @NotNull AtomicReference<View> viewReference;
   private final @NotNull Runnable callback;
+
+  public static void registerForNextDraw(
+      final @NotNull Activity activity,
+      final @NotNull Runnable drawDoneCallback,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+
+    @Nullable Window window = activity.getWindow();
+    if (window != null) {
+      @Nullable View decorView = window.peekDecorView();
+      if (decorView != null) {
+        registerForNextDraw(decorView, drawDoneCallback, buildInfoProvider);
+      } else {
+        final @Nullable Window.Callback oldCallback = window.getCallback();
+        window.setCallback(
+            new WindowContentChangedCallback(
+                oldCallback != null ? oldCallback : new NoOpWindowCallback(),
+                () -> {
+                  @Nullable View newDecorView = window.peekDecorView();
+                  if (newDecorView != null) {
+                    // let's set the old callback again, so we don't intercept anymore
+                    window.setCallback(oldCallback);
+                    registerForNextDraw(newDecorView, drawDoneCallback, buildInfoProvider);
+                  }
+                }));
+      }
+    }
+  }
 
   /** Registers a post-draw callback for the next draw of a view. */
   public static void registerForNextDraw(
@@ -49,8 +77,8 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
     // merged into the real ViewTreeObserver.
     // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
-    if (buildInfoProvider.getSdkInfoVersion() < 26
-        && !isAliveAndAttached(view, buildInfoProvider)) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.O
+        && !isAliveAndAttached(view)) {
       view.addOnAttachStateChangeListener(
           new View.OnAttachStateChangeListener() {
             @Override
@@ -97,17 +125,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
    * @return true if the View is already attached and the ViewTreeObserver is not a floating
    *     placeholder.
    */
-  private static boolean isAliveAndAttached(
-      final @NotNull View view, final @NotNull BuildInfoProvider buildInfoProvider) {
-    return view.getViewTreeObserver().isAlive() && isAttachedToWindow(view, buildInfoProvider);
-  }
-
-  @SuppressLint("NewApi")
-  private static boolean isAttachedToWindow(
-      final @NotNull View view, final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() >= 19) {
-      return view.isAttachedToWindow();
-    }
-    return view.getWindowToken() != null;
+  private static boolean isAliveAndAttached(final @NotNull View view) {
+    return view.getViewTreeObserver().isAlive() && view.isAttachedToWindow();
   }
 }

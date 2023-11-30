@@ -28,7 +28,7 @@ class SentryLogcatAdapterTest {
             val metadata = Bundle().apply {
                 putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
             }
-            val mockContext = ContextUtilsTest.mockMetaData(metaData = metadata)
+            val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
                 options != null -> SentryAndroid.init(mockContext, options)
                 else -> SentryAndroid.init(mockContext)

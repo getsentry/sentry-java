@@ -8,20 +8,19 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CheckIn
 import io.sentry.Hint
+import io.sentry.IScope
 import io.sentry.ISentryClient
 import io.sentry.ProfilingTraceData
-import io.sentry.Scope
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.Session
-import io.sentry.Session.State.Exited
-import io.sentry.Session.State.Ok
 import io.sentry.TraceContext
 import io.sentry.UserFeedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
+import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
@@ -130,7 +129,7 @@ class SessionTrackingIntegrationTest {
 
         override fun isEnabled(): Boolean = true
 
-        override fun captureEvent(event: SentryEvent, scope: Scope?, hint: Hint?): SentryId {
+        override fun captureEvent(event: SentryEvent, scope: IScope?, hint: Hint?): SentryId {
             TODO("Not yet implemented")
         }
 
@@ -157,14 +156,18 @@ class SessionTrackingIntegrationTest {
         override fun captureTransaction(
             transaction: SentryTransaction,
             traceContext: TraceContext?,
-            scope: Scope?,
+            scope: IScope?,
             hint: Hint?,
             profilingTraceData: ProfilingTraceData?
         ): SentryId {
             TODO("Not yet implemented")
         }
 
-        override fun captureCheckIn(checkIn: CheckIn, scope: Scope?, hint: Hint?): SentryId {
+        override fun captureCheckIn(checkIn: CheckIn, scope: IScope?, hint: Hint?): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun getRateLimiter(): RateLimiter? {
             TODO("Not yet implemented")
         }
     }

@@ -12,6 +12,9 @@ import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
 import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
+import io.sentry.hints.DiskFlushNotification
+import io.sentry.hints.Enqueable
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
@@ -25,8 +28,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class AsyncHttpTransportTest {
 
@@ -319,6 +325,81 @@ class AsyncHttpTransportTest {
                 assertEquals(it.header.sentAt, now)
             }
         )
+    }
+
+    @Test
+    fun `close uses flushTimeoutMillis option to schedule termination`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val sut = fixture.getSUT()
+        sut.close()
+
+        verify(fixture.executor).awaitTermination(eq(123), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `when DiskFlushNotification is not flushable, does not flush`() {
+        // given
+        val ev = SentryEvent()
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+
+        var calledFlush = false
+        val sentryHint = object : DiskFlushNotification {
+            override fun markFlushed() {
+                calledFlush = true
+            }
+            override fun isFlushable(eventId: SentryId?): Boolean = false
+            override fun setFlushable(eventId: SentryId) = Unit
+        }
+        val hint = HintUtils.createWithTypeCheckHint(sentryHint)
+
+        // when
+        fixture.getSUT().send(envelope, hint)
+
+        // then
+        assertFalse(calledFlush)
+    }
+
+    @Test
+    fun `when DiskFlushNotification is flushable, marks it as flushed`() {
+        // given
+        val ev = SentryEvent()
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+
+        var calledFlush = false
+        val sentryHint = object : DiskFlushNotification {
+            override fun markFlushed() {
+                calledFlush = true
+            }
+            override fun isFlushable(eventId: SentryId?): Boolean = envelope.header.eventId == eventId
+            override fun setFlushable(eventId: SentryId) = Unit
+        }
+        val hint = HintUtils.createWithTypeCheckHint(sentryHint)
+
+        // when
+        fixture.getSUT().send(envelope, hint)
+
+        // then
+        assertTrue(calledFlush)
+    }
+
+    @Test
+    fun `when event is Enqueable, marks it after sending to the queue`() {
+        val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+        whenever(fixture.transportGate.isConnected).thenReturn(true)
+        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+        whenever(fixture.connection.send(any())).thenReturn(TransportResult.success())
+
+        var called = false
+        val hint = HintUtils.createWithTypeCheckHint(object : Enqueable {
+            override fun markEnqueued() {
+                called = true
+            }
+        })
+        fixture.getSUT().send(envelope, hint)
+
+        assertTrue(called)
     }
 
     private fun createSession(): Session {

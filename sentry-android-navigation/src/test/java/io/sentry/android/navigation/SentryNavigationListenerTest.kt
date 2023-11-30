@@ -8,6 +8,7 @@ import androidx.navigation.NavDestination
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.Scope.IWithTransaction
 import io.sentry.ScopeCallback
@@ -44,7 +45,7 @@ class SentryNavigationListenerTest {
 
         val context = mock<Context>()
         val resources = mock<Resources>()
-        val scope = mock<Scope>()
+        val scope = mock<IScope>()
         lateinit var options: SentryOptions
 
         lateinit var transaction: SentryTracer
@@ -94,7 +95,12 @@ class SentryNavigationListenerTest {
             whenever(context.resources).thenReturn(resources)
             whenever(navController.context).thenReturn(context)
             whenever(destination.route).thenReturn(toRoute)
-            return SentryNavigationListener(hub, enableBreadcrumbs, enableTracing, traceOriginAppendix)
+            return SentryNavigationListener(
+                hub,
+                enableBreadcrumbs,
+                enableTracing,
+                traceOriginAppendix
+            )
         }
     }
 
@@ -355,7 +361,8 @@ class SentryNavigationListenerTest {
     fun `starts new trace if performance is disabled`() {
         val sut = fixture.getSut(enableTracing = false)
 
-        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> =
+            ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
         whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
@@ -384,5 +391,19 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         assertEquals("auto.navigation.jetpack_compose", fixture.transaction.spanContext.origin)
+    }
+
+    @Test
+    fun `Navigation listener transactions set automatic deadline timeout`() {
+        val sut = fixture.getSut()
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.hub).startTransaction(
+            any<TransactionContext>(),
+            check<TransactionOptions> { options ->
+                assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, options.deadlineTimeout)
+            }
+        )
     }
 }

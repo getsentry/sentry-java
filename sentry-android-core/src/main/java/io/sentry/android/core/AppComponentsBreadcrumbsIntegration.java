@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_CONFIGURATION;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.content.ComponentCallbacks2;
 import android.content.Context;
@@ -53,7 +54,7 @@ public final class AppComponentsBreadcrumbsIntegration
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion();
+        addIntegrationToSdkVersion(getClass());
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
