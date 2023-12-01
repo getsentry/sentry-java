@@ -12,7 +12,6 @@ import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.uitest.android.mockservers.MockRelay
-import org.junit.Rule
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
