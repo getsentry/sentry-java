@@ -113,6 +113,30 @@ public final class RateLimiter {
     return false;
   }
 
+
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  public boolean isAnyRateLimitActive() {
+    final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
+
+    // check all categories
+    final Date dateAllCategories = sentryRetryAfterLimit.get(DataCategory.All);
+    if (dateAllCategories != null) {
+      if (!currentDate.after(dateAllCategories)) {
+        return true;
+      }
+    }
+
+    for (DataCategory dataCategory : sentryRetryAfterLimit.keySet()) {
+      // check for specific dataCategory
+      final Date dateCategory = sentryRetryAfterLimit.get(dataCategory);
+      if (dateCategory != null) {
+        return !currentDate.after(dateCategory);
+      }
+    }
+
+    return false;
+  }
+
   /**
    * It marks the hint when sending has failed, so it's not necessary to wait the timeout
    *

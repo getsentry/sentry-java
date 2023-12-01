@@ -1,6 +1,9 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
+
+import io.sentry.backpressure.IBackpressureMonitor;
+import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
@@ -439,6 +442,8 @@ public class SentryOptions {
 
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
+
+  @ApiStatus.Experimental private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
   /**
    * Adds an event processor
@@ -2186,6 +2191,17 @@ public class SentryOptions {
   public void setConnectionStatusProvider(
       final @NotNull IConnectionStatusProvider connectionStatusProvider) {
     this.connectionStatusProvider = connectionStatusProvider;
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public IBackpressureMonitor getBackpressureMonitor() {
+    return backpressureMonitor;
+  }
+
+  @ApiStatus.Internal
+  public void setBackpressureMonitor(final @NotNull IBackpressureMonitor backpressureMonitor) {
+    this.backpressureMonitor = backpressureMonitor;
   }
 
   /** The BeforeSend callback */

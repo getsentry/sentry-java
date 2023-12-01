@@ -605,6 +605,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public boolean isHealthy() {
+    return stack.peek().getClient().isHealthy();
+  }
+
+  @Override
   public void flush(long timeoutMillis) {
     if (!isEnabled()) {
       options

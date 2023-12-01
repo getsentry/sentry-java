@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
@@ -241,6 +242,11 @@ public final class Sentry {
     notifyOptionsObservers(options);
 
     finalizePreviousSession(options, HubAdapter.getInstance());
+
+    // TODO move start into an integration?
+
+    options.setBackpressureMonitor(new BackpressureMonitor(options));
+    options.getBackpressureMonitor().start();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -729,6 +735,10 @@ public final class Sentry {
    */
   public static void bindClient(final @NotNull ISentryClient client) {
     getCurrentHub().bindClient(client);
+  }
+
+  public static boolean isHealthy() {
+    return getCurrentHub().isHealthy();
   }
 
   /**
