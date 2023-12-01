@@ -1,15 +1,12 @@
 package io.sentry.backpressure;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Date;
-
 import io.sentry.ISentryExecutorService;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import org.jetbrains.annotations.NotNull;
 
 public final class BackpressureMonitor implements IBackpressureMonitor, Runnable {
   private static final int MAX_DOWNSAMPLE_FACTOR = 10;
@@ -45,17 +42,30 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   public void run() {
     if (isHealthy()) {
       if (downsampleFactor > 0) {
-        sentryOptions.getLogger().log(SentryLevel.DEBUG, "Health check positive, reverting to normal sampling.");
+        sentryOptions
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Health check positive, reverting to normal sampling.");
       }
       downsampleFactor = 0;
     } else {
       if (downsampleFactor < MAX_DOWNSAMPLE_FACTOR) {
         downsampleFactor++;
         didEverDownsample = true;
-        sentryOptions.getLogger().log(SentryLevel.DEBUG, "Health check negative, downsampling with a factor of %d", downsampleFactor);
+        sentryOptions
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Health check negative, downsampling with a factor of %d",
+                downsampleFactor);
       }
     }
-    System.out.println("hello from backpressure monitor, downsamplingFactor is now " + downsampleFactor + " and it is " + ZonedDateTime.now(ZoneId.systemDefault()).toString() + " didEverDownsample? " + didEverDownsample);
+    System.out.println(
+        "hello from backpressure monitor, downsamplingFactor is now "
+            + downsampleFactor
+            + " and it is "
+            + ZonedDateTime.now(ZoneId.systemDefault()).toString()
+            + " didEverDownsample? "
+            + didEverDownsample);
     reschedule();
   }
 

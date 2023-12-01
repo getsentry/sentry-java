@@ -84,7 +84,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     }
   }
 
-  private boolean isSchedulingAllowed() {
+  public boolean isSchedulingAllowed() {
     return unfinishedTasksCount.getCount() < maxQueueSize;
   }
 

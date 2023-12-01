@@ -1,6 +1,5 @@
 package io.sentry.transport;
 
-import io.sentry.DataCategory;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.ILogger;
@@ -154,7 +153,8 @@ public final class AsyncHttpTransport implements ITransport {
   public boolean isHealthy() {
     boolean anyRateLimitActive = rateLimiter.isAnyRateLimitActive();
     boolean schedulingAllowed = executor.isSchedulingAllowed();
-    System.out.println("rate limit " + anyRateLimitActive + ", scheduling allowed " + schedulingAllowed);
+    System.out.println(
+        "rate limit " + anyRateLimitActive + ", scheduling allowed " + schedulingAllowed);
     return !anyRateLimitActive && schedulingAllowed;
   }
 

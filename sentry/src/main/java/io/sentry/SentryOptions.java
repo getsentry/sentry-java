@@ -1,7 +1,6 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
-
 import io.sentry.backpressure.IBackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
@@ -443,7 +442,8 @@ public class SentryOptions {
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
-  @ApiStatus.Experimental private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
+  @ApiStatus.Experimental
+  private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
   /**
    * Adds an event processor

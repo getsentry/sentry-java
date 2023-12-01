@@ -113,7 +113,6 @@ public final class RateLimiter {
     return false;
   }
 
-
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public boolean isAnyRateLimitActive() {
     final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
