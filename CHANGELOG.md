@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v850)
+  - [diff](https://github.com/gradle/gradle/compare/v8.4.0...v8.5.0)
+
 ## 7.0.0
 
 Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
