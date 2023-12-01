@@ -134,7 +134,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
           ? ConnectionStatus.CONNECTED
           : ConnectionStatus.DISCONNECTED;
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "Could not retrieve Connection Status", t);
+      logger.log(SentryLevel.WARNING, "Could not retrieve Connection Status", t);
       return ConnectionStatus.UNKNOWN;
     }
   }
@@ -306,7 +306,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     try {
       connectivityManager.registerDefaultNetworkCallback(networkCallback);
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "registerDefaultNetworkCallback failed", t);
+      logger.log(SentryLevel.WARNING, "registerDefaultNetworkCallback failed", t);
       return false;
     }
     return true;
@@ -328,7 +328,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     try {
       connectivityManager.unregisterNetworkCallback(networkCallback);
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "unregisterNetworkCallback failed", t);
+      logger.log(SentryLevel.WARNING, "unregisterNetworkCallback failed", t);
     }
   }
 

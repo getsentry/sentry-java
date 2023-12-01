@@ -12,6 +12,7 @@ import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.uitest.android.mockservers.MockRelay
+import org.junit.Rule
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
@@ -85,6 +86,7 @@ abstract class BaseUiTest {
         }
         SentryAndroid.init(context) {
             it.dsn = mockDsn
+            it.isDebug = true
             // We don't use test orchestrator, due to problems with Saucelabs.
             // So the app data is not deleted between tests. Thus, We don't know when sessions will actually be sent.
             // To avoid any interference between tests we can just disable them by default.
