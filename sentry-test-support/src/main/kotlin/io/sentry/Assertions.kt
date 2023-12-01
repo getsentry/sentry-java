@@ -36,6 +36,7 @@ fun checkTransaction(predicate: (SentryTransaction) -> Unit): SentryEnvelope {
 inline fun <reified T> assertEnvelopeItem(
     items: List<SentryEnvelopeItem>,
     requiredType: SentryItemType? = null,
+    logger: ILogger = NoOpLogger.getInstance(),
     predicate: (index: Int, item: T) -> Unit = { _, _ -> }
 ): T {
     val item = items.mapIndexedNotNull { index, it ->
@@ -57,16 +58,18 @@ inline fun <reified T> assertEnvelopeItem(
  */
 inline fun assertEnvelopeTransaction(
     items: List<SentryEnvelopeItem>,
+    logger: ILogger = NoOpLogger.getInstance(),
     predicate: (index: Int, item: SentryTransaction) -> Unit = { _, _ -> }
-): SentryTransaction = assertEnvelopeItem(items, SentryItemType.Transaction, predicate)
+): SentryTransaction = assertEnvelopeItem(items, SentryItemType.Transaction, logger, predicate)
 
 /**
  * Asserts a profile exists in [items] and returns the first one. Otherwise it throws an [AssertionError].
  */
 inline fun assertEnvelopeProfile(
     items: List<SentryEnvelopeItem>,
+    logger: ILogger = NoOpLogger.getInstance(),
     predicate: (index: Int, item: ProfilingTraceData) -> Unit = { _, _ -> }
-): ProfilingTraceData = assertEnvelopeItem(items, SentryItemType.Profile, predicate)
+): ProfilingTraceData = assertEnvelopeItem(items, SentryItemType.Profile, logger, predicate)
 
 /**
  * Modified version of check from mockito-kotlin Verification.kt, that does not print errors of type `SkipError`.

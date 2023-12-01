@@ -18,7 +18,7 @@ jobs:
 
   agp-matrix-compatibility:
     timeout-minutes: 30
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +43,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup KVM
+        shell: bash
+        run: |
+          # check if virtualization is supported...
+          sudo apt install -y --no-install-recommends cpu-checker coreutils && echo "CPUs=$(nproc --all)" && kvm-ok
+          # allow access to KVM to run the emulator
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       # Clean, build and release a test apk
       - name: Make assembleUiTests
         run: make assembleUiTests
@@ -64,3 +75,13 @@ jobs:
           target: 'aosp_atd'
           channel: canary # Necessary for ATDs
           script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results-AGP${{ matrix.agp }}-Integrations${{ matrix.integrations }}
+          path: |
+            **/build/reports/*
+            **/build/outputs/*/connected/*
+            **/build/outputs/mapping/release/*
