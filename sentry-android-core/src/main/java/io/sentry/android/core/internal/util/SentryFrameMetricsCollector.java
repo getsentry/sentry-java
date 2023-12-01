@@ -139,6 +139,12 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
               buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R
                   ? window.getContext().getDisplay().getRefreshRate()
                   : window.getWindowManager().getDefaultDisplay().getRefreshRate();
+          final long expectedFrameTimeNanos = (long) (1_000_000_000 / refreshRate);
+          final long totalDurationNanos = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
+
+          // if totalDurationNanos is smaller than expectedFrameTimeNanos,
+          // it means that the frame was drawn within it's time budget, thus 0 delay
+          final long delayNanos = Math.max(0, totalDurationNanos - expectedFrameTimeNanos);
 
           final long cpuDuration = getFrameCpuDuration(frameMetrics);
           long startTime = getFrameStartTimestamp(frameMetrics);
@@ -156,7 +162,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           lastFrameEndNanos = startTime + cpuDuration;
 
           for (FrameMetricsCollectorListener l : listenerMap.values()) {
-            l.onFrameMetricCollected(lastFrameEndNanos, cpuDuration, refreshRate);
+            l.onFrameMetricCollected(lastFrameEndNanos, cpuDuration, delayNanos, refreshRate);
           }
         };
   }
@@ -302,10 +308,14 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
      * @param frameEndNanos End timestamp of a frame in nanoseconds relative to System.nanotime().
      * @param durationNanos Duration in nanoseconds of the time spent from the cpu on the main
      *     thread to create the frame.
+     * @param delayNanos the frame delay, in nanoseconds.
      * @param refreshRate Refresh rate of the screen.
      */
     void onFrameMetricCollected(
-        final long frameEndNanos, final long durationNanos, final float refreshRate);
+        final long frameEndNanos,
+        final long durationNanos,
+        final long delayNanos,
+        final float refreshRate);
   }
 
   @ApiStatus.Internal

@@ -29,7 +29,6 @@ import org.jetbrains.annotations.TestOnly;
 final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
-  private final @NotNull IHub hub;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isInitialized = false;
   private int transactionsCounter = 0;
@@ -44,27 +43,20 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   public AndroidTransactionProfiler(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
-    this(
-        context,
-        sentryAndroidOptions,
-        buildInfoProvider,
-        frameMetricsCollector,
-        HubAdapter.getInstance());
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    this(context, sentryAndroidOptions, buildInfoProvider, HubAdapter.getInstance());
   }
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull IHub hub) {
     this.context = Objects.requireNonNull(context, "The application context is required");
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
     this.frameMetricsCollector =
-        Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
+        Objects.requireNonNull(
+            options.getFrameMetricsCollector(), "SentryFrameMetricsCollector is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
   }

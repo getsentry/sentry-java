@@ -101,7 +101,7 @@ class AndroidTransactionProfilerTest {
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
             transaction3 = SentryTracer(TransactionContext("", ""), hub)
-            return AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector, hub)
+            return AndroidTransactionProfiler(context, options, buildInfoProvider, hub)
         }
     }
 
