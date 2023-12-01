@@ -152,10 +152,16 @@ public final class AsyncHttpTransport implements ITransport {
   @Override
   public boolean isHealthy() {
     boolean anyRateLimitActive = rateLimiter.isAnyRateLimitActive();
-    boolean schedulingAllowed = executor.isSchedulingAllowed();
+    boolean didRejectRecently = executor.didRejectRecently();
+    boolean isSchedulingAllowed = executor.isSchedulingAllowed();
     System.out.println(
-        "rate limit " + anyRateLimitActive + ", scheduling allowed " + schedulingAllowed);
-    return !anyRateLimitActive && schedulingAllowed;
+        "rate limit "
+            + anyRateLimitActive
+            + ", did reject recently "
+            + didRejectRecently
+            + ", isSchedulingAllowed "
+            + isSchedulingAllowed);
+    return !anyRateLimitActive && !didRejectRecently;
   }
 
   @Override
