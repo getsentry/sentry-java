@@ -18,15 +18,15 @@ public interface IPerformanceContinuousCollector extends IPerformanceCollector {
   void onSpanStarted(@NotNull ISpan span);
 
   /**
-   * Called when a itself span is finished or a timeout is reached.
+   * Called when a span itself is finished or a timeout is reached.
    *
    * @param span the span that was finished
    */
   void onSpanFinished(@NotNull ISpan span);
 
   /**
-   * Stop collecting any data. Usually called when no more transactions/spans are running or when
-   * the SDK is being closed.
+   * Called when no more data should be collected. Usually called when no more transactions/spans
+   * are running or when the SDK is being closed.
    */
   void clear();
 }

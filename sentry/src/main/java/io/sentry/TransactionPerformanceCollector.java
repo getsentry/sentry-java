@@ -9,6 +9,10 @@ public interface TransactionPerformanceCollector {
 
   void start(@NotNull ITransaction transaction);
 
+  void onSpanStarted(@NotNull Span span);
+
+  void onSpanFinished(@NotNull Span span);
+
   @Nullable
   List<PerformanceCollectionData> stop(@NotNull ITransaction transaction);
 

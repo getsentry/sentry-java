@@ -1160,6 +1160,8 @@ class SentryTracerTest {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
         val mockPerformanceCollector = object : TransactionPerformanceCollector {
             override fun start(transaction: ITransaction) {}
+            override fun onSpanStarted(span: Span) {}
+            override fun onSpanFinished(span: Span) {}
             override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
             override fun close() {}
         }

@@ -124,6 +124,20 @@ public final class DefaultTransactionPerformanceCollector
   }
 
   @Override
+  public void onSpanStarted(@NotNull Span span) {
+    for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
+      collector.onSpanStarted(span);
+    }
+  }
+
+  @Override
+  public void onSpanFinished(@NotNull Span span) {
+    for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
+      collector.onSpanStarted(span);
+    }
+  }
+
+  @Override
   public @Nullable List<PerformanceCollectionData> stop(final @NotNull ITransaction transaction) {
     options
         .getLogger()

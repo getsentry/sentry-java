@@ -261,6 +261,8 @@ public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
+	public fun onSpanFinished (Lio/sentry/Span;)V
+	public fun onSpanStarted (Lio/sentry/Span;)V
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
@@ -1313,6 +1315,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
+	public fun onSpanFinished (Lio/sentry/Span;)V
+	public fun onSpanStarted (Lio/sentry/Span;)V
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
@@ -2754,6 +2758,8 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 
 public abstract interface class io/sentry/TransactionPerformanceCollector {
 	public abstract fun close ()V
+	public abstract fun onSpanFinished (Lio/sentry/Span;)V
+	public abstract fun onSpanStarted (Lio/sentry/Span;)V
 	public abstract fun start (Lio/sentry/ITransaction;)V
 	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
