@@ -6,12 +6,20 @@
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
 
+### Dependencies
+
+- Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v850)
+  - [diff](https://github.com/gradle/gradle/compare/v8.4.0...v8.5.0)
+
+## 7.0.0
+
 Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 - Bumping `minSdk` level to 19 (Android 4.4)
 - The SDK will now listen to connectivity changes and try to re-upload cached events when internet connection is re-established additionally to uploading events on app restart 
 - `Sentry.getSpan` now returns the root transaction, which should improve the span hierarchy and make it leaner
 - Multiple improvements to reduce probability of the SDK causing ANRs
-- New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps 
+- New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps
 
 ## Sentry Self-hosted Compatibility
 
