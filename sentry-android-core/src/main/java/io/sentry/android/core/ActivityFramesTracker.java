@@ -21,6 +21,10 @@ import org.jetbrains.annotations.VisibleForTesting;
  * A class that tracks slow and frozen frames using the FrameMetricsAggregator class from
  * androidx.core package. It also checks if the FrameMetricsAggregator class is available at
  * runtime.
+ *
+ * <p>If starfish is enabled, frame metrics are recorded using {@link
+ * io.sentry.android.core.internal.util.SentryFrameMetricsCollector} via {@link
+ * AndroidSlowFrozenFrameCollector} instead.
  */
 public final class ActivityFramesTracker {
 
@@ -42,7 +46,8 @@ public final class ActivityFramesTracker {
     final boolean androidXAvailable =
         loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", options.getLogger());
 
-    if (androidXAvailable) {
+    /** */
+    if (androidXAvailable && !options.isEnableStarfish()) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
     this.options = options;

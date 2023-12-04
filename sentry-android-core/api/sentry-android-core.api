@@ -23,7 +23,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/ICollector {
+public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> (Lio/sentry/ILogger;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
@@ -43,7 +43,7 @@ public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/ICollector {
+public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> ()V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
@@ -69,6 +69,14 @@ public class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public final field startCpuMillis J
 	public final field startNanos J
 	public fun <init> (JJ)V
+}
+
+public class io/sentry/android/core/AndroidSlowFrozenFrameCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun clear ()V
+	public fun onFrameMetricCollected (JJJF)V
+	public fun onSpanFinished (Lio/sentry/ISpan;)V
+	public fun onSpanStarted (Lio/sentry/ISpan;)V
 }
 
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {

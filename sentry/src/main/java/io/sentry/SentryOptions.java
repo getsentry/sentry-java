@@ -412,7 +412,7 @@ public class SentryOptions {
   @ApiStatus.Internal
   private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
 
-  private final @NotNull List<ICollector> collectors = new ArrayList<>();
+  private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
   private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
@@ -2164,8 +2164,8 @@ public class SentryOptions {
    * @param collector the ICollector.
    */
   @ApiStatus.Internal
-  public void addCollector(final @NotNull ICollector collector) {
-    collectors.add(collector);
+  public void addPerformanceCollector(final @NotNull IPerformanceCollector collector) {
+    performanceCollectors.add(collector);
   }
 
   /**
@@ -2174,8 +2174,8 @@ public class SentryOptions {
    * @return the ICollector list.
    */
   @ApiStatus.Internal
-  public @NotNull List<ICollector> getCollectors() {
-    return collectors;
+  public @NotNull List<IPerformanceCollector> getPerformanceCollectors() {
+    return performanceCollectors;
   }
 
   @NotNull

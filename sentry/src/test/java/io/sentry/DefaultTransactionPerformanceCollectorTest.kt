@@ -38,7 +38,8 @@ class DefaultTransactionPerformanceCollectorTest {
         var mockTimer: Timer? = null
         val deferredExecutorService = DeferredExecutorService()
 
-        val mockCpuCollector: ICollector = object : ICollector {
+        val mockCpuCollector: IPerformanceSnapshotCollector = object :
+            IPerformanceSnapshotCollector {
             override fun setup() {}
             override fun collect(performanceCollectionData: PerformanceCollectionData) {
                 performanceCollectionData.addCpuData(mock())
@@ -49,14 +50,14 @@ class DefaultTransactionPerformanceCollectorTest {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = executorService
             if (cpuCollector != null) {
-                options.addCollector(cpuCollector)
+                options.addPerformanceCollector(cpuCollector)
             }
             if (memoryCollector != null) {
-                options.addCollector(memoryCollector)
+                options.addPerformanceCollector(memoryCollector)
             }
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
@@ -80,15 +81,15 @@ class DefaultTransactionPerformanceCollectorTest {
     @Test
     fun `when no collectors are set in options, collect is ignored`() {
         val collector = fixture.getSut(null, null)
-        assertTrue(fixture.options.collectors.isEmpty())
+        assertTrue(fixture.options.performanceCollectors.isEmpty())
         collector.start(fixture.transaction1)
         verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), any())
     }
 
     @Test
     fun `collect calls collectors setup`() {
-        val memoryCollector = mock<ICollector>()
-        val cpuCollector = mock<ICollector>()
+        val memoryCollector = mock<IPerformanceSnapshotCollector>()
+        val cpuCollector = mock<IPerformanceSnapshotCollector>()
         val collector = fixture.getSut(memoryCollector, cpuCollector)
         collector.start(fixture.transaction1)
         Thread.sleep(300)
@@ -171,16 +172,16 @@ class DefaultTransactionPerformanceCollectorTest {
     @Test
     fun `collector has no ICollector by default`() {
         val collector = fixture.getSut(null, null)
-        assertNotNull(collector.getProperty<List<ICollector>>("collectors"))
-        assertTrue(collector.getProperty<List<ICollector>>("collectors").isEmpty())
+        assertNotNull(collector.getProperty<List<IPerformanceSnapshotCollector>>("collectors"))
+        assertTrue(collector.getProperty<List<IPerformanceSnapshotCollector>>("collectors").isEmpty())
     }
 
     @Test
     fun `only one of multiple same collectors are collected`() {
-        fixture.options.addCollector(JavaMemoryCollector())
+        fixture.options.addPerformanceCollector(JavaMemoryCollector())
         val collector = fixture.getSut()
         // We have 2 memory collectors and 1 cpu collector
-        assertEquals(3, fixture.options.collectors.size)
+        assertEquals(3, fixture.options.performanceCollectors.size)
 
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
@@ -201,10 +202,10 @@ class DefaultTransactionPerformanceCollectorTest {
     @Test
     fun `setup and collect happen on background thread`() {
         val threadCheckerCollector = spy(ThreadCheckerCollector())
-        fixture.options.addCollector(threadCheckerCollector)
+        fixture.options.addPerformanceCollector(threadCheckerCollector)
         val collector = fixture.getSut()
         // We have the ThreadCheckerCollector in the collectors
-        assertTrue(fixture.options.collectors.any { it is ThreadCheckerCollector })
+        assertTrue(fixture.options.performanceCollectors.any { it is ThreadCheckerCollector })
 
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
@@ -241,7 +242,8 @@ class DefaultTransactionPerformanceCollectorTest {
         verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?"), any())
     }
 
-    inner class ThreadCheckerCollector : ICollector {
+    inner class ThreadCheckerCollector :
+        IPerformanceSnapshotCollector {
         override fun setup() {
             if (mainThreadChecker.isMainThread) {
                 throw AssertionError("setup() was called in the main thread")

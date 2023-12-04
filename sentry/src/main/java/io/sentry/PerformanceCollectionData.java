@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PerformanceCollectionData {
   private @Nullable MemoryCollectionData memoryData = null;
   private @Nullable CpuCollectionData cpuData = null;
+  private @Nullable FrameMetrics frameMetrics = null;
 
   /** Store a {@link io.sentry.MemoryCollectionData}, if not null. */
   public void addMemoryData(final @Nullable MemoryCollectionData memoryCollectionData) {
@@ -22,11 +23,19 @@ public final class PerformanceCollectionData {
     }
   }
 
+  public void setFrameMetrics(final @Nullable FrameMetrics frameMetrics) {
+    this.frameMetrics = frameMetrics;
+  }
+
   public @Nullable CpuCollectionData getCpuData() {
     return cpuData;
   }
 
   public @Nullable MemoryCollectionData getMemoryData() {
     return memoryData;
+  }
+
+  public @Nullable FrameMetrics getFrameMetrics() {
+    return frameMetrics;
   }
 }

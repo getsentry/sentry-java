@@ -1,14 +1,14 @@
 package io.sentry.android.core;
 
 import android.os.Debug;
-import io.sentry.ICollector;
+import io.sentry.IPerformanceSnapshotCollector;
 import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class AndroidMemoryCollector implements ICollector {
+public class AndroidMemoryCollector implements IPerformanceSnapshotCollector {
 
   @Override
   public void setup() {}

@@ -184,9 +184,13 @@ final class AndroidOptionsInitializer {
     }
 
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
-    if (options.getCollectors().isEmpty()) {
-      options.addCollector(new AndroidMemoryCollector());
-      options.addCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+    if (options.getPerformanceCollectors().isEmpty()) {
+      options.addPerformanceCollector(new AndroidMemoryCollector());
+      options.addPerformanceCollector(
+          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+    }
+    if (options.isEnableStarfish()) {
+      options.addPerformanceCollector(new AndroidSlowFrozenFrameCollector(options));
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
 

@@ -22,19 +22,37 @@ public final class DefaultTransactionPerformanceCollector
   private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, List<PerformanceCollectionData>> performanceDataMap =
       new ConcurrentHashMap<>();
-  private final @NotNull List<ICollector> collectors;
+
+  private final @NotNull List<IPerformanceSnapshotCollector> snapshotCollectors;
+  private final @NotNull List<IPerformanceContinuousCollector> continuousCollectors;
+
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
+  private final boolean hasNoCollectors;
 
   public DefaultTransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
-    this.collectors = options.getCollectors();
+    this.snapshotCollectors = new ArrayList<>();
+    this.continuousCollectors = new ArrayList<>();
+
+    final @NotNull List<IPerformanceCollector> performanceCollectors =
+        options.getPerformanceCollectors();
+    for (IPerformanceCollector performanceCollector : performanceCollectors) {
+      if (performanceCollector instanceof IPerformanceSnapshotCollector) {
+        snapshotCollectors.add((IPerformanceSnapshotCollector) performanceCollector);
+      }
+      if (performanceCollector instanceof IPerformanceContinuousCollector) {
+        continuousCollectors.add((IPerformanceContinuousCollector) performanceCollector);
+      }
+    }
+
+    hasNoCollectors = snapshotCollectors.isEmpty() && continuousCollectors.isEmpty();
   }
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
-    if (collectors.isEmpty()) {
+    if (hasNoCollectors) {
       options
           .getLogger()
           .log(
@@ -58,6 +76,9 @@ public final class DefaultTransactionPerformanceCollector
                 "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?",
                 e);
       }
+      for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
+        collector.onSpanStarted(transaction);
+      }
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
@@ -69,7 +90,7 @@ public final class DefaultTransactionPerformanceCollector
             new TimerTask() {
               @Override
               public void run() {
-                for (ICollector collector : collectors) {
+                for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
                   collector.setup();
                 }
               }
@@ -85,7 +106,7 @@ public final class DefaultTransactionPerformanceCollector
               public void run() {
                 final @NotNull PerformanceCollectionData tempData = new PerformanceCollectionData();
 
-                for (ICollector collector : collectors) {
+                for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
                   collector.collect(tempData);
                 }
 
@@ -104,8 +125,6 @@ public final class DefaultTransactionPerformanceCollector
 
   @Override
   public @Nullable List<PerformanceCollectionData> stop(final @NotNull ITransaction transaction) {
-    List<PerformanceCollectionData> data =
-        performanceDataMap.remove(transaction.getEventId().toString());
     options
         .getLogger()
         .log(
@@ -113,23 +132,32 @@ public final class DefaultTransactionPerformanceCollector
             "stop collecting performance info for transactions %s (%s)",
             transaction.getName(),
             transaction.getSpanContext().getTraceId().toString());
-    if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
-      synchronized (timerLock) {
-        if (timer != null) {
-          timer.cancel();
-          timer = null;
-        }
-      }
+
+    final @Nullable List<PerformanceCollectionData> data =
+        performanceDataMap.remove(transaction.getEventId().toString());
+
+    for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
+      collector.onSpanFinished(transaction);
+    }
+
+    // close if they are no more remaining transactions
+    if (performanceDataMap.isEmpty()) {
+      close();
     }
     return data;
   }
 
   @Override
   public void close() {
-    performanceDataMap.clear();
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "stop collecting all performance info for transactions");
+    performanceDataMap.clear();
+
+    for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
+      collector.clear();
+    }
+
     if (isStarted.getAndSet(false)) {
       synchronized (timerLock) {
         if (timer != null) {
