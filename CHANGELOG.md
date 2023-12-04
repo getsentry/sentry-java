@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+
 ### Dependencies
 
 - Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
