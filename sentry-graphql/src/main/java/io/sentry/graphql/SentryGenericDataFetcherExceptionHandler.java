@@ -3,7 +3,10 @@ package io.sentry.graphql;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
+import graphql.execution.SimpleDataFetcherExceptionHandler;
 import io.sentry.IHub;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,11 +27,27 @@ public final class SentryGenericDataFetcherExceptionHandler implements DataFetch
     this(null, delegate);
   }
 
-  @Override
   @SuppressWarnings("deprecation")
   public @Nullable DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
-    return handler.onException(
+    CompletableFuture<DataFetcherExceptionHandlerResult> futureResult =
+        handleException(handlerParameters);
+
+    if (futureResult == null) {
+      return CompletableFuture.completedFuture((DataFetcherExceptionHandlerResult) null).join();
+    }
+
+    try {
+      return futureResult.get();
+    } catch (InterruptedException | ExecutionException e) {
+      return CompletableFuture.completedFuture((DataFetcherExceptionHandlerResult) null).join();
+    }
+  }
+
+  @Override
+  public @Nullable CompletableFuture<DataFetcherExceptionHandlerResult> handleException(
+      DataFetcherExceptionHandlerParameters handlerParameters) {
+    return handler.handleException(
         handlerParameters.getException(),
         handlerParameters.getDataFetchingEnvironment(),
         handlerParameters);

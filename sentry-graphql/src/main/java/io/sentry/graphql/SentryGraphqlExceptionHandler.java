@@ -8,6 +8,7 @@ import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -22,8 +23,7 @@ public final class SentryGraphqlExceptionHandler {
     this.delegate = delegate;
   }
 
-  @SuppressWarnings("deprecation")
-  public @Nullable DataFetcherExceptionHandlerResult onException(
+  public @Nullable CompletableFuture<DataFetcherExceptionHandlerResult> handleException(
       final @NotNull Throwable throwable,
       final @Nullable DataFetchingEnvironment environment,
       final @Nullable DataFetcherExceptionHandlerParameters handlerParameters) {
@@ -40,9 +40,9 @@ public final class SentryGraphqlExceptionHandler {
       }
     }
     if (delegate != null) {
-      return delegate.onException(handlerParameters);
+      return delegate.handleException(handlerParameters);
     } else {
-      return null;
+      return CompletableFuture.completedFuture(null);
     }
   }
 }

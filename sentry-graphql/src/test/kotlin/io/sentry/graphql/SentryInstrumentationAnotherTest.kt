@@ -131,7 +131,8 @@ class SentryInstrumentationAnotherTest {
                     it.transaction = activeSpan
                 }
             }
-            fieldFetchParameters = InstrumentationFieldFetchParameters(executionContext, environment, executionStrategyParameters, false).withNewState(
+            fieldFetchParameters = InstrumentationFieldFetchParameters(executionContext,
+                { environment } , executionStrategyParameters, false).withNewState(
                 instrumentationState
             )
             val executionInput = ExecutionInput.newExecutionInput()

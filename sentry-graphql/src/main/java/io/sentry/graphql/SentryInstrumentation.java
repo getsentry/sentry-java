@@ -8,7 +8,6 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -37,7 +36,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryInstrumentation extends SimpleInstrumentation {
+@SuppressWarnings("deprecation")
+public final class SentryInstrumentation extends graphql.execution.instrumentation.SimpleInstrumentation {
 
   private static final @NotNull List<String> ERROR_TYPES_HANDLED_BY_DATA_FETCHERS =
       Arrays.asList(
@@ -161,11 +161,13 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public @NotNull InstrumentationState createState() {
     return new TracingState();
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public @NotNull InstrumentationContext<ExecutionResult> beginExecution(
       final @NotNull InstrumentationExecutionParameters parameters) {
     final TracingState tracingState = parameters.getInstrumentationState();
@@ -176,6 +178,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public CompletableFuture<ExecutionResult> instrumentExecutionResult(
       ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
     return super.instrumentExecutionResult(executionResult, parameters)
@@ -246,6 +249,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public @NotNull InstrumentationContext<ExecutionResult> beginExecuteOperation(
       final @NotNull InstrumentationExecuteOperationParameters parameters) {
     final @Nullable ExecutionContext executionContext = parameters.getExecutionContext();
@@ -276,7 +280,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
+  @SuppressWarnings({"FutureReturnValueIgnored", "deprecation"})
+
   public @NotNull DataFetcher<?> instrumentDataFetcher(
       final @NotNull DataFetcher<?> dataFetcher,
       final @NotNull InstrumentationFieldFetchParameters parameters) {

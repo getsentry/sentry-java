@@ -10,7 +10,9 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Captures exceptions that occur during data fetching, passes them to Sentry and invokes a delegate
@@ -36,13 +38,25 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   }
 
   @Override
-  @SuppressWarnings("deprecation")
-  public DataFetcherExceptionHandlerResult onException(
-      final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
+  public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(
+      DataFetcherExceptionHandlerParameters handlerParameters) {
     final Hint hint = new Hint();
     hint.set(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
 
     hub.captureException(handlerParameters.getException(), hint);
-    return delegate.onException(handlerParameters);
+    return delegate.handleException(handlerParameters);
+  }
+
+  @SuppressWarnings("deprecation")
+  public DataFetcherExceptionHandlerResult onException(
+      final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
+    final @Nullable CompletableFuture<DataFetcherExceptionHandlerResult> futureResult =
+        handleException(handlerParameters);
+
+    if (futureResult != null) {
+      return futureResult.join();
+    } else {
+      return CompletableFuture.completedFuture((DataFetcherExceptionHandlerResult) null).join();
+    }
   }
 }
