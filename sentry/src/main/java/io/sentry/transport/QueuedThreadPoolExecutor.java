@@ -28,8 +28,9 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;
   private @Nullable SentryDate lastRejectTimestamp = null;
   private final @NotNull ILogger logger;
+  private final @NotNull SentryDateProvider dateProvider;
   private final @NotNull ReusableCountLatch unfinishedTasksCount = new ReusableCountLatch();
-  private static final long RECENT_THRESHOLD = DateUtils.millisToNanos(10 * 1000);
+  private static final long RECENT_THRESHOLD = DateUtils.millisToNanos(2 * 1000);
 
   /**
    * Creates a new instance of the thread pool.

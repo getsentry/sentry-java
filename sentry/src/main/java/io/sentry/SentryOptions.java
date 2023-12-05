@@ -445,6 +445,8 @@ public class SentryOptions {
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
+  @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
+
   /**
    * Adds an event processor
    *
@@ -2202,6 +2204,16 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setBackpressureMonitor(final @NotNull IBackpressureMonitor backpressureMonitor) {
     this.backpressureMonitor = backpressureMonitor;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
+    this.enableBackpressureHandling = enableBackpressureHandling;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableBackpressureHandling() {
+    return enableBackpressureHandling;
   }
 
   /** The BeforeSend callback */

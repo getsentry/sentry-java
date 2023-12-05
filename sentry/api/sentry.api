@@ -2164,6 +2164,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
 	public fun isEnableAutoSessionTracking ()Z
+	public fun isEnableBackpressureHandling ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
@@ -2200,6 +2201,7 @@ public class io/sentry/SentryOptions {
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAutoSessionTracking (Z)V
+	public fun setEnableBackpressureHandling (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V

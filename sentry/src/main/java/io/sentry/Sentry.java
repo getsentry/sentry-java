@@ -242,11 +242,6 @@ public final class Sentry {
     notifyOptionsObservers(options);
 
     finalizePreviousSession(options, HubAdapter.getInstance());
-
-    // TODO move start into an integration?
-
-    options.setBackpressureMonitor(new BackpressureMonitor(options, HubAdapter.getInstance()));
-    options.getBackpressureMonitor().start();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -395,6 +390,11 @@ public final class Sentry {
 
     if (options.getCollectors().isEmpty()) {
       options.addCollector(new JavaMemoryCollector());
+    }
+
+    if (options.isEnableBackpressureHandling()) {
+      options.setBackpressureMonitor(new BackpressureMonitor(options, HubAdapter.getInstance()));
+      options.getBackpressureMonitor().start();
     }
 
     return true;
