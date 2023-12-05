@@ -242,7 +242,8 @@ public final class ActivityLifecycleIntegration
 
         @NotNull String transactionOp = UI_LOAD_OP;
         if (options.isEnablePerformanceV2() && !firstActivityCreated) {
-          // performance-v2: for cold/warm app starts we want to use app.start.* ops instead of ui.load
+          // performance-v2: for cold/warm app starts we want to use app.start.* ops instead of
+          // ui.load
           if (Boolean.TRUE.equals(coldStart)) {
             transactionOp = APP_START_COLD;
           } else if (Boolean.FALSE.equals(coldStart)) {
