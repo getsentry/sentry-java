@@ -32,8 +32,10 @@ import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RateLimiterTest {
 
@@ -264,5 +266,19 @@ class RateLimiterTest {
 
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `any limit can be checked`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
+
+        assertFalse(rateLimiter.isAnyRateLimitActive)
+
+        rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
+
+        assertTrue(rateLimiter.isAnyRateLimitActive)
     }
 }

@@ -1,7 +1,7 @@
 package io.sentry.backpressure;
 
+import io.sentry.IHub;
 import io.sentry.ISentryExecutorService;
-import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.time.ZoneId;
@@ -9,28 +9,28 @@ import java.time.ZonedDateTime;
 import org.jetbrains.annotations.NotNull;
 
 public final class BackpressureMonitor implements IBackpressureMonitor, Runnable {
-  private static final int MAX_DOWNSAMPLE_FACTOR = 10;
+  static final int MAX_DOWNSAMPLE_FACTOR = 10;
   private static final int CHECK_INTERVAL_IN_MS = 10 * 1000;
 
   private final @NotNull SentryOptions sentryOptions;
+  private final @NotNull IHub hub;
   private int downsampleFactor = 0;
   private boolean didEverDownsample = false;
 
-  public BackpressureMonitor(final @NotNull SentryOptions sentryOptions) {
+  public BackpressureMonitor(final @NotNull SentryOptions sentryOptions, final @NotNull IHub hub) {
     this.sentryOptions = sentryOptions;
+    this.hub = hub;
   }
 
   @Override
   public void start() {
-    reschedule();
+    run();
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void reschedule() {
-    final @NotNull ISentryExecutorService executorService = sentryOptions.getExecutorService();
-    if (!executorService.isClosed()) {
-      executorService.schedule(this, CHECK_INTERVAL_IN_MS);
-    }
+  @Override
+  public void run() {
+    checkHealth();
+    reschedule();
   }
 
   @Override
@@ -38,8 +38,7 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
     return downsampleFactor;
   }
 
-  @Override
-  public void run() {
+  void checkHealth() {
     if (isHealthy()) {
       if (downsampleFactor > 0) {
         sentryOptions
@@ -66,10 +65,17 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
             + ZonedDateTime.now(ZoneId.systemDefault()).toString()
             + " didEverDownsample? "
             + didEverDownsample);
-    reschedule();
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void reschedule() {
+    final @NotNull ISentryExecutorService executorService = sentryOptions.getExecutorService();
+    if (!executorService.isClosed()) {
+      executorService.schedule(this, CHECK_INTERVAL_IN_MS);
+    }
   }
 
   private boolean isHealthy() {
-    return Sentry.isHealthy();
+    return hub.isHealthy();
   }
 }

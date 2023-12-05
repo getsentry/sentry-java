@@ -2831,7 +2831,7 @@ public final class io/sentry/UserFeedback$JsonKeys {
 }
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
-	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/IHub;)V
 	public fun getDownsampleFactor ()I
 	public fun run ()V
 	public fun start ()V

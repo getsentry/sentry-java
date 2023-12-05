@@ -2,8 +2,8 @@ package io.sentry.transport;
 
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
-import io.sentry.Sentry;
 import io.sentry.SentryDate;
+import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
@@ -44,7 +44,8 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       final int maxQueueSize,
       final @NotNull ThreadFactory threadFactory,
       final @NotNull RejectedExecutionHandler rejectedExecutionHandler,
-      final @NotNull ILogger logger) {
+      final @NotNull ILogger logger,
+      final @NotNull SentryDateProvider dateProvider) {
     // similar to Executors.newSingleThreadExecutor, but with a max queue size control
     super(
         corePoolSize,
@@ -56,6 +57,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
         rejectedExecutionHandler);
     this.maxQueueSize = maxQueueSize;
     this.logger = logger;
+    this.dateProvider = dateProvider;
   }
 
   @Override
@@ -64,7 +66,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       unfinishedTasksCount.increment();
       return super.submit(task);
     } else {
-      lastRejectTimestamp = Sentry.getCurrentHub().getOptions().getDateProvider().now();
+      lastRejectTimestamp = dateProvider.now();
       // if the thread pool is full, we don't cache it
       logger.log(SentryLevel.WARNING, "Submit cancelled");
       return new CancelledFuture<>();
@@ -101,7 +103,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       return false;
     }
 
-    long diff = Sentry.getCurrentHub().getOptions().getDateProvider().now().diff(lastReject);
+    long diff = dateProvider.now().diff(lastReject);
     return diff < RECENT_THRESHOLD;
   }
 

@@ -210,7 +210,9 @@ class SentrySpringIntegrationTest {
 
 @SpringBootApplication
 open class App {
-    private val transport = mock<ITransport>()
+    private val transport = mock<ITransport>().also {
+        whenever(it.isHealthy).thenReturn(true)
+    }
 
     @Bean
     open fun mockTransportFactory(): ITransportFactory {

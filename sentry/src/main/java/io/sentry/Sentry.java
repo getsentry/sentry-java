@@ -245,7 +245,7 @@ public final class Sentry {
 
     // TODO move start into an integration?
 
-    options.setBackpressureMonitor(new BackpressureMonitor(options));
+    options.setBackpressureMonitor(new BackpressureMonitor(options, HubAdapter.getInstance()));
     options.getBackpressureMonitor().start();
   }
 
