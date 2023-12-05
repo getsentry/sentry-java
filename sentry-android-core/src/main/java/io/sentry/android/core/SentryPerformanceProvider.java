@@ -148,13 +148,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             }
             FirstDrawDoneListener.registerForNextDraw(
                 activity,
-                () ->
-                    handler.postAtFrontOfQueue(
-                        () -> {
-                          if (firstDrawDone.compareAndSet(false, true)) {
-                            onAppStartDone();
-                          }
-                        }),
+                () -> {
+                  if (firstDrawDone.compareAndSet(false, true)) {
+                    onAppStartDone();
+                  }
+                },
                 // as the SDK isn't initialized yet, we don't have access to SentryOptions
                 new BuildInfoProvider(NoOpLogger.getInstance()));
           }
