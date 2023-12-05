@@ -6,6 +6,10 @@
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
 
+### Fixes
+
+- Improve thresholds for network changes breadcrumbs ([#3083](https://github.com/getsentry/sentry-java/pull/3083))
+
 ### Dependencies
 
 - Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
