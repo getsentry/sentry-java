@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
@@ -58,12 +56,12 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   @ApiStatus.Internal
   public void onAppLaunched() {
-    // pre-starfish: use static field init as app start time
+    // pre-performance-v2: use static field init as app start time
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @NotNull TimeSpan sdkAppStartTimeSpan = appStartMetrics.getSdkAppStartTimeSpan();
     sdkAppStartTimeSpan.setStartedAt(sdkAppStartMillis);
 
-    // starfish: Use Process.getStartUptimeMillis()
+    // performance v2: Use Process.getStartUptimeMillis()
     // Process.getStartUptimeMillis() requires API level 24+
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
       return;
@@ -84,7 +82,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
 
     final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-    final Handler handler = new Handler(Looper.getMainLooper());
 
     activityCallback =
         new ActivityLifecycleCallbacksAdapter() {
@@ -148,13 +145,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             }
             FirstDrawDoneListener.registerForNextDraw(
                 activity,
-                () ->
-                    handler.postAtFrontOfQueue(
-                        () -> {
-                          if (firstDrawDone.compareAndSet(false, true)) {
-                            onAppStartDone();
-                          }
-                        }),
+                () -> {
+                  if (firstDrawDone.compareAndSet(false, true)) {
+                    onAppStartDone();
+                  }
+                },
                 // as the SDK isn't initialized yet, we don't have access to SentryOptions
                 new BuildInfoProvider(NoOpLogger.getInstance()));
           }

@@ -240,9 +240,9 @@ public final class ActivityLifecycleIntegration
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
 
-        // starfish: for cold/warm app starts we want to use app.start.* ops instead of ui.load
         @NotNull String transactionOp = UI_LOAD_OP;
-        if (options.isEnableStarfish() && !firstActivityCreated) {
+        if (options.isEnablePerformanceV2() && !firstActivityCreated) {
+          // performance-v2: for cold/warm app starts we want to use app.start.* ops instead of ui.load
           if (Boolean.TRUE.equals(coldStart)) {
             transactionOp = APP_START_COLD;
           } else if (Boolean.FALSE.equals(coldStart)) {
@@ -648,8 +648,8 @@ public final class ActivityLifecycleIntegration
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       // SentryPerformanceProvider sets this already
-      // pre-starfish: back-fill with best guess
-      if (options != null && !options.isEnableStarfish()) {
+      // pre-performance-v2: back-fill with best guess
+      if (options != null && !options.isEnablePerformanceV2()) {
         AppStartMetrics.getInstance()
             .setAppStartType(
                 savedInstanceState == null
@@ -700,7 +700,7 @@ public final class ActivityLifecycleIntegration
 
   private @NotNull TimeSpan getAppStartTimeSpan() {
     final @NotNull TimeSpan appStartTimeSpan =
-        options.isEnableStarfish()
+        options.isEnablePerformanceV2()
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
             : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
     return appStartTimeSpan;
