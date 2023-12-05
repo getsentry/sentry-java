@@ -68,8 +68,8 @@ public class AppStartMetrics {
   }
 
   /**
-   * @return the app start time span, as measured pre-starfish Uses ContentProvider/Sdk init time as
-   *     start timestamp
+   * @return the app start time span, as measured pre-performance-v2 Uses ContentProvider/Sdk init
+   *     time as start timestamp
    */
   public @NotNull TimeSpan getSdkAppStartTimeSpan() {
     return sdkAppStartSpan;

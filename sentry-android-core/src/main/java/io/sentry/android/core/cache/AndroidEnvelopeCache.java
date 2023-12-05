@@ -54,7 +54,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
 
     final TimeSpan appStartTimeSpan =
-        options.isEnableStarfish()
+        options.isEnablePerformanceV2()
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
             : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
 

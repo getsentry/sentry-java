@@ -434,13 +434,13 @@ class SentryAndroidTest {
     }
 
     @Test
-    fun `init sets app start times span if starfish is enabled`() {
+    fun `init sets app start times span if performance-v2 is enabled`() {
         AppStartMetrics.getInstance().clear()
         SentryShadowProcess.setStartUptimeMillis(42)
 
         fixture.initSut(context = mock<Application>()) { options ->
             options.dsn = "https://key@sentry.io/123"
-            options.isEnableStarfish = true
+            options.isEnablePerformanceV2 = true
         }
         assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
         assertTrue(AppStartMetrics.getInstance().sdkAppStartTimeSpan.hasStarted())

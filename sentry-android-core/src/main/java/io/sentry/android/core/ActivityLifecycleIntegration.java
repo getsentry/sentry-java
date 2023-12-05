@@ -637,8 +637,8 @@ public final class ActivityLifecycleIntegration
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       // SentryPerformanceProvider sets this already
-      // pre-starfish: back-fill with best guess
-      if (options != null && !options.isEnableStarfish()) {
+      // pre-performance-v2: back-fill with best guess
+      if (options != null && !options.isEnablePerformanceV2()) {
         AppStartMetrics.getInstance()
             .setAppStartType(
                 savedInstanceState == null
@@ -689,7 +689,7 @@ public final class ActivityLifecycleIntegration
 
   private @NotNull TimeSpan getAppStartTimeSpan() {
     final @NotNull TimeSpan appStartTimeSpan =
-        options.isEnableStarfish()
+        options.isEnablePerformanceV2()
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
             : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
     return appStartTimeSpan;

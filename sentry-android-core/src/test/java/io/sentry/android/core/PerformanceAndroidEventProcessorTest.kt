@@ -37,10 +37,10 @@ class PerformanceAndroidEventProcessorTest {
 
         fun getSut(
             tracesSampleRate: Double? = 1.0,
-            enableStarfish: Boolean = false
+            enablePerformanceV2: Boolean = false
         ): PerformanceAndroidEventProcessor {
             options.tracesSampleRate = tracesSampleRate
-            options.isEnableStarfish = enableStarfish
+            options.isEnablePerformanceV2 = enablePerformanceV2
             whenever(hub.options).thenReturn(options)
             tracer = SentryTracer(context, hub)
             return PerformanceAndroidEventProcessor(options, activityFramesTracker)
@@ -67,9 +67,9 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     @Test
-    fun `add cold start measurement for starfish`() {
+    fun `add cold start measurement for performance-v2`() {
         val sut = fixture.getSut()
-        fixture.options.isEnableStarfish = true
+        fixture.options.isEnablePerformanceV2 = true
 
         var tr = getTransaction(AppStartType.COLD)
         setAppStart(fixture.options)
@@ -212,7 +212,7 @@ class PerformanceAndroidEventProcessorTest {
         appStartMetrics.addActivityLifecycleTimeSpans(activityTimeSpan)
 
         // when an activity transaction is created
-        val sut = fixture.getSut(enableStarfish = true)
+        val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
@@ -261,7 +261,7 @@ class PerformanceAndroidEventProcessorTest {
                 false -> AppStartType.WARM
             }
             val timeSpan =
-                if (options.isEnableStarfish) appStartTimeSpan else sdkAppStartTimeSpan
+                if (options.isEnablePerformanceV2) appStartTimeSpan else sdkAppStartTimeSpan
             timeSpan.apply {
                 setStartedAt(1)
                 setStoppedAt(2)

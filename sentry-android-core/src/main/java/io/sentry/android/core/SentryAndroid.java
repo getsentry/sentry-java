@@ -124,8 +124,8 @@ public final class SentryAndroid {
 
             // if SentryPerformanceProvider was disabled or removed, we set the App Start when
             // the SDK is called.
-            // pre-starfish: fill-back the app start time to the SDK init time
-            if (options.isEnableStarfish()) {
+            // pre-performance-v2: fill-back the app start time to the SDK init time
+            if (options.isEnablePerformanceV2()) {
               final @NotNull TimeSpan appStartTimeSpan =
                   AppStartMetrics.getInstance().getAppStartTimeSpan();
               if (appStartTimeSpan.hasNotStarted()
