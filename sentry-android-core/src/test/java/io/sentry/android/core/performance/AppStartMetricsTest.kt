@@ -28,7 +28,7 @@ class AppStartMetricsTest {
     }
 
     @Test
-    fun `getInstance returns a singelton`() {
+    fun `getInstance returns a singleton`() {
         assertSame(AppStartMetrics.getInstance(), AppStartMetrics.getInstance())
     }
 
@@ -53,5 +53,24 @@ class AppStartMetricsTest {
 
         assertTrue(metrics.activityLifecycleTimeSpans.isEmpty())
         assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
+    }
+
+    @Test
+    fun `if app start time span is started, appStartTimeSpanWithFallback returns it`() {
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+
+        val timeSpan = AppStartMetrics.getInstance().appStartTimeSpanWithFallback
+        assertSame(appStartTimeSpan, timeSpan)
+    }
+
+    @Test
+    fun `if app start time span is not started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        assertTrue(appStartTimeSpan.hasNotStarted())
+
+        val timeSpan = AppStartMetrics.getInstance().appStartTimeSpanWithFallback
+        val sdkInitSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
+        assertSame(sdkInitSpan, timeSpan)
     }
 }

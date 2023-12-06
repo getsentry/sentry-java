@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
@@ -104,10 +103,7 @@ public final class InternalSentrySdk {
       app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
 
       final @NotNull TimeSpan appStartTimeSpan =
-          (new BuildInfoProvider(options.getLogger()).getSdkInfoVersion() >= Build.VERSION_CODES.N
-                  && options.isEnablePerformanceV2())
-              ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-              : AppStartMetrics.getInstance().getSdkInitTimeSpan();
+          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
       if (appStartTimeSpan.hasStarted()) {
         app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
       }

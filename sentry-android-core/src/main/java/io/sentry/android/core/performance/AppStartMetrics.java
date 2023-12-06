@@ -115,6 +115,21 @@ public class AppStartMetrics {
     activityLifecycles.add(timeSpan);
   }
 
+  /**
+   * @return the app start time span, in case it's was never started, the sdk init time span is
+   *     returned instead
+   */
+  public @NotNull TimeSpan getAppStartTimeSpanWithFallback() {
+    // should only be started if performance v2 is enabled and the sdk version is >= N
+    final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
+    if (appStartSpan.hasStarted()) {
+      return appStartSpan;
+    }
+
+    // fallback: use sdk init time span, as it will always have a start time set
+    return getSdkInitTimeSpan();
+  }
+
   public void clear() {
     appStartType = AppStartType.UNKNOWN;
     appStartSpan.reset();

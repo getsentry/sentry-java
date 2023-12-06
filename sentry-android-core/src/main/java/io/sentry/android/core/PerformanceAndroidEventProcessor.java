@@ -4,7 +4,6 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
-import android.os.Build;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.MeasurementUnit;
@@ -72,10 +71,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // the app.start span, which is automatically created by the SDK.
     if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
       final @NotNull TimeSpan appStartTimeSpan =
-          (new BuildInfoProvider(options.getLogger()).getSdkInfoVersion() >= Build.VERSION_CODES.N
-                  && options.isEnablePerformanceV2())
-              ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-              : AppStartMetrics.getInstance().getSdkInitTimeSpan();
+          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
       final long appStartUpInterval = appStartTimeSpan.getDurationMs();
 
       // if appStartUpInterval is 0, metrics are not ready to be sent

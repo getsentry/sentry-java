@@ -187,7 +187,8 @@ public final class ActivityLifecycleIntegration
 
         final @Nullable SentryDate appStartTime;
         final @Nullable Boolean coldStart;
-        final TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+        final TimeSpan appStartTimeSpan =
+            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
 
         // we only track app start for processes that will show an Activity (full launch).
         // Here we check the process importance which will tell us that.
@@ -684,19 +685,10 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan() {
-    final @NotNull TimeSpan appStartTimeSpan = getAppStartTimeSpan();
-    final @Nullable SentryDate appStartEndTime = appStartTimeSpan.getProjectedStopTimestamp();
+    final @Nullable SentryDate appStartEndTime =
+        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback().getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
     }
-  }
-
-  private @NotNull TimeSpan getAppStartTimeSpan() {
-    final @NotNull TimeSpan appStartTimeSpan =
-        (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N
-                && options.isEnablePerformanceV2())
-            ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getSdkInitTimeSpan();
-    return appStartTimeSpan;
   }
 }
