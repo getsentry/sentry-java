@@ -9,6 +9,7 @@
 ### Fixes
 
 - Improve thresholds for network changes breadcrumbs ([#3083](https://github.com/getsentry/sentry-java/pull/3083))
+- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
 
 ### Dependencies
 
