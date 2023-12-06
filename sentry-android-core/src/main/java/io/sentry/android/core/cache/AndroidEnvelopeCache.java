@@ -52,16 +52,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     super.store(envelope, hint);
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
-
-    final TimeSpan appStartTimeSpan =
-        options.isEnablePerformanceV2()
-            ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
+    final TimeSpan sdkInitTimeSpan = AppStartMetrics.getInstance().getSdkInitTimeSpan();
 
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
-        && appStartTimeSpan.hasStarted()) {
+        && sdkInitTimeSpan.hasStarted()) {
       long timeSinceSdkInit =
-          currentDateProvider.getCurrentTimeMillis() - appStartTimeSpan.getStartTimestampMs();
+          currentDateProvider.getCurrentTimeMillis() - sdkInitTimeSpan.getStartTimestampMs();
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
             .getLogger()

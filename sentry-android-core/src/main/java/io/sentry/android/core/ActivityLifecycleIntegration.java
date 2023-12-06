@@ -546,13 +546,17 @@ public final class ActivityLifecycleIntegration
 
   private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
     // app start span
-    final @NotNull TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+    final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
 
-    // in case the SentryPerformanceProvider is disabled it does not set the app start times,
-    // and we need to set the end time manually here,
-    // the start time gets set manually in SentryAndroid.init()
+    // in case the SentryPerformanceProvider is disabled it does not set the app start end times,
+    // and we need to set the end time manually here
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
       appStartTimeSpan.stop();
+    }
+    if (sdkInitTimeSpan.hasStarted() && sdkInitTimeSpan.hasNotStopped()) {
+      sdkInitTimeSpan.stop();
     }
     finishAppStartSpan();
 
@@ -689,9 +693,10 @@ public final class ActivityLifecycleIntegration
 
   private @NotNull TimeSpan getAppStartTimeSpan() {
     final @NotNull TimeSpan appStartTimeSpan =
-        options.isEnablePerformanceV2()
+        (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N
+                && options.isEnablePerformanceV2())
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
+            : AppStartMetrics.getInstance().getSdkInitTimeSpan();
     return appStartTimeSpan;
   }
 }

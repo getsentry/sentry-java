@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -202,9 +203,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
     final @NotNull TimeSpan appStartTimeSpan =
-        options.isEnablePerformanceV2()
+        (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N
+                && options.isEnablePerformanceV2())
             ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
+            : AppStartMetrics.getInstance().getSdkInitTimeSpan();
     if (appStartTimeSpan.hasStarted()) {
       app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
     }

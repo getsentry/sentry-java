@@ -36,7 +36,7 @@ class AppStartMetricsTest {
     fun `metrics are properly cleared`() {
         val metrics = AppStartMetrics.getInstance()
         metrics.appStartTimeSpan.start()
-        metrics.sdkAppStartTimeSpan.start()
+        metrics.sdkInitTimeSpan.start()
         metrics.appStartType = AppStartMetrics.AppStartType.WARM
         metrics.applicationOnCreateTimeSpan.start()
         metrics.addActivityLifecycleTimeSpans(ActivityLifecycleTimeSpan())
@@ -46,7 +46,7 @@ class AppStartMetricsTest {
         metrics.clear()
 
         assertTrue(metrics.appStartTimeSpan.hasNotStarted())
-        assertTrue(metrics.sdkAppStartTimeSpan.hasNotStarted())
+        assertTrue(metrics.sdkInitTimeSpan.hasNotStarted())
         assertTrue(metrics.applicationOnCreateTimeSpan.hasNotStarted())
         assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
         assertTrue(metrics.applicationOnCreateTimeSpan.hasNotStarted())

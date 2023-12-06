@@ -330,9 +330,7 @@ public final class io/sentry/android/core/SentryLogcatAdapter {
 public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
-	public fun getActivityCallback ()Landroid/app/Application$ActivityLifecycleCallbacks;
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
-	public fun onAppLaunched ()V
 	public fun onCreate ()Z
 }
 
@@ -413,7 +411,7 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
-	public fun getSdkAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
