@@ -148,7 +148,6 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         hub.addBreadcrumb(breadcrumb, hint)
         // No span is created (e.g. no transaction is running)
         if (callRootSpan == null) {
-
             // We report the client error even without spans.
             clientErrorResponse?.let {
                 SentryOkHttpUtils.captureClientError(hub, it.request, it)
