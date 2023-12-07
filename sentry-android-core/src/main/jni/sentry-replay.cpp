@@ -401,12 +401,12 @@ namespace {
     };
 
     struct Op {
-        uint32_t type: 8;
+        uint8_t type: 8;
         uint32_t skip: 24;
     };
 
     struct DisplayListData {
-        AutoTMalloc<uint8_t> fBytes;
+        uint8_t* fBytes;
         size_t fUsed;
         size_t fReserved;
 
@@ -516,21 +516,26 @@ namespace {
 //        return RenderNode_getNamePtr(renderNode);
 //    }
 
-    extern "C" JNIEXPORT void
+    extern "C" JNIEXPORT jobject
     JNICALL
     Java_android_graphics_RenderNodeHelper_nGetDisplayList(JNIEnv
                                                            *env,
                                                            jclass clazz, jlong
                                                            render_node) {
-        auto *displayList = RenderNode_getNamePtr(render_node);
-        auto end = displayList->fBytes.get() + displayList->fUsed;
-        for (const uint8_t *ptr = displayList->fBytes.get(); ptr < end;) {
+        auto node = reinterpret_cast<RenderNode10 *>(render_node);
+        auto* displayList = node->mDisplayList.mImpl;
+        auto data = &displayList->mDisplayList;
+//        auto renderProperties = &node->properties();
+//        auto test = name->mImpl->mDisplayList;
+
+        auto end = data->fBytes + data->fUsed;
+        for (const uint8_t* ptr = data->fBytes; ptr < end;) {
             auto op = (const Op *) ptr;
             auto type = op->type;
             auto skip = op->skip;
             ptr += skip;
         }
-//        auto test = name->mImpl->mDisplayList;
+        return nullptr;
     }
 
 }

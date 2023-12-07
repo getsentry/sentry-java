@@ -94,6 +94,7 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         view?.let {
             captureFrame(it)
         }
+        Log.e("COMMANDS", recorder.currentFrameCommands.joinToString("\n"))
     }
 
     private fun captureFrame(view: View) {
@@ -109,23 +110,23 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
         }
         lastCapturedAtMs = now
 
-        if (canvasDelegate == null) {
-            val displayMetrics = DisplayMetrics()
-            activity!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
-            val bitmap = Bitmap.createBitmap(
-                displayMetrics.widthPixels,
-                displayMetrics.heightPixels,
-                Bitmap.Config.ARGB_8888
-            )
-            canvas = Canvas(bitmap)
-            canvasDelegate = CanvasDelegate(
-                recorder,
-                canvas!!
-            )
-        }
-
-        // reset the canvas first, as it will be re-used for clipping operations
-        canvas!!.restoreToCount(1)
+//        if (canvasDelegate == null) {
+//            val displayMetrics = DisplayMetrics()
+//            activity!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
+//            val bitmap = Bitmap.createBitmap(
+//                displayMetrics.widthPixels,
+//                displayMetrics.heightPixels,
+//                Bitmap.Config.ARGB_8888
+//            )
+//            canvas = Canvas(bitmap)
+//            canvasDelegate = CanvasDelegate(
+//                recorder,
+//                canvas!!
+//            )
+//        }
+//
+//        // reset the canvas first, as it will be re-used for clipping operations
+//        canvas!!.restoreToCount(1)
         recorder.beginFrame(System.currentTimeMillis(), view.width, view.height)
 
         val location = IntArray(2)
@@ -139,30 +140,30 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                 } else if (item is ViewGroup && item.willNotDraw()) {
                     // skip layouts which don't draw anything
                 } else {
-//                    val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
-//                    renderNodeField.isAccessible = true
-//                    val renderNode = renderNodeField.get(item)
-//
-//                    val outputMethod = RenderNode::class.java.getDeclaredMethod("output")
-//                    outputMethod.isAccessible = true
-//                    outputMethod.invoke(renderNode)
-//
-//                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
-//                    nativeRenderNodeField.isAccessible = true
-//                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
-//                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
+                    val renderNodeField = View::class.java.getDeclaredField("mRenderNode")
+                    renderNodeField.isAccessible = true
+                    val renderNode = renderNodeField.get(item)
 
-                    item.getLocationOnScreen(location)
-                    val x = location[0].toFloat() + item.translationX
-                    val y = location[1].toFloat() + item.translationY
+                    val outputMethod = RenderNode::class.java.getDeclaredMethod("output")
+                    outputMethod.isAccessible = true
+                    outputMethod.invoke(renderNode)
+//
+                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
+                    nativeRenderNodeField.isAccessible = true
+                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
+                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
 
-                    val saveCount = canvasDelegate!!.save()
-                    recorder.translate(
-                        x,
-                        y
-                    )
-                    ViewHelper.executeOnDraw(item, canvasDelegate!!)
-                    canvasDelegate!!.restoreToCount(saveCount)
+//                    item.getLocationOnScreen(location)
+//                    val x = location[0].toFloat() + item.translationX
+//                    val y = location[1].toFloat() + item.translationY
+//
+//                    val saveCount = canvasDelegate!!.save()
+//                    recorder.translate(
+//                        x,
+//                        y
+//                    )
+//                    ViewHelper.executeOnDraw(item, canvasDelegate!!)
+//                    canvasDelegate!!.restoreToCount(saveCount)
                 }
 
                 if (item is ViewGroup) {

@@ -1,9 +1,10 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <RenderNode.h>
-#include <SkRRect.h>
 #include <SkTextBlob.h>
-#include <SkiaDisplayList.h>
+#include <SkTextBlobPriv.h>
+#include <RecordingCanvas.h>
+#include <Rect.h>
 
 namespace {
 //    static const SkRect kUnset = {SK_ScalarInfinity, 0, 0, 0};
@@ -11,69 +12,26 @@ namespace {
 //        return r.left() == SK_ScalarInfinity ? nullptr : &r;
 //    }
 //
-#define X(T) T,
-    enum class Type : uint8_t {
-        X(Flush)
-        X(Save)
-        X(Restore)
-        X(SaveLayer)
-        X(SaveBehind)
-        X(Concat)
-        X(SetMatrix)
-        X(Scale)
-        X(Translate)
-        X(ClipPath)
-        X(ClipRect)
-        X(ClipRRect)
-        X(ClipRegion)
-        X(ResetClip)
-        X(DrawPaint)
-        X(DrawBehind)
-        X(DrawPath)
-        X(DrawRect)
-        X(DrawRegion)
-        X(DrawOval)
-        X(DrawArc)
-        X(DrawRRect)
-        X(DrawDRRect)
-        X(DrawAnnotation)
-        X(DrawDrawable)
-        X(DrawPicture)
-        X(DrawImage)
-        X(DrawImageRect)
-        X(DrawImageLattice)
-        X(DrawTextBlob)
-        X(DrawPatch)
-        X(DrawPoints)
-        X(DrawVertices)
-        X(DrawAtlas)
-        X(DrawShadowRec)
-        X(DrawVectorDrawable)
-        X(DrawRippleDrawable)
-        X(DrawWebView)
-        X(DrawSkMesh)
-        X(DrawMesh)
-    };
-#undef X
-//
+
     struct Op {
         uint32_t type : 8;
         uint32_t skip : 24;
     };
     static_assert(sizeof(Op) == 4, "");
 //
+//
     struct Flush final : Op {
-        static const auto kType = Type::Flush;
+        static const auto kType = android::uirenderer::DisplayListOpType::Flush;
     };
 //
     struct Save final : Op {
-        static const auto kType = Type::Save;
+        static const auto kType = android::uirenderer::DisplayListOpType::Save;
     };
     struct Restore final : Op {
-        static const auto kType = Type::Restore;
+        static const auto kType = android::uirenderer::DisplayListOpType::Restore;
     };
 //    struct SaveLayer final : Op {
-//        static const auto kType = Type::SaveLayer;
+//        static const auto kType = android::uirenderer::DisplayListOpType::SaveLayer;
 //        SaveLayer(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
 //                  SkCanvas::SaveLayerFlags flags) {
 //            if (bounds) {
@@ -94,7 +52,7 @@ namespace {
 //        }
 //    };
 //    struct SaveBehind final : Op {
-//        static const auto kType = Type::SaveBehind;
+//        static const auto kType = android::uirenderer::DisplayListOpType::SaveBehind;
 //        SaveBehind(const SkRect* subset) {
 //            if (subset) { this->subset = *subset; }
 //        }
@@ -105,13 +63,13 @@ namespace {
 //    };
 //
 //    struct Concat final : Op {
-//        static const auto kType = Type::Concat;
+//        static const auto kType = android::uirenderer::DisplayListOpType::Concat;
 //        Concat(const SkM44& matrix) : matrix(matrix) {}
 //        SkM44 matrix;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->concat(matrix); }
 //    };
 //    struct SetMatrix final : Op {
-//        static const auto kType = Type::SetMatrix;
+//        static const auto kType = android::uirenderer::DisplayListOpType::SetMatrix;
 //        SetMatrix(const SkM44& matrix) : matrix(matrix) {}
 //        SkM44 matrix;
 //        void draw(SkCanvas* c, const SkMatrix& original) const {
@@ -119,50 +77,50 @@ namespace {
 //        }
 //    };
 //    struct Scale final : Op {
-//        static const auto kType = Type::Scale;
+//        static const auto kType = android::uirenderer::DisplayListOpType::Scale;
 //        Scale(SkScalar sx, SkScalar sy) : sx(sx), sy(sy) {}
 //        SkScalar sx, sy;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->scale(sx, sy); }
 //    };
     struct Translate final : Op {
-        static const auto kType = Type::Translate;
+        static const auto kType = android::uirenderer::DisplayListOpType::Translate;
         Translate(SkScalar dx, SkScalar dy) : dx(dx), dy(dy) {}
         SkScalar dx, dy;
     };
 //
 //    struct ClipPath final : Op {
-//        static const auto kType = Type::ClipPath;
-//        ClipPath(const SkPath& path, SkClipOp op, bool aa) : path(path), op(op), aa(aa) {}
+//        static const auto kType = android::uirenderer::DisplayListOpType::ClipPath;
+//        ClipPath(const SkPath& path, SkClipandroid::uirenderer::DisplayListOp op, bool aa) : path(path), op(op), aa(aa) {}
 //        SkPath path;
-//        SkClipOp op;
+//        SkClipandroid::uirenderer::DisplayListOp op;
 //        bool aa;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->clipPath(path, op, aa); }
 //    };
-//    struct ClipRect final : Op {
-//        static const auto kType = Type::ClipRect;
-//        ClipRect(const SkRect& rect, SkClipOp op, bool aa) : rect(rect), op(op), aa(aa) {}
-//        SkRect rect;
-//        SkClipOp op;
-//        bool aa;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->clipRect(rect, op, aa); }
-//    };
+    struct ClipRect final : Op {
+        static const auto kType = android::uirenderer::DisplayListOpType::ClipRect;
+        ClipRect(const SkRect& rect, SkClipOp op, bool aa) : rect(rect), op(op), aa(aa) {}
+        SkRect rect;
+        SkClipOp op;
+        bool aa;
+        void draw(SkCanvas* c, const SkMatrix&) const { c->clipRect(rect, op, aa); }
+    };
 //    struct ClipRRect final : Op {
-//        static const auto kType = Type::ClipRRect;
-//        ClipRRect(const SkRRect& rrect, SkClipOp op, bool aa) : rrect(rrect), op(op), aa(aa) {}
+//        static const auto kType = android::uirenderer::DisplayListOpType::ClipRRect;
+//        ClipRRect(const SkRRect& rrect, SkClipandroid::uirenderer::DisplayListOp op, bool aa) : rrect(rrect), op(op), aa(aa) {}
 //        SkRRect rrect;
-//        SkClipOp op;
+//        SkClipandroid::uirenderer::DisplayListOp op;
 //        bool aa;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->clipRRect(rrect, op, aa); }
 //    };
 //    struct ClipRegion final : Op {
-//        static const auto kType = Type::ClipRegion;
-//        ClipRegion(const SkRegion& region, SkClipOp op) : region(region), op(op) {}
+//        static const auto kType = android::uirenderer::DisplayListOpType::ClipRegion;
+//        ClipRegion(const SkRegion& region, SkClipandroid::uirenderer::DisplayListOp op) : region(region), op(op) {}
 //        SkRegion region;
-//        SkClipOp op;
+//        SkClipandroid::uirenderer::DisplayListOp op;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->clipRegion(region, op); }
 //    };
 //    struct ResetClip final : Op {
-//        static const auto kType = Type::ResetClip;
+//        static const auto kType = android::uirenderer::DisplayListOpType::ResetClip;
 //        ResetClip() {}
 //        void draw(SkCanvas* c, const SkMatrix&) const {
 ////            SkAndroidFrameworkUtils::ResetClip(c);
@@ -170,13 +128,13 @@ namespace {
 //    };
 //
 //    struct DrawPaint final : Op {
-//        static const auto kType = Type::DrawPaint;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawPaint;
 //        DrawPaint(const SkPaint& paint) : paint(paint) {}
 //        SkPaint paint;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->drawPaint(paint); }
 //    };
 //    struct DrawBehind final : Op {
-//        static const auto kType = Type::DrawBehind;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawBehind;
 //        DrawBehind(const SkPaint& paint) : paint(paint) {}
 //        SkPaint paint;
 //        void draw(SkCanvas* c, const SkMatrix&) const {
@@ -184,35 +142,35 @@ namespace {
 //            }
 //    };
 //    struct DrawPath final : Op {
-//        static const auto kType = Type::DrawPath;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawPath;
 //        DrawPath(const SkPath& path, const SkPaint& paint) : path(path), paint(paint) {}
 //        SkPath path;
 //        SkPaint paint;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->drawPath(path, paint); }
 //    };
-//    struct DrawRect final : Op {
-//        static const auto kType = Type::DrawRect;
-//        DrawRect(const SkRect& rect, const SkPaint& paint) : rect(rect), paint(paint) {}
-//        SkRect rect;
-//        SkPaint paint;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->drawRect(rect, paint); }
-//    };
+    struct DrawRect final : Op {
+        static const auto kType = android::uirenderer::DisplayListOpType::DrawRect;
+        DrawRect(const SkRect& rect, const SkPaint& paint) : rect(rect), paint(paint) {}
+        SkRect rect;
+        SkPaint paint;
+        void draw(SkCanvas* c, const SkMatrix&) const { c->drawRect(rect, paint); }
+    };
 //    struct DrawRegion final : Op {
-//        static const auto kType = Type::DrawRegion;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawRegion;
 //        DrawRegion(const SkRegion& region, const SkPaint& paint) : region(region), paint(paint) {}
 //        SkRegion region;
 //        SkPaint paint;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->drawRegion(region, paint); }
 //    };
 //    struct DrawOval final : Op {
-//        static const auto kType = Type::DrawOval;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawOval;
 //        DrawOval(const SkRect& oval, const SkPaint& paint) : oval(oval), paint(paint) {}
 //        SkRect oval;
 //        SkPaint paint;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->drawOval(oval, paint); }
 //    };
 //    struct DrawArc final : Op {
-//        static const auto kType = Type::DrawArc;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawArc;
 //        DrawArc(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle, bool useCenter,
 //                const SkPaint& paint)
 //                : oval(oval)
@@ -230,14 +188,14 @@ namespace {
 //        }
 //    };
 //    struct DrawRRect final : Op {
-//        static const auto kType = Type::DrawRRect;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawRRect;
 //        DrawRRect(const SkRRect& rrect, const SkPaint& paint) : rrect(rrect), paint(paint) {}
 //        SkRRect rrect;
 //        SkPaint paint;
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->drawRRect(rrect, paint); }
 //    };
 //    struct DrawDRRect final : Op {
-//        static const auto kType = Type::DrawDRRect;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawDRRect;
 //        DrawDRRect(const SkRRect& outer, const SkRRect& inner, const SkPaint& paint)
 //                : outer(outer), inner(inner), paint(paint) {}
 //        SkRRect outer, inner;
@@ -245,7 +203,7 @@ namespace {
 //        void draw(SkCanvas* c, const SkMatrix&) const { c->drawDRRect(outer, inner, paint); }
 //    };
 //    struct DrawDrawable final : Op {
-//        static const auto kType = Type::DrawDrawable;
+//        static const auto kType = android::uirenderer::DisplayListOpType::DrawDrawable;
 //        DrawDrawable(SkDrawable* drawable, const SkMatrix* matrix) : drawable(sk_ref_sp(drawable)) {
 //            if (matrix) {
 //                this->matrix = *matrix;
@@ -260,162 +218,21 @@ namespace {
 //        // keep it alive for longer than the frames duration (e.g. SKP serialization).
 //        void draw(SkCanvas* c, const SkMatrix&) const { drawable->draw(c, &matrix); }
 //    };
-//    enum class DrawTextBlobMode {
-//        Normal,
-//        HctOutline,
-//        HctInner,
-//    };
-//    inline DrawTextBlobMode gDrawTextBlobMode = DrawTextBlobMode::Normal;
-//    struct DrawTextBlob final : Op {
-//        static const auto kType = Type::DrawTextBlob;
-//        DrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y, const SkPaint& paint)
-//                : blob(sk_ref_sp(blob)), x(x), y(y), paint(paint), drawTextBlobMode(gDrawTextBlobMode) {}
-//        sk_sp<const SkTextBlob> blob;
-//        SkScalar x, y;
-//        SkPaint paint;
-//        DrawTextBlobMode drawTextBlobMode;
-//        void draw(SkCanvas* c, const SkMatrix&) const { c->drawTextBlob(blob.get(), x, y, paint); }
-//    };
+    enum class DrawTextBlobMode {
+        Normal,
+        HctOutline,
+        HctInner,
+    };
+    struct DrawTextBlob final : Op {
+        static const auto kType = android::uirenderer::DisplayListOpType::DrawTextBlob;
+        sk_sp<const SkTextBlob> blob;
+        SkScalar x, y;
+        SkPaint paint;
+        DrawTextBlobMode drawTextBlobMode;
+        void draw(SkCanvas* c, const SkMatrix&) const { c->drawTextBlob(blob.get(), x, y, paint); }
+    };
 //
-    enum ClipEdgeStyle {
-        kHard_ClipEdgeStyle,
-        kSoft_ClipEdgeStyle
-    };
 
-    enum SrcRectConstraint {
-        kStrict_SrcRectConstraint, //!< sample only inside bounds; slower
-        kFast_SrcRectConstraint,   //!< sample outside bounds; faster
-    };
-
-    struct Lattice {
-
-        /** \enum SkCanvas::Lattice::RectType
-            Optional setting per rectangular grid entry to make it transparent,
-            or to fill the grid entry with a color.
-        */
-        enum RectType : uint8_t {
-            kDefault     = 0, //!< draws SkBitmap into lattice rectangle
-            kTransparent,     //!< skips lattice rectangle by making it transparent
-            kFixedColor,      //!< draws one of fColors into lattice rectangle
-        };
-
-        const int*      fXDivs;     //!< x-axis values dividing bitmap
-        const int*      fYDivs;     //!< y-axis values dividing bitmap
-        const RectType* fRectTypes; //!< array of fill types
-        int             fXCount;    //!< number of x-coordinates
-        int             fYCount;    //!< number of y-coordinates
-        const SkIRect*  fBounds;    //!< source bounds to draw from
-        const SkColor*  fColors;    //!< array of colors
-    };
-
-                class VirtualCanvas {
-                public:
-                    VirtualCanvas(
-                            const android::uirenderer::skiapipeline::SkiaDisplayList &displayList)
-                            : mDisplayList(displayList) {}
-                protected:
-                    void onClipRect(const SkRect &rect, SkClipOp, ClipEdgeStyle) {
-                    }
-
-                    void onClipRRect(const SkRRect &rrect, SkClipOp, ClipEdgeStyle) {
-                    }
-
-                    void onClipPath(const SkPath &path, SkClipOp, ClipEdgeStyle) {
-                    }
-
-                    void onClipRegion(const SkRegion &deviceRgn, SkClipOp) {
-                    }
-
-                    void onResetClip() {
-                    }
-
-                    void onDrawPaint(const SkPaint &) {
-                    }
-
-                    void onDrawPath(const SkPath &, const SkPaint &) {
-                    }
-
-                    void onDrawRect(const SkRect &, const SkPaint &) {
-                    }
-
-                    void onDrawRegion(const SkRegion &, const SkPaint &) {
-                    }
-
-                    void onDrawOval(const SkRect &, const SkPaint &) {
-                    }
-
-                    void
-                    onDrawArc(const SkRect &, SkScalar, SkScalar, bool, const SkPaint &) {
-                    }
-
-                    void onDrawRRect(const SkRRect &, const SkPaint &) {
-                    }
-
-                    void onDrawDRRect(const SkRRect &, const SkRRect &, const SkPaint &) {
-                    }
-
-                    void onDrawTextBlob(const SkTextBlob *, SkScalar, SkScalar,
-                                        const SkPaint &) {
-                    }
-
-                    void onDrawImage2(const SkImage *, SkScalar dx, SkScalar dy,
-                                      const SkSamplingOptions &,
-                                      const SkPaint *) {
-                    }
-
-                    void onDrawImageRect2(const SkImage *, const SkRect &, const SkRect &,
-                                          const SkSamplingOptions &,
-                                          const SkPaint *, SrcRectConstraint) {
-                    }
-
-                    void
-                    onDrawImageLattice2(const SkImage *, const Lattice &lattice, const SkRect &dst,
-                                        SkFilterMode, const SkPaint *) {
-                    }
-
-                    void onDrawPoints(SkCanvas::PointMode, size_t, const SkPoint[],
-                                      const SkPaint &) {
-                    }
-
-                    void
-                    onDrawPicture(const SkPicture *, const SkMatrix *, const SkPaint *) {
-                    }
-
-                    void onDrawDrawable(SkDrawable *drawable, const SkMatrix *) {
-                        auto renderNodeDrawable = getRenderNodeDrawable(drawable);
-                        if (nullptr != renderNodeDrawable) {
-                            return;
-                        }
-                        auto glFunctorDrawable = getFunctorDrawable(drawable);
-                        if (nullptr != glFunctorDrawable) {
-                            return;
-                        }
-                    }
-                private:
-                    const android::uirenderer::skiapipeline::RenderNodeDrawable *
-                    getRenderNodeDrawable(SkDrawable *drawable) {
-                        for (auto &child: mDisplayList.mChildNodes) {
-                            if (drawable == &child) {
-                                return &child;
-                            }
-                        }
-                        return nullptr;
-                    }
-
-                    android::uirenderer::skiapipeline::FunctorDrawable *
-                    getFunctorDrawable(SkDrawable *drawable) {
-                        for (auto &child: mDisplayList.mChildFunctors) {
-                            if (drawable == reinterpret_cast<SkDrawable *>(child)) {
-                                return child;
-                            }
-                        }
-                        return nullptr;
-                    }
-
-                    int mLevel;
-                    const android::uirenderer::skiapipeline::SkiaDisplayList &mDisplayList;
-                    std::string mIdent;
-                };
 
                 jobject getProperties(JNIEnv *env, const char *op, jobject args) {
                     jclass hashMapClass = env->FindClass("java/util/HashMap");
@@ -431,6 +248,24 @@ namespace {
                     return hashMap;
                 }
 
+                jobject newInt(JNIEnv *env, int value) {
+                    jobject newInt = env->CallStaticObjectMethod(
+                            env->FindClass("java/lang/Integer"),
+                            env->GetStaticMethodID(env->FindClass("java/lang/Integer"), "valueOf", "(I)Ljava/lang/Integer;"),
+                            value
+                    );
+                    return newInt;
+                }
+
+                jobject newFloat(JNIEnv *env, float value) {
+                    jobject newFloat = env->CallStaticObjectMethod(
+                            env->FindClass("java/lang/Float"),
+                            env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf", "(F)Ljava/lang/Float;"),
+                            value
+                    );
+                    return newFloat;
+                }
+
     extern "C" JNIEXPORT jobject
     JNICALL
     Java_android_graphics_RenderNodeHelper_nGetDisplayList2(JNIEnv *env,
@@ -439,9 +274,7 @@ namespace {
         auto node = reinterpret_cast<android::uirenderer::RenderNode *>(render_node);
         auto* displayList = node->getDisplayList().asSkiaDl();
         auto data = &displayList->mDisplayList;
-
-//        VirtualCanvas canvas(*displayList);
-//        AutoCanvasRestore acr(&canvas, false);
+        auto renderProperties = &node->properties();
 
         jclass arrayListClass = env->FindClass("java/util/ArrayList");
         jmethodID arrayListConstructor = env->GetMethodID(arrayListClass, "<init>", "()V");
@@ -450,103 +283,154 @@ namespace {
 
         jmethodID arrayListAdd = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
 
+        auto translationX = renderProperties->getX();
+        auto translationY = renderProperties->getY();
+        if (translationX != 0 || translationY != 0) {
+            jobject x = newFloat(env, translationX);
+            jobject y = newFloat(env, translationY);
+            jobject args = env->NewObject(arrayListClass, arrayListConstructorWithI, 2);
+            env->CallBooleanMethod(args, arrayListAdd, x);
+            env->CallBooleanMethod(args, arrayListAdd, y);
+            jobject props = getProperties(env, "translate", args);
+            env->CallBooleanMethod(arrayList, arrayListAdd, props);
+        }
+
+        int clipFlags = renderProperties->getClippingFlags();
+        if (clipFlags) {
+            android::uirenderer::Rect clipRect;
+            renderProperties->getClippingRectForFlags(clipFlags, &clipRect);
+            jobject beginPathProps = getProperties(env, "beginPath", nullptr);
+            env->CallBooleanMethod(arrayList, arrayListAdd, beginPathProps);
+
+            jobject x = newFloat(env, clipRect.left);
+            jobject y = newFloat(env, clipRect.top);
+            jobject width = newFloat(env, clipRect.right - clipRect.left);
+            jobject height = newFloat(env, clipRect.bottom - clipRect.top);
+            jobject rectArgs = env->NewObject(arrayListClass, arrayListConstructorWithI, 4);
+            env->CallBooleanMethod(rectArgs, arrayListAdd, x);
+            env->CallBooleanMethod(rectArgs, arrayListAdd, y);
+            env->CallBooleanMethod(rectArgs, arrayListAdd, width);
+            env->CallBooleanMethod(rectArgs, arrayListAdd, height);
+            jobject rectProps = getProperties(env, "rect", rectArgs);
+            env->CallBooleanMethod(arrayList, arrayListAdd, rectProps);
+
+            jobject clipProps = getProperties(env, "clip", nullptr);
+            env->CallBooleanMethod(arrayList, arrayListAdd, clipProps);
+        }
+
         if (data->fBytes.get() != nullptr) {
             auto end = data->fBytes.get() + data->fUsed;
             // TODO use (end / skip) as a fixed jarray size
             for (const uint8_t* ptr = data->fBytes.get(); ptr < end;) {
                 auto op = (const Op*)ptr;
-                auto type = (const Type)op->type;
+                auto type = (const android::uirenderer::DisplayListOpType)op->type;
                 auto skip = op->skip;
                 switch(type) {
-                    case Type::Flush:
+                    case android::uirenderer::DisplayListOpType::Flush:
                         // do nothing
                         break;
-                    case Type::Translate: {
+                    case android::uirenderer::DisplayListOpType::Translate: {
                         auto translate = (const Translate*) op;
-                        jfloat x = translate->dx;
+                        jobject x = env->CallStaticObjectMethod(
+                                env->FindClass("java/lang/Float"),
+                                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf", "(F)Ljava/lang/Float;"),
+                                translate->dx
+                        );
+                        jobject y = env->CallStaticObjectMethod(
+                                env->FindClass("java/lang/Float"),
+                                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf", "(F)Ljava/lang/Float;"),
+                                translate->dy
+                        );
                         jobject args = env->NewObject(arrayListClass, arrayListConstructorWithI, 2);
                         env->CallBooleanMethod(args, arrayListAdd, x);
+                        env->CallBooleanMethod(args, arrayListAdd, y);
                         jobject props = getProperties(env, "translate", args);
                         env->CallBooleanMethod(arrayList, arrayListAdd, props);
                         break;
                     }
-                    case Type::Save: {
-                        jobject props = getProperties(env, "translate", nullptr);
+                    case android::uirenderer::DisplayListOpType::Save: {
+                        jobject props = getProperties(env, "save", nullptr);
+                        env->CallBooleanMethod(arrayList, arrayListAdd, props);
                         break;
                     }
-                    case Type::Restore:
+                    case android::uirenderer::DisplayListOpType::Restore: {
+                        jobject props = getProperties(env, "restore", nullptr);
+                        env->CallBooleanMethod(arrayList, arrayListAdd, props);
                         break;
-                    case Type::SaveLayer:
+                    }
+                    case android::uirenderer::DisplayListOpType::SaveLayer:
                         break;
-                    case Type::SaveBehind:
+                    case android::uirenderer::DisplayListOpType::SaveBehind:
                         break;
-                    case Type::Concat:
+                    case android::uirenderer::DisplayListOpType::Concat:
                         break;
-                    case Type::SetMatrix:
+                    case android::uirenderer::DisplayListOpType::SetMatrix:
                         break;
-                    case Type::Scale:
+                    case android::uirenderer::DisplayListOpType::Scale:
                         break;
-                    case Type::ClipPath:
+                    case android::uirenderer::DisplayListOpType::ClipPath:
                         break;
-                    case Type::ClipRect:
+                    case android::uirenderer::DisplayListOpType::ClipRect: {
+                        auto clipRect = (const ClipRect*) op;
                         break;
-                    case Type::ClipRRect:
+                    }
+                    case android::uirenderer::DisplayListOpType::ClipRRect:
                         break;
-                    case Type::ClipRegion:
+                    case android::uirenderer::DisplayListOpType::ClipRegion:
                         break;
-                    case Type::ResetClip:
+                    case android::uirenderer::DisplayListOpType::DrawPaint:
                         break;
-                    case Type::DrawPaint:
+                    case android::uirenderer::DisplayListOpType::DrawBehind:
                         break;
-                    case Type::DrawBehind:
+                    case android::uirenderer::DisplayListOpType::DrawPath:
                         break;
-                    case Type::DrawPath:
+                    case android::uirenderer::DisplayListOpType::DrawRect: {
+                        auto drawRect = (const DrawRect*) op;
                         break;
-                    case Type::DrawRect:
+                    }
+                    case android::uirenderer::DisplayListOpType::DrawRegion:
                         break;
-                    case Type::DrawRegion:
+                    case android::uirenderer::DisplayListOpType::DrawOval:
                         break;
-                    case Type::DrawOval:
+                    case android::uirenderer::DisplayListOpType::DrawArc:
                         break;
-                    case Type::DrawArc:
+                    case android::uirenderer::DisplayListOpType::DrawRRect:
                         break;
-                    case Type::DrawRRect:
+                    case android::uirenderer::DisplayListOpType::DrawDRRect:
                         break;
-                    case Type::DrawDRRect:
+                    case android::uirenderer::DisplayListOpType::DrawAnnotation:
                         break;
-                    case Type::DrawAnnotation:
+                    case android::uirenderer::DisplayListOpType::DrawDrawable: {
                         break;
-                    case Type::DrawDrawable:
+                    }
+                    case android::uirenderer::DisplayListOpType::DrawPicture:
                         break;
-                    case Type::DrawPicture:
+                    case android::uirenderer::DisplayListOpType::DrawImage:
                         break;
-                    case Type::DrawImage:
+                    case android::uirenderer::DisplayListOpType::DrawImageRect:
                         break;
-                    case Type::DrawImageRect:
+                    case android::uirenderer::DisplayListOpType::DrawImageLattice:
                         break;
-                    case Type::DrawImageLattice:
+                    case android::uirenderer::DisplayListOpType::DrawTextBlob: {
+                        auto drawTextBlob = (const DrawTextBlob*) op;
+                        auto runRecord = reinterpret_cast<const SkTextBlob::RunRecord*>(SkAlignPtr((uintptr_t)(drawTextBlob->blob.get() + 1)));
                         break;
-                    case Type::DrawTextBlob:
+                    }
+                    case android::uirenderer::DisplayListOpType::DrawPatch:
                         break;
-                    case Type::DrawPatch:
+                    case android::uirenderer::DisplayListOpType::DrawPoints:
                         break;
-                    case Type::DrawPoints:
+                    case android::uirenderer::DisplayListOpType::DrawVertices:
                         break;
-                    case Type::DrawVertices:
+                    case android::uirenderer::DisplayListOpType::DrawAtlas:
                         break;
-                    case Type::DrawAtlas:
+                    case android::uirenderer::DisplayListOpType::DrawShadowRec:
                         break;
-                    case Type::DrawShadowRec:
+                    case android::uirenderer::DisplayListOpType::DrawVectorDrawable:
                         break;
-                    case Type::DrawVectorDrawable:
+                    case android::uirenderer::DisplayListOpType::DrawRippleDrawable:
                         break;
-                    case Type::DrawRippleDrawable:
-                        break;
-                    case Type::DrawWebView:
-                        break;
-                    case Type::DrawSkMesh:
-                        break;
-                    case Type::DrawMesh:
+                    case android::uirenderer::DisplayListOpType::DrawWebView:
                         break;
                 }
                 ptr += skip;

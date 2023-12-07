@@ -10,7 +10,7 @@ public class RenderNodeHelper {
     System.loadLibrary("sentry-android-replay-headers");
   }
 
-  public static native void nGetDisplayList(long renderNode);
+  public static native List<Map<String, Object>> nGetDisplayList(long renderNode);
 
   public static native List<Map<String, Object>> nGetDisplayList2(long renderNode);
 
