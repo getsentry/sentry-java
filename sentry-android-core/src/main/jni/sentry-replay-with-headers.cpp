@@ -1,10 +1,11 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <RenderNode.h>
-#include <SkTextBlob.h>
-#include <SkTextBlobPriv.h>
-#include <RecordingCanvas.h>
-#include <Rect.h>
+//#include <SkTextBlob.h>
+//#include <SkTextBlobPriv.h>
+//#include <RecordingCanvas.h>
+//#include <Rect.h>
+#include <shadowhook.h>
 
 namespace {
 //    static const SkRect kUnset = {SK_ScalarInfinity, 0, 0, 0};
@@ -13,9 +14,11 @@ namespace {
 //    }
 //
 
+    void *DisplayListData_draw_hook = nullptr;
+
     struct Op {
-        uint32_t type : 8;
-        uint32_t skip : 24;
+        uint32_t type: 8;
+        uint32_t skip: 24;
     };
     static_assert(sizeof(Op) == 4, "");
 //
@@ -30,6 +33,7 @@ namespace {
     struct Restore final : Op {
         static const auto kType = android::uirenderer::DisplayListOpType::Restore;
     };
+
 //    struct SaveLayer final : Op {
 //        static const auto kType = android::uirenderer::DisplayListOpType::SaveLayer;
 //        SaveLayer(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
@@ -84,9 +88,12 @@ namespace {
 //    };
     struct Translate final : Op {
         static const auto kType = android::uirenderer::DisplayListOpType::Translate;
+
         Translate(SkScalar dx, SkScalar dy) : dx(dx), dy(dy) {}
+
         SkScalar dx, dy;
     };
+
 //
 //    struct ClipPath final : Op {
 //        static const auto kType = android::uirenderer::DisplayListOpType::ClipPath;
@@ -98,12 +105,16 @@ namespace {
 //    };
     struct ClipRect final : Op {
         static const auto kType = android::uirenderer::DisplayListOpType::ClipRect;
-        ClipRect(const SkRect& rect, SkClipOp op, bool aa) : rect(rect), op(op), aa(aa) {}
+
+        ClipRect(const SkRect &rect, SkClipOp op, bool aa) : rect(rect), op(op), aa(aa) {}
+
         SkRect rect;
         SkClipOp op;
         bool aa;
-        void draw(SkCanvas* c, const SkMatrix&) const { c->clipRect(rect, op, aa); }
+
+        void draw(SkCanvas *c, const SkMatrix &) const { c->clipRect(rect, op, aa); }
     };
+
 //    struct ClipRRect final : Op {
 //        static const auto kType = android::uirenderer::DisplayListOpType::ClipRRect;
 //        ClipRRect(const SkRRect& rrect, SkClipandroid::uirenderer::DisplayListOp op, bool aa) : rrect(rrect), op(op), aa(aa) {}
@@ -150,11 +161,15 @@ namespace {
 //    };
     struct DrawRect final : Op {
         static const auto kType = android::uirenderer::DisplayListOpType::DrawRect;
-        DrawRect(const SkRect& rect, const SkPaint& paint) : rect(rect), paint(paint) {}
+
+        DrawRect(const SkRect &rect, const SkPaint &paint) : rect(rect), paint(paint) {}
+
         SkRect rect;
         SkPaint paint;
-        void draw(SkCanvas* c, const SkMatrix&) const { c->drawRect(rect, paint); }
+
+        void draw(SkCanvas *c, const SkMatrix &) const { c->drawRect(rect, paint); }
     };
+
 //    struct DrawRegion final : Op {
 //        static const auto kType = android::uirenderer::DisplayListOpType::DrawRegion;
 //        DrawRegion(const SkRegion& region, const SkPaint& paint) : region(region), paint(paint) {}
@@ -223,48 +238,102 @@ namespace {
         HctOutline,
         HctInner,
     };
+
     struct DrawTextBlob final : Op {
         static const auto kType = android::uirenderer::DisplayListOpType::DrawTextBlob;
         sk_sp<const SkTextBlob> blob;
         SkScalar x, y;
         SkPaint paint;
         DrawTextBlobMode drawTextBlobMode;
-        void draw(SkCanvas* c, const SkMatrix&) const { c->drawTextBlob(blob.get(), x, y, paint); }
+
+        void draw(SkCanvas *c, const SkMatrix &) const { c->drawTextBlob(blob.get(), x, y, paint); }
     };
 //
 
 
-                jobject getProperties(JNIEnv *env, const char *op, jobject args) {
-                    jclass hashMapClass = env->FindClass("java/util/HashMap");
-                    jmethodID hashMapConstructor = env->GetMethodID(hashMapClass, "<init>",
-                                                                    "(I)V");
-                    jobject hashMap = env->NewObject(hashMapClass, hashMapConstructor, 2);
+    jobject getProperties(JNIEnv *env, const char *op, jobject args) {
+        jclass hashMapClass = env->FindClass("java/util/HashMap");
+        jmethodID hashMapConstructor = env->GetMethodID(hashMapClass, "<init>",
+                                                        "(I)V");
+        jobject hashMap = env->NewObject(hashMapClass, hashMapConstructor, 2);
 
-                    jmethodID hashMapPut = env->GetMethodID(hashMapClass, "put",
-                                                            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+        jmethodID hashMapPut = env->GetMethodID(hashMapClass, "put",
+                                                "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
 
-                    env->CallObjectMethod(hashMap, hashMapPut, env->NewStringUTF("property"), env->NewStringUTF(op));
-                    env->CallObjectMethod(hashMap, hashMapPut, env->NewStringUTF("args"), args);
-                    return hashMap;
-                }
+        env->CallObjectMethod(hashMap, hashMapPut, env->NewStringUTF("property"),
+                              env->NewStringUTF(op));
+        env->CallObjectMethod(hashMap, hashMapPut, env->NewStringUTF("args"), args);
+        return hashMap;
+    }
 
-                jobject newInt(JNIEnv *env, int value) {
-                    jobject newInt = env->CallStaticObjectMethod(
-                            env->FindClass("java/lang/Integer"),
-                            env->GetStaticMethodID(env->FindClass("java/lang/Integer"), "valueOf", "(I)Ljava/lang/Integer;"),
-                            value
-                    );
-                    return newInt;
-                }
+    jobject newInt(JNIEnv *env, int value) {
+        jobject newInt = env->CallStaticObjectMethod(
+                env->FindClass("java/lang/Integer"),
+                env->GetStaticMethodID(env->FindClass("java/lang/Integer"), "valueOf",
+                                       "(I)Ljava/lang/Integer;"),
+                value
+        );
+        return newInt;
+    }
 
-                jobject newFloat(JNIEnv *env, float value) {
-                    jobject newFloat = env->CallStaticObjectMethod(
-                            env->FindClass("java/lang/Float"),
-                            env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf", "(F)Ljava/lang/Float;"),
-                            value
-                    );
-                    return newFloat;
-                }
+    jobject newFloat(JNIEnv *env, float value) {
+        jobject newFloat = env->CallStaticObjectMethod(
+                env->FindClass("java/lang/Float"),
+                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf",
+                                       "(F)Ljava/lang/Float;"),
+                value
+        );
+        return newFloat;
+    }
+
+    void DumpOpsCanvas_onDrawRect_proxy(void* canvas, void* skRect, void* skPaint) {
+        SHADOWHOOK_STACK_SCOPE();
+        auto rect = reinterpret_cast<SkRect*>(skRect);
+        auto paint = reinterpret_cast<SkPaint*>(skPaint);
+        SHADOWHOOK_CALL_PREV(DumpOpsCanvas_onDrawRect_proxy, canvas, skRect, skPaint);
+    }
+
+    void DisplayListData_draw_proxy(void* displayListData, void* canvas) {
+        SHADOWHOOK_STACK_SCOPE();
+        auto data = reinterpret_cast<android::uirenderer::DisplayListData*>(displayListData);
+        if (data->fBytes.get() != nullptr) {
+            auto end = data->fBytes.get() + data->fUsed;
+            // TODO use (end / skip) as a fixed jarray size
+            for (const uint8_t *ptr = data->fBytes.get(); ptr < end;) {
+                auto op = (const Op *) ptr;
+                auto type = (const android::uirenderer::DisplayListOpType) op->type;
+                auto skip = op->skip;
+                ptr += skip;
+            }
+        }
+//        SHADOWHOOK_ALLOW_REENTRANT();
+        SHADOWHOOK_CALL_PREV(DisplayListData_draw_proxy, displayListData, canvas);
+    }
+
+    extern "C"
+    JNIEXPORT void JNICALL
+    Java_io_sentry_android_core_replay_RenderNodeTracing_nStartRenderNodeTracing(JNIEnv *env,
+                                                                                 jclass clazz) {
+        if (DisplayListData_draw_hook != nullptr) {
+            return;
+        }
+
+        DisplayListData_draw_hook = shadowhook_hook_sym_name(
+                "libhwui.so",
+                "_ZN7android10uirenderer12skiapipeline13DumpOpsCanvas10onDrawRectERK6SkRectRK7SkPaint",
+                reinterpret_cast<void*>(DumpOpsCanvas_onDrawRect_proxy),
+                nullptr
+                );
+    }
+
+    extern "C"
+    JNIEXPORT void JNICALL
+    Java_io_sentry_android_core_replay_RenderNodeTracing_nStopRenderNodeTracing(JNIEnv *env,
+                                                                                jclass clazz) {
+        if (DisplayListData_draw_hook != nullptr) {
+            shadowhook_unhook(DisplayListData_draw_hook);
+        }
+    }
 
     extern "C" JNIEXPORT jobject
     JNICALL
@@ -272,7 +341,7 @@ namespace {
                                                             jclass clazz,
                                                             jlong render_node) {
         auto node = reinterpret_cast<android::uirenderer::RenderNode *>(render_node);
-        auto* displayList = node->getDisplayList().asSkiaDl();
+        auto *displayList = node->getDisplayList().asSkiaDl();
         auto data = &displayList->mDisplayList;
         auto renderProperties = &node->properties();
 
@@ -321,24 +390,26 @@ namespace {
         if (data->fBytes.get() != nullptr) {
             auto end = data->fBytes.get() + data->fUsed;
             // TODO use (end / skip) as a fixed jarray size
-            for (const uint8_t* ptr = data->fBytes.get(); ptr < end;) {
-                auto op = (const Op*)ptr;
-                auto type = (const android::uirenderer::DisplayListOpType)op->type;
+            for (const uint8_t *ptr = data->fBytes.get(); ptr < end;) {
+                auto op = (const Op *) ptr;
+                auto type = (const android::uirenderer::DisplayListOpType) op->type;
                 auto skip = op->skip;
-                switch(type) {
+                switch (type) {
                     case android::uirenderer::DisplayListOpType::Flush:
                         // do nothing
                         break;
                     case android::uirenderer::DisplayListOpType::Translate: {
-                        auto translate = (const Translate*) op;
+                        auto translate = (const Translate *) op;
                         jobject x = env->CallStaticObjectMethod(
                                 env->FindClass("java/lang/Float"),
-                                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf", "(F)Ljava/lang/Float;"),
+                                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf",
+                                                       "(F)Ljava/lang/Float;"),
                                 translate->dx
                         );
                         jobject y = env->CallStaticObjectMethod(
                                 env->FindClass("java/lang/Float"),
-                                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf", "(F)Ljava/lang/Float;"),
+                                env->GetStaticMethodID(env->FindClass("java/lang/Float"), "valueOf",
+                                                       "(F)Ljava/lang/Float;"),
                                 translate->dy
                         );
                         jobject args = env->NewObject(arrayListClass, arrayListConstructorWithI, 2);
@@ -371,7 +442,7 @@ namespace {
                     case android::uirenderer::DisplayListOpType::ClipPath:
                         break;
                     case android::uirenderer::DisplayListOpType::ClipRect: {
-                        auto clipRect = (const ClipRect*) op;
+                        auto clipRect = (const ClipRect *) op;
                         break;
                     }
                     case android::uirenderer::DisplayListOpType::ClipRRect:
@@ -385,7 +456,7 @@ namespace {
                     case android::uirenderer::DisplayListOpType::DrawPath:
                         break;
                     case android::uirenderer::DisplayListOpType::DrawRect: {
-                        auto drawRect = (const DrawRect*) op;
+                        auto drawRect = (const DrawRect *) op;
                         break;
                     }
                     case android::uirenderer::DisplayListOpType::DrawRegion:
@@ -412,8 +483,9 @@ namespace {
                     case android::uirenderer::DisplayListOpType::DrawImageLattice:
                         break;
                     case android::uirenderer::DisplayListOpType::DrawTextBlob: {
-                        auto drawTextBlob = (const DrawTextBlob*) op;
-                        auto runRecord = reinterpret_cast<const SkTextBlob::RunRecord*>(SkAlignPtr((uintptr_t)(drawTextBlob->blob.get() + 1)));
+//                        auto drawTextBlob = (const DrawTextBlob *) op;
+//                        auto runRecord = reinterpret_cast<const SkTextBlob::RunRecord *>(SkAlignPtr(
+//                                (uintptr_t) (drawTextBlob->blob.get() + 1)));
                         break;
                     }
                     case android::uirenderer::DisplayListOpType::DrawPatch:

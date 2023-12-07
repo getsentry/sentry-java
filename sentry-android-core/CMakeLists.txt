@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-#set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to be used")
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to be used")
 project(Sentry-Android-Replay LANGUAGES C CXX)
 
 # Add sentry-android shared library
@@ -42,3 +42,5 @@ target_include_directories(sentry-android-replay-headers PUBLIC "/Users/romtsn/W
 #set_target_properties( hwui PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libhwui.so )
 #
 #target_link_libraries(sentry-android-replay hwui)
+find_package(shadowhook REQUIRED CONFIG)
+target_link_libraries(sentry-android-replay-headers shadowhook::shadowhook)

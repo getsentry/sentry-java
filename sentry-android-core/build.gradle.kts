@@ -26,7 +26,7 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 
         ndk {
-            abiFilters.addAll(Config.Android.abiFilters)
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
         }
 
         externalNativeBuild {
@@ -47,6 +47,14 @@ android {
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
+    }
+
+    buildFeatures {
+        prefab = true
+    }
+
+    packagingOptions {
+        pickFirst("**/libshadowhook.so")
     }
 
     kotlinOptions {
@@ -93,6 +101,7 @@ dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     // TODO remove and use double reflection
+    implementation("com.bytedance.android:shadowhook:1.0.7")
     implementation("com.github.ChickenHook:RestrictionBypass:2.2")
 
     compileOnly(projects.sentryAndroidFragment)

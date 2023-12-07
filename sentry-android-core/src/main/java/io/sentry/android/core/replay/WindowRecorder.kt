@@ -50,9 +50,11 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                 return super.dispatchTouchEvent(event)
             }
         }
+        RenderNodeTracing.starTracing()
     }
 
     fun stopRecording(): Pair<SentryReplayEvent, Hint> {
+        RenderNodeTracing.stopTracing()
         activity?.window?.removeOnFrameMetricsAvailableListener(this)
         activity = null
 
@@ -148,10 +150,10 @@ class WindowRecorder : Window.OnFrameMetricsAvailableListener {
                     outputMethod.isAccessible = true
                     outputMethod.invoke(renderNode)
 //
-                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
-                    nativeRenderNodeField.isAccessible = true
-                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
-                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
+//                    val nativeRenderNodeField = RenderNode::class.java.getDeclaredField("mNativeRenderNode")
+//                    nativeRenderNodeField.isAccessible = true
+//                    val nativeRenderNode = nativeRenderNodeField.get(renderNode) as Long
+//                    RenderNodeHelper.fetchDisplayList(nativeRenderNode)
 
 //                    item.getLocationOnScreen(location)
 //                    val x = location[0].toFloat() + item.translationX

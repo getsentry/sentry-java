@@ -29,7 +29,7 @@ android {
         }
 
         ndk {
-            abiFilters.addAll(Config.Android.abiFilters)
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
         }
     }
 
@@ -88,6 +88,10 @@ android {
                 )
             )
         }
+    }
+
+    packagingOptions {
+        pickFirst("**/libshadowhook.so")
     }
 
     kotlinOptions {
