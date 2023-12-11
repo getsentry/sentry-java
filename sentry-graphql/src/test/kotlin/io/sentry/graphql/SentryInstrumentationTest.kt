@@ -193,8 +193,12 @@ class SentryInstrumentationTest {
             .fields(MergedSelectionSet.newMergedSelectionSet().build())
             .field(MergedField.newMergedField().addField(Field.newField("myFieldName").build()).build())
             .build()
-        val parameters = InstrumentationFieldFetchParameters(executionContext,
-            { environment }, executionStrategyParameters, false).withNewState(SentryInstrumentation.TracingState())
+        val parameters = InstrumentationFieldFetchParameters(
+            executionContext,
+            { environment },
+            executionStrategyParameters,
+            false
+        ).withNewState(SentryInstrumentation.TracingState())
         val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters)
         val result = instrumentedDataFetcher.get(environment)
 

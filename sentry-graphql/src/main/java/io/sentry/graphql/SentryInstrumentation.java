@@ -37,7 +37,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @SuppressWarnings("deprecation")
-public final class SentryInstrumentation extends graphql.execution.instrumentation.SimpleInstrumentation {
+public final class SentryInstrumentation
+    extends graphql.execution.instrumentation.SimpleInstrumentation {
 
   private static final @NotNull List<String> ERROR_TYPES_HANDLED_BY_DATA_FETCHERS =
       Arrays.asList(
@@ -281,7 +282,6 @@ public final class SentryInstrumentation extends graphql.execution.instrumentati
 
   @Override
   @SuppressWarnings({"FutureReturnValueIgnored", "deprecation"})
-
   public @NotNull DataFetcher<?> instrumentDataFetcher(
       final @NotNull DataFetcher<?> dataFetcher,
       final @NotNull InstrumentationFieldFetchParameters parameters) {

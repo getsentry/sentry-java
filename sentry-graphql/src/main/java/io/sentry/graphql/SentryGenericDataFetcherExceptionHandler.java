@@ -3,7 +3,6 @@ package io.sentry.graphql;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
-import graphql.execution.SimpleDataFetcherExceptionHandler;
 import io.sentry.IHub;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
