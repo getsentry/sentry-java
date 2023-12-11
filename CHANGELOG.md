@@ -5,6 +5,7 @@
 ### Features
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+- Add support for `graphql-java` version 21 ([#3090](https://github.com/getsentry/sentry-java/pull/3090))
 
 ### Fixes
 
