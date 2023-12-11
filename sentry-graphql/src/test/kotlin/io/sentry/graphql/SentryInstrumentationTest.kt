@@ -195,7 +195,7 @@ class SentryInstrumentationTest {
             .build()
         val parameters = InstrumentationFieldFetchParameters(
             executionContext,
-            { environment },
+            environment,
             executionStrategyParameters,
             false
         ).withNewState(SentryInstrumentation.TracingState())

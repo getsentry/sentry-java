@@ -133,7 +133,7 @@ class SentryInstrumentationAnotherTest {
             }
             fieldFetchParameters = InstrumentationFieldFetchParameters(
                 executionContext,
-                { environment },
+                environment,
                 executionStrategyParameters,
                 false
             ).withNewState(
