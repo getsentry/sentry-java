@@ -38,6 +38,7 @@ class TimeSpanTest {
     @Test
     fun `spans reset`() {
         val span = TimeSpan().apply {
+            description = "Hello World"
             setStartedAt(1)
             setStoppedAt(2)
         }

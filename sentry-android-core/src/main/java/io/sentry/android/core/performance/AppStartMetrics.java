@@ -33,7 +33,7 @@ public class AppStartMetrics {
   private boolean appLaunchedInForeground = false;
 
   private final @NotNull TimeSpan appStartSpan;
-  private final @NotNull TimeSpan sdkAppStartSpan;
+  private final @NotNull TimeSpan sdkInitTimeSpan;
   private final @NotNull TimeSpan applicationOnCreate;
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
@@ -53,7 +53,7 @@ public class AppStartMetrics {
 
   public AppStartMetrics() {
     appStartSpan = new TimeSpan();
-    sdkAppStartSpan = new TimeSpan();
+    sdkInitTimeSpan = new TimeSpan();
     applicationOnCreate = new TimeSpan();
     contentProviderOnCreates = new HashMap<>();
     activityLifecycles = new ArrayList<>();
@@ -68,11 +68,14 @@ public class AppStartMetrics {
   }
 
   /**
-   * @return the app start time span, as measured pre-performance-v2 Uses ContentProvider/Sdk init
+   * @return the SDK init time span, as measured pre-performance-v2 Uses ContentProvider/Sdk init
    *     time as start timestamp
+   *     <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
+   *     fallback to {@link io.sentry.android.core.SentryAndroid}. At leas the start timestamp
+   *     should always be set.
    */
-  public @NotNull TimeSpan getSdkAppStartTimeSpan() {
-    return sdkAppStartSpan;
+  public @NotNull TimeSpan getSdkInitTimeSpan() {
+    return sdkInitTimeSpan;
   }
 
   public @NotNull TimeSpan getApplicationOnCreateTimeSpan() {
@@ -112,10 +115,25 @@ public class AppStartMetrics {
     activityLifecycles.add(timeSpan);
   }
 
+  /**
+   * @return the app start time span, in case it's was never started, the sdk init time span is
+   *     returned instead
+   */
+  public @NotNull TimeSpan getAppStartTimeSpanWithFallback() {
+    // should only be started if performance v2 is enabled and the sdk version is >= N
+    final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
+    if (appStartSpan.hasStarted()) {
+      return appStartSpan;
+    }
+
+    // fallback: use sdk init time span, as it will always have a start time set
+    return getSdkInitTimeSpan();
+  }
+
   public void clear() {
     appStartType = AppStartType.UNKNOWN;
     appStartSpan.reset();
-    sdkAppStartSpan.reset();
+    sdkInitTimeSpan.reset();
     applicationOnCreate.reset();
     contentProviderOnCreates.clear();
     activityLifecycles.clear();

@@ -11,6 +11,8 @@ import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +29,7 @@ public final class AssetsDebugMetaLoader implements IDebugMetaLoader {
   }
 
   @Override
-  public @Nullable Properties loadDebugMeta() {
+  public @Nullable List<Properties> loadDebugMeta() {
     final AssetManager assets = context.getAssets();
     // one may have thousands of asset files and looking up this list might slow down the SDK init.
     // quite a bit, for this reason, we try to open the file directly and take care of errors
@@ -36,7 +38,7 @@ public final class AssetsDebugMetaLoader implements IDebugMetaLoader {
         new BufferedInputStream(assets.open(DEBUG_META_PROPERTIES_FILENAME))) {
       final Properties properties = new Properties();
       properties.load(is);
-      return properties;
+      return Collections.singletonList(properties);
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.INFO, e, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
     } catch (IOException e) {

@@ -68,8 +68,7 @@ class PerformanceAndroidEventProcessorTest {
 
     @Test
     fun `add cold start measurement for performance-v2`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnablePerformanceV2 = true
+        val sut = fixture.getSut(enablePerformanceV2 = true)
 
         var tr = getTransaction(AppStartType.COLD)
         setAppStart(fixture.options)
@@ -261,7 +260,7 @@ class PerformanceAndroidEventProcessorTest {
                 false -> AppStartType.WARM
             }
             val timeSpan =
-                if (options.isEnablePerformanceV2) appStartTimeSpan else sdkAppStartTimeSpan
+                if (options.isEnablePerformanceV2) appStartTimeSpan else sdkInitTimeSpan
             timeSpan.apply {
                 setStartedAt(1)
                 setStoppedAt(2)

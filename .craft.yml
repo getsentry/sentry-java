@@ -49,7 +49,7 @@ targets:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:
       maven:io.sentry:sentry-quartz:
-      # maven:io.sentry:sentry-okhttp:
+      maven:io.sentry:sentry-okhttp:
       maven:io.sentry:sentry-android-navigation:
       maven:io.sentry:sentry-compose:
       maven:io.sentry:sentry-compose-android:

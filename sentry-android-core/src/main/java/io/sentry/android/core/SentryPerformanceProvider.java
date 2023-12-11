@@ -27,14 +27,14 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   // static to rely on Class load
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long sdkAppStartMillis = SystemClock.uptimeMillis();
+  private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
   private @Nullable Application app;
   private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
 
   @Override
   public boolean onCreate() {
-    onAppLaunched();
+    onAppLaunched(getContext());
     return true;
   }
 
@@ -54,23 +54,19 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     return null;
   }
 
-  @ApiStatus.Internal
-  public void onAppLaunched() {
-    // pre-performance-v2: use static field init as app start time
+  private void onAppLaunched(final @Nullable Context context) {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    final @NotNull TimeSpan sdkAppStartTimeSpan = appStartMetrics.getSdkAppStartTimeSpan();
-    sdkAppStartTimeSpan.setStartedAt(sdkAppStartMillis);
 
-    // performance v2: Use Process.getStartUptimeMillis()
-    // Process.getStartUptimeMillis() requires API level 24+
+    // sdk-init uses static field init as start time
+    final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+    sdkInitTimeSpan.setStartedAt(sdkInitMillis);
+
+    // performance v2: Uses Process.getStartUptimeMillis()
+    // requires API level 24+
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
       return;
     }
 
-    @Nullable Context context = getContext();
-    if (context != null) {
-      context = context.getApplicationContext();
-    }
     if (context instanceof Application) {
       app = (Application) context;
     }
@@ -179,8 +175,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     app.registerActivityLifecycleCallbacks(activityCallback);
   }
 
-  private synchronized void onAppStartDone() {
-    AppStartMetrics.getInstance().getAppStartTimeSpan().stop();
+  @TestOnly
+  synchronized void onAppStartDone() {
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    appStartMetrics.getSdkInitTimeSpan().stop();
+    appStartMetrics.getAppStartTimeSpan().stop();
 
     if (app != null) {
       if (activityCallback != null) {
@@ -190,7 +189,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   }
 
   @TestOnly
-  public @Nullable Application.ActivityLifecycleCallbacks getActivityCallback() {
+  @Nullable
+  Application.ActivityLifecycleCallbacks getActivityCallback() {
     return activityCallback;
   }
 }

@@ -1,18 +1,17 @@
 package io.sentry.android.core
 
+import android.app.Application
+import android.content.Context
 import android.content.pm.ProviderInfo
 import android.os.Build
 import android.os.Bundle
-import android.os.Looper
-import android.view.View
-import android.view.ViewTreeObserver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.robolectric.Shadows
+import org.mockito.kotlin.verify
 import org.robolectric.annotation.Config
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -34,8 +33,10 @@ class SentryPerformanceProviderTest {
 
     @Test
     fun `provider starts appStartTimeSpan`() {
+        assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasNotStarted())
         assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasNotStarted())
         setupProvider()
+        assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
         assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasStarted())
     }
 
@@ -67,7 +68,7 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
-    fun `provider sets keeps startup state even if multiple activities are launched`() {
+    fun `provider keeps startup state even if multiple activities are launched`() {
         val provider = setupProvider()
 
         // when there's a saved state
@@ -83,34 +84,37 @@ class SentryPerformanceProviderTest {
         assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
     }
 
-    private fun setupProvider(): SentryPerformanceProvider {
-        val providerInfo = ProviderInfo()
+    @Test
+    fun `provider sets both appstart and sdk init start + end times`() {
+        val provider = setupProvider()
+        provider.onAppStartDone()
 
-        val mockContext = ContextUtilsTestHelper.createMockContext(true)
+        val metrics = AppStartMetrics.getInstance()
+        assertTrue(metrics.appStartTimeSpan.hasStarted())
+        assertTrue(metrics.appStartTimeSpan.hasStopped())
+
+        assertTrue(metrics.sdkInitTimeSpan.hasStarted())
+        assertTrue(metrics.sdkInitTimeSpan.hasStopped())
+    }
+
+    @Test
+    fun `provider properly registers and unregisters ActivityLifecycleCallbacks`() {
+        val context = mock<Application>()
+        val provider = setupProvider(context)
+
+        verify(context).registerActivityLifecycleCallbacks(any())
+        provider.onAppStartDone()
+        verify(context).unregisterActivityLifecycleCallbacks(any())
+    }
+
+    private fun setupProvider(context: Context = mock<Application>()): SentryPerformanceProvider {
+        val providerInfo = ProviderInfo()
         providerInfo.authority = AUTHORITY
 
-        // calls onCreate
+        // calls onCreate under the hood
         val provider = SentryPerformanceProvider()
-        provider.attachInfo(mockContext, providerInfo)
+        provider.attachInfo(context, providerInfo)
         return provider
-    }
-
-    private fun createView(): View {
-        val view = View(ApplicationProvider.getApplicationContext())
-
-        // Adding a listener forces ViewTreeObserver.mOnDrawListeners to be initialized and non-null.
-        val dummyListener = ViewTreeObserver.OnDrawListener {}
-        view.viewTreeObserver.addOnDrawListener(dummyListener)
-        view.viewTreeObserver.removeOnDrawListener(dummyListener)
-
-        return view
-    }
-
-    private fun runFirstDraw(view: View) {
-        // Removes OnDrawListener in the next OnGlobalLayout after onDraw
-        view.viewTreeObserver.dispatchOnDraw()
-        view.viewTreeObserver.dispatchOnGlobalLayout()
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
     }
 
     companion object {

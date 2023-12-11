@@ -3143,17 +3143,17 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 }
 
 public abstract interface class io/sentry/internal/debugmeta/IDebugMetaLoader {
-	public abstract fun loadDebugMeta ()Ljava/util/Properties;
+	public abstract fun loadDebugMeta ()Ljava/util/List;
 }
 
 public final class io/sentry/internal/debugmeta/NoOpDebugMetaLoader : io/sentry/internal/debugmeta/IDebugMetaLoader {
 	public static fun getInstance ()Lio/sentry/internal/debugmeta/NoOpDebugMetaLoader;
-	public fun loadDebugMeta ()Ljava/util/Properties;
+	public fun loadDebugMeta ()Ljava/util/List;
 }
 
 public final class io/sentry/internal/debugmeta/ResourcesDebugMetaLoader : io/sentry/internal/debugmeta/IDebugMetaLoader {
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun loadDebugMeta ()Ljava/util/Properties;
+	public fun loadDebugMeta ()Ljava/util/List;
 }
 
 public abstract interface class io/sentry/internal/gestures/GestureTargetLocator {
@@ -4540,7 +4540,7 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
 	public fun <init> ()V
-	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/Properties;)V
+	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/List;)V
 	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
 }
 
