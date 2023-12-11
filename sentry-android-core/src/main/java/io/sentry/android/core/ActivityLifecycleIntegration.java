@@ -241,21 +241,10 @@ public final class ActivityLifecycleIntegration
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
 
-        @NotNull String transactionOp = UI_LOAD_OP;
-        if (options.isEnablePerformanceV2() && !firstActivityCreated) {
-          // performance-v2: for cold/warm app starts we want to use app.start.* ops instead of ui.load
-          if (Boolean.TRUE.equals(coldStart)) {
-            transactionOp = APP_START_COLD;
-          } else if (Boolean.FALSE.equals(coldStart)) {
-            transactionOp = APP_START_WARM;
-          }
-        }
-
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
             hub.startTransaction(
-                new TransactionContext(
-                    activityName, TransactionNameSource.COMPONENT, transactionOp),
+                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
                 transactionOptions);
         setSpanOrigin(transaction);
 
