@@ -6,6 +6,10 @@
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
 
+### Fixes
+
+- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+
 ### Dependencies
 
 - Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
