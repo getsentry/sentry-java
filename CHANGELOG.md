@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Automatically downsample transactions when system is under load ([#3072](https://github.com/getsentry/sentry-java/pull/3072))
+  - You can opt into this behaviour by setting `enable-backpressure-handling=true`.
+  - We're happy to receive feedback, e.g. [in this GitHub issue](https://github.com/getsentry/sentry-java/issues/2829)
+  - When the system is under load we start reducing the `tracesSampleRate` automatically.
+  - Once the system goes back to healthy, we reset the `tracesSampleRate` to its original value.
+
 ## 7.0.0
 
 Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
