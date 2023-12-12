@@ -4,8 +4,19 @@
 
 ### Features
 
+- Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
 - (Internal, Experimental) Attach spans for Application, ContentProvider, and Activities to app-start ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
 - (Internal) Extract Activity Breadcrumbs generation into own Integration ([#3064](https://github.com/getsentry/sentry-java/pull/3064))
+
+### Fixes
+
+- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+
+### Dependencies
+
+- Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v850)
+  - [diff](https://github.com/gradle/gradle/compare/v8.4.0...v8.5.0)
 
 ## 7.0.0
 

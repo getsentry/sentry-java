@@ -123,11 +123,11 @@ class SentryOkHttpEventTest {
     }
 
     @Test
-    fun `when root span is null, no breadcrumb is created`() {
+    fun `when root span is null, breadcrumb is created anyway`() {
         val sut = fixture.getSut(currentSpan = null)
         assertNull(sut.callRootSpan)
         sut.finishEvent()
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -572,6 +572,28 @@ class SentryOkHttpEventTest {
         sut.setClientErrorResponse(clientErrorResponse)
         verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
         sut.finishEvent()
+        assertNotNull(sut.callRootSpan)
+        verify(fixture.hub).captureEvent(
+            argThat {
+                throwable is SentryHttpClientException &&
+                    throwable!!.message!!.startsWith("HTTP Client Error with status code: ")
+            },
+            argThat<Hint> {
+                get(TypeCheckHint.OKHTTP_REQUEST) != null &&
+                    get(TypeCheckHint.OKHTTP_RESPONSE) != null
+            }
+        )
+    }
+
+    @Test
+    fun `setClientErrorResponse will capture the client error on finishEvent even when no span is running`() {
+        val sut = fixture.getSut(currentSpan = null)
+        val clientErrorResponse = mock<Response>()
+        whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+        sut.setClientErrorResponse(clientErrorResponse)
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        sut.finishEvent()
+        assertNull(sut.callRootSpan)
         verify(fixture.hub).captureEvent(
             argThat {
                 throwable is SentryHttpClientException &&

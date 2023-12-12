@@ -976,7 +976,7 @@ class SentryTest {
     }
 
     private class CustomDebugMetaLoader : IDebugMetaLoader {
-        override fun loadDebugMeta(): Properties? = null
+        override fun loadDebugMeta(): List<Properties>? = null
     }
 
     private class CustomEnvelopCache : IEnvelopeCache {

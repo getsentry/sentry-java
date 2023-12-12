@@ -435,16 +435,32 @@ class SentryAndroidTest {
     }
 
     @Test
-    fun `init sets app start times span if starfish is enabled`() {
+    fun `init backfills sdk init and app start time`() {
         AppStartMetrics.getInstance().clear()
         SentryShadowProcess.setStartUptimeMillis(42)
 
         fixture.initSut(context = mock<Application>()) { options ->
             options.dsn = "https://key@sentry.io/123"
-            options.isEnableStarfish = true
+            options.isEnablePerformanceV2 = true
         }
         assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
-        assertTrue(AppStartMetrics.getInstance().sdkAppStartTimeSpan.hasStarted())
+        assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
+    }
+
+    @Test
+    fun `init does not backfill sdk init and app start times if already set`() {
+        AppStartMetrics.getInstance().clear()
+        AppStartMetrics.getInstance().sdkInitTimeSpan.setStartedAt(99)
+        AppStartMetrics.getInstance().appStartTimeSpan.setStartedAt(99)
+
+        SentryShadowProcess.setStartUptimeMillis(42)
+        fixture.initSut(context = mock<Application>()) { options ->
+            options.dsn = "https://key@sentry.io/123"
+            options.isEnablePerformanceV2 = true
+        }
+
+        assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
+        assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
     }
 
     private fun prefillScopeCache(cacheDir: String) {

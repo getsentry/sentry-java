@@ -75,7 +75,6 @@ class ActivityLifecycleIntegrationTest {
             dsn = "https://key@sentry.io/proj"
         }
         val bundle = mock<Bundle>()
-        val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
@@ -95,9 +94,10 @@ class ActivityLifecycleIntegrationTest {
             whenever(hub.options).thenReturn(options)
 
             // We let the ActivityLifecycleIntegration create the proper transaction here
-            val argumentCaptor = argumentCaptor<TransactionOptions>()
-            whenever(hub.startTransaction(any(), argumentCaptor.capture())).thenAnswer {
-                val t = SentryTracer(context, hub, argumentCaptor.lastValue)
+            val optionCaptor = argumentCaptor<TransactionOptions>()
+            val contextCaptor = argumentCaptor<TransactionContext>()
+            whenever(hub.startTransaction(contextCaptor.capture(), optionCaptor.capture())).thenAnswer {
+                val t = SentryTracer(contextCaptor.lastValue, hub, optionCaptor.lastValue)
                 transaction = t
                 return@thenAnswer t
             }
@@ -690,7 +690,7 @@ class ActivityLifecycleIntegrationTest {
         // usually set by SentryPerformanceProvider
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
-        AppStartMetrics.getInstance().sdkAppStartTimeSpan.setStoppedAt(2)
+        AppStartMetrics.getInstance().sdkInitTimeSpan.setStoppedAt(2)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -710,9 +710,9 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(startDate)
         val appStartMetrics = AppStartMetrics.getInstance()
         appStartMetrics.appStartType = AppStartType.WARM
-        appStartMetrics.sdkAppStartTimeSpan.setStoppedAt(2)
+        appStartMetrics.sdkInitTimeSpan.setStoppedAt(2)
 
-        val endDate = appStartMetrics.sdkAppStartTimeSpan.projectedStopTimestamp
+        val endDate = appStartMetrics.sdkInitTimeSpan.projectedStopTimestamp
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -743,14 +743,14 @@ class ActivityLifecycleIntegrationTest {
         whenever(activity.findViewById<View>(any())).thenReturn(view)
         sut.onActivityCreated(activity, fixture.bundle)
         // then app-start end time should still be null
-        assertTrue(AppStartMetrics.getInstance().sdkAppStartTimeSpan.hasNotStopped())
+        assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasNotStopped())
 
         // when activity is resumed
         sut.onActivityResumed(activity)
         Thread.sleep(1)
         runFirstDraw(view)
         // end-time should be set
-        assertTrue(AppStartMetrics.getInstance().sdkAppStartTimeSpan.hasStopped())
+        assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStopped())
     }
 
     @Test
@@ -763,7 +763,7 @@ class ActivityLifecycleIntegrationTest {
         val startDate = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(startDate)
         AppStartMetrics.getInstance().appStartType = AppStartType.WARM
-        AppStartMetrics.getInstance().sdkAppStartTimeSpan.setStoppedAt(1234)
+        AppStartMetrics.getInstance().sdkInitTimeSpan.setStoppedAt(1234)
 
         // when activity is created and resumed
         val activity = mock<Activity>()
@@ -773,7 +773,7 @@ class ActivityLifecycleIntegrationTest {
         // then the end time should not be overwritten
         assertEquals(
             DateUtils.millisToNanos(1234),
-            AppStartMetrics.getInstance().sdkAppStartTimeSpan.projectedStopTimestamp!!.nanoTimestamp()
+            AppStartMetrics.getInstance().sdkInitTimeSpan.projectedStopTimestamp!!.nanoTimestamp()
         )
     }
 
@@ -798,7 +798,7 @@ class ActivityLifecycleIntegrationTest {
         Thread.sleep(1)
         runFirstDraw(view)
 
-        val firstAppStartEndTime = AppStartMetrics.getInstance().sdkAppStartTimeSpan.projectedStopTimestamp
+        val firstAppStartEndTime = AppStartMetrics.getInstance().sdkInitTimeSpan.projectedStopTimestamp
 
         Thread.sleep(1)
         sut.onActivityPaused(activity)
@@ -811,7 +811,7 @@ class ActivityLifecycleIntegrationTest {
         // then the end time should not be overwritten
         assertEquals(
             firstAppStartEndTime!!.nanoTimestamp(),
-            AppStartMetrics.getInstance().sdkAppStartTimeSpan.projectedStopTimestamp!!.nanoTimestamp()
+            AppStartMetrics.getInstance().sdkInitTimeSpan.projectedStopTimestamp!!.nanoTimestamp()
         )
     }
 
@@ -1329,8 +1329,13 @@ class ActivityLifecycleIntegrationTest {
 
     private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(1), 0)) {
         // set by SentryPerformanceProvider so forcing it here
-        val appStartTimeSpan = AppStartMetrics.getInstance().sdkAppStartTimeSpan
+        val sdkAppStartTimeSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         val millis = DateUtils.nanosToMillis(date.nanoTimestamp().toDouble()).toLong()
+
+        sdkAppStartTimeSpan.setStartedAt(millis)
+        sdkAppStartTimeSpan.setStartUnixTimeMs(millis)
+        sdkAppStartTimeSpan.setStoppedAt(0)
 
         appStartTimeSpan.setStartedAt(millis)
         appStartTimeSpan.setStartUnixTimeMs(millis)

@@ -28,7 +28,12 @@ import org.jetbrains.annotations.Nullable;
 /** Event Processor responsible for adding Android metrics to transactions */
 final class PerformanceAndroidEventProcessor implements EventProcessor {
 
-  private static final String APP_METRICS_ORIGN = "auto.ui";
+  private static final String APP_METRICS_ORIGIN = "auto.ui";
+
+  private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
+  private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
+  private static final String APP_METRICS_APPLICATION_OP = "application.load";
+
   private boolean sentStartMeasurement = false;
 
   private final @NotNull ActivityFramesTracker activityFramesTracker;
@@ -71,9 +76,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // the app.start span, which is automatically created by the SDK.
     if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
       final @NotNull TimeSpan appStartTimeSpan =
-          options.isEnableStarfish()
-              ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-              : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
+          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
       final long appStartUpInterval = appStartTimeSpan.getDurationMs();
 
       // if appStartUpInterval is 0, metrics are not ready to be sent
@@ -142,77 +145,60 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
     final @NotNull SentryId traceId = traceContext.getTraceId();
 
-    // Application.onCreate
-    final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
-    if (appOnCreate.hasStopped()) {
-      final SentrySpan span = timeSpanToSentrySpan(appOnCreate, null, traceId);
-      txn.getSpans().add(span);
+    // determine the app.start.cold span, where all other spans will be attached to
+    @Nullable SpanId parentSpanId = null;
+    final @NotNull List<SentrySpan> spans = txn.getSpans();
+    for (final @NotNull SentrySpan span : spans) {
+      if (span.getOp().contentEquals(APP_START_COLD)) {
+        parentSpanId = span.getSpanId();
+        break;
+      }
     }
 
-    // Content Provider
+    // Content Providers
     final @NotNull List<TimeSpan> contentProviderOnCreates =
         appStartMetrics.getContentProviderOnCreateTimeSpans();
     if (!contentProviderOnCreates.isEmpty()) {
-      final @NotNull SentrySpan contentProviderRootSpan =
-          new SentrySpan(
-              contentProviderOnCreates.get(0).getStartTimestampSecs(),
-              contentProviderOnCreates
-                  .get(contentProviderOnCreates.size() - 1)
-                  .getProjectedStopTimestampSecs(),
-              traceId,
-              new SpanId(),
-              null,
-              UI_LOAD_OP,
-              "Content Providers",
-              SpanStatus.OK,
-              APP_METRICS_ORIGN,
-              new HashMap<>(),
-              null);
-      txn.getSpans().add(contentProviderRootSpan);
       for (final @NotNull TimeSpan contentProvider : contentProviderOnCreates) {
         txn.getSpans()
             .add(
                 timeSpanToSentrySpan(
-                    contentProvider, contentProviderRootSpan.getSpanId(), traceId));
+                    contentProvider, parentSpanId, traceId, APP_METRICS_CONTENT_PROVIDER_OP));
       }
+    }
+
+    // Application.onCreate
+    final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
+    if (appOnCreate.hasStopped()) {
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
     }
 
     // Activities
     final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycleTimeSpans =
         appStartMetrics.getActivityLifecycleTimeSpans();
     if (!activityLifecycleTimeSpans.isEmpty()) {
-      final SentrySpan activityRootSpan =
-          new SentrySpan(
-              activityLifecycleTimeSpans.get(0).getOnCreate().getStartTimestampSecs(),
-              activityLifecycleTimeSpans
-                  .get(activityLifecycleTimeSpans.size() - 1)
-                  .getOnStart()
-                  .getProjectedStopTimestampSecs(),
-              traceId,
-              new SpanId(),
-              null,
-              UI_LOAD_OP,
-              "Activities",
-              SpanStatus.OK,
-              APP_METRICS_ORIGN,
-              new HashMap<>(),
-              null);
-      txn.getSpans().add(activityRootSpan);
-
       for (ActivityLifecycleTimeSpan activityTimeSpan : activityLifecycleTimeSpans) {
         if (activityTimeSpan.getOnCreate().hasStarted()
             && activityTimeSpan.getOnCreate().hasStopped()) {
           txn.getSpans()
               .add(
                   timeSpanToSentrySpan(
-                      activityTimeSpan.getOnCreate(), activityRootSpan.getSpanId(), traceId));
+                      activityTimeSpan.getOnCreate(),
+                      parentSpanId,
+                      traceId,
+                      APP_METRICS_ACTIVITIES_OP));
         }
         if (activityTimeSpan.getOnStart().hasStarted()
             && activityTimeSpan.getOnStart().hasStopped()) {
           txn.getSpans()
               .add(
                   timeSpanToSentrySpan(
-                      activityTimeSpan.getOnStart(), activityRootSpan.getSpanId(), traceId));
+                      activityTimeSpan.getOnStart(),
+                      parentSpanId,
+                      traceId,
+                      APP_METRICS_ACTIVITIES_OP));
         }
       }
     }
@@ -222,17 +208,18 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private static SentrySpan timeSpanToSentrySpan(
       final @NotNull TimeSpan span,
       final @Nullable SpanId parentSpanId,
-      final @NotNull SentryId traceId) {
+      final @NotNull SentryId traceId,
+      final @NotNull String operation) {
     return new SentrySpan(
         span.getStartTimestampSecs(),
         span.getProjectedStopTimestampSecs(),
         traceId,
         new SpanId(),
         parentSpanId,
-        ActivityLifecycleIntegration.UI_LOAD_OP,
+        operation,
         span.getDescription(),
         SpanStatus.OK,
-        APP_METRICS_ORIGN,
+        APP_METRICS_ORIGIN,
         new HashMap<>(),
         null);
   }

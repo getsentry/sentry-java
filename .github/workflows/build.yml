@@ -14,8 +14,7 @@ jobs:
       # we want that the matrix keeps running, default is to cancel them if it fails.
       fail-fast: false
       matrix:
-        # TODO: windows-latest
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         # Zulu Community distribution of OpenJDK
         java: ['17']
 

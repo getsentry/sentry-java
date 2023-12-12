@@ -1320,20 +1320,20 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads starfish flag to options`() {
+    fun `applyMetadata reads performance-v2 flag to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.ENABLE_STARFISH to true)
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to true)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isEnableStarfish)
+        assertTrue(fixture.options.isEnablePerformanceV2)
     }
 
     @Test
-    fun `applyMetadata reads starfish flag to options and keeps default if not found`() {
+    fun `applyMetadata reads performance-v2 flag to options and keeps default if not found`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1341,6 +1341,6 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.isEnableStarfish)
+        assertFalse(fixture.options.isEnablePerformanceV2)
     }
 }

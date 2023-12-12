@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import android.content.ContentProvider
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.MeasurementUnit
@@ -23,6 +24,7 @@ import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PerformanceAndroidEventProcessorTest {
@@ -37,10 +39,10 @@ class PerformanceAndroidEventProcessorTest {
 
         fun getSut(
             tracesSampleRate: Double? = 1.0,
-            enableStarfish: Boolean = false
+            enablePerformanceV2: Boolean = false
         ): PerformanceAndroidEventProcessor {
             options.tracesSampleRate = tracesSampleRate
-            options.isEnableStarfish = enableStarfish
+            options.isEnablePerformanceV2 = enablePerformanceV2
             whenever(hub.options).thenReturn(options)
             tracer = SentryTracer(context, hub)
             return PerformanceAndroidEventProcessor(options, activityFramesTracker)
@@ -67,9 +69,8 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     @Test
-    fun `add cold start measurement for starfish`() {
-        val sut = fixture.getSut()
-        fixture.options.isEnableStarfish = true
+    fun `add cold start measurement for performance-v2`() {
+        val sut = fixture.getSut(enablePerformanceV2 = true)
 
         var tr = getTransaction(AppStartType.COLD)
         setAppStart(fixture.options)
@@ -201,6 +202,15 @@ class PerformanceAndroidEventProcessorTest {
         appStartMetrics.appStartTimeSpan.setStartedAt(123)
         appStartMetrics.appStartTimeSpan.setStoppedAt(456)
 
+        val contentProvider = mock<ContentProvider>()
+        AppStartMetrics.onContentProviderCreate(contentProvider)
+        AppStartMetrics.onContentProviderPostCreate(contentProvider)
+
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+
         val activityTimeSpan = ActivityLifecycleTimeSpan()
         activityTimeSpan.onCreate.description = "MainActivity.onCreate"
         activityTimeSpan.onStart.description = "MainActivity.onStart"
@@ -212,44 +222,131 @@ class PerformanceAndroidEventProcessorTest {
         appStartMetrics.addActivityLifecycleTimeSpans(activityTimeSpan)
 
         // when an activity transaction is created
-        val sut = fixture.getSut(enableStarfish = true)
+        val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
 
-        // and it contains an app start signal
-        tr.spans.add(
-            SentrySpan(
-                0.0,
-                1.0,
-                tr.contexts.trace!!.traceId,
-                SpanId(),
-                null,
-                APP_START_COLD,
-                "App Start",
-                SpanStatus.OK,
-                null,
-                emptyMap(),
-                null
-            )
+        // and it contains an app.start.cold span
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            null
         )
+        tr.spans.add(appStartSpan)
 
         // then the app start metrics should be attached
         tr = sut.process(tr, Hint())
 
         assertTrue(
             tr.spans.any {
-                UI_LOAD_OP == it.op && "Activity" == it.description
+                "contentprovider.load" == it.op &&
+                    appStartSpan.spanId == it.parentSpanId
+            }
+        )
+
+        assertTrue(
+            tr.spans.any {
+                "application.load" == it.op
+            }
+        )
+
+        assertTrue(
+            tr.spans.any {
+                "activity.load" == it.op && "MainActivity.onCreate" == it.description
             }
         )
         assertTrue(
             tr.spans.any {
-                UI_LOAD_OP == it.op && "MainActivity.onCreate" == it.description
+                "activity.load" == it.op && "MainActivity.onStart" == it.description
             }
         )
+    }
+
+    @Test
+    fun `does not add app start metrics to app start txn when it is not a cold start`() {
+        // given some WARM app start metrics
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.WARM
+        appStartMetrics.appStartTimeSpan.setStartedAt(123)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(456)
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+        // when an activity transaction is created
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+
+        // then the app start metrics should not be attached
+        tr = sut.process(tr, Hint())
+
+        assertFalse(
+            tr.spans.any {
+                "application.load" == it.op
+            }
+        )
+    }
+
+    @Test
+    fun `does not add app start metrics more than once`() {
+        // given some WARM app start metrics
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.COLD
+        appStartMetrics.appStartTimeSpan.setStartedAt(123)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(456)
+
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+
+        // when the first activity transaction is created
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            null
+        )
+        tr.spans.add(appStartSpan)
+
+        // then the app start metrics should not be attached
+        tr = sut.process(tr, Hint())
+
         assertTrue(
             tr.spans.any {
-                UI_LOAD_OP == it.op && "MainActivity.onStart" == it.description
+                "application.load" == it.op
+            }
+        )
+
+        // but not on the second activity transaction
+        var tr2 = SentryTransaction(tracer)
+        tr2.spans.add(appStartSpan)
+        tr2 = sut.process(tr2, Hint())
+        assertFalse(
+            tr2.spans.any {
+                "application.load" == it.op
             }
         )
     }
@@ -261,7 +358,7 @@ class PerformanceAndroidEventProcessorTest {
                 false -> AppStartType.WARM
             }
             val timeSpan =
-                if (options.isEnableStarfish) appStartTimeSpan else sdkAppStartTimeSpan
+                if (options.isEnablePerformanceV2) appStartTimeSpan else sdkInitTimeSpan
             timeSpan.apply {
                 setStartedAt(1)
                 setStoppedAt(2)

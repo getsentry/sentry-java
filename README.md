@@ -38,12 +38,12 @@ Sentry SDK for Java and Android
 | sentry-kotlin-extensions                | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions)                               | 14 |
 | sentry-servlet                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet)                                                   | |
 | sentry-servlet-jakarta                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet-jakarta)                                   | |
-| sentry-spring-boot                      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot)                           |
+| sentry-spring-boot                      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot)                                           |
 | sentry-spring-boot-jakarta              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-jakarta)                           |
 | sentry-spring-boot-starter              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter)                           |
-| sentry-spring-boot-starter-jakarta      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter-jakarta)                           |
+| sentry-spring-boot-starter-jakarta      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter-jakarta)           |
 | sentry-spring                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring)                                                     |
-| sentry-spring-jakarta                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-jakarta)                                                     |
+| sentry-spring-jakarta                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-jakarta)                                     |
 | sentry-logback                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-logback/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-logback)                                                   |
 | sentry-log4j2                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-log4j2/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-log4j2)                                                     |
 | sentry-bom                              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-bom/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-bom)                                                           |
@@ -53,6 +53,7 @@ Sentry SDK for Java and Android
 | sentry-opentelemetry-agent              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agent/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agent)                           |
 | sentry-opentelemetry-agentcustomization | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agentcustomization/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agentcustomization) |
 | sentry-opentelemetry-core               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core)                             |
+| sentry-okhttp                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp)                                                     |
 
 
 
@@ -104,6 +105,8 @@ This directory is also included in `.gitignore` not to be shown as pending chang
 Since version 3.0.0 of this SDK, Sentry version >= v20.6.0 is required. This only applies to self-hosted Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.
 
 Since version 6.0.0 of this SDK, Sentry version >= v21.9.0 is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.
+
+Since version 7.0.0 of this SDK, Sentry version >= 22.12.0 is required to properly ingest transactions with unfinished spans. This only applies to self-hosted Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.
 
 # Resources
 

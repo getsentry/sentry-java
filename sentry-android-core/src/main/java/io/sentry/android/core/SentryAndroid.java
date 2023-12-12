@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 public final class SentryAndroid {
 
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long appStart = SystemClock.uptimeMillis();
+  private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
   static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
       "io.sentry.android.fragment.FragmentLifecycleIntegration";
@@ -122,21 +122,19 @@ public final class SentryAndroid {
 
             configuration.configure(options);
 
-            // if SentryPerformanceProvider was disabled or removed, we set the App Start when
-            // the SDK is called.
-            // pre-starfish: fill-back the app start time to the SDK init time
-            if (options.isEnableStarfish()) {
-              final @NotNull TimeSpan appStartTimeSpan =
-                  AppStartMetrics.getInstance().getAppStartTimeSpan();
-              if (appStartTimeSpan.hasNotStarted()
-                  && buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+            // if SentryPerformanceProvider was disabled or removed,
+            // we set the app start / sdk init time here instead
+            final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+            if (options.isEnablePerformanceV2()
+                && buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+              final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+              if (appStartTimeSpan.hasNotStarted()) {
                 appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
               }
             }
-            final @NotNull TimeSpan sdkAppStartTime =
-                AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
-            if (sdkAppStartTime.hasNotStarted()) {
-              sdkAppStartTime.setStartedAt(appStart);
+            final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+            if (sdkInitTimeSpan.hasNotStarted()) {
+              sdkInitTimeSpan.setStartedAt(sdkInitMillis);
             }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
