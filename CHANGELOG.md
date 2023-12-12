@@ -6,7 +6,6 @@
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
 - (Internal, Experimental) Attach spans for Application, ContentProvider, and Activities to app-start ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
-- (Internal, Experimental) Use `app.start.cold/warm` as cold/warm app start transaction op ([#3067](https://github.com/getsentry/sentry-java/pull/3067))
 
 ### Fixes
 
