@@ -17,4 +17,7 @@ public interface SpanDataConvention {
   String CALL_STACK_KEY = "call_stack";
   String THREAD_ID = "thread.id";
   String THREAD_NAME = "thread.name";
+  String FRAMES_TOTAL = "frames.total";
+  String FRAMES_SLOW = "frames.slow";
+  String FRAMES_FROZEN = "frames.frozen";
 }
