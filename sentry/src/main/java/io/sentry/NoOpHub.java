@@ -133,7 +133,7 @@ public final class NoOpHub implements IHub {
 
   @Override
   public boolean isHealthy() {
-    return false;
+    return true;
   }
 
   @Override
