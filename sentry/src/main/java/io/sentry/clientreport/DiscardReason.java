@@ -10,7 +10,9 @@ public enum DiscardReason {
   NETWORK_ERROR("network_error"),
   SAMPLE_RATE("sample_rate"),
   BEFORE_SEND("before_send"),
-  EVENT_PROCESSOR("event_processor"); // also for ignored exceptions
+  EVENT_PROCESSOR("event_processor"), // also for ignored exceptions
+
+  BACKPRESSURE("backpressure");
 
   private final String reason;
 

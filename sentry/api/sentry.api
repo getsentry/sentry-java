@@ -2953,6 +2953,7 @@ public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clien
 }
 
 public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
+	public static final field BACKPRESSURE Lio/sentry/clientreport/DiscardReason;
 	public static final field BEFORE_SEND Lio/sentry/clientreport/DiscardReason;
 	public static final field CACHE_OVERFLOW Lio/sentry/clientreport/DiscardReason;
 	public static final field EVENT_PROCESSOR Lio/sentry/clientreport/DiscardReason;
