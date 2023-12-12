@@ -2431,6 +2431,9 @@ public class SentryOptions {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
       setIgnoredCheckIns(ignoredCheckIns);
     }
+    if (options.isEnableBackpressureHandling() != null) {
+      setEnableBackpressureHandling(options.isEnableBackpressureHandling());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
