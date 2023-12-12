@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final class BackpressureMonitor implements IBackpressureMonitor, Runnable {
   static final int MAX_DOWNSAMPLE_FACTOR = 10;
+  private static final int INITIAL_CHECK_DELAY_IN_MS = 500;
   private static final int CHECK_INTERVAL_IN_MS = 10 * 1000;
 
   private final @NotNull SentryOptions sentryOptions;
@@ -21,13 +22,13 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
 
   @Override
   public void start() {
-    run();
+    reschedule(INITIAL_CHECK_DELAY_IN_MS);
   }
 
   @Override
   public void run() {
     checkHealth();
-    reschedule();
+    reschedule(CHECK_INTERVAL_IN_MS);
   }
 
   @Override
@@ -57,10 +58,10 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  private void reschedule() {
+  private void reschedule(final int delay) {
     final @NotNull ISentryExecutorService executorService = sentryOptions.getExecutorService();
     if (!executorService.isClosed()) {
-      executorService.schedule(this, CHECK_INTERVAL_IN_MS);
+      executorService.schedule(this, delay);
     }
   }
 
