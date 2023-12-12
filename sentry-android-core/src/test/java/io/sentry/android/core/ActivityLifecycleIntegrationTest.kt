@@ -21,6 +21,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryDate
+import io.sentry.SentryDateProvider
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
@@ -1477,6 +1478,34 @@ class ActivityLifecycleIntegrationTest {
 
         fixture.transaction.forceFinish(OK, false, null)
         verify(fixture.activityFramesTracker).setMetrics(activity, fixture.transaction.eventId)
+    }
+
+    @Test
+    fun `When sentry is initialized mid activity lifecycle, last paused time should be used in favor of app start time`() {
+        val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        val now = SentryNanotimeDate(Date(1234), 456)
+
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.dateProvider = SentryDateProvider { now }
+        sut.register(fixture.hub, fixture.options)
+
+        // usually done by SentryPerformanceProvider
+        val startDate = SentryNanotimeDate(Date(5678), 910)
+        setAppStartTime(startDate)
+        AppStartMetrics.getInstance().appStartType = AppStartType.COLD
+
+        // when activity is paused without being created
+        // indicating a delayed SDK init
+        val oldActivity = mock<Activity>()
+        sut.onActivityPrePaused(oldActivity)
+        sut.onActivityPaused(oldActivity)
+
+        // and the next activity is created
+        val newActivity = mock<Activity>()
+        sut.onActivityCreated(newActivity, null)
+
+        // then the transaction should start with the paused time
+        assertEquals(now.nanoTimestamp(), fixture.transaction.startDate.nanoTimestamp())
     }
 
     private fun runFirstDraw(view: View) {

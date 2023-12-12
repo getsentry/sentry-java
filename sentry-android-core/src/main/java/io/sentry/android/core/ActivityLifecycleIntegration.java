@@ -431,6 +431,10 @@ public final class ActivityLifecycleIntegration
   public void onActivityPrePaused(@NonNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityPaused
     if (isAllActivityCallbacksAvailable) {
+      // as the SDK may gets (re-)initialized mid activity lifecycle, ensure we set the flag here as
+      // well
+      // this ensures any newly launched activity will not use the app start timestamp as txn start
+      firstActivityCreated = true;
       if (hub == null) {
         lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
       } else {
@@ -443,6 +447,10 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityPaused(final @NotNull Activity activity) {
     // only executed if API < 29 otherwise it happens on onActivityPrePaused
     if (!isAllActivityCallbacksAvailable) {
+      // as the SDK may gets (re-)initialized mid activity lifecycle, ensure we set the flag here as
+      // well
+      // this ensures any newly launched activity will not use the app start timestamp as txn start
+      firstActivityCreated = true;
       if (hub == null) {
         lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
       } else {
