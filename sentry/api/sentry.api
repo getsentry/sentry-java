@@ -2592,6 +2592,9 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
+	public static final field FRAMES_FROZEN Ljava/lang/String;
+	public static final field FRAMES_SLOW Ljava/lang/String;
+	public static final field FRAMES_TOTAL Ljava/lang/String;
 	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
 	public static final field HTTP_METHOD_KEY Ljava/lang/String;
 	public static final field HTTP_QUERY_KEY Ljava/lang/String;

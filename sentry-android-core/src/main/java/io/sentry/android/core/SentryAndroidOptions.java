@@ -595,11 +595,23 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachAnrThreadDump = attachAnrThreadDump;
   }
 
+  /**
+   * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
+   *     more details.
+   */
   @ApiStatus.Experimental
   public boolean isEnablePerformanceV2() {
     return enablePerformanceV2;
   }
 
+  /**
+   * Experimental: Enables or disables the Performance V2 SDK features.
+   *
+   * <p>With this change - Cold app start spans will provide more accurate timings - Cold app start
+   * spans will be enriched with detailed ContentProvider, Application and Activity startup times
+   *
+   * @param enablePerformanceV2 true if enabled or false otherwise
+   */
   @ApiStatus.Experimental
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
     this.enablePerformanceV2 = enablePerformanceV2;
