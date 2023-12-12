@@ -4,11 +4,22 @@
 
 ### Features
 
-- Automatically downsample transactions when system is under load ([#3072](https://github.com/getsentry/sentry-java/pull/3072))
+- Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+- Automatically downsample transactions when the system is under load ([#3072](https://github.com/getsentry/sentry-java/pull/3072))
   - You can opt into this behaviour by setting `enable-backpressure-handling=true`.
   - We're happy to receive feedback, e.g. [in this GitHub issue](https://github.com/getsentry/sentry-java/issues/2829)
   - When the system is under load we start reducing the `tracesSampleRate` automatically.
   - Once the system goes back to healthy, we reset the `tracesSampleRate` to its original value.
+
+### Fixes
+
+- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+
+### Dependencies
+
+- Bump Gradle from v8.4.0 to v8.5.0 ([#3070](https://github.com/getsentry/sentry-java/pull/3070))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v850)
+  - [diff](https://github.com/gradle/gradle/compare/v8.4.0...v8.5.0)
 
 ## 7.0.0
 

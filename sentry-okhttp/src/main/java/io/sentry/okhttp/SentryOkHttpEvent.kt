@@ -139,7 +139,22 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
     /** Finishes the call root span, and runs [beforeFinish] on it. Then a breadcrumb is sent. */
     fun finishEvent(finishDate: SentryDate? = null, beforeFinish: ((span: ISpan) -> Unit)? = null) {
-        callRootSpan ?: return
+        // We put data in the hint and send a breadcrumb
+        val hint = Hint()
+        hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
+        response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
+
+        // We send the breadcrumb even without spans.
+        hub.addBreadcrumb(breadcrumb, hint)
+
+        // No span is created (e.g. no transaction is running)
+        if (callRootSpan == null) {
+            // We report the client error even without spans.
+            clientErrorResponse?.let {
+                SentryOkHttpUtils.captureClientError(hub, it.request, it)
+            }
+            return
+        }
 
         // We forcefully finish all spans, even if they should already have been finished through finishSpan()
         eventSpans.values.filter { !it.isFinished }.forEach {
@@ -159,13 +174,6 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         } else {
             callRootSpan.finish()
         }
-
-        // We put data in the hint and send a breadcrumb
-        val hint = Hint()
-        hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
-        response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
-
-        hub.addBreadcrumb(breadcrumb, hint)
         return
     }
 
