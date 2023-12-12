@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
@@ -29,14 +27,14 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   // static to rely on Class load
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long sdkAppStartMillis = SystemClock.uptimeMillis();
+  private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
   private @Nullable Application app;
   private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
 
   @Override
   public boolean onCreate() {
-    onAppLaunched();
+    onAppLaunched(getContext());
     return true;
   }
 
@@ -56,23 +54,19 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     return null;
   }
 
-  @ApiStatus.Internal
-  public void onAppLaunched() {
-    // pre-starfish: use static field init as app start time
+  private void onAppLaunched(final @Nullable Context context) {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    final @NotNull TimeSpan sdkAppStartTimeSpan = appStartMetrics.getSdkAppStartTimeSpan();
-    sdkAppStartTimeSpan.setStartedAt(sdkAppStartMillis);
 
-    // starfish: Use Process.getStartUptimeMillis()
-    // Process.getStartUptimeMillis() requires API level 24+
+    // sdk-init uses static field init as start time
+    final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+    sdkInitTimeSpan.setStartedAt(sdkInitMillis);
+
+    // performance v2: Uses Process.getStartUptimeMillis()
+    // requires API level 24+
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
       return;
     }
 
-    @Nullable Context context = getContext();
-    if (context != null) {
-      context = context.getApplicationContext();
-    }
     if (context instanceof Application) {
       app = (Application) context;
     }
@@ -84,7 +78,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
 
     final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-    final Handler handler = new Handler(Looper.getMainLooper());
 
     activityCallback =
         new ActivityLifecycleCallbacksAdapter() {
@@ -148,13 +141,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             }
             FirstDrawDoneListener.registerForNextDraw(
                 activity,
-                () ->
-                    handler.postAtFrontOfQueue(
-                        () -> {
-                          if (firstDrawDone.compareAndSet(false, true)) {
-                            onAppStartDone();
-                          }
-                        }),
+                () -> {
+                  if (firstDrawDone.compareAndSet(false, true)) {
+                    onAppStartDone();
+                  }
+                },
                 // as the SDK isn't initialized yet, we don't have access to SentryOptions
                 new BuildInfoProvider(NoOpLogger.getInstance()));
           }
@@ -184,8 +175,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     app.registerActivityLifecycleCallbacks(activityCallback);
   }
 
-  private synchronized void onAppStartDone() {
-    AppStartMetrics.getInstance().getAppStartTimeSpan().stop();
+  @TestOnly
+  synchronized void onAppStartDone() {
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    appStartMetrics.getSdkInitTimeSpan().stop();
+    appStartMetrics.getAppStartTimeSpan().stop();
 
     if (app != null) {
       if (activityCallback != null) {
@@ -195,7 +189,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   }
 
   @TestOnly
-  public @Nullable Application.ActivityLifecycleCallbacks getActivityCallback() {
+  @Nullable
+  Application.ActivityLifecycleCallbacks getActivityCallback() {
     return activityCallback;
   }
 }

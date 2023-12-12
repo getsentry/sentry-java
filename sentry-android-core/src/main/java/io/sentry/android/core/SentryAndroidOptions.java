@@ -213,7 +213,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachAnrThreadDump = false;
 
-  private boolean enableStarfish;
+  private boolean enablePerformanceV2 = false;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
@@ -596,13 +596,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   @ApiStatus.Experimental
-  public boolean isEnableStarfish() {
-    return enableStarfish;
+  public boolean isEnablePerformanceV2() {
+    return enablePerformanceV2;
   }
 
   @ApiStatus.Experimental
-  public void setEnableStarfish(final boolean enableStarfish) {
-    this.enableStarfish = enableStarfish;
+  public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
+    this.enablePerformanceV2 = enablePerformanceV2;
   }
 
   @ApiStatus.Internal

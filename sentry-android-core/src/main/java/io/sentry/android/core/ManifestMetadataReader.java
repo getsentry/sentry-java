@@ -96,7 +96,7 @@ final class ManifestMetadataReader {
 
   static final String SEND_MODULES = "io.sentry.send-modules";
 
-  static final String ENABLE_STARFISH = "io.sentry.starfish.enable";
+  static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -363,8 +363,8 @@ final class ManifestMetadataReader {
 
         options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
 
-        options.setEnableStarfish(
-            readBool(metadata, logger, ENABLE_STARFISH, options.isEnableStarfish()));
+        options.setEnablePerformanceV2(
+            readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
       }
 
       options

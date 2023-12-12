@@ -187,7 +187,8 @@ public final class ActivityLifecycleIntegration
 
         final @Nullable SentryDate appStartTime;
         final @Nullable Boolean coldStart;
-        final TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+        final TimeSpan appStartTimeSpan =
+            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
 
         // we only track app start for processes that will show an Activity (full launch).
         // Here we check the process importance which will tell us that.
@@ -546,13 +547,17 @@ public final class ActivityLifecycleIntegration
 
   private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
     // app start span
-    final @NotNull TimeSpan appStartTimeSpan = getAppStartTimeSpan();
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+    final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
 
-    // in case the SentryPerformanceProvider is disabled it does not set the app start times,
-    // and we need to set the end time manually here,
-    // the start time gets set manually in SentryAndroid.init()
+    // in case the SentryPerformanceProvider is disabled it does not set the app start end times,
+    // and we need to set the end time manually here
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
       appStartTimeSpan.stop();
+    }
+    if (sdkInitTimeSpan.hasStarted() && sdkInitTimeSpan.hasNotStopped()) {
+      sdkInitTimeSpan.stop();
     }
     finishAppStartSpan();
 
@@ -637,8 +642,8 @@ public final class ActivityLifecycleIntegration
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       // SentryPerformanceProvider sets this already
-      // pre-starfish: back-fill with best guess
-      if (options != null && !options.isEnableStarfish()) {
+      // pre-performance-v2: back-fill with best guess
+      if (options != null && !options.isEnablePerformanceV2()) {
         AppStartMetrics.getInstance()
             .setAppStartType(
                 savedInstanceState == null
@@ -680,18 +685,12 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan() {
-    final @NotNull TimeSpan appStartTimeSpan = getAppStartTimeSpan();
-    final @Nullable SentryDate appStartEndTime = appStartTimeSpan.getProjectedStopTimestamp();
+    final @Nullable SentryDate appStartEndTime =
+        AppStartMetrics.getInstance()
+            .getAppStartTimeSpanWithFallback(options)
+            .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
     }
-  }
-
-  private @NotNull TimeSpan getAppStartTimeSpan() {
-    final @NotNull TimeSpan appStartTimeSpan =
-        options.isEnableStarfish()
-            ? AppStartMetrics.getInstance().getAppStartTimeSpan()
-            : AppStartMetrics.getInstance().getSdkAppStartTimeSpan();
-    return appStartTimeSpan;
   }
 }

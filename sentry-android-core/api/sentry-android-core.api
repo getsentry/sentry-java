@@ -273,9 +273,9 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
+	public fun isEnablePerformanceV2 ()Z
 	public fun isEnableRootCheck ()Z
 	public fun isEnableScopeSync ()Z
-	public fun isEnableStarfish ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isReportHistoricalAnrs ()Z
 	public fun setAnrEnabled (Z)V
@@ -296,9 +296,9 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
+	public fun setEnablePerformanceV2 (Z)V
 	public fun setEnableRootCheck (Z)V
 	public fun setEnableScopeSync (Z)V
-	public fun setEnableStarfish (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -340,9 +340,7 @@ public final class io/sentry/android/core/SentryLogcatAdapter {
 public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
-	public fun getActivityCallback ()Landroid/app/Application$ActivityLifecycleCallbacks;
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
-	public fun onAppLaunched ()V
 	public fun onCreate ()Z
 }
 
@@ -419,11 +417,12 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun clear ()V
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
-	public fun getSdkAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
