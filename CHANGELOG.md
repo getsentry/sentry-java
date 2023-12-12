@@ -9,6 +9,7 @@
 ### Fixes
 
 - Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- (Android) Fix wrong activity transaction duration in case SDK init is deferred ([#3092](https://github.com/getsentry/sentry-java/pull/3092))
 
 ### Dependencies
 
