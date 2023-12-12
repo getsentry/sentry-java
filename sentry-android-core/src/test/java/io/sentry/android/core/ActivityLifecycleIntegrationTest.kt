@@ -78,7 +78,6 @@ class ActivityLifecycleIntegrationTest {
             dsn = "https://key@sentry.io/proj"
         }
         val bundle = mock<Bundle>()
-        val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
@@ -98,9 +97,10 @@ class ActivityLifecycleIntegrationTest {
             whenever(hub.options).thenReturn(options)
 
             // We let the ActivityLifecycleIntegration create the proper transaction here
-            val argumentCaptor = argumentCaptor<TransactionOptions>()
-            whenever(hub.startTransaction(any(), argumentCaptor.capture())).thenAnswer {
-                val t = SentryTracer(context, hub, argumentCaptor.lastValue)
+            val optionCaptor = argumentCaptor<TransactionOptions>()
+            val contextCaptor = argumentCaptor<TransactionContext>()
+            whenever(hub.startTransaction(contextCaptor.capture(), optionCaptor.capture())).thenAnswer {
+                val t = SentryTracer(contextCaptor.lastValue, hub, optionCaptor.lastValue)
                 transaction = t
                 return@thenAnswer t
             }
@@ -1496,8 +1496,13 @@ class ActivityLifecycleIntegrationTest {
 
     private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(1), 0)) {
         // set by SentryPerformanceProvider so forcing it here
-        val appStartTimeSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
+        val sdkAppStartTimeSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         val millis = DateUtils.nanosToMillis(date.nanoTimestamp().toDouble()).toLong()
+
+        sdkAppStartTimeSpan.setStartedAt(millis)
+        sdkAppStartTimeSpan.setStartUnixTimeMs(millis)
+        sdkAppStartTimeSpan.setStoppedAt(0)
 
         appStartTimeSpan.setStartedAt(millis)
         appStartTimeSpan.setStartUnixTimeMs(millis)
