@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
@@ -74,7 +73,6 @@ public final class ActivityBreadcrumbsIntegration
     addBreadcrumb(activity, "started");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     addBreadcrumb(activity, "resumed");
