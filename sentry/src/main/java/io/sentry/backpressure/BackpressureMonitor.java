@@ -4,8 +4,6 @@ import io.sentry.IHub;
 import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import org.jetbrains.annotations.NotNull;
 
 public final class BackpressureMonitor implements IBackpressureMonitor, Runnable {
@@ -15,7 +13,6 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   private final @NotNull SentryOptions sentryOptions;
   private final @NotNull IHub hub;
   private int downsampleFactor = 0;
-  private boolean didEverDownsample = false;
 
   public BackpressureMonitor(final @NotNull SentryOptions sentryOptions, final @NotNull IHub hub) {
     this.sentryOptions = sentryOptions;
@@ -49,7 +46,6 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
     } else {
       if (downsampleFactor < MAX_DOWNSAMPLE_FACTOR) {
         downsampleFactor++;
-        didEverDownsample = true;
         sentryOptions
             .getLogger()
             .log(
@@ -58,13 +54,6 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
                 downsampleFactor);
       }
     }
-    System.out.println(
-        "hello from backpressure monitor, downsamplingFactor is now "
-            + downsampleFactor
-            + " and it is "
-            + ZonedDateTime.now(ZoneId.systemDefault()).toString()
-            + " didEverDownsample? "
-            + didEverDownsample);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
