@@ -31,6 +31,11 @@ class MockRelay(
     init {
         relay.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
+                // If a request with a body size of 0 is received, we drop it.
+                // This shouldn't happen in reality, but it rarely happens in tests.
+                if (request.bodySize == 0L) {
+                    return MockResponse()
+                }
                 // We check if there is any custom response previously set to return to this request,
                 // otherwise we return a successful MockResponse.
                 val response = responses.asSequence()
