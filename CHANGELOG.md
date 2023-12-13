@@ -9,6 +9,8 @@
 ### Fixes
 
 - Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
+  - If you are setting global job listeners please also add `SentryJobListener`
 
 ### Dependencies
 
