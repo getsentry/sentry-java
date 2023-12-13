@@ -5,6 +5,10 @@
 ### Features
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+- (Android) Experimental: Provide more detailed cold app start information ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
+  - Attaches spans for Application, ContentProvider, and Activities to app-start timings
+  - Uses Process.startUptimeMillis to calculate app-start timings
+  - To enable this feature set `options.isEnablePerformanceV2 = true`
 
 ### Fixes
 

@@ -11,6 +11,8 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryThread;
@@ -199,7 +201,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
-    app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
+    final @NotNull TimeSpan appStartTimeSpan =
+        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+    if (appStartTimeSpan.hasStarted()) {
+      app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
+    }
 
     // This should not be set by Hybrid SDKs since they have their own app's lifecycle
     if (!HintUtils.isFromHybridSdk(hint) && app.getInForeground() == null) {
