@@ -154,6 +154,8 @@ public final class RateLimiter {
         return DataCategory.Profile;
       case "transaction":
         return DataCategory.Transaction;
+      case "check_in":
+        return DataCategory.Monitor;
       default:
         return DataCategory.Unknown;
     }
