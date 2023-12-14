@@ -1,16 +1,19 @@
 package io.sentry.android.core;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
-import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
@@ -21,11 +24,8 @@ import org.jetbrains.annotations.NotNull;
 /** Sentry initialization class */
 public final class SentryAndroid {
 
-  // static to rely on Class load init.
-  private static final @NotNull SentryDate appStartTime =
-      AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long appStart = SystemClock.uptimeMillis();
+  private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
   static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
       "io.sentry.android.fragment.FragmentLifecycleIntegration";
@@ -77,13 +77,11 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
+  @SuppressLint("NewApi")
   public static synchronized void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
-    // if SentryPerformanceProvider was disabled or removed, we set the App Start when
-    // the SDK is called.
-    AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
 
     try {
       Sentry.init(
@@ -123,6 +121,21 @@ public final class SentryAndroid {
                 isTimberAvailable);
 
             configuration.configure(options);
+
+            // if SentryPerformanceProvider was disabled or removed,
+            // we set the app start / sdk init time here instead
+            final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+            if (options.isEnablePerformanceV2()
+                && buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+              final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+              if (appStartTimeSpan.hasNotStarted()) {
+                appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
+              }
+            }
+            final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+            if (sdkInitTimeSpan.hasNotStarted()) {
+              sdkInitTimeSpan.setStartedAt(sdkInitMillis);
+            }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
                 options, context, buildInfoProvider, loadClass, activityFramesTracker);

@@ -10,10 +10,15 @@
   - We're happy to receive feedback, e.g. [in this GitHub issue](https://github.com/getsentry/sentry-java/issues/2829)
   - When the system is under load we start reducing the `tracesSampleRate` automatically.
   - Once the system goes back to healthy, we reset the `tracesSampleRate` to its original value.
+- (Android) Experimental: Provide more detailed cold app start information ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
+  - Attaches spans for Application, ContentProvider, and Activities to app-start timings
+  - Uses Process.startUptimeMillis to calculate app-start timings
+  - To enable this feature set `options.isEnablePerformanceV2 = true`
 
 ### Fixes
 
-- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- Send breadcrumbs and client error in `SentryOkHttpEventListener` even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- Keep `io.sentry.exception.SentryHttpClientException` from obfuscation to display proper issue title on Sentry ([#3093](https://github.com/getsentry/sentry-java/pull/3093))
 
 ### Dependencies
 

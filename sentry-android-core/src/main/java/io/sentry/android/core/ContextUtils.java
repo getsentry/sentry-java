@@ -167,7 +167,8 @@ public final class ContextUtils {
    *
    * @return true if IMPORTANCE_FOREGROUND and false otherwise
    */
-  static boolean isForegroundImportance() {
+  @ApiStatus.Internal
+  public static boolean isForegroundImportance() {
     try {
       final ActivityManager.RunningAppProcessInfo appProcessInfo =
           new ActivityManager.RunningAppProcessInfo();

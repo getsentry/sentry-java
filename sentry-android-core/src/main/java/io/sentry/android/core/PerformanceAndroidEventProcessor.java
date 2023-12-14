@@ -9,11 +9,17 @@ import io.sentry.Hint;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
+import io.sentry.SpanId;
+import io.sentry.SpanStatus;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +27,12 @@ import org.jetbrains.annotations.Nullable;
 
 /** Event Processor responsible for adding Android metrics to transactions */
 final class PerformanceAndroidEventProcessor implements EventProcessor {
+
+  private static final String APP_METRICS_ORIGIN = "auto.ui";
+
+  private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
+  private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
+  private static final String APP_METRICS_APPLICATION_OP = "application.load";
 
   private boolean sentStartMeasurement = false;
 
@@ -62,20 +74,25 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
     // the app start measurement is only sent once and only if the transaction has
     // the app.start span, which is automatically created by the SDK.
-    if (!sentStartMeasurement && hasAppStartSpan(transaction.getSpans())) {
-      final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
-      // if appStartUpInterval is null, metrics are not ready to be sent
-      if (appStartUpInterval != null) {
+    if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
+      final @NotNull TimeSpan appStartTimeSpan =
+          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+      final long appStartUpInterval = appStartTimeSpan.getDurationMs();
+
+      // if appStartUpInterval is 0, metrics are not ready to be sent
+      if (appStartUpInterval != 0) {
         final MeasurementValue value =
             new MeasurementValue(
                 (float) appStartUpInterval, MeasurementUnit.Duration.MILLISECOND.apiName());
 
         final String appStartKey =
-            AppStartState.getInstance().isColdStart()
+            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
                 ? MeasurementValue.KEY_APP_START_COLD
                 : MeasurementValue.KEY_APP_START_WARM;
 
         transaction.getMeasurements().put(appStartKey, value);
+
+        attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
         sentStartMeasurement = true;
       }
     }
@@ -99,13 +116,111 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     return transaction;
   }
 
-  private boolean hasAppStartSpan(final @NotNull List<SentrySpan> spans) {
-    for (final SentrySpan span : spans) {
+  private boolean hasAppStartSpan(final @NotNull SentryTransaction txn) {
+    final @NotNull List<SentrySpan> spans = txn.getSpans();
+    for (final @NotNull SentrySpan span : spans) {
       if (span.getOp().contentEquals(APP_START_COLD)
           || span.getOp().contentEquals(APP_START_WARM)) {
         return true;
       }
     }
-    return false;
+
+    final @Nullable SpanContext context = txn.getContexts().getTrace();
+    return context != null
+        && (context.getOperation().equals(APP_START_COLD)
+            || context.getOperation().equals(APP_START_WARM));
+  }
+
+  private void attachColdAppStartSpans(
+      final @NotNull AppStartMetrics appStartMetrics, final @NotNull SentryTransaction txn) {
+
+    // data will be filled only for cold app starts
+    if (appStartMetrics.getAppStartType() != AppStartMetrics.AppStartType.COLD) {
+      return;
+    }
+
+    final @Nullable SpanContext traceContext = txn.getContexts().getTrace();
+    if (traceContext == null) {
+      return;
+    }
+    final @NotNull SentryId traceId = traceContext.getTraceId();
+
+    // determine the app.start.cold span, where all other spans will be attached to
+    @Nullable SpanId parentSpanId = null;
+    final @NotNull List<SentrySpan> spans = txn.getSpans();
+    for (final @NotNull SentrySpan span : spans) {
+      if (span.getOp().contentEquals(APP_START_COLD)) {
+        parentSpanId = span.getSpanId();
+        break;
+      }
+    }
+
+    // Content Providers
+    final @NotNull List<TimeSpan> contentProviderOnCreates =
+        appStartMetrics.getContentProviderOnCreateTimeSpans();
+    if (!contentProviderOnCreates.isEmpty()) {
+      for (final @NotNull TimeSpan contentProvider : contentProviderOnCreates) {
+        txn.getSpans()
+            .add(
+                timeSpanToSentrySpan(
+                    contentProvider, parentSpanId, traceId, APP_METRICS_CONTENT_PROVIDER_OP));
+      }
+    }
+
+    // Application.onCreate
+    final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
+    if (appOnCreate.hasStopped()) {
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
+    }
+
+    // Activities
+    final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycleTimeSpans =
+        appStartMetrics.getActivityLifecycleTimeSpans();
+    if (!activityLifecycleTimeSpans.isEmpty()) {
+      for (ActivityLifecycleTimeSpan activityTimeSpan : activityLifecycleTimeSpans) {
+        if (activityTimeSpan.getOnCreate().hasStarted()
+            && activityTimeSpan.getOnCreate().hasStopped()) {
+          txn.getSpans()
+              .add(
+                  timeSpanToSentrySpan(
+                      activityTimeSpan.getOnCreate(),
+                      parentSpanId,
+                      traceId,
+                      APP_METRICS_ACTIVITIES_OP));
+        }
+        if (activityTimeSpan.getOnStart().hasStarted()
+            && activityTimeSpan.getOnStart().hasStopped()) {
+          txn.getSpans()
+              .add(
+                  timeSpanToSentrySpan(
+                      activityTimeSpan.getOnStart(),
+                      parentSpanId,
+                      traceId,
+                      APP_METRICS_ACTIVITIES_OP));
+        }
+      }
+    }
+  }
+
+  @NotNull
+  private static SentrySpan timeSpanToSentrySpan(
+      final @NotNull TimeSpan span,
+      final @Nullable SpanId parentSpanId,
+      final @NotNull SentryId traceId,
+      final @NotNull String operation) {
+    return new SentrySpan(
+        span.getStartTimestampSecs(),
+        span.getProjectedStopTimestampSecs(),
+        traceId,
+        new SpanId(),
+        parentSpanId,
+        operation,
+        span.getDescription(),
+        SpanStatus.OK,
+        APP_METRICS_ORIGIN,
+        new HashMap<>(),
+        null);
   }
 }
