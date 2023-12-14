@@ -139,16 +139,17 @@ public class AndroidProfiler {
     frameMetricsCollectorId =
         frameMetricsCollector.startCollection(
             new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
-              final long nanosInSecond = TimeUnit.SECONDS.toNanos(1);
-              final long frozenFrameThresholdNanos = TimeUnit.MILLISECONDS.toNanos(700);
               float lastRefreshRate = 0;
 
               @Override
               public void onFrameMetricCollected(
-                  final long frameEndNanos,
-                  final long durationNanos,
-                  final long delayNanos,
-                  float refreshRate) {
+                final long frameStartNanos,
+                final long frameEndNanos,
+                final long durationNanos,
+                final long delayNanos,
+                final boolean isSlow,
+                final boolean isFrozen,
+                final float refreshRate) {
                 // transactionStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
                 // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
                 // relative to transactionStartNanos
@@ -163,22 +164,17 @@ public class AndroidProfiler {
                 if (frameTimestampRelativeNanos < 0) {
                   return;
                 }
-                // Most frames take just a few nanoseconds longer than the optimal calculated
-                // duration.
-                // Therefore we subtract one, because otherwise almost all frames would be slow.
-                boolean isSlow = durationNanos > nanosInSecond / (refreshRate - 1);
-                float newRefreshRate = (int) (refreshRate * 100) / 100F;
-                if (durationNanos > frozenFrameThresholdNanos) {
+                if (isFrozen) {
                   frozenFrameRenderMeasurements.addLast(
                       new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
                 } else if (isSlow) {
                   slowFrameRenderMeasurements.addLast(
                       new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
                 }
-                if (newRefreshRate != lastRefreshRate) {
-                  lastRefreshRate = newRefreshRate;
+                if (refreshRate != lastRefreshRate) {
+                  lastRefreshRate = refreshRate;
                   screenFrameRateMeasurements.addLast(
-                      new ProfileMeasurementValue(frameTimestampRelativeNanos, newRefreshRate));
+                      new ProfileMeasurementValue(frameTimestampRelativeNanos, refreshRate));
                 }
               }
             });

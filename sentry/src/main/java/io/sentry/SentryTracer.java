@@ -435,6 +435,9 @@ public final class SentryTracer implements ITransaction {
               timestamp,
               spanOptions,
               finishingSpan -> {
+                if (transactionPerformanceCollector != null) {
+                  transactionPerformanceCollector.onSpanFinished(finishingSpan);
+                }
                 final FinishStatus finishStatus = this.finishStatus;
                 if (transactionOptions.getIdleTimeout() != null) {
                   // if it's an idle transaction, no matter the status, we'll reset the timeout here
@@ -445,9 +448,6 @@ public final class SentryTracer implements ITransaction {
                   }
                 } else if (finishStatus.isFinishing) {
                   finish(finishStatus.spanStatus);
-                  if (transactionPerformanceCollector != null) {
-                    transactionPerformanceCollector.onSpanFinished(finishingSpan);
-                  }
                 }
               });
       span.setDescription(description);

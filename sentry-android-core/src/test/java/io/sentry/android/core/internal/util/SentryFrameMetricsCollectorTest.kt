@@ -25,12 +25,15 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Shadows
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class SentryFrameMetricsCollectorTest {
@@ -280,7 +283,10 @@ class SentryFrameMetricsCollectorTest {
         val frameMetrics = createMockFrameMetrics()
 
         var timesCalled = 0
-        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+        collector.startCollection { frameStartNanos, frameEndNanos,
+                                    durationNanos, delayNanos,
+                                    isSlow, isFrozen,
+                                    refreshRate ->
             // The frame end is 100 (Choreographer.mLastFrameTimeNanos) plus frame duration
             assertEquals(100 + durationNanos, frameEndNanos)
             timesCalled++
@@ -297,12 +303,14 @@ class SentryFrameMetricsCollectorTest {
         }
         val collector = fixture.getSut(context, buildInfo)
         val listener = collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
-        // FrameMetrics with cpu time of 21 nanoseconds and INTENDED_VSYNC_TIMESTAMP of 50 nanoseconds
         val frameMetrics = createMockFrameMetrics()
         // We don't inject the choreographer field
 
         var timesCalled = 0
-        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+        collector.startCollection { frameStartNanos, frameEndNanos,
+                                    durationNanos, delayNanos,
+                                    isSlow, isFrozen,
+                                    refreshRate ->
             assertEquals(50 + durationNanos, frameEndNanos)
             timesCalled++
         }
@@ -322,7 +330,10 @@ class SentryFrameMetricsCollectorTest {
         val frameMetrics = createMockFrameMetrics()
 
         var timesCalled = 0
-        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+        collector.startCollection { frameStartNanos, frameEndNanos,
+                                    durationNanos, delayNanos,
+                                    isSlow, isFrozen,
+                                    refreshRate ->
             assertEquals(21, durationNanos)
             timesCalled++
         }
@@ -342,7 +353,10 @@ class SentryFrameMetricsCollectorTest {
         whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(50)
         var previousEnd = 0L
         var timesCalled = 0
-        collector.startCollection { frameEndNanos, durationNanos, refreshRate ->
+        collector.startCollection { frameStartNanos, frameEndNanos,
+                                    durationNanos, delayNanos,
+                                    isSlow, isFrozen,
+                                    refreshRate ->
             // The second time the listener is called, the frame start is shifted to be equal to the previous frame end
             if (timesCalled > 0) {
                 assertEquals(previousEnd + durationNanos, frameEndNanos)
@@ -356,6 +370,57 @@ class SentryFrameMetricsCollectorTest {
         assertEquals(2, timesCalled)
     }
 
+    @Test
+    fun `collector properly reports slow and frozen flags`() {
+        val buildInfo = mock<BuildInfoProvider> {
+            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+        }
+        val collector = fixture.getSut(context, buildInfo)
+        val listener = collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+
+        var timesCalled = 0
+        var lastFrameStartNanos = 0L
+        var lastFrameEndNanos = 0L
+        var lastDurationNanos = 0L
+        var lastDelayNanos = 0L
+        var lastIsSlow = false
+        var lastIsFrozen = false
+        var lastRefreshRate = 0.0f
+
+        collector.startCollection { frameStartNanos, frameEndNanos,
+                                    durationNanos, delayNanos,
+                                    isSlow, isFrozen,
+                                    refreshRate ->
+
+            lastFrameStartNanos = frameStartNanos
+            lastFrameEndNanos = frameEndNanos
+            lastDurationNanos = durationNanos
+            lastDelayNanos = delayNanos
+            lastIsSlow = isSlow
+            lastIsFrozen = isFrozen
+            lastRefreshRate = refreshRate
+            timesCalled++
+        }
+        listener.onFrameMetricsAvailable(createMockWindow(), createMockFrameMetrics(), 0)
+        assertFalse(lastIsSlow)
+        assertFalse(lastIsFrozen)
+
+        listener.onFrameMetricsAvailable(createMockWindow(), createMockFrameMetrics(
+            unknownDelayDuration = 1 + TimeUnit.MILLISECONDS.toNanos(100),
+        ), 0)
+        assertTrue(lastIsSlow)
+        assertFalse(lastIsFrozen)
+
+        listener.onFrameMetricsAvailable(createMockWindow(), createMockFrameMetrics(
+            unknownDelayDuration = 1 + TimeUnit.MILLISECONDS.toNanos(1000),
+        ), 0)
+        assertTrue(lastIsSlow)
+        assertTrue(lastIsFrozen)
+
+        // Assert the callbacks were called
+        assertEquals(3, timesCalled)
+    }
+
     private fun createMockWindow(): Window {
         val mockWindow = mock<Window>()
         val mockDisplay = mock<Display>()
@@ -366,15 +431,18 @@ class SentryFrameMetricsCollectorTest {
         return mockWindow
     }
 
-    private fun createMockFrameMetrics(): FrameMetrics {
+    /**
+     * FrameMetrics with default cpu time of 21 nanoseconds and INTENDED_VSYNC_TIMESTAMP of 50 nanoseconds
+     */
+    private fun createMockFrameMetrics(unknownDelayDuration: Long = 1, totalDuration : Long = 60): FrameMetrics {
         val frameMetrics = mock<FrameMetrics>()
-        whenever(frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION)).thenReturn(1)
+        whenever(frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION)).thenReturn(unknownDelayDuration)
         whenever(frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION)).thenReturn(2)
         whenever(frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION)).thenReturn(3)
         whenever(frameMetrics.getMetric(FrameMetrics.LAYOUT_MEASURE_DURATION)).thenReturn(4)
         whenever(frameMetrics.getMetric(FrameMetrics.DRAW_DURATION)).thenReturn(5)
         whenever(frameMetrics.getMetric(FrameMetrics.SYNC_DURATION)).thenReturn(6)
-        whenever(frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)).thenReturn(60)
+        whenever(frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)).thenReturn(totalDuration)
         whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(50)
         return frameMetrics
     }

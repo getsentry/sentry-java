@@ -17,6 +17,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -25,12 +26,17 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
+  private static final long nanosInSecond = TimeUnit.SECONDS.toNanos(1);
+  private static final long frozenFrameThresholdNanos = TimeUnit.MILLISECONDS.toNanos(700);
+
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
   private final @NotNull ILogger logger;
@@ -132,6 +138,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       logger.log(
           SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
     }
+
+
+
     frameMetricsAvailableListener =
         (window, frameMetrics, dropCountSinceLastInvocation) -> {
           final long now = System.nanoTime();
@@ -139,12 +148,13 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
               buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R
                   ? window.getContext().getDisplay().getRefreshRate()
                   : window.getWindowManager().getDefaultDisplay().getRefreshRate();
-          final long expectedFrameTimeNanos = (long) (1_000_000_000 / refreshRate);
-          final long totalDurationNanos = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
+
+          final long expectedFrameDuration = (long) (nanosInSecond / refreshRate);
+          final long totalFrameDuration = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
 
           // if totalDurationNanos is smaller than expectedFrameTimeNanos,
           // it means that the frame was drawn within it's time budget, thus 0 delay
-          final long delayNanos = Math.max(0, totalDurationNanos - expectedFrameTimeNanos);
+          final long delayNanos = Math.max(0, totalFrameDuration - expectedFrameDuration);
 
           final long cpuDuration = getFrameCpuDuration(frameMetrics);
           long startTime = getFrameStartTimestamp(frameMetrics);
@@ -161,8 +171,21 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           lastFrameStartNanos = startTime;
           lastFrameEndNanos = startTime + cpuDuration;
 
+          // Most frames take just a few nanoseconds longer than the optimal calculated
+          // duration.
+          // Therefore we subtract one, because otherwise almost all frames would be slow.
+          final boolean isSlow = cpuDuration > nanosInSecond / (refreshRate - 1);
+          final boolean isFrozen = isSlow && cpuDuration > frozenFrameThresholdNanos;
+
           for (FrameMetricsCollectorListener l : listenerMap.values()) {
-            l.onFrameMetricCollected(lastFrameEndNanos, cpuDuration, delayNanos, refreshRate);
+            l.onFrameMetricCollected(
+              startTime,
+              lastFrameEndNanos,
+              cpuDuration,
+              delayNanos,
+              isSlow,
+              isFrozen,
+              refreshRate);
           }
         };
   }
@@ -305,16 +328,22 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     /**
      * Called when a frame is collected.
      *
+     * @param frameStartNanos Start timestamp of a frame in nanoseconds relative to System.nanotime().
      * @param frameEndNanos End timestamp of a frame in nanoseconds relative to System.nanotime().
      * @param durationNanos Duration in nanoseconds of the time spent from the cpu on the main
      *     thread to create the frame.
      * @param delayNanos the frame delay, in nanoseconds.
-     * @param refreshRate Refresh rate of the screen.
+     * @param isSlow True if the frame is considered slow, rendering taking longer than the refresh-rate based budget, false otherwise.
+     * @param isFrozen True if the frame is considered frozen, rendering taking longer than 700ms, false otherwise.
+     * @param refreshRate the last known refresh rate when the frame was rendered.
      */
     void onFrameMetricCollected(
+        final long frameStartNanos,
         final long frameEndNanos,
         final long durationNanos,
         final long delayNanos,
+        final boolean isSlow,
+        final boolean isFrozen,
         final float refreshRate);
   }
 
