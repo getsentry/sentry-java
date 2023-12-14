@@ -146,13 +146,13 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                   : window.getWindowManager().getDefaultDisplay().getRefreshRate();
 
           final long expectedFrameDuration = (long) (oneSecondInNanos / refreshRate);
-          final long totalFrameDuration = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
+
+          final long cpuDuration = getFrameCpuDuration(frameMetrics);
 
           // if totalDurationNanos is smaller than expectedFrameTimeNanos,
           // it means that the frame was drawn within it's time budget, thus 0 delay
-          final long delayNanos = Math.max(0, totalFrameDuration - expectedFrameDuration);
+          final long delayNanos = Math.max(0, cpuDuration - expectedFrameDuration);
 
-          final long cpuDuration = getFrameCpuDuration(frameMetrics);
           long startTime = getFrameStartTimestamp(frameMetrics);
           // If we couldn't get the timestamp through reflection, we use current time
           if (startTime < 0) {
@@ -218,6 +218,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
    */
   @RequiresApi(api = Build.VERSION_CODES.N)
   private long getFrameCpuDuration(final @NotNull FrameMetrics frameMetrics) {
+    // Inspired by JankStats
+    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt;l=74-79;drc=1de6215c6bd9e887e3d94556e9ac55cfb7b8c797
     return frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION)
         + frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION)
         + frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION)
