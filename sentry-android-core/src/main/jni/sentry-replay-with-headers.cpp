@@ -1,8 +1,12 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <RenderNode.h>
-//#include <SkTextBlob.h>
-//#include <SkTextBlobPriv.h>
+#include <SkTextBlob.h>
+#include <SkPaint.h>
+#include <SkTextBlobPriv.h>
+#include <SkTypes.h>
+#include <SkGlyph.h>
+#include <SkGlyphRun.h>
 //#include <RecordingCanvas.h>
 //#include <Rect.h>
 #include <shadowhook.h>
@@ -15,6 +19,8 @@ namespace {
 //
 
     void *DisplayListData_draw_hook = nullptr;
+    void *DumpOpsCanvas_onDrawTextBlob_hook = nullptr;
+    void *SkCanvas_onDrawTextBlob_hook = nullptr;
 
     struct Op {
         uint32_t type: 8;
@@ -286,16 +292,46 @@ namespace {
         return newFloat;
     }
 
-    void DumpOpsCanvas_onDrawRect_proxy(void* canvas, void* skRect, void* skPaint) {
+    void DumpOpsCanvas_onDrawRect_proxy(void *canvas, const void *skRect, const void *skPaint) {
         SHADOWHOOK_STACK_SCOPE();
-        auto rect = reinterpret_cast<SkRect*>(skRect);
-        auto paint = reinterpret_cast<SkPaint*>(skPaint);
+        auto rect = reinterpret_cast<const SkRect *>(skRect);
+        auto paint = reinterpret_cast<const SkPaint *>(skPaint);
         SHADOWHOOK_CALL_PREV(DumpOpsCanvas_onDrawRect_proxy, canvas, skRect, skPaint);
     }
 
-    void DisplayListData_draw_proxy(void* displayListData, void* canvas) {
+    void
+    DumpOpsCanvas_onDrawTextBlob_proxy(void *canvas, const void *skTextBlob, SkScalar x, SkScalar y,
+                                       const void *skPaint) {
         SHADOWHOOK_STACK_SCOPE();
-        auto data = reinterpret_cast<android::uirenderer::DisplayListData*>(displayListData);
+        auto blob = reinterpret_cast<const SkTextBlob *>(skTextBlob);
+        auto paint = reinterpret_cast<const SkPaint *>(skPaint);
+        auto runRecord = reinterpret_cast<const SkTextBlob::RunRecord *>(SkAlignPtr(
+                (uintptr_t) (blob + 1)));
+//        auto next = SkToBool(runRecord->fFlags & runRecord->kLast_Flag) ? nullptr
+//                                                                        : runRecord->NextUnchecked(
+//                        runRecord);
+//        auto text = next->textBuffer();
+        SHADOWHOOK_CALL_PREV(DumpOpsCanvas_onDrawTextBlob_proxy, canvas, skTextBlob, x, y, skPaint);
+    }
+
+    void
+    SkCanvas_onDrawGlyphRunList_proxy(void *canvas, const void *glyphRunList, const void *skPaint) {
+        SHADOWHOOK_STACK_SCOPE();
+        auto runList = reinterpret_cast<const SkGlyphRunList *>(glyphRunList);
+        auto blob = runList->blob();
+        auto runRecord = reinterpret_cast<const SkTextBlob::RunRecord *>(SkAlignPtr(
+                (uintptr_t) (blob + 1)));
+//        auto blob = reinterpret_cast<const SkTextBlob *>(skTextBlob);
+//        auto paint = reinterpret_cast<const SkPaint *>(skPaint);
+//        auto runRecord = reinterpret_cast<const SkGlyph *>(SkAlignPtr(
+//                (uintptr_t) (blob + 2)));
+//        auto text = runRecord->textBuffer();
+        SHADOWHOOK_CALL_PREV(SkCanvas_onDrawGlyphRunList_proxy, canvas, glyphRunList, skPaint);
+    }
+
+    void DisplayListData_draw_proxy(void *displayListData, void *canvas) {
+        SHADOWHOOK_STACK_SCOPE();
+        auto data = reinterpret_cast<android::uirenderer::DisplayListData *>(displayListData);
         if (data->fBytes.get() != nullptr) {
             auto end = data->fBytes.get() + data->fUsed;
             // TODO use (end / skip) as a fixed jarray size
@@ -314,16 +350,31 @@ namespace {
     JNIEXPORT void JNICALL
     Java_io_sentry_android_core_replay_RenderNodeTracing_nStartRenderNodeTracing(JNIEnv *env,
                                                                                  jclass clazz) {
-        if (DisplayListData_draw_hook != nullptr) {
+        if (DisplayListData_draw_hook != nullptr && DumpOpsCanvas_onDrawTextBlob_hook != nullptr &&
+            SkCanvas_onDrawTextBlob_hook != nullptr) {
             return;
         }
 
         DisplayListData_draw_hook = shadowhook_hook_sym_name(
                 "libhwui.so",
                 "_ZN7android10uirenderer12skiapipeline13DumpOpsCanvas10onDrawRectERK6SkRectRK7SkPaint",
-                reinterpret_cast<void*>(DumpOpsCanvas_onDrawRect_proxy),
+                reinterpret_cast<void *>(DumpOpsCanvas_onDrawRect_proxy),
                 nullptr
-                );
+        );
+
+        DumpOpsCanvas_onDrawTextBlob_hook = shadowhook_hook_sym_name(
+                "libhwui.so",
+                "_ZN7android10uirenderer12skiapipeline13DumpOpsCanvas14onDrawTextBlobEPK10SkTextBlobffRK7SkPaint",
+                reinterpret_cast<void *>(DumpOpsCanvas_onDrawTextBlob_proxy),
+                nullptr
+        );
+
+        SkCanvas_onDrawTextBlob_hook = shadowhook_hook_sym_name(
+                "libhwui.so",
+                "_ZN8SkCanvas18onDrawGlyphRunListERK14SkGlyphRunListRK7SkPaint",
+                reinterpret_cast<void *>(SkCanvas_onDrawGlyphRunList_proxy),
+                nullptr
+        );
     }
 
     extern "C"
@@ -332,6 +383,12 @@ namespace {
                                                                                 jclass clazz) {
         if (DisplayListData_draw_hook != nullptr) {
             shadowhook_unhook(DisplayListData_draw_hook);
+        }
+        if (DumpOpsCanvas_onDrawTextBlob_hook != nullptr) {
+            shadowhook_unhook(DumpOpsCanvas_onDrawTextBlob_hook);
+        }
+        if (SkCanvas_onDrawTextBlob_hook != nullptr) {
+            shadowhook_unhook(SkCanvas_onDrawTextBlob_hook);
         }
     }
 
