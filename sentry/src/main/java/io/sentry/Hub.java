@@ -734,7 +734,8 @@ public final class Hub implements IHub {
       // stop it
       if (samplingDecision.getSampled() && samplingDecision.getProfileSampled()) {
         final ITransactionProfiler transactionProfiler = options.getTransactionProfiler();
-        transactionProfiler.onTransactionStart(transaction);
+        transactionProfiler.start();
+        transactionProfiler.bindTransaction(transaction);
       }
     }
     if (transactionOptions.isBindToScope()) {

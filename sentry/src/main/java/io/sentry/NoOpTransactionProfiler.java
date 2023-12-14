@@ -15,7 +15,10 @@ public final class NoOpTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
-  public void onTransactionStart(@NotNull ITransaction transaction) {}
+  public void start() {}
+
+  @Override
+  public void bindTransaction(@NotNull ITransaction transaction) {}
 
   @Override
   public @Nullable ProfilingTraceData onTransactionFinish(

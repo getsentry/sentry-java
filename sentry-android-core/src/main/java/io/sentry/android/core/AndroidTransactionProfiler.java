@@ -35,8 +35,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private int transactionsCounter = 0;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable ProfilingTransactionData currentProfilingTransactionData;
-
-  private @Nullable ITransaction currentTransaction = null;
   private @Nullable AndroidProfiler profiler = null;
   private long transactionStartNanos;
   private long profileStartCpuMillis;
@@ -110,7 +108,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
-  public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
+  public synchronized void start() {
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
 
@@ -119,30 +117,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     transactionsCounter++;
     // When the first transaction is starting, we can start profiling
-    if (transactionsCounter == 1) {
-      if (onFirstTransactionStarted(transaction)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Transaction %s (%s) started and being profiled.",
-                transaction.getName(),
-                transaction.getSpanContext().getTraceId().toString());
-      }
+    if (transactionsCounter == 1 && onFirstStart()) {
+      options.getLogger().log(SentryLevel.DEBUG, "Profiler started.");
     } else {
       transactionsCounter--;
       options
           .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "A transaction is already being profiled. Transaction %s (%s) will be ignored.",
-              transaction.getName(),
-              transaction.getSpanContext().getTraceId().toString());
+          .log(SentryLevel.WARNING, "A profile is already running. This profile will be ignored.");
     }
   }
 
   @SuppressLint("NewApi")
-  private boolean onFirstTransactionStarted(final @NotNull ITransaction transaction) {
+  private boolean onFirstStart() {
     // init() didn't create profiler, should never happen
     if (profiler == null) {
       return false;
@@ -155,12 +141,16 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
     transactionStartNanos = startData.startNanos;
     profileStartCpuMillis = startData.startCpuMillis;
-
-    currentTransaction = transaction;
-
-    currentProfilingTransactionData =
-        new ProfilingTransactionData(transaction, transactionStartNanos, profileStartCpuMillis);
     return true;
+  }
+
+  @Override
+  public synchronized void bindTransaction(final @NotNull ITransaction transaction) {
+    // If the profiler is running, but no profilingTransactionData is set, we bind it here
+    if (transactionsCounter > 0 && currentProfilingTransactionData == null) {
+      currentProfilingTransactionData =
+          new ProfilingTransactionData(transaction, transactionStartNanos, profileStartCpuMillis);
+    }
   }
 
   @Override
@@ -168,12 +158,19 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final @NotNull ITransaction transaction,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
 
-    return onTransactionFinish(transaction, false, performanceCollectionData);
+    return onTransactionFinish(
+        transaction.getName(),
+        transaction.getEventId().toString(),
+        transaction.getSpanContext().getTraceId().toString(),
+        false,
+        performanceCollectionData);
   }
 
   @SuppressLint("NewApi")
   private @Nullable synchronized ProfilingTraceData onTransactionFinish(
-      final @NotNull ITransaction transaction,
+      final @NotNull String transactionName,
+      final @NotNull String transactionId,
+      final @NotNull String traceId,
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     // check if profiler was created
@@ -187,15 +184,15 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     // Transaction finished, but it's not in the current profile
     if (currentProfilingTransactionData == null
-        || !currentProfilingTransactionData.getId().equals(transaction.getEventId().toString())) {
+        || !currentProfilingTransactionData.getId().equals(transactionId)) {
       // A transaction is finishing, but it's not profiled. We can skip it
       options
           .getLogger()
           .log(
               SentryLevel.INFO,
               "Transaction %s (%s) finished, but was not currently being profiled. Skipping",
-              transaction.getName(),
-              transaction.getSpanContext().getTraceId().toString());
+              transactionName,
+              traceId);
       return null;
     }
 
@@ -205,11 +202,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     options
         .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "Transaction %s (%s) finished.",
-            transaction.getName(),
-            transaction.getSpanContext().getTraceId().toString());
+        .log(SentryLevel.DEBUG, "Transaction %s (%s) finished.", transactionName, traceId);
 
     if (transactionsCounter != 0) {
       // We notify the data referring to this transaction that it finished
@@ -240,7 +233,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     currentProfilingTransactionData = null;
     // We clear the counter in case of a timeout
     transactionsCounter = 0;
-    currentTransaction = null;
 
     String totalMem = "0";
     ActivityManager.MemoryInfo memInfo = getMemInfo();
@@ -261,7 +253,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     return new ProfilingTraceData(
         endData.traceFile,
         transactionList,
-        transaction,
+        transactionName,
+        transactionId,
+        traceId,
         Long.toString(transactionDurationNanos),
         buildInfoProvider.getSdkInfoVersion(),
         abis != null && abis.length > 0 ? abis[0] : "",
@@ -283,8 +277,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   @Override
   public void close() {
     // we stop profiling
-    if (currentTransaction != null) {
-      onTransactionFinish(currentTransaction, true, null);
+    if (currentProfilingTransactionData != null) {
+      onTransactionFinish(
+          currentProfilingTransactionData.getName(),
+          currentProfilingTransactionData.getId(),
+          currentProfilingTransactionData.getTraceId(),
+          true,
+          null);
     }
 
     // we have to first stop profiling otherwise we would lost the last profile
@@ -315,8 +314,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @TestOnly
-  @Nullable
-  ITransaction getCurrentTransaction() {
-    return currentTransaction;
+  int getTransactionsCounter() {
+    return transactionsCounter;
   }
 }

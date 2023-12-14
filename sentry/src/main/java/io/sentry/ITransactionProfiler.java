@@ -8,7 +8,9 @@ import org.jetbrains.annotations.Nullable;
 /** Used for performing operations when a transaction is started or ended. */
 @ApiStatus.Internal
 public interface ITransactionProfiler {
-  void onTransactionStart(@NotNull ITransaction transaction);
+  void start();
+
+  void bindTransaction(@NotNull ITransaction transaction);
 
   @Nullable
   ProfilingTraceData onTransactionFinish(

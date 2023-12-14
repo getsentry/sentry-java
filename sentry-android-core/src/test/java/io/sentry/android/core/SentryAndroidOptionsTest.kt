@@ -164,7 +164,8 @@ class SentryAndroidOptionsTest {
     }
 
     private class CustomTransactionProfiler : ITransactionProfiler {
-        override fun onTransactionStart(transaction: ITransaction) {}
+        override fun start() {}
+        override fun bindTransaction(transaction: ITransaction) {}
         override fun onTransactionFinish(
             transaction: ITransaction,
             performanceCollectionData: List<PerformanceCollectionData>?
