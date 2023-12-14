@@ -11,12 +11,15 @@ import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ILogger;
+import io.sentry.ISentryExecutorService;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.util.Objects;
@@ -28,16 +31,33 @@ import org.jetbrains.annotations.TestOnly;
 
 final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull Context context;
-  private final @NotNull SentryAndroidOptions options;
-  private final @NotNull IHub hub;
+  private final @NotNull ILogger logger;
+  private final @Nullable String profilingTracesDirPath;
+  private final boolean isProfilingEnabled;
+  private final int profilingTracesHz;
+  private final @NotNull ISentryExecutorService executorService;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isInitialized = false;
   private int transactionsCounter = 0;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable ProfilingTransactionData currentProfilingTransactionData;
   private @Nullable AndroidProfiler profiler = null;
-  private long transactionStartNanos;
+  private long profileStartNanos;
   private long profileStartCpuMillis;
+
+  /**
+   * @deprecated please use a constructor that doesn't takes a {@link IHub} instead, as it would be
+   *     ignored anyway.
+   */
+  @Deprecated
+  public AndroidTransactionProfiler(
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions sentryAndroidOptions,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull IHub hub) {
+    this(context, sentryAndroidOptions, buildInfoProvider, frameMetricsCollector);
+  }
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
@@ -46,25 +66,35 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
     this(
         context,
-        sentryAndroidOptions,
         buildInfoProvider,
         frameMetricsCollector,
-        HubAdapter.getInstance());
+        sentryAndroidOptions.getLogger(),
+        sentryAndroidOptions.getProfilingTracesDirPath(),
+        sentryAndroidOptions.isProfilingEnabled(),
+        sentryAndroidOptions.getProfilingTracesHz(),
+        sentryAndroidOptions.getExecutorService());
   }
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
-      final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull IHub hub) {
+      final @NotNull ILogger logger,
+      final @Nullable String profilingTracesDirPath,
+      final boolean isProfilingEnabled,
+      final int profilingTracesHz,
+      final @NotNull ISentryExecutorService executorService) {
     this.context = Objects.requireNonNull(context, "The application context is required");
-    this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.logger = Objects.requireNonNull(logger, "ILogger is required");
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
+    this.profilingTracesDirPath = profilingTracesDirPath;
+    this.isProfilingEnabled = isProfilingEnabled;
+    this.profilingTracesHz = profilingTracesHz;
+    this.executorService =
+        Objects.requireNonNull(executorService, "The ISentryExecutorService is required.");
   }
 
   private void init() {
@@ -73,37 +103,31 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return;
     }
     isInitialized = true;
-    final String tracesFilesDirPath = options.getProfilingTracesDirPath();
-    if (!options.isProfilingEnabled()) {
-      options.getLogger().log(SentryLevel.INFO, "Profiling is disabled in options.");
+    if (!isProfilingEnabled) {
+      logger.log(SentryLevel.INFO, "Profiling is disabled in options.");
       return;
     }
-    if (tracesFilesDirPath == null) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Disabling profiling because no profiling traces dir path is defined in options.");
+    if (profilingTracesDirPath == null) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Disabling profiling because no profiling traces dir path is defined in options.");
       return;
     }
-    final int intervalHz = options.getProfilingTracesHz();
-    if (intervalHz <= 0) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Disabling profiling because trace rate is set to %d",
-              intervalHz);
+    if (profilingTracesHz <= 0) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Disabling profiling because trace rate is set to %d",
+          profilingTracesHz);
       return;
     }
 
     profiler =
         new AndroidProfiler(
-            tracesFilesDirPath,
-            (int) SECONDS.toMicros(1) / intervalHz,
+            profilingTracesDirPath,
+            (int) SECONDS.toMicros(1) / profilingTracesHz,
             frameMetricsCollector,
-            options.getExecutorService(),
-            options.getLogger(),
+            executorService,
+            logger,
             buildInfoProvider);
   }
 
@@ -118,12 +142,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     transactionsCounter++;
     // When the first transaction is starting, we can start profiling
     if (transactionsCounter == 1 && onFirstStart()) {
-      options.getLogger().log(SentryLevel.DEBUG, "Profiler started.");
+      logger.log(SentryLevel.DEBUG, "Profiler started.");
     } else {
       transactionsCounter--;
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "A profile is already running. This profile will be ignored.");
+      logger.log(
+          SentryLevel.WARNING, "A profile is already running. This profile will be ignored.");
     }
   }
 
@@ -139,7 +162,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     if (startData == null) {
       return false;
     }
-    transactionStartNanos = startData.startNanos;
+    profileStartNanos = startData.startNanos;
     profileStartCpuMillis = startData.startCpuMillis;
     return true;
   }
@@ -149,21 +172,23 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // If the profiler is running, but no profilingTransactionData is set, we bind it here
     if (transactionsCounter > 0 && currentProfilingTransactionData == null) {
       currentProfilingTransactionData =
-          new ProfilingTransactionData(transaction, transactionStartNanos, profileStartCpuMillis);
+          new ProfilingTransactionData(transaction, profileStartNanos, profileStartCpuMillis);
     }
   }
 
   @Override
   public @Nullable synchronized ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
-      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData,
+      final @NotNull SentryOptions options) {
 
     return onTransactionFinish(
         transaction.getName(),
         transaction.getEventId().toString(),
         transaction.getSpanContext().getTraceId().toString(),
         false,
-        performanceCollectionData);
+        performanceCollectionData,
+        options);
   }
 
   @SuppressLint("NewApi")
@@ -172,7 +197,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final @NotNull String transactionId,
       final @NotNull String traceId,
       final boolean isTimeout,
-      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData,
+      final @NotNull SentryOptions options) {
     // check if profiler was created
     if (profiler == null) {
       return null;
@@ -186,13 +212,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     if (currentProfilingTransactionData == null
         || !currentProfilingTransactionData.getId().equals(transactionId)) {
       // A transaction is finishing, but it's not profiled. We can skip it
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Transaction %s (%s) finished, but was not currently being profiled. Skipping",
-              transactionName,
-              traceId);
+      logger.log(
+          SentryLevel.INFO,
+          "Transaction %s (%s) finished, but was not currently being profiled. Skipping",
+          transactionName,
+          traceId);
       return null;
     }
 
@@ -200,16 +224,14 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       transactionsCounter--;
     }
 
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Transaction %s (%s) finished.", transactionName, traceId);
+    logger.log(SentryLevel.DEBUG, "Transaction %s (%s) finished.", transactionName, traceId);
 
     if (transactionsCounter != 0) {
       // We notify the data referring to this transaction that it finished
       if (currentProfilingTransactionData != null) {
         currentProfilingTransactionData.notifyFinish(
             SystemClock.elapsedRealtimeNanos(),
-            transactionStartNanos,
+            profileStartNanos,
             Process.getElapsedCpuTime(),
             profileStartCpuMillis);
       }
@@ -223,7 +245,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    long transactionDurationNanos = endData.endNanos - transactionStartNanos;
+    long transactionDurationNanos = endData.endNanos - profileStartNanos;
 
     List<ProfilingTransactionData> transactionList = new ArrayList<>(1);
     final ProfilingTransactionData txData = currentProfilingTransactionData;
@@ -245,7 +267,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // Some may not have been really finished, in case of a timeout
     for (ProfilingTransactionData t : transactionList) {
       t.notifyFinish(
-          endData.endNanos, transactionStartNanos, endData.endCpuMillis, profileStartCpuMillis);
+          endData.endNanos, profileStartNanos, endData.endCpuMillis, profileStartCpuMillis);
     }
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
@@ -283,7 +305,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           currentProfilingTransactionData.getId(),
           currentProfilingTransactionData.getTraceId(),
           true,
-          null);
+          null,
+          HubAdapter.getInstance().getOptions());
     }
 
     // we have to first stop profiling otherwise we would lost the last profile
@@ -305,10 +328,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         actManager.getMemoryInfo(memInfo);
         return memInfo;
       }
-      options.getLogger().log(SentryLevel.INFO, "Error getting MemoryInfo.");
+      logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
       return null;
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
+      logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
     }
   }

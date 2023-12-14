@@ -17,7 +17,7 @@ class NoOpTransactionProfilerTest {
 
     @Test
     fun `onTransactionFinish does returns null`() {
-        assertNull(profiler.onTransactionFinish(NoOpTransaction.getInstance(), null))
+        assertNull(profiler.onTransactionFinish(NoOpTransaction.getInstance(), null, mock()))
     }
 
     @Test

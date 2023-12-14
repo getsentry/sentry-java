@@ -793,7 +793,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 public abstract interface class io/sentry/ITransactionProfiler {
 	public abstract fun bindTransaction (Lio/sentry/ITransaction;)V
 	public abstract fun close ()V
-	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
+	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/ProfilingTraceData;
 	public abstract fun start ()V
 }
 
@@ -1299,7 +1299,7 @@ public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionPro
 	public fun bindTransaction (Lio/sentry/ITransaction;)V
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
-	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;)Lio/sentry/ProfilingTraceData;
+	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/ProfilingTraceData;
 	public fun start ()V
 }
 

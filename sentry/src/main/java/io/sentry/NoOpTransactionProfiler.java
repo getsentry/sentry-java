@@ -23,7 +23,8 @@ public final class NoOpTransactionProfiler implements ITransactionProfiler {
   @Override
   public @Nullable ProfilingTraceData onTransactionFinish(
       @NotNull ITransaction transaction,
-      @Nullable List<PerformanceCollectionData> performanceCollectionData) {
+      @Nullable List<PerformanceCollectionData> performanceCollectionData,
+      @NotNull SentryOptions options) {
     return null;
   }
 

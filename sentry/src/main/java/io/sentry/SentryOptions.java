@@ -1613,13 +1613,17 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the listener interface to perform operations when a transaction is started or ended.
+   * Sets the listener interface to perform operations when a transaction is started or ended. It
+   * only has effect if no profiler was already set.
    *
    * @param transactionProfiler - the listener for operations when a transaction is started or ended
    */
   public void setTransactionProfiler(final @Nullable ITransactionProfiler transactionProfiler) {
-    this.transactionProfiler =
-        transactionProfiler != null ? transactionProfiler : NoOpTransactionProfiler.getInstance();
+    // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
+    if (this.transactionProfiler == NoOpTransactionProfiler.getInstance()
+        && transactionProfiler != null) {
+      this.transactionProfiler = transactionProfiler;
+    }
   }
 
   /**
