@@ -133,7 +133,7 @@ public final class DefaultTransactionPerformanceCollector
   @Override
   public void onSpanFinished(@NotNull Span span) {
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
-      collector.onSpanStarted(span);
+      collector.onSpanFinished(span);
     }
   }
 

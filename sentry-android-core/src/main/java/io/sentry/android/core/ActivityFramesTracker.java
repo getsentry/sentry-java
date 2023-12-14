@@ -47,7 +47,7 @@ public final class ActivityFramesTracker {
         loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", options.getLogger());
 
     /** */
-    if (androidXAvailable && !options.isEnableStarfish()) {
+    if (androidXAvailable && !options.isEnablePerformanceV2()) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
     this.options = options;

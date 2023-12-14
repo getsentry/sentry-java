@@ -189,7 +189,7 @@ final class AndroidOptionsInitializer {
       options.addPerformanceCollector(
           new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
     }
-    if (options.isEnableStarfish()) {
+    if (options.isEnablePerformanceV2()) {
       options.addPerformanceCollector(new AndroidSlowFrozenFrameCollector(options));
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
