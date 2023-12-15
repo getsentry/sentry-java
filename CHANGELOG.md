@@ -10,6 +10,7 @@
   - Uses Process.startUptimeMillis to calculate app-start timings
   - To enable this feature set `options.isEnablePerformanceV2 = true`
 - Move slow+frozen frame calculation, as well as frame delay inside SentryFrameMetricsCollector ([#3100](https://github.com/getsentry/sentry-java/pull/3100))
+- Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
 
 ### Fixes
 
