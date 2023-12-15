@@ -143,13 +143,13 @@ public class AndroidProfiler {
 
               @Override
               public void onFrameMetricCollected(
-                final long frameStartNanos,
-                final long frameEndNanos,
-                final long durationNanos,
-                final long delayNanos,
-                final boolean isSlow,
-                final boolean isFrozen,
-                final float refreshRate) {
+                  final long frameStartNanos,
+                  final long frameEndNanos,
+                  final long durationNanos,
+                  final long delayNanos,
+                  final boolean isSlow,
+                  final boolean isFrozen,
+                  final float refreshRate) {
                 // transactionStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
                 // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
                 // relative to transactionStartNanos

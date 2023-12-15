@@ -65,3 +65,10 @@
 -keep class io.sentry.apollo3.SentryApollo3ClientException { <init>(...); }
 
 ##---------------End: proguard configuration for sentry-apollo-3  ----------
+
+##---------------Begin: proguard configuration for sentry-okhttp  ----------
+
+# we don't want this class to be obfuscated, otherwise issue's titles are obfuscated as well.
+-keepnames class io.sentry.exception.SentryHttpClientException
+
+##---------------End: proguard configuration for sentry-okhttp  ----------

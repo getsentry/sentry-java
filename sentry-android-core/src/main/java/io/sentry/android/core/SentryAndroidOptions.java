@@ -624,7 +624,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   @ApiStatus.Internal
   public void setFrameMetricsCollector(
-      final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
+    final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
   }
 }

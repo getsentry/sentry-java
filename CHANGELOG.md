@@ -9,10 +9,12 @@
   - Attaches spans for Application, ContentProvider, and Activities to app-start timings
   - Uses Process.startUptimeMillis to calculate app-start timings
   - To enable this feature set `options.isEnablePerformanceV2 = true`
+- Move slow+frozen frame calculation, as well as frame delay inside SentryFrameMetricsCollector ([#3100](https://github.com/getsentry/sentry-java/pull/3100))
 
 ### Fixes
 
-- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- Send breadcrumbs and client error in `SentryOkHttpEventListener` even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- Keep `io.sentry.exception.SentryHttpClientException` from obfuscation to display proper issue title on Sentry ([#3093](https://github.com/getsentry/sentry-java/pull/3093))
 
 ### Dependencies
 
