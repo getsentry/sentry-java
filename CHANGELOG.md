@@ -9,6 +9,7 @@
   - Attaches spans for Application, ContentProvider, and Activities to app-start timings
   - Uses Process.startUptimeMillis to calculate app-start timings
   - To enable this feature set `options.isEnablePerformanceV2 = true`
+- Early profiling 1 - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
 
 ### Fixes
 
