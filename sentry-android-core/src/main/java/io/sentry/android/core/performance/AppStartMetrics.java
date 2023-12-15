@@ -5,6 +5,7 @@ import android.content.ContentProvider;
 import android.os.SystemClock;
 import androidx.annotation.Nullable;
 import io.sentry.android.core.ContextUtils;
+import io.sentry.android.core.SentryAndroidOptions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class AppStartMetrics {
    * @return the SDK init time span, as measured pre-performance-v2 Uses ContentProvider/Sdk init
    *     time as start timestamp
    *     <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
-   *     fallback to {@link io.sentry.android.core.SentryAndroid}. At leas the start timestamp
+   *     fallback to {@link io.sentry.android.core.SentryAndroid}. At least the start timestamp
    *     should always be set.
    */
   public @NotNull TimeSpan getSdkInitTimeSpan() {
@@ -116,14 +117,17 @@ public class AppStartMetrics {
   }
 
   /**
-   * @return the app start time span, in case it's was never started, the sdk init time span is
-   *     returned instead
+   * @return the app start time span if it was started and perf-2 is enabled, falls back to the sdk
+   *     init time span otherwise
    */
-  public @NotNull TimeSpan getAppStartTimeSpanWithFallback() {
-    // should only be started if performance v2 is enabled and the sdk version is >= N
-    final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
-    if (appStartSpan.hasStarted()) {
-      return appStartSpan;
+  public @NotNull TimeSpan getAppStartTimeSpanWithFallback(
+      final @NotNull SentryAndroidOptions options) {
+    if (options.isEnablePerformanceV2()) {
+      // Only started when sdk version is >= N
+      final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
+      if (appStartSpan.hasStarted()) {
+        return appStartSpan;
+      }
     }
 
     // fallback: use sdk init time span, as it will always have a start time set

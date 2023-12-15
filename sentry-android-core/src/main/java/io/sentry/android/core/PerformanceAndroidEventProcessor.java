@@ -76,7 +76,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // the app.start span, which is automatically created by the SDK.
     if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
       final @NotNull TimeSpan appStartTimeSpan =
-          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
+          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
       final long appStartUpInterval = appStartTimeSpan.getDurationMs();
 
       // if appStartUpInterval is 0, metrics are not ready to be sent

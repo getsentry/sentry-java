@@ -202,7 +202,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
     final @NotNull TimeSpan appStartTimeSpan =
-        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
+        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
     if (appStartTimeSpan.hasStarted()) {
       app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
     }
