@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public final class JavaMemoryCollector implements ICollector {
+public final class JavaMemoryCollector implements IPerformanceSnapshotCollector {
 
   private final @NotNull Runtime runtime = Runtime.getRuntime();
 

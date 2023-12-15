@@ -303,7 +303,7 @@ class SentryOptionsTest {
 
     @Test
     fun `when options is initialized, collector is empty list`() {
-        assertTrue(SentryOptions().collectors.isEmpty())
+        assertTrue(SentryOptions().performanceCollectors.isEmpty())
     }
 
     @Test

@@ -9,6 +9,20 @@ public interface TransactionPerformanceCollector {
 
   void start(@NotNull ITransaction transaction);
 
+  /**
+   * Called whenever a new span (including the top level transaction) is started.
+   *
+   * @param span the span that was started
+   */
+  void onSpanStarted(@NotNull ISpan span);
+
+  /**
+   * Called whenever a span (including the top level transaction) is finished.
+   *
+   * @param span the span that was finished
+   */
+  void onSpanFinished(@NotNull ISpan span);
+
   @Nullable
   List<PerformanceCollectionData> stop(@NotNull ITransaction transaction);
 

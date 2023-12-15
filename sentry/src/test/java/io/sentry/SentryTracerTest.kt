@@ -1001,10 +1001,21 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction is created, transactionPerformanceCollector is stopped`() {
+    fun `when transaction is finished, transactionPerformanceCollector is stopped`() {
         val transaction = fixture.getSut()
         transaction.finish()
         verify(fixture.transactionPerformanceCollector).stop(check { assertEquals(transaction, it) })
+    }
+
+    @Test
+    fun `when a span is started and finished the transactionPerformanceCollector gets notified`() {
+        val transaction = fixture.getSut()
+
+        val span = transaction.startChild("op.span")
+        span.finish()
+
+        verify(fixture.transactionPerformanceCollector).onSpanStarted(check { assertEquals(span, it) })
+        verify(fixture.transactionPerformanceCollector).onSpanFinished(check { assertEquals(span, it) })
     }
 
     @Test
@@ -1160,6 +1171,8 @@ class SentryTracerTest {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
         val mockPerformanceCollector = object : TransactionPerformanceCollector {
             override fun start(transaction: ITransaction) {}
+            override fun onSpanStarted(span: ISpan) {}
+            override fun onSpanFinished(span: ISpan) {}
             override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
             override fun close() {}
         }
