@@ -42,6 +42,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private long profileStartCpuMillis;
 
   public AndroidTransactionProfiler(
+    final @NotNull Context context,
+    final @NotNull SentryAndroidOptions sentryAndroidOptions,
+    final @NotNull BuildInfoProvider buildInfoProvider) {
+    this(
+      context,
+      sentryAndroidOptions,
+      buildInfoProvider,
+      Objects.requireNonNull(sentryAndroidOptions.getFrameMetricsCollector(),"sentryAndroidOptions.getFrameMetricsCollector() cannot be null."),
+      HubAdapter.getInstance());
+  }
+
+  public AndroidTransactionProfiler(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider,
