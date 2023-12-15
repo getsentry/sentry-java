@@ -13,16 +13,15 @@ public final class FrameMetrics {
   private long frozenFrameDuration;
   private long fastFrameDuration;
 
-  public FrameMetrics() {
-  }
+  public FrameMetrics() {}
 
-  public FrameMetrics(int fastFrameCount,
-                      int slowFrameCount,
-                      int frozenFrameCount,
-                      long fastFrameDuration,
-                      long slowFrameDuration,
-                      long frozenFrameDuration
-  ) {
+  public FrameMetrics(
+      int fastFrameCount,
+      int slowFrameCount,
+      int frozenFrameCount,
+      long fastFrameDuration,
+      long slowFrameDuration,
+      long frozenFrameDuration) {
     this.fastFrameCount = fastFrameCount;
     this.slowFrameCount = slowFrameCount;
     this.frozenFrameCount = frozenFrameCount;
@@ -71,7 +70,6 @@ public final class FrameMetrics {
     return fastFrameCount + slowFrameCount + frozenFrameCount;
   }
 
-
   public void clear() {
     fastFrameCount = 0;
     slowFrameCount = 0;
@@ -81,21 +79,24 @@ public final class FrameMetrics {
   }
 
   public FrameMetrics duplicate() {
-    return new FrameMetrics(fastFrameCount, slowFrameCount, frozenFrameCount, fastFrameDuration, slowFrameDuration, frozenFrameDuration);
+    return new FrameMetrics(
+        fastFrameCount,
+        slowFrameCount,
+        frozenFrameCount,
+        fastFrameDuration,
+        slowFrameDuration,
+        frozenFrameDuration);
   }
 
   public FrameMetrics diffTo(FrameMetrics other) {
     return new FrameMetrics(
-      fastFrameCount - other.fastFrameCount,
-      slowFrameCount - other.slowFrameCount,
-      frozenFrameCount - other.frozenFrameCount,
-      fastFrameDuration - other.fastFrameDuration,
-      slowFrameDuration - other.slowFrameDuration,
-      frozenFrameDuration - other.frozenFrameDuration
-    );
+        fastFrameCount - other.fastFrameCount,
+        slowFrameCount - other.slowFrameCount,
+        frozenFrameCount - other.frozenFrameCount,
+        fastFrameDuration - other.fastFrameDuration,
+        slowFrameDuration - other.slowFrameDuration,
+        frozenFrameDuration - other.frozenFrameDuration);
   }
 
-  public void addDelayNanos(long delayNanos) {
-
-  }
+  public void addDelayNanos(long delayNanos) {}
 }

@@ -1,14 +1,6 @@
 package io.sentry.android.core;
 
 import android.util.Log;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import io.sentry.FrameMetrics;
 import io.sentry.IPerformanceContinuousCollector;
 import io.sentry.ISpan;
@@ -16,6 +8,11 @@ import io.sentry.NoOpSpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class AndroidSlowFrozenFrameCollector
     implements IPerformanceContinuousCollector,
@@ -59,7 +56,8 @@ public class AndroidSlowFrozenFrameCollector
     }
     @Nullable FrameMetrics diff = null;
     synchronized (lock) {
-      final @Nullable FrameMetrics metricsAtStart = metricsAtSpanStart.remove(span.getSpanContext().getSpanId());
+      final @Nullable FrameMetrics metricsAtStart =
+          metricsAtSpanStart.remove(span.getSpanContext().getSpanId());
       if (metricsAtStart != null) {
         diff = currentFrameMetrics.diffTo(metricsAtStart);
       }
@@ -89,9 +87,15 @@ public class AndroidSlowFrozenFrameCollector
     }
   }
 
-
   @Override
-  public void onFrameMetricCollected(long frameStartNanos, long frameEndNanos, long durationNanos, long delayNanos, boolean isSlow, boolean isFrozen, float refreshRate) {
+  public void onFrameMetricCollected(
+      long frameStartNanos,
+      long frameEndNanos,
+      long durationNanos,
+      long delayNanos,
+      boolean isSlow,
+      boolean isFrozen,
+      float refreshRate) {
 
     lastRefreshRate = (int) (refreshRate * 100) / 100F;
 

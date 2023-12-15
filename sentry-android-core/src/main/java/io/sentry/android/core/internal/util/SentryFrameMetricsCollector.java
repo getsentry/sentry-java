@@ -17,7 +17,6 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.BuildInfoProvider;
-import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
