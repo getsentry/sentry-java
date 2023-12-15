@@ -169,6 +169,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public boolean isHealthy() {
+    return Sentry.isHealthy();
+  }
+
+  @Override
   public void flush(long timeoutMillis) {
     Sentry.flush(timeoutMillis);
   }

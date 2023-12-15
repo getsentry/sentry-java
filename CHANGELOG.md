@@ -5,6 +5,11 @@
 ### Features
 
 - Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+- Automatically downsample transactions when the system is under load ([#3072](https://github.com/getsentry/sentry-java/pull/3072))
+  - You can opt into this behaviour by setting `enable-backpressure-handling=true`.
+  - We're happy to receive feedback, e.g. [in this GitHub issue](https://github.com/getsentry/sentry-java/issues/2829)
+  - When the system is under load we start reducing the `tracesSampleRate` automatically.
+  - Once the system goes back to healthy, we reset the `tracesSampleRate` to its original value.
 - (Android) Experimental: Provide more detailed cold app start information ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
   - Attaches spans for Application, ContentProvider, and Activities to app-start timings
   - Uses Process.startUptimeMillis to calculate app-start timings
