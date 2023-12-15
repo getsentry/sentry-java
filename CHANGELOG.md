@@ -5,6 +5,7 @@
 ### Features
 
 - Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
+- Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
 
 ### Fixes
 
