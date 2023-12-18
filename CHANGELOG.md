@@ -21,6 +21,7 @@
 
 - Send breadcrumbs and client error in `SentryOkHttpEventListener` even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
 - Keep `io.sentry.exception.SentryHttpClientException` from obfuscation to display proper issue title on Sentry ([#3093](https://github.com/getsentry/sentry-java/pull/3093))
+- (Android) Fix wrong activity transaction duration in case SDK init is deferred ([#3092](https://github.com/getsentry/sentry-java/pull/3092))
 
 ### Dependencies
 
