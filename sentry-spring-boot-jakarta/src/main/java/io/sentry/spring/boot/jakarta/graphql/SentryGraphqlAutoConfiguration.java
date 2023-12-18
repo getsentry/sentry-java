@@ -59,7 +59,7 @@ public class SentryGraphqlAutoConfiguration {
   }
 
   @Bean
-  public SentryGraphqlBeanPostProcessor graphqlBeanPostProcessor() {
+  public static SentryGraphqlBeanPostProcessor graphqlBeanPostProcessor() {
     return new SentryGraphqlBeanPostProcessor();
   }
 }
