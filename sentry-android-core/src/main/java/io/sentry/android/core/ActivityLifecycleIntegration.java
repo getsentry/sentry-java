@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import static io.sentry.MeasurementUnit.Duration.MILLISECOND;
-import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
@@ -12,9 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import androidx.annotation.NonNull;
-import io.sentry.Breadcrumb;
 import io.sentry.FullyDisplayedReporter;
-import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.IScope;
 import io.sentry.ISpan;
@@ -112,13 +109,6 @@ public final class ActivityLifecycleIntegration
 
     this.hub = Objects.requireNonNull(hub, "Hub is required");
 
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "ActivityLifecycleIntegration enabled: %s",
-            this.options.isEnableActivityLifecycleBreadcrumbs());
-
     performanceEnabled = isPerformanceEnabled(this.options);
     fullyDisplayedReporter = this.options.getFullyDisplayedReporter();
     timeToFullDisplaySpanEnabled = this.options.isEnableTimeToFullDisplayTracing();
@@ -141,22 +131,6 @@ public final class ActivityLifecycleIntegration
     }
 
     activityFramesTracker.stop();
-  }
-
-  private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {
-    if (options != null && hub != null && options.isEnableActivityLifecycleBreadcrumbs()) {
-      final Breadcrumb breadcrumb = new Breadcrumb();
-      breadcrumb.setType("navigation");
-      breadcrumb.setData("state", state);
-      breadcrumb.setData("screen", getActivityName(activity));
-      breadcrumb.setCategory("ui.lifecycle");
-      breadcrumb.setLevel(SentryLevel.INFO);
-
-      final Hint hint = new Hint();
-      hint.set(ANDROID_ACTIVITY, activity);
-
-      hub.addBreadcrumb(breadcrumb, hint);
-    }
   }
 
   private @NotNull String getActivityName(final @NotNull Activity activity) {
@@ -385,7 +359,6 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
-    addBreadcrumb(activity, "created");
     if (hub != null) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
       hub.configureScope(scope -> scope.setScreen(activityClassName));
@@ -411,7 +384,6 @@ public final class ActivityLifecycleIntegration
       // working. Moving this to onActivityStarted fixes the problem.
       activityFramesTracker.addActivity(activity);
     }
-    addBreadcrumb(activity, "started");
   }
 
   @Override
@@ -430,7 +402,6 @@ public final class ActivityLifecycleIntegration
         mainHandler.post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
       }
     }
-    addBreadcrumb(activity, "resumed");
   }
 
   @Override
@@ -460,24 +431,22 @@ public final class ActivityLifecycleIntegration
         lastPausedTime = hub.getOptions().getDateProvider().now();
       }
     }
-    addBreadcrumb(activity, "paused");
   }
 
   @Override
   public synchronized void onActivityStopped(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "stopped");
+    // no-op
   }
 
   @Override
   public synchronized void onActivitySaveInstanceState(
       final @NotNull Activity activity, final @NotNull Bundle outState) {
-    addBreadcrumb(activity, "saveInstanceState");
+    // no-op
   }
 
   @Override
   public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
-    if (performanceEnabled || options.isEnableActivityLifecycleBreadcrumbs()) {
-      addBreadcrumb(activity, "destroyed");
+    if (performanceEnabled) {
 
       // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
       // memory leak
