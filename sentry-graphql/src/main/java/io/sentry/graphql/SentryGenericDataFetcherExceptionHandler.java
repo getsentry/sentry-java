@@ -32,14 +32,14 @@ public final class SentryGenericDataFetcherExceptionHandler implements DataFetch
     CompletableFuture<DataFetcherExceptionHandlerResult> futureResult =
         handleException(handlerParameters);
 
-    if (futureResult == null) {
-      return CompletableFuture.completedFuture((DataFetcherExceptionHandlerResult) null).join();
-    }
-
-    try {
-      return futureResult.get();
-    } catch (InterruptedException | ExecutionException e) {
-      return CompletableFuture.completedFuture((DataFetcherExceptionHandlerResult) null).join();
+    if (futureResult != null) {
+      try {
+        return futureResult.get();
+      } catch (InterruptedException | ExecutionException e) {
+        return null;
+      }
+    } else {
+      return null;
     }
   }
 

@@ -11,6 +11,7 @@ import io.sentry.IHub;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,15 +49,19 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   }
 
   @SuppressWarnings("deprecation")
-  public DataFetcherExceptionHandlerResult onException(
+  public @Nullable DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
     final @Nullable CompletableFuture<DataFetcherExceptionHandlerResult> futureResult =
         handleException(handlerParameters);
 
     if (futureResult != null) {
-      return futureResult.join();
+      try {
+        return futureResult.get();
+      } catch (InterruptedException | ExecutionException e) {
+        return null;
+      }
     } else {
-      return CompletableFuture.completedFuture((DataFetcherExceptionHandlerResult) null).join();
+      return null;
     }
   }
 }

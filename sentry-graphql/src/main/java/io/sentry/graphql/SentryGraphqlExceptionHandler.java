@@ -42,7 +42,7 @@ public final class SentryGraphqlExceptionHandler {
     if (delegate != null) {
       return delegate.handleException(handlerParameters);
     } else {
-      return CompletableFuture.completedFuture(null);
+      return null;
     }
   }
 }
