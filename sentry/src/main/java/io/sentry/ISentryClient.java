@@ -273,4 +273,9 @@ public interface ISentryClient {
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
+
+  @ApiStatus.Internal
+  default boolean isHealthy() {
+    return true;
+  }
 }

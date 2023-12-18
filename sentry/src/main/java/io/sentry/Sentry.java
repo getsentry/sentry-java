@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
@@ -391,6 +392,11 @@ public final class Sentry {
       options.addCollector(new JavaMemoryCollector());
     }
 
+    if (options.isEnableBackpressureHandling()) {
+      options.setBackpressureMonitor(new BackpressureMonitor(options, HubAdapter.getInstance()));
+      options.getBackpressureMonitor().start();
+    }
+
     return true;
   }
 
@@ -729,6 +735,10 @@ public final class Sentry {
    */
   public static void bindClient(final @NotNull ISentryClient client) {
     getCurrentHub().bindClient(client);
+  }
+
+  public static boolean isHealthy() {
+    return getCurrentHub().isHealthy();
   }
 
   /**

@@ -4,12 +4,30 @@
 
 ### Features
 
-- Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
 - Add support for `graphql-java` version 21 ([#3090](https://github.com/getsentry/sentry-java/pull/3090))
+
+## 7.1.0
+
+### Features
+
+- Support multiple debug-metadata.properties ([#3024](https://github.com/getsentry/sentry-java/pull/3024))
+- Automatically downsample transactions when the system is under load ([#3072](https://github.com/getsentry/sentry-java/pull/3072))
+  - You can opt into this behaviour by setting `enable-backpressure-handling=true`.
+  - We're happy to receive feedback, e.g. [in this GitHub issue](https://github.com/getsentry/sentry-java/issues/2829)
+  - When the system is under load we start reducing the `tracesSampleRate` automatically.
+  - Once the system goes back to healthy, we reset the `tracesSampleRate` to its original value.
+- (Android) Experimental: Provide more detailed cold app start information ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
+  - Attaches spans for Application, ContentProvider, and Activities to app-start timings
+  - Uses Process.startUptimeMillis to calculate app-start timings
+  - To enable this feature set `options.isEnablePerformanceV2 = true`
+- Move slow+frozen frame calculation, as well as frame delay inside SentryFrameMetricsCollector ([#3100](https://github.com/getsentry/sentry-java/pull/3100))
+- Extract Activity Breadcrumbs generation into own Integration ([#3064](https://github.com/getsentry/sentry-java/pull/3064))
 
 ### Fixes
 
-- Send breadcrumbs and client error even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- Send breadcrumbs and client error in `SentryOkHttpEventListener` even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
+- Keep `io.sentry.exception.SentryHttpClientException` from obfuscation to display proper issue title on Sentry ([#3093](https://github.com/getsentry/sentry-java/pull/3093))
+- (Android) Fix wrong activity transaction duration in case SDK init is deferred ([#3092](https://github.com/getsentry/sentry-java/pull/3092))
 
 ### Dependencies
 

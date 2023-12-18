@@ -151,5 +151,7 @@
         <!--    how to disable sentry -->
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
+      <meta-data android:name="io.sentry.performance-v2" android:value="true" />
+
     </application>
 </manifest>

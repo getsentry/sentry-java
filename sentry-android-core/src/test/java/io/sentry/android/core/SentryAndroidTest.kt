@@ -4,7 +4,9 @@ import android.app.ActivityManager
 import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
@@ -21,6 +23,7 @@ import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.IEnvelopeCache
@@ -60,11 +63,16 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
+@Config(
+    sdk = [Build.VERSION_CODES.N],
+    shadows = [SentryShadowProcess::class]
+)
 class SentryAndroidTest {
 
     @get:Rule
@@ -150,7 +158,7 @@ class SentryAndroidTest {
     @BeforeTest
     fun `set up`() {
         Sentry.close()
-        AppStartState.getInstance().resetInstance()
+        AppStartMetrics.getInstance().clear()
         context = ApplicationProvider.getApplicationContext()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
         fixture.shadowActivityManager = Shadow.extract(activityManager)
@@ -202,10 +210,15 @@ class SentryAndroidTest {
         fixture.initSut(autoInit = true)
 
         // done by ActivityLifecycleIntegration so forcing it here
-        AppStartState.getInstance().setAppStartEnd()
-        AppStartState.getInstance().setColdStart(true)
+        AppStartMetrics.getInstance().apply {
+            appStartType = AppStartMetrics.AppStartType.COLD
+            appStartTimeSpan.apply {
+                setStartedAt(1)
+                setStoppedAt(1 + SystemClock.uptimeMillis())
+            }
+        }
 
-        assertNotNull(AppStartState.getInstance().appStartInterval)
+        assertNotEquals(0, AppStartMetrics.getInstance().appStartTimeSpan.durationMs)
     }
 
     @Test
@@ -396,7 +409,7 @@ class SentryAndroidTest {
         fixture.initSut(context = mock<Application>()) { options ->
             optionsRef = options
             options.dsn = "https://key@sentry.io/123"
-            assertEquals(18, options.integrations.size)
+            assertEquals(19, options.integrations.size)
             options.integrations.removeAll {
                 it is UncaughtExceptionHandlerIntegration ||
                     it is ShutdownHookIntegration ||
@@ -406,6 +419,7 @@ class SentryAndroidTest {
                     it is AppLifecycleIntegration ||
                     it is AnrIntegration ||
                     it is ActivityLifecycleIntegration ||
+                    it is ActivityBreadcrumbsIntegration ||
                     it is CurrentActivityIntegration ||
                     it is UserInteractionIntegration ||
                     it is FragmentLifecycleIntegration ||
@@ -418,6 +432,35 @@ class SentryAndroidTest {
             }
         }
         assertEquals(0, optionsRef.integrations.size)
+    }
+
+    @Test
+    fun `init backfills sdk init and app start time`() {
+        AppStartMetrics.getInstance().clear()
+        SentryShadowProcess.setStartUptimeMillis(42)
+
+        fixture.initSut(context = mock<Application>()) { options ->
+            options.dsn = "https://key@sentry.io/123"
+            options.isEnablePerformanceV2 = true
+        }
+        assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+        assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
+    }
+
+    @Test
+    fun `init does not backfill sdk init and app start times if already set`() {
+        AppStartMetrics.getInstance().clear()
+        AppStartMetrics.getInstance().sdkInitTimeSpan.setStartedAt(99)
+        AppStartMetrics.getInstance().appStartTimeSpan.setStartedAt(99)
+
+        SentryShadowProcess.setStartUptimeMillis(42)
+        fixture.initSut(context = mock<Application>()) { options ->
+            options.dsn = "https://key@sentry.io/123"
+            options.isEnablePerformanceV2 = true
+        }
+
+        assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
+        assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
     }
 
     private fun prefillScopeCache(cacheDir: String) {

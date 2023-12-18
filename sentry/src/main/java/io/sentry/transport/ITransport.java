@@ -15,6 +15,10 @@ public interface ITransport extends Closeable {
     send(envelope, new Hint());
   }
 
+  default boolean isHealthy() {
+    return true;
+  }
+
   /**
    * Flushes events queued up, but keeps the client enabled. Not implemented yet.
    *
