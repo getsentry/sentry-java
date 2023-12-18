@@ -72,11 +72,15 @@ final class TracesSampler {
         Boolean.TRUE.equals(isEnableTracing) ? DEFAULT_TRACES_SAMPLE_RATE : null;
     final @Nullable Double tracesSampleRateOrDefault =
         tracesSampleRateFromOptions == null ? defaultSampleRate : tracesSampleRateFromOptions;
+    final @NotNull Double downsampleFactor =
+        Math.pow(2, options.getBackpressureMonitor().getDownsampleFactor());
+    final @Nullable Double downsampledTracesSampleRate =
+        tracesSampleRateOrDefault == null ? null : tracesSampleRateOrDefault / downsampleFactor;
 
-    if (tracesSampleRateOrDefault != null) {
+    if (downsampledTracesSampleRate != null) {
       return new TracesSamplingDecision(
-          sample(tracesSampleRateOrDefault),
-          tracesSampleRateOrDefault,
+          sample(downsampledTracesSampleRate),
+          downsampledTracesSampleRate,
           profilesSampled,
           profilesSampleRate);
     }

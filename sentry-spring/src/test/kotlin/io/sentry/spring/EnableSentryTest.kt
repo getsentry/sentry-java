@@ -6,8 +6,11 @@ import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
@@ -185,7 +188,9 @@ class EnableSentryTest {
     class AppConfigWithCustomTransportFactory {
 
         @Bean
-        fun transport() = mock<ITransportFactory>()
+        fun transport() = mock<ITransportFactory>().also {
+            whenever(it.create(any(), any())).thenReturn(mock<ITransport>())
+        }
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")

@@ -1,6 +1,8 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.backpressure.IBackpressureMonitor;
+import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
@@ -439,6 +441,11 @@ public class SentryOptions {
 
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
+
+  @ApiStatus.Experimental
+  private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
+
+  @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
 
   /**
    * Adds an event processor
@@ -2188,6 +2195,27 @@ public class SentryOptions {
     this.connectionStatusProvider = connectionStatusProvider;
   }
 
+  @ApiStatus.Internal
+  @NotNull
+  public IBackpressureMonitor getBackpressureMonitor() {
+    return backpressureMonitor;
+  }
+
+  @ApiStatus.Internal
+  public void setBackpressureMonitor(final @NotNull IBackpressureMonitor backpressureMonitor) {
+    this.backpressureMonitor = backpressureMonitor;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
+    this.enableBackpressureHandling = enableBackpressureHandling;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableBackpressureHandling() {
+    return enableBackpressureHandling;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2402,6 +2430,9 @@ public class SentryOptions {
     if (options.getIgnoredCheckIns() != null) {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
       setIgnoredCheckIns(ignoredCheckIns);
+    }
+    if (options.isEnableBackpressureHandling() != null) {
+      setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
   }
 

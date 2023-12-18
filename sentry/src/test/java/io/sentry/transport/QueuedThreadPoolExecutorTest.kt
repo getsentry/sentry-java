@@ -1,5 +1,6 @@
 package io.sentry.transport
 
+import io.sentry.SentryNanotimeDateProvider
 import org.mockito.kotlin.mock
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadFactory
@@ -29,7 +30,14 @@ class QueuedThreadPoolExecutorTest {
         }
 
         fun getSut(): QueuedThreadPoolExecutor =
-            QueuedThreadPoolExecutor(maxQueueSize + 1, maxQueueSize, threadFactory, DiscardPolicy(), mock())
+            QueuedThreadPoolExecutor(
+                maxQueueSize + 1,
+                maxQueueSize,
+                threadFactory,
+                DiscardPolicy(),
+                mock(),
+                SentryNanotimeDateProvider()
+            )
     }
 
     private val fixture = Fixture()
@@ -79,6 +87,9 @@ class QueuedThreadPoolExecutorTest {
     @Test
     fun `limits the queue size`() {
         val sut = fixture.getSut()
+
+        assertFalse(sut.didRejectRecently())
+
         // using this we're waiting for the submitted jobs to be unblocked
         val jobBlocker = Object()
 
@@ -110,6 +121,8 @@ class QueuedThreadPoolExecutorTest {
 
         var f = sut.submit { synchronized(jobBlocker) { jobBlocker.wait() } }
         assertTrue(f.isCancelled, "A task above the queue size should have been cancelled.")
+
+        assertTrue(sut.didRejectRecently())
 
         // wake up a single job and wait on the main thread for that to finish
         synchronized(jobBlocker) { jobBlocker.notify() }
