@@ -1318,4 +1318,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isSendModules)
     }
+
+    @Test
+    fun `applyMetadata reads performance-v2 flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnablePerformanceV2)
+    }
+
+    @Test
+    fun `applyMetadata reads performance-v2 flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnablePerformanceV2)
+    }
 }

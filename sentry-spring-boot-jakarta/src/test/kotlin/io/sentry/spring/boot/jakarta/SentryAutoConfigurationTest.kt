@@ -162,7 +162,8 @@ class SentryAutoConfigurationTest {
             "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$",
             "sentry.enabled=false",
             "sentry.send-modules=false",
-            "sentry.ignored-checkins=slug1,slugB"
+            "sentry.ignored-checkins=slug1,slugB",
+            "sentry.enable-backpressure-handling=true"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -194,6 +195,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
+            assertThat(options.isEnableBackpressureHandling).isEqualTo(true)
         }
     }
 

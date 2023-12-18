@@ -6,6 +6,7 @@ import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.android.core.performance.AppStartMetrics
 import org.junit.runner.RunWith
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest
@@ -40,7 +41,7 @@ class SentryLogcatAdapterTest {
     @BeforeTest
     fun `set up`() {
         Sentry.close()
-        AppStartState.getInstance().resetInstance()
+        AppStartMetrics.getInstance().clear()
         breadcrumbs.clear()
 
         fixture.initSut {

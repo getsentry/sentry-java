@@ -941,6 +941,11 @@ public final class SentryClient implements ISentryClient {
     return transport.getRateLimiter();
   }
 
+  @Override
+  public boolean isHealthy() {
+    return transport.isHealthy();
+  }
+
   private boolean sample() {
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
     if (options.getSampleRate() != null && random != null) {
