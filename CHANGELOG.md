@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
+  - If you are setting global job listeners please also add `SentryJobListener`
+
 ## 7.1.0
 
 ### Features
