@@ -49,7 +49,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   }
 
   @SuppressWarnings("deprecation")
-  public @Nullable DataFetcherExceptionHandlerResult onException(
+  public DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
     final @Nullable CompletableFuture<DataFetcherExceptionHandlerResult> futureResult =
         handleException(handlerParameters);
@@ -58,10 +58,10 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
       try {
         return futureResult.get();
       } catch (InterruptedException | ExecutionException e) {
-        return null;
+        return DataFetcherExceptionHandlerResult.newResult().build();
       }
     } else {
-      return null;
+      return DataFetcherExceptionHandlerResult.newResult().build();
     }
   }
 }
