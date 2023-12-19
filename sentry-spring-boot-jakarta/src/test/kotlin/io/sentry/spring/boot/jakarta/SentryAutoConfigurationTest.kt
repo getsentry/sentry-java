@@ -37,10 +37,15 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.quartz.JobExecutionContext
+import org.quartz.JobExecutionException
+import org.quartz.JobListener
+import org.quartz.Scheduler
 import org.quartz.core.QuartzScheduler
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration
 import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
@@ -780,6 +785,61 @@ class SentryAutoConfigurationTest {
             .run {
                 assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
             }
+    }
+
+    @Test
+    fun `Sentry quartz job listener is added`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .withUserConfiguration(QuartzAutoConfiguration::class.java)
+            .run {
+                val jobListeners = it.getBean(Scheduler::class.java).listenerManager.jobListeners
+                assertThat(jobListeners).hasSize(1)
+                assertThat(jobListeners[0]).matches(
+                    { it.name == "sentry-job-listener" },
+                    "is sentry job listener"
+                )
+            }
+    }
+
+    @Test
+    fun `user defined SchedulerFactoryBeanCustomizer overrides Sentry Customizer`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .withUserConfiguration(QuartzAutoConfiguration::class.java, CustomSchedulerFactoryBeanCustomizerConfiguration::class.java)
+            .run {
+                val jobListeners = it.getBean(Scheduler::class.java).listenerManager.jobListeners
+                assertThat(jobListeners).hasSize(1)
+                assertThat(jobListeners[0]).matches(
+                    { it.name == "custom-job-listener" },
+                    "is custom job listener"
+                )
+            }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class CustomSchedulerFactoryBeanCustomizerConfiguration {
+        class MyJobListener : JobListener {
+            override fun getName() = "custom-job-listener"
+
+            override fun jobToBeExecuted(context: JobExecutionContext?) {
+                // do nothing
+            }
+
+            override fun jobExecutionVetoed(context: JobExecutionContext?) {
+                // do nothing
+            }
+
+            override fun jobWasExecuted(
+                context: JobExecutionContext?,
+                jobException: JobExecutionException?
+            ) {
+                // do nothing
+            }
+        }
+
+        @Bean
+        open fun mySchedulerFactoryBeanCustomizer(): SchedulerFactoryBeanCustomizer {
+            return SchedulerFactoryBeanCustomizer { schedulerFactoryBean -> schedulerFactoryBean.setGlobalJobListeners(MyJobListener()) }
+        }
     }
 
     @Configuration(proxyBeanMethods = false)
