@@ -336,12 +336,14 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracingOrigins ()Ljava/util/List;
+	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableBackpressureHandling (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
@@ -435,6 +437,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
+	public fun isHealthy ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
@@ -485,6 +488,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
+	public fun isHealthy ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
@@ -578,6 +582,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun getTransaction ()Lio/sentry/ITransaction;
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
+	public abstract fun isHealthy ()Z
 	public abstract fun popScope ()V
 	public abstract fun pushScope ()V
 	public abstract fun removeExtra (Ljava/lang/String;)V
@@ -718,6 +723,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun flush (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun isEnabled ()Z
+	public fun isHealthy ()Z
 }
 
 public abstract interface class io/sentry/ISentryExecutorService {
@@ -1120,6 +1126,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
+	public fun isHealthy ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
@@ -1667,6 +1674,7 @@ public final class io/sentry/Sentry {
 	public static fun init (Ljava/lang/String;)V
 	public static fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public static fun isEnabled ()Z
+	public static fun isHealthy ()Z
 	public static fun popScope ()V
 	public static fun pushScope ()V
 	public static fun removeExtra (Ljava/lang/String;)V
@@ -1783,6 +1791,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isEnabled ()Z
+	public fun isHealthy ()Z
 }
 
 public final class io/sentry/SentryCrashLastRunState {
@@ -2080,6 +2089,7 @@ public class io/sentry/SentryOptions {
 	public fun addOptionsObserver (Lio/sentry/IOptionsObserver;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
+	public fun getBackpressureMonitor ()Lio/sentry/backpressure/IBackpressureMonitor;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
@@ -2158,6 +2168,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
 	public fun isEnableAutoSessionTracking ()Z
+	public fun isEnableBackpressureHandling ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
@@ -2179,6 +2190,7 @@ public class io/sentry/SentryOptions {
 	public fun setAttachServerName (Z)V
 	public fun setAttachStacktrace (Z)V
 	public fun setAttachThreads (Z)V
+	public fun setBackpressureMonitor (Lio/sentry/backpressure/IBackpressureMonitor;)V
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
@@ -2193,6 +2205,7 @@ public class io/sentry/SentryOptions {
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAutoSessionTracking (Z)V
+	public fun setEnableBackpressureHandling (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
@@ -2826,6 +2839,24 @@ public final class io/sentry/UserFeedback$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/IHub;)V
+	public fun getDownsampleFactor ()I
+	public fun run ()V
+	public fun start ()V
+}
+
+public abstract interface class io/sentry/backpressure/IBackpressureMonitor {
+	public abstract fun getDownsampleFactor ()I
+	public abstract fun start ()V
+}
+
+public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor {
+	public fun getDownsampleFactor ()I
+	public static fun getInstance ()Lio/sentry/backpressure/NoOpBackpressureMonitor;
+	public fun start ()V
+}
+
 public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field NATIVE_CRASH_MARKER_FILE Ljava/lang/String;
@@ -2927,6 +2958,7 @@ public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clien
 }
 
 public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
+	public static final field BACKPRESSURE Lio/sentry/clientreport/DiscardReason;
 	public static final field BEFORE_SEND Lio/sentry/clientreport/DiscardReason;
 	public static final field CACHE_OVERFLOW Lio/sentry/clientreport/DiscardReason;
 	public static final field EVENT_PROCESSOR Lio/sentry/clientreport/DiscardReason;
@@ -4434,6 +4466,7 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 	public fun close ()V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
+	public fun isHealthy ()Z
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 
@@ -4449,6 +4482,7 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
 	public abstract fun flush (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
+	public fun isHealthy ()Z
 	public fun send (Lio/sentry/SentryEnvelope;)V
 	public abstract fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
@@ -4483,6 +4517,7 @@ public final class io/sentry/transport/RateLimiter {
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
+	public fun isAnyRateLimitActive ()Z
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
 

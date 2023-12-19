@@ -605,6 +605,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public boolean isHealthy() {
+    return stack.peek().getClient().isHealthy();
+  }
+
+  @Override
   public void flush(long timeoutMillis) {
     if (!isEnabled()) {
       options
@@ -660,9 +665,15 @@ public final class Hub implements IHub {
                   SentryLevel.DEBUG,
                   "Transaction %s was dropped due to sampling decision.",
                   transaction.getEventId());
-          options
-              .getClientReportRecorder()
-              .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
+          if (options.getBackpressureMonitor().getDownsampleFactor() > 0) {
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(DiscardReason.BACKPRESSURE, DataCategory.Transaction);
+          } else {
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
+          }
         } else {
           StackItem item = null;
           try {

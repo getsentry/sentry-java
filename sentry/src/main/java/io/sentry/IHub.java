@@ -330,6 +330,13 @@ public interface IHub {
   void bindClient(@NotNull ISentryClient client);
 
   /**
+   * Whether the transport is healthy.
+   *
+   * @return true if the transport is healthy
+   */
+  boolean isHealthy();
+
+  /**
    * Flushes events queued up, but keeps the Hub enabled. Not implemented yet.
    *
    * @param timeoutMillis time in milliseconds
