@@ -1,78 +1,40 @@
 package io.sentry.android.core;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Process;
 import android.os.SystemClock;
-import android.view.View;
+import androidx.annotation.NonNull;
 import io.sentry.NoOpLogger;
-import io.sentry.SentryDate;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
+import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.core.performance.TimeSpan;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-/**
- * SentryPerformanceProvider is responsible for collecting data (eg appStart) as early as possible
- * as ContentProvider is the only reliable hook for libraries that works across all the supported
- * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis() We could also use
- * AppComponentFactory but it depends on androidx.core.app.AppComponentFactory
- */
 @ApiStatus.Internal
-public final class SentryPerformanceProvider extends EmptySecureContentProvider
-    implements Application.ActivityLifecycleCallbacks {
+public final class SentryPerformanceProvider extends EmptySecureContentProvider {
 
   // static to rely on Class load
-  private static @NotNull SentryDate appStartTime = AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static long appStartMillis = SystemClock.uptimeMillis();
+  private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
-  private boolean firstActivityCreated = false;
-  private boolean firstActivityResumed = false;
-
-  private @Nullable Application application;
-
-  private final @NotNull BuildInfoProvider buildInfoProvider;
-
-  private final @NotNull MainLooperHandler mainHandler;
-
-  public SentryPerformanceProvider() {
-    AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
-    buildInfoProvider = new BuildInfoProvider(NoOpLogger.getInstance());
-    mainHandler = new MainLooperHandler();
-  }
-
-  SentryPerformanceProvider(
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull MainLooperHandler mainHandler) {
-    AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
-    this.buildInfoProvider = buildInfoProvider;
-    this.mainHandler = mainHandler;
-  }
+  private @Nullable Application app;
+  private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
 
   @Override
   public boolean onCreate() {
-    Context context = getContext();
-
-    if (context == null) {
-      return false;
-    }
-
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
-
-    if (context instanceof Application) {
-      application = ((Application) context);
-      application.registerActivityLifecycleCallbacks(this);
-    }
-
+    onAppLaunched(getContext());
     return true;
   }
 
@@ -92,62 +54,143 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider
     return null;
   }
 
-  @TestOnly
-  static void setAppStartTime(
-      final long appStartMillisLong, final @NotNull SentryDate appStartTimeDate) {
-    appStartMillis = appStartMillisLong;
-    appStartTime = appStartTimeDate;
-  }
+  private void onAppLaunched(final @Nullable Context context) {
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
 
-  @Override
-  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
-    // Hybrid Apps like RN or Flutter init the Android SDK after the MainActivity of the App
-    // has been created, and some frameworks overwrites the behaviour of activity lifecycle
-    // or it's already too late to get the callback for the very first Activity, hence we
-    // register the ActivityLifecycleCallbacks here, since this Provider is always run first.
-    if (!firstActivityCreated) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      final boolean coldStart = savedInstanceState == null;
-      AppStartState.getInstance().setColdStart(coldStart);
+    // sdk-init uses static field init as start time
+    final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+    sdkInitTimeSpan.setStartedAt(sdkInitMillis);
 
-      firstActivityCreated = true;
+    // performance v2: Uses Process.getStartUptimeMillis()
+    // requires API level 24+
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
+      return;
     }
+
+    if (context instanceof Application) {
+      app = (Application) context;
+    }
+    if (app == null) {
+      return;
+    }
+
+    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
+
+    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
+
+    activityCallback =
+        new ActivityLifecycleCallbacksAdapter() {
+          final WeakHashMap<Activity, ActivityLifecycleTimeSpan> activityLifecycleMap =
+              new WeakHashMap<>();
+
+          @Override
+          public void onActivityPreCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            final long now = SystemClock.uptimeMillis();
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+
+            final ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
+            timeSpan.getOnCreate().setStartedAt(now);
+            activityLifecycleMap.put(activity, timeSpan);
+          }
+
+          @Override
+          public void onActivityCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+              appStartMetrics.setAppStartType(
+                  savedInstanceState == null
+                      ? AppStartMetrics.AppStartType.COLD
+                      : AppStartMetrics.AppStartType.WARM);
+            }
+          }
+
+          @Override
+          public void onActivityPostCreated(
+              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.getOnCreate().stop();
+              timeSpan.getOnCreate().setDescription(activity.getClass().getName() + ".onCreate");
+            }
+          }
+
+          @Override
+          public void onActivityPreStarted(@NonNull Activity activity) {
+            final long now = SystemClock.uptimeMillis();
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.getOnStart().setStartedAt(now);
+            }
+          }
+
+          @Override
+          public void onActivityStarted(@NonNull Activity activity) {
+            if (firstDrawDone.get()) {
+              return;
+            }
+            FirstDrawDoneListener.registerForNextDraw(
+                activity,
+                () -> {
+                  if (firstDrawDone.compareAndSet(false, true)) {
+                    onAppStartDone();
+                  }
+                },
+                // as the SDK isn't initialized yet, we don't have access to SentryOptions
+                new BuildInfoProvider(NoOpLogger.getInstance()));
+          }
+
+          @Override
+          public void onActivityPostStarted(@NonNull Activity activity) {
+            final @Nullable ActivityLifecycleTimeSpan timeSpan =
+                activityLifecycleMap.remove(activity);
+            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
+              return;
+            }
+            if (timeSpan != null) {
+              timeSpan.getOnStart().stop();
+              timeSpan.getOnStart().setDescription(activity.getClass().getName() + ".onStart");
+
+              appStartMetrics.addActivityLifecycleTimeSpans(timeSpan);
+            }
+          }
+
+          @Override
+          public void onActivityDestroyed(@NonNull Activity activity) {
+            // safety net for activities which were created but never stopped
+            activityLifecycleMap.remove(activity);
+          }
+        };
+
+    app.registerActivityLifecycleCallbacks(activityCallback);
   }
 
-  @Override
-  public void onActivityStarted(@NotNull Activity activity) {}
+  @TestOnly
+  synchronized void onAppStartDone() {
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    appStartMetrics.getSdkInitTimeSpan().stop();
+    appStartMetrics.getAppStartTimeSpan().stop();
 
-  @SuppressLint("NewApi")
-  @Override
-  public void onActivityResumed(@NotNull Activity activity) {
-    if (!firstActivityResumed) {
-      // sets App start as finished when the very first activity calls onResume
-      firstActivityResumed = true;
-      final View rootView = activity.findViewById(android.R.id.content);
-      if (rootView != null) {
-        FirstDrawDoneListener.registerForNextDraw(
-            rootView, () -> AppStartState.getInstance().setAppStartEnd(), buildInfoProvider);
-      } else {
-        // Posting a task to the main thread's handler will make it executed after it finished
-        // its current job. That is, right after the activity draws the layout.
-        mainHandler.post(() -> AppStartState.getInstance().setAppStartEnd());
+    if (app != null) {
+      if (activityCallback != null) {
+        app.unregisterActivityLifecycleCallbacks(activityCallback);
       }
     }
-    if (application != null) {
-      application.unregisterActivityLifecycleCallbacks(this);
-    }
   }
 
-  @Override
-  public void onActivityPaused(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivityStopped(@NotNull Activity activity) {}
-
-  @Override
-  public void onActivitySaveInstanceState(@NotNull Activity activity, @NotNull Bundle outState) {}
-
-  @Override
-  public void onActivityDestroyed(@NotNull Activity activity) {}
+  @TestOnly
+  @Nullable
+  Application.ActivityLifecycleCallbacks getActivityCallback() {
+    return activityCallback;
+  }
 }
