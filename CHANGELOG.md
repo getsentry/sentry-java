@@ -7,6 +7,10 @@
 - SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
   - If you are setting global job listeners please also add `SentryJobListener`
 
+### Dependencies
+
+- Bump `opentelemetry-sdk` to `1.33.0` and `opentelemetry-javaagent` to `1.32.0` ([#3112](https://github.com/getsentry/sentry-java/pull/3112))
+
 ## 7.1.0
 
 ### Features
