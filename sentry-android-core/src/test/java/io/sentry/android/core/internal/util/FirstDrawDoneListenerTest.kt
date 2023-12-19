@@ -1,16 +1,19 @@
 package io.sentry.android.core.internal.util
 
+import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.Window
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.test.getProperty
 import org.junit.runner.RunWith
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -22,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -135,5 +139,51 @@ class FirstDrawDoneListenerTest {
         // Execute all tasks posted to main looper
         Shadows.shadowOf(Looper.getMainLooper()).idle()
         verify(r).run()
+    }
+
+    @Test
+    fun `registerForNextDraw uses the activity decor view`() {
+        val view = fixture.getSut()
+
+        val activity = mock<Activity>()
+        val window = mock<Window>()
+        whenever(activity.window).thenReturn(window)
+        whenever(window.peekDecorView()).thenReturn(view)
+
+        val r: Runnable = mock()
+        FirstDrawDoneListener.registerForNextDraw(activity, r, fixture.buildInfo)
+
+        assertFalse(fixture.onDrawListeners.isEmpty())
+    }
+
+    @Test
+    fun `registerForNextDraw uses the activity decor view once it's available`() {
+        val view = fixture.getSut()
+
+        val activity = mock<Activity>()
+        val window = mock<Window>()
+        whenever(activity.window).thenReturn(window)
+        whenever(window.peekDecorView()).thenReturn(null)
+        val callbackCapture = argumentCaptor<Window.Callback>()
+
+        // when registerForNextDraw is called, but the activity has no window yet
+        val r: Runnable = mock()
+        FirstDrawDoneListener.registerForNextDraw(activity, r, fixture.buildInfo)
+
+        // then a window callback is installed
+        verify(window).callback = callbackCapture.capture()
+
+        // once the window is available
+        whenever(window.peekDecorView()).thenReturn(view)
+        callbackCapture.firstValue.onContentChanged()
+
+        // then a window callback should be set back to the original one
+        verify(window, times(2)).callback = callbackCapture.capture()
+        assertNull(callbackCapture.lastValue)
+
+        // and the onDrawListener should be registered
+        assertFalse(fixture.onDrawListeners.isEmpty())
+
+        listOf(1, 2).isNotEmpty()
     }
 }

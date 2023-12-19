@@ -16,11 +16,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Open
-class WindowCallbackAdapter implements Window.Callback {
+public class WindowCallbackAdapter implements Window.Callback {
 
   private final @NotNull Window.Callback delegate;
 
-  WindowCallbackAdapter(final Window.@NotNull Callback delegate) {
+  public WindowCallbackAdapter(final Window.@NotNull Callback delegate) {
     this.delegate = delegate;
   }
 

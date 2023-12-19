@@ -4,8 +4,8 @@ import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
-import io.sentry.android.core.AppStartState
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.cache.EnvelopeCache
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.HintUtils
@@ -48,7 +48,15 @@ class AndroidEnvelopeCacheTest {
             lastReportedAnrFile = File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_ANR_REPORT)
 
             if (appStartMillis != null) {
-                AppStartState.getInstance().setAppStartMillis(appStartMillis)
+                AppStartMetrics.getInstance().apply {
+                    if (options.isEnablePerformanceV2) {
+                        appStartTimeSpan.setStartedAt(appStartMillis)
+                        appStartTimeSpan.setStartUnixTimeMs(appStartMillis)
+                    } else {
+                        sdkInitTimeSpan.setStartedAt(appStartMillis)
+                        sdkInitTimeSpan.setStartUnixTimeMs(appStartMillis)
+                    }
+                }
             }
             if (currentTimeMillis != null) {
                 whenever(dateProvider.currentTimeMillis).thenReturn(currentTimeMillis)
@@ -62,7 +70,7 @@ class AndroidEnvelopeCacheTest {
 
     @BeforeTest
     fun `set up`() {
-        AppStartState.getInstance().reset()
+        AppStartMetrics.getInstance().clear()
     }
 
     @Test

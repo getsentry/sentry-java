@@ -1,6 +1,9 @@
 package io.sentry.transport;
 
+import io.sentry.DateUtils;
 import io.sentry.ILogger;
+import io.sentry.SentryDate;
+import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
@@ -20,10 +23,14 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>This class is not public because it is used solely in {@link AsyncHttpTransport}.
  */
+@SuppressWarnings("UnusedVariable")
 final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   private final int maxQueueSize;
+  private @Nullable SentryDate lastRejectTimestamp = null;
   private final @NotNull ILogger logger;
+  private final @NotNull SentryDateProvider dateProvider;
   private final @NotNull ReusableCountLatch unfinishedTasksCount = new ReusableCountLatch();
+  private static final long RECENT_THRESHOLD = DateUtils.millisToNanos(2 * 1000);
 
   /**
    * Creates a new instance of the thread pool.
@@ -38,7 +45,8 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       final int maxQueueSize,
       final @NotNull ThreadFactory threadFactory,
       final @NotNull RejectedExecutionHandler rejectedExecutionHandler,
-      final @NotNull ILogger logger) {
+      final @NotNull ILogger logger,
+      final @NotNull SentryDateProvider dateProvider) {
     // similar to Executors.newSingleThreadExecutor, but with a max queue size control
     super(
         corePoolSize,
@@ -50,6 +58,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
         rejectedExecutionHandler);
     this.maxQueueSize = maxQueueSize;
     this.logger = logger;
+    this.dateProvider = dateProvider;
   }
 
   @Override
@@ -58,6 +67,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       unfinishedTasksCount.increment();
       return super.submit(task);
     } else {
+      lastRejectTimestamp = dateProvider.now();
       // if the thread pool is full, we don't cache it
       logger.log(SentryLevel.WARNING, "Submit cancelled");
       return new CancelledFuture<>();
@@ -84,8 +94,18 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     }
   }
 
-  private boolean isSchedulingAllowed() {
+  public boolean isSchedulingAllowed() {
     return unfinishedTasksCount.getCount() < maxQueueSize;
+  }
+
+  public boolean didRejectRecently() {
+    final @Nullable SentryDate lastReject = this.lastRejectTimestamp;
+    if (lastReject == null) {
+      return false;
+    }
+
+    long diff = dateProvider.now().diff(lastReject);
+    return diff < RECENT_THRESHOLD;
   }
 
   static final class CancelledFuture<T> implements Future<T> {

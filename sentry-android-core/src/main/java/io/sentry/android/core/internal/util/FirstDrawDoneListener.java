@@ -18,12 +18,17 @@
 
 package io.sentry.android.core.internal.util;
 
+import android.app.Activity;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.Window;
+import androidx.annotation.Nullable;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
+import io.sentry.android.core.performance.WindowContentChangedCallback;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,6 +40,33 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final @NotNull Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final @NotNull AtomicReference<View> viewReference;
   private final @NotNull Runnable callback;
+
+  public static void registerForNextDraw(
+      final @NotNull Activity activity,
+      final @NotNull Runnable drawDoneCallback,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+
+    @Nullable Window window = activity.getWindow();
+    if (window != null) {
+      @Nullable View decorView = window.peekDecorView();
+      if (decorView != null) {
+        registerForNextDraw(decorView, drawDoneCallback, buildInfoProvider);
+      } else {
+        final @Nullable Window.Callback oldCallback = window.getCallback();
+        window.setCallback(
+            new WindowContentChangedCallback(
+                oldCallback != null ? oldCallback : new NoOpWindowCallback(),
+                () -> {
+                  @Nullable View newDecorView = window.peekDecorView();
+                  if (newDecorView != null) {
+                    // let's set the old callback again, so we don't intercept anymore
+                    window.setCallback(oldCallback);
+                    registerForNextDraw(newDecorView, drawDoneCallback, buildInfoProvider);
+                  }
+                }));
+      }
+    }
+  }
 
   /** Registers a post-draw callback for the next draw of a view. */
   public static void registerForNextDraw(

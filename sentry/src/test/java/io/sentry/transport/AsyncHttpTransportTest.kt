@@ -402,6 +402,38 @@ class AsyncHttpTransportTest {
         assertTrue(called)
     }
 
+    @Test
+    fun `is healthy if not rate limited and not rejected recently`() {
+        whenever(fixture.rateLimiter.isAnyRateLimitActive()).thenReturn(false)
+        whenever(fixture.executor.didRejectRecently()).thenReturn(false)
+
+        assertTrue(fixture.getSUT().isHealthy)
+    }
+
+    @Test
+    fun `is unhealthy if rate limited and not rejected recently`() {
+        whenever(fixture.rateLimiter.isAnyRateLimitActive()).thenReturn(true)
+        whenever(fixture.executor.didRejectRecently()).thenReturn(false)
+
+        assertFalse(fixture.getSUT().isHealthy)
+    }
+
+    @Test
+    fun `is unhealthy if not rate limited but rejected recently`() {
+        whenever(fixture.rateLimiter.isAnyRateLimitActive()).thenReturn(false)
+        whenever(fixture.executor.didRejectRecently()).thenReturn(true)
+
+        assertFalse(fixture.getSUT().isHealthy)
+    }
+
+    @Test
+    fun `is unhealthy if rate limited and rejected recently`() {
+        whenever(fixture.rateLimiter.isAnyRateLimitActive()).thenReturn(true)
+        whenever(fixture.executor.didRejectRecently()).thenReturn(true)
+
+        assertFalse(fixture.getSUT().isHealthy)
+    }
+
     private fun createSession(): Session {
         return Session("123", User(), "env", "release")
     }
