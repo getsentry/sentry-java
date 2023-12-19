@@ -100,6 +100,9 @@ final class AndroidOptionsInitializer {
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
+    options.setFrameMetricsCollector(
+        new SentryFrameMetricsCollector(context, logger, buildInfoProvider));
+
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
 
@@ -145,10 +148,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
     options.setTransportGate(new AndroidTransportGate(options));
-    final SentryFrameMetricsCollector frameMetricsCollector =
-        new SentryFrameMetricsCollector(context, options, buildInfoProvider);
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
+        new AndroidTransactionProfiler(context, options, buildInfoProvider));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
 
@@ -187,6 +188,10 @@ final class AndroidOptionsInitializer {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(
           new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+
+      if (options.isEnablePerformanceV2()) {
+        options.addPerformanceCollector(new SpanFrameMetricsCollector(options));
+      }
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
 
