@@ -21,6 +21,10 @@ import org.jetbrains.annotations.VisibleForTesting;
  * A class that tracks slow and frozen frames using the FrameMetricsAggregator class from
  * androidx.core package. It also checks if the FrameMetricsAggregator class is available at
  * runtime.
+ *
+ * <p>If performance-v2 is enabled, frame metrics are recorded using {@link
+ * io.sentry.android.core.internal.util.SentryFrameMetricsCollector} via {@link
+ * SpanFrameMetricsCollector} instead and this implementation will no-op.
  */
 public final class ActivityFramesTracker {
 
@@ -67,7 +71,9 @@ public final class ActivityFramesTracker {
 
   @VisibleForTesting
   public boolean isFrameMetricsAggregatorAvailable() {
-    return frameMetricsAggregator != null && options.isEnableFramesTracking();
+    return frameMetricsAggregator != null
+        && options.isEnableFramesTracking()
+        && !options.isEnablePerformanceV2();
   }
 
   @SuppressWarnings("NullAway")

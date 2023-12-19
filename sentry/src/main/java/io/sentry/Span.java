@@ -231,10 +231,6 @@ public final class Span implements ISpan {
 
   @Override
   public void setOperation(final @NotNull String operation) {
-    if (finished.get()) {
-      return;
-    }
-
     this.context.setOperation(operation);
   }
 
@@ -245,10 +241,6 @@ public final class Span implements ISpan {
 
   @Override
   public void setDescription(final @Nullable String description) {
-    if (finished.get()) {
-      return;
-    }
-
     this.context.setDescription(description);
   }
 
@@ -259,10 +251,6 @@ public final class Span implements ISpan {
 
   @Override
   public void setStatus(final @Nullable SpanStatus status) {
-    if (finished.get()) {
-      return;
-    }
-
     this.context.setStatus(status);
   }
 
@@ -278,10 +266,6 @@ public final class Span implements ISpan {
 
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
-    if (finished.get()) {
-      return;
-    }
-
     this.context.setTag(key, value);
   }
 
@@ -313,10 +297,6 @@ public final class Span implements ISpan {
 
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
-    if (finished.get()) {
-      return;
-    }
-
     this.throwable = throwable;
   }
 
@@ -344,10 +324,6 @@ public final class Span implements ISpan {
 
   @Override
   public void setData(@NotNull String key, @NotNull Object value) {
-    if (finished.get()) {
-      return;
-    }
-
     data.put(key, value);
   }
 
