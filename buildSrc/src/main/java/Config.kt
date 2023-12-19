@@ -116,7 +116,7 @@ object Config {
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
-        val contextPropagation = "io.micrometer:context-propagation:1.0.2"
+        val contextPropagation = "io.micrometer:context-propagation:1.1.0"
 
         private val feignVersion = "11.6"
         val feignCore = "io.github.openfeign:feign-core:$feignVersion"
