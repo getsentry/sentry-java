@@ -5,6 +5,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @Configuration(proxyBeanMethods = false)
 @Open
@@ -12,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 public class SentryQuartzConfiguration {
 
   @Bean
+  @Order(Ordered.HIGHEST_PRECEDENCE)
   public SchedulerFactoryBeanCustomizer schedulerFactoryBeanCustomizer() {
     return new SentrySchedulerFactoryBeanCustomizer();
   }

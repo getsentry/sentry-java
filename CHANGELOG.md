@@ -6,6 +6,11 @@
 
 - Add support for `graphql-java` version 21 ([#3090](https://github.com/getsentry/sentry-java/pull/3090))
 
+### Fixes
+
+- SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
+  - If you are setting global job listeners please also add `SentryJobListener`
+
 ## 7.1.0
 
 ### Features
@@ -18,6 +23,7 @@
   - Once the system goes back to healthy, we reset the `tracesSampleRate` to its original value.
 - (Android) Experimental: Provide more detailed cold app start information ([#3057](https://github.com/getsentry/sentry-java/pull/3057))
   - Attaches spans for Application, ContentProvider, and Activities to app-start timings
+  - Application and ContentProvider timings are added using bytecode instrumentation, which requires sentry-android-gradle-plugin version `4.1.0` or newer
   - Uses Process.startUptimeMillis to calculate app-start timings
   - To enable this feature set `options.isEnablePerformanceV2 = true`
 - Move slow+frozen frame calculation, as well as frame delay inside SentryFrameMetricsCollector ([#3100](https://github.com/getsentry/sentry-java/pull/3100))
