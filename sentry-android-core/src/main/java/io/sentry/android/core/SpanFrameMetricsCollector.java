@@ -121,7 +121,7 @@ public class SpanFrameMetricsCollector
     } else if (isSlow) {
       currentFrameMetrics.addSlowFrame(durationNanos);
     } else {
-      currentFrameMetrics.addFastFrame(durationNanos);
+      currentFrameMetrics.addNormalFrame(durationNanos);
     }
   }
 }

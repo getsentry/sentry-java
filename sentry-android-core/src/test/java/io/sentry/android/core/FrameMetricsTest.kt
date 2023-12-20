@@ -9,11 +9,11 @@ class FrameMetricsTest {
     @Test
     fun addFastFrame() {
         val frameMetrics = FrameMetrics()
-        frameMetrics.addFastFrame(10)
-        assertEquals(1, frameMetrics.fastFrameCount)
+        frameMetrics.addNormalFrame(10)
+        assertEquals(1, frameMetrics.normalFrameCount)
 
-        frameMetrics.addFastFrame(10)
-        assertEquals(2, frameMetrics.fastFrameCount)
+        frameMetrics.addNormalFrame(10)
+        assertEquals(2, frameMetrics.normalFrameCount)
     }
 
     @Test
@@ -43,7 +43,7 @@ class FrameMetricsTest {
     @Test
     fun totalFrameCount() {
         val frameMetrics = FrameMetrics()
-        frameMetrics.addFastFrame(10)
+        frameMetrics.addNormalFrame(10)
         frameMetrics.addSlowFrame(100)
         frameMetrics.addFrozenFrame(1000)
         assertEquals(3, frameMetrics.totalFrameCount)
@@ -52,12 +52,12 @@ class FrameMetricsTest {
     @Test
     fun duplicate() {
         val frameMetrics = FrameMetrics()
-        frameMetrics.addFastFrame(10)
+        frameMetrics.addNormalFrame(10)
         frameMetrics.addSlowFrame(100)
         frameMetrics.addFrozenFrame(1000)
 
         val dup = frameMetrics.duplicate()
-        assertEquals(1, dup.fastFrameCount)
+        assertEquals(1, dup.normalFrameCount)
         assertEquals(1, dup.slowFrameCount)
         assertEquals(100, dup.slowFrameDuration)
         assertEquals(1, dup.frozenFrameCount)
@@ -69,7 +69,7 @@ class FrameMetricsTest {
     fun diffTo() {
         // given one fast, 2 slow and 3 frozen frame
         val frameMetricsA = FrameMetrics()
-        frameMetricsA.addFastFrame(10)
+        frameMetricsA.addNormalFrame(10)
         frameMetricsA.addSlowFrame(100)
         frameMetricsA.addSlowFrame(100)
         frameMetricsA.addFrozenFrame(1000)
@@ -95,14 +95,14 @@ class FrameMetricsTest {
     @Test
     fun clear() {
         val frameMetrics = FrameMetrics().apply {
-            addFastFrame(10)
+            addNormalFrame(10)
             addSlowFrame(100)
             addFrozenFrame(1000)
         }
 
         frameMetrics.clear()
 
-        assertEquals(0, frameMetrics.fastFrameCount)
+        assertEquals(0, frameMetrics.normalFrameCount)
         assertEquals(0, frameMetrics.slowFrameCount)
         assertEquals(0, frameMetrics.slowFrameDuration)
         assertEquals(0, frameMetrics.frozenFrameCount)
@@ -115,7 +115,7 @@ class FrameMetricsTest {
         val frameMetrics = FrameMetrics()
         assertFalse(frameMetrics.containsValidData())
 
-        frameMetrics.addFastFrame(10)
+        frameMetrics.addNormalFrame(10)
         assertTrue(frameMetrics.containsValidData())
 
         val invalidData = FrameMetrics().diffTo(frameMetrics)

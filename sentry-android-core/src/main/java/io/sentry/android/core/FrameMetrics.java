@@ -5,29 +5,27 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 final class FrameMetrics {
 
-  private int fastFrameCount;
+  private int normalFrameCount;
   private int slowFrameCount;
   private int frozenFrameCount;
 
   private long slowFrameDuration;
   private long frozenFrameDuration;
-  private long fastFrameDuration;
 
   public FrameMetrics() {}
 
   public FrameMetrics(
-      int fastFrameCount,
+      int normalFrameCount,
       int slowFrameCount,
-      int frozenFrameCount,
-      long fastFrameDuration,
       long slowFrameDuration,
+      int frozenFrameCount,
       long frozenFrameDuration) {
-    this.fastFrameCount = fastFrameCount;
-    this.slowFrameCount = slowFrameCount;
-    this.frozenFrameCount = frozenFrameCount;
+    this.normalFrameCount = normalFrameCount;
 
-    this.fastFrameDuration = fastFrameDuration;
+    this.slowFrameCount = slowFrameCount;
     this.slowFrameDuration = slowFrameDuration;
+
+    this.frozenFrameCount = frozenFrameCount;
     this.frozenFrameDuration = frozenFrameDuration;
   }
 
@@ -41,13 +39,12 @@ final class FrameMetrics {
     frozenFrameCount++;
   }
 
-  public void addFastFrame(long duration) {
-    fastFrameDuration += duration;
-    fastFrameCount++;
+  public void addNormalFrame(long duration) {
+    normalFrameCount++;
   }
 
-  public int getFastFrameCount() {
-    return fastFrameCount;
+  public int getNormalFrameCount() {
+    return normalFrameCount;
   }
 
   public int getSlowFrameCount() {
@@ -67,25 +64,22 @@ final class FrameMetrics {
   }
 
   public int getTotalFrameCount() {
-    return fastFrameCount + slowFrameCount + frozenFrameCount;
+    return normalFrameCount + slowFrameCount + frozenFrameCount;
   }
 
   public void clear() {
-    fastFrameCount = 0;
+    normalFrameCount = 0;
+
     slowFrameCount = 0;
-    frozenFrameCount = 0;
     slowFrameDuration = 0;
+
+    frozenFrameCount = 0;
     frozenFrameDuration = 0;
   }
 
   public FrameMetrics duplicate() {
     return new FrameMetrics(
-        fastFrameCount,
-        slowFrameCount,
-        frozenFrameCount,
-        fastFrameDuration,
-        slowFrameDuration,
-        frozenFrameDuration);
+        normalFrameCount, slowFrameCount, slowFrameDuration, frozenFrameCount, frozenFrameDuration);
   }
 
   /**
@@ -94,11 +88,10 @@ final class FrameMetrics {
    */
   public FrameMetrics diffTo(FrameMetrics other) {
     return new FrameMetrics(
-        fastFrameCount - other.fastFrameCount,
+        normalFrameCount - other.normalFrameCount,
         slowFrameCount - other.slowFrameCount,
-        frozenFrameCount - other.frozenFrameCount,
-        fastFrameDuration - other.fastFrameDuration,
         slowFrameDuration - other.slowFrameDuration,
+        frozenFrameCount - other.frozenFrameCount,
         frozenFrameDuration - other.frozenFrameDuration);
   }
 
