@@ -10,6 +10,7 @@
 
 - SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
   - If you are setting global job listeners please also add `SentryJobListener`
+- Fix UserFeedback disk cache name conflicts with linked events ([#3116](https://github.com/getsentry/sentry-java/pull/3116))
 
 ### Dependencies
 
