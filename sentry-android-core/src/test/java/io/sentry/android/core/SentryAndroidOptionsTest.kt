@@ -134,16 +134,28 @@ class SentryAndroidOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, enableScopeSync is enabled by default`() {
-        assertTrue(SentryAndroidOptions().isEnableScopeSync)
-    }
-
-    @Test
     fun `enableScopeSync can be properly disabled`() {
         val options = SentryAndroidOptions()
         options.isEnableScopeSync = false
 
         assertFalse(options.isEnableScopeSync)
+    }
+
+    @Test
+    fun `performance v2 is disabled by default`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertFalse(sentryOptions.isEnablePerformanceV2)
+    }
+
+    @Test
+    fun `performance v2 can be enabled`() {
+        val sentryOptions = SentryAndroidOptions()
+        sentryOptions.isEnablePerformanceV2 = true
+        assertTrue(sentryOptions.isEnablePerformanceV2)
+    }
+
+    fun `when options is initialized, enableScopeSync is enabled by default`() {
+        assertTrue(SentryAndroidOptions().isEnableScopeSync)
     }
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {

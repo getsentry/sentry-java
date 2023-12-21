@@ -149,6 +149,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.Attachment.equals(itemType)) {
       return DataCategory.Attachment;
     }
+    if (SentryItemType.CheckIn.equals(itemType)) {
+      return DataCategory.Monitor;
+    }
 
     return DataCategory.Default;
   }

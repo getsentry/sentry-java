@@ -15,7 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfiguration {
 
   // this API is meant to be consumed by non-browser clients thus the CSRF protection is not needed.
-  @SuppressWarnings("lgtm[java/spring-disabled-csrf-protection]")
+  @SuppressWarnings({"lgtm[java/spring-disabled-csrf-protection]", "removal"})
   @Bean
   public SecurityFilterChain filterChain(final @NotNull HttpSecurity http) throws Exception {
     http.csrf().disable().authorizeHttpRequests().anyRequest().authenticated().and().httpBasic();

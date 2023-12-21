@@ -132,6 +132,11 @@ public final class NoOpHub implements IHub {
   public void bindClient(@NotNull ISentryClient client) {}
 
   @Override
+  public boolean isHealthy() {
+    return true;
+  }
+
+  @Override
   public void flush(long timeoutMillis) {}
 
   @Override

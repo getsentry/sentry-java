@@ -68,7 +68,7 @@ public class io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration {
 public class io/sentry/spring/boot/jakarta/graphql/SentryGraphqlAutoConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
-	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
+	public static fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
 	public fun sourceBuilderCustomizerWebflux (Lio/sentry/spring/boot/jakarta/SentryProperties;)Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
 	public fun sourceBuilderCustomizerWebmvc (Lio/sentry/spring/boot/jakarta/SentryProperties;)Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
 }
