@@ -514,6 +514,7 @@ class SentryOptionsTest {
         assertEquals(customProvider, options.connectionStatusProvider)
     }
 
+    @Test
     fun `when options are initialized, enabled is set to true by default`() {
         assertTrue(SentryOptions().isEnabled)
     }
@@ -526,5 +527,17 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, sendModules is set to true by default`() {
         assertTrue(SentryOptions().isSendModules)
+    }
+
+    @Test
+    fun `when options are initialized, enableStartupProfiling is set to false by default`() {
+        assertFalse(SentryOptions().isEnableStartupProfiling)
+    }
+
+    @Test
+    fun `when setEnableStartupProfiling is called, overrides default`() {
+        val options = SentryOptions()
+        options.isEnableStartupProfiling = true
+        assertTrue(options.isEnableStartupProfiling)
     }
 }

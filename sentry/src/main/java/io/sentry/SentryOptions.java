@@ -440,6 +440,9 @@ public class SentryOptions {
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
+  /** Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate. */
+  private boolean enableStartupProfiling = false;
+
   /**
    * Adds an event processor
    *
@@ -2113,6 +2116,24 @@ public class SentryOptions {
    */
   public void setEnablePrettySerializationOutput(boolean enablePrettySerializationOutput) {
     this.enablePrettySerializationOutput = enablePrettySerializationOutput;
+  }
+
+  /**
+   * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
+   *
+   * @return true if startup profiling should be started.
+   */
+  public boolean isEnableStartupProfiling() {
+    return enableStartupProfiling;
+  }
+
+  /**
+   * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
+   *
+   * @param enableStartupProfiling true if startup profiling should be started.
+   */
+  public void setEnableStartupProfiling(boolean enableStartupProfiling) {
+    this.enableStartupProfiling = enableStartupProfiling;
   }
 
   /**
