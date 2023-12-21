@@ -174,11 +174,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     } else {
       options
           .getLogger()
-          .log(
-              DEBUG,
-              new Exception(),
-              "Adding Envelope to offline storage: %s",
-              envelopeFile.getAbsolutePath());
+          .log(DEBUG, "Adding Envelope to offline storage: %s", envelopeFile.getAbsolutePath());
     }
 
     writeEnvelopeToDisk(envelopeFile, envelope);
