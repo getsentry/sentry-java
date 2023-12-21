@@ -4,8 +4,11 @@ public final class io/sentry/apollo3/BuildConfig {
 }
 
 public final class io/sentry/apollo3/SentryApollo3ClientException : java/lang/Exception {
+	public static final field Companion Lio/sentry/apollo3/SentryApollo3ClientException$Companion;
 	public fun <init> (Ljava/lang/String;)V
-	public final fun getSerialVersionUID ()J
+}
+
+public final class io/sentry/apollo3/SentryApollo3ClientException$Companion {
 }
 
 public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollographql/apollo3/network/http/HttpInterceptor {
