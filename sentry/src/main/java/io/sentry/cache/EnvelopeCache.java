@@ -174,7 +174,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     } else {
       options
           .getLogger()
-          .log(DEBUG, "Adding Envelope to offline storage: %s", envelopeFile.getAbsolutePath());
+          .log(
+              DEBUG,
+              new Exception(),
+              "Adding Envelope to offline storage: %s",
+              envelopeFile.getAbsolutePath());
     }
 
     writeEnvelopeToDisk(envelopeFile, envelope);
@@ -362,16 +366,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * @return the file
    */
   private synchronized @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
-    String fileName;
+    final @NotNull String fileName;
     if (fileNameMap.containsKey(envelope)) {
       fileName = fileNameMap.get(envelope);
     } else {
-      if (envelope.getHeader().getEventId() != null) {
-        fileName = envelope.getHeader().getEventId().toString();
-      } else {
-        fileName = UUID.randomUUID().toString();
-      }
-      fileName += SUFFIX_ENVELOPE_FILE;
+      fileName = UUID.randomUUID() + SUFFIX_ENVELOPE_FILE;
       fileNameMap.put(envelope, fileName);
     }
 
