@@ -25,6 +25,7 @@ abstract class BaseUiTest {
     /** Application context for the current test. */
     protected lateinit var context: Context
 
+    // The mockDsn cannot be changed. If a custom dsn needs to be used, it can be set in the options as usual
     /** Mock dsn used to send envelopes to our mock [relay] server. */
     protected lateinit var mockDsn: String
         // The mockDsn cannot be changed. If a custom dsn needs to be used, it can be set in the options as usual

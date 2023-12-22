@@ -1,8 +1,14 @@
 package io.sentry.uitest.android.mockservers
 
 import io.sentry.EnvelopeReader
+import io.sentry.JsonSerializer
+import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
+import io.sentry.SentryItemType
+import io.sentry.SentryOptions
+import io.sentry.protocol.SentryTransaction
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import java.io.IOException
@@ -10,40 +16,18 @@ import java.util.zip.GZIPInputStream
 
 /** Class used to assert requests sent to [MockRelay]. */
 class RelayAsserter(
-    private val unassertedEnvelopes: MutableList<RelayResponse>,
-    private val unassertedRequests: MutableList<RelayResponse>
+    private val unassertedEnvelopes: MutableList<RelayResponse>
 ) {
-
-    /**
-     * Asserts an envelope request exists and allows to make other assertions on the first one and on its response.
-     * The asserted envelope request is then removed from internal list of unasserted envelopes.
-     */
-    fun assertFirstRawEnvelope(assertion: ((relayResponse: RelayResponse) -> Unit)? = null) {
-        val relayResponse = unassertedEnvelopes.removeFirstOrNull()
-            ?: throw AssertionError("No envelope request found")
-        assertion?.let { it(relayResponse) }
-    }
-
-    /**
-     * Asserts a request exists and makes other assertions on the first one and on its response.
-     * The asserted request is then removed from internal list of unasserted requests.
-     */
-    fun assertRawRequest(assertion: ((request: RecordedRequest, response: MockResponse) -> Unit)? = null) {
-        val relayResponse = unassertedRequests.removeFirstOrNull()
-            ?: throw AssertionError("No raw request found")
-        assertion?.let {
-            it(relayResponse.request, relayResponse.response)
-        }
-    }
+    private val originalUnassertedEnvelopes: MutableList<RelayResponse> = ArrayList(unassertedEnvelopes)
 
     /**
      * Parses the first request as an envelope and makes other assertions through a [EnvelopeAsserter].
      * The asserted envelope is then removed from internal list of unasserted envelopes.
      */
     fun assertFirstEnvelope(assertion: (asserter: EnvelopeAsserter) -> Unit) {
-        assertFirstRawEnvelope { relayResponse ->
-            relayResponse.assert(assertion)
-        }
+        val relayResponse = unassertedEnvelopes.removeFirstOrNull()
+            ?: throw AssertionError("No envelope request found")
+        relayResponse.assert(assertion)
     }
 
     /**
@@ -61,22 +45,39 @@ class RelayAsserter(
     /** Asserts no other envelopes were sent. */
     fun assertNoOtherEnvelopes() {
         if (unassertedEnvelopes.isNotEmpty()) {
-            throw AssertionError("There were other ${unassertedEnvelopes.size} envelope requests: $unassertedEnvelopes")
+            throw AssertionError(
+                "There was a total of ${originalUnassertedEnvelopes.size} envelopes: " +
+                    originalUnassertedEnvelopes.joinToString { describeEnvelope(it.envelope!!) }
+            )
         }
     }
 
-    /** Asserts no other raw requests were sent. */
-    fun assertNoOtherRawRequests() {
-        assertNoOtherEnvelopes()
-        if (unassertedRequests.isNotEmpty()) {
-            throw AssertionError("There were other ${unassertedRequests.size} requests: $unassertedRequests")
+    /** Function used to describe the content of the envelope to print in the logs. For debugging purposes only. */
+    private fun describeEnvelope(envelope: SentryEnvelope): String {
+        var descr = ""
+        envelope.items.forEach { item ->
+            when (item.header.type) {
+                SentryItemType.Event -> {
+                    val deserialized = JsonSerializer(SentryOptions())
+                        .deserialize(item.data.inputStream().reader(), SentryEvent::class.java)!!
+                    descr += "Event (${deserialized.eventId}) - message: ${deserialized.message!!.formatted} -- "
+                }
+                SentryItemType.Transaction -> {
+                    val deserialized = JsonSerializer(SentryOptions())
+                        .deserialize(item.data.inputStream().reader(), SentryTransaction::class.java)!!
+                    descr += "Transaction (${deserialized.eventId}) - transaction: ${deserialized.transaction} - spans: ${deserialized.spans.joinToString { "${it.op} ${it.description}" }} -- "
+                }
+                SentryItemType.Profile -> {
+                    val deserialized = JsonSerializer(SentryOptions())
+                        .deserialize(item.data.inputStream().reader(), ProfilingTraceData::class.java)!!
+                    descr += "Profile (${deserialized.profileId}) - transactionName: ${deserialized.transactionName} -- "
+                }
+                else -> {
+                    descr += "${item.header.type} -- "
+                }
+            }
         }
-    }
-
-    /** Asserts no other requests or envelopes were sent. */
-    fun assertNoOtherRequests() {
-        assertNoOtherEnvelopes()
-        assertNoOtherRawRequests()
+        return "*** Envelope: $descr ***"
     }
 
     data class RelayResponse(val request: RecordedRequest, val response: MockResponse) {
