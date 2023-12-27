@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * returns 5xx.
  */
 public final class SentryHttpClientException extends Exception {
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 348162238030337390L;
 
   public SentryHttpClientException(final @Nullable String message) {
     super(message);
