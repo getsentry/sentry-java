@@ -6,50 +6,33 @@ on:
       - release/**
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    name: Build Job ${{ matrix.os }} - Java ${{ matrix.java }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      # we want that the matrix keeps running, default is to cancel them if it fails.
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        # Zulu Community distribution of OpenJDK
-        java: ['17']
+    name: Build Job ubuntu-latest - Java 17
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Git checkout
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 'Set up Java: ${{ matrix.java }}'
+      - name: Setup Java Version
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java }}
           distribution: 'temurin'
+          java-version: '17'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@842c587ad8aa4c68eeba24c396e15af4c2e9f30a # pin@v2
 
       # Clean, check formatting, build and do a dry release
       - name: Make all
         run: make all
 
-      # We stop gradle at the end to make sure the cache folders
-      # don't contain any lock files and are free to be cached.
-      - name: Make stop
-        run: make stop
-
       - name: Archive packages
-        # We need artifacts from only one the builds
-        if: runner.os == 'Linux' && matrix.java == '17'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}
@@ -60,8 +43,6 @@ jobs:
             ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
 
       - name: Upload coverage to Codecov
-        # We need coverage data from only one the builds
-        if: runner.os == 'Linux' && matrix.java == '17'
         uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@v3
         with:
           name: sentry-java

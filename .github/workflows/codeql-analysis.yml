@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '17 23 * * 3'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze
@@ -20,32 +24,25 @@ jobs:
         language: ['cpp', 'java']
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 'Set up Java: ${{ matrix.java }}'
+      - name: Setup Java Version
         uses: actions/setup-java@v4
         with:
-          java-version: 17
           distribution: 'temurin'
+          java-version: '17'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@842c587ad8aa4c68eeba24c396e15af4c2e9f30a # pin@v2
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@cdcdbb579706841c47f7063dda365e292e5cad7a # pin@v2
         with:
           languages: ${{ matrix.language }}
 
-      - run: |
-          ./gradlew assemble
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@cdcdbb579706841c47f7063dda365e292e5cad7a # pin@v2
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@cdcdbb579706841c47f7063dda365e292e5cad7a # pin@v2
