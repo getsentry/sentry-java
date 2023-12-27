@@ -10,37 +10,37 @@ final class SentryFrameMetrics {
   private int slowFrameCount;
   private int frozenFrameCount;
 
-  private long slowFrameDuration;
-  private long frozenFrameDuration;
+  private long slowFrameDelayNanos;
+  private long frozenFrameDelayNanos;
 
   public SentryFrameMetrics() {}
 
   public SentryFrameMetrics(
       int normalFrameCount,
       int slowFrameCount,
-      long slowFrameDuration,
+      long slowFrameDelayNanos,
       int frozenFrameCount,
-      long frozenFrameDuration) {
+      long frozenFrameDelayNanos) {
     this.normalFrameCount = normalFrameCount;
 
     this.slowFrameCount = slowFrameCount;
-    this.slowFrameDuration = slowFrameDuration;
+    this.slowFrameDelayNanos = slowFrameDelayNanos;
 
     this.frozenFrameCount = frozenFrameCount;
-    this.frozenFrameDuration = frozenFrameDuration;
+    this.frozenFrameDelayNanos = frozenFrameDelayNanos;
   }
 
-  public void addSlowFrame(final long duration) {
-    slowFrameDuration += duration;
+  public void addSlowFrame(final long delayNanos) {
+    slowFrameDelayNanos += delayNanos;
     slowFrameCount++;
   }
 
-  public void addFrozenFrame(final long duration) {
-    frozenFrameDuration += duration;
+  public void addFrozenFrame(final long delayNanos) {
+    frozenFrameDelayNanos += delayNanos;
     frozenFrameCount++;
   }
 
-  public void addNormalFrame(long duration) {
+  public void addNormalFrame() {
     normalFrameCount++;
   }
 
@@ -56,12 +56,12 @@ final class SentryFrameMetrics {
     return frozenFrameCount;
   }
 
-  public long getSlowFrameDuration() {
-    return slowFrameDuration;
+  public long getSlowFrameDelayNanos() {
+    return slowFrameDelayNanos;
   }
 
-  public long getFrozenFrameDuration() {
-    return frozenFrameDuration;
+  public long getFrozenFrameDelayNanos() {
+    return frozenFrameDelayNanos;
   }
 
   public int getTotalFrameCount() {
@@ -72,16 +72,20 @@ final class SentryFrameMetrics {
     normalFrameCount = 0;
 
     slowFrameCount = 0;
-    slowFrameDuration = 0;
+    slowFrameDelayNanos = 0;
 
     frozenFrameCount = 0;
-    frozenFrameDuration = 0;
+    frozenFrameDelayNanos = 0;
   }
 
   @NotNull
   public SentryFrameMetrics duplicate() {
     return new SentryFrameMetrics(
-        normalFrameCount, slowFrameCount, slowFrameDuration, frozenFrameCount, frozenFrameDuration);
+        normalFrameCount,
+        slowFrameCount,
+        slowFrameDelayNanos,
+        frozenFrameCount,
+        frozenFrameDelayNanos);
   }
 
   /**
@@ -93,9 +97,9 @@ final class SentryFrameMetrics {
     return new SentryFrameMetrics(
         normalFrameCount - other.normalFrameCount,
         slowFrameCount - other.slowFrameCount,
-        slowFrameDuration - other.slowFrameDuration,
+        slowFrameDelayNanos - other.slowFrameDelayNanos,
         frozenFrameCount - other.frozenFrameCount,
-        frozenFrameDuration - other.frozenFrameDuration);
+        frozenFrameDelayNanos - other.frozenFrameDelayNanos);
   }
 
   public boolean containsValidData() {

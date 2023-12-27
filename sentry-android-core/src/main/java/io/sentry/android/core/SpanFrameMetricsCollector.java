@@ -114,11 +114,11 @@ public class SpanFrameMetricsCollector
       final float refreshRate) {
 
     if (isFrozen) {
-      currentFrameMetrics.addFrozenFrame(durationNanos);
+      currentFrameMetrics.addFrozenFrame(delayNanos);
     } else if (isSlow) {
-      currentFrameMetrics.addSlowFrame(durationNanos);
+      currentFrameMetrics.addSlowFrame(delayNanos);
     } else {
-      currentFrameMetrics.addNormalFrame(durationNanos);
+      currentFrameMetrics.addNormalFrame();
     }
   }
 }
