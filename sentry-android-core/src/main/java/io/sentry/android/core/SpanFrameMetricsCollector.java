@@ -20,9 +20,9 @@ public class SpanFrameMetricsCollector
   private @NotNull final Object lock = new Object();
   private @Nullable final SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable volatile String listenerId;
-  private @NotNull final Map<SpanId, FrameMetrics> metricsAtSpanStart;
+  private @NotNull final Map<SpanId, SentryFrameMetrics> metricsAtSpanStart;
 
-  private @NotNull final FrameMetrics currentFrameMetrics;
+  private @NotNull final SentryFrameMetrics currentFrameMetrics;
   private final boolean enabled;
 
   public SpanFrameMetricsCollector(final @NotNull SentryAndroidOptions options) {
@@ -30,7 +30,7 @@ public class SpanFrameMetricsCollector
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
 
     metricsAtSpanStart = new HashMap<>();
-    currentFrameMetrics = new FrameMetrics();
+    currentFrameMetrics = new SentryFrameMetrics();
   }
 
   @Override
@@ -68,9 +68,9 @@ public class SpanFrameMetricsCollector
       return;
     }
 
-    @Nullable FrameMetrics diff = null;
+    @Nullable SentryFrameMetrics diff = null;
     synchronized (lock) {
-      final @Nullable FrameMetrics metricsAtStart =
+      final @Nullable SentryFrameMetrics metricsAtStart =
           metricsAtSpanStart.remove(span.getSpanContext().getSpanId());
       if (metricsAtStart != null) {
         diff = currentFrameMetrics.diffTo(metricsAtStart);

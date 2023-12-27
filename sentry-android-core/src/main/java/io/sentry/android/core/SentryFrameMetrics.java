@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-final class FrameMetrics {
+final class SentryFrameMetrics {
 
   private int normalFrameCount;
   private int slowFrameCount;
@@ -13,9 +13,9 @@ final class FrameMetrics {
   private long slowFrameDuration;
   private long frozenFrameDuration;
 
-  public FrameMetrics() {}
+  public SentryFrameMetrics() {}
 
-  public FrameMetrics(
+  public SentryFrameMetrics(
       int normalFrameCount,
       int slowFrameCount,
       long slowFrameDuration,
@@ -79,8 +79,8 @@ final class FrameMetrics {
   }
 
   @NotNull
-  public FrameMetrics duplicate() {
-    return new FrameMetrics(
+  public SentryFrameMetrics duplicate() {
+    return new SentryFrameMetrics(
         normalFrameCount, slowFrameCount, slowFrameDuration, frozenFrameCount, frozenFrameDuration);
   }
 
@@ -89,8 +89,8 @@ final class FrameMetrics {
    * @return the difference between two frame metrics (this minus other)
    */
   @NotNull
-  public FrameMetrics diffTo(final @NotNull FrameMetrics other) {
-    return new FrameMetrics(
+  public SentryFrameMetrics diffTo(final @NotNull SentryFrameMetrics other) {
+    return new SentryFrameMetrics(
         normalFrameCount - other.normalFrameCount,
         slowFrameCount - other.slowFrameCount,
         slowFrameDuration - other.slowFrameDuration,

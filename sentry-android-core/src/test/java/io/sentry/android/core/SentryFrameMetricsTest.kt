@@ -5,10 +5,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class FrameMetricsTest {
+class SentryFrameMetricsTest {
     @Test
     fun addFastFrame() {
-        val frameMetrics = FrameMetrics()
+        val frameMetrics = SentryFrameMetrics()
         frameMetrics.addNormalFrame(10)
         assertEquals(1, frameMetrics.normalFrameCount)
 
@@ -18,7 +18,7 @@ class FrameMetricsTest {
 
     @Test
     fun addSlowFrame() {
-        val frameMetrics = FrameMetrics()
+        val frameMetrics = SentryFrameMetrics()
         frameMetrics.addSlowFrame(100)
         assertEquals(1, frameMetrics.slowFrameCount)
         assertEquals(100, frameMetrics.slowFrameDuration)
@@ -30,7 +30,7 @@ class FrameMetricsTest {
 
     @Test
     fun addFrozenFrame() {
-        val frameMetrics = FrameMetrics()
+        val frameMetrics = SentryFrameMetrics()
         frameMetrics.addFrozenFrame(1000)
         assertEquals(1, frameMetrics.frozenFrameCount)
         assertEquals(1000, frameMetrics.frozenFrameDuration)
@@ -42,7 +42,7 @@ class FrameMetricsTest {
 
     @Test
     fun totalFrameCount() {
-        val frameMetrics = FrameMetrics()
+        val frameMetrics = SentryFrameMetrics()
         frameMetrics.addNormalFrame(10)
         frameMetrics.addSlowFrame(100)
         frameMetrics.addFrozenFrame(1000)
@@ -51,7 +51,7 @@ class FrameMetricsTest {
 
     @Test
     fun duplicate() {
-        val frameMetrics = FrameMetrics()
+        val frameMetrics = SentryFrameMetrics()
         frameMetrics.addNormalFrame(10)
         frameMetrics.addSlowFrame(100)
         frameMetrics.addFrozenFrame(1000)
@@ -68,7 +68,7 @@ class FrameMetricsTest {
     @Test
     fun diffTo() {
         // given one fast, 2 slow and 3 frozen frame
-        val frameMetricsA = FrameMetrics()
+        val frameMetricsA = SentryFrameMetrics()
         frameMetricsA.addNormalFrame(10)
         frameMetricsA.addSlowFrame(100)
         frameMetricsA.addSlowFrame(100)
@@ -94,7 +94,7 @@ class FrameMetricsTest {
 
     @Test
     fun clear() {
-        val frameMetrics = FrameMetrics().apply {
+        val frameMetrics = SentryFrameMetrics().apply {
             addNormalFrame(10)
             addSlowFrame(100)
             addFrozenFrame(1000)
@@ -112,13 +112,13 @@ class FrameMetricsTest {
 
     @Test
     fun containsValidData() {
-        val frameMetrics = FrameMetrics()
+        val frameMetrics = SentryFrameMetrics()
         assertFalse(frameMetrics.containsValidData())
 
         frameMetrics.addNormalFrame(10)
         assertTrue(frameMetrics.containsValidData())
 
-        val invalidData = FrameMetrics().diffTo(frameMetrics)
+        val invalidData = SentryFrameMetrics().diffTo(frameMetrics)
         assertFalse(invalidData.containsValidData())
     }
 }
