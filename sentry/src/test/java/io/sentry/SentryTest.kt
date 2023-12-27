@@ -1,5 +1,7 @@
 package io.sentry
 
+import io.sentry.backpressure.BackpressureMonitor
+import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.internal.debugmeta.IDebugMetaLoader
@@ -920,6 +922,29 @@ class SentryTest {
         assertEquals("op-child", span.operation)
     }
 
+    @Test
+    fun `backpressure monitor is a NoOp if handling is disabled`() {
+        var sentryOptions: SentryOptions? = null
+        Sentry.init({
+            it.dsn = dsn
+            it.isEnableBackpressureHandling = false
+            sentryOptions = it
+        })
+        assertIs<NoOpBackpressureMonitor>(sentryOptions?.backpressureMonitor)
+    }
+
+    @Test
+    fun `backpressure monitor is set if handling is enabled`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init({
+            it.dsn = dsn
+            it.isEnableBackpressureHandling = true
+            sentryOptions = it
+        })
+        assertIs<BackpressureMonitor>(sentryOptions?.backpressureMonitor)
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set
@@ -976,7 +1001,7 @@ class SentryTest {
     }
 
     private class CustomDebugMetaLoader : IDebugMetaLoader {
-        override fun loadDebugMeta(): Properties? = null
+        override fun loadDebugMeta(): List<Properties>? = null
     }
 
     private class CustomEnvelopCache : IEnvelopeCache {

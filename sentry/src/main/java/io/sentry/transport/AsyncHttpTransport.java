@@ -5,6 +5,7 @@ import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.RequestDetails;
 import io.sentry.SentryDate;
+import io.sentry.SentryDateProvider;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -46,7 +47,10 @@ public final class AsyncHttpTransport implements ITransport {
       final @NotNull RequestDetails requestDetails) {
     this(
         initExecutor(
-            options.getMaxQueueSize(), options.getEnvelopeDiskCache(), options.getLogger()),
+            options.getMaxQueueSize(),
+            options.getEnvelopeDiskCache(),
+            options.getLogger(),
+            options.getDateProvider()),
         options,
         rateLimiter,
         transportGate,
@@ -124,7 +128,8 @@ public final class AsyncHttpTransport implements ITransport {
   private static QueuedThreadPoolExecutor initExecutor(
       final int maxQueueSize,
       final @NotNull IEnvelopeCache envelopeCache,
-      final @NotNull ILogger logger) {
+      final @NotNull ILogger logger,
+      final @NotNull SentryDateProvider dateProvider) {
 
     final RejectedExecutionHandler storeEvents =
         (r, executor) -> {
@@ -141,12 +146,19 @@ public final class AsyncHttpTransport implements ITransport {
         };
 
     return new QueuedThreadPoolExecutor(
-        1, maxQueueSize, new AsyncConnectionThreadFactory(), storeEvents, logger);
+        1, maxQueueSize, new AsyncConnectionThreadFactory(), storeEvents, logger, dateProvider);
   }
 
   @Override
   public @NotNull RateLimiter getRateLimiter() {
     return rateLimiter;
+  }
+
+  @Override
+  public boolean isHealthy() {
+    boolean anyRateLimitActive = rateLimiter.isAnyRateLimitActive();
+    boolean didRejectRecently = executor.didRejectRecently();
+    return !anyRateLimitActive && !didRejectRecently;
   }
 
   @Override

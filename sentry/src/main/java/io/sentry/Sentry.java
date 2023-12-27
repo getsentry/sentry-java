@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
@@ -378,8 +379,8 @@ public final class Sentry {
     if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
       options.setDebugMetaLoader(new ResourcesDebugMetaLoader(options.getLogger()));
     }
-    final @Nullable Properties properties = options.getDebugMetaLoader().loadDebugMeta();
-    DebugMetaPropertiesApplier.applyToOptions(options, properties);
+    final @Nullable List<Properties> propertiesList = options.getDebugMetaLoader().loadDebugMeta();
+    DebugMetaPropertiesApplier.applyToOptions(options, propertiesList);
 
     final IMainThreadChecker mainThreadChecker = options.getMainThreadChecker();
     // only override the MainThreadChecker if it's not already set by Android
@@ -389,6 +390,11 @@ public final class Sentry {
 
     if (options.getCollectors().isEmpty()) {
       options.addCollector(new JavaMemoryCollector());
+    }
+
+    if (options.isEnableBackpressureHandling()) {
+      options.setBackpressureMonitor(new BackpressureMonitor(options, HubAdapter.getInstance()));
+      options.getBackpressureMonitor().start();
     }
 
     return true;
@@ -729,6 +735,10 @@ public final class Sentry {
    */
   public static void bindClient(final @NotNull ISentryClient client) {
     getCurrentHub().bindClient(client);
+  }
+
+  public static boolean isHealthy() {
+    return getCurrentHub().isHealthy();
   }
 
   /**

@@ -169,8 +169,9 @@ public final class io/sentry/spring/graphql/SentryDgsSubscriptionHandler : io/se
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
-public final class io/sentry/spring/graphql/SentryGraphqlBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor {
+public final class io/sentry/spring/graphql/SentryGraphqlBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
 	public fun <init> ()V
+	public fun getOrder ()I
 	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 }
 

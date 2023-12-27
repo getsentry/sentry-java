@@ -5,6 +5,8 @@ import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
+import okio.GzipSource
+import okio.buffer
 import java.io.IOException
 import java.util.zip.GZIPInputStream
 
@@ -97,6 +99,10 @@ class RelayAsserter(
             envelope?.let {
                 assertion(EnvelopeAsserter(it, response))
             } ?: throw AssertionError("Was unable to parse the request as an envelope: $request")
+        }
+
+        override fun toString(): String {
+            return "RelayResponse(request=${request.requestLine}\n${GzipSource(request.body).buffer().readUtf8()}\n, response=$response)"
         }
     }
 }

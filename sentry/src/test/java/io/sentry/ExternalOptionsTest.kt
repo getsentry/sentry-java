@@ -268,6 +268,13 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with enableBackpressureHandling set to true`() {
+        withPropertiesFile("enable-backpressure-handling=true") { options ->
+            assertTrue(options.isEnableBackpressureHandling == true)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

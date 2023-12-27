@@ -2,7 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.sdk.trace.ReadableSpan;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.protocol.TransactionNameSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SpanDescriptionExtractor {
 
+  @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanDescription(final @NotNull ReadableSpan otelSpan) {
     final @NotNull String name = otelSpan.getName();
 
@@ -27,6 +28,7 @@ public final class SpanDescriptionExtractor {
     return new OtelSpanInfo(name, name, TransactionNameSource.CUSTOM);
   }
 
+  @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForHttpMethod(
       final @NotNull ReadableSpan otelSpan, final @NotNull String httpMethod) {
     final @NotNull String name = otelSpan.getName();
