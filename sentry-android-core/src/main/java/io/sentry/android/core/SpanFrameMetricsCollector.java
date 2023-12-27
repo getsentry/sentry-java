@@ -23,10 +23,9 @@ public class SpanFrameMetricsCollector
   private @NotNull final Map<SpanId, FrameMetrics> metricsAtSpanStart;
 
   private @NotNull final FrameMetrics currentFrameMetrics;
-  float lastRefreshRate = 0;
   private final boolean enabled;
 
-  public SpanFrameMetricsCollector(@NotNull SentryAndroidOptions options) {
+  public SpanFrameMetricsCollector(final @NotNull SentryAndroidOptions options) {
     frameMetricsCollector = options.getFrameMetricsCollector();
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
 
@@ -106,15 +105,13 @@ public class SpanFrameMetricsCollector
 
   @Override
   public void onFrameMetricCollected(
-      long frameStartNanos,
-      long frameEndNanos,
-      long durationNanos,
-      long delayNanos,
-      boolean isSlow,
-      boolean isFrozen,
-      float refreshRate) {
-
-    lastRefreshRate = (int) (refreshRate * 100) / 100F;
+      final long frameStartNanos,
+      final long frameEndNanos,
+      final long durationNanos,
+      final long delayNanos,
+      final boolean isSlow,
+      final boolean isFrozen,
+      final float refreshRate) {
 
     if (isFrozen) {
       currentFrameMetrics.addFrozenFrame(durationNanos);
