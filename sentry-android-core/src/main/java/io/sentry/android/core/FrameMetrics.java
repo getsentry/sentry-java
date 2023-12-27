@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 final class FrameMetrics {
@@ -29,12 +30,12 @@ final class FrameMetrics {
     this.frozenFrameDuration = frozenFrameDuration;
   }
 
-  public void addSlowFrame(long duration) {
+  public void addSlowFrame(final long duration) {
     slowFrameDuration += duration;
     slowFrameCount++;
   }
 
-  public void addFrozenFrame(long duration) {
+  public void addFrozenFrame(final long duration) {
     frozenFrameDuration += duration;
     frozenFrameCount++;
   }
@@ -77,6 +78,7 @@ final class FrameMetrics {
     frozenFrameDuration = 0;
   }
 
+  @NotNull
   public FrameMetrics duplicate() {
     return new FrameMetrics(
         normalFrameCount, slowFrameCount, slowFrameDuration, frozenFrameCount, frozenFrameDuration);
@@ -86,7 +88,8 @@ final class FrameMetrics {
    * @param other the other frame metrics to compare to, usually the older one
    * @return the difference between two frame metrics (this minus other)
    */
-  public FrameMetrics diffTo(FrameMetrics other) {
+  @NotNull
+  public FrameMetrics diffTo(final @NotNull FrameMetrics other) {
     return new FrameMetrics(
         normalFrameCount - other.normalFrameCount,
         slowFrameCount - other.slowFrameCount,

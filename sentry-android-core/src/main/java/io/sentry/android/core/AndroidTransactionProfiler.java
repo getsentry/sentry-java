@@ -59,19 +59,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
-    this(
-        context,
-        sentryAndroidOptions,
-        buildInfoProvider,
-        frameMetricsCollector,
-        HubAdapter.getInstance());
-  }
-
-  public AndroidTransactionProfiler(
-      final @NotNull Context context,
-      final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull IHub hub) {
     this.context = Objects.requireNonNull(context, "The application context is required");
