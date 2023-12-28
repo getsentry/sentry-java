@@ -91,6 +91,11 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
+            maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+
+            // Cap JVM args per test
+            minHeapSize = "128m"
+            maxHeapSize = "1g"
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
