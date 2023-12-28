@@ -1,8 +1,9 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease createCoverageReports
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease createCoverageReports check preMerge
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
+preMerge: check createCoverageReports
 
 # deep clean
 clean:
@@ -57,3 +58,6 @@ assembleUiTestRelease:
 createCoverageReports:
 	./gradlew jacocoTestReport
 	./gradlew koverXmlReportRelease
+
+check:
+  ./gradlew check
