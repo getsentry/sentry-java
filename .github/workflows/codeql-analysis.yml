@@ -41,8 +41,14 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@cdcdbb579706841c47f7063dda365e292e5cad7a # pin@v2
+      - if: matrix.language == 'cpp'
+        name: Build Cpp
+        run: |
+          ./gradlew sentry-android-ndk:buildCMakeRelWithDebInfo
+      - if: matrix.language == 'java'
+        name: Build Java
+        run: |
+          ./gradlew buildForCodeQL
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@cdcdbb579706841c47f7063dda365e292e5cad7a # pin@v2
