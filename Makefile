@@ -61,4 +61,4 @@ createCoverageReports:
 
 # Run tests and lint
 check:
-  ./gradlew check
+	./gradlew check
