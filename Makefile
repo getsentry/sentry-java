@@ -1,9 +1,10 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease createCoverageReports check preMerge
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease createCoverageReports check preMerge publish
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
 preMerge: check createCoverageReports
+publish: clean dryRelease
 
 # deep clean
 clean:
@@ -19,7 +20,7 @@ javadocs:
 
 # do a dry release (like a local deploy)
 dryRelease:
-	./gradlew aggregateJavadocs publishToMavenLocal --no-daemon --no-parallel
+	./gradlew aggregateJavadocs distZip
 
 # check for dependencies update
 update:
