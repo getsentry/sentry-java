@@ -59,5 +59,6 @@ createCoverageReports:
 	./gradlew jacocoTestReport
 	./gradlew koverXmlReportRelease
 
+# Run tests and lint
 check:
   ./gradlew check
