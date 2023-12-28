@@ -47,3 +47,11 @@ jobs:
         with:
           name: sentry-java
           fail_ci_if_error: false
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.ref }}
+          path: |
+            **/build/reports/*
