@@ -10,7 +10,7 @@ import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.Baggage;
 import io.sentry.DsnUtil;
 import io.sentry.HubAdapter;
@@ -233,6 +233,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
     return true;
   }
 
+  @SuppressWarnings("deprecation")
   private boolean isSentryRequest(final @NotNull ReadableSpan otelSpan) {
     final @NotNull SpanKind kind = otelSpan.getKind();
     if (!spanKindsConsideredForSentryRequests.contains(kind)) {
@@ -311,6 +312,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
     sentrySpan.setDescription(otelSpanInfo.getDescription());
   }
 
+  @SuppressWarnings("deprecation")
   private SpanStatus mapOtelStatus(final @NotNull ReadableSpan otelSpan) {
     final @NotNull SpanData otelSpanData = otelSpan.toSpanData();
     final @NotNull StatusData otelStatus = otelSpanData.getStatus();

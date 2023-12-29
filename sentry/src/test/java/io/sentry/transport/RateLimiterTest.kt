@@ -1,6 +1,8 @@
 package io.sentry.transport
 
 import io.sentry.Attachment
+import io.sentry.CheckIn
+import io.sentry.CheckInStatus
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ISerializer
@@ -32,8 +34,10 @@ import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RateLimiterTest {
 
@@ -194,8 +198,9 @@ class RateLimiterTest {
         val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, fixture.serializer)
+        val checkInItem = SentryEnvelopeItem.fromCheckIn(fixture.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR))
 
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem))
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem))
 
         rateLimiter.updateRetryAfterLimits(null, null, 429)
         val result = rateLimiter.filter(envelope, Hint())
@@ -207,6 +212,7 @@ class RateLimiterTest {
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(userFeedbackItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(attachmentItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(checkInItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -264,5 +270,19 @@ class RateLimiterTest {
 
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `any limit can be checked`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
+
+        assertFalse(rateLimiter.isAnyRateLimitActive)
+
+        rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
+
+        assertTrue(rateLimiter.isAnyRateLimitActive)
     }
 }

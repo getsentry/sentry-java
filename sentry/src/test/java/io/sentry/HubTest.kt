@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.backpressure.IBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
@@ -1437,6 +1438,28 @@ class HubTest {
         assertClientReport(
             options.clientReportRecorder,
             listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
+    fun `transactions lost due to sampling caused by backpressure are recorded as lost`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        val mockBackpressureMonitor = mock<IBackpressureMonitor>()
+        options.backpressureMonitor = mockBackpressureMonitor
+        whenever(mockBackpressureMonitor.downsampleFactor).thenReturn(1)
+
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
+        sentryTracer.finish()
+
+        assertClientReport(
+            options.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Transaction.category, 1))
         )
     }
     //endregion

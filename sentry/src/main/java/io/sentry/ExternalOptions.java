@@ -49,6 +49,7 @@ public final class ExternalOptions {
   private @Nullable List<String> ignoredCheckIns;
 
   private @Nullable Boolean sendModules;
+  private @Nullable Boolean enableBackpressureHandling;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -130,6 +131,9 @@ public final class ExternalOptions {
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
 
     options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
+
+    options.setEnableBackpressureHandling(
+        propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -397,5 +401,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableBackpressureHandling(final @Nullable Boolean enableBackpressureHandling) {
+    this.enableBackpressureHandling = enableBackpressureHandling;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isEnableBackpressureHandling() {
+    return enableBackpressureHandling;
   }
 }
