@@ -28,6 +28,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.RestTemplate
+import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -37,7 +38,10 @@ class SentrySpanRestTemplateCustomizerTest {
     class Fixture {
         val sentryOptions = SentryOptions()
         val hub = mock<IHub>()
-        val restTemplate = RestTemplateBuilder().build()
+        val restTemplate = RestTemplateBuilder()
+            .setConnectTimeout(Duration.ofSeconds(2))
+            .setReadTimeout(Duration.ofSeconds(2))
+            .build()
         var mockServer = MockWebServer()
         val transaction: SentryTracer
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
