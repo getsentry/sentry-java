@@ -5,6 +5,7 @@
 ### Features
 
 - Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
+- Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
 
 ### Fixes
 
@@ -34,7 +35,6 @@
   - To enable this feature set `options.isEnablePerformanceV2 = true`
 - Move slow+frozen frame calculation, as well as frame delay inside SentryFrameMetricsCollector ([#3100](https://github.com/getsentry/sentry-java/pull/3100))
 - Extract Activity Breadcrumbs generation into own Integration ([#3064](https://github.com/getsentry/sentry-java/pull/3064))
-- Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
 
 ### Fixes
 
