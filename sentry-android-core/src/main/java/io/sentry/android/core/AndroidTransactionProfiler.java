@@ -50,8 +50,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         sentryAndroidOptions,
         buildInfoProvider,
         Objects.requireNonNull(
-            Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required")
-                .getFrameMetricsCollector(),
+            sentryAndroidOptions.getFrameMetricsCollector(),
             "options.getFrameMetricsCollector cannot be null."),
         HubAdapter.getInstance());
   }
