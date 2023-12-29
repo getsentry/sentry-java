@@ -2162,6 +2162,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableShutdownHook ()Z
+	public fun isEnableStartupProfiling ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
@@ -2197,6 +2198,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableShutdownHook (Z)V
+	public fun setEnableStartupProfiling (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
@@ -2702,6 +2704,8 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+	public fun isForNextStartup ()Z
+	public fun setForNextStartup (Z)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setParentSampled (Ljava/lang/Boolean;)V

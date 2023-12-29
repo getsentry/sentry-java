@@ -208,9 +208,9 @@ public final class TransactionContext extends SpanContext {
   }
 
   /**
-   * Whether this {@link TransactionContext} evaluates for the next startup.
-   *  If this is true, it gets called only once when the SDK initializes.
-   *  This is set only if {@link SentryOptions#isEnableStartupProfiling()} is true.
+   * Whether this {@link TransactionContext} evaluates for the next startup. If this is true, it
+   * gets called only once when the SDK initializes. This is set only if {@link
+   * SentryOptions#isEnableStartupProfiling()} is true.
    *
    * @return True if this {@link TransactionContext} will be used for the next startup.
    */

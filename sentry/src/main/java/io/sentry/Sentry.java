@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
+import io.sentry.instrumentation.file.SentryFileWriter;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
 import io.sentry.internal.modules.CompositeModulesLoader;
@@ -20,6 +21,8 @@ import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +48,9 @@ public final class Sentry {
 
   /** whether to use a single (global) Hub as opposed to one per thread. */
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
+
+  private static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
+      "startup_profiling_config";
 
   /**
    * Returns the current (threads) hub, if none, clones the mainHub and returns it.
@@ -224,9 +230,7 @@ public final class Sentry {
 
     // If the executorService passed in the init is the same that was previously closed, we have to
     // set a new one
-    final ISentryExecutorService sentryExecutorService = options.getExecutorService();
-    // If the passed executor service was previously called we set a new one
-    if (sentryExecutorService.isClosed()) {
+    if (options.getExecutorService().isClosed()) {
       options.setExecutorService(new SentryExecutorService());
     }
 
@@ -241,6 +245,58 @@ public final class Sentry {
     notifyOptionsObservers(options);
 
     finalizePreviousSession(options, HubAdapter.getInstance());
+
+    handleStartupProfilingConfig(options, options.getExecutorService());
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void handleStartupProfilingConfig(
+      final @NotNull SentryOptions options,
+      final @NotNull ISentryExecutorService sentryExecutorService) {
+    sentryExecutorService.submit(
+        () -> {
+          final String cacheDirPath = options.getCacheDirPathWithoutDsn();
+          if (cacheDirPath != null) {
+            final @NotNull File startupProfilingConfigFile =
+                new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+            // We always delete the config file for startup profiling
+            FileUtils.deleteRecursively(startupProfilingConfigFile);
+            if (!options.isEnableStartupProfiling()) {
+              return;
+            }
+            if (!options.isTracingEnabled()) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.INFO,
+                      "Tracing is disabled and startup profiling will not start.");
+              return;
+            }
+            try {
+              if (startupProfilingConfigFile.createNewFile()) {
+                final @NotNull TracesSamplingDecision startupSamplingDecision =
+                    sampleStartupProfiling(options);
+                final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
+                    new SentryStartupProfilingOptions(options, startupSamplingDecision);
+                try (Writer fileWriter = new SentryFileWriter(startupProfilingConfigFile)) {
+                  options.getSerializer().serialize(startupProfilingOptions, fileWriter);
+                }
+              }
+            } catch (IOException e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
+            }
+          }
+        });
+  }
+
+  private static @NotNull TracesSamplingDecision sampleStartupProfiling(
+      final @NotNull SentryOptions options) {
+    TransactionContext startupTransactionContext = new TransactionContext("ui.load", "");
+    startupTransactionContext.setForNextStartup(true);
+    SamplingContext startupSamplingContext = new SamplingContext(startupTransactionContext, null);
+    return new TracesSampler(options).sample(startupSamplingContext);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

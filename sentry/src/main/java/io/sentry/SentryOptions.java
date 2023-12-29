@@ -727,6 +727,20 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the cache dir path if set, without the appended dsn hash.
+   *
+   * @return the cache dir path, without the appended dsn hash, or null if not set.
+   */
+  @Nullable
+  String getCacheDirPathWithoutDsn() {
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+
+    return cacheDirPath;
+  }
+
+  /**
    * Returns the outbox path if cacheDirPath is set
    *
    * @return the outbox path or null if not set
@@ -2120,11 +2134,12 @@ public class SentryOptions {
 
   /**
    * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
+   * Depends on {@link SentryOptions#isProfilingEnabled()}
    *
    * @return true if startup profiling should be started.
    */
   public boolean isEnableStartupProfiling() {
-    return enableStartupProfiling;
+    return isProfilingEnabled() && enableStartupProfiling;
   }
 
   /**
