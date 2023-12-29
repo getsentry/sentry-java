@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @Open
 @ApiStatus.Internal
@@ -67,7 +68,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
 
-  private static final long SESSION_FLUSH_DISK_TIMEOUT_MS = 15000;
+  private static long SESSION_FLUSH_DISK_TIMEOUT_MS = 15000;
 
   private final CountDownLatch previousSessionLatch;
 
@@ -443,5 +444,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   public void flushPreviousSession() {
     previousSessionLatch.countDown();
+  }
+
+  @TestOnly
+  public void overrideSessionFlushTimeout(final long sessionFlushTimeoutMs) {
+    SESSION_FLUSH_DISK_TIMEOUT_MS = sessionFlushTimeoutMs;
   }
 }

@@ -44,6 +44,8 @@ class PreviousSessionFinalizerTest {
                 if (!shouldAwait) {
                     (envelopeDiskCache as? EnvelopeCache)?.flushPreviousSession()
                 }
+                (envelopeDiskCache as? EnvelopeCache)
+                    ?.overrideSessionFlushTimeout(flushTimeoutMillis)
             }
             options.cacheDirPath?.let {
                 sessionFile = EnvelopeCache.getPreviousSessionFile(it)
