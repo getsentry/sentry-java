@@ -5,5 +5,7 @@ package io.sentry.apollo3
  * returns 4xx, 5xx or the `errors` field.
  */
 class SentryApollo3ClientException(message: String?) : Exception(message) {
-    val serialVersionUID = 1L
+    companion object {
+        private const val serialVersionUID = 4312120066430858144L
+    }
 }

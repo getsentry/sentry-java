@@ -1,6 +1,8 @@
 package io.sentry.clientreport
 
 import io.sentry.Attachment
+import io.sentry.CheckIn
+import io.sentry.CheckInStatus
 import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
@@ -64,13 +66,14 @@ class ClientReportTest {
             SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
             SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
             SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
-            SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer)
+            SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
+            SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR))
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(11, clientReportAtEnd)
+        testHelper.assertTotalCount(12, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
@@ -79,6 +82,7 @@ class ClientReportTest {
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Session, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Attachment, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Profile, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Monitor, 1, clientReportAtEnd)
     }
 
     @Test
