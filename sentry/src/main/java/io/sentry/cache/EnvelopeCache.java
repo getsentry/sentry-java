@@ -50,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @Open
 @ApiStatus.Internal
@@ -67,8 +66,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
 
   public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
-
-  private static long SESSION_FLUSH_DISK_TIMEOUT_MS = 15000;
 
   private final CountDownLatch previousSessionLatch;
 
@@ -432,9 +429,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   /** Awaits until the previous session (if any) is flushed to its own file. */
   public boolean waitPreviousSessionFlush() {
     try {
-      // use fixed timeout instead of configurable options.getFlushTimeoutMillis() to ensure there's
-      // enough time to flush the session to disk
-      return previousSessionLatch.await(SESSION_FLUSH_DISK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+      return previousSessionLatch.await(
+          options.getSessionFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       options.getLogger().log(DEBUG, "Timed out waiting for previous session to flush.");
@@ -444,10 +440,5 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   public void flushPreviousSession() {
     previousSessionLatch.countDown();
-  }
-
-  @TestOnly
-  public void overrideSessionFlushTimeout(final long sessionFlushTimeoutMs) {
-    SESSION_FLUSH_DISK_TIMEOUT_MS = sessionFlushTimeoutMs;
   }
 }

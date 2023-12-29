@@ -82,13 +82,12 @@ class AnrV2IntegrationTest {
                     if (useImmediateExecutorService) ImmediateExecutorService() else mock()
                 this.isAnrEnabled = isAnrEnabled
                 this.flushTimeoutMillis = flushTimeoutMillis
+                this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis
                 this.isEnableAutoSessionTracking = sessionTrackingEnabled
                 this.isReportHistoricalAnrs = reportHistoricalAnrs
                 this.isAttachAnrThreadDump = attachAnrThreadDump
                 addInAppInclude("io.sentry.samples")
                 setEnvelopeDiskCache(EnvelopeCache.create(this))
-                (envelopeDiskCache as? EnvelopeCache)
-                    ?.overrideSessionFlushTimeout(sessionFlushTimeoutMillis)
             }
             options.cacheDirPath?.let { cacheDir ->
                 lastReportedAnrFile = File(cacheDir, AndroidEnvelopeCache.LAST_ANR_REPORT)
