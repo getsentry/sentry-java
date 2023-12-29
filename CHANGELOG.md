@@ -6,6 +6,7 @@
 
 - Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
 - Startup profiling 1 - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
+- Startup profiling 2 - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
 
 ### Fixes
 
