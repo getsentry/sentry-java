@@ -27,6 +27,7 @@ public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccess
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void reset() {
     Sentry.setCurrentHub(NoOpHub.getInstance());
   }

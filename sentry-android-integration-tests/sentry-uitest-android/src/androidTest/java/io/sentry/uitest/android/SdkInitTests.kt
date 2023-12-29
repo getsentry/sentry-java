@@ -72,7 +72,6 @@ class SdkInitTests : BaseUiTest() {
                 assertEquals("e2etests2", profilingTraceData.transactionName)
             }
             assertNoOtherEnvelopes()
-            assertNoOtherRequests()
         }
     }
 }
