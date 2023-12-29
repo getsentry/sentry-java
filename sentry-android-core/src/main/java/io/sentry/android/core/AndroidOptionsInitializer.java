@@ -149,7 +149,13 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
     options.setTransportGate(new AndroidTransportGate(options));
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(context, options, buildInfoProvider));
+        new AndroidTransactionProfiler(
+            context,
+            options,
+            buildInfoProvider,
+            Objects.requireNonNull(
+                options.getFrameMetricsCollector(),
+                "options.getFrameMetricsCollector cannot be null.")));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
 

@@ -44,14 +44,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   public AndroidTransactionProfiler(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
     this(
         context,
         sentryAndroidOptions,
         buildInfoProvider,
-        Objects.requireNonNull(
-            sentryAndroidOptions.getFrameMetricsCollector(),
-            "options.getFrameMetricsCollector cannot be null."),
+        frameMetricsCollector,
         HubAdapter.getInstance());
   }
 
