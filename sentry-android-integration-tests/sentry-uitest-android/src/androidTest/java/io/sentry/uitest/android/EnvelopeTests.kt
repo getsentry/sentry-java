@@ -9,18 +9,15 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.AndroidLogger
-import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeProfile
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
-import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
@@ -179,12 +176,6 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkTimedOutProfile() {
-        assumeFalse(
-            "Sometimes traceFile does not exist for profiles on emulators and it fails." +
-                " Although, Android Runtime is the one that manages the file, so something" +
-                " must be wrong with Debug.startMethodTracing",
-            BuildInfoProvider(NoOpLogger.getInstance()).isEmulator ?: true
-        )
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
         initSentry(true) { options: SentryAndroidOptions ->
