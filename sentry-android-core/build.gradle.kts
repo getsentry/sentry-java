@@ -1,4 +1,7 @@
 import net.ltgt.gradle.errorprone.errorprone
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.configurationcache.extensions.capitalized
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
@@ -20,7 +23,11 @@ android {
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
-        buildConfigField("String", "SENTRY_ANDROID_SDK_NAME", "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\"")
+        buildConfigField(
+            "String",
+            "SENTRY_ANDROID_SDK_NAME",
+            "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\""
+        )
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -65,10 +72,63 @@ android {
     }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    options.errorprone {
-        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
-        option("NullAway:AnnotatedPackages", "io.sentry")
+tasks {
+    withType<JavaCompile>().configureEach {
+        options.errorprone {
+            check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+            option("NullAway:AnnotatedPackages", "io.sentry")
+        }
+    }
+
+    withType<Test>().configureEach {
+        testLogging.showStandardStreams = true
+        testLogging.exceptionFormat = TestExceptionFormat.FULL
+        testLogging.events = setOf(
+            TestLogEvent.SKIPPED,
+            TestLogEvent.PASSED,
+            TestLogEvent.FAILED
+        )
+        maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+
+        // Cap JVM args per test
+        minHeapSize = "128m"
+        maxHeapSize = "1g"
+        if (!this.name.contains("robolectric", ignoreCase = true)) {
+            filter {
+                exclude { element ->
+                    if (element.isDirectory || !element.file.exists()) {
+                        return@exclude false
+                    }
+                    return@exclude element.file
+                        .readText()
+                        .contains("Landroidx/test/ext/junit/runners/AndroidJUnit4;")
+                }
+            }
+        }
+        dependsOn("cleanTest")
+    }
+}
+
+afterEvaluate {
+    setOf("debug", "release").forEach { variant ->
+        task<Test>("${variant}RobolectricTest") {
+            group = "verification"
+            description = "Runs the Robolectric tests"
+
+            val testTask = tasks.findByName("test${variant.capitalized()}UnitTest") as Test
+            classpath = testTask.classpath
+            testClassesDirs = testTask.testClassesDirs
+            filter {
+                include { element ->
+                    if (element.isDirectory || !element.file.exists()) {
+                        return@include true
+                    }
+                    return@include element.file
+                        .readText()
+                        .contains("Landroidx/test/ext/junit/runners/AndroidJUnit4;")
+                }
+            }
+        }
     }
 }
 

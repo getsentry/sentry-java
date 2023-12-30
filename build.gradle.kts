@@ -83,20 +83,22 @@ allprojects {
     version = properties[Config.Sentry.versionNameProp].toString()
     description = Config.Sentry.description
     tasks {
-        withType<Test> {
-            testLogging.showStandardStreams = true
-            testLogging.exceptionFormat = TestExceptionFormat.FULL
-            testLogging.events = setOf(
-                TestLogEvent.SKIPPED,
-                TestLogEvent.PASSED,
-                TestLogEvent.FAILED
-            )
-            maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+        if (this@allprojects.name != "sentry-android-core") {
+            withType<Test> {
+                testLogging.showStandardStreams = true
+                testLogging.exceptionFormat = TestExceptionFormat.FULL
+                testLogging.events = setOf(
+                    TestLogEvent.SKIPPED,
+                    TestLogEvent.PASSED,
+                    TestLogEvent.FAILED
+                )
+                maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
 
-            // Cap JVM args per test
-            minHeapSize = "128m"
-            maxHeapSize = "1g"
-            dependsOn("cleanTest")
+                // Cap JVM args per test
+                minHeapSize = "128m"
+                maxHeapSize = "1g"
+                dependsOn("cleanTest")
+            }
         }
         withType<JavaCompile> {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
