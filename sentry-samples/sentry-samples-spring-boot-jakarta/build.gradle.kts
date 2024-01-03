@@ -68,9 +68,9 @@ configure<SourceSetContainer> {
     }
 }
 
-//tasks.withType<Test> {
+// tasks.withType<Test> {
 //    useJUnitPlatform()
-//}
+// }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
