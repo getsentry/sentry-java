@@ -94,6 +94,7 @@ object Config {
         val springBoot3StarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBoot3Version"
         val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
         val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
+        val springBoot3StarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBoot3Version"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
@@ -146,7 +147,7 @@ object Config {
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
-        val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
+        val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
         object OpenTelemetry {
             val otelVersion = "1.33.0"

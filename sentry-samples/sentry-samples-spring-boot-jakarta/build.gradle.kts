@@ -6,6 +6,7 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
+    id("com.apollographql.apollo3") version "3.8.2"
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
@@ -17,8 +18,18 @@ repositories {
     mavenCentral()
 }
 
+configure<JavaPluginExtension> {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+}
+
 dependencies {
     implementation(Config.Libs.springBoot3StarterSecurity)
+    implementation(Config.Libs.springBoot3StarterActuator)
     implementation(Config.Libs.springBoot3StarterWeb)
     implementation(Config.Libs.springBoot3StarterWebsocket)
     implementation(Config.Libs.springBoot3StarterGraphql)
@@ -41,15 +52,55 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
+//    testImplementation(projects.sentryTestSupport)
+    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(Config.TestLibs.kotlinTestJunit)
+//    testImplementation(Config.Libs.logbackClassic)
+    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation(Config.Libs.slf4jApi2)
+//    implementation(Config.Libs.apolloKotlin) // actually used for test
+    testImplementation(Config.Libs.apolloKotlin)
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
+configure<SourceSetContainer> {
+    test {
+        java.srcDir("src/test/java")
+    }
 }
+
+//tasks.withType<Test> {
+//    useJUnitPlatform()
+//}
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+}
+
+tasks.register<Test>("systemTest").configure {
+    group = "verification"
+    description = "Runs the System tests"
+
+    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+
+    // Cap JVM args per test
+    minHeapSize = "128m"
+    maxHeapSize = "1g"
+
+    filter {
+//        includeTestsMatching("io.sentry.samples.spring.boot.jakarta.e2etest.*")
+        includeTestsMatching("io.sentry.samples*")
+    }
+}
+
+apollo {
+    service("service") {
+        srcDir("src/test/graphql")
+        packageName.set("io.sentry.samples.graphql")
+        outputDirConnection {
+            connectToKotlinSourceSet("test")
+        }
     }
 }

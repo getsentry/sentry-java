@@ -1,0 +1,40 @@
+name: system-tests-backend
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  system-test:
+    runs-on: ubuntu-latest
+    env:
+      SENTRY_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.5'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@7e48093f71aa12588241894ff3695e83c4b5e4b0 # pin@v2.4.2
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Start server and run integration test for sentry-cli commands
+        run: |
+          test/system-test-sentry-server-start.sh &
+          ./gradlew :sentry-samples:sentry-samples-spring-boot-jakarta:bootJar &&
+          test/system-test-spring-server-start.sh &
+          test/wait-for-spring.sh &&
+          ./gradlew :sentry-samples:sentry-samples-spring-boot-jakarta:systemTest
