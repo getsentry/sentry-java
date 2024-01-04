@@ -13,6 +13,10 @@ clean:
 compile:
 	./gradlew build
 
+# build without tests
+compileWithoutTests:
+	./gradlew build -x test
+
 javadocs:
 	./gradlew aggregateJavadocs
 

@@ -42,8 +42,8 @@ jobs:
 #            ${{ runner.os }}-gradle-
 
       # Clean, check formatting, build and do a dry release
-      - name: Make compile
-        run: make compile
+      - name: Make compile without tests
+        run: make compileWithoutTests
 
       - name: Start server and run integration test for sentry-cli commands
         run: |

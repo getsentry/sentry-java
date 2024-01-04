@@ -95,6 +95,19 @@ tasks.register<Test>("systemTest").configure {
     }
 }
 
+tasks.named("test").configure {
+    require(this is Test)
+//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+//
+//    // Cap JVM args per test
+//    minHeapSize = "128m"
+//    maxHeapSize = "1g"
+
+    filter {
+        excludeTestsMatching("io.sentry.samples.*")
+    }
+}
+
 apollo {
     service("service") {
         srcDir("src/test/graphql")
