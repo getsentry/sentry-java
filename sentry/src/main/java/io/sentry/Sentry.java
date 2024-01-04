@@ -50,8 +50,12 @@ public final class Sentry {
   /** whether to use a single (global) Hub as opposed to one per thread. */
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
 
-  private static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
+  @ApiStatus.Internal
+  public static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
       "startup_profiling_config";
+
+  /** Timestamp used to check old profiles to delete. */
+  private static final long classCreationTimestamp = System.currentTimeMillis();
 
   /**
    * Returns the current (threads) hub, if none, clones the mainHub and returns it.
@@ -254,42 +258,51 @@ public final class Sentry {
   private static void handleStartupProfilingConfig(
       final @NotNull SentryOptions options,
       final @NotNull ISentryExecutorService sentryExecutorService) {
-    sentryExecutorService.submit(
-        () -> {
-          final String cacheDirPath = options.getCacheDirPathWithoutDsn();
-          if (cacheDirPath != null) {
-            final @NotNull File startupProfilingConfigFile =
-                new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
-            // We always delete the config file for startup profiling
-            FileUtils.deleteRecursively(startupProfilingConfigFile);
-            if (!options.isEnableStartupProfiling()) {
-              return;
-            }
-            if (!options.isTracingEnabled()) {
-              options
-                  .getLogger()
-                  .log(
-                      SentryLevel.INFO,
-                      "Tracing is disabled and startup profiling will not start.");
-              return;
-            }
-            try {
-              if (startupProfilingConfigFile.createNewFile()) {
-                final @NotNull TracesSamplingDecision startupSamplingDecision =
-                    sampleStartupProfiling(options);
-                final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
-                    new SentryStartupProfilingOptions(options, startupSamplingDecision);
-                try (Writer fileWriter = new SentryFileWriter(startupProfilingConfigFile)) {
-                  options.getSerializer().serialize(startupProfilingOptions, fileWriter);
-                }
+    try {
+      sentryExecutorService.submit(
+          () -> {
+            final String cacheDirPath = options.getCacheDirPathWithoutDsn();
+            if (cacheDirPath != null) {
+              final @NotNull File startupProfilingConfigFile =
+                  new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+              // We always delete the config file for startup profiling
+              FileUtils.deleteRecursively(startupProfilingConfigFile);
+              if (!options.isEnableStartupProfiling()) {
+                return;
               }
-            } catch (IOException e) {
-              options
-                  .getLogger()
-                  .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
+              if (!options.isTracingEnabled()) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.INFO,
+                        "Tracing is disabled and startup profiling will not start.");
+                return;
+              }
+              try {
+                if (startupProfilingConfigFile.createNewFile()) {
+                  final @NotNull TracesSamplingDecision startupSamplingDecision =
+                      sampleStartupProfiling(options);
+                  final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
+                      new SentryStartupProfilingOptions(options, startupSamplingDecision);
+                  try (Writer fileWriter = new SentryFileWriter(startupProfilingConfigFile)) {
+                    options.getSerializer().serialize(startupProfilingOptions, fileWriter);
+                  }
+                }
+              } catch (IOException e) {
+                options
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
+              }
             }
-          }
-        });
+          });
+    } catch (RejectedExecutionException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
+              e);
+    }
   }
 
   private static @NotNull TracesSamplingDecision sampleStartupProfiling(
@@ -393,7 +406,6 @@ public final class Sentry {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
-      final long timestamp = System.currentTimeMillis();
 
       try {
         options
@@ -405,7 +417,7 @@ public final class Sentry {
                   // Method trace files are normally deleted at the end of traces, but if that fails
                   // for some reason we try to clear any old files here.
                   for (File f : oldTracesDirContent) {
-                    if (f.lastModified() < timestamp) {
+                    if (f.lastModified() < classCreationTimestamp) {
                       FileUtils.deleteRecursively(f);
                     }
                   }
@@ -885,6 +897,22 @@ public final class Sentry {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     return getCurrentHub().startTransaction(transactionContext, transactionOptions);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance.
+   *
+   * @param transactionContext the transaction context
+   * @param transactionOptions options for the transaction
+   * @param isStartupTransaction if the transaction is the app startup one
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions,
+      final boolean isStartupTransaction) {
+    return getCurrentHub()
+        .startTransaction(transactionContext, transactionOptions, isStartupTransaction);
   }
 
   /**

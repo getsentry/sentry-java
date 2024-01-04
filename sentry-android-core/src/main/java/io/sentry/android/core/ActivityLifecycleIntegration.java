@@ -23,6 +23,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.ClassUtil;
@@ -161,7 +162,7 @@ public final class ActivityLifecycleIntegration
 
         final @Nullable SentryDate appStartTime;
         final @Nullable Boolean coldStart;
-        final TimeSpan appStartTimeSpan =
+        final @NotNull TimeSpan appStartTimeSpan =
             AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
 
         // we only track app start for processes that will show an Activity (full launch).
@@ -205,21 +206,32 @@ public final class ActivityLifecycleIntegration
 
         // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
         final @NotNull SentryDate ttidStartTime;
+        final @Nullable TracesSamplingDecision startupSamplingDecision;
 
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
           // The first activity ttid/ttfd spans should start at the app start time
           ttidStartTime = appStartTime;
+          // The app start transaction inherits the sampling decision from the startup profiling,
+          // then clears it
+          startupSamplingDecision = AppStartMetrics.getInstance().getStartupSamplingDecision();
+          AppStartMetrics.getInstance().setStartupSamplingDecision(null);
         } else {
           // The ttid/ttfd spans should start when the previous activity called its onPause method
           ttidStartTime = lastPausedTime;
+          startupSamplingDecision = null;
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
 
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
             hub.startTransaction(
-                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
-                transactionOptions);
+                new TransactionContext(
+                    activityName,
+                    TransactionNameSource.COMPONENT,
+                    UI_LOAD_OP,
+                    startupSamplingDecision),
+                transactionOptions,
+                startupSamplingDecision != null);
         setSpanOrigin(transaction);
 
         // in case appStartTime isn't available, we don't create a span for it.

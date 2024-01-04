@@ -97,7 +97,8 @@ class ActivityLifecycleIntegrationTest {
             // We let the ActivityLifecycleIntegration create the proper transaction here
             val optionCaptor = argumentCaptor<TransactionOptions>()
             val contextCaptor = argumentCaptor<TransactionContext>()
-            whenever(hub.startTransaction(contextCaptor.capture(), optionCaptor.capture())).thenAnswer {
+            val startupFlagCaptor = argumentCaptor<Boolean>()
+            whenever(hub.startTransaction(contextCaptor.capture(), optionCaptor.capture(), startupFlagCaptor.capture())).thenAnswer {
                 val t = SentryTracer(contextCaptor.lastValue, hub, optionCaptor.lastValue)
                 transaction = t
                 return@thenAnswer t
@@ -191,7 +192,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any<TransactionOptions>())
+        verify(fixture.hub).startTransaction(any(), any<TransactionOptions>(), any())
     }
 
     @Test
@@ -213,7 +214,8 @@ class ActivityLifecycleIntegrationTest {
             check<TransactionOptions> { transactionOptions ->
                 assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
                 assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, transactionOptions.deadlineTimeout)
-            }
+            },
+            any()
         )
     }
 
@@ -245,7 +247,8 @@ class ActivityLifecycleIntegrationTest {
                 assertEquals("Activity", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
+            any()
         )
     }
 
@@ -585,7 +588,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.hub).startTransaction(any(), any<TransactionOptions>())
+        verify(fixture.hub).startTransaction(any(), any<TransactionOptions>(), any())
     }
 
     @Test
@@ -678,8 +681,62 @@ class ActivityLifecycleIntegrationTest {
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
-            }
+            },
+            any()
         )
+    }
+
+    @Test
+    fun `When firstActivityCreated is true and startup sampling decision is set, start transaction with isStartup true`() {
+        AppStartMetrics.getInstance().startupSamplingDecision = mock()
+        val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> {
+                assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+            },
+            eq(true)
+        )
+    }
+
+    @Test
+    fun `When firstActivityCreated is true and startup sampling decision is not set, start transaction with isStartup false`() {
+        val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> {
+                assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+            },
+            eq(false)
+        )
+    }
+
+    @Test
+    fun `When firstActivityCreated is false and startup sampling decision is set, start transaction with isStartup false`() {
+        AppStartMetrics.getInstance().startupSamplingDecision = mock()
+        val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(any(), any(), eq(false))
     }
 
     @Test
@@ -697,7 +754,11 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) })
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) },
+            any()
+        )
     }
 
     @Test

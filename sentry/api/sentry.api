@@ -453,6 +453,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;Z)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -504,6 +505,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;Z)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -600,6 +602,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public abstract fun traceHeaders ()Lio/sentry/SentryTraceHeader;
@@ -800,6 +803,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 public abstract interface class io/sentry/ITransactionProfiler {
 	public abstract fun bindTransaction (Lio/sentry/ITransaction;)V
 	public abstract fun close ()V
+	public abstract fun isRunning ()Z
 	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/ProfilingTraceData;
 	public abstract fun start ()V
 }
@@ -1142,6 +1146,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;Z)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -1307,6 +1312,7 @@ public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionPro
 	public fun bindTransaction (Lio/sentry/ITransaction;)V
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
+	public fun isRunning ()Z
 	public fun onTransactionFinish (Lio/sentry/ITransaction;Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/ProfilingTraceData;
 	public fun start ()V
 }
@@ -1635,6 +1641,7 @@ public final class io/sentry/SendFireAndForgetOutboxSender : io/sentry/SendCache
 }
 
 public final class io/sentry/Sentry {
+	public static final field STARTUP_PROFILING_CONFIG_FILE_NAME Ljava/lang/String;
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public static fun addBreadcrumb (Ljava/lang/String;)V
@@ -1692,6 +1699,7 @@ public final class io/sentry/Sentry {
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
@@ -2090,6 +2098,7 @@ public class io/sentry/SentryOptions {
 	public fun addOptionsObserver (Lio/sentry/IOptionsObserver;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
+	public static fun empty ()Lio/sentry/SentryOptions;
 	public fun getBackpressureMonitor ()Lio/sentry/backpressure/IBackpressureMonitor;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
@@ -2140,6 +2149,7 @@ public class io/sentry/SentryOptions {
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
+	public fun getProfilingTracesHz ()I
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -2244,6 +2254,7 @@ public class io/sentry/SentryOptions {
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingEnabled (Z)V
+	public fun setProfilingTracesHz (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
@@ -2329,6 +2340,44 @@ public final class io/sentry/SentryStackTraceFactory {
 	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;Z)Ljava/util/List;
 	public fun isInApp (Ljava/lang/String;)Ljava/lang/Boolean;
+}
+
+public final class io/sentry/SentryStartupProfilingOptions : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getProfileSampleRate ()Ljava/lang/Double;
+	public fun getProfilingTracesDirPath ()Ljava/lang/String;
+	public fun getProfilingTracesHz ()I
+	public fun getTraceSampleRate ()Ljava/lang/Double;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun isProfileSampled ()Z
+	public fun isProfilingEnabled ()Z
+	public fun isTraceSampled ()Z
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setProfileSampleRate (Ljava/lang/Double;)V
+	public fun setProfileSampled (Z)V
+	public fun setProfilingEnabled (Z)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
+	public fun setProfilingTracesHz (I)V
+	public fun setTraceSampleRate (Ljava/lang/Double;)V
+	public fun setTraceSampled (Z)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryStartupProfilingOptions$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryStartupProfilingOptions;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryStartupProfilingOptions$JsonKeys {
+	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
+	public static final field PROFILE_SAMPLED Ljava/lang/String;
+	public static final field PROFILE_SAMPLE_RATE Ljava/lang/String;
+	public static final field PROFILING_TRACES_DIR_PATH Ljava/lang/String;
+	public static final field PROFILING_TRACES_HZ Ljava/lang/String;
+	public static final field TRACE_SAMPLED Ljava/lang/String;
+	public static final field TRACE_SAMPLE_RATE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryThreadFactory {

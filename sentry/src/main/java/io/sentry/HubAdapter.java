@@ -200,6 +200,14 @@ public final class HubAdapter implements IHub {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions,
+      final boolean isStartupTransaction) {
+    return Sentry.startTransaction(transactionContext, transactionOptions, isStartupTransaction);
+  }
+
   @Deprecated
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {

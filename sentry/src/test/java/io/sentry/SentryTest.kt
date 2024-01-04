@@ -945,11 +945,11 @@ class SentryTest {
     @Test
     fun `backpressure monitor is a NoOp if handling is disabled`() {
         var sentryOptions: SentryOptions? = null
-        Sentry.init({
+        Sentry.init {
             it.dsn = dsn
             it.isEnableBackpressureHandling = false
             sentryOptions = it
-        })
+        }
         assertIs<NoOpBackpressureMonitor>(sentryOptions?.backpressureMonitor)
     }
 
@@ -957,11 +957,11 @@ class SentryTest {
     fun `backpressure monitor is set if handling is enabled`() {
         var sentryOptions: SentryOptions? = null
 
-        Sentry.init({
+        Sentry.init {
             it.dsn = dsn
             it.isEnableBackpressureHandling = true
             sentryOptions = it
-        })
+        }
         assertIs<BackpressureMonitor>(sentryOptions?.backpressureMonitor)
     }
 

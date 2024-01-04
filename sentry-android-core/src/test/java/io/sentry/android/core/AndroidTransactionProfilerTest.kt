@@ -171,6 +171,18 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
+    fun `isStarted reflects inner counter`() {
+        val profiler = fixture.getSut(context)
+        profiler.start()
+        profiler.bindTransaction(fixture.transaction1)
+        assertEquals(1, profiler.transactionsCounter)
+        assertTrue(profiler.isRunning)
+        profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
+        assertEquals(0, profiler.transactionsCounter)
+        assertFalse(profiler.isRunning)
+    }
+
+    @Test
     fun `profiler multiple starts are ignored`() {
         val profiler = fixture.getSut(context)
         profiler.start()
@@ -488,6 +500,26 @@ class AndroidTransactionProfilerTest {
         assertNull(scheduledJob)
 
         // Calling transaction finish returns null, as the profiler was stopped
+        val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
+        assertNull(profilingTraceData)
+    }
+
+    @Test
+    fun `profiler stops profiling on close, even if not bound to a transaction`() {
+        val profiler = fixture.getSut(context)
+        profiler.start()
+        assertEquals(1, profiler.transactionsCounter)
+
+        profiler.close()
+        assertEquals(0, profiler.transactionsCounter)
+
+        // The timeout scheduled job should be cleared
+        val androidProfiler = profiler.getProperty<AndroidProfiler?>("profiler")
+        val scheduledJob = androidProfiler?.getProperty<Future<*>?>("scheduledFinish")
+        assertNull(scheduledJob)
+
+        // Binding and calling transaction finish returns null, as the profiler was stopped
+        profiler.bindTransaction(fixture.transaction1)
         val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
         assertNull(profilingTraceData)
     }

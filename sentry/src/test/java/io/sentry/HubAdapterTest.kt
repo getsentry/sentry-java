@@ -214,6 +214,16 @@ class HubAdapterTest {
 
         HubAdapter.getInstance().startTransaction(transactionContext, transactionOptions)
         verify(hub).startTransaction(eq(transactionContext), eq(transactionOptions))
+
+        reset(hub)
+
+        HubAdapter.getInstance().startTransaction(transactionContext, transactionOptions, true)
+        verify(hub).startTransaction(eq(transactionContext), eq(transactionOptions), eq(true))
+
+        reset(hub)
+
+        HubAdapter.getInstance().startTransaction(transactionContext, transactionOptions, false)
+        verify(hub).startTransaction(eq(transactionContext), eq(transactionOptions), eq(false))
     }
 
     @Test fun `traceHeaders calls Hub`() {

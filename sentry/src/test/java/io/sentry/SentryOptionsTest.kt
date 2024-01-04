@@ -574,4 +574,16 @@ class SentryOptionsTest {
         options.profilesSampleRate = 0.0
         assertFalse(options.isEnableStartupProfiling)
     }
+
+    @Test
+    fun `when options are initialized, profilingTracesHz is set to 101 by default`() {
+        assertEquals(101, SentryOptions().profilingTracesHz)
+    }
+
+    @Test
+    fun `when setProfilingTracesHz is called, overrides default`() {
+        val options = SentryOptions()
+        options.profilingTracesHz = 13
+        assertEquals(13, options.profilingTracesHz)
+    }
 }

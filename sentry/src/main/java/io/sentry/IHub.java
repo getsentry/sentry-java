@@ -460,6 +460,21 @@ public interface IHub {
       final @NotNull TransactionOptions transactionOptions);
 
   /**
+   * Creates a Transaction and returns the instance. Based on the passed transaction context and
+   * transaction options the decision if transaction is sampled will be taken by {@link
+   * TracesSampler}.
+   *
+   * @param transactionContext the transaction context
+   * @param transactionOptions the transaction options
+   * @return created transaction.
+   */
+  @NotNull
+  ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions,
+      final boolean isStartupTransaction);
+
+  /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
    *

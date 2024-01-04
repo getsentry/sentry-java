@@ -4,10 +4,13 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
-final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializable {
+@ApiStatus.Internal
+public final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializable {
 
   boolean profileSampled;
   @Nullable Double profileSampleRate;
@@ -15,16 +18,19 @@ final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializab
   @Nullable Double traceSampleRate;
   @Nullable String profilingTracesDirPath;
   boolean isProfilingEnabled;
+  int profilingTracesHz;
 
   private @Nullable Map<String, Object> unknown;
 
-  SentryStartupProfilingOptions() {
+  @VisibleForTesting
+  public SentryStartupProfilingOptions() {
     traceSampled = false;
     traceSampleRate = null;
     profileSampled = false;
     profileSampleRate = null;
     profilingTracesDirPath = null;
     isProfilingEnabled = false;
+    profilingTracesHz = 0;
   }
 
   SentryStartupProfilingOptions(
@@ -36,6 +42,63 @@ final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializab
     profileSampleRate = samplingDecision.getProfileSampleRate();
     profilingTracesDirPath = options.getProfilingTracesDirPath();
     isProfilingEnabled = options.isProfilingEnabled();
+    profilingTracesHz = options.getProfilingTracesHz();
+  }
+
+  public void setProfileSampled(final boolean profileSampled) {
+    this.profileSampled = profileSampled;
+  }
+
+  public boolean isProfileSampled() {
+    return profileSampled;
+  }
+
+  public void setProfileSampleRate(final @Nullable Double profileSampleRate) {
+    this.profileSampleRate = profileSampleRate;
+  }
+
+  public @Nullable Double getProfileSampleRate() {
+    return profileSampleRate;
+  }
+
+  public void setTraceSampled(final boolean traceSampled) {
+    this.traceSampled = traceSampled;
+  }
+
+  public boolean isTraceSampled() {
+    return traceSampled;
+  }
+
+  public void setTraceSampleRate(final @Nullable Double traceSampleRate) {
+    this.traceSampleRate = traceSampleRate;
+  }
+
+  public @Nullable Double getTraceSampleRate() {
+    return traceSampleRate;
+  }
+
+  public void setProfilingTracesDirPath(final @Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  public void setProfilingEnabled(final boolean profilingEnabled) {
+    isProfilingEnabled = profilingEnabled;
+  }
+
+  public boolean isProfilingEnabled() {
+    return isProfilingEnabled;
+  }
+
+  public void setProfilingTracesHz(final int profilingTracesHz) {
+    this.profilingTracesHz = profilingTracesHz;
+  }
+
+  public int getProfilingTracesHz() {
+    return profilingTracesHz;
   }
 
   // JsonSerializable
@@ -47,6 +110,7 @@ final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializab
     public static final String TRACE_SAMPLE_RATE = "trace_sample_rate";
     public static final String PROFILING_TRACES_DIR_PATH = "profiling_traces_dir_path";
     public static final String IS_PROFILING_ENABLED = "is_profiling_enabled";
+    public static final String PROFILING_TRACES_HZ = "profiling_traces_hz";
   }
 
   @Override
@@ -59,6 +123,7 @@ final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializab
     writer.name(JsonKeys.TRACE_SAMPLE_RATE).value(logger, traceSampleRate);
     writer.name(JsonKeys.PROFILING_TRACES_DIR_PATH).value(logger, profilingTracesDirPath);
     writer.name(JsonKeys.IS_PROFILING_ENABLED).value(logger, isProfilingEnabled);
+    writer.name(JsonKeys.PROFILING_TRACES_HZ).value(logger, profilingTracesHz);
 
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -128,6 +193,12 @@ final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializab
             Boolean isProfilingEnabled = reader.nextBooleanOrNull();
             if (isProfilingEnabled != null) {
               options.isProfilingEnabled = isProfilingEnabled;
+            }
+            break;
+          case JsonKeys.PROFILING_TRACES_HZ:
+            Integer profilingTracesHz = reader.nextIntegerOrNull();
+            if (profilingTracesHz != null) {
+              options.profilingTracesHz = profilingTracesHz;
             }
             break;
           default:
