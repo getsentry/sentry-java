@@ -28,23 +28,27 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@7e48093f71aa12588241894ff3695e83c4b5e4b0 # pin@v2.4.2
+#      - name: Setup Gradle
+#        uses: gradle/gradle-build-action@7e48093f71aa12588241894ff3695e83c4b5e4b0 # pin@v2.4.2
 
-#      - name: Cache Gradle packages
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/.gradle/caches
-#            ~/.gradle/wrapper
-#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-#          restore-keys: |
-#            ${{ runner.os }}-gradle-
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       # Without this android-ndk submodule caused problems
       # Build could probably be speed up by removing this and fixing the actual issue
-      - name: Make compile without tests
-        run: make compileWithoutTests
+#      - name: Make compile without tests
+#        run: make compileWithoutTests
+
+      - name: Exclude NDK from build
+        run: |
+          sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-samples:sentry-samples-android",/d' settings.gradle.kts
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
