@@ -20,7 +20,7 @@ javadocs:
 
 # do a dry release (like a local deploy)
 dryRelease:
-	./gradlew aggregateJavadocs distZip
+	./gradlew aggregateJavadocs distZip --no-build-cache
 
 # check for dependencies update
 update:
