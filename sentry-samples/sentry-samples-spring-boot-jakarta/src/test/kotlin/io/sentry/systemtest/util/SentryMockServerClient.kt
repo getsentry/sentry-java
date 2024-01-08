@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot.jakarta.systemtest.client
+package io.sentry.systemtest.util
 
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders

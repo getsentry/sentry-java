@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot.jakarta.systemtest.client
+package io.sentry.systemtest.util
 
 import io.sentry.samples.spring.boot.jakarta.Person
 import io.sentry.samples.spring.boot.jakarta.Todo

@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot.jakarta.systemtest.client
+package io.sentry.systemtest.util
 
 import org.springframework.http.client.BufferingClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate

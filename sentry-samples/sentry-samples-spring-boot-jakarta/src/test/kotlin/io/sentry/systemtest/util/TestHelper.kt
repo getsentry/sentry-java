@@ -1,11 +1,8 @@
-package io.sentry.samples.spring.boot.jakarta.systemtest.util
+package io.sentry.systemtest.util
 
 import com.apollographql.apollo3.api.ApolloResponse
 import com.apollographql.apollo3.api.Operation
-import io.sentry.samples.spring.boot.jakarta.systemtest.client.EnvelopeCounts
-import io.sentry.samples.spring.boot.jakarta.systemtest.client.GraphqlTestClient
-import io.sentry.samples.spring.boot.jakarta.systemtest.client.RestTestClient
-import io.sentry.samples.spring.boot.jakarta.systemtest.client.SentryMockServerClient
+import io.sentry.systemtest.grahql.GraphqlTestClient
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

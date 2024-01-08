@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot.jakarta.systemtest.client
+package io.sentry.systemtest.grahql
 
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.ApolloResponse

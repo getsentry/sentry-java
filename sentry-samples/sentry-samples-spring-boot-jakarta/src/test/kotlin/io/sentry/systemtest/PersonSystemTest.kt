@@ -1,7 +1,7 @@
-package io.sentry.samples.spring.boot.jakarta.systemtest
+package io.sentry.systemtest
 
 import io.sentry.samples.spring.boot.jakarta.Person
-import io.sentry.samples.spring.boot.jakarta.systemtest.util.TestHelper
+import io.sentry.systemtest.util.TestHelper
 import org.junit.Before
 import org.springframework.http.HttpStatus
 import kotlin.test.Test
