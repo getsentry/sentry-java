@@ -7,7 +7,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.0.3"
+    val springBoot3Version = "3.2.0"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.5.3"
@@ -116,7 +116,7 @@ object Config {
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
-        val contextPropagation = "io.micrometer:context-propagation:1.0.2"
+        val contextPropagation = "io.micrometer:context-propagation:1.1.0"
 
         private val feignVersion = "11.6"
         val feignCore = "io.github.openfeign:feign-core:$feignVersion"
@@ -149,13 +149,14 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
 
         object OpenTelemetry {
-            val otelVersion = "1.23.1"
+            val otelVersion = "1.33.0"
             val otelAlphaVersion = "$otelVersion-alpha"
-            val otelJavaagentVersion = "1.23.0"
+            val otelJavaagentVersion = "1.32.0"
             val otelJavaagentAlphaVersion = "$otelJavaagentVersion-alpha"
+            val otelSemanticConvetionsVersion = "1.23.1-alpha"
 
             val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
-            val otelSemconv = "io.opentelemetry:opentelemetry-semconv:$otelAlphaVersion"
+            val otelSemconv = "io.opentelemetry.semconv:opentelemetry-semconv:$otelSemanticConvetionsVersion"
             val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelJavaagentVersion"
             val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelJavaagentAlphaVersion"
             val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelJavaagentAlphaVersion"

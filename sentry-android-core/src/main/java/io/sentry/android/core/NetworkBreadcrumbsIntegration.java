@@ -11,10 +11,12 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.Breadcrumb;
+import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
+import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TypeCheckHint;
@@ -69,7 +71,8 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
 
-      networkCallback = new NetworkBreadcrumbsNetworkCallback(hub, buildInfoProvider);
+      networkCallback =
+          new NetworkBreadcrumbsNetworkCallback(hub, buildInfoProvider, options.getDateProvider());
       final boolean registered =
           AndroidConnectionStatusProvider.registerNetworkCallback(
               context, logger, buildInfoProvider, networkCallback);
@@ -104,12 +107,17 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     @Nullable Network currentNetwork = null;
 
     @Nullable NetworkCapabilities lastCapabilities = null;
+    long lastCapabilityNanos = 0;
+    final @NotNull SentryDateProvider dateProvider;
 
     NetworkBreadcrumbsNetworkCallback(
-        final @NotNull IHub hub, final @NotNull BuildInfoProvider buildInfoProvider) {
+        final @NotNull IHub hub,
+        final @NotNull BuildInfoProvider buildInfoProvider,
+        final @NotNull SentryDateProvider dateProvider) {
       this.hub = Objects.requireNonNull(hub, "Hub is required");
       this.buildInfoProvider =
           Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+      this.dateProvider = Objects.requireNonNull(dateProvider, "SentryDateProvider is required");
     }
 
     @Override
@@ -129,12 +137,15 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       if (!network.equals(currentNetwork)) {
         return;
       }
+      final long nowNanos = dateProvider.now().nanoTimestamp();
       final @Nullable NetworkBreadcrumbConnectionDetail connectionDetail =
-          getNewConnectionDetails(lastCapabilities, networkCapabilities);
+          getNewConnectionDetails(
+              lastCapabilities, networkCapabilities, lastCapabilityNanos, nowNanos);
       if (connectionDetail == null) {
         return;
       }
       lastCapabilities = networkCapabilities;
+      lastCapabilityNanos = nowNanos;
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_CAPABILITIES_CHANGED");
       breadcrumb.setData("download_bandwidth", connectionDetail.downBandwidth);
       breadcrumb.setData("upload_bandwidth", connectionDetail.upBandwidth);
@@ -170,18 +181,23 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
     private @Nullable NetworkBreadcrumbConnectionDetail getNewConnectionDetails(
         final @Nullable NetworkCapabilities oldCapabilities,
-        final @NotNull NetworkCapabilities newCapabilities) {
+        final @NotNull NetworkCapabilities newCapabilities,
+        final long oldCapabilityNanos,
+        final long newCapabilityNanos) {
       if (oldCapabilities == null) {
-        return new NetworkBreadcrumbConnectionDetail(newCapabilities, buildInfoProvider);
+        return new NetworkBreadcrumbConnectionDetail(
+            newCapabilities, buildInfoProvider, newCapabilityNanos);
       }
       NetworkBreadcrumbConnectionDetail oldConnectionDetails =
-          new NetworkBreadcrumbConnectionDetail(oldCapabilities, buildInfoProvider);
+          new NetworkBreadcrumbConnectionDetail(
+              oldCapabilities, buildInfoProvider, oldCapabilityNanos);
       NetworkBreadcrumbConnectionDetail newConnectionDetails =
-          new NetworkBreadcrumbConnectionDetail(newCapabilities, buildInfoProvider);
+          new NetworkBreadcrumbConnectionDetail(
+              newCapabilities, buildInfoProvider, newCapabilityNanos);
 
       // We compare the details and if they are similar we return null, so that we don't spam the
       // user with lots of breadcrumbs for e.g. an increase of signal strength of 1 point
-      if (newConnectionDetails.isSimilar(oldConnectionDetails)) {
+      if (oldConnectionDetails.isSimilar(newConnectionDetails)) {
         return null;
       }
       return newConnectionDetails;
@@ -190,6 +206,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
   static class NetworkBreadcrumbConnectionDetail {
     final int downBandwidth, upBandwidth, signalStrength;
+    private long timestampNanos;
     final boolean isVpn;
     final @NotNull String type;
 
@@ -197,7 +214,8 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     NetworkBreadcrumbConnectionDetail(
         final @NotNull NetworkCapabilities networkCapabilities,
-        final @NotNull BuildInfoProvider buildInfoProvider) {
+        final @NotNull BuildInfoProvider buildInfoProvider,
+        final long capabilityNanos) {
       Objects.requireNonNull(networkCapabilities, "NetworkCapabilities is required");
       Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
       this.downBandwidth = networkCapabilities.getLinkDownstreamBandwidthKbps();
@@ -212,6 +230,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       String connectionType =
           AndroidConnectionStatusProvider.getConnectionType(networkCapabilities, buildInfoProvider);
       this.type = connectionType != null ? connectionType : "";
+      this.timestampNanos = capabilityNanos;
     }
 
     /**
@@ -221,13 +240,24 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
      * @return true if the details are similar enough, false otherwise
      */
     boolean isSimilar(final @NotNull NetworkBreadcrumbConnectionDetail other) {
+      int signalDiff = Math.abs(signalStrength - other.signalStrength);
+      int downBandwidthDiff = Math.abs(downBandwidth - other.downBandwidth);
+      int upBandwidthDiff = Math.abs(upBandwidth - other.upBandwidth);
+      // Signal and bandwidth will be reported at most once every 5 seconds.
+      // This means that if the new connection detail come less than 5 seconds after the previous
+      //  one, we'll report the signal and bandwidth as similar, regardless of their real value.
+      boolean isTimestampSimilar =
+          DateUtils.nanosToMillis(Math.abs(timestampNanos - other.timestampNanos)) < 5000;
+      boolean isSignalSimilar = isTimestampSimilar || signalDiff <= 5;
+      boolean isDownBandwidthSimilar =
+          isTimestampSimilar || downBandwidthDiff <= Math.max(1000, Math.abs(downBandwidth) * 0.1);
+      boolean isUpBandwidthSimilar =
+          isTimestampSimilar || upBandwidthDiff <= Math.max(1000, Math.abs(upBandwidth) * 0.1);
       return isVpn == other.isVpn
           && type.equals(other.type)
-          && (-5 <= signalStrength - other.signalStrength
-              && signalStrength - other.signalStrength <= 5)
-          && (-1000 <= downBandwidth - other.downBandwidth
-              && downBandwidth - other.downBandwidth <= 1000)
-          && (-1000 <= upBandwidth - other.upBandwidth && upBandwidth - other.upBandwidth <= 1000);
+          && isSignalSimilar
+          && isDownBandwidthSimilar
+          && isUpBandwidthSimilar;
     }
   }
 }
