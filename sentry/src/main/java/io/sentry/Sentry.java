@@ -307,7 +307,7 @@ public final class Sentry {
 
   private static @NotNull TracesSamplingDecision sampleStartupProfiling(
       final @NotNull SentryOptions options) {
-    TransactionContext startupTransactionContext = new TransactionContext("ui.load", "");
+    TransactionContext startupTransactionContext = new TransactionContext("app.launch", "profile");
     startupTransactionContext.setForNextStartup(true);
     SamplingContext startupSamplingContext = new SamplingContext(startupTransactionContext, null);
     return new TracesSampler(options).sample(startupSamplingContext);

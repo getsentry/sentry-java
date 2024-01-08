@@ -310,7 +310,7 @@ class SentryTest {
         oldProfile.createNewFile()
         newProfile.createNewFile()
         // Make the old profile look like it's created earlier
-        oldProfile.setLastModified(System.currentTimeMillis() - 10000)
+        oldProfile.setLastModified(10000)
         // Make the new profile look like it's created later
         newProfile.setLastModified(System.currentTimeMillis() + 10000)
 
@@ -982,11 +982,15 @@ class SentryTest {
         // Samplers are called with isForNextStartup flag set to true
         verify(mockSampleTracer).sample(
             check {
+                assertEquals("app.launch", it.transactionContext.name)
+                assertEquals("profile", it.transactionContext.operation)
                 assertTrue(it.transactionContext.isForNextStartup)
             }
         )
         verify(mockProfilesSampler).sample(
             check {
+                assertEquals("app.launch", it.transactionContext.name)
+                assertEquals("profile", it.transactionContext.operation)
                 assertTrue(it.transactionContext.isForNextStartup)
             }
         )

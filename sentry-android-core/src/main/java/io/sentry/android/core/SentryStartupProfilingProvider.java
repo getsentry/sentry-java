@@ -39,7 +39,7 @@ public final class SentryStartupProfilingProvider extends EmptySecureContentProv
     this.buildInfoProvider = buildInfoProvider;
   }
 
-  SentryStartupProfilingProvider() {
+  public SentryStartupProfilingProvider() {
     logger = new AndroidLogger();
     buildInfoProvider = new BuildInfoProvider(logger);
   }
