@@ -12,6 +12,7 @@
 - SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
   - If you are setting global job listeners please also add `SentryJobListener`
 - Ensure serialVersionUID of Exception classes are unique ([#3115](https://github.com/getsentry/sentry-java/pull/3115))
+- Get rid of "is not eligible for getting processed by all BeanPostProcessors" warnings in Spring Boot ([#3108](https://github.com/getsentry/sentry-java/pull/3108))
 
 ### Dependencies
 
@@ -40,7 +41,6 @@
 - Send breadcrumbs and client error in `SentryOkHttpEventListener` even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
 - Keep `io.sentry.exception.SentryHttpClientException` from obfuscation to display proper issue title on Sentry ([#3093](https://github.com/getsentry/sentry-java/pull/3093))
 - (Android) Fix wrong activity transaction duration in case SDK init is deferred ([#3092](https://github.com/getsentry/sentry-java/pull/3092))
-- Get rid of "is not eligible for getting processed by all BeanPostProcessors" warnings in Spring Boot ([#3108](https://github.com/getsentry/sentry-java/pull/3108))
 
 ### Dependencies
 

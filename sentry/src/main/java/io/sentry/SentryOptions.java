@@ -1317,7 +1317,7 @@ public class SentryOptions {
   /**
    * Returns HostnameVerifier
    *
-   * @return HostnameVerifier objecr or null
+   * @return HostnameVerifier object or null
    */
   public @Nullable HostnameVerifier getHostnameVerifier() {
     return hostnameVerifier;

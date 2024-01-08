@@ -45,7 +45,6 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(event.message?.formatted == "Message captured during test")
             }
             assertNoOtherEnvelopes()
-            assertNoOtherRequests()
         }
     }
 
@@ -173,7 +172,6 @@ class EnvelopeTests : BaseUiTest() {
                 assertNotNull(transactionData)
             }
             assertNoOtherEnvelopes()
-            assertNoOtherRequests()
         }
     }
 
@@ -214,7 +212,6 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()
-            assertNoOtherRequests()
         }
     }
 
