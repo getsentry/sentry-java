@@ -313,26 +313,29 @@ public class AndroidProfiler {
           new ArrayDeque<>(performanceCollectionData.size());
       final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements =
           new ArrayDeque<>(performanceCollectionData.size());
-      for (PerformanceCollectionData performanceData : performanceCollectionData) {
-        CpuCollectionData cpuData = performanceData.getCpuData();
-        MemoryCollectionData memoryData = performanceData.getMemoryData();
-        if (cpuData != null) {
-          cpuUsageMeasurements.add(
+
+      synchronized (performanceCollectionData) {
+        for (PerformanceCollectionData performanceData : performanceCollectionData) {
+          CpuCollectionData cpuData = performanceData.getCpuData();
+          MemoryCollectionData memoryData = performanceData.getMemoryData();
+          if (cpuData != null) {
+            cpuUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
-                  cpuData.getCpuUsagePercentage()));
-        }
-        if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
-          memoryUsageMeasurements.add(
+                TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
+                cpuData.getCpuUsagePercentage()));
+          }
+          if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
+            memoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                  memoryData.getUsedHeapMemory()));
-        }
-        if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
-          nativeMemoryUsageMeasurements.add(
+                TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                memoryData.getUsedHeapMemory()));
+          }
+          if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
+            nativeMemoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                  memoryData.getUsedNativeMemory()));
+                TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                memoryData.getUsedNativeMemory()));
+          }
         }
       }
       if (!cpuUsageMeasurements.isEmpty()) {
