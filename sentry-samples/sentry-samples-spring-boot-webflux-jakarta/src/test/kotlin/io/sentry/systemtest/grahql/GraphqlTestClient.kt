@@ -4,10 +4,7 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.ApolloResponse
 import com.apollographql.apollo3.api.Mutation
 import com.apollographql.apollo3.api.Query
-import io.sentry.samples.graphql.AddProjectMutation
 import io.sentry.samples.graphql.GreetingQuery
-import io.sentry.samples.graphql.ProjectQuery
-import io.sentry.samples.graphql.TasksAndAssigneesQuery
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
@@ -24,18 +21,6 @@ class GraphqlTestClient(val backendUrl: String) {
 
     fun greet(name: String): ApolloResponse<GreetingQuery.Data>? {
         return executeQuery(GreetingQuery(name))
-    }
-
-    fun project(slug: String): ApolloResponse<ProjectQuery.Data>? {
-        return executeQuery(ProjectQuery(slug))
-    }
-
-    fun tasksAndAssignees(slug: String): ApolloResponse<TasksAndAssigneesQuery.Data>? {
-        return executeQuery(TasksAndAssigneesQuery(slug))
-    }
-
-    fun addProject(slug: String): ApolloResponse<AddProjectMutation.Data>? {
-        return executeMutation(AddProjectMutation(slug))
     }
 
     private fun <T : Query.Data> executeQuery(query: Query<T>): ApolloResponse<T>? = runBlocking {

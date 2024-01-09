@@ -1,9 +1,11 @@
 package io.sentry.samples.spring.boot;
 
 public class Todo {
-  private final Long id;
-  private final String title;
-  private final boolean completed;
+  private Long id;
+  private String title;
+  private boolean completed;
+
+  public Todo() {}
 
   public Todo(Long id, String title, boolean completed) {
     this.id = id;

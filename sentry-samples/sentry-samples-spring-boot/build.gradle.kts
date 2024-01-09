@@ -44,9 +44,10 @@ dependencies {
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation(Config.Libs.logbackClassic)
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
+    testImplementation("org.apache.httpcomponents:httpclient")
 }
 
 configure<SourceSetContainer> {

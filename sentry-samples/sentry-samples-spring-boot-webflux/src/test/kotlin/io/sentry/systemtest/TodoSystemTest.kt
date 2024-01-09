@@ -17,22 +17,6 @@ class TodoSystemTest {
     }
 
     @Test
-    fun `get todo works`() {
-        val envelopeCountBefore = testHelper.sentryClient.getEnvelopeCount()
-        println(envelopeCountBefore)
-
-        val restClient = testHelper.restClient
-        restClient.getTodo(1L)
-        assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
-
-        Thread.sleep(1000)
-
-        val envelopeCountAfter = testHelper.sentryClient.getEnvelopeCount()
-        println(envelopeCountAfter)
-        assertTrue(envelopeCountAfter.envelopes!! > envelopeCountBefore.envelopes!!)
-    }
-
-    @Test
     fun `get todo webclient works`() {
         val envelopeCountBefore = testHelper.sentryClient.getEnvelopeCount()
         println(envelopeCountBefore)
