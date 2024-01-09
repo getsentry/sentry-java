@@ -52,13 +52,10 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-//    testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-//    testImplementation(Config.Libs.logbackClassic)
     testImplementation("ch.qos.logback:logback-classic:1.3.5")
     testImplementation(Config.Libs.slf4jApi2)
-//    implementation(Config.Libs.apolloKotlin) // actually used for test
     testImplementation(Config.Libs.apolloKotlin)
 }
 
@@ -67,10 +64,6 @@ configure<SourceSetContainer> {
         java.srcDir("src/test/java")
     }
 }
-
-// tasks.withType<Test> {
-//    useJUnitPlatform()
-// }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {

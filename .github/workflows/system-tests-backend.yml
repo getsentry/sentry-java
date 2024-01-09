@@ -16,6 +16,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SENTRY_URL: http://127.0.0.1:8000
+    strategy:
+      matrix:
+        sample: [ "sentry-samples-spring-boot-jakarta" ]
+        java: [ "17" ]
+        include:
+          - sample: "sentry-samples-spring-boot"
+            java: "8"
+          - sample: "sentry-samples-spring-boot-webflux-jakarta"
+            java: "17"
+          - sample: "sentry-samples-spring-boot-webflux"
+            java: "8"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
@@ -26,7 +37,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: ${{ matrix.java }}
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@7e48093f71aa12588241894ff3695e83c4b5e4b0 # pin@v2.4.2
@@ -56,4 +67,4 @@ jobs:
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh & ./gradlew :sentry-samples:sentry-samples-spring-boot-jakarta:bootJar && test/system-test-spring-server-start.sh & test/wait-for-spring.sh && ./gradlew :sentry-samples:sentry-samples-spring-boot-jakarta:systemTest
+          test/system-test-sentry-server-start.sh & ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar && test/system-test-spring-server-start.sh "${{ matrix.sample }}" & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
