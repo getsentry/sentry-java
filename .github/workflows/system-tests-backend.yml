@@ -46,9 +46,13 @@ jobs:
 #      - name: Make compile without tests
 #        run: make compileWithoutTests
 
-      - name: Exclude NDK from build
+      - name: Exclude android modules from build
         run: |
           sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-android-core",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' settings.gradle.kts
+
+      - name: Exclude android modules from ignore list
+        run: |
+          sed -i -e '/.*"sentry-uitest-android",/d' -e '/.*"sentry-uitest-android-benchmark",/d' -e '/.*"test-app-sentry",/d' build.gradle.kts
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
