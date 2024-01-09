@@ -43,12 +43,12 @@ jobs:
 
 #       Without this android-ndk submodule caused problems
 #       Build could probably be speed up by removing this and fixing the actual issue
-      - name: Make compile without tests
-        run: make compileWithoutTests
+#      - name: Make compile without tests
+#        run: make compileWithoutTests
 
-#      - name: Exclude NDK from build
-#        run: |
-#          sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-android",/d' settings.gradle.kts
+      - name: Exclude NDK from build
+        run: |
+          sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-android-timber",/d' -e '/.*"sentry-android-okhttp",/d' -e '/.*"sentry-android-fragment",/d' -e '/.*"sentry-android-navigation",/d' -e '/.*"sentry-android-sqlite",/d' settings.gradle.kts
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
