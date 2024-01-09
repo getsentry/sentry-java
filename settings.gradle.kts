@@ -52,7 +52,6 @@ include(
     "sentry-samples:sentry-samples-jul",
     "sentry-samples:sentry-samples-log4j2",
     "sentry-samples:sentry-samples-logback",
-    "sentry-samples:sentry-samples-openfeign",
     "sentry-samples:sentry-samples-servlet",
     "sentry-samples:sentry-samples-spring",
     "sentry-samples:sentry-samples-spring-jakarta",
@@ -64,7 +63,8 @@ include(
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-plain",
-    "sentry-android-integration-tests:test-app-sentry"
+    "sentry-android-integration-tests:test-app-sentry",
+    "sentry-samples:sentry-samples-openfeign"
 )
 
 gradle.beforeProject {
