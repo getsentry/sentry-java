@@ -42,21 +42,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@7e48093f71aa12588241894ff3695e83c4b5e4b0 # pin@v2.4.2
 
-#      - name: Cache Gradle packages
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/.gradle/caches
-#            ~/.gradle/wrapper
-#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-#          restore-keys: |
-#            ${{ runner.os }}-gradle-
-
-#       Without this android-ndk submodule caused problems
-#       Build could probably be speed up by removing this and fixing the actual issue
-#      - name: Make compile without tests
-#        run: make compileWithoutTests
-
       - name: Exclude android modules from build
         run: |
           sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-android-core",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' -e '/.*"sentry-samples:sentry-samples-android",/d' settings.gradle.kts
