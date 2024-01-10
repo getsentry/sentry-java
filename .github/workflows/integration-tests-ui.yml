@@ -3,18 +3,13 @@ on:
   push:
     branches:
       - main
-      - release/**
   pull_request:
 
-jobs:
-  cancel-previous-workflow:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@01ce38bf961b4e243a6342cbade0dbc8ba3f0432 # pin@0.12.0
-        with:
-          access_token: ${{ github.token }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   test:
     name: Ui tests
     runs-on: ubuntu-latest
@@ -33,15 +28,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@842c587ad8aa4c68eeba24c396e15af4c2e9f30a # pin@v2
+
       # Clean, build and release a test apk, but only if we will run the benchmark
       - name: Make assembleUiTests
         if: env.SAUCE_USERNAME != null
         run: make assembleUiTests
-
-      # We stop gradle at the end to make sure the cache folders
-      # don't contain any lock files and are free to be cached.
-      - name: Make stop
-        run: make stop
 
       - name: Run Tests in SauceLab
         uses: saucelabs/saucectl-run-action@7fe025ef1fdc6f211add3751a6c7d8bba27ba9b1 # pin@v3

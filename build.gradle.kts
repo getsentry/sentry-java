@@ -91,6 +91,11 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
+            maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+
+            // Cap JVM args per test
+            minHeapSize = "128m"
+            maxHeapSize = "1g"
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
@@ -263,6 +268,23 @@ gradle.projectsEvaluated {
                     classpath += javadocTask.classpath
                     excludes += javadocTask.excludes
                     includes += javadocTask.includes
+                }
+            }
+    }
+
+    tasks.create("buildForCodeQL") {
+        subprojects
+            .filter {
+                !it.displayName.contains("sample") &&
+                    !it.displayName.contains("integration-tests") &&
+                    !it.displayName.contains("bom") &&
+                    it.name != "sentry-opentelemetry"
+            }
+            .forEach { proj ->
+                if (proj.plugins.hasPlugin("com.android.library")) {
+                    this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
+                } else {
+                    this.dependsOn(proj.tasks.findByName("testClasses"))
                 }
             }
     }
