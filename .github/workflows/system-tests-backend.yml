@@ -40,7 +40,7 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@7e48093f71aa12588241894ff3695e83c4b5e4b0 # pin@v2.4.2
+        uses: gradle/gradle-build-action@842c587ad8aa4c68eeba24c396e15af4c2e9f30a # pin@v2
 
       - name: Exclude android modules from build
         run: |
@@ -53,3 +53,11 @@ jobs:
       - name: Start server and run integration test for sentry-cli commands
         run: |
           test/system-test-sentry-server-start.sh & ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar && test/system-test-spring-server-start.sh "${{ matrix.sample }}" & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-test-results-${{ matrix.sample }}
+          path: |
+            **/build/reports/*
