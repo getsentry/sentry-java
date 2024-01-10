@@ -27,6 +27,13 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
 }
 
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+}
+
 dependencies {
     implementation(Config.Libs.springBoot3StarterSecurity)
     implementation(Config.Libs.springBoot3StarterActuator)
@@ -62,13 +69,6 @@ dependencies {
 configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")
-    }
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 }
 

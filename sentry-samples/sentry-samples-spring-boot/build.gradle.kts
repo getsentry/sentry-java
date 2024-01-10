@@ -23,6 +23,17 @@ configure<JavaPluginExtension> {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+}
+
 dependencies {
     implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
@@ -58,13 +69,6 @@ dependencies {
 configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")
-    }
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
 
