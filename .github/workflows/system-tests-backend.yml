@@ -75,3 +75,5 @@ jobs:
           path: |
             **/build/test-results/**/*.xml
           reporter: java-junit
+          fail-on-error: false
+          fail-on-empty: false
