@@ -76,6 +76,12 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
+//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+
+    // Cap JVM args per test
+    minHeapSize = "128m"
+    maxHeapSize = "1g"
+
     filter {
         includeTestsMatching("io.sentry.systemtest*")
     }
