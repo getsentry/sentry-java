@@ -18,6 +18,11 @@ repositories {
     mavenCentral()
 }
 
+configure<JavaPluginExtension> {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 dependencies {
     implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
