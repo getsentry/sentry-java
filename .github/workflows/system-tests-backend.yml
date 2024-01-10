@@ -52,7 +52,7 @@ jobs:
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh & ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar && test/system-test-spring-server-start.sh "${{ matrix.sample }}" & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+          test/system-test-sentry-server-start.sh > sentry-mock-server.txt 2>&1 & ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar && test/system-test-spring-server-start.sh "${{ matrix.sample }}" > spring-server.txt 2>&1 & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
 
       - name: Upload test results
         if: always()
@@ -61,6 +61,8 @@ jobs:
           name: system-test-results-${{ matrix.sample }}
           path: |
             **/build/reports/*
+            sentry-mock-server.txt
+            spring-server.txt
 
       - name: Test Report
         uses: dorny/test-reporter@v1
