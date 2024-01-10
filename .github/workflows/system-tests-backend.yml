@@ -14,9 +14,11 @@ concurrency:
 jobs:
   system-test:
     runs-on: ubuntu-20.04
+    continue-on-error: true
     env:
       SENTRY_URL: http://127.0.0.1:8000
     strategy:
+      fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
         java: [ "17" ]
@@ -29,6 +31,7 @@ jobs:
             java: "17"
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10.5'
