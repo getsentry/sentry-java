@@ -41,7 +41,9 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         val op1 = BenchmarkOperation(choreographer, op = getOperation(runner))
         val op2 = BenchmarkOperation(choreographer, op = getOperation(runner))
         val refreshRate = BenchmarkActivity.refreshRate ?: 60F
-        val comparisonResults = BenchmarkOperation.compare(op1, "Op1", op2, "Op2", refreshRate)
+        // since we benchmark the same operation, warmupIterations = 1 would effectively mean
+        // 2 warmup runs which should be enough
+        val comparisonResults = BenchmarkOperation.compare(op1, "Op1", op2, "Op2", refreshRate, warmupIterations = 1, measuredIterations = 10)
         val comparisonResult = comparisonResults.getSummaryResult()
         comparisonResult.printResults()
 
