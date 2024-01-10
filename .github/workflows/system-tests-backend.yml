@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   system-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       SENTRY_URL: http://127.0.0.1:8000
     strategy:
@@ -22,11 +22,11 @@ jobs:
         java: [ "17" ]
         include:
           - sample: "sentry-samples-spring-boot"
-            java: "8"
+            java: "17"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
             java: "17"
           - sample: "sentry-samples-spring-boot-webflux"
-            java: "8"
+            java: "17"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
