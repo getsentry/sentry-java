@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Avoid concurrency in AndroidProfiler performance data collection ([#3130](https://github.com/getsentry/sentry-java/pull/3130))
 - Improve thresholds for network changes breadcrumbs ([#3083](https://github.com/getsentry/sentry-java/pull/3083))
 - SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
   - If you are setting global job listeners please also add `SentryJobListener`
