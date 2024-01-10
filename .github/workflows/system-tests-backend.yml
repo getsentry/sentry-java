@@ -65,7 +65,7 @@ jobs:
             spring-server.txt
 
       - name: Test Report
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@afe6793191b75b608954023a46831a3fe10048d4 # pin@v1.7.0
         if: always()
         with:
           name: JUnit Tests
