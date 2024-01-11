@@ -4,7 +4,6 @@ import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
-import io.sentry.instrumentation.file.SentryFileWriter;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
 import io.sentry.internal.modules.CompositeModulesLoader;
@@ -21,10 +20,15 @@ import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -52,6 +56,9 @@ public final class Sentry {
 
   private static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
       "startup_profiling_config";
+
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   /**
    * Returns the current (threads) hub, if none, clones the mainHub and returns it.
@@ -260,27 +267,31 @@ public final class Sentry {
           if (cacheDirPath != null) {
             final @NotNull File startupProfilingConfigFile =
                 new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
-            // We always delete the config file for startup profiling
-            FileUtils.deleteRecursively(startupProfilingConfigFile);
-            if (!options.isEnableStartupProfiling()) {
-              return;
-            }
-            if (!options.isTracingEnabled()) {
-              options
-                  .getLogger()
-                  .log(
-                      SentryLevel.INFO,
-                      "Tracing is disabled and startup profiling will not start.");
-              return;
-            }
             try {
+              // We always delete the config file for startup profiling
+              FileUtils.deleteRecursively(startupProfilingConfigFile);
+              if (!options.isEnableStartupProfiling()) {
+                return;
+              }
+              if (!options.isTracingEnabled()) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.INFO,
+                        "Tracing is disabled and startup profiling will not start.");
+                return;
+              }
+
               if (startupProfilingConfigFile.createNewFile()) {
                 final @NotNull TracesSamplingDecision startupSamplingDecision =
                     sampleStartupProfiling(options);
                 final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
                     new SentryStartupProfilingOptions(options, startupSamplingDecision);
-                try (Writer fileWriter = new SentryFileWriter(startupProfilingConfigFile)) {
-                  options.getSerializer().serialize(startupProfilingOptions, fileWriter);
+                try (final OutputStream outputStream =
+                        new FileOutputStream(startupProfilingConfigFile);
+                    final Writer writer =
+                        new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+                  options.getSerializer().serialize(startupProfilingOptions, writer);
                 }
               }
             } catch (IOException e) {
