@@ -4,7 +4,6 @@ import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
-import io.sentry.instrumentation.file.SentryFileWriter;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
 import io.sentry.internal.modules.CompositeModulesLoader;
@@ -21,10 +20,15 @@ import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -53,6 +57,9 @@ public final class Sentry {
   @ApiStatus.Internal
   public static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
       "startup_profiling_config";
+
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   /** Timestamp used to check old profiles to delete. */
   private static final long classCreationTimestamp = System.currentTimeMillis();
@@ -260,11 +267,12 @@ public final class Sentry {
       final @NotNull ISentryExecutorService sentryExecutorService) {
     try {
       sentryExecutorService.submit(
-          () -> {
-            final String cacheDirPath = options.getCacheDirPathWithoutDsn();
-            if (cacheDirPath != null) {
-              final @NotNull File startupProfilingConfigFile =
-                  new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+        () -> {
+          final String cacheDirPath = options.getCacheDirPathWithoutDsn();
+          if (cacheDirPath != null) {
+            final @NotNull File startupProfilingConfigFile =
+              new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+            try {
               // We always delete the config file for startup profiling
               FileUtils.deleteRecursively(startupProfilingConfigFile);
               if (!options.isEnableStartupProfiling()) {
@@ -272,36 +280,38 @@ public final class Sentry {
               }
               if (!options.isTracingEnabled()) {
                 options
-                    .getLogger()
-                    .log(
-                        SentryLevel.INFO,
-                        "Tracing is disabled and startup profiling will not start.");
+                  .getLogger()
+                  .log(
+                    SentryLevel.INFO,
+                    "Tracing is disabled and startup profiling will not start.");
                 return;
               }
-              try {
-                if (startupProfilingConfigFile.createNewFile()) {
-                  final @NotNull TracesSamplingDecision startupSamplingDecision =
-                      sampleStartupProfiling(options);
-                  final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
-                      new SentryStartupProfilingOptions(options, startupSamplingDecision);
-                  try (Writer fileWriter = new SentryFileWriter(startupProfilingConfigFile)) {
-                    options.getSerializer().serialize(startupProfilingOptions, fileWriter);
-                  }
+              if (startupProfilingConfigFile.createNewFile()) {
+                final @NotNull TracesSamplingDecision startupSamplingDecision =
+                  sampleStartupProfiling(options);
+                final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
+                  new SentryStartupProfilingOptions(options, startupSamplingDecision);
+                try (final OutputStream outputStream =
+                       new FileOutputStream(startupProfilingConfigFile);
+                     final Writer writer =
+                       new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+                  options.getSerializer().serialize(startupProfilingOptions, writer);
                 }
-              } catch (IOException e) {
-                options
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
               }
+            } catch (IOException e) {
+              options
+                .getLogger()
+                .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
             }
-          });
+          }
+        });
     } catch (RejectedExecutionException e) {
       options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
-              e);
+        .getLogger()
+        .log(
+          SentryLevel.ERROR,
+          "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
+          e);
     }
   }
 
