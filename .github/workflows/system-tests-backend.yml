@@ -20,14 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
-        java: [ "17" ]
         include:
           - sample: "sentry-samples-spring-boot"
-            java: "17"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
-            java: "17"
           - sample: "sentry-samples-spring-boot-webflux"
-            java: "17"
     steps:
       - uses: actions/checkout@v4
 
