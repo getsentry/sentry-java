@@ -1,17 +1,16 @@
-name: 'Build'
+name: 'Build Release Artifacts'
 on:
   push:
     branches:
-      - main
-  pull_request:
+      - release/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Job ubuntu-latest - Java 17
+  release:
+    name: Build release artifacts
     runs-on: ubuntu-latest
 
     steps:
@@ -27,19 +26,15 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@842c587ad8aa4c68eeba24c396e15af4c2e9f30a # pin@v2
 
-      - name: Run Tests with coverage and Lint
-        run: make preMerge
+      - name: Build artifacts
+        run: make publish
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@v3
-        with:
-          name: sentry-java
-          fail_ci_if_error: false
-
-      - name: Upload test results
-        if: always()
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: ${{ github.sha }}
+          if-no-files-found: error
           path: |
-            **/build/reports/*
+            ./*/build/distributions/*.zip
+            ./sentry-opentelemetry/*/build/distributions/*.zip
+            ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*

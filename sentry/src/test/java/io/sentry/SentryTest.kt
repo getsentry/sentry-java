@@ -743,6 +743,8 @@ class SentryTest {
 
         Sentry.init {
             it.dsn = dsn
+            it.isDebug = true
+            it.setLogger(SystemOutLogger())
 
             it.release = "io.sentry.sample@2.0"
             it.cacheDirPath = tmpDir.newFolder().absolutePath

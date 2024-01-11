@@ -39,6 +39,7 @@ class PreviousSessionFinalizerTest {
                 isDebug = true
                 cacheDirPath = dir?.newFolder()?.absolutePath
                 this.flushTimeoutMillis = flushTimeoutMillis
+                this.sessionFlushTimeoutMillis = flushTimeoutMillis
                 isEnableAutoSessionTracking = sessionTrackingEnabled
                 setEnvelopeDiskCache(EnvelopeCache.create(this))
                 if (!shouldAwait) {
