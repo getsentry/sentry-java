@@ -16,10 +16,11 @@ import io.sentry.SentryStartupProfilingOptions;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
-import io.sentry.instrumentation.file.SentryFileReader;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -66,10 +67,11 @@ public final class SentryStartupProfilingProvider extends EmptySecureContentProv
       return false;
     }
 
-    try (final @NotNull Reader fileReader = new SentryFileReader(configFile)) {
+    try (final @NotNull Reader reader =
+            new BufferedReader(new InputStreamReader(new FileInputStream(configFile)))) {
       final @Nullable SentryStartupProfilingOptions profilingOptions =
           new JsonSerializer(SentryOptions.empty())
-              .deserialize(fileReader, SentryStartupProfilingOptions.class);
+              .deserialize(reader, SentryStartupProfilingOptions.class);
 
       if (profilingOptions == null) {
         logger.log(
@@ -93,6 +95,7 @@ public final class SentryStartupProfilingProvider extends EmptySecureContentProv
       AppStartMetrics.getInstance().setStartupSamplingDecision(startupSamplingDecision);
 
       if (!(startupSamplingDecision.getProfileSampled() && startupSamplingDecision.getSampled())) {
+        logger.log(SentryLevel.DEBUG, "Startup profiling was not sampled. It will not start.");
         return false;
       }
       logger.log(SentryLevel.DEBUG, "Startup profiling started.");
@@ -114,7 +117,7 @@ public final class SentryStartupProfilingProvider extends EmptySecureContentProv
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, "Startup profiling config file not found. ", e);
       return false;
-    } catch (IOException e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error reading startup profiling config file. ", e);
       return false;
     }
@@ -124,10 +127,12 @@ public final class SentryStartupProfilingProvider extends EmptySecureContentProv
 
   @Override
   public void shutdown() {
-    final @Nullable ITransactionProfiler startupProfiler =
-        AppStartMetrics.getInstance().getStartupProfiler();
-    if (startupProfiler != null) {
-      startupProfiler.close();
+    synchronized (AppStartMetrics.getInstance()) {
+      final @Nullable ITransactionProfiler startupProfiler =
+          AppStartMetrics.getInstance().getStartupProfiler();
+      if (startupProfiler != null) {
+        startupProfiler.close();
+      }
     }
   }
 

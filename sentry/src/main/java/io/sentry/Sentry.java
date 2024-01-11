@@ -23,7 +23,6 @@ import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -267,51 +266,51 @@ public final class Sentry {
       final @NotNull ISentryExecutorService sentryExecutorService) {
     try {
       sentryExecutorService.submit(
-        () -> {
-          final String cacheDirPath = options.getCacheDirPathWithoutDsn();
-          if (cacheDirPath != null) {
-            final @NotNull File startupProfilingConfigFile =
-              new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
-            try {
-              // We always delete the config file for startup profiling
-              FileUtils.deleteRecursively(startupProfilingConfigFile);
-              if (!options.isEnableStartupProfiling()) {
-                return;
-              }
-              if (!options.isTracingEnabled()) {
-                options
-                  .getLogger()
-                  .log(
-                    SentryLevel.INFO,
-                    "Tracing is disabled and startup profiling will not start.");
-                return;
-              }
-              if (startupProfilingConfigFile.createNewFile()) {
-                final @NotNull TracesSamplingDecision startupSamplingDecision =
-                  sampleStartupProfiling(options);
-                final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
-                  new SentryStartupProfilingOptions(options, startupSamplingDecision);
-                try (final OutputStream outputStream =
-                       new FileOutputStream(startupProfilingConfigFile);
-                     final Writer writer =
-                       new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-                  options.getSerializer().serialize(startupProfilingOptions, writer);
+          () -> {
+            final String cacheDirPath = options.getCacheDirPathWithoutDsn();
+            if (cacheDirPath != null) {
+              final @NotNull File startupProfilingConfigFile =
+                  new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+              try {
+                // We always delete the config file for startup profiling
+                FileUtils.deleteRecursively(startupProfilingConfigFile);
+                if (!options.isEnableStartupProfiling()) {
+                  return;
                 }
+                if (!options.isTracingEnabled()) {
+                  options
+                      .getLogger()
+                      .log(
+                          SentryLevel.INFO,
+                          "Tracing is disabled and startup profiling will not start.");
+                  return;
+                }
+                if (startupProfilingConfigFile.createNewFile()) {
+                  final @NotNull TracesSamplingDecision startupSamplingDecision =
+                      sampleStartupProfiling(options);
+                  final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
+                      new SentryStartupProfilingOptions(options, startupSamplingDecision);
+                  try (final OutputStream outputStream =
+                          new FileOutputStream(startupProfilingConfigFile);
+                      final Writer writer =
+                          new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+                    options.getSerializer().serialize(startupProfilingOptions, writer);
+                  }
+                }
+              } catch (Throwable e) {
+                options
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
               }
-            } catch (IOException e) {
-              options
-                .getLogger()
-                .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
             }
-          }
-        });
+          });
     } catch (RejectedExecutionException e) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.ERROR,
-          "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
-          e);
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
+              e);
     }
   }
 
@@ -907,22 +906,6 @@ public final class Sentry {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     return getCurrentHub().startTransaction(transactionContext, transactionOptions);
-  }
-
-  /**
-   * Creates a Transaction and returns the instance.
-   *
-   * @param transactionContext the transaction context
-   * @param transactionOptions options for the transaction
-   * @param isStartupTransaction if the transaction is the app startup one
-   * @return created transaction.
-   */
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext,
-      final @NotNull TransactionOptions transactionOptions,
-      final boolean isStartupTransaction) {
-    return getCurrentHub()
-        .startTransaction(transactionContext, transactionOptions, isStartupTransaction);
   }
 
   /**

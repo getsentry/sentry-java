@@ -152,17 +152,19 @@ final class AndroidOptionsInitializer {
     // Check if the profiler was already instantiated in the startup.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
-    final @Nullable ITransactionProfiler startupProfiler =
-        AppStartMetrics.getInstance().getStartupProfiler();
-    if (startupProfiler != null) {
-      options.setTransactionProfiler(startupProfiler);
-      AppStartMetrics.getInstance().setStartupProfiler(null);
-    } else {
-      final SentryFrameMetricsCollector frameMetricsCollector =
-          new SentryFrameMetricsCollector(context, options, buildInfoProvider);
-      options.setTransactionProfiler(
-          new AndroidTransactionProfiler(
-              context, options, buildInfoProvider, frameMetricsCollector));
+    synchronized (AppStartMetrics.getInstance()) {
+      final @Nullable ITransactionProfiler startupProfiler =
+          AppStartMetrics.getInstance().getStartupProfiler();
+      if (startupProfiler != null) {
+        options.setTransactionProfiler(startupProfiler);
+        AppStartMetrics.getInstance().setStartupProfiler(null);
+      } else {
+        final SentryFrameMetricsCollector frameMetricsCollector =
+            new SentryFrameMetricsCollector(context, options, buildInfoProvider);
+        options.setTransactionProfiler(
+            new AndroidTransactionProfiler(
+                context, options, buildInfoProvider, frameMetricsCollector));
+      }
     }
 
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));

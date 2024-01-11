@@ -20,6 +20,9 @@ public final class TransactionOptions extends SpanOptions {
   /** The start timestamp of the transaction */
   private @Nullable SentryDate startTimestamp = null;
 
+  /** Defines if transaction refers to the startup process */
+  private boolean isStartupTransaction = false;
+
   /**
    * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
    * (the order of meeting condition does not matter): - tracer itself is finished - all child spans
@@ -182,5 +185,15 @@ public final class TransactionOptions extends SpanOptions {
   public void setTransactionFinishedCallback(
       @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     this.transactionFinishedCallback = transactionFinishedCallback;
+  }
+
+  @ApiStatus.Internal
+  public void setStartupTransaction(final boolean startupTransaction) {
+    isStartupTransaction = startupTransaction;
+  }
+
+  @ApiStatus.Internal
+  public boolean isStartupTransaction() {
+    return isStartupTransaction;
   }
 }

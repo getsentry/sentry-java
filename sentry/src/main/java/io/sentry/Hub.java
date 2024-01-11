@@ -700,21 +700,12 @@ public final class Hub implements IHub {
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
-    return startTransaction(transactionContext, transactionOptions, false);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext,
-      final @NotNull TransactionOptions transactionOptions,
-      final boolean isStartupTransaction) {
-    return createTransaction(transactionContext, transactionOptions, isStartupTransaction);
+    return createTransaction(transactionContext, transactionOptions);
   }
 
   private @NotNull ITransaction createTransaction(
       final @NotNull TransactionContext transactionContext,
-      final @NotNull TransactionOptions transactionOptions,
-      final boolean isStartupTransaction) {
+      final @NotNull TransactionOptions transactionOptions) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -758,7 +749,7 @@ public final class Hub implements IHub {
         if (!transactionProfiler.isRunning()) {
           transactionProfiler.start();
           transactionProfiler.bindTransaction(transaction);
-        } else if (isStartupTransaction) {
+        } else if (transactionOptions.isStartupTransaction()) {
           // If the profiler is running and the current transaction is the app startup, we bind it.
           transactionProfiler.bindTransaction(transaction);
         }

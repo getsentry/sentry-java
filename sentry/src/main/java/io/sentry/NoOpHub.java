@@ -161,14 +161,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext,
-      final @NotNull TransactionOptions transactionOptions,
-      final boolean isStartupTransaction) {
-    return NoOpTransaction.getInstance();
-  }
-
-  @Override
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public @NotNull SentryTraceHeader traceHeaders() {

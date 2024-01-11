@@ -221,6 +221,7 @@ public final class ActivityLifecycleIntegration
           startupSamplingDecision = null;
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
+        transactionOptions.setStartupTransaction(startupSamplingDecision != null);
 
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
@@ -230,8 +231,7 @@ public final class ActivityLifecycleIntegration
                     TransactionNameSource.COMPONENT,
                     UI_LOAD_OP,
                     startupSamplingDecision),
-                transactionOptions,
-                startupSamplingDecision != null);
+                transactionOptions);
         setSpanOrigin(transaction);
 
         // in case appStartTime isn't available, we don't create a span for it.

@@ -147,7 +147,10 @@ class SentryStartupProfilingProviderTest {
         assertFalse(AppStartMetrics.getInstance().startupSamplingDecision!!.sampled)
         // If trace is not sampled, profile is not sample, either
         assertFalse(AppStartMetrics.getInstance().startupSamplingDecision!!.profileSampled)
-        verify(fixture.logger, never()).log(any(), any())
+        verify(fixture.logger).log(
+            eq(SentryLevel.DEBUG),
+            eq("Startup profiling was not sampled. It will not start.")
+        )
     }
 
     @Test
@@ -159,7 +162,10 @@ class SentryStartupProfilingProviderTest {
         assertNotNull(AppStartMetrics.getInstance().startupSamplingDecision)
         assertTrue(AppStartMetrics.getInstance().startupSamplingDecision!!.sampled)
         assertFalse(AppStartMetrics.getInstance().startupSamplingDecision!!.profileSampled)
-        verify(fixture.logger, never()).log(any(), any())
+        verify(fixture.logger).log(
+            eq(SentryLevel.DEBUG),
+            eq("Startup profiling was not sampled. It will not start.")
+        )
     }
 
     @Test
