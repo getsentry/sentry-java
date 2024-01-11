@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - release/**
   pull_request:
 
 concurrency:
@@ -40,7 +39,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: ${{ matrix.java }}
+          java-version: '17'
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@842c587ad8aa4c68eeba24c396e15af4c2e9f30a # pin@v2
@@ -53,7 +52,7 @@ jobs:
         run: |
           sed -i -e '/.*"sentry-uitest-android",/d' -e '/.*"sentry-uitest-android-benchmark",/d' -e '/.*"test-app-sentry",/d' -e '/.*"sentry-samples-android",/d' build.gradle.kts
 
-      - name: Start server and run integration test for sentry-cli commands
+      - name: Build server jar
         run: |
           ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
 
