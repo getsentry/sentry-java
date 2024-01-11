@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   system-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     continue-on-error: true
     env:
       SENTRY_URL: http://127.0.0.1:8000
@@ -55,7 +55,11 @@ jobs:
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh > sentry-mock-server.txt 2>&1 & ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar && test/system-test-spring-server-start.sh "${{ matrix.sample }}" > spring-server.txt 2>&1 & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
+
+      - name: Start server and run integration test for sentry-cli commands
+        run: |
+          test/system-test-sentry-server-start.sh > sentry-mock-server.txt 2>&1 & test/system-test-spring-server-start.sh "${{ matrix.sample }}" > spring-server.txt 2>&1 & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
 
       - name: Upload test results
         if: always()
