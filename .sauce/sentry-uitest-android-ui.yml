@@ -11,7 +11,7 @@ sauce:
       - android
 
 defaults:
-  timeout: 40m
+  timeout: 20m
 
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
@@ -19,33 +19,21 @@ espresso:
 suites:
 
   - name: "Android 13 Ui test (api 33)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
     devices:
       - name: ".*"
         platformVersion: "13"
 
   - name: "Android 12 Ui test (api 31)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
     devices:
       - name: ".*"
         platformVersion: "12"
 
   - name: "Android 11 Ui test (api 30)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
     devices:
       - name: ".*"
         platformVersion: "11"
 
   - name: "Android 10 Ui test (api 29)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
     devices:
       - name: ".*"
         platformVersion: "10"

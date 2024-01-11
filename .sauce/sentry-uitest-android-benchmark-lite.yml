@@ -10,7 +10,7 @@ sauce:
       - android
 
 defaults:
-  timeout: 40m
+  timeout: 20m
 
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android-benchmark/build/outputs/apk/release/sentry-uitest-android-benchmark-release.apk
@@ -19,9 +19,6 @@ espresso:
 suites:
 
   - name: "Android 11 (api 30)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
     devices:
       - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11)
 
