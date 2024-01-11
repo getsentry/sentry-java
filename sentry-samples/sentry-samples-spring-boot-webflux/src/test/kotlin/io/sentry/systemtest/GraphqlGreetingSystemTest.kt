@@ -29,7 +29,7 @@ class GraphqlGreetingSystemTest {
 
         val response = testHelper.graphqlClient.greet("crash")
 
-        testHelper.ensureErrorCount(response, 0)
+        testHelper.ensureErrorCount(response, 1)
         testHelper.ensureEnvelopCountIncreased()
     }
 }
