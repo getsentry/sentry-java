@@ -297,6 +297,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
+  public boolean isRunning() {
+    return transactionsCounter != 0;
+  }
+
+  @Override
   public void close() {
     // we stop profiling
     if (currentProfilingTransactionData != null) {
@@ -307,6 +312,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           true,
           null,
           HubAdapter.getInstance().getOptions());
+    } else if (transactionsCounter != 0) {
+      // in case the startup profiling is running, and it's not bound to a transaction, we still
+      // stop profiling, but we also have to manually update the counter.
+      transactionsCounter--;
     }
 
     // we have to first stop profiling otherwise we would lost the last profile

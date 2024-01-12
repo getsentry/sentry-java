@@ -310,7 +310,7 @@ class SentryTest {
         oldProfile.createNewFile()
         newProfile.createNewFile()
         // Make the old profile look like it's created earlier
-        oldProfile.setLastModified(System.currentTimeMillis() - 10000)
+        oldProfile.setLastModified(10000)
         // Make the new profile look like it's created later
         newProfile.setLastModified(System.currentTimeMillis() + 10000)
 
@@ -945,11 +945,11 @@ class SentryTest {
     @Test
     fun `backpressure monitor is a NoOp if handling is disabled`() {
         var sentryOptions: SentryOptions? = null
-        Sentry.init({
+        Sentry.init {
             it.dsn = dsn
             it.isEnableBackpressureHandling = false
             sentryOptions = it
-        })
+        }
         assertIs<NoOpBackpressureMonitor>(sentryOptions?.backpressureMonitor)
     }
 
@@ -957,11 +957,11 @@ class SentryTest {
     fun `backpressure monitor is set if handling is enabled`() {
         var sentryOptions: SentryOptions? = null
 
-        Sentry.init({
+        Sentry.init {
             it.dsn = dsn
             it.isEnableBackpressureHandling = true
             sentryOptions = it
-        })
+        }
         assertIs<BackpressureMonitor>(sentryOptions?.backpressureMonitor)
     }
 
@@ -982,11 +982,15 @@ class SentryTest {
         // Samplers are called with isForNextStartup flag set to true
         verify(mockSampleTracer).sample(
             check {
+                assertEquals("app.launch", it.transactionContext.name)
+                assertEquals("profile", it.transactionContext.operation)
                 assertTrue(it.transactionContext.isForNextStartup)
             }
         )
         verify(mockProfilesSampler).sample(
             check {
+                assertEquals("app.launch", it.transactionContext.name)
+                assertEquals("profile", it.transactionContext.operation)
                 assertTrue(it.transactionContext.isForNextStartup)
             }
         )

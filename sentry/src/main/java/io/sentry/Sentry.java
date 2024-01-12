@@ -23,7 +23,6 @@ import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -54,11 +53,15 @@ public final class Sentry {
   /** whether to use a single (global) Hub as opposed to one per thread. */
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
 
-  private static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
+  @ApiStatus.Internal
+  public static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
       "startup_profiling_config";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  /** Timestamp used to check old profiles to delete. */
+  private static final long classCreationTimestamp = System.currentTimeMillis();
 
   /**
    * Returns the current (threads) hub, if none, clones the mainHub and returns it.
@@ -261,51 +264,59 @@ public final class Sentry {
   private static void handleStartupProfilingConfig(
       final @NotNull SentryOptions options,
       final @NotNull ISentryExecutorService sentryExecutorService) {
-    sentryExecutorService.submit(
-        () -> {
-          final String cacheDirPath = options.getCacheDirPathWithoutDsn();
-          if (cacheDirPath != null) {
-            final @NotNull File startupProfilingConfigFile =
-                new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
-            try {
-              // We always delete the config file for startup profiling
-              FileUtils.deleteRecursively(startupProfilingConfigFile);
-              if (!options.isEnableStartupProfiling()) {
-                return;
-              }
-              if (!options.isTracingEnabled()) {
+    try {
+      sentryExecutorService.submit(
+          () -> {
+            final String cacheDirPath = options.getCacheDirPathWithoutDsn();
+            if (cacheDirPath != null) {
+              final @NotNull File startupProfilingConfigFile =
+                  new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+              try {
+                // We always delete the config file for startup profiling
+                FileUtils.deleteRecursively(startupProfilingConfigFile);
+                if (!options.isEnableStartupProfiling()) {
+                  return;
+                }
+                if (!options.isTracingEnabled()) {
+                  options
+                      .getLogger()
+                      .log(
+                          SentryLevel.INFO,
+                          "Tracing is disabled and startup profiling will not start.");
+                  return;
+                }
+                if (startupProfilingConfigFile.createNewFile()) {
+                  final @NotNull TracesSamplingDecision startupSamplingDecision =
+                      sampleStartupProfiling(options);
+                  final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
+                      new SentryStartupProfilingOptions(options, startupSamplingDecision);
+                  try (final OutputStream outputStream =
+                          new FileOutputStream(startupProfilingConfigFile);
+                      final Writer writer =
+                          new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+                    options.getSerializer().serialize(startupProfilingOptions, writer);
+                  }
+                }
+              } catch (Throwable e) {
                 options
                     .getLogger()
-                    .log(
-                        SentryLevel.INFO,
-                        "Tracing is disabled and startup profiling will not start.");
-                return;
+                    .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
               }
-
-              if (startupProfilingConfigFile.createNewFile()) {
-                final @NotNull TracesSamplingDecision startupSamplingDecision =
-                    sampleStartupProfiling(options);
-                final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
-                    new SentryStartupProfilingOptions(options, startupSamplingDecision);
-                try (final OutputStream outputStream =
-                        new FileOutputStream(startupProfilingConfigFile);
-                    final Writer writer =
-                        new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-                  options.getSerializer().serialize(startupProfilingOptions, writer);
-                }
-              }
-            } catch (IOException e) {
-              options
-                  .getLogger()
-                  .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
             }
-          }
-        });
+          });
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
+              e);
+    }
   }
 
   private static @NotNull TracesSamplingDecision sampleStartupProfiling(
       final @NotNull SentryOptions options) {
-    TransactionContext startupTransactionContext = new TransactionContext("ui.load", "");
+    TransactionContext startupTransactionContext = new TransactionContext("app.launch", "profile");
     startupTransactionContext.setForNextStartup(true);
     SamplingContext startupSamplingContext = new SamplingContext(startupTransactionContext, null);
     return new TracesSampler(options).sample(startupSamplingContext);
@@ -404,7 +415,6 @@ public final class Sentry {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
-      final long timestamp = System.currentTimeMillis();
 
       try {
         options
@@ -416,7 +426,7 @@ public final class Sentry {
                   // Method trace files are normally deleted at the end of traces, but if that fails
                   // for some reason we try to clear any old files here.
                   for (File f : oldTracesDirContent) {
-                    if (f.lastModified() < timestamp) {
+                    if (f.lastModified() < classCreationTimestamp) {
                       FileUtils.deleteRecursively(f);
                     }
                   }

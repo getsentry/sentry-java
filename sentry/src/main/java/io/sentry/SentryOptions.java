@@ -451,6 +451,13 @@ public class SentryOptions {
   private boolean enableStartupProfiling = false;
 
   /**
+   * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
+   * lockstep sampling. More on
+   * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
+   */
+  private int profilingTracesHz = 101;
+
+  /**
    * Adds an event processor
    *
    * @param eventProcessor the event processor
@@ -2251,6 +2258,22 @@ public class SentryOptions {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
 
+  /**
+   * Returns the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second.
+   *
+   * @return Rate the profiler will sample rates at.
+   */
+  @ApiStatus.Internal
+  public int getProfilingTracesHz() {
+    return profilingTracesHz;
+  }
+
+  /** Sets the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second. */
+  @ApiStatus.Internal
+  public void setProfilingTracesHz(final int profilingTracesHz) {
+    this.profilingTracesHz = profilingTracesHz;
+  }
+
   @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
@@ -2334,7 +2357,8 @@ public class SentryOptions {
    *
    * @return SentryOptions
    */
-  static @NotNull SentryOptions empty() {
+  @ApiStatus.Internal
+  public static @NotNull SentryOptions empty() {
     return new SentryOptions(true);
   }
 

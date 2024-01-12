@@ -978,7 +978,7 @@ class JsonSerializerTest {
         val actual = serializeToString(startupProfilingOptions)
 
         val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
-            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false}"
+            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
         assertEquals(expected, actual)
     }
@@ -986,7 +986,7 @@ class JsonSerializerTest {
     @Test
     fun `deserializing SentryStartupProfilingOptions`() {
         val jsonStartupProfilingOptions = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\"" +
-            ":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false}"
+            ":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
         val actual = fixture.serializer.deserialize(StringReader(jsonStartupProfilingOptions), SentryStartupProfilingOptions::class.java)
         assertNotNull(actual)
@@ -995,6 +995,8 @@ class JsonSerializerTest {
         assertEquals(startupProfilingOptions.profileSampled, actual.profileSampled)
         assertEquals(startupProfilingOptions.profileSampleRate, actual.profileSampleRate)
         assertEquals(startupProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
+        assertEquals(startupProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
+        assertEquals(startupProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
         assertNull(actual.unknown)
     }
 
@@ -1280,6 +1282,7 @@ class JsonSerializerTest {
         profileSampled = true
         profileSampleRate = 0.8
         isProfilingEnabled = false
+        profilingTracesHz = 65
     }
 
     private fun createSpan(): ISpan {
