@@ -5,6 +5,7 @@
 ### Features
 
 - Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
+- Add support for `graphql-java` version 21 ([#3090](https://github.com/getsentry/sentry-java/pull/3090))
 
 ### Fixes
 

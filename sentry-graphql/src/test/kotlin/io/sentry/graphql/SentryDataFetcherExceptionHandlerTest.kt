@@ -23,6 +23,6 @@ class SentryDataFetcherExceptionHandlerTest {
         handler.onException(parameters)
 
         verify(hub).captureException(eq(exception), anyOrNull<Hint>())
-        verify(delegate).onException(parameters)
+        verify(delegate).handleException(parameters)
     }
 }
