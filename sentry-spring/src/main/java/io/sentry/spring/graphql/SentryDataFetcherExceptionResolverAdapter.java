@@ -5,6 +5,7 @@ import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.schema.DataFetchingEnvironment;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,9 +37,11 @@ public final class SentryDataFetcherExceptionResolverAdapter
   @Override
   protected @Nullable List<GraphQLError> resolveToMultipleErrors(
       Throwable ex, DataFetchingEnvironment env) {
-    @Nullable DataFetcherExceptionHandlerResult result = handler.onException(ex, env, null);
+    @Nullable
+    CompletableFuture<DataFetcherExceptionHandlerResult> result =
+        handler.handleException(ex, env, null);
     if (result != null) {
-      return result.getErrors();
+      return result.join().getErrors();
     }
     return null;
   }
