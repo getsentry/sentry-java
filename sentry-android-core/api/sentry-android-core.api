@@ -343,13 +343,6 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
-}
-
-public final class io/sentry/android/core/SentryStartupProfilingProvider {
-	public fun <init> ()V
-	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
-	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
-	public fun onCreate ()Z
 	public fun shutdown ()V
 }
 

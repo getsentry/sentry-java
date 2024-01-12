@@ -9,12 +9,6 @@
       android:exported="false"/>
 
     <provider
-      android:name=".SentryStartupProfilingProvider"
-      android:authorities="${applicationId}.SentryStartupProfilingProvider"
-      android:exported="false"
-      android:initOrder="201"/>
-
-    <provider
         android:name=".SentryPerformanceProvider"
         android:authorities="${applicationId}.SentryPerformanceProvider"
         android:initOrder="200"
