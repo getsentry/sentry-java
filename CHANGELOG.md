@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.2.0
 
 ### Features
 
