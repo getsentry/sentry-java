@@ -26,8 +26,7 @@ class ProfilingSampleActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityProfilingSampleBinding
-    private val backgroundThreadPoolSize = 2
-    private val executor: ExecutorService = Executors.newFixedThreadPool(backgroundThreadPoolSize)
+    private val executor: ExecutorService = Executors.newFixedThreadPool(1)
     private var resumed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,10 +63,8 @@ class ProfilingSampleActivity : AppCompatActivity() {
         resumed = true
 
         // Do operations until the activity is paused.
-        repeat(backgroundThreadPoolSize) {
-            executor.execute {
-                fibonacci(50)
-            }
+        executor.execute {
+            fibonacci(50)
         }
     }
 
@@ -99,7 +96,7 @@ internal class ProfilingSampleListAdapter : RecyclerView.Adapter<ViewHolder>() {
 
     @Suppress("MagicNumber")
     private fun generateBitmap(): Bitmap {
-        val bitmapSize = 512
+        val bitmapSize = 256
         val colors = (0 until (bitmapSize * bitmapSize)).map {
             Color.rgb(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
         }.toIntArray()
