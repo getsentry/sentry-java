@@ -69,8 +69,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   @Override
   public boolean onCreate() {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    launchStartupProfiler(appStartMetrics);
     onAppLaunched(getContext(), appStartMetrics);
+    launchStartupProfiler(appStartMetrics);
     return true;
   }
 

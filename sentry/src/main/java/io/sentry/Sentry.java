@@ -304,7 +304,7 @@ public final class Sentry {
               }
             }
           });
-    } catch (RejectedExecutionException e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(
