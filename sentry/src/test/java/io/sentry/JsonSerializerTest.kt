@@ -8,6 +8,7 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
+import org.junit.After
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -62,6 +63,12 @@ class JsonSerializerTest {
     @BeforeTest
     fun before() {
         fixture = Fixture()
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+    }
+
+    @After
+    fun teardown() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
     }
 
     private fun <T> serializeToString(ev: T): String {

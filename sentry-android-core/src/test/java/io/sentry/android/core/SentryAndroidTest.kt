@@ -21,6 +21,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
+import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
@@ -356,6 +357,8 @@ class SentryAndroidTest {
         fixture.initSut(context) {
             it.dsn = "https://key@sentry.io/123"
             it.cacheDirPath = cacheDir
+            it.isDebug = true
+            it.setLogger(SystemOutLogger())
             // beforeSend is called after event processors are applied, so we can assert here
             // against the enriched ANR event
             it.beforeSend = BeforeSendCallback { event, hint ->

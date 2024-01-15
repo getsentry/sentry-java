@@ -100,6 +100,13 @@ public class SentryOptions {
   private long flushTimeoutMillis = 15000; // 15s
 
   /**
+   * Controls how many seconds to wait before flushing previous session. Sentry SDKs finalizes
+   * unfinished sessions from a background queue and this queue is given a certain amount to drain
+   * sessions. Default is 15000 = 15s
+   */
+  private long sessionFlushTimeoutMillis = 15000; // 15s
+
+  /**
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
    * information if something goes wrong. Default is disabled.
    */
@@ -1334,7 +1341,7 @@ public class SentryOptions {
   /**
    * Returns HostnameVerifier
    *
-   * @return HostnameVerifier objecr or null
+   * @return HostnameVerifier object or null
    */
   public @Nullable HostnameVerifier getHostnameVerifier() {
     return hostnameVerifier;
@@ -2277,6 +2284,16 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  @ApiStatus.Internal
+  public long getSessionFlushTimeoutMillis() {
+    return sessionFlushTimeoutMillis;
+  }
+
+  @ApiStatus.Internal
+  public void setSessionFlushTimeoutMillis(final long sessionFlushTimeoutMillis) {
+    this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
   /** The BeforeSend callback */
