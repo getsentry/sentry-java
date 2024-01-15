@@ -447,6 +447,16 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
 
+  /** Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate. */
+  private boolean enableStartupProfiling = false;
+
+  /**
+   * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
+   * lockstep sampling. More on
+   * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
+   */
+  private int profilingTracesHz = 101;
+
   /**
    * Adds an event processor
    *
@@ -728,6 +738,20 @@ public class SentryOptions {
     }
 
     return dsnHash != null ? new File(cacheDirPath, dsnHash).getAbsolutePath() : cacheDirPath;
+  }
+
+  /**
+   * Returns the cache dir path if set, without the appended dsn hash.
+   *
+   * @return the cache dir path, without the appended dsn hash, or null if not set.
+   */
+  @Nullable
+  String getCacheDirPathWithoutDsn() {
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+
+    return cacheDirPath;
   }
 
   /**
@@ -2123,6 +2147,25 @@ public class SentryOptions {
   }
 
   /**
+   * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
+   * Depends on {@link SentryOptions#isProfilingEnabled()}
+   *
+   * @return true if startup profiling should be started.
+   */
+  public boolean isEnableStartupProfiling() {
+    return isProfilingEnabled() && enableStartupProfiling;
+  }
+
+  /**
+   * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
+   *
+   * @param enableStartupProfiling true if startup profiling should be started.
+   */
+  public void setEnableStartupProfiling(boolean enableStartupProfiling) {
+    this.enableStartupProfiling = enableStartupProfiling;
+  }
+
+  /**
    * Whether to send modules containing information about versions.
    *
    * @param sendModules true if modules should be sent.
@@ -2215,6 +2258,22 @@ public class SentryOptions {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
 
+  /**
+   * Returns the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second.
+   *
+   * @return Rate the profiler will sample rates at.
+   */
+  @ApiStatus.Internal
+  public int getProfilingTracesHz() {
+    return profilingTracesHz;
+  }
+
+  /** Sets the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second. */
+  @ApiStatus.Internal
+  public void setProfilingTracesHz(final int profilingTracesHz) {
+    this.profilingTracesHz = profilingTracesHz;
+  }
+
   @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
@@ -2298,7 +2357,8 @@ public class SentryOptions {
    *
    * @return SentryOptions
    */
-  static @NotNull SentryOptions empty() {
+  @ApiStatus.Internal
+  public static @NotNull SentryOptions empty() {
     return new SentryOptions(true);
   }
 

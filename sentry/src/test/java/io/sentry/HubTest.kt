@@ -1503,6 +1503,48 @@ class HubTest {
         transaction.finish()
         verify(mockClient, never()).captureEnvelope(any())
     }
+
+    @Test
+    fun `when profiler is running and isStartupTransaction is false, startTransaction does not interact with profiler`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        whenever(mockTransactionProfiler.isRunning).thenReturn(true)
+        val hub = generateHub {
+            it.profilesSampleRate = 1.0
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val context = TransactionContext("name", "op")
+        hub.startTransaction(context, TransactionOptions().apply { isStartupTransaction = false })
+        verify(mockTransactionProfiler, never()).start()
+        verify(mockTransactionProfiler, never()).bindTransaction(any())
+    }
+
+    @Test
+    fun `when profiler is running and isStartupTransaction is true, startTransaction binds current profile`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        whenever(mockTransactionProfiler.isRunning).thenReturn(true)
+        val hub = generateHub {
+            it.profilesSampleRate = 1.0
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val context = TransactionContext("name", "op")
+        val transaction = hub.startTransaction(context, TransactionOptions().apply { isStartupTransaction = true })
+        verify(mockTransactionProfiler, never()).start()
+        verify(mockTransactionProfiler).bindTransaction(eq(transaction))
+    }
+
+    @Test
+    fun `when profiler is not running, startTransaction starts and binds current profile`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        whenever(mockTransactionProfiler.isRunning).thenReturn(false)
+        val hub = generateHub {
+            it.profilesSampleRate = 1.0
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val context = TransactionContext("name", "op")
+        val transaction = hub.startTransaction(context, TransactionOptions().apply { isStartupTransaction = false })
+        verify(mockTransactionProfiler).start()
+        verify(mockTransactionProfiler).bindTransaction(eq(transaction))
+    }
     //endregion
 
     //region startTransaction tests

@@ -18,6 +18,11 @@ public final class NoOpTransactionProfiler implements ITransactionProfiler {
   public void start() {}
 
   @Override
+  public boolean isRunning() {
+    return false;
+  }
+
+  @Override
   public void bindTransaction(@NotNull ITransaction transaction) {}
 
   @Override
