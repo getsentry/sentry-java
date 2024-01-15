@@ -1,11 +1,9 @@
 package io.sentry.android.core
 
-import io.sentry.ITransaction
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
-import io.sentry.PerformanceCollectionData
-import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
+import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -70,18 +68,29 @@ class SentryAndroidOptionsTest {
 
     @Test
     fun `set transactionProfiler accepts non null value`() {
+        val profiler = mock<ITransactionProfiler>()
         val sentryOptions = SentryAndroidOptions().apply {
-            setTransactionProfiler(CustomTransactionProfiler())
+            setTransactionProfiler(profiler)
         }
-        assertNotNull(sentryOptions.transactionProfiler)
+        assertEquals(profiler, sentryOptions.transactionProfiler)
     }
 
     @Test
-    fun `set transactionProfiler to null sets it to noop`() {
+    fun `set transactionProfiler to null is ignored`() {
         val sentryOptions = SentryAndroidOptions().apply {
             setTransactionProfiler(null)
         }
-        assertEquals(sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+        assertEquals(NoOpTransactionProfiler.getInstance(), sentryOptions.transactionProfiler)
+    }
+
+    @Test
+    fun `set transactionProfiler multiple times is ignored`() {
+        val profiler = mock<ITransactionProfiler>()
+        val sentryOptions = SentryAndroidOptions().apply {
+            setTransactionProfiler(profiler)
+            setTransactionProfiler(mock())
+        }
+        assertEquals(profiler, sentryOptions.transactionProfiler)
     }
 
     @Test
@@ -161,15 +170,5 @@ class SentryAndroidOptionsTest {
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}
-    }
-
-    private class CustomTransactionProfiler : ITransactionProfiler {
-        override fun onTransactionStart(transaction: ITransaction) {}
-        override fun onTransactionFinish(
-            transaction: ITransaction,
-            performanceCollectionData: List<PerformanceCollectionData>?
-        ): ProfilingTraceData? = null
-
-        override fun close() {}
     }
 }

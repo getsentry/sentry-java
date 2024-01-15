@@ -1,20 +1,39 @@
 package io.sentry.android.core;
 
+import static io.sentry.Sentry.STARTUP_PROFILING_CONFIG_FILE_NAME;
+
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
+import io.sentry.ILogger;
+import io.sentry.ITransactionProfiler;
+import io.sentry.JsonSerializer;
 import io.sentry.NoOpLogger;
+import io.sentry.SentryExecutorService;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.SentryStartupProfilingOptions;
+import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -32,9 +51,26 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   private @Nullable Application app;
   private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
 
+  private final @NotNull ILogger logger;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
+
+  @TestOnly
+  SentryPerformanceProvider(
+      final @NotNull ILogger logger, final @NotNull BuildInfoProvider buildInfoProvider) {
+    this.logger = logger;
+    this.buildInfoProvider = buildInfoProvider;
+  }
+
+  public SentryPerformanceProvider() {
+    logger = new AndroidLogger();
+    buildInfoProvider = new BuildInfoProvider(logger);
+  }
+
   @Override
   public boolean onCreate() {
-    onAppLaunched(getContext());
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    onAppLaunched(getContext(), appStartMetrics);
+    launchStartupProfiler(appStartMetrics);
     return true;
   }
 
@@ -54,8 +90,95 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     return null;
   }
 
-  private void onAppLaunched(final @Nullable Context context) {
-    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+  @Override
+  public void shutdown() {
+    synchronized (AppStartMetrics.getInstance()) {
+      final @Nullable ITransactionProfiler startupProfiler =
+          AppStartMetrics.getInstance().getStartupProfiler();
+      if (startupProfiler != null) {
+        startupProfiler.close();
+      }
+    }
+  }
+
+  private void launchStartupProfiler(final @NotNull AppStartMetrics appStartMetrics) {
+    final @Nullable Context context = getContext();
+
+    if (context == null) {
+      logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
+      return;
+    }
+
+    // Debug.startMethodTracingSampling() is only available since Lollipop
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
+
+    final @NotNull File cacheDir = AndroidOptionsInitializer.getCacheDir(context);
+    final @NotNull File configFile = new File(cacheDir, STARTUP_PROFILING_CONFIG_FILE_NAME);
+
+    // No config exists: startup profiling is not enabled
+    if (!configFile.exists() || !configFile.canRead()) {
+      return;
+    }
+
+    try (final @NotNull Reader reader =
+            new BufferedReader(new InputStreamReader(new FileInputStream(configFile)))) {
+      final @Nullable SentryStartupProfilingOptions profilingOptions =
+          new JsonSerializer(SentryOptions.empty())
+              .deserialize(reader, SentryStartupProfilingOptions.class);
+
+      if (profilingOptions == null) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Unable to deserialize the SentryStartupProfilingOptions. Startup profiling will not start.");
+        return;
+      }
+
+      if (!profilingOptions.isProfilingEnabled()) {
+        logger.log(SentryLevel.INFO, "Profiling is not enabled. Startup profiling will not start.");
+        return;
+      }
+
+      final @NotNull TracesSamplingDecision startupSamplingDecision =
+          new TracesSamplingDecision(
+              profilingOptions.isTraceSampled(),
+              profilingOptions.getTraceSampleRate(),
+              profilingOptions.isProfileSampled(),
+              profilingOptions.getProfileSampleRate());
+      // We store any sampling decision, so we can respect it when the first transaction starts
+      appStartMetrics.setStartupSamplingDecision(startupSamplingDecision);
+
+      if (!(startupSamplingDecision.getProfileSampled() && startupSamplingDecision.getSampled())) {
+        logger.log(SentryLevel.DEBUG, "Startup profiling was not sampled. It will not start.");
+        return;
+      }
+      logger.log(SentryLevel.DEBUG, "Startup profiling started.");
+
+      final @NotNull ITransactionProfiler startupProfiler =
+          new AndroidTransactionProfiler(
+              context.getApplicationContext(),
+              buildInfoProvider,
+              new SentryFrameMetricsCollector(
+                  context.getApplicationContext(), logger, buildInfoProvider),
+              logger,
+              profilingOptions.getProfilingTracesDirPath(),
+              profilingOptions.isProfilingEnabled(),
+              profilingOptions.getProfilingTracesHz(),
+              new SentryExecutorService());
+      appStartMetrics.setStartupProfiler(startupProfiler);
+      startupProfiler.start();
+
+    } catch (FileNotFoundException e) {
+      logger.log(SentryLevel.ERROR, "Startup profiling config file not found. ", e);
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Error reading startup profiling config file. ", e);
+    }
+  }
+
+  @SuppressLint("NewApi")
+  private void onAppLaunched(
+      final @Nullable Context context, final @NotNull AppStartMetrics appStartMetrics) {
 
     // sdk-init uses static field init as start time
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
@@ -63,7 +186,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     // performance v2: Uses Process.getStartUptimeMillis()
     // requires API level 24+
-    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
+    if (buildInfoProvider.getSdkInfoVersion() < android.os.Build.VERSION_CODES.N) {
       return;
     }
 

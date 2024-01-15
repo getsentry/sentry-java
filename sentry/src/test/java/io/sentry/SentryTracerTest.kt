@@ -168,7 +168,7 @@ class SentryTracerTest {
             it.setTransactionProfiler(transactionProfiler)
         })
         tracer.finish()
-        verify(transactionProfiler, never()).onTransactionFinish(any(), anyOrNull())
+        verify(transactionProfiler, never()).onTransactionFinish(any(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -179,7 +179,7 @@ class SentryTracerTest {
             it.setTransactionProfiler(transactionProfiler)
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
-        verify(transactionProfiler).onTransactionFinish(any(), anyOrNull())
+        verify(transactionProfiler).onTransactionFinish(any(), anyOrNull(), anyOrNull())
     }
 
     @Test

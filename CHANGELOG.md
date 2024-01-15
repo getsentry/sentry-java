@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Added Startup profiling
+    - This depends on the new option `io.sentry.profiling.enable-startup`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
+    - Sampler functions can check the new `isForNextStartup` flag, to adjust startup profiling sampling programmatically.
+      Relevant PRs:
+    - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
+    - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
+    - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
+
 ## 7.2.0
 
 ### Features

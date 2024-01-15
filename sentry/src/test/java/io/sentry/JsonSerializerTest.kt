@@ -981,6 +981,33 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `serializing SentryStartupProfilingOptions`() {
+        val actual = serializeToString(startupProfilingOptions)
+
+        val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
+            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `deserializing SentryStartupProfilingOptions`() {
+        val jsonStartupProfilingOptions = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\"" +
+            ":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+
+        val actual = fixture.serializer.deserialize(StringReader(jsonStartupProfilingOptions), SentryStartupProfilingOptions::class.java)
+        assertNotNull(actual)
+        assertEquals(startupProfilingOptions.traceSampled, actual.traceSampled)
+        assertEquals(startupProfilingOptions.traceSampleRate, actual.traceSampleRate)
+        assertEquals(startupProfilingOptions.profileSampled, actual.profileSampled)
+        assertEquals(startupProfilingOptions.profileSampleRate, actual.profileSampleRate)
+        assertEquals(startupProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
+        assertEquals(startupProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
+        assertEquals(startupProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
+        assertNull(actual.unknown)
+    }
+
+    @Test
     fun `serializes span data`() {
         val sentrySpan = SentrySpan(createSpan() as Span, mapOf("data1" to "value1"))
 
@@ -1254,6 +1281,15 @@ class JsonSerializerTest {
             email = "john@me.com"
             comments = "comment"
         }
+    }
+
+    private val startupProfilingOptions = SentryStartupProfilingOptions().apply {
+        traceSampled = false
+        traceSampleRate = 0.1
+        profileSampled = true
+        profileSampleRate = 0.8
+        isProfilingEnabled = false
+        profilingTracesHz = 65
     }
 
     private fun createSpan(): ISpan {
