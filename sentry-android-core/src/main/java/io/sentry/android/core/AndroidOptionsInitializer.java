@@ -8,6 +8,7 @@ import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
+import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -19,6 +20,7 @@ import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
@@ -34,6 +36,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -101,7 +104,7 @@ final class AndroidOptionsInitializer {
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
-    initializeCacheDirs(context, options);
+    options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
 
     readDefaultOptionValues(options, context, buildInfoProvider);
   }
@@ -145,10 +148,25 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
     options.setTransportGate(new AndroidTransportGate(options));
-    final SentryFrameMetricsCollector frameMetricsCollector =
-        new SentryFrameMetricsCollector(context, options, buildInfoProvider);
-    options.setTransactionProfiler(
-        new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
+
+    // Check if the profiler was already instantiated in the startup.
+    // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
+    // state of the profiler, and it's only possible retaining the instance.
+    synchronized (AppStartMetrics.getInstance()) {
+      final @Nullable ITransactionProfiler startupProfiler =
+          AppStartMetrics.getInstance().getStartupProfiler();
+      if (startupProfiler != null) {
+        options.setTransactionProfiler(startupProfiler);
+        AppStartMetrics.getInstance().setStartupProfiler(null);
+      } else {
+        final SentryFrameMetricsCollector frameMetricsCollector =
+            new SentryFrameMetricsCollector(context, options, buildInfoProvider);
+        options.setTransactionProfiler(
+            new AndroidTransactionProfiler(
+                context, options, buildInfoProvider, frameMetricsCollector));
+      }
+    }
+
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
 
@@ -319,14 +337,11 @@ final class AndroidOptionsInitializer {
   }
 
   /**
-   * Sets the cache dirs like sentry, outbox and sessions
+   * Retrieve the Sentry cache dir.
    *
    * @param context the Application context
-   * @param options the SentryAndroidOptions
    */
-  private static void initializeCacheDirs(
-      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
-    final File cacheDir = new File(context.getCacheDir(), "sentry");
-    options.setCacheDirPath(cacheDir.getAbsolutePath());
+  static @NotNull File getCacheDir(final @NotNull Context context) {
+    return new File(context.getCacheDir(), "sentry");
   }
 }

@@ -212,7 +212,7 @@ public final class SentryTracer implements ITransaction {
         profilingTraceData =
             hub.getOptions()
                 .getTransactionProfiler()
-                .onTransactionFinish(this, performanceCollectionData);
+                .onTransactionFinish(this, performanceCollectionData, hub.getOptions());
       }
       if (performanceCollectionData != null) {
         performanceCollectionData.clear();

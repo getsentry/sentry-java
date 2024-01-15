@@ -4,6 +4,24 @@
 
 ### Features
 
+- Added Startup profiling
+    - This depends on the new option `io.sentry.profiling.enable-startup`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
+    - Sampler functions can check the new `isForNextStartup` flag, to adjust startup profiling sampling programmatically.
+      Relevant PRs:
+    - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
+    - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
+    - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
+
+### Dependencies
+
+- Bump Native SDK from v0.6.7 to v0.7.0 ([#3133](https://github.com/getsentry/sentry-java/pull/3133))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#070)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.7...0.7.0)
+
+## 7.2.0
+
+### Features
+
 - Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
 - Add support for `graphql-java` version 21 ([#3090](https://github.com/getsentry/sentry-java/pull/3090))
 

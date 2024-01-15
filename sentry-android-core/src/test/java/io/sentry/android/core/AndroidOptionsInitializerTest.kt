@@ -248,6 +248,12 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `getCacheDir returns sentry subfolder`() {
+        fixture.initSut()
+        assertTrue(AndroidOptionsInitializer.getCacheDir(fixture.context).path.endsWith("${File.separator}cache${File.separator}sentry"))
+    }
+
+    @Test
     fun `profilingTracesDirPath should be set at initialization`() {
         fixture.initSut()
 
