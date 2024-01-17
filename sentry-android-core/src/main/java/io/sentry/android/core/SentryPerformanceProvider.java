@@ -1,6 +1,6 @@
 package io.sentry.android.core;
 
-import static io.sentry.Sentry.App_START_PROFILING_CONFIG_FILE_NAME;
+import static io.sentry.Sentry.APP_START_PROFILING_CONFIG_FILE_NAME;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
