@@ -1347,7 +1347,7 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads startupProfiling flag to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.ENABLE_STARTUP_PROFILING to true)
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_APP_START_PROFILING to true)
         val context = fixture.getContext(metaData = bundle)
         fixture.options.profilesSampleRate = 1.0
 
@@ -1355,7 +1355,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isEnableStartupProfiling)
+        assertTrue(fixture.options.isEnableAppStartProfiling)
     }
 
     @Test
@@ -1368,6 +1368,6 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.isEnableStartupProfiling)
+        assertFalse(fixture.options.isEnableAppStartProfiling)
     }
 }

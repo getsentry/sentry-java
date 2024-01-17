@@ -1505,7 +1505,7 @@ class HubTest {
     }
 
     @Test
-    fun `when profiler is running and isStartupTransaction is false, startTransaction does not interact with profiler`() {
+    fun `when profiler is running and isAppStartTransaction is false, startTransaction does not interact with profiler`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         whenever(mockTransactionProfiler.isRunning).thenReturn(true)
         val hub = generateHub {
@@ -1513,13 +1513,13 @@ class HubTest {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         val context = TransactionContext("name", "op")
-        hub.startTransaction(context, TransactionOptions().apply { isStartupTransaction = false })
+        hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
         verify(mockTransactionProfiler, never()).start()
         verify(mockTransactionProfiler, never()).bindTransaction(any())
     }
 
     @Test
-    fun `when profiler is running and isStartupTransaction is true, startTransaction binds current profile`() {
+    fun `when profiler is running and isAppStartTransaction is true, startTransaction binds current profile`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         whenever(mockTransactionProfiler.isRunning).thenReturn(true)
         val hub = generateHub {
@@ -1527,7 +1527,7 @@ class HubTest {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         val context = TransactionContext("name", "op")
-        val transaction = hub.startTransaction(context, TransactionOptions().apply { isStartupTransaction = true })
+        val transaction = hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = true })
         verify(mockTransactionProfiler, never()).start()
         verify(mockTransactionProfiler).bindTransaction(eq(transaction))
     }
@@ -1541,7 +1541,7 @@ class HubTest {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         val context = TransactionContext("name", "op")
-        val transaction = hub.startTransaction(context, TransactionOptions().apply { isStartupTransaction = false })
+        val transaction = hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
         verify(mockTransactionProfiler).start()
         verify(mockTransactionProfiler).bindTransaction(eq(transaction))
     }

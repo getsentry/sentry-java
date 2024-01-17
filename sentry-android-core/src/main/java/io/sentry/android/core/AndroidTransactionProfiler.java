@@ -313,7 +313,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           null,
           HubAdapter.getInstance().getOptions());
     } else if (transactionsCounter != 0) {
-      // in case the startup profiling is running, and it's not bound to a transaction, we still
+      // in case the app start profiling is running, and it's not bound to a transaction, we still
       // stop profiling, but we also have to manually update the counter.
       transactionsCounter--;
     }

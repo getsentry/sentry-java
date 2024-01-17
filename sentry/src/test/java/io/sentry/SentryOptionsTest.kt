@@ -555,24 +555,24 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, enableStartupProfiling is set to false by default`() {
-        assertFalse(SentryOptions().isEnableStartupProfiling)
+    fun `when options are initialized, enableAppStartProfiling is set to false by default`() {
+        assertFalse(SentryOptions().isEnableAppStartProfiling)
     }
 
     @Test
-    fun `when setEnableStartupProfiling is called, overrides default`() {
+    fun `when setEnableAppStartProfiling is called, overrides default`() {
         val options = SentryOptions()
-        options.isEnableStartupProfiling = true
+        options.isEnableAppStartProfiling = true
         options.profilesSampleRate = 1.0
-        assertTrue(options.isEnableStartupProfiling)
+        assertTrue(options.isEnableAppStartProfiling)
     }
 
     @Test
-    fun `when profiling is disabled, isEnableStartupProfiling is always false`() {
+    fun `when profiling is disabled, isEnableAppStartProfiling is always false`() {
         val options = SentryOptions()
-        options.isEnableStartupProfiling = true
+        options.isEnableAppStartProfiling = true
         options.profilesSampleRate = 0.0
-        assertFalse(options.isEnableStartupProfiling)
+        assertFalse(options.isEnableAppStartProfiling)
     }
 
     @Test

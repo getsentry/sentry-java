@@ -683,8 +683,8 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When firstActivityCreated is true and startup sampling decision is set, start transaction with isStartup true`() {
-        AppStartMetrics.getInstance().startupSamplingDecision = mock()
+    fun `When firstActivityCreated is true and app start sampling decision is set, start transaction with isAppStart true`() {
+        AppStartMetrics.getInstance().appStartSamplingDecision = mock()
         val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
         sut.register(fixture.hub, fixture.options)
 
@@ -698,13 +698,13 @@ class ActivityLifecycleIntegrationTest {
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
-                assertTrue(it.isStartupTransaction)
+                assertTrue(it.isAppStartTransaction)
             }
         )
     }
 
     @Test
-    fun `When firstActivityCreated is true and startup sampling decision is not set, start transaction with isStartup false`() {
+    fun `When firstActivityCreated is true and app start sampling decision is not set, start transaction with isAppStart false`() {
         val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
         sut.register(fixture.hub, fixture.options)
 
@@ -718,21 +718,21 @@ class ActivityLifecycleIntegrationTest {
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
-                assertFalse(it.isStartupTransaction)
+                assertFalse(it.isAppStartTransaction)
             }
         )
     }
 
     @Test
-    fun `When firstActivityCreated is false and startup sampling decision is set, start transaction with isStartup false`() {
-        AppStartMetrics.getInstance().startupSamplingDecision = mock()
+    fun `When firstActivityCreated is false and app start sampling decision is set, start transaction with isAppStart false`() {
+        AppStartMetrics.getInstance().appStartSamplingDecision = mock()
         val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertFalse(it.isStartupTransaction) })
+        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertFalse(it.isAppStartTransaction) })
     }
 
     @Test
