@@ -20,8 +20,8 @@ public final class TransactionOptions extends SpanOptions {
   /** The start timestamp of the transaction */
   private @Nullable SentryDate startTimestamp = null;
 
-  /** Defines if transaction refers to the startup process */
-  private boolean isStartupTransaction = false;
+  /** Defines if transaction refers to the app start process */
+  private boolean isAppStartTransaction = false;
 
   /**
    * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
@@ -188,12 +188,12 @@ public final class TransactionOptions extends SpanOptions {
   }
 
   @ApiStatus.Internal
-  public void setStartupTransaction(final boolean startupTransaction) {
-    isStartupTransaction = startupTransaction;
+  public void setAppStartTransaction(final boolean appStartTransaction) {
+    isAppStartTransaction = appStartTransaction;
   }
 
   @ApiStatus.Internal
-  public boolean isStartupTransaction() {
-    return isStartupTransaction;
+  public boolean isAppStartTransaction() {
+    return isAppStartTransaction;
   }
 }

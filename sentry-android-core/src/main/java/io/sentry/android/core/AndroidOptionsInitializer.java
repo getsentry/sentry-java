@@ -149,15 +149,15 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
     options.setTransportGate(new AndroidTransportGate(options));
 
-    // Check if the profiler was already instantiated in the startup.
+    // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
     synchronized (AppStartMetrics.getInstance()) {
-      final @Nullable ITransactionProfiler startupProfiler =
-          AppStartMetrics.getInstance().getStartupProfiler();
-      if (startupProfiler != null) {
-        options.setTransactionProfiler(startupProfiler);
-        AppStartMetrics.getInstance().setStartupProfiler(null);
+      final @Nullable ITransactionProfiler appStartProfiler =
+          AppStartMetrics.getInstance().getAppStartProfiler();
+      if (appStartProfiler != null) {
+        options.setTransactionProfiler(appStartProfiler);
+        AppStartMetrics.getInstance().setAppStartProfiler(null);
       } else {
         final SentryFrameMetricsCollector frameMetricsCollector =
             new SentryFrameMetricsCollector(context, options, buildInfoProvider);

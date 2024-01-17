@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
-public final class SentryStartupProfilingOptions implements JsonUnknown, JsonSerializable {
+public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSerializable {
 
   boolean profileSampled;
   @Nullable Double profileSampleRate;
@@ -23,7 +23,7 @@ public final class SentryStartupProfilingOptions implements JsonUnknown, JsonSer
   private @Nullable Map<String, Object> unknown;
 
   @VisibleForTesting
-  public SentryStartupProfilingOptions() {
+  public SentryAppStartProfilingOptions() {
     traceSampled = false;
     traceSampleRate = null;
     profileSampled = false;
@@ -33,7 +33,7 @@ public final class SentryStartupProfilingOptions implements JsonUnknown, JsonSer
     profilingTracesHz = 0;
   }
 
-  SentryStartupProfilingOptions(
+  SentryAppStartProfilingOptions(
       final @NotNull SentryOptions options,
       final @NotNull TracesSamplingDecision samplingDecision) {
     traceSampled = samplingDecision.getSampled();
@@ -147,13 +147,13 @@ public final class SentryStartupProfilingOptions implements JsonUnknown, JsonSer
   }
 
   public static final class Deserializer
-      implements JsonDeserializer<SentryStartupProfilingOptions> {
+      implements JsonDeserializer<SentryAppStartProfilingOptions> {
 
     @Override
-    public @NotNull SentryStartupProfilingOptions deserialize(
+    public @NotNull SentryAppStartProfilingOptions deserialize(
         @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
-      SentryStartupProfilingOptions options = new SentryStartupProfilingOptions();
+      SentryAppStartProfilingOptions options = new SentryAppStartProfilingOptions();
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {

@@ -8,9 +8,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
 import io.sentry.Sentry
+import io.sentry.SentryAppStartProfilingOptions
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.SentryStartupProfilingOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
@@ -56,7 +56,7 @@ class SentryPerformanceProviderTest {
             whenever(buildInfoProvider.sdkInfoVersion).thenReturn(sdkVersion)
             whenever(mockContext.cacheDir).thenReturn(cache)
             whenever(mockContext.applicationContext).thenReturn(mockContext)
-            configFile = File(sentryCache, Sentry.STARTUP_PROFILING_CONFIG_FILE_NAME)
+            configFile = File(sentryCache, Sentry.APP_START_PROFILING_CONFIG_FILE_NAME)
             handleFile?.invoke(configFile)
 
             providerInfo.authority = authority
@@ -169,11 +169,11 @@ class SentryPerformanceProviderTest {
         verify(fixture.mockContext).unregisterActivityLifecycleCallbacks(any())
     }
 
-    //region startup profiling
+    //region app start profiling
     @Test
     fun `when config file does not exists, nothing happens`() {
         fixture.getSut()
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger, never()).log(any(), any())
     }
 
@@ -183,7 +183,7 @@ class SentryPerformanceProviderTest {
             writeConfig(config)
             config.setReadable(false)
         }
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger, never()).log(any(), any())
     }
 
@@ -192,7 +192,7 @@ class SentryPerformanceProviderTest {
         fixture.getSut(sdkVersion = Build.VERSION_CODES.KITKAT) { config ->
             writeConfig(config)
         }
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger, never()).log(any(), any())
     }
 
@@ -201,10 +201,10 @@ class SentryPerformanceProviderTest {
         fixture.getSut { config ->
             config.createNewFile()
         }
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.WARNING),
-            eq("Unable to deserialize the SentryStartupProfilingOptions. Startup profiling will not start.")
+            eq("Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.")
         )
     }
 
@@ -213,10 +213,10 @@ class SentryPerformanceProviderTest {
         fixture.getSut { config ->
             writeConfig(config, profilingEnabled = false)
         }
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.INFO),
-            eq("Profiling is not enabled. Startup profiling will not start.")
+            eq("Profiling is not enabled. App start profiling will not start.")
         )
     }
 
@@ -225,14 +225,14 @@ class SentryPerformanceProviderTest {
         fixture.getSut { config ->
             writeConfig(config, traceSampled = false, profileSampled = true)
         }
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
-        assertNotNull(AppStartMetrics.getInstance().startupSamplingDecision)
-        assertFalse(AppStartMetrics.getInstance().startupSamplingDecision!!.sampled)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNotNull(AppStartMetrics.getInstance().appStartSamplingDecision)
+        assertFalse(AppStartMetrics.getInstance().appStartSamplingDecision!!.sampled)
         // If trace is not sampled, profile is not sample, either
-        assertFalse(AppStartMetrics.getInstance().startupSamplingDecision!!.profileSampled)
+        assertFalse(AppStartMetrics.getInstance().appStartSamplingDecision!!.profileSampled)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("Startup profiling was not sampled. It will not start.")
+            eq("App start profiling was not sampled. It will not start.")
         )
     }
 
@@ -241,13 +241,13 @@ class SentryPerformanceProviderTest {
         fixture.getSut { config ->
             writeConfig(config, traceSampled = true, profileSampled = false)
         }
-        assertNull(AppStartMetrics.getInstance().startupProfiler)
-        assertNotNull(AppStartMetrics.getInstance().startupSamplingDecision)
-        assertTrue(AppStartMetrics.getInstance().startupSamplingDecision!!.sampled)
-        assertFalse(AppStartMetrics.getInstance().startupSamplingDecision!!.profileSampled)
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNotNull(AppStartMetrics.getInstance().appStartSamplingDecision)
+        assertTrue(AppStartMetrics.getInstance().appStartSamplingDecision!!.sampled)
+        assertFalse(AppStartMetrics.getInstance().appStartSamplingDecision!!.profileSampled)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("Startup profiling was not sampled. It will not start.")
+            eq("App start profiling was not sampled. It will not start.")
         )
     }
 
@@ -256,14 +256,14 @@ class SentryPerformanceProviderTest {
         fixture.getSut { config ->
             writeConfig(config)
         }
-        assertNotNull(AppStartMetrics.getInstance().startupProfiler)
-        assertNotNull(AppStartMetrics.getInstance().startupSamplingDecision)
-        assertTrue(AppStartMetrics.getInstance().startupProfiler!!.isRunning)
-        assertTrue(AppStartMetrics.getInstance().startupSamplingDecision!!.sampled)
-        assertTrue(AppStartMetrics.getInstance().startupSamplingDecision!!.profileSampled)
+        assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNotNull(AppStartMetrics.getInstance().appStartSamplingDecision)
+        assertTrue(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
+        assertTrue(AppStartMetrics.getInstance().appStartSamplingDecision!!.sampled)
+        assertTrue(AppStartMetrics.getInstance().appStartSamplingDecision!!.profileSampled)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("Startup profiling started.")
+            eq("App start profiling started.")
         )
     }
 
@@ -273,8 +273,8 @@ class SentryPerformanceProviderTest {
             writeConfig(config)
         }
         provider.shutdown()
-        assertNotNull(AppStartMetrics.getInstance().startupProfiler)
-        assertFalse(AppStartMetrics.getInstance().startupProfiler!!.isRunning)
+        assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertFalse(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
     }
 
     private fun writeConfig(
@@ -286,15 +286,15 @@ class SentryPerformanceProviderTest {
         profileSampleRate: Double = 1.0,
         profilingTracesDirPath: String = traceDir.absolutePath
     ) {
-        val startupProfilingOptions = SentryStartupProfilingOptions()
-        startupProfilingOptions.isProfilingEnabled = profilingEnabled
-        startupProfilingOptions.isTraceSampled = traceSampled
-        startupProfilingOptions.traceSampleRate = traceSampleRate
-        startupProfilingOptions.isProfileSampled = profileSampled
-        startupProfilingOptions.profileSampleRate = profileSampleRate
-        startupProfilingOptions.profilingTracesDirPath = profilingTracesDirPath
-        startupProfilingOptions.profilingTracesHz = 101
-        JsonSerializer(SentryOptions.empty()).serialize(startupProfilingOptions, FileWriter(configFile))
+        val appStartProfilingOptions = SentryAppStartProfilingOptions()
+        appStartProfilingOptions.isProfilingEnabled = profilingEnabled
+        appStartProfilingOptions.isTraceSampled = traceSampled
+        appStartProfilingOptions.traceSampleRate = traceSampleRate
+        appStartProfilingOptions.isProfileSampled = profileSampled
+        appStartProfilingOptions.profileSampleRate = profileSampleRate
+        appStartProfilingOptions.profilingTracesDirPath = profilingTracesDirPath
+        appStartProfilingOptions.profilingTracesHz = 101
+        JsonSerializer(SentryOptions.empty()).serialize(appStartProfilingOptions, FileWriter(configFile))
     }
     //endregion
 
