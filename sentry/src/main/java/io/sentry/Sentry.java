@@ -54,7 +54,7 @@ public final class Sentry {
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
 
   @ApiStatus.Internal
-  public static final @NotNull String App_START_PROFILING_CONFIG_FILE_NAME =
+  public static final @NotNull String APP_START_PROFILING_CONFIG_FILE_NAME =
       "app_start_profiling_config";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
@@ -270,7 +270,7 @@ public final class Sentry {
             final String cacheDirPath = options.getCacheDirPathWithoutDsn();
             if (cacheDirPath != null) {
               final @NotNull File appStartProfilingConfigFile =
-                  new File(cacheDirPath, App_START_PROFILING_CONFIG_FILE_NAME);
+                  new File(cacheDirPath, APP_START_PROFILING_CONFIG_FILE_NAME);
               try {
                 // We always delete the config file for app start profiling
                 FileUtils.deleteRecursively(appStartProfilingConfigFile);

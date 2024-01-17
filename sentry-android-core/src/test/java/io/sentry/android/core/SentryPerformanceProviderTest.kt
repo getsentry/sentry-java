@@ -56,7 +56,7 @@ class SentryPerformanceProviderTest {
             whenever(buildInfoProvider.sdkInfoVersion).thenReturn(sdkVersion)
             whenever(mockContext.cacheDir).thenReturn(cache)
             whenever(mockContext.applicationContext).thenReturn(mockContext)
-            configFile = File(sentryCache, Sentry.App_START_PROFILING_CONFIG_FILE_NAME)
+            configFile = File(sentryCache, Sentry.APP_START_PROFILING_CONFIG_FILE_NAME)
             handleFile?.invoke(configFile)
 
             providerInfo.authority = authority

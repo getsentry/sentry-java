@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.Sentry.APP_START_PROFILING_CONFIG_FILE_NAME;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
@@ -113,7 +115,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     }
 
     final @NotNull File cacheDir = AndroidOptionsInitializer.getCacheDir(context);
-    final @NotNull File configFile = new File(cacheDir, App_START_PROFILING_CONFIG_FILE_NAME);
+    final @NotNull File configFile = new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
 
     // No config exists: app start profiling is not enabled
     if (!configFile.exists() || !configFile.canRead()) {

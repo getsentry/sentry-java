@@ -1637,7 +1637,7 @@ public final class io/sentry/SendFireAndForgetOutboxSender : io/sentry/SendCache
 }
 
 public final class io/sentry/Sentry {
-	public static final field App_START_PROFILING_CONFIG_FILE_NAME Ljava/lang/String;
+	public static final field APP_START_PROFILING_CONFIG_FILE_NAME Ljava/lang/String;
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public static fun addBreadcrumb (Ljava/lang/String;)V
