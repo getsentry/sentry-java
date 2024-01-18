@@ -14,6 +14,14 @@
 - Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
 - Collect slow and frozen frames for spans using `OnFrameMetricsAvailableListener` ([#3111](https://github.com/getsentry/sentry-java/pull/3111))
 
+### Breaking changes
+
+- Remove `HostnameVerifier` option as it's flagged by security tools of some app stores ([#3150](https://github.com/getsentry/sentry-java/pull/3150))
+  - If you were using this option, you have 3 possible paths going forward:
+    - Provide a custom `ITransportFactory` through `SentryOptions.setTransportFactory()`, where you can copy over most of the parts like `HttpConnection` and `AsyncHttpTransport` from the SDK with necessary modifications
+    - Get a certificate for your server through e.g. [Let's Encrypt](https://letsencrypt.org/)
+    - Fork the SDK and add the hostname verifier back
+
 ### Dependencies
 
 - Bump Native SDK from v0.6.7 to v0.7.0 ([#3133](https://github.com/getsentry/sentry-java/pull/3133))

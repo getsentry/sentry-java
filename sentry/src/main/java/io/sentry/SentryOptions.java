@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -285,9 +284,6 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
-
-  /** HostnameVerifier for self-signed certificate trust* */
-  private @Nullable HostnameVerifier hostnameVerifier;
 
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
@@ -1336,24 +1332,6 @@ public class SentryOptions {
    */
   public void setSslSocketFactory(final @Nullable SSLSocketFactory sslSocketFactory) {
     this.sslSocketFactory = sslSocketFactory;
-  }
-
-  /**
-   * Returns HostnameVerifier
-   *
-   * @return HostnameVerifier object or null
-   */
-  public @Nullable HostnameVerifier getHostnameVerifier() {
-    return hostnameVerifier;
-  }
-
-  /**
-   * Set custom HostnameVerifier
-   *
-   * @param hostnameVerifier the HostnameVerifier
-   */
-  public void setHostnameVerifier(final @Nullable HostnameVerifier hostnameVerifier) {
-    this.hostnameVerifier = hostnameVerifier;
   }
 
   /**
