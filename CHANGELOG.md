@@ -6,6 +6,7 @@
 
 - Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
 - Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
+- Collect slow and frozen frames for spans using `OnFrameMetricsAvailableListener` ([#3111](https://github.com/getsentry/sentry-java/pull/3111))
 
 ### Fixes
 
