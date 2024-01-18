@@ -2158,7 +2158,6 @@ public class io/sentry/SentryOptions {
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
-	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
@@ -2269,7 +2268,6 @@ public class io/sentry/SentryOptions {
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setGestureTargetLocators (Ljava/util/List;)V
-	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
