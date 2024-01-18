@@ -12,7 +12,7 @@
     - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
     - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
 
-### Chores
+### Breaking changes
 
 - Remove `HostnameVerifier` option as it's flagged by security tools of some app stores ([#3150](https://github.com/getsentry/sentry-java/pull/3150))
   - If you were using this option, you have 3 possible paths going forward:
