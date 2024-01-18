@@ -261,7 +261,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
-	public fun getProfilingTracesHz ()I
 	public fun getProfilingTracesIntervalMillis ()I
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
@@ -307,7 +306,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
-	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
 	public fun setReportHistoricalAnrs (Z)V
 }
@@ -347,6 +345,7 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
+	public fun shutdown ()V
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
@@ -429,6 +428,8 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
+	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
@@ -441,6 +442,8 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
+	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
+	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
 }
 

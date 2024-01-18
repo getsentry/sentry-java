@@ -7,6 +7,7 @@
   <application
     android:theme="@style/Theme.AppCompat"
     android:label="Sentry End2End Tests"
+    android:largeHeap="true"
     android:icon="@android:mipmap/sym_def_app_icon"
     android:usesCleartextTraffic="true"
     tools:targetApi="m">

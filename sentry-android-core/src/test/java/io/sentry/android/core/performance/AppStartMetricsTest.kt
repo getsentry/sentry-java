@@ -12,6 +12,7 @@ import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -43,6 +44,8 @@ class AppStartMetricsTest {
         metrics.addActivityLifecycleTimeSpans(ActivityLifecycleTimeSpan())
         AppStartMetrics.onApplicationCreate(mock<Application>())
         AppStartMetrics.onContentProviderCreate(mock<ContentProvider>())
+        metrics.setAppStartProfiler(mock())
+        metrics.appStartSamplingDecision = mock()
 
         metrics.clear()
 
@@ -50,10 +53,11 @@ class AppStartMetricsTest {
         assertTrue(metrics.sdkInitTimeSpan.hasNotStarted())
         assertTrue(metrics.applicationOnCreateTimeSpan.hasNotStarted())
         assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
-        assertTrue(metrics.applicationOnCreateTimeSpan.hasNotStarted())
 
         assertTrue(metrics.activityLifecycleTimeSpans.isEmpty())
         assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
+        assertNull(metrics.appStartProfiler)
+        assertNull(metrics.appStartSamplingDecision)
     }
 
     @Test

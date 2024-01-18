@@ -67,6 +67,7 @@ class AnrV2IntegrationTest {
             useImmediateExecutorService: Boolean = true,
             isAnrEnabled: Boolean = true,
             flushTimeoutMillis: Long = 0L,
+            sessionFlushTimeoutMillis: Long = 0L,
             lastReportedAnrTimestamp: Long? = null,
             lastEventId: SentryId = SentryId(),
             sessionTrackingEnabled: Boolean = true,
@@ -81,6 +82,7 @@ class AnrV2IntegrationTest {
                     if (useImmediateExecutorService) ImmediateExecutorService() else mock()
                 this.isAnrEnabled = isAnrEnabled
                 this.flushTimeoutMillis = flushTimeoutMillis
+                this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis
                 this.isEnableAutoSessionTracking = sessionTrackingEnabled
                 this.isReportHistoricalAnrs = reportHistoricalAnrs
                 this.isAttachAnrThreadDump = attachAnrThreadDump
@@ -92,7 +94,6 @@ class AnrV2IntegrationTest {
                 lastReportedAnrFile.writeText(lastReportedAnrTimestamp.toString())
             }
             whenever(hub.captureEvent(any(), anyOrNull<Hint>())).thenReturn(lastEventId)
-
             return AnrV2Integration(context)
         }
 
@@ -306,7 +307,7 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(
             tmpDir,
             lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 1000L
+            flushTimeoutMillis = 500L
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
@@ -314,7 +315,7 @@ class AnrV2IntegrationTest {
             val hint = HintUtils.getSentrySdkHint(invocation.getArgument(1))
                 as DiskFlushNotification
             thread {
-                Thread.sleep(500L)
+                Thread.sleep(200L)
                 hint.markFlushed()
             }
             SentryId()
@@ -458,12 +459,12 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(
             tmpDir,
             lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 1000L
+            sessionFlushTimeoutMillis = 500L
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         thread {
-            Thread.sleep(500L)
+            Thread.sleep(200L)
             val sessionHint = HintUtils.createWithTypeCheckHint(SessionStartHint())
             fixture.options.envelopeDiskCache.store(
                 SentryEnvelope(SentryId.EMPTY_ID, null, emptyList()),
@@ -487,7 +488,7 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(
             tmpDir,
             lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 500L,
+            sessionFlushTimeoutMillis = 500L,
             sessionTrackingEnabled = false
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
@@ -507,7 +508,7 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(
             tmpDir,
             lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 500L
+            sessionFlushTimeoutMillis = 500L
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 

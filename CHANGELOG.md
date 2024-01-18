@@ -4,16 +4,38 @@
 
 ### Features
 
-- Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
+- Added App Start profiling
+    - This depends on the new option `io.sentry.profiling.enable-app-start`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
+    - Sampler functions can check the new `isForNextAppStart` flag, to adjust startup profiling sampling programmatically.
+      Relevant PRs:
+    - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
+    - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
+    - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
 - Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
 - Collect slow and frozen frames for spans using `OnFrameMetricsAvailableListener` ([#3111](https://github.com/getsentry/sentry-java/pull/3111))
 
+### Dependencies
+
+- Bump Native SDK from v0.6.7 to v0.7.0 ([#3133](https://github.com/getsentry/sentry-java/pull/3133))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#070)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.6.7...0.7.0)
+
+## 7.2.0
+
+### Features
+
+- Handle `monitor`/`check_in` in client reports and rate limiter ([#3096](https://github.com/getsentry/sentry-java/pull/3096))
+- Add support for `graphql-java` version 21 ([#3090](https://github.com/getsentry/sentry-java/pull/3090))
+
 ### Fixes
 
+- Avoid concurrency in AndroidProfiler performance data collection ([#3130](https://github.com/getsentry/sentry-java/pull/3130))
 - Improve thresholds for network changes breadcrumbs ([#3083](https://github.com/getsentry/sentry-java/pull/3083))
 - SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
   - If you are setting global job listeners please also add `SentryJobListener`
 - Ensure serialVersionUID of Exception classes are unique ([#3115](https://github.com/getsentry/sentry-java/pull/3115))
+- Get rid of "is not eligible for getting processed by all BeanPostProcessors" warnings in Spring Boot ([#3108](https://github.com/getsentry/sentry-java/pull/3108))
+- Fix missing `release` and other fields for ANRs reported with `mechanism:AppExitInfo` ([#3074](https://github.com/getsentry/sentry-java/pull/3074))
 
 ### Dependencies
 
@@ -42,7 +64,6 @@
 - Send breadcrumbs and client error in `SentryOkHttpEventListener` even without transactions ([#3087](https://github.com/getsentry/sentry-java/pull/3087))
 - Keep `io.sentry.exception.SentryHttpClientException` from obfuscation to display proper issue title on Sentry ([#3093](https://github.com/getsentry/sentry-java/pull/3093))
 - (Android) Fix wrong activity transaction duration in case SDK init is deferred ([#3092](https://github.com/getsentry/sentry-java/pull/3092))
-- Get rid of "is not eligible for getting processed by all BeanPostProcessors" warnings in Spring Boot ([#3108](https://github.com/getsentry/sentry-java/pull/3108))
 
 ### Dependencies
 
@@ -976,6 +997,9 @@ val apolloClient = ApolloClient.Builder()
 - New package `sentry-android-navigation` for AndroidX Navigation support ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
 - New package `sentry-compose` for Jetpack Compose support (Navigation) ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
 - Add sample rate to baggage as well as trace in envelope header and flatten user ([#2135](https://github.com/getsentry/sentry-java/pull/2135))
+
+Breaking Changes:
+- The boolean parameter `samplingDecision` in the `TransactionContext` constructor has been replaced with a `TracesSamplingDecision` object. Feel free to ignore the `@ApiStatus.Internal` in this case.
 
 ## 6.1.4
 

@@ -18,6 +18,7 @@ class TransactionContextTest {
         assertNull(context.parentSampled)
         assertEquals("name", context.name)
         assertEquals("op", context.op)
+        assertFalse(context.isForNextAppStart)
     }
 
     @Test
@@ -27,6 +28,7 @@ class TransactionContextTest {
         assertNull(context.sampled)
         assertNull(context.profileSampled)
         assertTrue(context.parentSampled!!)
+        assertFalse(context.isForNextAppStart)
     }
 
     @Test
@@ -42,6 +44,7 @@ class TransactionContextTest {
         assertNull(context.profileSampled)
         assertFalse(context.parentSampled!!)
         assertEquals(0.3, context.parentSamplingDecision!!.sampleRate)
+        assertFalse(context.isForNextAppStart)
     }
 
     @Test
@@ -57,6 +60,7 @@ class TransactionContextTest {
         assertNull(context.profileSampled)
         assertFalse(context.parentSampled!!)
         assertNull(context.parentSamplingDecision!!.sampleRate)
+        assertFalse(context.isForNextAppStart)
     }
 
     @Test
@@ -72,6 +76,7 @@ class TransactionContextTest {
         assertNull(context.profileSampled)
         assertTrue(context.parentSampled!!)
         assertEquals(0.3, context.parentSamplingDecision!!.sampleRate)
+        assertFalse(context.isForNextAppStart)
     }
 
     @Test
@@ -87,5 +92,13 @@ class TransactionContextTest {
         assertNull(context.profileSampled)
         assertTrue(context.parentSampled!!)
         assertNull(context.parentSamplingDecision!!.sampleRate)
+        assertFalse(context.isForNextAppStart)
+    }
+
+    @Test
+    fun `setForNextAppStart sets the isForNextAppStart flag`() {
+        val context = TransactionContext("name", "op")
+        context.isForNextAppStart = true
+        assertTrue(context.isForNextAppStart)
     }
 }

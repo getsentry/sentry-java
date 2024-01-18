@@ -9,6 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -464,6 +465,21 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `getCacheDirPathWithoutDsn does not contain dsn hash`() {
+        val dsn = "http://key@localhost/proj"
+        val hash = StringUtils.calculateStringHash(dsn, mock())
+        val options = SentryOptions().apply {
+            setDsn(dsn)
+            cacheDirPath = "${File.separator}test"
+        }
+
+        val cacheDirPathWithoutDsn = options.cacheDirPathWithoutDsn!!
+        assertNotEquals(cacheDirPathWithoutDsn, options.cacheDirPath)
+        assertEquals(cacheDirPathWithoutDsn, options.cacheDirPath!!.substringBeforeLast("/"))
+        assertFalse(cacheDirPathWithoutDsn.contains(hash.toString()))
+    }
+
+    @Test
     fun `when options are initialized, idleTimeout is 3000`() {
         assertEquals(3000L, SentryOptions().idleTimeout)
     }
@@ -517,6 +533,7 @@ class SentryOptionsTest {
         assertEquals(customProvider, options.connectionStatusProvider)
     }
 
+    @Test
     fun `when options are initialized, enabled is set to true by default`() {
         assertTrue(SentryOptions().isEnabled)
     }
@@ -535,5 +552,38 @@ class SentryOptionsTest {
     fun `when options are initialized, enableBackpressureHandling is set to false by default`() {
         assertFalse(SentryOptions().isEnableBackpressureHandling)
         assertTrue(SentryOptions().backpressureMonitor is NoOpBackpressureMonitor)
+    }
+
+    @Test
+    fun `when options are initialized, enableAppStartProfiling is set to false by default`() {
+        assertFalse(SentryOptions().isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `when setEnableAppStartProfiling is called, overrides default`() {
+        val options = SentryOptions()
+        options.isEnableAppStartProfiling = true
+        options.profilesSampleRate = 1.0
+        assertTrue(options.isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `when profiling is disabled, isEnableAppStartProfiling is always false`() {
+        val options = SentryOptions()
+        options.isEnableAppStartProfiling = true
+        options.profilesSampleRate = 0.0
+        assertFalse(options.isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `when options are initialized, profilingTracesHz is set to 101 by default`() {
+        assertEquals(101, SentryOptions().profilingTracesHz)
+    }
+
+    @Test
+    fun `when setProfilingTracesHz is called, overrides default`() {
+        val options = SentryOptions()
+        options.profilingTracesHz = 13
+        assertEquals(13, options.profilingTracesHz)
     }
 }

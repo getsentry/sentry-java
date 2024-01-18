@@ -79,7 +79,9 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this(
         traceFile,
         new ArrayList<>(),
-        transaction,
+        transaction.getName(),
+        transaction.getEventId().toString(),
+        transaction.getSpanContext().getTraceId().toString(),
         "0",
         0,
         "",
@@ -100,7 +102,9 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   public ProfilingTraceData(
       @NotNull File traceFile,
       @NotNull List<ProfilingTransactionData> transactions,
-      @NotNull ITransaction transaction,
+      @NotNull String transactionName,
+      @NotNull String transactionId,
+      @NotNull String traceId,
       @NotNull String durationNanos,
       int sdkInt,
       @NotNull String cpuArchitecture,
@@ -135,7 +139,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
     // Transaction info
     this.transactions = transactions;
-    this.transactionName = transaction.getName();
+    this.transactionName = transactionName;
     this.durationNs = durationNanos;
 
     // App info
@@ -143,8 +147,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.release = release != null ? release : "";
 
     // Stacktrace context
-    this.transactionId = transaction.getEventId().toString();
-    this.traceId = transaction.getSpanContext().getTraceId().toString();
+    this.transactionId = transactionId;
+    this.traceId = traceId;
     this.profileId = UUID.randomUUID().toString();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
     this.truncationReason = truncationReason;

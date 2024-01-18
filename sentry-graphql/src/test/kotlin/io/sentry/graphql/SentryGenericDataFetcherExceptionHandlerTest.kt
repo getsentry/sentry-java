@@ -36,6 +36,6 @@ class SentryGenericDataFetcherExceptionHandlerTest {
         assertNotNull(exceptions)
         assertEquals(1, exceptions.size)
         assertEquals(exception, exceptions.first())
-        verify(delegate).onException(parameters)
+        verify(delegate).handleException(parameters)
     }
 }

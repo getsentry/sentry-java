@@ -98,6 +98,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
 
+  static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -365,6 +367,10 @@ final class ManifestMetadataReader {
 
         options.setEnablePerformanceV2(
             readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
+
+        options.setEnableAppStartProfiling(
+            readBool(
+                metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
       }
 
       options

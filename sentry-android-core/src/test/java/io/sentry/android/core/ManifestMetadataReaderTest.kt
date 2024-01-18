@@ -1343,4 +1343,31 @@ class ManifestMetadataReaderTest {
         // Assert
         assertFalse(fixture.options.isEnablePerformanceV2)
     }
+
+    @Test
+    fun `applyMetadata reads startupProfiling flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_APP_START_PROFILING to true)
+        val context = fixture.getContext(metaData = bundle)
+        fixture.options.profilesSampleRate = 1.0
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `applyMetadata reads startupProfiling flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+        fixture.options.profilesSampleRate = 1.0
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableAppStartProfiling)
+    }
 }

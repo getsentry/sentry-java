@@ -1,5 +1,7 @@
 package io.sentry
 
+import io.sentry.SentryOptions.ProfilesSamplerCallback
+import io.sentry.SentryOptions.TracesSamplerCallback
 import io.sentry.backpressure.BackpressureMonitor
 import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
@@ -23,11 +25,14 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.io.FileReader
 import java.nio.file.Files
 import java.util.Properties
 import java.util.concurrent.CompletableFuture
@@ -81,6 +86,21 @@ class SentryTest {
         }
 
         val file = File(sentryOptions!!.cacheDirPath!!)
+        assertTrue(file.exists())
+        file.deleteOnExit()
+    }
+
+    @Test
+    fun `getCacheDirPathWithoutDsn should be created at initialization`() {
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            sentryOptions = it
+        }
+
+        val cacheDirPathWithoutDsn = sentryOptions!!.cacheDirPathWithoutDsn!!
+        val file = File(cacheDirPathWithoutDsn)
         assertTrue(file.exists())
         file.deleteOnExit()
     }
@@ -290,7 +310,7 @@ class SentryTest {
         oldProfile.createNewFile()
         newProfile.createNewFile()
         // Make the old profile look like it's created earlier
-        oldProfile.setLastModified(System.currentTimeMillis() - 10000)
+        oldProfile.setLastModified(10000)
         // Make the new profile look like it's created later
         newProfile.setLastModified(System.currentTimeMillis() + 10000)
 
@@ -743,6 +763,8 @@ class SentryTest {
 
         Sentry.init {
             it.dsn = dsn
+            it.isDebug = true
+            it.setLogger(SystemOutLogger())
 
             it.release = "io.sentry.sample@2.0"
             it.cacheDirPath = tmpDir.newFolder().absolutePath
@@ -925,11 +947,11 @@ class SentryTest {
     @Test
     fun `backpressure monitor is a NoOp if handling is disabled`() {
         var sentryOptions: SentryOptions? = null
-        Sentry.init({
+        Sentry.init {
             it.dsn = dsn
             it.isEnableBackpressureHandling = false
             sentryOptions = it
-        })
+        }
         assertIs<NoOpBackpressureMonitor>(sentryOptions?.backpressureMonitor)
     }
 
@@ -937,12 +959,160 @@ class SentryTest {
     fun `backpressure monitor is set if handling is enabled`() {
         var sentryOptions: SentryOptions? = null
 
-        Sentry.init({
+        Sentry.init {
             it.dsn = dsn
             it.isEnableBackpressureHandling = true
             sentryOptions = it
-        })
+        }
         assertIs<BackpressureMonitor>(sentryOptions?.backpressureMonitor)
+    }
+
+    @Test
+    fun `init calls samplers if isEnableAppStartProfiling is true`() {
+        val mockSampleTracer = mock<TracesSamplerCallback>()
+        val mockProfilesSampler = mock<ProfilesSamplerCallback>()
+        Sentry.init {
+            it.dsn = dsn
+            it.enableTracing = true
+            it.isEnableAppStartProfiling = true
+            it.profilesSampleRate = 1.0
+            it.tracesSampler = mockSampleTracer
+            it.profilesSampler = mockProfilesSampler
+            it.executorService = ImmediateExecutorService()
+            it.cacheDirPath = getTempPath()
+        }
+        // Samplers are called with isForNextAppStart flag set to true
+        verify(mockSampleTracer).sample(
+            check {
+                assertEquals("app.launch", it.transactionContext.name)
+                assertEquals("profile", it.transactionContext.operation)
+                assertTrue(it.transactionContext.isForNextAppStart)
+            }
+        )
+        verify(mockProfilesSampler).sample(
+            check {
+                assertEquals("app.launch", it.transactionContext.name)
+                assertEquals("profile", it.transactionContext.operation)
+                assertTrue(it.transactionContext.isForNextAppStart)
+            }
+        )
+    }
+
+    @Test
+    fun `init calls app start profiling samplers in the background`() {
+        val mockSampleTracer = mock<TracesSamplerCallback>()
+        val mockProfilesSampler = mock<ProfilesSamplerCallback>()
+        Sentry.init {
+            it.dsn = dsn
+            it.enableTracing = true
+            it.isEnableAppStartProfiling = true
+            it.profilesSampleRate = 1.0
+            it.tracesSampler = mockSampleTracer
+            it.profilesSampler = mockProfilesSampler
+            it.executorService = NoOpSentryExecutorService.getInstance()
+            it.cacheDirPath = getTempPath()
+        }
+        // Samplers are called with isForNextAppStart flag set to true
+        verify(mockSampleTracer, never()).sample(any())
+        verify(mockProfilesSampler, never()).sample(any())
+    }
+
+    @Test
+    fun `init does not call app start profiling samplers if cache dir is null`() {
+        val mockSampleTracer = mock<TracesSamplerCallback>()
+        val mockProfilesSampler = mock<ProfilesSamplerCallback>()
+        Sentry.init {
+            it.dsn = dsn
+            it.enableTracing = true
+            it.isEnableAppStartProfiling = true
+            it.profilesSampleRate = 1.0
+            it.tracesSampler = mockSampleTracer
+            it.profilesSampler = mockProfilesSampler
+            it.executorService = NoOpSentryExecutorService.getInstance()
+            it.cacheDirPath = null
+        }
+        // Samplers are called with isForNextAppStart flag set to true
+        verify(mockSampleTracer, never()).sample(any())
+        verify(mockProfilesSampler, never()).sample(any())
+    }
+
+    @Test
+    fun `init does not call app start profiling samplers if enableTracing is false`() {
+        val logger = mock<ILogger>()
+        val mockTraceSampler = mock<TracesSamplerCallback>()
+        val mockProfilesSampler = mock<ProfilesSamplerCallback>()
+        Sentry.init {
+            it.dsn = dsn
+            it.enableTracing = false
+            it.isEnableAppStartProfiling = true
+            it.profilesSampleRate = 1.0
+            it.tracesSampler = mockTraceSampler
+            it.profilesSampler = mockProfilesSampler
+            it.executorService = ImmediateExecutorService()
+            it.cacheDirPath = getTempPath()
+            it.isDebug = true
+            it.setLogger(logger)
+        }
+        verify(logger).log(eq(SentryLevel.INFO), eq("Tracing is disabled and app start profiling will not start."))
+        verify(mockTraceSampler, never()).sample(any())
+        verify(mockProfilesSampler, never()).sample(any())
+    }
+
+    @Test
+    fun `init deletes app start profiling config`() {
+        val path = getTempPath()
+        File(path).mkdirs()
+        val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
+        appStartProfilingConfigFile.createNewFile()
+        assertTrue(appStartProfilingConfigFile.exists())
+        Sentry.init {
+            it.dsn = dsn
+            it.executorService = ImmediateExecutorService()
+            it.cacheDirPath = path
+        }
+        assertFalse(appStartProfilingConfigFile.exists())
+    }
+
+    @Test
+    fun `init creates app start profiling config if isEnableAppStartProfiling and enableTracing is true`() {
+        val path = getTempPath()
+        File(path).mkdirs()
+        val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
+        appStartProfilingConfigFile.createNewFile()
+        assertTrue(appStartProfilingConfigFile.exists())
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = path
+            it.isEnableAppStartProfiling = true
+            it.profilesSampleRate = 1.0
+            it.enableTracing = true
+            it.executorService = ImmediateExecutorService()
+        }
+        assertTrue(appStartProfilingConfigFile.exists())
+    }
+
+    @Test
+    fun `init saves SentryAppStartProfilingOptions to disk`() {
+        var options = SentryOptions()
+        val path = getTempPath()
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = path
+            it.enableTracing = true
+            it.tracesSampleRate = 0.5
+            it.isEnableAppStartProfiling = true
+            it.profilesSampleRate = 0.2
+            it.executorService = ImmediateExecutorService()
+            options = it
+        }
+        val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
+        assertTrue(appStartProfilingConfigFile.exists())
+        val appStartOption =
+            JsonSerializer(options).deserialize(FileReader(appStartProfilingConfigFile), SentryAppStartProfilingOptions::class.java)
+        assertNotNull(appStartOption)
+        assertEquals(0.5, appStartOption.traceSampleRate)
+        assertEquals(0.2, appStartOption.profileSampleRate)
+        assertTrue(appStartOption.isProfilingEnabled)
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {
