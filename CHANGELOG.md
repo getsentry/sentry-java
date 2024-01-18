@@ -996,6 +996,9 @@ val apolloClient = ApolloClient.Builder()
 - New package `sentry-compose` for Jetpack Compose support (Navigation) ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
 - Add sample rate to baggage as well as trace in envelope header and flatten user ([#2135](https://github.com/getsentry/sentry-java/pull/2135))
 
+Breaking Changes:
+- The boolean parameter `samplingDecision` in the `TransactionContext` constructor has been replaced with a `TracesSamplingDecision` object. Feel free to ignore the `@ApiStatus.Internal` in this case.
+
 ## 6.1.4
 
 ### Fixes
