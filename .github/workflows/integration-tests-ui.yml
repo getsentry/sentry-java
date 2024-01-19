@@ -58,7 +58,7 @@ jobs:
           echo "job_id=$job_id" >> $GITHUB_OUTPUT
 
       - name: Verify Test Results
-        run: |
+        run: >
           previousStepLogs="$(gh api
             -H "Accept: application/vnd.github+json"
             -H "X-GitHub-Api-Version: 2022-11-28"
