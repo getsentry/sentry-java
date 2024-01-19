@@ -58,6 +58,8 @@ jobs:
           echo "job_id=$job_id" >> $GITHUB_OUTPUT
 
       - name: Verify Test Results
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           previousStepLogs="$(gh api \
             -H "Accept: application/vnd.github+json" \
