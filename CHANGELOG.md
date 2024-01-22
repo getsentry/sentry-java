@@ -44,6 +44,7 @@
 - SchedulerFactoryBeanCustomizer now runs first so user customization is not overridden ([#3095](https://github.com/getsentry/sentry-java/pull/3095))
   - If you are setting global job listeners please also add `SentryJobListener`
 - Ensure serialVersionUID of Exception classes are unique ([#3115](https://github.com/getsentry/sentry-java/pull/3115))
+<<<<<<< HEAD
 - Get rid of "is not eligible for getting processed by all BeanPostProcessors" warnings in Spring Boot ([#3108](https://github.com/getsentry/sentry-java/pull/3108))
 - Fix missing `release` and other fields for ANRs reported with `mechanism:AppExitInfo` ([#3074](https://github.com/getsentry/sentry-java/pull/3074))
 
