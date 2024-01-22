@@ -353,8 +353,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Returns the envelope's file path. If the envelope has no eventId header, it generates a random
-   * file name to it.
+   * Returns the envelope's file path. If the envelope wasn't added to the cache beforehand, a
+   * random file name is assigned.
    *
    * @param envelope the SentryEnvelope object
    * @return the file
