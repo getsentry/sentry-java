@@ -1,6 +1,8 @@
 package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
+
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.SpanStatus;
@@ -28,8 +30,8 @@ public class SentryTransactionAdvice implements MethodInterceptor {
   private static final String TRACE_ORIGIN = "auto.function.spring.advice";
   private final @NotNull IHub hub;
 
-  public SentryTransactionAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryTransactionAdvice() {
+    this.hub = HubAdapter.getInstance();
   }
 
   @SuppressWarnings("deprecation")

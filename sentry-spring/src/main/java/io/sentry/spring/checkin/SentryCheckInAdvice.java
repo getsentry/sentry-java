@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
@@ -29,8 +30,8 @@ import org.springframework.util.ObjectUtils;
 public class SentryCheckInAdvice implements MethodInterceptor {
   private final @NotNull IHub hub;
 
-  public SentryCheckInAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryCheckInAdvice() {
+    this.hub = HubAdapter.getInstance();
   }
 
   @Override

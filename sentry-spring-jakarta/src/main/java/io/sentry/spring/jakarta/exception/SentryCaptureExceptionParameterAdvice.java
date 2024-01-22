@@ -1,6 +1,8 @@
 package io.sentry.spring.jakarta.exception;
 
 import com.jakewharton.nopen.annotation.Open;
+
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
@@ -23,8 +25,8 @@ public class SentryCaptureExceptionParameterAdvice implements MethodInterceptor 
   private static final String MECHANISM_TYPE = "SentrySpring6CaptureExceptionParameterAdvice";
   private final @NotNull IHub hub;
 
-  public SentryCaptureExceptionParameterAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryCaptureExceptionParameterAdvice() {
+    this.hub = HubAdapter.getInstance();
   }
 
   @Override

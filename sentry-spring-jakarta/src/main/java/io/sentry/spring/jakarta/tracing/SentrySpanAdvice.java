@@ -1,6 +1,8 @@
 package io.sentry.spring.jakarta.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
+
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SpanStatus;
@@ -23,8 +25,8 @@ public class SentrySpanAdvice implements MethodInterceptor {
   private static final String TRACE_ORIGIN = "auto.function.spring_jakarta.advice";
   private final @NotNull IHub hub;
 
-  public SentrySpanAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentrySpanAdvice() {
+    this.hub = HubAdapter.getInstance();
   }
 
   @SuppressWarnings("deprecation")
