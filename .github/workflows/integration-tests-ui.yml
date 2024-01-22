@@ -66,12 +66,12 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             /repos/getsentry/sentry-java/actions/jobs/${{ steps.get-job-id.outputs.job_id }}/logs)"
 
-          processCrashed=$(grep "Process crashed." <<< "$previousStepLogs" | wc -l)
+          processCrashed=$(grep "Suite finished." <<< "$previousStepLogs" | wc -l)
           echo $processCrashed
           if [[ "${{ steps.saucelabs.outcome }}" = "success" ]]; then
             exit 0
           elif [[ "$processCrashed" -ne 0 ]]; then
-            exit 0
+            exit 1
           else
             exit 1
           fi
