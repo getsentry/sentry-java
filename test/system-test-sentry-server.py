@@ -7,6 +7,7 @@ import sys
 import threading
 import binascii
 import json
+import gzip
 
 apiOrg = 'sentry-sdks'
 apiProject = 'sentry-java'
@@ -28,8 +29,10 @@ class EnvelopeCount:
 
     @classmethod
     def get_json(cls):
-        return '{"envelopes":"' + str(cls.__envelopes_received) + '"' +\
-            '}'
+        jsonObject = {
+            'envelopes': cls.__envelopes_received
+        }
+        return json.dumps(jsonObject)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -47,16 +50,13 @@ class Handler(BaseHTTPRequestHandler):
             print("Envelope count queried " + str(EnvelopeCount.get_envelopes_received()))
             self.writeJSON(EnvelopeCount.get_json())
             return
-        else:
-            self.end_headers()
 
         self.flushLogs()
 
     def do_POST(self):
         if self.isApi('/api/0/envelope/'):
             EnvelopeCount.increment()
-            self.end_headers()
-        else:
+            self.start_response(HTTPStatus.OK)
             self.end_headers()
 
         self.flushLogs()
@@ -76,16 +76,17 @@ class Handler(BaseHTTPRequestHandler):
         if isinstance(code, HTTPStatus):
             code = code.value
         body = self.body = self.requestBody()
+ 
         if body:
             body = self.body[0:min(1000, len(body))]
         self.log_message('"%s" %s %s%s',
-                         self.requestline, str(code), "({} bytes)".format(size) if size else '', body)
+                         self.requestline, str(code), "({} bytes)".format(len(body)) if size else '', body)
 
     # Note: this may only be called once during a single request - can't `.read()` the same stream again.
     def requestBody(self):
         if self.command == "POST" and 'Content-Length' in self.headers:
-            length = int(self.headers['Content-Length'])
-            content = self.rfile.read(length)
+            content = self.getContent()
+
             try:
                 return content.decode("utf-8", errors='replace')
             except Exception as e:
@@ -112,6 +113,15 @@ class Handler(BaseHTTPRequestHandler):
     def flushLogs(self):
         sys.stdout.flush()
         sys.stderr.flush()
+
+    def getContent(self):
+        length = int(self.headers['Content-Length'])
+        content = self.rfile.read(length)
+        
+        if 'Content-Encoding' in self.headers and self.headers['Content-Encoding'] == 'gzip':
+            content = gzip.decompress(content)
+        
+        return content
 
 
 print("HTTP server listening on {}".format(uri.geturl()))
