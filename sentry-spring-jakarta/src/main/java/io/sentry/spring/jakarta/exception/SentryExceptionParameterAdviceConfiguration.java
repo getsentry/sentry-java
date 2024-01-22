@@ -1,7 +1,6 @@
 package io.sentry.spring.jakarta.exception;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
 import org.aopalliance.aop.Advice;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Advisor;
@@ -17,7 +16,7 @@ import org.springframework.context.annotation.Role;
 @Configuration(proxyBeanMethods = false)
 @Open
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public class SentryExceptionParameterAdviceConfiguration   {
+public class SentryExceptionParameterAdviceConfiguration {
 
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

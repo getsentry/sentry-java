@@ -1,12 +1,10 @@
 package io.sentry.spring.exception;
 
 import com.jakewharton.nopen.annotation.Open;
-
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
-import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;

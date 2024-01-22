@@ -1,7 +1,6 @@
 package io.sentry.spring.jakarta.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
 import org.aopalliance.aop.Advice;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Advisor;

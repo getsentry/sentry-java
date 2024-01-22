@@ -8,7 +8,6 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
