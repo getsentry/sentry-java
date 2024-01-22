@@ -67,6 +67,7 @@ jobs:
             /repos/getsentry/sentry-java/actions/jobs/${{ steps.get-job-id.outputs.job_id }}/logs)"
 
           processCrashed=$(grep "Suite finished." <<< "$previousStepLogs" | wc -l)
+          echo $previousStepLogs
           echo $processCrashed
           if [[ "${{ steps.saucelabs.outcome }}" = "success" ]]; then
             exit 0
