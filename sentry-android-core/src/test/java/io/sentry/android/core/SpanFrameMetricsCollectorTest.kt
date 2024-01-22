@@ -1,10 +1,12 @@
 package io.sentry.android.core
 
 import io.sentry.ISpan
+import io.sentry.ITransaction
 import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
 import io.sentry.SpanContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
+import io.sentry.protocol.MeasurementValue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -33,6 +35,13 @@ class SpanFrameMetricsCollectorTest {
 
     private fun createFakeSpan(): ISpan {
         val span = mock<ISpan>()
+        val spanContext = SpanContext("op.fake")
+        whenever(span.spanContext).thenReturn(spanContext)
+        return span
+    }
+
+    private fun createFakeTxn(): ITransaction {
+        val span = mock<ITransaction>()
         val spanContext = SpanContext("op.fake")
         whenever(span.spanContext).thenReturn(spanContext)
         return span
@@ -150,6 +159,35 @@ class SpanFrameMetricsCollectorTest {
         verify(span1).setData("frames.slow", 1)
         verify(span1).setData("frames.frozen", 0)
         verify(span1).setData("frames.total", 1)
+    }
+
+    @Test
+    fun `measurements are not set on spans`() {
+        val sut = fixture.getSut()
+
+        val span = createFakeSpan()
+        sut.onSpanStarted(span)
+        sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
+        sut.onSpanFinished(span)
+
+        // then the metrics are set on the spans
+        verify(span).setData("frames.total", 1)
+        verify(span, never()).setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, 1)
+    }
+
+    @Test
+    fun `measurements are set on transactions`() {
+        val sut = fixture.getSut()
+
+        // when the first span starts
+        val txn = createFakeTxn()
+        sut.onSpanStarted(txn)
+        sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
+        sut.onSpanFinished(txn)
+
+        // then the metrics are set on the spans
+        verify(txn).setData("frames.total", 1)
+        verify(txn).setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, 1)
     }
 
     @Test

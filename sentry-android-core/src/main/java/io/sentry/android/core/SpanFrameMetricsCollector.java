@@ -2,11 +2,13 @@ package io.sentry.android.core;
 
 import io.sentry.IPerformanceContinuousCollector;
 import io.sentry.ISpan;
+import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.protocol.MeasurementValue;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -80,6 +82,12 @@ public class SpanFrameMetricsCollector
       span.setData(SpanDataConvention.FRAMES_SLOW, diff.getSlowFrameCount());
       span.setData(SpanDataConvention.FRAMES_FROZEN, diff.getFrozenFrameCount());
       span.setData(SpanDataConvention.FRAMES_TOTAL, diff.getTotalFrameCount());
+
+      if (span instanceof ITransaction) {
+        span.setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, diff.getTotalFrameCount());
+        span.setMeasurement(MeasurementValue.KEY_FRAMES_SLOW, diff.getSlowFrameCount());
+        span.setMeasurement(MeasurementValue.KEY_FRAMES_FROZEN, diff.getFrozenFrameCount());
+      }
     }
 
     synchronized (lock) {
