@@ -12,6 +12,10 @@
     - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
     - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
 
+### Fixes
+
+- Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
+
 ### Breaking changes
 
 - Remove `HostnameVerifier` option as it's flagged by security tools of some app stores ([#3150](https://github.com/getsentry/sentry-java/pull/3150))
