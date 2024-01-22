@@ -16,15 +16,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@982da8e78c05368c70dac0351bb82647a9e9a5d2 # pin@v2
 
       - name: Generate Aggregate Javadocs
         run: |

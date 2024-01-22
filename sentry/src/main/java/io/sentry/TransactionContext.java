@@ -18,6 +18,7 @@ public final class TransactionContext extends SpanContext {
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private @Nullable Baggage baggage;
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+  private boolean isForNextAppStart = false;
 
   /**
    * Creates {@link TransactionContext} from sentry-trace header.
@@ -199,5 +200,21 @@ public final class TransactionContext extends SpanContext {
 
   public void setTransactionNameSource(final @NotNull TransactionNameSource transactionNameSource) {
     this.transactionNameSource = transactionNameSource;
+  }
+
+  @ApiStatus.Internal
+  public void setForNextAppStart(final boolean forNextAppStart) {
+    isForNextAppStart = forNextAppStart;
+  }
+
+  /**
+   * Whether this {@link TransactionContext} evaluates for the next app start. If this is true, it
+   * gets called only once when the SDK initializes. This is set only if {@link
+   * SentryOptions#isEnableAppStartProfiling()} is true.
+   *
+   * @return True if this {@link TransactionContext} will be used for the next app start.
+   */
+  public boolean isForNextAppStart() {
+    return isForNextAppStart;
   }
 }

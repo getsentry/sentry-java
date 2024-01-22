@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.ContentProvider;
 import android.os.SystemClock;
 import androidx.annotation.Nullable;
+import io.sentry.ITransactionProfiler;
+import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * An in-memory representation for app-metrics during app start. As the SDK can't be initialized
@@ -38,6 +41,8 @@ public class AppStartMetrics {
   private final @NotNull TimeSpan applicationOnCreate;
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
+  private @Nullable ITransactionProfiler appStartProfiler = null;
+  private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
 
   public static @NotNull AppStartMetrics getInstance() {
 
@@ -134,6 +139,7 @@ public class AppStartMetrics {
     return getSdkInitTimeSpan();
   }
 
+  @TestOnly
   public void clear() {
     appStartType = AppStartType.UNKNOWN;
     appStartSpan.reset();
@@ -141,6 +147,28 @@ public class AppStartMetrics {
     applicationOnCreate.reset();
     contentProviderOnCreates.clear();
     activityLifecycles.clear();
+    if (appStartProfiler != null) {
+      appStartProfiler.close();
+    }
+    appStartProfiler = null;
+    appStartSamplingDecision = null;
+  }
+
+  public @Nullable ITransactionProfiler getAppStartProfiler() {
+    return appStartProfiler;
+  }
+
+  public void setAppStartProfiler(final @Nullable ITransactionProfiler appStartProfiler) {
+    this.appStartProfiler = appStartProfiler;
+  }
+
+  public void setAppStartSamplingDecision(
+      final @Nullable TracesSamplingDecision appStartSamplingDecision) {
+    this.appStartSamplingDecision = appStartSamplingDecision;
+  }
+
+  public @Nullable TracesSamplingDecision getAppStartSamplingDecision() {
+    return appStartSamplingDecision;
   }
 
   /**

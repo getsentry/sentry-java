@@ -683,6 +683,59 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When firstActivityCreated is true and app start sampling decision is set, start transaction with isAppStart true`() {
+        AppStartMetrics.getInstance().appStartSamplingDecision = mock()
+        val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> {
+                assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+                assertTrue(it.isAppStartTransaction)
+            }
+        )
+    }
+
+    @Test
+    fun `When firstActivityCreated is true and app start sampling decision is not set, start transaction with isAppStart false`() {
+        val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+        sut.register(fixture.hub, fixture.options)
+
+        val date = SentryNanotimeDate(Date(1), 0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> {
+                assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+                assertFalse(it.isAppStartTransaction)
+            }
+        )
+    }
+
+    @Test
+    fun `When firstActivityCreated is false and app start sampling decision is set, start transaction with isAppStart false`() {
+        AppStartMetrics.getInstance().appStartSamplingDecision = mock()
+        val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertFalse(it.isAppStartTransaction) })
+    }
+
+    @Test
     fun `When firstActivityCreated is true, do not create app start span if not foregroundImportance`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_BACKGROUND)
         fixture.options.tracesSampleRate = 1.0
@@ -697,7 +750,10 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) })
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) }
+        )
     }
 
     @Test

@@ -22,7 +22,6 @@ import java.net.InetSocketAddress
 import java.net.Proxy.Type
 import java.net.URL
 import java.nio.charset.Charset
-import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLSocketFactory
 import kotlin.test.Test
@@ -41,14 +40,12 @@ class HttpConnectionTest {
         val authenticatorWrapper = mock<AuthenticatorWrapper>()
         val rateLimiter = mock<RateLimiter>()
         var sslSocketFactory: SSLSocketFactory? = null
-        var hostnameVerifier: HostnameVerifier? = null
         val requestDetails = mock<RequestDetails>()
         val options = SentryOptions()
 
         init {
             whenever(connection.outputStream).thenReturn(mock())
             whenever(connection.inputStream).thenReturn(mock())
-            whenever(connection.setHostnameVerifier(any())).thenCallRealMethod()
             whenever(connection.setSSLSocketFactory(any())).thenCallRealMethod()
             whenever(requestDetails.headers).thenReturn(mapOf("header-name" to "header-value"))
             val url = mock<URL>()
@@ -61,7 +58,6 @@ class HttpConnectionTest {
             options.setSerializer(serializer)
             options.proxy = proxy
             options.sslSocketFactory = sslSocketFactory
-            options.hostnameVerifier = hostnameVerifier
 
             return HttpConnection(options, requestDetails, authenticatorWrapper, rateLimiter)
         }
@@ -168,26 +164,6 @@ class HttpConnectionTest {
         transport.send(createEnvelope())
 
         verify(fixture.connection, never()).sslSocketFactory = any()
-    }
-
-    @Test
-    fun `When HostnameVerifier is given, set to connection`() {
-        val hostname = mock<HostnameVerifier>()
-        fixture.hostnameVerifier = hostname
-        val transport = fixture.getSUT()
-
-        transport.send(createEnvelope())
-
-        verify(fixture.connection).hostnameVerifier = eq(hostname)
-    }
-
-    @Test
-    fun `When HostnameVerifier is not given, do not set to connection`() {
-        val transport = fixture.getSUT()
-
-        transport.send(createEnvelope())
-
-        verify(fixture.connection, never()).hostnameVerifier = any()
     }
 
     @Test

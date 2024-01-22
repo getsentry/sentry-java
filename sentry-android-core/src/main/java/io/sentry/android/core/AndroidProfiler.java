@@ -73,7 +73,7 @@ public class AndroidProfiler {
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
 
   private static final int PROFILING_TIMEOUT_MILLIS = 30_000;
-  private long transactionStartNanos = 0;
+  private long profileStartNanos = 0;
   private final @NotNull File traceFilesDir;
   private final int intervalUs;
   private @Nullable Future<?> scheduledFinish = null;
@@ -150,14 +150,14 @@ public class AndroidProfiler {
                   final boolean isSlow,
                   final boolean isFrozen,
                   final float refreshRate) {
-                // transactionStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
+                // profileStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
                 // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
-                // relative to transactionStartNanos
+                // relative to profileStartNanos
                 final long frameTimestampRelativeNanos =
                     frameEndNanos
                         - System.nanoTime()
                         + SystemClock.elapsedRealtimeNanos()
-                        - transactionStartNanos;
+                        - profileStartNanos;
 
                 // We don't allow negative relative timestamps.
                 // So we add a check, even if this should never happen.
@@ -191,7 +191,7 @@ public class AndroidProfiler {
           e);
     }
 
-    transactionStartNanos = SystemClock.elapsedRealtimeNanos();
+    profileStartNanos = SystemClock.elapsedRealtimeNanos();
     long profileStartCpuMillis = Process.getElapsedCpuTime();
 
     // We don't make any check on the file existence or writeable state, because we don't want to
@@ -203,7 +203,7 @@ public class AndroidProfiler {
       // tests)
       Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
       isRunning = true;
-      return new ProfileStartData(transactionStartNanos, profileStartCpuMillis);
+      return new ProfileStartData(profileStartNanos, profileStartCpuMillis);
     } catch (Throwable e) {
       endAndCollect(false, null);
       logger.log(SentryLevel.ERROR, "Unable to start a profile: ", e);
@@ -304,7 +304,7 @@ public class AndroidProfiler {
     // the beginning, expressed with SystemClock.elapsedRealtimeNanos()
     long timestampDiff =
         SystemClock.elapsedRealtimeNanos()
-            - transactionStartNanos
+            - profileStartNanos
             - TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
     if (performanceCollectionData != null) {
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
@@ -313,26 +313,29 @@ public class AndroidProfiler {
           new ArrayDeque<>(performanceCollectionData.size());
       final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements =
           new ArrayDeque<>(performanceCollectionData.size());
-      for (PerformanceCollectionData performanceData : performanceCollectionData) {
-        CpuCollectionData cpuData = performanceData.getCpuData();
-        MemoryCollectionData memoryData = performanceData.getMemoryData();
-        if (cpuData != null) {
-          cpuUsageMeasurements.add(
-              new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
-                  cpuData.getCpuUsagePercentage()));
-        }
-        if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
-          memoryUsageMeasurements.add(
-              new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                  memoryData.getUsedHeapMemory()));
-        }
-        if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
-          nativeMemoryUsageMeasurements.add(
-              new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                  memoryData.getUsedNativeMemory()));
+
+      synchronized (performanceCollectionData) {
+        for (PerformanceCollectionData performanceData : performanceCollectionData) {
+          CpuCollectionData cpuData = performanceData.getCpuData();
+          MemoryCollectionData memoryData = performanceData.getMemoryData();
+          if (cpuData != null) {
+            cpuUsageMeasurements.add(
+                new ProfileMeasurementValue(
+                    TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
+                    cpuData.getCpuUsagePercentage()));
+          }
+          if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
+            memoryUsageMeasurements.add(
+                new ProfileMeasurementValue(
+                    TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                    memoryData.getUsedHeapMemory()));
+          }
+          if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
+            nativeMemoryUsageMeasurements.add(
+                new ProfileMeasurementValue(
+                    TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                    memoryData.getUsedNativeMemory()));
+          }
         }
       }
       if (!cpuUsageMeasurements.isEmpty()) {

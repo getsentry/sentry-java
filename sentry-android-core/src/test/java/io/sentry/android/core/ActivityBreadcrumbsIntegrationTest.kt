@@ -3,11 +3,9 @@ package io.sentry.android.core
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hub
 import io.sentry.SentryLevel
-import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -18,7 +16,6 @@ import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@RunWith(AndroidJUnit4::class)
 class ActivityBreadcrumbsIntegrationTest {
 
     private class Fixture {

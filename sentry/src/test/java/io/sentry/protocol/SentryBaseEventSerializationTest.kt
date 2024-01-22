@@ -6,7 +6,10 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonSerializable
 import io.sentry.ObjectWriter
 import io.sentry.SentryBaseEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.vendor.gson.stream.JsonToken
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
@@ -75,6 +78,16 @@ class SentryBaseEventSerializationTest {
         }
     }
     private val fixture = Fixture()
+
+    @Before
+    fun setup() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+    }
+
+    @After
+    fun teardown() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+    }
 
     @Test
     fun serialize() {

@@ -6,6 +6,7 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.SentryIntegrationPackageStorage
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -35,7 +36,12 @@ class SdkVersionSerializationTest {
     private val fixture = Fixture()
 
     @Before
-    fun clearIntegrationPackageStorage() {
+    fun setup() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+    }
+
+    @After
+    fun teardown() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
     }
 

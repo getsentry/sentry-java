@@ -32,18 +32,20 @@ public final class io/sentry/graphql/NoOpSubscriptionHandler : io/sentry/graphql
 public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun handleException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;
 	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
 }
 
 public final class io/sentry/graphql/SentryGenericDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun handleException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;
 	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
 }
 
 public final class io/sentry/graphql/SentryGraphqlExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
-	public fun onException (Ljava/lang/Throwable;Lgraphql/schema/DataFetchingEnvironment;Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
+	public fun handleException (Ljava/lang/Throwable;Lgraphql/schema/DataFetchingEnvironment;Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;
 }
 
 public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {

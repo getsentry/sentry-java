@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -98,6 +97,13 @@ public class SentryOptions {
    * 15000 = 15s
    */
   private long flushTimeoutMillis = 15000; // 15s
+
+  /**
+   * Controls how many seconds to wait before flushing previous session. Sentry SDKs finalizes
+   * unfinished sessions from a background queue and this queue is given a certain amount to drain
+   * sessions. Default is 15000 = 15s
+   */
+  private long sessionFlushTimeoutMillis = 15000; // 15s
 
   /**
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
@@ -279,9 +285,6 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
-  /** HostnameVerifier for self-signed certificate trust* */
-  private @Nullable HostnameVerifier hostnameVerifier;
-
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
 
@@ -446,6 +449,16 @@ public class SentryOptions {
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
   @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
+
+  /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
+  private boolean enableAppStartProfiling = false;
+
+  /**
+   * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
+   * lockstep sampling. More on
+   * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
+   */
+  private int profilingTracesHz = 101;
 
   /**
    * Adds an event processor
@@ -728,6 +741,20 @@ public class SentryOptions {
     }
 
     return dsnHash != null ? new File(cacheDirPath, dsnHash).getAbsolutePath() : cacheDirPath;
+  }
+
+  /**
+   * Returns the cache dir path if set, without the appended dsn hash.
+   *
+   * @return the cache dir path, without the appended dsn hash, or null if not set.
+   */
+  @Nullable
+  String getCacheDirPathWithoutDsn() {
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+
+    return cacheDirPath;
   }
 
   /**
@@ -1308,24 +1335,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns HostnameVerifier
-   *
-   * @return HostnameVerifier objecr or null
-   */
-  public @Nullable HostnameVerifier getHostnameVerifier() {
-    return hostnameVerifier;
-  }
-
-  /**
-   * Set custom HostnameVerifier
-   *
-   * @param hostnameVerifier the HostnameVerifier
-   */
-  public void setHostnameVerifier(final @Nullable HostnameVerifier hostnameVerifier) {
-    this.hostnameVerifier = hostnameVerifier;
-  }
-
-  /**
    * Sets the SdkVersion object
    *
    * @param sdkVersion the SdkVersion object or null
@@ -1620,13 +1629,17 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the listener interface to perform operations when a transaction is started or ended.
+   * Sets the listener interface to perform operations when a transaction is started or ended. It
+   * only has effect if no profiler was already set.
    *
    * @param transactionProfiler - the listener for operations when a transaction is started or ended
    */
   public void setTransactionProfiler(final @Nullable ITransactionProfiler transactionProfiler) {
-    this.transactionProfiler =
-        transactionProfiler != null ? transactionProfiler : NoOpTransactionProfiler.getInstance();
+    // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
+    if (this.transactionProfiler == NoOpTransactionProfiler.getInstance()
+        && transactionProfiler != null) {
+      this.transactionProfiler = transactionProfiler;
+    }
   }
 
   /**
@@ -2119,6 +2132,25 @@ public class SentryOptions {
   }
 
   /**
+   * Whether to profile app launches, depending on profilesSampler or profilesSampleRate. Depends on
+   * {@link SentryOptions#isProfilingEnabled()}
+   *
+   * @return true if app launches should be profiled.
+   */
+  public boolean isEnableAppStartProfiling() {
+    return isProfilingEnabled() && enableAppStartProfiling;
+  }
+
+  /**
+   * Whether to profile app launches, depending on profilesSampler or profilesSampleRate.
+   *
+   * @param enableAppStartProfiling true if app launches should be profiled.
+   */
+  public void setEnableAppStartProfiling(boolean enableAppStartProfiling) {
+    this.enableAppStartProfiling = enableAppStartProfiling;
+  }
+
+  /**
    * Whether to send modules containing information about versions.
    *
    * @param sendModules true if modules should be sent.
@@ -2211,9 +2243,35 @@ public class SentryOptions {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
 
+  /**
+   * Returns the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second.
+   *
+   * @return Rate the profiler will sample rates at.
+   */
+  @ApiStatus.Internal
+  public int getProfilingTracesHz() {
+    return profilingTracesHz;
+  }
+
+  /** Sets the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second. */
+  @ApiStatus.Internal
+  public void setProfilingTracesHz(final int profilingTracesHz) {
+    this.profilingTracesHz = profilingTracesHz;
+  }
+
   @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  @ApiStatus.Internal
+  public long getSessionFlushTimeoutMillis() {
+    return sessionFlushTimeoutMillis;
+  }
+
+  @ApiStatus.Internal
+  public void setSessionFlushTimeoutMillis(final long sessionFlushTimeoutMillis) {
+    this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
   /** The BeforeSend callback */
@@ -2294,7 +2352,8 @@ public class SentryOptions {
    *
    * @return SentryOptions
    */
-  static @NotNull SentryOptions empty() {
+  @ApiStatus.Internal
+  public static @NotNull SentryOptions empty() {
     return new SentryOptions(true);
   }
 

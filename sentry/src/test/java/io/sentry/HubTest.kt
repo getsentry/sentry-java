@@ -1470,7 +1470,7 @@ class HubTest {
     fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         val mockClient = mock<ISentryClient>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
+        whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val hub = generateHub {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
@@ -1492,7 +1492,7 @@ class HubTest {
     fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         val mockClient = mock<ISentryClient>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
+        whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val hub = generateHub {
             it.profilesSampleRate = 0.0
             it.setTransactionProfiler(mockTransactionProfiler)
@@ -1502,6 +1502,48 @@ class HubTest {
         val transaction = hub.startTransaction(contexts)
         transaction.finish()
         verify(mockClient, never()).captureEnvelope(any())
+    }
+
+    @Test
+    fun `when profiler is running and isAppStartTransaction is false, startTransaction does not interact with profiler`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        whenever(mockTransactionProfiler.isRunning).thenReturn(true)
+        val hub = generateHub {
+            it.profilesSampleRate = 1.0
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val context = TransactionContext("name", "op")
+        hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
+        verify(mockTransactionProfiler, never()).start()
+        verify(mockTransactionProfiler, never()).bindTransaction(any())
+    }
+
+    @Test
+    fun `when profiler is running and isAppStartTransaction is true, startTransaction binds current profile`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        whenever(mockTransactionProfiler.isRunning).thenReturn(true)
+        val hub = generateHub {
+            it.profilesSampleRate = 1.0
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val context = TransactionContext("name", "op")
+        val transaction = hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = true })
+        verify(mockTransactionProfiler, never()).start()
+        verify(mockTransactionProfiler).bindTransaction(eq(transaction))
+    }
+
+    @Test
+    fun `when profiler is not running, startTransaction starts and binds current profile`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        whenever(mockTransactionProfiler.isRunning).thenReturn(false)
+        val hub = generateHub {
+            it.profilesSampleRate = 1.0
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val context = TransactionContext("name", "op")
+        val transaction = hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
+        verify(mockTransactionProfiler).start()
+        verify(mockTransactionProfiler).bindTransaction(eq(transaction))
     }
     //endregion
 

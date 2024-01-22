@@ -18,7 +18,6 @@ import java.net.Proxy;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.NotNull;
@@ -129,12 +128,6 @@ final class HttpConnection {
 
     connection.setConnectTimeout(options.getConnectionTimeoutMillis());
     connection.setReadTimeout(options.getReadTimeoutMillis());
-
-    final HostnameVerifier hostnameVerifier = options.getHostnameVerifier();
-
-    if (connection instanceof HttpsURLConnection && hostnameVerifier != null) {
-      ((HttpsURLConnection) connection).setHostnameVerifier(hostnameVerifier);
-    }
 
     final SSLSocketFactory sslSocketFactory = options.getSslSocketFactory();
 
