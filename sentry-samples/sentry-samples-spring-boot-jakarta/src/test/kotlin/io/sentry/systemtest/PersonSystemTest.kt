@@ -22,7 +22,7 @@ class PersonSystemTest {
 
         val restClient = testHelper.restClient
         restClient.getPerson(1L)
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
+        assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
 
         testHelper.ensureEnvelopeCountIncreased()
     }
