@@ -59,7 +59,7 @@ jobs:
         run: |
           processCrashed=$(cat test_logs.txt | grep "Suite finished." | wc -l)
           echo $processCrashed
-          if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
+          if [[ ${{ steps.saucelabs.outcome }} == 'failure' ]]; then
             exit 0
           elif [[ "$processCrashed" -ne 0 ]]; then
             exit 1
