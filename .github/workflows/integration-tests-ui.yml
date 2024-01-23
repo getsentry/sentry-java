@@ -57,7 +57,7 @@ jobs:
 
       - name: Verify Test Results
         run: |
-          processCrashed=$(cat test_logs.txt | grep "Process crashed." | wc -l)
+          processCrashed=$(cat test_logs.txt | grep "Instrumentation run failed due to 'Process crashed.'" | wc -l)
           if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
             exit 0
           elif [[ "$processCrashed" -ne 0 ]]; then
