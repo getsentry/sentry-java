@@ -83,6 +83,7 @@ object Config {
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
         val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
+        val springBootStarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
 
         val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
         val springBoot3StarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBoot3Version"

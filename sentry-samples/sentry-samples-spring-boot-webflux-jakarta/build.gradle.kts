@@ -21,6 +21,7 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBoot3StarterWebflux)
     implementation(Config.Libs.springBoot3StarterGraphql)
+    implementation(Config.Libs.springBoot3StarterActuator)
     implementation(Config.Libs.contextPropagation)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))

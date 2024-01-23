@@ -42,6 +42,7 @@ dependencies {
     implementation(Config.Libs.springBootStarterGraphql)
     implementation(Config.Libs.springBootStarterQuartz)
     implementation(Config.Libs.springBootStarterAop)
+    implementation(Config.Libs.springBootStarterActuator)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.kotlinReflect)
