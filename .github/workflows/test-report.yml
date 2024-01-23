@@ -1,0 +1,25 @@
+name: JUnit Test Reports
+on:
+  workflow_run:
+    workflows:
+      - 'System Tests Backend'
+      - 'Build'
+      - 'AGP Matrix Compatibility'
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dorny/test-reporter@afe6793191b75b608954023a46831a3fe10048d4 # pin@v1.7.0
+        with:
+          artifact: /test-results-(.*)/
+          name: 'JUnit Test Results $1'
+          path: |
+            **/build/test-results/**/*.xml
+          reporter: java-junit
