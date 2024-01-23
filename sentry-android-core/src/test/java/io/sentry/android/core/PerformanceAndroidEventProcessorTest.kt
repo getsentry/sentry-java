@@ -248,6 +248,13 @@ class PerformanceAndroidEventProcessorTest {
 
         assertTrue(
             tr.spans.any {
+                "process.load" == it.op &&
+                    appStartSpan.spanId == it.parentSpanId
+            }
+        )
+
+        assertTrue(
+            tr.spans.any {
                 "contentprovider.load" == it.op &&
                     appStartSpan.spanId == it.parentSpanId
             }

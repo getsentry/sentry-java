@@ -33,7 +33,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
   private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
   private static final String APP_METRICS_APPLICATION_OP = "application.load";
-  private static final String APP_METRICS_PROCESS_INIT_OP = "process.init";
+  private static final String APP_METRICS_PROCESS_INIT_OP = "process.load";
 
   private boolean sentStartMeasurement = false;
 
