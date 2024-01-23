@@ -3,10 +3,8 @@ on:
   workflow_run:
     workflows: ['System Tests Backend', 'Build', 'AGP Matrix Compatibility']
     types: [completed]
-  push:
-    branches:
-      - main
-  pull_request:
+    branches: [main]
+    pull_request:
 
 permissions:
   contents: read
