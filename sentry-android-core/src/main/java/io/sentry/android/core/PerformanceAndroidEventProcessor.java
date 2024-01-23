@@ -33,6 +33,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
   private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
   private static final String APP_METRICS_APPLICATION_OP = "application.load";
+  private static final String APP_METRICS_PROCESS_INIT_OP = "process.init";
 
   private boolean sentStartMeasurement = false;
 
@@ -153,6 +154,23 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         parentSpanId = span.getSpanId();
         break;
       }
+    }
+
+    // Process init
+    final long classInitUptimeMs = appStartMetrics.getClassLoadedUptimeMs();
+    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+    if (appStartTimeSpan.hasStarted()) {
+      final @NotNull TimeSpan processInitTimeSpan = new TimeSpan();
+      processInitTimeSpan.setStartedAt(appStartTimeSpan.getStartUptimeMs());
+      processInitTimeSpan.setStartUnixTimeMs(appStartTimeSpan.getStartTimestampMs());
+
+      processInitTimeSpan.setStoppedAt(classInitUptimeMs);
+      processInitTimeSpan.setDescription("Process Initialization");
+
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(
+                  processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
     }
 
     // Content Providers

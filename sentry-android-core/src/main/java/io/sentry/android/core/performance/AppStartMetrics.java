@@ -31,6 +31,8 @@ public class AppStartMetrics {
     WARM
   }
 
+  private static final long CLASS_LOADED_UPTIME_MS = SystemClock.uptimeMillis();
+
   private static volatile @Nullable AppStartMetrics instance;
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
@@ -119,6 +121,10 @@ public class AppStartMetrics {
 
   public void addActivityLifecycleTimeSpans(final @NotNull ActivityLifecycleTimeSpan timeSpan) {
     activityLifecycles.add(timeSpan);
+  }
+
+  public long getClassLoadedUptimeMs() {
+    return CLASS_LOADED_UPTIME_MS;
   }
 
   /**
