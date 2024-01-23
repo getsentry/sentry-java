@@ -8,6 +8,7 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -30,7 +31,11 @@ public class SentryCheckInAdvice implements MethodInterceptor {
   private final @NotNull IHub hub;
 
   public SentryCheckInAdvice() {
-    this.hub = HubAdapter.getInstance();
+    this(HubAdapter.getInstance());
+  }
+
+  public SentryCheckInAdvice(final @NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   @Override

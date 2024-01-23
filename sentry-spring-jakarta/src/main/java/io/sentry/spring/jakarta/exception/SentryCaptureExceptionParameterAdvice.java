@@ -5,6 +5,7 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
+import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -24,7 +25,11 @@ public class SentryCaptureExceptionParameterAdvice implements MethodInterceptor 
   private final @NotNull IHub hub;
 
   public SentryCaptureExceptionParameterAdvice() {
-    this.hub = HubAdapter.getInstance();
+    this(HubAdapter.getInstance());
+  }
+
+  public SentryCaptureExceptionParameterAdvice(final @NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   @Override

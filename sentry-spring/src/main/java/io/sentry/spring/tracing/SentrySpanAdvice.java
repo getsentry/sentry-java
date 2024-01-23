@@ -5,6 +5,7 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SpanStatus;
+import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -24,7 +25,11 @@ public class SentrySpanAdvice implements MethodInterceptor {
   private final @NotNull IHub hub;
 
   public SentrySpanAdvice() {
-    this.hub = HubAdapter.getInstance();
+    this(HubAdapter.getInstance());
+  }
+
+  public SentrySpanAdvice(final @NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   @SuppressWarnings("deprecation")

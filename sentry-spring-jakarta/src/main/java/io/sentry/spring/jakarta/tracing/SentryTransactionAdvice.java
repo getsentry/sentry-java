@@ -8,6 +8,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -30,7 +31,11 @@ public class SentryTransactionAdvice implements MethodInterceptor {
   private final @NotNull IHub hub;
 
   public SentryTransactionAdvice() {
-    this.hub = HubAdapter.getInstance();
+    this(HubAdapter.getInstance());
+  }
+
+  public SentryTransactionAdvice(final @NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   @SuppressWarnings("deprecation")
