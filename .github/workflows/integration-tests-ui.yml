@@ -51,7 +51,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           exec &> >(tee -a "test_logs.txt")
-          saucectl -c .sauce/sentry-uitest-android-ui.yml
+          saucectl run -c .sauce/sentry-uitest-android-ui.yml
         if: env.SAUCE_USERNAME != null
         continue-on-error: true
 
