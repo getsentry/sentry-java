@@ -1,10 +1,7 @@
 name: JUnit Test Reports
 on:
   workflow_run:
-    workflows:
-      - 'System Tests Backend'
-      - 'Build'
-      - 'AGP Matrix Compatibility'
+    workflows: ['System Tests Backend', 'Build', 'AGP Matrix Compatibility']
     types: [completed]
 
 permissions:
