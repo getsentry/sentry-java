@@ -6,7 +6,6 @@ import org.junit.Before
 import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class PersonSystemTest {
 
@@ -19,18 +18,13 @@ class PersonSystemTest {
 
     @Test
     fun `get person fails`() {
-        val envelopeCountBefore = testHelper.sentryClient.getEnvelopeCount()
-        println(envelopeCountBefore)
+        testHelper.snapshotEnvelopeCount()
 
         val restClient = testHelper.restClient
         restClient.getPerson(1L)
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
 
-        Thread.sleep(1000)
-
-        val envelopeCountAfter = testHelper.sentryClient.getEnvelopeCount()
-        println(envelopeCountAfter)
-        assertTrue(envelopeCountAfter.envelopes!! > envelopeCountBefore.envelopes!!)
+        testHelper.ensureEnvelopeCountIncreased()
     }
 
     @Test

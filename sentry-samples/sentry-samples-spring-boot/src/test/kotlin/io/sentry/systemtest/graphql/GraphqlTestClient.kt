@@ -1,4 +1,4 @@
-package io.sentry.systemtest.grahql
+package io.sentry.systemtest.graphql
 
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.ApolloResponse
@@ -9,13 +9,8 @@ import io.sentry.samples.graphql.GreetingQuery
 import io.sentry.samples.graphql.ProjectQuery
 import io.sentry.samples.graphql.TasksAndAssigneesQuery
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
 
-class GraphqlTestClient(val backendUrl: String) {
-
-    companion object {
-        val logger = LoggerFactory.getLogger(GraphqlTestClient::class.java)
-    }
+class GraphqlTestClient(backendUrl: String) {
 
     val apollo = ApolloClient.Builder()
         .serverUrl("$backendUrl/graphql")

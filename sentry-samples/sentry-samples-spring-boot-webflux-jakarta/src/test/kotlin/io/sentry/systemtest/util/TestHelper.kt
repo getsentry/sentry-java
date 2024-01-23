@@ -25,7 +25,7 @@ class TestHelper(backendUrl: String) {
         envelopeCounts = sentryClient.getEnvelopeCount()
     }
 
-    fun ensureEnvelopCountIncreased() {
+    fun ensureEnvelopeCountIncreased() {
         Thread.sleep(1000)
         val envelopeCountsAfter = sentryClient.getEnvelopeCount()
         assertTrue(envelopeCountsAfter!!.envelopes!! > envelopeCounts!!.envelopes!!)

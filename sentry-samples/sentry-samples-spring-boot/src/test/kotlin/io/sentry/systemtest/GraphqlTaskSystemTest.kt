@@ -31,6 +31,6 @@ class GraphqlTaskSystemTest {
         assertEquals("C3", firstTask.creatorId)
         assertEquals("C3", firstTask.creator?.id)
 
-        testHelper.ensureEnvelopCountIncreased()
+        testHelper.ensureEnvelopeCountIncreased()
     }
 }

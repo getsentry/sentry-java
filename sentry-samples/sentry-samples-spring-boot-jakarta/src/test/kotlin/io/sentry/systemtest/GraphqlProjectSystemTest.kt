@@ -24,7 +24,7 @@ class GraphqlProjectSystemTest {
 
         testHelper.ensureNoErrors(response)
         assertEquals("proj-slug", response?.data?.project?.slug)
-        testHelper.ensureEnvelopCountIncreased()
+        testHelper.ensureEnvelopeCountIncreased()
     }
 
     @Test
@@ -35,7 +35,7 @@ class GraphqlProjectSystemTest {
 
         testHelper.ensureNoErrors(response)
         assertNotNull(response?.data?.addProject)
-        testHelper.ensureEnvelopCountIncreased()
+        testHelper.ensureEnvelopeCountIncreased()
     }
 
     @Test
@@ -46,6 +46,6 @@ class GraphqlProjectSystemTest {
 
         testHelper.ensureErrorCount(response, 1)
         assertNull(response?.data?.addProject)
-        testHelper.ensureEnvelopCountIncreased()
+        testHelper.ensureEnvelopeCountIncreased()
     }
 }

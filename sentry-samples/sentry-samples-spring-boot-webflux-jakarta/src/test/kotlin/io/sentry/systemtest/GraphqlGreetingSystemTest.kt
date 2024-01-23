@@ -20,7 +20,7 @@ class GraphqlGreetingSystemTest {
         val response = testHelper.graphqlClient.greet("world")
 
         testHelper.ensureNoErrors(response)
-        testHelper.ensureEnvelopCountIncreased()
+        testHelper.ensureEnvelopeCountIncreased()
     }
 
     @Test
@@ -30,6 +30,6 @@ class GraphqlGreetingSystemTest {
         val response = testHelper.graphqlClient.greet("crash")
 
         testHelper.ensureErrorCount(response, 1)
-        testHelper.ensureEnvelopCountIncreased()
+        testHelper.ensureEnvelopeCountIncreased()
     }
 }
