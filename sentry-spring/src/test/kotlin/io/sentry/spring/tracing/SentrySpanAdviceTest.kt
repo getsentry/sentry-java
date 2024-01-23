@@ -2,6 +2,7 @@ package io.sentry.spring.tracing
 
 import io.sentry.IHub
 import io.sentry.Scope
+import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
@@ -150,7 +151,11 @@ class SentrySpanAdviceTest {
         open fun classAnnotatedWithOperationSampleService() = ClassAnnotatedWithOperationSampleService()
 
         @Bean
-        open fun hub() = mock<IHub>()
+        open fun hub(): IHub {
+            val hub = mock<IHub>()
+            Sentry.setCurrentHub(hub)
+            return hub
+        }
     }
 
     open class SampleService {

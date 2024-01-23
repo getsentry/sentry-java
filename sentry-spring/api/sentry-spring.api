@@ -95,13 +95,14 @@ public abstract interface annotation class io/sentry/spring/checkin/SentryCheckI
 }
 
 public class io/sentry/spring/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
 
 public class io/sentry/spring/checkin/SentryCheckInAdviceConfiguration {
 	public fun <init> ()V
-	public fun sentryCheckInAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCheckInAdvice ()Lorg/aopalliance/aop/Advice;
 	public fun sentryCheckInAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
@@ -124,6 +125,7 @@ public abstract interface annotation class io/sentry/spring/exception/SentryCapt
 }
 
 public class io/sentry/spring/exception/SentryCaptureExceptionParameterAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
@@ -139,7 +141,7 @@ public class io/sentry/spring/exception/SentryCaptureExceptionParameterPointcutC
 
 public class io/sentry/spring/exception/SentryExceptionParameterAdviceConfiguration {
 	public fun <init> ()V
-	public fun sentryCaptureExceptionParameterAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryCaptureExceptionParameterAdvice ()Lorg/aopalliance/aop/Advice;
 	public fun sentryCaptureExceptionParameterAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
@@ -190,9 +192,9 @@ public final class io/sentry/spring/graphql/SentrySpringSubscriptionHandler : io
 
 public class io/sentry/spring/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
-	public fun sentrySpanAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentrySpanAdvice ()Lorg/aopalliance/aop/Advice;
 	public fun sentrySpanAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
-	public fun sentryTransactionAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
+	public fun sentryTransactionAdvice ()Lorg/aopalliance/aop/Advice;
 	public fun sentryTransactionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
@@ -203,6 +205,7 @@ public abstract interface annotation class io/sentry/spring/tracing/SentrySpan :
 }
 
 public class io/sentry/spring/tracing/SentrySpanAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
@@ -240,6 +243,7 @@ public abstract interface annotation class io/sentry/spring/tracing/SentryTransa
 }
 
 public class io/sentry/spring/tracing/SentryTransactionAdvice : org/aopalliance/intercept/MethodInterceptor {
+	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 }
