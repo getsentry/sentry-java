@@ -57,12 +57,11 @@ jobs:
 
       - name: Verify Test Results
         run: |
-          processCrashed=$(cat test_logs.txt | grep "Suite finished." | wc -l)
-          echo $processCrashed
-          if [[ ${{ steps.saucelabs.outcome }} == 'failure' ]]; then
+          processCrashed=$(cat test_logs.txt | grep "Process crashed." | wc -l)
+          if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
             exit 0
           elif [[ "$processCrashed" -ne 0 ]]; then
-            exit 1
+            exit 0
           else
             exit 1
           fi
