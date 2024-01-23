@@ -11,6 +11,7 @@
     - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
     - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
     - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
+- Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
 
 ### Fixes
 
