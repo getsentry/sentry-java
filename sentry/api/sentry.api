@@ -1637,7 +1637,7 @@ public final class io/sentry/SendFireAndForgetOutboxSender : io/sentry/SendCache
 }
 
 public final class io/sentry/Sentry {
-	public static final field STARTUP_PROFILING_CONFIG_FILE_NAME Ljava/lang/String;
+	public static final field APP_START_PROFILING_CONFIG_FILE_NAME Ljava/lang/String;
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public static fun addBreadcrumb (Ljava/lang/String;)V
@@ -1704,6 +1704,44 @@ public final class io/sentry/Sentry {
 
 public abstract interface class io/sentry/Sentry$OptionsConfiguration {
 	public abstract fun configure (Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getProfileSampleRate ()Ljava/lang/Double;
+	public fun getProfilingTracesDirPath ()Ljava/lang/String;
+	public fun getProfilingTracesHz ()I
+	public fun getTraceSampleRate ()Ljava/lang/Double;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun isProfileSampled ()Z
+	public fun isProfilingEnabled ()Z
+	public fun isTraceSampled ()Z
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setProfileSampleRate (Ljava/lang/Double;)V
+	public fun setProfileSampled (Z)V
+	public fun setProfilingEnabled (Z)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
+	public fun setProfilingTracesHz (I)V
+	public fun setTraceSampleRate (Ljava/lang/Double;)V
+	public fun setTraceSampled (Z)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryAppStartProfilingOptions$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryAppStartProfilingOptions;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
+	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
+	public static final field PROFILE_SAMPLED Ljava/lang/String;
+	public static final field PROFILE_SAMPLE_RATE Ljava/lang/String;
+	public static final field PROFILING_TRACES_DIR_PATH Ljava/lang/String;
+	public static final field PROFILING_TRACES_HZ Ljava/lang/String;
+	public static final field TRACE_SAMPLED Ljava/lang/String;
+	public static final field TRACE_SAMPLE_RATE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryAutoDateProvider : io/sentry/SentryDateProvider {
@@ -2120,7 +2158,6 @@ public class io/sentry/SentryOptions {
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
-	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
@@ -2174,13 +2211,13 @@ public class io/sentry/SentryOptions {
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
+	public fun isEnableAppStartProfiling ()Z
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableBackpressureHandling ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableShutdownHook ()Z
-	public fun isEnableStartupProfiling ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
@@ -2212,13 +2249,13 @@ public class io/sentry/SentryOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableAppStartProfiling (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableShutdownHook (Z)V
-	public fun setEnableStartupProfiling (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
@@ -2231,7 +2268,6 @@ public class io/sentry/SentryOptions {
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setGestureTargetLocators (Ljava/util/List;)V
-	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
@@ -2337,44 +2373,6 @@ public final class io/sentry/SentryStackTraceFactory {
 	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;Z)Ljava/util/List;
 	public fun isInApp (Ljava/lang/String;)Ljava/lang/Boolean;
-}
-
-public final class io/sentry/SentryStartupProfilingOptions : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
-	public fun getProfileSampleRate ()Ljava/lang/Double;
-	public fun getProfilingTracesDirPath ()Ljava/lang/String;
-	public fun getProfilingTracesHz ()I
-	public fun getTraceSampleRate ()Ljava/lang/Double;
-	public fun getUnknown ()Ljava/util/Map;
-	public fun isProfileSampled ()Z
-	public fun isProfilingEnabled ()Z
-	public fun isTraceSampled ()Z
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-	public fun setProfileSampleRate (Ljava/lang/Double;)V
-	public fun setProfileSampled (Z)V
-	public fun setProfilingEnabled (Z)V
-	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
-	public fun setProfilingTracesHz (I)V
-	public fun setTraceSampleRate (Ljava/lang/Double;)V
-	public fun setTraceSampled (Z)V
-	public fun setUnknown (Ljava/util/Map;)V
-}
-
-public final class io/sentry/SentryStartupProfilingOptions$Deserializer : io/sentry/JsonDeserializer {
-	public fun <init> ()V
-	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryStartupProfilingOptions;
-	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/SentryStartupProfilingOptions$JsonKeys {
-	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
-	public static final field PROFILE_SAMPLED Ljava/lang/String;
-	public static final field PROFILE_SAMPLE_RATE Ljava/lang/String;
-	public static final field PROFILING_TRACES_DIR_PATH Ljava/lang/String;
-	public static final field PROFILING_TRACES_HZ Ljava/lang/String;
-	public static final field TRACE_SAMPLED Ljava/lang/String;
-	public static final field TRACE_SAMPLE_RATE Ljava/lang/String;
-	public fun <init> ()V
 }
 
 public final class io/sentry/SentryThreadFactory {
@@ -2764,8 +2762,8 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
-	public fun isForNextStartup ()Z
-	public fun setForNextStartup (Z)V
+	public fun isForNextAppStart ()Z
+	public fun setForNextAppStart (Z)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setParentSampled (Ljava/lang/Boolean;)V
@@ -2785,15 +2783,15 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
+	public fun isAppStartTransaction ()Z
 	public fun isBindToScope ()Z
-	public fun isStartupTransaction ()Z
 	public fun isWaitForChildren ()Z
+	public fun setAppStartTransaction (Z)V
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
 	public fun setDeadlineTimeout (Ljava/lang/Long;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
-	public fun setStartupTransaction (Z)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
 	public fun setWaitForChildren (Z)V
 }

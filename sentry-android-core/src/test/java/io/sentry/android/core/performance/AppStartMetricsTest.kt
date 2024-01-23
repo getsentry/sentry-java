@@ -44,8 +44,8 @@ class AppStartMetricsTest {
         metrics.addActivityLifecycleTimeSpans(ActivityLifecycleTimeSpan())
         AppStartMetrics.onApplicationCreate(mock<Application>())
         AppStartMetrics.onContentProviderCreate(mock<ContentProvider>())
-        metrics.setStartupProfiler(mock())
-        metrics.startupSamplingDecision = mock()
+        metrics.setAppStartProfiler(mock())
+        metrics.appStartSamplingDecision = mock()
 
         metrics.clear()
 
@@ -56,8 +56,8 @@ class AppStartMetricsTest {
 
         assertTrue(metrics.activityLifecycleTimeSpans.isEmpty())
         assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
-        assertNull(metrics.startupProfiler)
-        assertNull(metrics.startupSamplingDecision)
+        assertNull(metrics.appStartProfiler)
+        assertNull(metrics.appStartSamplingDecision)
     }
 
     @Test

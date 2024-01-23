@@ -981,8 +981,8 @@ class JsonSerializerTest {
     }
 
     @Test
-    fun `serializing SentryStartupProfilingOptions`() {
-        val actual = serializeToString(startupProfilingOptions)
+    fun `serializing SentryAppStartProfilingOptions`() {
+        val actual = serializeToString(appStartProfilingOptions)
 
         val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
             "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
@@ -991,19 +991,19 @@ class JsonSerializerTest {
     }
 
     @Test
-    fun `deserializing SentryStartupProfilingOptions`() {
-        val jsonStartupProfilingOptions = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\"" +
+    fun `deserializing SentryAppStartProfilingOptions`() {
+        val jsonAppStartProfilingOptions = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\"" +
             ":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
-        val actual = fixture.serializer.deserialize(StringReader(jsonStartupProfilingOptions), SentryStartupProfilingOptions::class.java)
+        val actual = fixture.serializer.deserialize(StringReader(jsonAppStartProfilingOptions), SentryAppStartProfilingOptions::class.java)
         assertNotNull(actual)
-        assertEquals(startupProfilingOptions.traceSampled, actual.traceSampled)
-        assertEquals(startupProfilingOptions.traceSampleRate, actual.traceSampleRate)
-        assertEquals(startupProfilingOptions.profileSampled, actual.profileSampled)
-        assertEquals(startupProfilingOptions.profileSampleRate, actual.profileSampleRate)
-        assertEquals(startupProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
-        assertEquals(startupProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
-        assertEquals(startupProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
+        assertEquals(appStartProfilingOptions.traceSampled, actual.traceSampled)
+        assertEquals(appStartProfilingOptions.traceSampleRate, actual.traceSampleRate)
+        assertEquals(appStartProfilingOptions.profileSampled, actual.profileSampled)
+        assertEquals(appStartProfilingOptions.profileSampleRate, actual.profileSampleRate)
+        assertEquals(appStartProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
+        assertEquals(appStartProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
+        assertEquals(appStartProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
         assertNull(actual.unknown)
     }
 
@@ -1283,7 +1283,7 @@ class JsonSerializerTest {
         }
     }
 
-    private val startupProfilingOptions = SentryStartupProfilingOptions().apply {
+    private val appStartProfilingOptions = SentryAppStartProfilingOptions().apply {
         traceSampled = false
         traceSampleRate = 0.1
         profileSampled = true

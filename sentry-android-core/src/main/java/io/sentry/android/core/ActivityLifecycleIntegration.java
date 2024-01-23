@@ -206,22 +206,22 @@ public final class ActivityLifecycleIntegration
 
         // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
         final @NotNull SentryDate ttidStartTime;
-        final @Nullable TracesSamplingDecision startupSamplingDecision;
+        final @Nullable TracesSamplingDecision appStartSamplingDecision;
 
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
           // The first activity ttid/ttfd spans should start at the app start time
           ttidStartTime = appStartTime;
-          // The app start transaction inherits the sampling decision from the startup profiling,
+          // The app start transaction inherits the sampling decision from the app start profiling,
           // then clears it
-          startupSamplingDecision = AppStartMetrics.getInstance().getStartupSamplingDecision();
-          AppStartMetrics.getInstance().setStartupSamplingDecision(null);
+          appStartSamplingDecision = AppStartMetrics.getInstance().getAppStartSamplingDecision();
+          AppStartMetrics.getInstance().setAppStartSamplingDecision(null);
         } else {
           // The ttid/ttfd spans should start when the previous activity called its onPause method
           ttidStartTime = lastPausedTime;
-          startupSamplingDecision = null;
+          appStartSamplingDecision = null;
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
-        transactionOptions.setStartupTransaction(startupSamplingDecision != null);
+        transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
 
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
@@ -230,7 +230,7 @@ public final class ActivityLifecycleIntegration
                     activityName,
                     TransactionNameSource.COMPONENT,
                     UI_LOAD_OP,
-                    startupSamplingDecision),
+                    appStartSamplingDecision),
                 transactionOptions);
         setSpanOrigin(transaction);
 

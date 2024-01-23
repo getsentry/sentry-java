@@ -418,6 +418,8 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
+	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
@@ -425,16 +427,14 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
-	public fun getStartupProfiler ()Lio/sentry/ITransactionProfiler;
-	public fun getStartupSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun isAppLaunchedInForeground ()Z
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
+	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
+	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
-	public fun setStartupProfiler (Lio/sentry/ITransactionProfiler;)V
-	public fun setStartupSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {

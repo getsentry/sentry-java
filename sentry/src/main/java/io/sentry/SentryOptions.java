@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -286,9 +285,6 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
-  /** HostnameVerifier for self-signed certificate trust* */
-  private @Nullable HostnameVerifier hostnameVerifier;
-
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
 
@@ -454,8 +450,8 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
 
-  /** Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate. */
-  private boolean enableStartupProfiling = false;
+  /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
+  private boolean enableAppStartProfiling = false;
 
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
@@ -1339,24 +1335,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns HostnameVerifier
-   *
-   * @return HostnameVerifier object or null
-   */
-  public @Nullable HostnameVerifier getHostnameVerifier() {
-    return hostnameVerifier;
-  }
-
-  /**
-   * Set custom HostnameVerifier
-   *
-   * @param hostnameVerifier the HostnameVerifier
-   */
-  public void setHostnameVerifier(final @Nullable HostnameVerifier hostnameVerifier) {
-    this.hostnameVerifier = hostnameVerifier;
-  }
-
-  /**
    * Sets the SdkVersion object
    *
    * @param sdkVersion the SdkVersion object or null
@@ -2154,22 +2132,22 @@ public class SentryOptions {
   }
 
   /**
-   * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
-   * Depends on {@link SentryOptions#isProfilingEnabled()}
+   * Whether to profile app launches, depending on profilesSampler or profilesSampleRate. Depends on
+   * {@link SentryOptions#isProfilingEnabled()}
    *
-   * @return true if startup profiling should be started.
+   * @return true if app launches should be profiled.
    */
-  public boolean isEnableStartupProfiling() {
-    return isProfilingEnabled() && enableStartupProfiling;
+  public boolean isEnableAppStartProfiling() {
+    return isProfilingEnabled() && enableAppStartProfiling;
   }
 
   /**
-   * Whether to enable startup profiling, depending on profilesSampler or profilesSampleRate.
+   * Whether to profile app launches, depending on profilesSampler or profilesSampleRate.
    *
-   * @param enableStartupProfiling true if startup profiling should be started.
+   * @param enableAppStartProfiling true if app launches should be profiled.
    */
-  public void setEnableStartupProfiling(boolean enableStartupProfiling) {
-    this.enableStartupProfiling = enableStartupProfiling;
+  public void setEnableAppStartProfiling(boolean enableAppStartProfiling) {
+    this.enableAppStartProfiling = enableAppStartProfiling;
   }
 
   /**

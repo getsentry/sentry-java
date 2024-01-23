@@ -749,8 +749,8 @@ public final class Hub implements IHub {
         if (!transactionProfiler.isRunning()) {
           transactionProfiler.start();
           transactionProfiler.bindTransaction(transaction);
-        } else if (transactionOptions.isStartupTransaction()) {
-          // If the profiler is running and the current transaction is the app startup, we bind it.
+        } else if (transactionOptions.isAppStartTransaction()) {
+          // If the profiler is running and the current transaction is the app start, we bind it.
           transactionProfiler.bindTransaction(transaction);
         }
       }

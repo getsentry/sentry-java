@@ -54,8 +54,8 @@ public final class Sentry {
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
 
   @ApiStatus.Internal
-  public static final @NotNull String STARTUP_PROFILING_CONFIG_FILE_NAME =
-      "startup_profiling_config";
+  public static final @NotNull String APP_START_PROFILING_CONFIG_FILE_NAME =
+      "app_start_profiling_config";
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -257,11 +257,11 @@ public final class Sentry {
 
     finalizePreviousSession(options, HubAdapter.getInstance());
 
-    handleStartupProfilingConfig(options, options.getExecutorService());
+    handleAppStartProfilingConfig(options, options.getExecutorService());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  private static void handleStartupProfilingConfig(
+  private static void handleAppStartProfilingConfig(
       final @NotNull SentryOptions options,
       final @NotNull ISentryExecutorService sentryExecutorService) {
     try {
@@ -269,12 +269,12 @@ public final class Sentry {
           () -> {
             final String cacheDirPath = options.getCacheDirPathWithoutDsn();
             if (cacheDirPath != null) {
-              final @NotNull File startupProfilingConfigFile =
-                  new File(cacheDirPath, STARTUP_PROFILING_CONFIG_FILE_NAME);
+              final @NotNull File appStartProfilingConfigFile =
+                  new File(cacheDirPath, APP_START_PROFILING_CONFIG_FILE_NAME);
               try {
-                // We always delete the config file for startup profiling
-                FileUtils.deleteRecursively(startupProfilingConfigFile);
-                if (!options.isEnableStartupProfiling()) {
+                // We always delete the config file for app start profiling
+                FileUtils.deleteRecursively(appStartProfilingConfigFile);
+                if (!options.isEnableAppStartProfiling()) {
                   return;
                 }
                 if (!options.isTracingEnabled()) {
@@ -282,25 +282,26 @@ public final class Sentry {
                       .getLogger()
                       .log(
                           SentryLevel.INFO,
-                          "Tracing is disabled and startup profiling will not start.");
+                          "Tracing is disabled and app start profiling will not start.");
                   return;
                 }
-                if (startupProfilingConfigFile.createNewFile()) {
-                  final @NotNull TracesSamplingDecision startupSamplingDecision =
-                      sampleStartupProfiling(options);
-                  final @NotNull SentryStartupProfilingOptions startupProfilingOptions =
-                      new SentryStartupProfilingOptions(options, startupSamplingDecision);
+                if (appStartProfilingConfigFile.createNewFile()) {
+                  final @NotNull TracesSamplingDecision appStartSamplingDecision =
+                      sampleAppStartProfiling(options);
+                  final @NotNull SentryAppStartProfilingOptions appStartProfilingOptions =
+                      new SentryAppStartProfilingOptions(options, appStartSamplingDecision);
                   try (final OutputStream outputStream =
-                          new FileOutputStream(startupProfilingConfigFile);
+                          new FileOutputStream(appStartProfilingConfigFile);
                       final Writer writer =
                           new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-                    options.getSerializer().serialize(startupProfilingOptions, writer);
+                    options.getSerializer().serialize(appStartProfilingOptions, writer);
                   }
                 }
               } catch (Throwable e) {
                 options
                     .getLogger()
-                    .log(SentryLevel.ERROR, "Unable to create startup profiling config file. ", e);
+                    .log(
+                        SentryLevel.ERROR, "Unable to create app start profiling config file. ", e);
               }
             }
           });
@@ -309,17 +310,17 @@ public final class Sentry {
           .getLogger()
           .log(
               SentryLevel.ERROR,
-              "Failed to call the executor. Startup profiling config will not be changed. Did you call Sentry.close()?",
+              "Failed to call the executor. App start profiling config will not be changed. Did you call Sentry.close()?",
               e);
     }
   }
 
-  private static @NotNull TracesSamplingDecision sampleStartupProfiling(
+  private static @NotNull TracesSamplingDecision sampleAppStartProfiling(
       final @NotNull SentryOptions options) {
-    TransactionContext startupTransactionContext = new TransactionContext("app.launch", "profile");
-    startupTransactionContext.setForNextStartup(true);
-    SamplingContext startupSamplingContext = new SamplingContext(startupTransactionContext, null);
-    return new TracesSampler(options).sample(startupSamplingContext);
+    TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
+    appStartTransactionContext.setForNextAppStart(true);
+    SamplingContext appStartSamplingContext = new SamplingContext(appStartTransactionContext, null);
+    return new TracesSampler(options).sample(appStartSamplingContext);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

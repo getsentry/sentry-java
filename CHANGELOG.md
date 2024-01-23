@@ -4,13 +4,21 @@
 
 ### Features
 
-- Added Startup profiling
-    - This depends on the new option `io.sentry.profiling.enable-startup`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
-    - Sampler functions can check the new `isForNextStartup` flag, to adjust startup profiling sampling programmatically.
+- Added App Start profiling
+    - This depends on the new option `io.sentry.profiling.enable-app-start`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
+    - Sampler functions can check the new `isForNextAppStart` flag, to adjust startup profiling sampling programmatically.
       Relevant PRs:
     - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
     - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
     - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
+
+### Breaking changes
+
+- Remove `HostnameVerifier` option as it's flagged by security tools of some app stores ([#3150](https://github.com/getsentry/sentry-java/pull/3150))
+  - If you were using this option, you have 3 possible paths going forward:
+    - Provide a custom `ITransportFactory` through `SentryOptions.setTransportFactory()`, where you can copy over most of the parts like `HttpConnection` and `AsyncHttpTransport` from the SDK with necessary modifications
+    - Get a certificate for your server through e.g. [Let's Encrypt](https://letsencrypt.org/)
+    - Fork the SDK and add the hostname verifier back
 
 ### Dependencies
 
@@ -995,6 +1003,9 @@ val apolloClient = ApolloClient.Builder()
 - New package `sentry-android-navigation` for AndroidX Navigation support ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
 - New package `sentry-compose` for Jetpack Compose support (Navigation) ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
 - Add sample rate to baggage as well as trace in envelope header and flatten user ([#2135](https://github.com/getsentry/sentry-java/pull/2135))
+
+Breaking Changes:
+- The boolean parameter `samplingDecision` in the `TransactionContext` constructor has been replaced with a `TracesSamplingDecision` object. Feel free to ignore the `@ApiStatus.Internal` in this case.
 
 ## 6.1.4
 

@@ -41,8 +41,8 @@ public class AppStartMetrics {
   private final @NotNull TimeSpan applicationOnCreate;
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
-  private @Nullable ITransactionProfiler startupProfiler = null;
-  private @Nullable TracesSamplingDecision startupSamplingDecision = null;
+  private @Nullable ITransactionProfiler appStartProfiler = null;
+  private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
 
   public static @NotNull AppStartMetrics getInstance() {
 
@@ -147,28 +147,28 @@ public class AppStartMetrics {
     applicationOnCreate.reset();
     contentProviderOnCreates.clear();
     activityLifecycles.clear();
-    if (startupProfiler != null) {
-      startupProfiler.close();
+    if (appStartProfiler != null) {
+      appStartProfiler.close();
     }
-    startupProfiler = null;
-    startupSamplingDecision = null;
+    appStartProfiler = null;
+    appStartSamplingDecision = null;
   }
 
-  public @Nullable ITransactionProfiler getStartupProfiler() {
-    return startupProfiler;
+  public @Nullable ITransactionProfiler getAppStartProfiler() {
+    return appStartProfiler;
   }
 
-  public void setStartupProfiler(final @Nullable ITransactionProfiler startupProfiler) {
-    this.startupProfiler = startupProfiler;
+  public void setAppStartProfiler(final @Nullable ITransactionProfiler appStartProfiler) {
+    this.appStartProfiler = appStartProfiler;
   }
 
-  public void setStartupSamplingDecision(
-      final @Nullable TracesSamplingDecision startupSamplingDecision) {
-    this.startupSamplingDecision = startupSamplingDecision;
+  public void setAppStartSamplingDecision(
+      final @Nullable TracesSamplingDecision appStartSamplingDecision) {
+    this.appStartSamplingDecision = appStartSamplingDecision;
   }
 
-  public @Nullable TracesSamplingDecision getStartupSamplingDecision() {
-    return startupSamplingDecision;
+  public @Nullable TracesSamplingDecision getAppStartSamplingDecision() {
+    return appStartSamplingDecision;
   }
 
   /**
