@@ -17,6 +17,7 @@ jobs:
     # we copy the secret to the env variable in order to access it in the workflow
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
 
     steps:
       - name: Git checkout
@@ -36,40 +37,29 @@ jobs:
         if: env.SAUCE_USERNAME != null
         run: make assembleUiTests
 
-      - name: Run Tests in SauceLab
-        id: saucelabs
+      - name: Install SauceLabs CLI
         uses: saucelabs/saucectl-run-action@7fe025ef1fdc6f211add3751a6c7d8bba27ba9b1 # pin@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          sauce-username: ${{ secrets.SAUCE_USERNAME }}
-          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
-          config-file: .sauce/sentry-uitest-android-ui.yml
+          skip-run: true
+        if: env.SAUCE_USERNAME != null
+
+      - name: Run Tests
+        id: saucelabs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          exec &> >(tee -a "test_logs.txt")
+          saucectl -c .sauce/sentry-uitest-android-ui.yml
         if: env.SAUCE_USERNAME != null
         continue-on-error: true
 
-      - name: Get Job ID
-        id: get-job-id
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
-          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
-          echo "job_id=$job_id" >> $GITHUB_OUTPUT
-
       - name: Verify Test Results
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          previousStepLogs="$(gh api \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/getsentry/sentry-java/actions/jobs/${{ steps.get-job-id.outputs.job_id }}/logs)"
-
-          processCrashed=$(grep "Suite finished." <<< "$previousStepLogs" | wc -l)
-          echo $previousStepLogs
+          processCrashed=$(cat test_logs.txt | grep "Suite finished." | wc -l)
           echo $processCrashed
-          if [[ "${{ steps.saucelabs.outcome }}" = "success" ]]; then
+          if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
             exit 0
           elif [[ "$processCrashed" -ne 0 ]]; then
             exit 1
