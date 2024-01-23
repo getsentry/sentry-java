@@ -15,6 +15,7 @@
 ### Fixes
 
 - Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
+- Fix UserFeedback disk cache name conflicts with linked events ([#3116](https://github.com/getsentry/sentry-java/pull/3116))
 
 ### Breaking changes
 
@@ -23,10 +24,6 @@
     - Provide a custom `ITransportFactory` through `SentryOptions.setTransportFactory()`, where you can copy over most of the parts like `HttpConnection` and `AsyncHttpTransport` from the SDK with necessary modifications
     - Get a certificate for your server through e.g. [Let's Encrypt](https://letsencrypt.org/)
     - Fork the SDK and add the hostname verifier back
-
-### Fixes
-
-- Fix UserFeedback disk cache name conflicts with linked events ([#3116](https://github.com/getsentry/sentry-java/pull/3116))
 
 ### Dependencies
 
