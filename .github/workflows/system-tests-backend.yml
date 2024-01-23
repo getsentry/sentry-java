@@ -70,7 +70,7 @@ jobs:
         uses: dorny/test-reporter@afe6793191b75b608954023a46831a3fe10048d4 # pin@v1.7.0
         if: always()
         with:
-          name: JUnit Tests ${{ matrix.sample }}
+          name: JUnit System Tests ${{ matrix.sample }}
           path: |
             **/build/test-results/**/*.xml
           reporter: java-junit

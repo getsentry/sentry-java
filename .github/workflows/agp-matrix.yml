@@ -76,3 +76,14 @@ jobs:
             **/build/reports/*
             **/build/outputs/*/connected/*
             **/build/outputs/mapping/release/*
+
+      - name: Test Report
+        uses: dorny/test-reporter@afe6793191b75b608954023a46831a3fe10048d4 # pin@v1.7.0
+        if: always()
+        with:
+          name: JUnit AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
+          path: |
+            **/build/test-results/**/*.xml
+          reporter: java-junit
+          fail-on-error: false
+          fail-on-empty: false
