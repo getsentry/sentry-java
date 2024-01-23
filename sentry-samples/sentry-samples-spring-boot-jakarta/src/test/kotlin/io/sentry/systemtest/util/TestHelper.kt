@@ -1,6 +1,7 @@
 package io.sentry.systemtest.util
 
 import com.apollographql.apollo3.api.ApolloResponse
+import com.apollographql.apollo3.api.Operation
 import io.sentry.systemtest.graphql.GraphqlTestClient
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,12 +31,12 @@ class TestHelper(backendUrl: String) {
         assertTrue(envelopeCountsAfter!!.envelopes!! > envelopeCounts!!.envelopes!!)
     }
 
-    fun ensureNoErrors(response: ApolloResponse<Any?>?) {
+    fun <T : Operation.Data> ensureNoErrors(response: ApolloResponse<T>?) {
         response ?: throw RuntimeException("no response")
         assertFalse(response.hasErrors())
     }
 
-    fun ensureErrorCount(response: ApolloResponse<Any?>?, errorCount: Int) {
+    fun <T : Operation.Data> ensureErrorCount(response: ApolloResponse<T>?, errorCount: Int) {
         response ?: throw RuntimeException("no response")
         assertEquals(errorCount, response.errors?.size)
     }
