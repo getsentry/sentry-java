@@ -3,6 +3,9 @@ on:
   workflow_run:
     workflows: ['System Tests Backend', 'Build', 'AGP Matrix Compatibility']
     types: [completed]
+    branches:
+      - main
+      - feat/**
 
 permissions:
   contents: read
