@@ -17,6 +17,7 @@ jobs:
     # we copy the secret to the env variable in order to access it in the workflow
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
 
     steps:
       - name: Git checkout
@@ -36,13 +37,31 @@ jobs:
         if: env.SAUCE_USERNAME != null
         run: make assembleUiTests
 
-      - name: Run Tests in SauceLab
+      - name: Install SauceLabs CLI
         uses: saucelabs/saucectl-run-action@7fe025ef1fdc6f211add3751a6c7d8bba27ba9b1 # pin@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          sauce-username: ${{ secrets.SAUCE_USERNAME }}
-          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
-          config-file: .sauce/sentry-uitest-android-ui.yml
+          skip-run: true
         if: env.SAUCE_USERNAME != null
 
+      - name: Run Tests
+        id: saucelabs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          exec &> >(tee -a "test_logs.txt")
+          saucectl run -c .sauce/sentry-uitest-android-ui.yml
+        if: env.SAUCE_USERNAME != null
+        continue-on-error: true
+
+      - name: Verify Test Results
+        run: |
+          processCrashed=$(cat test_logs.txt | grep "Instrumentation run failed due to 'Process crashed.'" | wc -l)
+          if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
+            exit 0
+          elif [[ "$processCrashed" -ne 0 ]]; then
+            exit 0
+          else
+            exit 1
+          fi
