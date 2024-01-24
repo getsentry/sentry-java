@@ -18,8 +18,6 @@ type Project {
     slug: ID!
     """ Project name """
     name: String
-    """ URL of the git repository """
-    repositoryUrl: String!
     """ Current support status """
     status: ProjectStatus!
 }
