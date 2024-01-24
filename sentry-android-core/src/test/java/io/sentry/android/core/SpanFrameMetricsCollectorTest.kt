@@ -1,16 +1,20 @@
 package io.sentry.android.core
 
 import io.sentry.ISpan
+import io.sentry.ITransaction
 import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
+import io.sentry.SentryLongDate
 import io.sentry.SpanContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
+import io.sentry.protocol.MeasurementValue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 
 class SpanFrameMetricsCollectorTest {
@@ -31,8 +35,20 @@ class SpanFrameMetricsCollectorTest {
         }
     }
 
-    private fun createFakeSpan(): ISpan {
+    private fun createFakeSpan(
+        startTimeStampNanos: Long = 1000,
+        endTimeStampNanos: Long? = 2000
+    ): ISpan {
         val span = mock<ISpan>()
+        val spanContext = SpanContext("op.fake")
+        whenever(span.spanContext).thenReturn(spanContext)
+        whenever(span.startDate).thenReturn(SentryLongDate(startTimeStampNanos))
+        whenever(span.finishDate).thenReturn(if (endTimeStampNanos != null) SentryLongDate(endTimeStampNanos) else null)
+        return span
+    }
+
+    private fun createFakeTxn(): ITransaction {
+        val span = mock<ITransaction>()
         val spanContext = SpanContext("op.fake")
         whenever(span.spanContext).thenReturn(spanContext)
         return span
@@ -150,6 +166,122 @@ class SpanFrameMetricsCollectorTest {
         verify(span1).setData("frames.slow", 1)
         verify(span1).setData("frames.frozen", 0)
         verify(span1).setData("frames.total", 1)
+    }
+
+    @Test
+    fun `measurements are not set on spans`() {
+        val sut = fixture.getSut()
+
+        val span = createFakeSpan()
+        sut.onSpanStarted(span)
+        sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
+        sut.onSpanFinished(span)
+
+        // then the metrics are set on the spans
+        verify(span).setData("frames.total", 1)
+        verify(span, never()).setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, 1)
+    }
+
+    @Test
+    fun `measurements are set on transactions`() {
+        val sut = fixture.getSut()
+
+        // when the first span starts
+        val txn = createFakeTxn()
+        sut.onSpanStarted(txn)
+        sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
+        sut.onSpanFinished(txn)
+
+        // then the metrics are set on the spans
+        verify(txn).setData("frames.total", 1)
+        verify(txn).setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, 1)
+    }
+
+    @Test
+    fun `when no frame data is collected the total count is interpolated`() {
+        val sut = fixture.getSut()
+
+        // given a span which lasts for 1 second
+        val span = createFakeSpan(
+            TimeUnit.SECONDS.toNanos(1),
+            TimeUnit.SECONDS.toNanos(2)
+        )
+
+        sut.onSpanStarted(span)
+        // but no frames are drawn
+
+        // and the span finishes
+        sut.onSpanFinished(span)
+
+        // then still 60 fps should be reported (1 second at 60fps)
+        verify(span).setData("frames.total", 60)
+        verify(span).setData("frames.slow", 0)
+        verify(span).setData("frames.frozen", 0)
+    }
+
+    @Test
+    fun `when frame data is only partially collected the total count is still interpolated`() {
+        val sut = fixture.getSut()
+
+        // given a span which lasts for 1 second
+        val span = createFakeSpan(
+            startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
+            endTimeStampNanos = TimeUnit.SECONDS.toNanos(2)
+        )
+
+        sut.onSpanStarted(span)
+
+        // when one frozen frame is recorded
+        sut.onFrameMetricCollected(
+            TimeUnit.MILLISECONDS.toNanos(1000),
+            TimeUnit.MILLISECONDS.toNanos(1800),
+            TimeUnit.MILLISECONDS.toNanos(800),
+            TimeUnit.MILLISECONDS.toNanos(800 - 16),
+            false,
+            true,
+            60.0f
+        )
+
+        // and the span finishes
+        sut.onSpanFinished(span)
+
+        // then 13 frames should be reported
+        // 1 frame at 800ms + 12 frames at 16ms = 992ms
+        verify(span).setData("frames.total", 13)
+        verify(span).setData("frames.slow", 0)
+        verify(span).setData("frames.frozen", 1)
+    }
+
+    @Test
+    fun `when frame data is only partially collected the total count is not interpolated in case the span didn't finish`() {
+        val sut = fixture.getSut()
+
+        // given a span which lasts for 1 second
+        val span = createFakeSpan(
+            startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
+            endTimeStampNanos = null
+        )
+
+        sut.onSpanStarted(span)
+
+        // when one frozen frame is recorded
+        sut.onFrameMetricCollected(
+            TimeUnit.MILLISECONDS.toNanos(1000),
+            TimeUnit.MILLISECONDS.toNanos(1800),
+            TimeUnit.MILLISECONDS.toNanos(800),
+            TimeUnit.MILLISECONDS.toNanos(800 - 16),
+            false,
+            true,
+            60.0f
+        )
+
+        // and the span finishes
+        sut.onSpanFinished(span)
+
+        // then only 1 total frame should be reported, as the span has no finish date
+        verify(span).setData("frames.total", 1)
+        verify(span).setData("frames.slow", 0)
+        verify(span).setData("frames.frozen", 1)
     }
 
     @Test

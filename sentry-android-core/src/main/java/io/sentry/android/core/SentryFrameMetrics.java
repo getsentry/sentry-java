@@ -13,14 +13,17 @@ final class SentryFrameMetrics {
   private long slowFrameDelayNanos;
   private long frozenFrameDelayNanos;
 
+  private long totalDurationNanos;
+
   public SentryFrameMetrics() {}
 
   public SentryFrameMetrics(
-      int normalFrameCount,
-      int slowFrameCount,
-      long slowFrameDelayNanos,
-      int frozenFrameCount,
-      long frozenFrameDelayNanos) {
+      final int normalFrameCount,
+      final int slowFrameCount,
+      final long slowFrameDelayNanos,
+      final int frozenFrameCount,
+      final long frozenFrameDelayNanos,
+      final long totalDurationNanos) {
     this.normalFrameCount = normalFrameCount;
 
     this.slowFrameCount = slowFrameCount;
@@ -28,19 +31,23 @@ final class SentryFrameMetrics {
 
     this.frozenFrameCount = frozenFrameCount;
     this.frozenFrameDelayNanos = frozenFrameDelayNanos;
+    this.totalDurationNanos = totalDurationNanos;
   }
 
-  public void addSlowFrame(final long delayNanos) {
+  public void addSlowFrame(final long durationNanos, final long delayNanos) {
+    totalDurationNanos += durationNanos;
     slowFrameDelayNanos += delayNanos;
     slowFrameCount++;
   }
 
-  public void addFrozenFrame(final long delayNanos) {
+  public void addFrozenFrame(final long durationNanos, final long delayNanos) {
+    totalDurationNanos += durationNanos;
     frozenFrameDelayNanos += delayNanos;
     frozenFrameCount++;
   }
 
-  public void addNormalFrame() {
+  public void addNormalFrame(final long durationNanos) {
+    totalDurationNanos += durationNanos;
     normalFrameCount++;
   }
 
@@ -68,6 +75,10 @@ final class SentryFrameMetrics {
     return normalFrameCount + slowFrameCount + frozenFrameCount;
   }
 
+  public long getTotalDurationNanos() {
+    return totalDurationNanos;
+  }
+
   public void clear() {
     normalFrameCount = 0;
 
@@ -76,6 +87,8 @@ final class SentryFrameMetrics {
 
     frozenFrameCount = 0;
     frozenFrameDelayNanos = 0;
+
+    totalDurationNanos = 0;
   }
 
   @NotNull
@@ -85,7 +98,8 @@ final class SentryFrameMetrics {
         slowFrameCount,
         slowFrameDelayNanos,
         frozenFrameCount,
-        frozenFrameDelayNanos);
+        frozenFrameDelayNanos,
+        totalDurationNanos);
   }
 
   /**
@@ -99,11 +113,20 @@ final class SentryFrameMetrics {
         slowFrameCount - other.slowFrameCount,
         slowFrameDelayNanos - other.slowFrameDelayNanos,
         frozenFrameCount - other.frozenFrameCount,
-        frozenFrameDelayNanos - other.frozenFrameDelayNanos);
+        frozenFrameDelayNanos - other.frozenFrameDelayNanos,
+        totalDurationNanos - other.totalDurationNanos);
   }
 
+  /**
+   * @return true if the frame metrics contain valid data, meaning all values are greater or equal
+   *     to 0
+   */
   public boolean containsValidData() {
-    // TODO sanity check durations?
-    return getTotalFrameCount() > 0;
+    return normalFrameCount >= 0
+        && slowFrameCount >= 0
+        && slowFrameDelayNanos >= 0
+        && frozenFrameCount >= 0
+        && frozenFrameDelayNanos >= 0
+        && totalDurationNanos >= 0;
   }
 }
