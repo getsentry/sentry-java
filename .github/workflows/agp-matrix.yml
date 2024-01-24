@@ -84,7 +84,7 @@ jobs:
         with:
           name: JUnit AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
           path: |
-            **/build/test-results/**/*.xml
+            **/build/outputs/androidTest-results/**/*.xml
           reporter: java-junit
           fail-on-error: false
           fail-on-empty: false
