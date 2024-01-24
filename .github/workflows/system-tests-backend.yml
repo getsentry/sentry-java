@@ -67,9 +67,11 @@ jobs:
             spring-server.txt
 
       - name: Test Report
-        uses: dorny/test-reporter@afe6793191b75b608954023a46831a3fe10048d4 # pin@v1.7.0
+#        uses: dorny/test-reporter@afe6793191b75b608954023a46831a3fe10048d4 # pin@v1.7.0
+        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
 #        if: always()
-        if: "! github.event.pull_request.head.repo.fork "
+#        if: "! github.event.pull_request.head.repo.fork "
+        output-to: step-summary
         with:
           name: JUnit System Tests ${{ matrix.sample }}
           path: |
