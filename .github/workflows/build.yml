@@ -54,3 +54,5 @@ jobs:
           reporter: java-junit
           output-to: step-summary
           fail-on-error: false
+          list-suites: failed
+          list-tests: failed
