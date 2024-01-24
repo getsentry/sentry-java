@@ -49,10 +49,10 @@ jobs:
         if: always()
         with:
           name: JUnit Build
+          list-suites: 'failed'
+          list-tests: 'failed'
           path: |
             **/build/test-results/**/*.xml
           reporter: java-junit
           output-to: step-summary
           fail-on-error: false
-          list-suites: only-failed
-          list-tests: only-failed
