@@ -103,6 +103,9 @@ final class AndroidOptionsInitializer {
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
+    options.setFrameMetricsCollector(
+        new SentryFrameMetricsCollector(context, logger, buildInfoProvider));
+
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
 
@@ -159,14 +162,16 @@ final class AndroidOptionsInitializer {
         options.setTransactionProfiler(appStartProfiler);
         AppStartMetrics.getInstance().setAppStartProfiler(null);
       } else {
-        final SentryFrameMetricsCollector frameMetricsCollector =
-            new SentryFrameMetricsCollector(context, options, buildInfoProvider);
         options.setTransactionProfiler(
             new AndroidTransactionProfiler(
-                context, options, buildInfoProvider, frameMetricsCollector));
+                context,
+                options,
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required")));
       }
     }
-
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
 
@@ -201,9 +206,14 @@ final class AndroidOptionsInitializer {
     }
 
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
-    if (options.getCollectors().isEmpty()) {
-      options.addCollector(new AndroidMemoryCollector());
-      options.addCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+    if (options.getPerformanceCollectors().isEmpty()) {
+      options.addPerformanceCollector(new AndroidMemoryCollector());
+      options.addPerformanceCollector(
+          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+
+      if (options.isEnablePerformanceV2()) {
+        options.addPerformanceCollector(new SpanFrameMetricsCollector(options));
+      }
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
 

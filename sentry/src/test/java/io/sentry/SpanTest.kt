@@ -11,6 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SpanTest {
@@ -189,7 +190,15 @@ class SpanTest {
     }
 
     @Test
-    fun `when span is finished, do nothing`() {
+    fun `when span is finished, start child is a no-op`() {
+        val span = fixture.getSut()
+        span.finish(SpanStatus.OK)
+        val child = span.startChild("op.invalid")
+        assertTrue(child is NoOpSpan)
+    }
+
+    @Test
+    fun `when span is finished, extra data can still be modified`() {
         val span = fixture.getSut()
         span.description = "desc"
         span.setTag("myTag", "myValue")
@@ -198,25 +207,22 @@ class SpanTest {
         span.throwable = ex
 
         span.finish(SpanStatus.OK)
-        assertTrue(span.isFinished)
 
-        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null, Instrumenter.SENTRY))
-        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc"))
-
-        span.finish(SpanStatus.UNKNOWN_ERROR)
+        span.status = SpanStatus.ABORTED
         span.operation = "newOp"
         span.description = "newDesc"
         span.status = SpanStatus.ABORTED
         span.setTag("myTag", "myNewValue")
-        span.throwable = RuntimeException()
+        val newEx = RuntimeException()
+        span.throwable = newEx
         span.setData("myData", "myNewValue")
 
-        assertEquals(SpanStatus.OK, span.status)
-        assertEquals("op", span.operation)
-        assertEquals("desc", span.description)
-        assertEquals("myValue", span.tags["myTag"])
-        assertEquals("myValue", span.data["myData"])
-        assertEquals(ex, span.throwable)
+        assertEquals(SpanStatus.ABORTED, span.status)
+        assertEquals("newOp", span.operation)
+        assertEquals("newDesc", span.description)
+        assertEquals("myNewValue", span.tags["myTag"])
+        assertEquals("myNewValue", span.data["myData"])
+        assertSame(newEx, span.throwable)
     }
 
     @Test
