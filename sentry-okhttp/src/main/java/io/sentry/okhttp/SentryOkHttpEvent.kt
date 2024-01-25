@@ -7,7 +7,6 @@ import io.sentry.ISpan
 import io.sentry.SentryDate
 import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
-import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECTION_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECT_EVENT
@@ -158,10 +157,12 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
         // We forcefully finish all spans, even if they should already have been finished through finishSpan()
         eventSpans.values.filter { !it.isFinished }.forEach {
-            // If a status was set on the span, we use that, otherwise we set its status as error.
-            it.status = it.status ?: SpanStatus.INTERNAL_ERROR
             moveThrowableToRootSpan(it)
-            it.finish()
+            if (finishDate != null) {
+                it.finish(it.status, finishDate)
+            } else {
+                it.finish()
+            }
         }
         beforeFinish?.invoke(callRootSpan)
         // We report the client error here, after all sub-spans finished, so that it will be bound
