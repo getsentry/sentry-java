@@ -18,6 +18,8 @@
 ### Fixes
 
 - Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
+- Set default fingerprint for ANRv2 events to correctly group background and foreground ANRs ([#3164](https://github.com/getsentry/sentry-java/pull/3164))
+  - This will improve grouping of ANRs that have similar stacktraces but differ in background vs foreground state. Only affects newly-ingested ANR events with `mechanism:AppExitInfo`
 
 ### Breaking changes
 
