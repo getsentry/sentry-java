@@ -1,8 +1,11 @@
 package io.sentry.spring.exception
 
+import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.Sentry
 import io.sentry.exception.ExceptionMechanismException
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -41,10 +44,10 @@ class SentryCaptureExceptionParameterAdviceTest {
         verify(hub).captureException(
             check {
                 assertTrue(it is ExceptionMechanismException)
-                val mechanismException = it as ExceptionMechanismException
-                assertEquals(exception, mechanismException.throwable)
-                assertEquals("SentrySpring5CaptureExceptionParameterAdvice", mechanismException.exceptionMechanism.type)
-            }
+                assertEquals(exception, it.throwable)
+                assertEquals("SentrySpring5CaptureExceptionParameterAdvice", it.exceptionMechanism.type)
+            },
+            any<Hint>()
         )
     }
 
@@ -57,7 +60,11 @@ class SentryCaptureExceptionParameterAdviceTest {
         open fun sampleService() = SampleService()
 
         @Bean
-        open fun hub() = mock<IHub>()
+        open fun hub(): IHub {
+            val hub = mock<IHub>()
+            Sentry.setCurrentHub(hub)
+            return hub
+        }
     }
 
     open class SampleService {

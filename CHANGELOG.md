@@ -15,6 +15,10 @@
 - Collect slow and frozen frames for spans using `OnFrameMetricsAvailableListener` ([#3111](https://github.com/getsentry/sentry-java/pull/3111))
 - Interpolate total frame count to match span duration ([#3158](https://github.com/getsentry/sentry-java/pull/3158))
 
+### Fixes
+
+- Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
+
 ### Breaking changes
 
 - Remove `HostnameVerifier` option as it's flagged by security tools of some app stores ([#3150](https://github.com/getsentry/sentry-java/pull/3150))

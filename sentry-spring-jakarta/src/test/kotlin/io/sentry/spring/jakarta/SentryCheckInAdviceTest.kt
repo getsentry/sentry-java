@@ -3,6 +3,7 @@ package io.sentry.spring.jakarta
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.IHub
+import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import io.sentry.spring.jakarta.checkin.SentryCheckIn
@@ -171,7 +172,11 @@ class SentryCheckInAdviceTest {
         open fun sampleServiceHeartbeat() = SampleServiceHeartbeat()
 
         @Bean
-        open fun hub() = mock<IHub>()
+        open fun hub(): IHub {
+            val hub = mock<IHub>()
+            Sentry.setCurrentHub(hub)
+            return hub
+        }
     }
 
     open class SampleService {
