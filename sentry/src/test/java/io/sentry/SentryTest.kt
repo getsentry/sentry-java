@@ -613,7 +613,7 @@ class SentryTest {
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.collectors.any { it is JavaMemoryCollector } }
+        assertTrue { sentryOptions!!.performanceCollectors.any { it is JavaMemoryCollector } }
     }
 
     @Test
@@ -622,11 +622,11 @@ class SentryTest {
 
         Sentry.init {
             it.dsn = dsn
-            it.addCollector(CustomMemoryCollector())
+            it.addPerformanceCollector(CustomMemoryCollector())
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.collectors.any { it is CustomMemoryCollector } }
+        assertTrue { sentryOptions!!.performanceCollectors.any { it is CustomMemoryCollector } }
     }
 
     @Test
@@ -1161,7 +1161,8 @@ class SentryTest {
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
     }
 
-    private class CustomMemoryCollector : ICollector {
+    private class CustomMemoryCollector :
+        IPerformanceSnapshotCollector {
         override fun setup() {}
         override fun collect(performanceCollectionData: PerformanceCollectionData) {}
     }
