@@ -65,11 +65,11 @@ apiValidation {
             "sentry-samples-spring-boot-jakarta",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
-            "sentry-samples-netflix-dgs",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
             "test-app-plain",
-            "test-app-sentry"
+            "test-app-sentry",
+            "sentry-samples-netflix-dgs"
         )
     )
 }

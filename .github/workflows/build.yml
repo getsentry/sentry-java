@@ -40,6 +40,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-build
           path: |
             **/build/reports/*
+
+      - name: Test Report
+        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        if: always()
+        with:
+          name: JUnit Build
+          list-suites: 'failed'
+          list-tests: 'failed'
+          path: |
+            **/build/test-results/**/*.xml
+          reporter: java-junit
+          output-to: step-summary
+          fail-on-error: false
