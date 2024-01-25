@@ -52,6 +52,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -129,7 +130,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       return event;
     }
 
-    backfillScope(event);
+    backfillScope(event, unwrappedHint);
 
     backfillOptions(event, unwrappedHint);
 
@@ -139,7 +140,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   // region scope persisted values
-  private void backfillScope(final @NotNull SentryEvent event) {
+  private void backfillScope(final @NotNull SentryEvent event, final @NotNull Object hint) {
     setRequest(event);
     setUser(event);
     setScopeTags(event);
@@ -147,7 +148,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setExtras(event);
     setContexts(event);
     setTransaction(event);
-    setFingerprints(event);
+    setFingerprints(event, hint);
     setLevel(event);
     setTrace(event);
   }
@@ -173,11 +174,20 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   @SuppressWarnings("unchecked")
-  private void setFingerprints(final @NotNull SentryEvent event) {
+  private void setFingerprints(final @NotNull SentryEvent event, final @NotNull Object hint) {
     final List<String> fingerprint =
         (List<String>) PersistingScopeObserver.read(options, FINGERPRINT_FILENAME, List.class);
     if (event.getFingerprints() == null) {
       event.setFingerprints(fingerprint);
+    }
+
+    // sentry does not yet have a capability to provide default server-side fingerprint rules,
+    // so we're doing this on the SDK side to group background and foreground ANRs separately
+    // even if they have similar stacktraces
+    final boolean isBackgroundAnr = isBackgroundAnr(hint);
+    if (event.getFingerprints() == null) {
+      event.setFingerprints(
+          Arrays.asList("{{ default }}", isBackgroundAnr ? "background-anr" : "foreground-anr"));
     }
   }
 
