@@ -58,11 +58,12 @@ public class MainActivity extends AppCompatActivity {
       Sentry.captureException(e);
     }
 
-//    final Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
-//    Sentry.configureScope(
-//        scope -> {
-//          scope.addAttachment(image);
-//        });
+    //    final Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png",
+    // "image/png");
+    //    Sentry.configureScope(
+    //        scope -> {
+    //          scope.addAttachment(image);
+    //        });
 
     binding.crashFromJava.setOnClickListener(
         view -> {
