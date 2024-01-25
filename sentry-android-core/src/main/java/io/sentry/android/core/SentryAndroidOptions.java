@@ -10,6 +10,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.RootChecker;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
@@ -206,6 +207,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean attachAnrThreadDump = false;
 
   private boolean enablePerformanceV2 = false;
+
+  private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -589,5 +592,16 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Experimental
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
     this.enablePerformanceV2 = enablePerformanceV2;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable SentryFrameMetricsCollector getFrameMetricsCollector() {
+    return frameMetricsCollector;
+  }
+
+  @ApiStatus.Internal
+  public void setFrameMetricsCollector(
+      final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
+    this.frameMetricsCollector = frameMetricsCollector;
   }
 }
