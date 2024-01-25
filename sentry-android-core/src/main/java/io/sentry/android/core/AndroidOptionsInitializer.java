@@ -285,6 +285,7 @@ final class AndroidOptionsInitializer {
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
+    options.addIntegration(new SpotlightIntegration());
   }
 
   /**

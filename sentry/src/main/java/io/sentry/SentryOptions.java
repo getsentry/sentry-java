@@ -442,6 +442,8 @@ public class SentryOptions {
   /** Whether to send modules containing information about versions. */
   private boolean sendModules = true;
 
+  private @Nullable BeforeEnvelopeCallback beforeEnvelopeCallback;
+
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
@@ -2274,6 +2276,18 @@ public class SentryOptions {
     this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
+  @ApiStatus.Internal
+  @Nullable
+  public BeforeEnvelopeCallback getBeforeEnvelopeCallback() {
+    return beforeEnvelopeCallback;
+  }
+
+  @ApiStatus.Internal
+  public void setBeforeEnvelopeCallback(
+      @Nullable final BeforeEnvelopeCallback beforeEnvelopeCallback) {
+    this.beforeEnvelopeCallback = beforeEnvelopeCallback;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2343,6 +2357,21 @@ public class SentryOptions {
      */
     @Nullable
     Double sample(@NotNull SamplingContext samplingContext);
+  }
+
+  /** The BeforeSend callback */
+  public interface BeforeEnvelopeCallback {
+
+    /**
+     * Mutates or drop an event before being sent
+     *
+     * @param envelope the envelope
+     * @param hint the hints
+     * @return the original envelope or the mutated envelope or null if the envelope should be
+     *     dropped
+     */
+    @Nullable
+    SentryEnvelope execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
   }
 
   /**
