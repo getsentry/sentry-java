@@ -65,3 +65,5 @@ jobs:
           else
             exit 1
           fi
+        if: env.SAUCE_USERNAME != null
+        
