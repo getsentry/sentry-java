@@ -444,6 +444,8 @@ public class SentryOptions {
 
   private @Nullable BeforeEnvelopeCallback beforeEnvelopeCallback;
 
+  private @Nullable String spotlightConnectionUrl;
+
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
@@ -2286,6 +2288,17 @@ public class SentryOptions {
   public void setBeforeEnvelopeCallback(
       @Nullable final BeforeEnvelopeCallback beforeEnvelopeCallback) {
     this.beforeEnvelopeCallback = beforeEnvelopeCallback;
+  }
+
+  @ApiStatus.Experimental
+  @Nullable
+  public String getSpotlightConnectionUrl() {
+    return spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
+    this.spotlightConnectionUrl = spotlightConnectionUrl;
   }
 
   /** The BeforeSend callback */

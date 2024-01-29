@@ -27,6 +27,7 @@ import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
+import io.sentry.internal.SpotlightIntegration;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -321,6 +322,12 @@ final class AndroidOptionsInitializer {
       } catch (RuntimeException e) {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }
+    }
+
+    if (options.getSpotlightConnectionUrl() == null) {
+      // developer machine should be the same across emulators
+      // see https://developer.android.com/studio/run/emulator-networking.html
+      options.setSpotlightConnectionUrl("http://10.0.2.2:8969/stream");
     }
   }
 
