@@ -346,13 +346,6 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun shutdown ()V
 }
 
-public class io/sentry/android/core/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
-	public fun <init> ()V
-	public fun close ()V
-	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V

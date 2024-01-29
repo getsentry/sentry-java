@@ -2197,6 +2197,7 @@ public class io/sentry/SentryOptions {
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeout ()J
 	public fun getShutdownTimeoutMillis ()J
+	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracePropagationTargets ()Ljava/util/List;
@@ -2305,6 +2306,7 @@ public class io/sentry/SentryOptions {
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeout (J)V
 	public fun setShutdownTimeoutMillis (J)V
+	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTraceOptionsRequests (Z)V
@@ -3234,6 +3236,13 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public final class io/sentry/internal/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
+	public fun <init> ()V
+	public fun close ()V
+	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
 public abstract interface class io/sentry/internal/debugmeta/IDebugMetaLoader {

@@ -3,10 +3,12 @@ package io.sentry.internal;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.Hint;
+import io.sentry.IHub;
+import io.sentry.Integration;
+import io.sentry.SentryEnvelope;
+import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,17 +18,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.zip.GZIPOutputStream;
-
-import io.sentry.Hint;
-import io.sentry.IHub;
-import io.sentry.Integration;
-import io.sentry.SentryEnvelope;
-import io.sentry.SentryOptions;
-import io.sentry.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SpotlightIntegration
-  implements Integration, SentryOptions.BeforeEnvelopeCallback, Closeable {
+    implements Integration, SentryOptions.BeforeEnvelopeCallback, Closeable {
 
   private @NotNull SentryOptions options = SentryOptions.empty();
 
@@ -36,7 +34,8 @@ public final class SpotlightIntegration
   public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
     this.options = options;
 
-    if (options.getBeforeEnvelopeCallback() == null && options.getSpotlightConnectionUrl() != null) {
+    if (options.getBeforeEnvelopeCallback() == null
+        && options.getSpotlightConnectionUrl() != null) {
       options.setBeforeEnvelopeCallback(this);
     }
   }
@@ -53,33 +52,37 @@ public final class SpotlightIntegration
 
   private void sendEnvelope(final @NotNull SentryEnvelope envelope) {
     try {
-      final @NotNull String spotlightConnectionUrl = Objects.requireNonNull(options.getSpotlightConnectionUrl(), "Spotlight URL can't be null");
+      final @NotNull String spotlightConnectionUrl =
+          Objects.requireNonNull(
+              options.getSpotlightConnectionUrl(), "Spotlight URL can't be null");
 
       final HttpURLConnection connection = createConnection(spotlightConnectionUrl);
       try (final OutputStream outputStream = connection.getOutputStream();
-           final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
+          final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
         options.getSerializer().serialize(envelope, gzip);
       } catch (Throwable e) {
-        options.getLogger()
-          .log(
-            ERROR,
-            e,
-            "An exception occurred while submitting the envelope to the Sentry server.");
+        options
+            .getLogger()
+            .log(
+                ERROR,
+                e,
+                "An exception occurred while submitting the envelope to the Sentry server.");
       } finally {
         final int responseCode = connection.getResponseCode();
         options.getLogger().log(DEBUG, "Envelope sent to spotlight: %d", responseCode);
         closeAndDisconnect(connection);
       }
     } catch (final Exception e) {
-      options.getLogger()
-        .log(ERROR, e, "An exception occurred while creating the connection to spotlight.");
+      options
+          .getLogger()
+          .log(ERROR, e, "An exception occurred while creating the connection to spotlight.");
     }
   }
 
   private @NotNull HttpURLConnection createConnection(final @NotNull String url) throws Exception {
 
     final @NotNull HttpURLConnection connection =
-      (HttpURLConnection) URI.create(url).toURL().openConnection();
+        (HttpURLConnection) URI.create(url).toURL().openConnection();
     connection.setRequestMethod("POST");
     connection.setDoOutput(true);
 
