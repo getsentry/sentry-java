@@ -37,6 +37,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.concurrent.RejectedExecutionException
@@ -250,6 +251,14 @@ class SentryOkHttpEventTest {
                 assertEquals(fixture.mockRequest, it[TypeCheckHint.OKHTTP_REQUEST])
             }
         )
+    }
+
+    @Test
+    fun `when finishEvent multiple times, only one breadcrumb is captured`() {
+        val sut = fixture.getSut()
+        sut.finishEvent()
+        sut.finishEvent()
+        verify(fixture.hub, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
     }
 
     @Test

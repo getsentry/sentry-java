@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.3.0
 
 ### Features
 
@@ -17,6 +17,7 @@
 
 ### Fixes
 
+- Avoid multiple breadcrumbs from OkHttpEventListener ([#3175](https://github.com/getsentry/sentry-java/pull/3175))
 - Apply OkHttp listener auto finish timestamp to all running spans ([#3167](https://github.com/getsentry/sentry-java/pull/3167))
 - Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
 - Set default fingerprint for ANRv2 events to correctly group background and foreground ANRs ([#3164](https://github.com/getsentry/sentry-java/pull/3164))
