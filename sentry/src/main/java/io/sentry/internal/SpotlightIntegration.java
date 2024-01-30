@@ -83,6 +83,9 @@ public final class SpotlightIntegration
 
     final @NotNull HttpURLConnection connection =
         (HttpURLConnection) URI.create(url).toURL().openConnection();
+
+    connection.setReadTimeout(1000);
+    connection.setConnectTimeout(1000);
     connection.setRequestMethod("POST");
     connection.setDoOutput(true);
 
