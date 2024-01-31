@@ -7,6 +7,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.SpotlightIntegration;
 import io.sentry.internal.debugmeta.IDebugMetaLoader;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
@@ -2420,6 +2421,7 @@ public class SentryOptions {
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
+      integrations.add(new SpotlightIntegration());
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));

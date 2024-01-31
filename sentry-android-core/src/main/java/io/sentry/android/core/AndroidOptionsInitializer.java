@@ -27,7 +27,6 @@ import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
-import io.sentry.internal.SpotlightIntegration;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -286,7 +285,7 @@ final class AndroidOptionsInitializer {
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
-    options.addIntegration(new SpotlightIntegration());
+    // options.addIntegration(new SpotlightIntegration());
   }
 
   /**
