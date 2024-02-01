@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
@@ -102,8 +103,7 @@ public final class SentryEnvelopeItem {
   }
 
   public static @NotNull SentryEnvelopeItem fromEvent(
-      final @NotNull ISerializer serializer, final @NotNull SentryBaseEvent event)
-      throws IOException {
+      final @NotNull ISerializer serializer, final @NotNull SentryBaseEvent event) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
     Objects.requireNonNull(event, "SentryEvent is required.");
 
@@ -341,6 +341,85 @@ public final class SentryEnvelopeItem {
       return serializer.deserialize(eventReader, ClientReport.class);
     }
   }
+
+  public static SentryEnvelopeItem fromReplayRecording(
+    final @NotNull ISerializer serializer,
+    final @NotNull ILogger logger,
+    final @NotNull ReplayRecording replayRecording) {
+
+    final CachedItem cachedItem =
+      new CachedItem(
+        () -> {
+          try {
+            try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                 final Writer writer =
+                   new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+
+              // session replay recording format
+              // {"segment_id":0}\n{json-serialized-gzipped-rrweb-protocol}
+
+              serializer.serialize(replayRecording, writer);
+              writer.write("\n");
+              if (replayRecording.getPayload() != null) {
+                serializer.serialize(replayRecording.getPayload(), writer);
+              }
+
+              // final byte[] payload = compressRecordingPayload(serializer, replayRecording);
+              // stream.write(payload);
+
+              writer.flush();
+              stream.flush();
+              return stream.toByteArray();
+            }
+          } catch (Throwable t) {
+            logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
+            return null;
+          }
+        });
+
+    //    try {
+    //      final byte[] data = cachedItem.getBytes();
+    //      final String dataStr = new String(data, UTF_8);
+    //
+    //      final String[] items = dataStr.split("\n", 2);
+    //      final String header = items[0];
+    //      final String payload = items[1];
+    //
+    //      final ByteArrayInputStream byteArrayInputStream = new
+    // ByteArrayInputStream(payload.getBytes(UTF_8));
+    //      final GZIPInputStream inputStream = new GZIPInputStream(byteArrayInputStream);
+    //
+    //      final ByteArrayOutputStream decodedData = new ByteArrayOutputStream();
+    //
+    //      byte[] buf = new byte[4096];
+    //      int readLen;
+    //      while ((readLen = inputStream.read(buf, 0, buf.length)) != -1) {
+    //        decodedData.write(buf, 0, readLen);
+    //      }
+    //
+    //    } catch (Exception e) {
+    //
+    //    }
+
+    final SentryEnvelopeItemHeader itemHeader =
+      new SentryEnvelopeItemHeader(
+        SentryItemType.ReplayRecording, () -> cachedItem.getBytes().length, null, null);
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    SentryEnvelopeItem item = new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+
+    try {
+      StringWriter writer = new StringWriter();
+      serializer.serialize(item.header, writer);
+      writer.flush();
+      writer.flush();
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "f", e);
+    }
+    return item;
+  }
+
 
   private static class CachedItem {
     private @Nullable byte[] bytes;

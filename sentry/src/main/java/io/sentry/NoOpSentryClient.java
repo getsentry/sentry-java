@@ -63,6 +63,12 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
+  public @NotNull SentryId captureReplayEvent(@NotNull SentryReplayEvent event,
+    @Nullable IScope scope, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   public @Nullable RateLimiter getRateLimiter() {
     return null;
   }

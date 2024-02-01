@@ -246,6 +246,53 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  @Override
+  public @NotNull SentryId captureReplayEvent(
+    @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
+    Objects.requireNonNull(event, "SessionReplay is required.");
+
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    if (shouldApplyScopeData(event, hint)) {
+      applyScope(event, scope);
+    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event.getReplayId() != null) {
+      sentryId = event.getReplayId();
+    }
+
+    event = processReplayEvent(event, hint, options.getEventProcessors());
+
+    if (event == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
+      return SentryId.EMPTY_ID;
+    }
+
+    try {
+      final SentryEnvelope envelope =
+        buildEnvelope(event, hint.getReplayRecordings());
+
+      hint.clear();
+      if (envelope != null) {
+        transport.send(envelope, hint);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
+      }
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
   private void addScopeAttachmentsToHint(@Nullable IScope scope, @NotNull Hint hint) {
     if (scope != null) {
       hint.addAttachments(scope.getAttachments());
@@ -432,6 +479,40 @@ public final class SentryClient implements ISentryClient {
     return transaction;
   }
 
+  @Nullable
+  private SentryReplayEvent processReplayEvent(
+      @NotNull SentryReplayEvent replayEvent,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        replayEvent = processor.process(replayEvent, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing replay event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (replayEvent == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Replay event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Replay);
+        break;
+      }
+    }
+    return replayEvent;
+  }
+
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
@@ -483,6 +564,40 @@ public final class SentryClient implements ISentryClient {
         new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
+  private @Nullable SentryEnvelope buildEnvelope(
+    final @Nullable SentryReplayEvent event,
+    final @Nullable List<ReplayRecording> replayRecordings
+  ) {
+    SentryId sentryId = null;
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    if (event != null) {
+      final SentryEnvelopeItem eventItem =
+        SentryEnvelopeItem.fromEvent(options.getSerializer(), event);
+      envelopeItems.add(eventItem);
+      sentryId = event.getEventId();
+    }
+
+    if (replayRecordings != null) {
+      for (final ReplayRecording replayRecording : replayRecordings) {
+        final SentryEnvelopeItem replayItem =
+          SentryEnvelopeItem.fromReplayRecording(
+            options.getSerializer(), options.getLogger(), replayRecording);
+        envelopeItems.add(replayItem);
+      }
+    }
+
+
+    if (!envelopeItems.isEmpty()) {
+      final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(sentryId, options.getSdkVersion());
+
+      return new SentryEnvelope(envelopeHeader, envelopeItems);
+    }
+
+    return null;
   }
 
   /**

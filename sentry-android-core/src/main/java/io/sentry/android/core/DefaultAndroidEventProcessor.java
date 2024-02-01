@@ -10,6 +10,7 @@ import io.sentry.IpAddressUtils;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryReplayEvent;
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -255,5 +256,21 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     setCommons(transaction, false, applyScopeData);
 
     return transaction;
+  }
+
+  @Override
+  public @NotNull SentryReplayEvent process(
+    final @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
+    final boolean applyScopeData = shouldApplyScopeData(event, hint);
+    if (applyScopeData) {
+      // we only set memory data if it's not a hard crash, when it's a hard crash the event is
+      // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
+      // be different if the App. crashes because of OOM.
+      processNonCachedEvent(event, hint);
+    }
+
+    setCommons(event, false, applyScopeData);
+
+    return event;
   }
 }

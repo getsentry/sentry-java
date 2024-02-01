@@ -1025,4 +1025,9 @@ public final class Sentry {
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return getCurrentHub().captureCheckIn(checkIn);
   }
+
+  public static void captureReplay(
+    final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+    getCurrentHub().captureReplay(replay, hint);
+  }
 }

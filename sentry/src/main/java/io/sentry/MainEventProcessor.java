@@ -149,6 +149,16 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     return transaction;
   }
 
+  @Override
+  public @NotNull SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
+    setCommons(event);
+    setDebugMeta(event);
+
+    if (shouldApplyScopeData(event, hint)) {
+      processNonCachedEvent(event);
+    }
+    return event;
+  }
   private void setCommons(final @NotNull SentryBaseEvent event) {
     setPlatform(event);
   }
