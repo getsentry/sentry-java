@@ -1003,14 +1003,19 @@ public final class io/sentry/MemoryCollectionData {
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/MonitorSchedule;)V
+	public fun <init> (Lio/sentry/MonitorSchedule;Ljava/lang/Long;Ljava/lang/Long;)V
 	public fun getCheckinMargin ()Ljava/lang/Long;
+	public fun getFailureIssueThreshold ()Ljava/lang/Long;
 	public fun getMaxRuntime ()Ljava/lang/Long;
+	public fun getRecoveryThreshold ()Ljava/lang/Long;
 	public fun getSchedule ()Lio/sentry/MonitorSchedule;
 	public fun getTimezone ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCheckinMargin (Ljava/lang/Long;)V
+	public fun setFailureIssueThreshold (Ljava/lang/Long;)V
 	public fun setMaxRuntime (Ljava/lang/Long;)V
+	public fun setRecoveryThreshold (Ljava/lang/Long;)V
 	public fun setSchedule (Lio/sentry/MonitorSchedule;)V
 	public fun setTimezone (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -1024,7 +1029,9 @@ public final class io/sentry/MonitorConfig$Deserializer : io/sentry/JsonDeserial
 
 public final class io/sentry/MonitorConfig$JsonKeys {
 	public static final field CHECKIN_MARGIN Ljava/lang/String;
+	public static final field FAILURE_ISSUE_THRESHOLD Ljava/lang/String;
 	public static final field MAX_RUNTIME Ljava/lang/String;
+	public static final field RECOVERY_THRESHOLD Ljava/lang/String;
 	public static final field SCHEDULE Ljava/lang/String;
 	public static final field TIMEZONE Ljava/lang/String;
 	public fun <init> ()V
