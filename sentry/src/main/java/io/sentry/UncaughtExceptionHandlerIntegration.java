@@ -147,6 +147,11 @@ public final class UncaughtExceptionHandlerIntegration
     final Mechanism mechanism = new Mechanism();
     mechanism.setHandled(false);
     mechanism.setType("UncaughtExceptionHandler");
+
+    // probably should be Android only?
+    if (thrown instanceof RuntimeException) {
+      mechanism.setIsExceptionGroup(true);
+    }
     return new ExceptionMechanismException(mechanism, thrown, thread);
   }
 

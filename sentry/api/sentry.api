@@ -3798,8 +3798,11 @@ public final class io/sentry/protocol/Mechanism : io/sentry/JsonSerializable, io
 	public fun <init> (Ljava/lang/Thread;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getExceptionId ()Ljava/lang/Integer;
 	public fun getHelpLink ()Ljava/lang/String;
+	public fun getIsExceptionGroup ()Ljava/lang/Boolean;
 	public fun getMeta ()Ljava/util/Map;
+	public fun getParentId ()Ljava/lang/Integer;
 	public fun getSynthetic ()Ljava/lang/Boolean;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -3807,9 +3810,12 @@ public final class io/sentry/protocol/Mechanism : io/sentry/JsonSerializable, io
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setExceptionId (Ljava/lang/Integer;)V
 	public fun setHandled (Ljava/lang/Boolean;)V
 	public fun setHelpLink (Ljava/lang/String;)V
+	public fun setIsExceptionGroup (Ljava/lang/Boolean;)V
 	public fun setMeta (Ljava/util/Map;)V
+	public fun setParentId (Ljava/lang/Integer;)V
 	public fun setSynthetic (Ljava/lang/Boolean;)V
 	public fun setType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3824,9 +3830,12 @@ public final class io/sentry/protocol/Mechanism$Deserializer : io/sentry/JsonDes
 public final class io/sentry/protocol/Mechanism$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field DESCRIPTION Ljava/lang/String;
+	public static final field EXCEPTION_ID Ljava/lang/String;
 	public static final field HANDLED Ljava/lang/String;
 	public static final field HELP_LINK Ljava/lang/String;
+	public static final field IS_EXCEPTION_GROUP Ljava/lang/String;
 	public static final field META Ljava/lang/String;
+	public static final field PARENT_ID Ljava/lang/String;
 	public static final field SYNTHETIC Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V

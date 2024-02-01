@@ -143,6 +143,11 @@ public final class SentryExceptionFactory {
 
     Throwable currentThrowable = throwable;
 
+    boolean handled = false;
+    String type = null;
+
+    int currentExceptionId = 0;
+
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
       boolean snapshot = false;
@@ -151,13 +156,25 @@ public final class SentryExceptionFactory {
         ExceptionMechanismException exceptionMechanismThrowable =
             (ExceptionMechanismException) currentThrowable;
         exceptionMechanism = exceptionMechanismThrowable.getExceptionMechanism();
+        handled = Boolean.TRUE.equals(exceptionMechanism.isHandled());
+        type = exceptionMechanism.getType();
+
         currentThrowable = exceptionMechanismThrowable.getThrowable();
         thread = exceptionMechanismThrowable.getThread();
         snapshot = exceptionMechanismThrowable.isSnapshot();
       } else {
-        exceptionMechanism = null;
+        exceptionMechanism = new Mechanism();
+        exceptionMechanism.setHandled(handled);
+        exceptionMechanism.setType(type);
+
         thread = Thread.currentThread();
       }
+
+      exceptionMechanism.setExceptionId(currentExceptionId);
+      if (currentExceptionId > 0) {
+        exceptionMechanism.setParentId(currentExceptionId - 1);
+      }
+      currentExceptionId++;
 
       final boolean includeSentryFrames =
           exceptionMechanism != null && Boolean.FALSE.equals(exceptionMechanism.isHandled());

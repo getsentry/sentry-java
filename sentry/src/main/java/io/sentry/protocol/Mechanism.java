@@ -68,6 +68,12 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
    */
   private @Nullable Boolean synthetic;
 
+  private @Nullable Boolean isExceptionGroup;
+
+  private @Nullable Integer parentId;
+
+  private @Nullable Integer exceptionId;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -140,6 +146,33 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
     this.synthetic = synthetic;
   }
 
+  @Nullable
+  public Boolean getIsExceptionGroup() {
+    return isExceptionGroup;
+  }
+
+  public void setIsExceptionGroup(@Nullable final Boolean exceptionGroup) {
+    isExceptionGroup = exceptionGroup;
+  }
+
+  @Nullable
+  public Integer getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(@Nullable final Integer parentId) {
+    this.parentId = parentId;
+  }
+
+  @Nullable
+  public Integer getExceptionId() {
+    return exceptionId;
+  }
+
+  public void setExceptionId(@Nullable Integer exceptionId) {
+    this.exceptionId = exceptionId;
+  }
+
   // JsonKeys
 
   public static final class JsonKeys {
@@ -150,6 +183,9 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
     public static final String META = "meta";
     public static final String DATA = "data";
     public static final String SYNTHETIC = "synthetic";
+    public static final String IS_EXCEPTION_GROUP = "is_exception_group";
+    public static final String EXCEPTION_ID = "exception_id";
+    public static final String PARENT_ID = "parent_id";
   }
 
   // JsonUnknown
@@ -190,6 +226,15 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
     }
     if (synthetic != null) {
       writer.name(JsonKeys.SYNTHETIC).value(synthetic);
+    }
+    if (isExceptionGroup != null) {
+      writer.name(JsonKeys.IS_EXCEPTION_GROUP).value(isExceptionGroup);
+    }
+    if (exceptionId != null) {
+      writer.name(JsonKeys.EXCEPTION_ID).value(exceptionId);
+    }
+    if (parentId != null) {
+      writer.name(JsonKeys.PARENT_ID).value(parentId);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -237,6 +282,15 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.SYNTHETIC:
             mechanism.synthetic = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.IS_EXCEPTION_GROUP:
+            mechanism.isExceptionGroup = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.EXCEPTION_ID:
+            mechanism.exceptionId = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.PARENT_ID:
+            mechanism.parentId = reader.nextIntegerOrNull();
             break;
           default:
             if (unknown == null) {
