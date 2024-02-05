@@ -275,6 +275,15 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with cron defaults`() {
+        withPropertiesFile(listOf("cron.default-checkin-margin=1", "cron.default-max-runtime=30", "cron.default-timezone=America/New_York")) { options ->
+            assertEquals("1", options.cron?.checkinMargin)
+            assertEquals("30", options.cron?.maxRuntime)
+            assertEquals("America/New_York", options.cron?.timezone)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

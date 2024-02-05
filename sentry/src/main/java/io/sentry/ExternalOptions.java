@@ -51,6 +51,8 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean enableBackpressureHandling;
 
+  private @Nullable SentryOptions.Cron cron;
+
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
       final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
@@ -156,6 +158,15 @@ public final class ExternalOptions {
             ignoredExceptionType);
       }
     }
+
+    final String cronDefaultCheckinMargin = propertiesProvider.getProperty("cron.default-checkin-margin");
+    final String cronDefaultMaxRuntime = propertiesProvider.getProperty("cron.default-max-runtime");
+    final String cronDefaultTimezone = propertiesProvider.getProperty("cron.default-timezone");
+
+    if (cronDefaultCheckinMargin != null || cronDefaultMaxRuntime != null || cronDefaultTimezone != null) {
+      options.setCron(new SentryOptions.Cron(cronDefaultCheckinMargin, cronDefaultMaxRuntime, cronDefaultTimezone));
+    }
+
     return options;
   }
 
@@ -411,5 +422,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable SentryOptions.Cron getCron() {
+    return cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setCron(final @Nullable SentryOptions.Cron cron) {
+    this.cron = cron;
   }
 }

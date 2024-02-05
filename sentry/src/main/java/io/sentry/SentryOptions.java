@@ -460,6 +460,8 @@ public class SentryOptions {
    */
   private int profilingTracesHz = 101;
 
+  @ApiStatus.Experimental private @Nullable Cron cron = null;
+
   /**
    * Adds an event processor
    *
@@ -2274,6 +2276,16 @@ public class SentryOptions {
     this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
+  @ApiStatus.Experimental
+  public @Nullable Cron getCron() {
+    return cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setCron(@Nullable Cron cron) {
+    this.cron = cron;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2493,6 +2505,10 @@ public class SentryOptions {
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
+
+    if (options.getCron() != null) {
+      setCron(options.getCron());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -2564,6 +2580,45 @@ public class SentryOptions {
 
     public void setPass(final @Nullable String pass) {
       this.pass = pass;
+    }
+  }
+
+  public static final class Cron {
+    private @Nullable String checkinMargin;
+    private @Nullable String maxRuntime;
+    private @Nullable String timezone;
+
+public Cron(
+        final @Nullable String checkinMargin,
+        final @Nullable String maxRuntime,
+        final @Nullable String timezone) {
+      this.checkinMargin = checkinMargin;
+      this.maxRuntime = maxRuntime;
+      this.timezone = timezone;
+    }
+
+    public @Nullable String getCheckinMargin() {
+      return checkinMargin;
+    }
+
+    public void setCheckinMargin(@Nullable String checkinMargin) {
+      this.checkinMargin = checkinMargin;
+    }
+
+    public @Nullable String getMaxRuntime() {
+      return maxRuntime;
+    }
+
+    public void setMaxRuntime(@Nullable String maxRuntime) {
+      this.maxRuntime = maxRuntime;
+    }
+
+    public @Nullable String getTimezone() {
+      return timezone;
+    }
+
+    public void setTimezone(@Nullable String timezone) {
+      this.timezone = timezone;
     }
   }
 
