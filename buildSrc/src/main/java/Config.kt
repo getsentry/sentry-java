@@ -256,7 +256,8 @@ object Config {
     }
 
     object NativePlugins {
-        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.1.1"
+        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.1.4"
         val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
+        val nativeImport = "com.ydq.android.gradle.native-aar.import"
     }
 }

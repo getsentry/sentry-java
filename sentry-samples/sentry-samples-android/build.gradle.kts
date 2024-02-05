@@ -15,16 +15,8 @@ android {
         versionName = project.version.toString()
 
         externalNativeBuild {
-            val sentryNativeSrc = if (File("${project.projectDir}/../../sentry-android-ndk/sentry-native-local").exists()) {
-                "sentry-native-local"
-            } else {
-                "sentry-native"
-            }
-            println("sentry-samples-android: $sentryNativeSrc")
-
             cmake {
-                arguments.add(0, "-DANDROID_STL=c++_static")
-                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
+                arguments.add(0, "-DANDROID_STL=c++_shared")
             }
         }
 
@@ -38,6 +30,7 @@ android {
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        prefab = true
     }
 
     composeOptions {
