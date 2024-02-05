@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
+
 ## 7.3.0
 
 ### Features
