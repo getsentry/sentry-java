@@ -1003,7 +1003,6 @@ public final class io/sentry/MemoryCollectionData {
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/MonitorSchedule;)V
-	public fun <init> (Lio/sentry/MonitorSchedule;Ljava/lang/Long;Ljava/lang/Long;)V
 	public fun getCheckinMargin ()Ljava/lang/Long;
 	public fun getFailureIssueThreshold ()Ljava/lang/Long;
 	public fun getMaxRuntime ()Ljava/lang/Long;

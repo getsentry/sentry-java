@@ -23,15 +23,6 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
     this.schedule = schedule;
   }
 
-  public MonitorConfig(
-      final @NotNull MonitorSchedule schedule,
-      @Nullable Long failureIssueThreshold,
-      @Nullable Long recoveryThreshold) {
-    this.schedule = schedule;
-    this.failureIssueThreshold = failureIssueThreshold;
-    this.recoveryThreshold = recoveryThreshold;
-  }
-
   public @NotNull MonitorSchedule getSchedule() {
     return schedule;
   }

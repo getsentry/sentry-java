@@ -153,7 +153,10 @@ class CheckInUtilsTest {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val hub = mock<IHub>()
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
-            val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY), 10, 20)
+            val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
+                failureIssueThreshold = 10
+                recoveryThreshold = 20
+            }
             val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
                 "test1"
             }
