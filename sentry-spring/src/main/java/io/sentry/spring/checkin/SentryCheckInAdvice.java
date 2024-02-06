@@ -56,9 +56,10 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
 
     final boolean isHeartbeatOnly = checkInAnnotation.heartbeat();
 
-    final @Nullable String monitorSlug = resolver != null
-      ? resolver.resolveStringValue(checkInAnnotation.value())
-      : checkInAnnotation.value();
+    final @Nullable String monitorSlug =
+        resolver != null
+            ? resolver.resolveStringValue(checkInAnnotation.value())
+            : checkInAnnotation.value();
 
     if (ObjectUtils.isEmpty(monitorSlug)) {
       hub.getOptions()

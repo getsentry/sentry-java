@@ -19,9 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringValueResolver;
 
@@ -59,9 +56,10 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
 
     final boolean isHeartbeatOnly = checkInAnnotation.heartbeat();
 
-    final @Nullable String monitorSlug = resolver != null
-      ? resolver.resolveStringValue(checkInAnnotation.value())
-      : checkInAnnotation.value();
+    final @Nullable String monitorSlug =
+        resolver != null
+            ? resolver.resolveStringValue(checkInAnnotation.value())
+            : checkInAnnotation.value();
 
     if (ObjectUtils.isEmpty(monitorSlug)) {
       hub.getOptions()
