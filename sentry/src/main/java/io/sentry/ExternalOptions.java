@@ -159,12 +159,18 @@ public final class ExternalOptions {
       }
     }
 
-    final String cronDefaultCheckinMargin = propertiesProvider.getProperty("cron.default-checkin-margin");
-    final String cronDefaultMaxRuntime = propertiesProvider.getProperty("cron.default-max-runtime");
+    final Long cronDefaultCheckinMargin =
+        propertiesProvider.getLongProperty("cron.default-checkin-margin");
+    final Long cronDefaultMaxRuntime =
+        propertiesProvider.getLongProperty("cron.default-max-runtime");
     final String cronDefaultTimezone = propertiesProvider.getProperty("cron.default-timezone");
 
-    if (cronDefaultCheckinMargin != null || cronDefaultMaxRuntime != null || cronDefaultTimezone != null) {
-      options.setCron(new SentryOptions.Cron(cronDefaultCheckinMargin, cronDefaultMaxRuntime, cronDefaultTimezone));
+    if (cronDefaultCheckinMargin != null
+        || cronDefaultMaxRuntime != null
+        || cronDefaultTimezone != null) {
+      options.setCron(
+          new SentryOptions.Cron(
+              cronDefaultCheckinMargin, cronDefaultMaxRuntime, cronDefaultTimezone));
     }
 
     return options;

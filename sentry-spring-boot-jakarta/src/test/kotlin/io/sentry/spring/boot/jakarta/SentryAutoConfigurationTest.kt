@@ -168,7 +168,10 @@ class SentryAutoConfigurationTest {
             "sentry.enabled=false",
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
-            "sentry.enable-backpressure-handling=true"
+            "sentry.enable-backpressure-handling=true",
+            "sentry.cron.default-checkin-margin=10",
+            "sentry.cron.default-max-runtime=30",
+            "sentry.cron.default-timezone=America/New_York"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -201,6 +204,10 @@ class SentryAutoConfigurationTest {
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
             assertThat(options.isEnableBackpressureHandling).isEqualTo(true)
+            assertThat(options.cron).isNotNull
+            assertThat(options.cron!!.defaultCheckinMargin).isEqualTo(10L)
+            assertThat(options.cron!!.defaultMaxRuntime).isEqualTo(30L)
+            assertThat(options.cron!!.defaultTimezone).isEqualTo("America/New_York")
         }
     }
 

@@ -278,9 +278,9 @@ class ExternalOptionsTest {
     @Test
     fun `creates options with cron defaults`() {
         withPropertiesFile(listOf("cron.default-checkin-margin=1", "cron.default-max-runtime=30", "cron.default-timezone=America/New_York")) { options ->
-            assertEquals("1", options.cron?.checkinMargin)
-            assertEquals("30", options.cron?.maxRuntime)
-            assertEquals("America/New_York", options.cron?.timezone)
+            assertEquals(1L, options.cron?.defaultCheckinMargin)
+            assertEquals(30L, options.cron?.defaultMaxRuntime)
+            assertEquals("America/New_York", options.cron?.defaultTimezone)
         }
     }
 

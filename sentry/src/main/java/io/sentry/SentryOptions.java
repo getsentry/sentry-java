@@ -2584,45 +2584,45 @@ public class SentryOptions {
   }
 
   public static final class Cron {
-    private @Nullable String checkinMargin;
-    private @Nullable String maxRuntime;
-    private @Nullable String timezone;
+    private @Nullable Long defaultCheckinMargin;
+    private @Nullable Long defaultMaxRuntime;
+    private @Nullable String defaultTimezone;
 
     public Cron(
-        final @Nullable String checkinMargin,
-        final @Nullable String maxRuntime,
+        final @Nullable Long checkinMargin,
+        final @Nullable Long maxRuntime,
         final @Nullable String timezone) {
-      this.checkinMargin = checkinMargin;
-      this.maxRuntime = maxRuntime;
-      this.timezone = timezone;
+      this.defaultCheckinMargin = checkinMargin;
+      this.defaultMaxRuntime = maxRuntime;
+      this.defaultTimezone = timezone;
     }
 
     public Cron() {
       this(null, null, null);
     }
 
-    public @Nullable String getCheckinMargin() {
-      return checkinMargin;
+    public @Nullable Long getDefaultCheckinMargin() {
+      return defaultCheckinMargin;
     }
 
-    public void setCheckinMargin(@Nullable String checkinMargin) {
-      this.checkinMargin = checkinMargin;
+    public void setDefaultCheckinMargin(@Nullable Long defaultCheckinMargin) {
+      this.defaultCheckinMargin = defaultCheckinMargin;
     }
 
-    public @Nullable String getMaxRuntime() {
-      return maxRuntime;
+    public @Nullable Long getDefaultMaxRuntime() {
+      return defaultMaxRuntime;
     }
 
-    public void setMaxRuntime(@Nullable String maxRuntime) {
-      this.maxRuntime = maxRuntime;
+    public void setDefaultMaxRuntime(@Nullable Long defaultMaxRuntime) {
+      this.defaultMaxRuntime = defaultMaxRuntime;
     }
 
-    public @Nullable String getTimezone() {
-      return timezone;
+    public @Nullable String getDefaultTimezone() {
+      return defaultTimezone;
     }
 
-    public void setTimezone(@Nullable String timezone) {
-      this.timezone = timezone;
+    public void setDefaultTimezone(@Nullable String defaultTimezone) {
+      this.defaultTimezone = defaultTimezone;
     }
   }
 
