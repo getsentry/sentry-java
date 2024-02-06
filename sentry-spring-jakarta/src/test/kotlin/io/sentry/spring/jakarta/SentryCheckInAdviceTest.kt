@@ -20,7 +20,6 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.beans.BeansException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.annotation.Bean
@@ -28,7 +27,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
-import org.springframework.core.env.ConfigurablePropertyResolver
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
@@ -37,7 +35,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryCheckInAdviceTest.Config::class)
@@ -298,7 +295,6 @@ class SentryCheckInAdviceTest {
         open fun helloExceptionProperty() = 1
     }
 
-
     class MyPropertyPlaceholderConfigurer : PropertySourcesPlaceholderConfigurer() {
 
         override fun doProcessProperties(
@@ -306,7 +302,7 @@ class SentryCheckInAdviceTest {
             valueResolver: StringValueResolver
         ) {
             val wrappedResolver = StringValueResolver { strVal: String ->
-                if("\${my.cron.exception.property}".equals(strVal)) {
+                if ("\${my.cron.exception.property}".equals(strVal)) {
                     throw IllegalArgumentException("Cannot resolve property: $strVal")
                 } else {
                     valueResolver.resolveStringValue(strVal)

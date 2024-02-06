@@ -21,7 +21,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -297,7 +296,6 @@ class SentryCheckInAdviceTest {
         open fun helloExceptionProperty() = 1
     }
 
-
     class MyPropertyPlaceholderConfigurer : PropertySourcesPlaceholderConfigurer() {
 
         override fun doProcessProperties(
@@ -305,7 +303,7 @@ class SentryCheckInAdviceTest {
             valueResolver: StringValueResolver
         ) {
             val wrappedResolver = StringValueResolver { strVal: String ->
-                if("\${my.cron.exception.property}".equals(strVal)) {
+                if ("\${my.cron.exception.property}".equals(strVal)) {
                     throw IllegalArgumentException("Cannot resolve property: $strVal")
                 } else {
                     valueResolver.resolveStringValue(strVal)

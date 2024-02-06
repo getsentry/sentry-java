@@ -63,10 +63,10 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         monitorSlug = resolver.resolveStringValue(checkInAnnotation.value());
       } catch (Throwable e) {
         hub.getOptions()
-          .getLogger()
-          .log(
-            SentryLevel.WARNING,
-            "Slug for method annotated with @SentryCheckIn could not be resolved from properties.");
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Slug for method annotated with @SentryCheckIn could not be resolved from properties.");
       }
     }
 
