@@ -56,10 +56,19 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
 
     final boolean isHeartbeatOnly = checkInAnnotation.heartbeat();
 
-    final @Nullable String monitorSlug =
-        resolver != null
-            ? resolver.resolveStringValue(checkInAnnotation.value())
-            : checkInAnnotation.value();
+    @Nullable String monitorSlug = checkInAnnotation.value();
+
+    if (resolver != null) {
+      try {
+        monitorSlug = resolver.resolveStringValue(checkInAnnotation.value());
+      } catch (Throwable e) {
+        hub.getOptions()
+          .getLogger()
+          .log(
+            SentryLevel.WARNING,
+            "Slug for method annotated with @SentryCheckIn could not be resolved from properties.");
+      }
+    }
 
     if (ObjectUtils.isEmpty(monitorSlug)) {
       hub.getOptions()
