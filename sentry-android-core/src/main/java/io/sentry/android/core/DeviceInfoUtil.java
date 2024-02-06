@@ -44,6 +44,7 @@ public final class DeviceInfoUtil {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable Boolean isEmulator;
   private final @Nullable ContextUtils.SideLoadedInfo sideLoadedInfo;
+  private final @Nullable ContextUtils.SplitApksInfo splitApksInfo;
   private final @NotNull OperatingSystem os;
 
   private final @Nullable Long totalMem;
@@ -60,6 +61,8 @@ public final class DeviceInfoUtil {
     isEmulator = buildInfoProvider.isEmulator();
     sideLoadedInfo =
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+    splitApksInfo =
+        ContextUtils.retrieveSplitApksInfo(context, options.getLogger(), buildInfoProvider);
     final @Nullable ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
@@ -180,6 +183,12 @@ public final class DeviceInfoUtil {
   public ContextUtils.SideLoadedInfo getSideLoadedInfo() {
     return sideLoadedInfo;
   }
+
+  @Nullable
+  public ContextUtils.SplitApksInfo getSplitApksInfo() {
+    return splitApksInfo;
+  }
+
 
   private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
     final Intent batteryIntent = getBatteryIntent();

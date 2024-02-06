@@ -61,6 +61,36 @@ public final class ContextUtils {
     }
   }
 
+  static class SplitApksInfo {
+    // https://github.com/google/bundletool/blob/master/src/main/java/com/android/tools/build/bundletool/model/AndroidManifest.java#L257-L263
+    static final String SPLITS_REQUIRED = "com.android.vending.splits.required";
+
+    private final boolean isSplitApks;
+    private final String[] splitNames;
+
+    public SplitApksInfo(final boolean isSplitApks, final String[] splitNames) {
+      this.isSplitApks = isSplitApks;
+      this.splitNames = splitNames;
+    }
+
+    public boolean isSplitApks() {
+      return isSplitApks;
+    }
+
+    public @Nullable String[] getSplitNames() {
+      return splitNames;
+    }
+
+    public @NotNull Map<String, String> asTags() {
+      final Map<String, String> data = new HashMap<>();
+      data.put("isSplitApks", String.valueOf(isSplitApks));
+      if (splitNames != null) {
+        data.put("splitNames", String.join(", ", splitNames));
+      }
+      return data;
+    }
+  }
+
   private ContextUtils() {}
 
   /**
@@ -229,6 +259,32 @@ public final class ContextUtils {
     } catch (IllegalArgumentException e) {
       // it'll never be thrown as we are querying its own App's package.
       logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+    }
+
+    return null;
+  }
+
+  @SuppressWarnings({"deprecation"})
+  static @Nullable SplitApksInfo retrieveSplitApksInfo(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    String[] splitNames = null;
+    try {
+      final ApplicationInfo applicationInfo = getApplicationInfo(context, PackageManager.GET_META_DATA, buildInfoProvider);
+      final PackageInfo packageInfo = getPackageInfo(context, logger, buildInfoProvider);
+
+      if (packageInfo != null) {
+        splitNames = packageInfo.splitNames;
+        boolean isSplitApks = false;
+        if (applicationInfo.metaData != null) {
+          isSplitApks = applicationInfo.metaData.getBoolean(SplitApksInfo.SPLITS_REQUIRED);
+        }
+
+        return new SplitApksInfo(isSplitApks, splitNames);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      logger.log(SentryLevel.DEBUG, "cannot retrive application info");
     }
 
     return null;
