@@ -2588,13 +2588,17 @@ public class SentryOptions {
     private @Nullable String maxRuntime;
     private @Nullable String timezone;
 
-public Cron(
+    public Cron(
         final @Nullable String checkinMargin,
         final @Nullable String maxRuntime,
         final @Nullable String timezone) {
       this.checkinMargin = checkinMargin;
       this.maxRuntime = maxRuntime;
       this.timezone = timezone;
+    }
+
+    public Cron() {
+      this(null, null, null);
     }
 
     public @Nullable String getCheckinMargin() {

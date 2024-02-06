@@ -370,6 +370,7 @@ class SentryOptionsTest {
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
         externalOptions.isEnableBackpressureHandling = true
+        externalOptions.cron = SentryOptions.Cron("10", "30", "America/New_York")
 
         val options = SentryOptions()
 
@@ -400,6 +401,10 @@ class SentryOptionsTest {
         assertFalse(options.isSendModules)
         assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
         assertTrue(options.isEnableBackpressureHandling)
+        assertNotNull(options.cron)
+        assertEquals("10", options.cron?.checkinMargin)
+        assertEquals("30", options.cron?.maxRuntime)
+        assertEquals("America/New_York", options.cron?.timezone)
     }
 
     @Test
