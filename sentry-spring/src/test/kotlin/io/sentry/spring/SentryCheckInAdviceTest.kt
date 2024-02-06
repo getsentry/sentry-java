@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
 import kotlin.RuntimeException
@@ -35,6 +36,7 @@ import kotlin.test.assertNotNull
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryCheckInAdviceTest.Config::class)
+@TestPropertySource(properties = ["my.cron.slug = mypropertycronslug"])
 class SentryCheckInAdviceTest {
 
     @Autowired
@@ -45,6 +47,9 @@ class SentryCheckInAdviceTest {
 
     @Autowired
     lateinit var sampleServiceHeartbeat: SampleServiceHeartbeat
+
+    @Autowired
+    lateinit var sampleServiceSpringProperties: SampleServiceSpringProperties
 
     @Autowired
     lateinit var hub: IHub
@@ -157,6 +162,26 @@ class SentryCheckInAdviceTest {
         verify(hub, never()).popScope()
     }
 
+    @Test
+    fun `when @SentryCheckIn is passed a string property it is resolved correctly`() {
+        val checkInId = SentryId()
+        val checkInCaptor = argumentCaptor<CheckIn>()
+        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        val result = sampleServiceSpringProperties.hello()
+        assertEquals(1, result)
+        assertEquals(1, checkInCaptor.allValues.size)
+
+        val doneCheckIn = checkInCaptor.lastValue
+        assertEquals("mypropertycronslug", doneCheckIn.monitorSlug)
+        assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
+        assertNotNull(doneCheckIn.duration)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub).captureCheckIn(any())
+        order.verify(hub).popScope()
+    }
+
     @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     @Import(SentryCheckInAdviceConfiguration::class, SentryCheckInPointcutConfiguration::class)
@@ -170,6 +195,9 @@ class SentryCheckInAdviceTest {
 
         @Bean
         open fun sampleServiceHeartbeat() = SampleServiceHeartbeat()
+
+        @Bean
+        open fun sampleServiceSpringProperties() = SampleServiceSpringProperties()
 
         @Bean
         open fun hub(): IHub {
@@ -205,5 +233,10 @@ class SentryCheckInAdviceTest {
         open fun oops() {
             throw RuntimeException("thrown on purpose")
         }
+    }
+
+    open class SampleServiceSpringProperties {
+        @SentryCheckIn("\${my.cron.slug}", heartbeat = true)
+        open fun hello() = 1
     }
 }
