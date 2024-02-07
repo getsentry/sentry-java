@@ -269,6 +269,10 @@ public final class ContextUtils {
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      // packageInfo.splitNames is available since LOLLIPOP
+      return null;
+    }
     String[] splitNames = null;
     try {
       final ApplicationInfo applicationInfo = getApplicationInfo(context, PackageManager.GET_META_DATA, buildInfoProvider);
