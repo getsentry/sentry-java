@@ -350,10 +350,20 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/SpanFrameMetricsCollector$FrameTimeProvider;)V
 	public fun clear ()V
+	protected fun getInsertIdxInFrames (Ljava/util/List;Ljava/lang/Long;)I
 	public fun onFrameMetricCollected (JJJJZZF)V
 	public fun onSpanFinished (Lio/sentry/ISpan;)V
 	public fun onSpanStarted (Lio/sentry/ISpan;)V
+}
+
+public class io/sentry/android/core/SpanFrameMetricsCollector$Frame {
+	public fun <init> (JJJJZZJ)V
+}
+
+public abstract interface class io/sentry/android/core/SpanFrameMetricsCollector$FrameTimeProvider {
+	public abstract fun now ()J
 }
 
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {

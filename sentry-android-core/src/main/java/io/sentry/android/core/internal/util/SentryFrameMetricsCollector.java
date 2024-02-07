@@ -170,8 +170,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           // Most frames take just a few nanoseconds longer than the optimal calculated
           // duration.
           // Therefore we subtract one, because otherwise almost all frames would be slow.
-          final boolean isSlow = cpuDuration > oneSecondInNanos / (refreshRate - 1);
-          final boolean isFrozen = isSlow && cpuDuration > frozenFrameThresholdNanos;
+          final boolean isSlow =
+              isSlow(cpuDuration, (long) ((float) oneSecondInNanos / (refreshRate - 1.0f)));
+          final boolean isFrozen = isSlow && isFrozen(cpuDuration);
 
           for (FrameMetricsCollectorListener l : listenerMap.values()) {
             l.onFrameMetricCollected(
@@ -186,6 +187,14 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
         };
   }
 
+  public static boolean isFrozen(long frameDuration) {
+    return frameDuration > frozenFrameThresholdNanos;
+  }
+
+  public static boolean isSlow(long frameDuration, final long expectedFrameDuration) {
+    return frameDuration > expectedFrameDuration;
+  }
+
   /**
    * Return the internal timestamp in the choreographer of the last frame start timestamp through
    * reflection. On Android O the value is read from the frameMetrics itself.
@@ -197,19 +206,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       return frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP);
     }
 
-    // Let's read the choreographer private field to get start timestamp of the frame, which
-    // uses System.nanoTime() under the hood
-    if (choreographer != null && choreographerLastFrameTimeField != null) {
-      try {
-        Long choreographerFrameStartTime =
-            (Long) choreographerLastFrameTimeField.get(choreographer);
-        if (choreographerFrameStartTime != null) {
-          return choreographerFrameStartTime;
-        }
-      } catch (IllegalAccessException ignored) {
-      }
-    }
-    return -1;
+    return getLastKnownFrameStartTimeNanos();
   }
 
   /**
@@ -319,6 +316,25 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
             window, frameMetricsAvailableListener, handler);
       }
     }
+  }
+
+  /**
+   * @return the last known time a frame was started, according to the Choreographer
+   */
+  private long getLastKnownFrameStartTimeNanos() {
+    // Let's read the choreographer private field to get start timestamp of the frame, which
+    // uses System.nanoTime() under the hood
+    if (choreographer != null && choreographerLastFrameTimeField != null) {
+      try {
+        Long choreographerFrameStartTime =
+            (Long) choreographerLastFrameTimeField.get(choreographer);
+        if (choreographerFrameStartTime != null) {
+          return choreographerFrameStartTime;
+        }
+      } catch (IllegalAccessException ignored) {
+      }
+    }
+    return -1;
   }
 
   @ApiStatus.Internal

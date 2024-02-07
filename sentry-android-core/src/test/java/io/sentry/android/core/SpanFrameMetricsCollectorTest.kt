@@ -6,6 +6,7 @@ import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
 import io.sentry.SentryLongDate
 import io.sentry.SpanContext
+import io.sentry.android.core.SpanFrameMetricsCollector.Frame
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.MeasurementValue
 import org.mockito.kotlin.any
@@ -16,12 +17,14 @@ import org.mockito.kotlin.whenever
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class SpanFrameMetricsCollectorTest {
 
     private class Fixture {
         val options = SentryAndroidOptions()
         val frameMetricsCollector = mock<SentryFrameMetricsCollector>()
+        var timeNanos = 0L
 
         fun getSut(enabled: Boolean = true): SpanFrameMetricsCollector {
             whenever(frameMetricsCollector.startCollection(any())).thenReturn(
@@ -30,8 +33,13 @@ class SpanFrameMetricsCollectorTest {
             options.frameMetricsCollector = frameMetricsCollector
             options.isEnableFramesTracking = enabled
             options.isEnablePerformanceV2 = enabled
+            options.setDateProvider {
+                SentryLongDate(timeNanos)
+            }
 
-            return SpanFrameMetricsCollector(options)
+            return SpanFrameMetricsCollector(options) {
+                timeNanos
+            }
         }
     }
 
@@ -43,14 +51,35 @@ class SpanFrameMetricsCollectorTest {
         val spanContext = SpanContext("op.fake")
         whenever(span.spanContext).thenReturn(spanContext)
         whenever(span.startDate).thenReturn(SentryLongDate(startTimeStampNanos))
-        whenever(span.finishDate).thenReturn(if (endTimeStampNanos != null) SentryLongDate(endTimeStampNanos) else null)
+        whenever(span.finishDate).thenReturn(
+            if (endTimeStampNanos != null) {
+                SentryLongDate(
+                    endTimeStampNanos
+                )
+            } else {
+                null
+            }
+        )
         return span
     }
 
-    private fun createFakeTxn(): ITransaction {
+    private fun createFakeTxn(
+        startTimeStampNanos: Long = 1000,
+        endTimeStampNanos: Long? = 2000
+    ): ITransaction {
         val span = mock<ITransaction>()
         val spanContext = SpanContext("op.fake")
         whenever(span.spanContext).thenReturn(spanContext)
+        whenever(span.startDate).thenReturn(SentryLongDate(startTimeStampNanos))
+        whenever(span.finishDate).thenReturn(
+            if (endTimeStampNanos != null) {
+                SentryLongDate(
+                    endTimeStampNanos
+                )
+            } else {
+                null
+            }
+        )
         return span
     }
 
@@ -98,13 +127,15 @@ class SpanFrameMetricsCollectorTest {
         val sut = fixture.getSut()
 
         // when a span is started
-        val span = createFakeSpan()
+        fixture.timeNanos = 1000
+        val span = createFakeSpan(1000, 2000)
         sut.onSpanStarted(span)
 
         // then it registers for frame metrics
         verify(fixture.frameMetricsCollector).startCollection(any())
 
         // when the span is finished
+        fixture.timeNanos = 2000
         sut.onSpanFinished(span)
 
         // then it unregisters from frame metrics
@@ -139,42 +170,50 @@ class SpanFrameMetricsCollectorTest {
         val sut = fixture.getSut()
 
         // when the first span starts
-        val span0 = createFakeSpan()
+        fixture.timeNanos = 0
+        val span0 = createFakeSpan(0, 800)
         sut.onSpanStarted(span0)
 
         // and one fast, two slow frames and one frozen is are recorded
         sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
-        sut.onFrameMetricCollected(0, 20, 20, 4, true, false, 60.0f)
-        sut.onFrameMetricCollected(0, 20, 20, 4, true, false, 60.0f)
-        sut.onFrameMetricCollected(0, 800, 800, 784, true, true, 60.0f)
+        sut.onFrameMetricCollected(16, 48, 32, 16, true, false, 60.0f)
+        sut.onFrameMetricCollected(60, 92, 32, 16, true, false, 60.0f)
+        sut.onFrameMetricCollected(100, 800, 800, 784, true, true, 60.0f)
 
         // then a second span starts
-        val span1 = createFakeSpan()
+        fixture.timeNanos = 800
+        sut.onSpanFinished(span0)
+
+        fixture.timeNanos = 820
+        val span1 = createFakeSpan(820, 840)
         sut.onSpanStarted(span1)
 
         // and another slow frame is recorded
-        sut.onFrameMetricCollected(0, 20, 20, 4, true, false, 60.0f)
-
-        sut.onSpanFinished(span0)
+        fixture.timeNanos = 840
+        sut.onFrameMetricCollected(820, 840, 20, 4, true, false, 60.0f)
         sut.onSpanFinished(span1)
 
         // then the metrics are set on the spans
-        verify(span0).setData("frames.slow", 3)
+        verify(span0).setData("frames.total", 4)
+        verify(span0).setData("frames.slow", 2)
         verify(span0).setData("frames.frozen", 1)
-        verify(span0).setData("frames.total", 5)
 
+        verify(span1).setData("frames.total", 1)
         verify(span1).setData("frames.slow", 1)
         verify(span1).setData("frames.frozen", 0)
-        verify(span1).setData("frames.total", 1)
     }
 
     @Test
     fun `measurements are not set on spans`() {
         val sut = fixture.getSut()
 
-        val span = createFakeSpan()
+        fixture.timeNanos = 900
+        val span = createFakeSpan(900, 1110)
+
         sut.onSpanStarted(span)
-        sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
+        sut.onFrameMetricCollected(1000, 1010, 10, 0, false, false, 60.0f)
+
+        fixture.timeNanos = 1020
         sut.onSpanFinished(span)
 
         // then the metrics are set on the spans
@@ -186,15 +225,18 @@ class SpanFrameMetricsCollectorTest {
     fun `measurements are set on transactions`() {
         val sut = fixture.getSut()
 
-        // when the first span starts
-        val txn = createFakeTxn()
-        sut.onSpanStarted(txn)
-        sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
-        sut.onSpanFinished(txn)
+        fixture.timeNanos = 900
+        val span = createFakeTxn(900, 1110)
+
+        sut.onSpanStarted(span)
+        sut.onFrameMetricCollected(1000, 1010, 10, 0, false, false, 60.0f)
+
+        fixture.timeNanos = 1020
+        sut.onSpanFinished(span)
 
         // then the metrics are set on the spans
-        verify(txn).setData("frames.total", 1)
-        verify(txn).setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, 1)
+        verify(span).setData("frames.total", 1)
+        verify(span).setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, 1)
     }
 
     @Test
@@ -202,6 +244,7 @@ class SpanFrameMetricsCollectorTest {
         val sut = fixture.getSut()
 
         // given a span which lasts for 1 second
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
         val span = createFakeSpan(
             TimeUnit.SECONDS.toNanos(1),
             TimeUnit.SECONDS.toNanos(2)
@@ -211,6 +254,7 @@ class SpanFrameMetricsCollectorTest {
         // but no frames are drawn
 
         // and the span finishes
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(2)
         sut.onSpanFinished(span)
 
         // then still 60 fps should be reported (1 second at 60fps)
@@ -229,6 +273,7 @@ class SpanFrameMetricsCollectorTest {
             endTimeStampNanos = TimeUnit.SECONDS.toNanos(2)
         )
 
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
         sut.onSpanStarted(span)
 
         // when one frozen frame is recorded
@@ -243,6 +288,7 @@ class SpanFrameMetricsCollectorTest {
         )
 
         // and the span finishes
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(2)
         sut.onSpanFinished(span)
 
         // then 13 frames should be reported
@@ -256,7 +302,8 @@ class SpanFrameMetricsCollectorTest {
     fun `when frame data is only partially collected the total count is not interpolated in case the span didn't finish`() {
         val sut = fixture.getSut()
 
-        // given a span which lasts for 1 second
+        // given a span has no end date
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
         val span = createFakeSpan(
             startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
             endTimeStampNanos = null
@@ -275,13 +322,12 @@ class SpanFrameMetricsCollectorTest {
             60.0f
         )
 
-        // and the span finishes
+        // and the span finishes without a finish date
+        fixture.timeNanos = TimeUnit.MILLISECONDS.toNanos(1800)
         sut.onSpanFinished(span)
 
-        // then only 1 total frame should be reported, as the span has no finish date
-        verify(span).setData("frames.total", 1)
-        verify(span).setData("frames.slow", 0)
-        verify(span).setData("frames.frozen", 1)
+        // then no frame stats should be reported
+        verify(span, never()).setData(any(), any())
     }
 
     @Test
@@ -300,5 +346,34 @@ class SpanFrameMetricsCollectorTest {
 
         // and no span data should be attached
         verify(span0, never()).setData(any(), any())
+    }
+
+    @Test
+    fun `getInsertIdxInFrames works for continuous frames`() {
+        val frames = ArrayList<Frame>()
+        frames.add(Frame(100, 200, 100, 0, false, false, 16))
+        frames.add(Frame(200, 300, 100, 0, false, false, 16))
+        frames.add(Frame(300, 400, 100, 0, false, false, 16))
+
+        val sut = fixture.getSut()
+
+        assertEquals(-1, sut.getInsertIdxInFrames(frames, 0))
+        assertEquals(0, sut.getInsertIdxInFrames(frames, 150))
+        assertEquals(1, sut.getInsertIdxInFrames(frames, 250))
+        assertEquals(2, sut.getInsertIdxInFrames(frames, 350))
+        assertEquals(-1, sut.getInsertIdxInFrames(frames, 450))
+    }
+
+    @Test
+    fun `getInsertIdxInFrames works for non continuous frames`() {
+        val frames = ArrayList<Frame>()
+        frames.add(Frame(100, 200, 100, 0, false, false, 16))
+        frames.add(Frame(250, 300, 100, 0, false, false, 16))
+        frames.add(Frame(350, 400, 100, 0, false, false, 16))
+
+        val sut = fixture.getSut()
+
+        assertEquals(1, sut.getInsertIdxInFrames(frames, 201))
+        assertEquals(2, sut.getInsertIdxInFrames(frames, 301))
     }
 }
