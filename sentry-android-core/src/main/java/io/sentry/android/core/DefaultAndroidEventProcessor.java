@@ -248,10 +248,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     try {
       final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.get().getSplitApksInfo();
       if (splitApksInfo != null) {
-        final @NotNull Map<String, String> tags = splitApksInfo.asTags();
-        for (Map.Entry<String, String> entry : tags.entrySet()) {
-          event.setTag(entry.getKey(), entry.getValue());
-        }
+        final @NotNull Map<String, Object> extras = splitApksInfo.asExtras();
+        event.setExtras(extras);
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);

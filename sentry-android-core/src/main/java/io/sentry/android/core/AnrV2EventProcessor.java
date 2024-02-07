@@ -542,10 +542,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
           ContextUtils.retrieveSplitApksInfo(context, options.getLogger(), buildInfoProvider);
 
       if (splitApksInfo != null) {
-        final @NotNull Map<String, String> tags = splitApksInfo.asTags();
-        for (Map.Entry<String, String> entry : tags.entrySet()) {
-          event.setTag(entry.getKey(), entry.getValue());
-        }
+        final @NotNull Map<String, Object> extras = splitApksInfo.asExtras();
+        event.setExtras(extras);
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
