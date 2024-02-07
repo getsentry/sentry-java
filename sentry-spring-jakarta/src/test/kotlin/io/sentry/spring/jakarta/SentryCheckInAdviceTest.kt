@@ -194,7 +194,7 @@ class SentryCheckInAdviceTest {
         assertEquals(1, checkInCaptor.allValues.size)
 
         val doneCheckIn = checkInCaptor.lastValue
-        assertEquals("\${my.cron.wrong.property}", doneCheckIn.monitorSlug)
+        assertEquals("\${my.cron.unresolved.property}", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
@@ -214,7 +214,7 @@ class SentryCheckInAdviceTest {
         assertEquals(1, checkInCaptor.allValues.size)
 
         val doneCheckIn = checkInCaptor.lastValue
-        assertEquals("\${my.cron.wrong.property}", doneCheckIn.monitorSlug)
+        assertEquals("\${my.cron.exception.property}", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 

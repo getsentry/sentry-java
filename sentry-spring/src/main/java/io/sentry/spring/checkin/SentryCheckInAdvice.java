@@ -62,11 +62,19 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       try {
         monitorSlug = resolver.resolveStringValue(checkInAnnotation.value());
       } catch (Throwable e) {
+        // When resolving fails, we fall back to the original string which may contain unresolved
+        // expressions.
+        // Testing shows this can also happen if properties cannot be resolved (without an exception
+        // being thrown).
+        // Sentry should alert the user about missed checkins in this case since the monitor slug
+        // won't match
+        // what is configured in Sentry.
         hub.getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Slug for method annotated with @SentryCheckIn could not be resolved from properties.");
+                "Slug for method annotated with @SentryCheckIn could not be resolved from properties.",
+                e);
       }
     }
 
