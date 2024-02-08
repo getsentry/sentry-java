@@ -351,7 +351,7 @@ class AsyncHttpTransportTest {
         val sut = fixture.getSUT()
         sut.close(true)
 
-        verify(fixture.executor).awaitTermination(eq(0), eq(TimeUnit.MILLISECONDS))
+        verify(fixture.executor).awaitTermination(eq(200), eq(TimeUnit.MILLISECONDS))
     }
 
     @Test

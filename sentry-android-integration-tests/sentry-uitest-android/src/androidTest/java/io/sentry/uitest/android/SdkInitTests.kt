@@ -104,7 +104,8 @@ class SdkInitTests : BaseUiTest() {
         val restartMs = afterRestart - beforeRestart
 
         Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
-        assertTrue(restartMs < 250, "Expected less than 250 ms for SDK restart. Got $restartMs ms")
+        // We assert for less than 1 second just to account for slow devices in saucelabs or headless emulator
+        assertTrue(restartMs < 1000, "Expected less than 1000 ms for SDK restart. Got $restartMs ms")
 
         relay.assert {
             findEnvelope {

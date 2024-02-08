@@ -171,13 +171,14 @@ public final class AsyncHttpTransport implements ITransport {
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
-      if (!executor.awaitTermination(
-          isRestarting ? 0 : options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS)) {
+      // We need a small timeout to be able to save to disk any rejected envelope
+      long timeout = isRestarting ? 200 : options.getFlushTimeoutMillis();
+      if (!executor.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Failed to shutdown the async connection async sender within 1 minute. Trying to force it now.");
+                "Failed to shutdown the async connection async sender  within " + timeout + " ms. Trying to force it now.");
         executor.shutdownNow();
       }
     } catch (InterruptedException e) {
