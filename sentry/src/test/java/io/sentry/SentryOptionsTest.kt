@@ -370,7 +370,7 @@ class SentryOptionsTest {
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
         externalOptions.isEnableBackpressureHandling = true
-        externalOptions.cron = SentryOptions.Cron(10L, 30L, "America/New_York")
+        externalOptions.cron = SentryOptions.Cron(10L, 30L, "America/New_York", 40L, 50L)
 
         val options = SentryOptions()
 
@@ -404,6 +404,8 @@ class SentryOptionsTest {
         assertNotNull(options.cron)
         assertEquals(10L, options.cron?.defaultCheckinMargin)
         assertEquals(30L, options.cron?.defaultMaxRuntime)
+        assertEquals(40L, options.cron?.defaultFailureIssueThreshold)
+        assertEquals(50L, options.cron?.defaultRecoveryThreshold)
         assertEquals("America/New_York", options.cron?.defaultTimezone)
     }
 
@@ -590,5 +592,43 @@ class SentryOptionsTest {
         val options = SentryOptions()
         options.profilingTracesHz = 13
         assertEquals(13, options.profilingTracesHz)
+    }
+
+    @Test
+    fun `existing cron defaults are not overridden if not present in external options`() {
+        val options = SentryOptions().apply {
+            cron = SentryOptions.Cron(1, 2, "America/New_York", 3, 4)
+        }
+
+        val externalOptions = ExternalOptions().apply {
+            cron = SentryOptions.Cron()
+        }
+
+        options.merge(externalOptions)
+
+        assertEquals(1, options.cron?.defaultCheckinMargin)
+        assertEquals(2, options.cron?.defaultMaxRuntime)
+        assertEquals("America/New_York", options.cron?.defaultTimezone)
+        assertEquals(3, options.cron?.defaultFailureIssueThreshold)
+        assertEquals(4, options.cron?.defaultRecoveryThreshold)
+    }
+
+    @Test
+    fun `all cron properties set in external options override values set in sentry options`() {
+        val options = SentryOptions().apply {
+            cron = SentryOptions.Cron(1, 2, "America/New_York", 3, 4)
+        }
+
+        val externalOptions = ExternalOptions().apply {
+            cron = SentryOptions.Cron(10, 20, "Europe/Vienna", 30, 40)
+        }
+
+        options.merge(externalOptions)
+
+        assertEquals(10, options.cron?.defaultCheckinMargin)
+        assertEquals(20, options.cron?.defaultMaxRuntime)
+        assertEquals("Europe/Vienna", options.cron?.defaultTimezone)
+        assertEquals(30, options.cron?.defaultFailureIssueThreshold)
+        assertEquals(40, options.cron?.defaultRecoveryThreshold)
     }
 }

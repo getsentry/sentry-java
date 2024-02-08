@@ -2355,12 +2355,16 @@ public abstract interface class io/sentry/SentryOptions$BeforeSendTransactionCal
 
 public final class io/sentry/SentryOptions$Cron {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)V
 	public fun getDefaultCheckinMargin ()Ljava/lang/Long;
+	public fun getDefaultFailureIssueThreshold ()Ljava/lang/Long;
 	public fun getDefaultMaxRuntime ()Ljava/lang/Long;
+	public fun getDefaultRecoveryThreshold ()Ljava/lang/Long;
 	public fun getDefaultTimezone ()Ljava/lang/String;
 	public fun setDefaultCheckinMargin (Ljava/lang/Long;)V
+	public fun setDefaultFailureIssueThreshold (Ljava/lang/Long;)V
 	public fun setDefaultMaxRuntime (Ljava/lang/Long;)V
+	public fun setDefaultRecoveryThreshold (Ljava/lang/Long;)V
 	public fun setDefaultTimezone (Ljava/lang/String;)V
 }
 

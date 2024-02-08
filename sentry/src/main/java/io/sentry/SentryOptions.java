@@ -2507,7 +2507,26 @@ public class SentryOptions {
     }
 
     if (options.getCron() != null) {
-      setCron(options.getCron());
+      if (getCron() == null) {
+        setCron(options.getCron());
+      } else {
+        if (options.getCron().getDefaultCheckinMargin() != null) {
+          getCron().setDefaultCheckinMargin(options.getCron().getDefaultCheckinMargin());
+        }
+        if (options.getCron().getDefaultMaxRuntime() != null) {
+          getCron().setDefaultMaxRuntime(options.getCron().getDefaultMaxRuntime());
+        }
+        if (options.getCron().getDefaultTimezone() != null) {
+          getCron().setDefaultTimezone(options.getCron().getDefaultTimezone());
+        }
+        if (options.getCron().getDefaultFailureIssueThreshold() != null) {
+          getCron()
+              .setDefaultFailureIssueThreshold(options.getCron().getDefaultFailureIssueThreshold());
+        }
+        if (options.getCron().getDefaultRecoveryThreshold() != null) {
+          getCron().setDefaultRecoveryThreshold(options.getCron().getDefaultRecoveryThreshold());
+        }
+      }
     }
   }
 
@@ -2587,18 +2606,24 @@ public class SentryOptions {
     private @Nullable Long defaultCheckinMargin;
     private @Nullable Long defaultMaxRuntime;
     private @Nullable String defaultTimezone;
+    private @Nullable Long defaultFailureIssueThreshold;
+    private @Nullable Long defaultRecoveryThreshold;
 
     public Cron(
         final @Nullable Long checkinMargin,
         final @Nullable Long maxRuntime,
-        final @Nullable String timezone) {
+        final @Nullable String timezone,
+        final @Nullable Long failureIssueThreshold,
+        final @Nullable Long recoveryThreshold) {
       this.defaultCheckinMargin = checkinMargin;
       this.defaultMaxRuntime = maxRuntime;
       this.defaultTimezone = timezone;
+      this.defaultFailureIssueThreshold = failureIssueThreshold;
+      this.defaultRecoveryThreshold = recoveryThreshold;
     }
 
     public Cron() {
-      this(null, null, null);
+      this(null, null, null, null, null);
     }
 
     public @Nullable Long getDefaultCheckinMargin() {
@@ -2623,6 +2648,22 @@ public class SentryOptions {
 
     public void setDefaultTimezone(@Nullable String defaultTimezone) {
       this.defaultTimezone = defaultTimezone;
+    }
+
+    public @Nullable Long getDefaultFailureIssueThreshold() {
+      return defaultFailureIssueThreshold;
+    }
+
+    public void setDefaultFailureIssueThreshold(@Nullable Long defaultFailureIssueThreshold) {
+      this.defaultFailureIssueThreshold = defaultFailureIssueThreshold;
+    }
+
+    public @Nullable Long getDefaultRecoveryThreshold() {
+      return defaultRecoveryThreshold;
+    }
+
+    public void setDefaultRecoveryThreshold(@Nullable Long defaultRecoveryThreshold) {
+      this.defaultRecoveryThreshold = defaultRecoveryThreshold;
     }
   }
 

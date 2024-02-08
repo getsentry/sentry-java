@@ -164,13 +164,23 @@ public final class ExternalOptions {
     final Long cronDefaultMaxRuntime =
         propertiesProvider.getLongProperty("cron.default-max-runtime");
     final String cronDefaultTimezone = propertiesProvider.getProperty("cron.default-timezone");
+    final Long cronDefaultFailureIssueThreshold =
+        propertiesProvider.getLongProperty("cron.default-failure-issue-threshold");
+    final Long cronDefaultRecoveryThreshold =
+        propertiesProvider.getLongProperty("cron.default-recovery-threshold");
 
     if (cronDefaultCheckinMargin != null
         || cronDefaultMaxRuntime != null
-        || cronDefaultTimezone != null) {
+        || cronDefaultTimezone != null
+        || cronDefaultFailureIssueThreshold != null
+        || cronDefaultRecoveryThreshold != null) {
       options.setCron(
           new SentryOptions.Cron(
-              cronDefaultCheckinMargin, cronDefaultMaxRuntime, cronDefaultTimezone));
+              cronDefaultCheckinMargin,
+              cronDefaultMaxRuntime,
+              cronDefaultTimezone,
+              cronDefaultFailureIssueThreshold,
+              cronDefaultRecoveryThreshold));
     }
 
     return options;
