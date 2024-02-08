@@ -136,6 +136,7 @@ class SdkInitTests : BaseUiTest() {
 
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
+            options.flushTimeoutMillis = 3000
         }
 
         Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
@@ -154,7 +155,7 @@ class SdkInitTests : BaseUiTest() {
         val restartMs = afterRestart - beforeRestart
 
         Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
-        assertTrue(restartMs > 2000, "Expected more than 2000 ms for SDK close and restart. Got $restartMs ms")
+        assertTrue(restartMs > 3000, "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms")
 
         relay.assert {
             findEnvelope {
