@@ -163,10 +163,16 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   public void close() throws IOException {
+    close(false);
+  }
+
+  @Override
+  public void close(final boolean isRestarting) throws IOException {
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
-      if (!executor.awaitTermination(options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS)) {
+      if (!executor.awaitTermination(
+          isRestarting ? 0 : options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
             .log(

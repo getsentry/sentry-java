@@ -337,6 +337,24 @@ class AsyncHttpTransportTest {
     }
 
     @Test
+    fun `close with isRestarting false uses flushTimeoutMillis option to schedule termination`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val sut = fixture.getSUT()
+        sut.close(false)
+
+        verify(fixture.executor).awaitTermination(eq(123), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `close with isRestarting true does not await termination`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val sut = fixture.getSUT()
+        sut.close(true)
+
+        verify(fixture.executor).awaitTermination(eq(0), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
     fun `when DiskFlushNotification is not flushable, does not flush`() {
         // given
         val ev = SentryEvent()

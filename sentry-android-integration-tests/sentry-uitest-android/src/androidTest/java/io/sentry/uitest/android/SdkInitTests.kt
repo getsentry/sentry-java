@@ -9,9 +9,12 @@ import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class SdkInitTests : BaseUiTest() {
@@ -70,6 +73,103 @@ class SdkInitTests : BaseUiTest() {
                 it.assertNoOtherItems()
                 assertEquals("e2etests2", transactionItem.transaction)
                 assertEquals("e2etests2", profilingTraceData.transactionName)
+            }
+            assertNoOtherEnvelopes()
+        }
+    }
+
+    @Test
+    fun doubleInitDoesNotWait() {
+        relayIdlingResource.increment()
+        relayIdlingResource.increment()
+        // Let's make the first request timeout
+        relay.addResponse { MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE) }
+
+        initSentry(true) { options: SentryAndroidOptions ->
+            options.tracesSampleRate = 1.0
+        }
+
+        Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
+
+        val beforeRestart = System.currentTimeMillis()
+        // We restart the SDK. This shouldn't block the main thread, but new options (e.g. profiling) should work
+        initSentry(false) { options: SentryAndroidOptions ->
+            // Registering again the idling resource blocks for some time. But we already registered it before.
+            // So we just need to update the mock relay flag, as we are overwriting it in this "initSentry(false)".
+            relay.waitForRequests = true
+            options.tracesSampleRate = 1.0
+            options.profilesSampleRate = 1.0
+        }
+        val afterRestart = System.currentTimeMillis()
+        val restartMs = afterRestart - beforeRestart
+
+        Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
+        assertTrue(restartMs < 250, "Expected less than 250 ms for SDK restart. Got $restartMs ms")
+
+        relay.assert {
+            findEnvelope {
+                assertEnvelopeTransaction(it.items.toList()).transaction == "beforeRestart"
+            }.assert {
+                it.assertTransaction()
+                // No profiling item, as in the first init it was not enabled
+                it.assertNoOtherItems()
+            }
+            findEnvelope {
+                assertEnvelopeTransaction(it.items.toList()).transaction == "afterRestart"
+            }.assert {
+                it.assertTransaction()
+                // There is a profiling item, as in the second init it was enabled
+                it.assertProfile()
+                it.assertNoOtherItems()
+            }
+            assertNoOtherEnvelopes()
+        }
+    }
+
+    @Test
+    fun initCloseInitWaits() {
+        relayIdlingResource.increment()
+        relayIdlingResource.increment()
+        // Let's make the first request timeout
+        relay.addResponse { MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE) }
+
+        initSentry(true) { options: SentryAndroidOptions ->
+            options.tracesSampleRate = 1.0
+        }
+
+        Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
+
+        val beforeRestart = System.currentTimeMillis()
+        Sentry.close()
+        // We stop the SDK. This should block the main thread. Then we start it again with new options
+        initSentry(false) { options: SentryAndroidOptions ->
+            // Registering again the idling resource blocks for some time. But we already registered it before.
+            // So we just need to update the mock relay flag, as we are overwriting it in this "initSentry(false)".
+            relay.waitForRequests = true
+            options.tracesSampleRate = 1.0
+            options.profilesSampleRate = 1.0
+        }
+        val afterRestart = System.currentTimeMillis()
+        val restartMs = afterRestart - beforeRestart
+
+        Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
+        assertTrue(restartMs > 2000, "Expected more than 2000 ms for SDK close and restart. Got $restartMs ms")
+
+        relay.assert {
+            findEnvelope {
+                assertEnvelopeTransaction(it.items.toList()).transaction == "beforeRestart"
+            }.assert {
+                it.assertTransaction()
+                // No profiling item, as in the first init it was not enabled
+                it.assertNoOtherItems()
+            }
+            findEnvelope {
+                assertEnvelopeTransaction(it.items.toList()).transaction == "afterRestart"
+            }.assert {
+                it.assertTransaction()
+                // There is a profiling item, as in the second init it was enabled
+                it.assertProfile()
+                it.assertNoOtherItems()
             }
             assertNoOtherEnvelopes()
         }

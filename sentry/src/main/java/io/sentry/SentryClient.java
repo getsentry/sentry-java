@@ -903,11 +903,16 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void close() {
+    close(false);
+  }
+
+  @Override
+  public void close(final boolean isRestarting) {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
 
     try {
-      flush(options.getShutdownTimeoutMillis());
-      transport.close();
+      flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
+      transport.close(isRestarting);
     } catch (IOException e) {
       options
           .getLogger()
