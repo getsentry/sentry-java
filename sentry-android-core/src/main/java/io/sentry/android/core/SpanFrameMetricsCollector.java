@@ -11,6 +11,7 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.util.Objects;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class SpanFrameMetricsCollector
   private final boolean enabled;
 
   private final @NotNull Object lock = new Object();
-  private final @Nullable SentryFrameMetricsCollector frameMetricsCollector;
+  private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
 
   private volatile @Nullable String listenerId;
 
@@ -58,7 +59,9 @@ public class SpanFrameMetricsCollector
     this.options = options;
     this.frameTimeProvider = frameTimeProvider;
 
-    frameMetricsCollector = options.getFrameMetricsCollector();
+    frameMetricsCollector =
+        Objects.requireNonNull(
+            options.getFrameMetricsCollector(), "FrameMetricsCollector is required");
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
 
     frames = new LinkedList<>();
@@ -82,9 +85,7 @@ public class SpanFrameMetricsCollector
       runningSpans.put(span.getSpanContext().getSpanId(), now);
 
       if (listenerId == null) {
-        if (frameMetricsCollector != null) {
-          listenerId = frameMetricsCollector.startCollection(this);
-        }
+        listenerId = frameMetricsCollector.startCollection(this);
       }
 
       ensureFrameSizeLimit();
@@ -196,13 +197,25 @@ public class SpanFrameMetricsCollector
       // in order to match the span duration with the total frame count,
       // we simply interpolate the total number of frames based on the span duration
       // this way the data is more sound and we also match the output of the cocoa SDK
-      // TODO right distinguish between a delayed frame or a normal frame when interpolating
       int totalFrameCount = frameMetrics.getTotalFrameCount();
-      if (frameMetrics.containsValidData()) {
+
+      final long nextScheduledFrameNanos = frameMetricsCollector.getLastKnownFrameStartTimeNanos();
+      final long pendingDurationNanos = Math.max(0, nowNanos - nextScheduledFrameNanos);
+      final boolean isSlow =
+          SentryFrameMetricsCollector.isSlow(pendingDurationNanos, frameDurationNanos);
+      if (isSlow) {
+        // add a single slow/frozen frame
+        final boolean isFrozen = SentryFrameMetricsCollector.isFrozen(pendingDurationNanos);
+        final long pendingDelayNanos = Math.max(0, pendingDurationNanos - frameDurationNanos);
+        frameMetrics.addFrame(pendingDurationNanos, pendingDelayNanos, true, isFrozen);
+        totalFrameCount++;
+      } else {
+        // assume normal frames if Choreographer field has been recently updated
         final long frameMetricsDurationNanos = frameMetrics.getTotalDurationNanos();
         final long nonRenderedDuration = spanDurationNanos - frameMetricsDurationNanos;
         if (nonRenderedDuration > 0) {
-          totalFrameCount += (int) (nonRenderedDuration / frameDurationNanos);
+          final int normalFrames = (int) (nonRenderedDuration / frameDurationNanos);
+          totalFrameCount += normalFrames;
         }
       }
 
@@ -262,9 +275,7 @@ public class SpanFrameMetricsCollector
   public void clear() {
     synchronized (lock) {
       if (listenerId != null) {
-        if (frameMetricsCollector != null) {
-          frameMetricsCollector.stopCollection(listenerId);
-        }
+        frameMetricsCollector.stopCollection(listenerId);
         listenerId = null;
       }
       frames.clear();

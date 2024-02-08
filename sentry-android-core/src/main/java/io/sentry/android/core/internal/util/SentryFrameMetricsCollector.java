@@ -321,7 +321,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   /**
    * @return the last known time a frame was started, according to the Choreographer
    */
-  private long getLastKnownFrameStartTimeNanos() {
+  public long getLastKnownFrameStartTimeNanos() {
     // Let's read the choreographer private field to get start timestamp of the frame, which
     // uses System.nanoTime() under the hood
     if (choreographer != null && choreographerLastFrameTimeField != null) {

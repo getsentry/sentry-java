@@ -4,6 +4,11 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
@@ -43,11 +49,28 @@ class FrameDataForSpansActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface {
+                    val infiniteTransition = rememberInfiniteTransition(
+                        label = "infiniteTransition"
+                    )
+                    val progress = infiniteTransition.animateFloat(
+                        label = "progress",
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000),
+                            repeatMode = RepeatMode.Reverse
+                        )
+                    )
                     Column(modifier = Modifier.padding(24.dp)) {
                         Text(
                             text = "Frame Data for Spans",
                             style = MaterialTheme.typography.headlineMedium
                         )
+                        LinearProgressIndicator(
+                            progress = progress.value,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.size(24.dp))
                         Text(text = "Tap to trigger a new frame render")
                         FrameControls(model)
                         Spacer(modifier = Modifier.size(24.dp))
@@ -66,6 +89,7 @@ class FrameDataForSpansActivity : ComponentActivity() {
         val txnOpts = TransactionOptions().apply {
             idleTimeout = 100000
             deadlineTimeout = 100000
+            isBindToScope = true
         }
         txn = Sentry.startTransaction("SlowAndFrozenFramesActivity", "ui.render", txnOpts)
     }
@@ -84,7 +108,7 @@ fun FrameControls(viewModel: ViewModel) {
     ) {
         JankyButton(name = "Normal", delay = 5, viewModel.normalCount)
         JankyButton(name = "Slow", delay = 500, viewModel.slowCount)
-        JankyButton(name = "Frozen", delay = 3000, viewModel.frozenCount)
+        JankyButton(name = "Frozen", delay = 4000, viewModel.frozenCount)
     }
 }
 
@@ -161,7 +185,7 @@ fun SpanControls(viewModel: ViewModel) {
                     viewModel.onStartSpanClicked()
                 }
             ) {
-                Text("Start")
+                Text("Start", color = MaterialTheme.colorScheme.onPrimary)
             }
 
             ButtonWithoutIndication(
@@ -170,7 +194,7 @@ fun SpanControls(viewModel: ViewModel) {
                     viewModel.onStopSpanClicked()
                 }
             ) {
-                Text("Stop")
+                Text("Stop", color = MaterialTheme.colorScheme.onPrimary)
             }
 
             ButtonWithoutIndication(
@@ -179,7 +203,7 @@ fun SpanControls(viewModel: ViewModel) {
                     viewModel.onStopDelayedSpanClicked()
                 }
             ) {
-                Text("Stop in 1s")
+                Text("Stop in 3s", color = MaterialTheme.colorScheme.onPrimary)
             }
         }
 
@@ -209,7 +233,7 @@ class ViewModel {
 
     fun onStopDelayedSpanClicked() {
         Thread {
-            Thread.sleep(1000)
+            Thread.sleep(3000)
             onStopSpanClicked()
         }.start()
     }
