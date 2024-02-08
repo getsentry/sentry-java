@@ -6,10 +6,11 @@ import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
 import io.sentry.SentryLongDate
 import io.sentry.SpanContext
-import io.sentry.android.core.SpanFrameMetricsCollector.Frame
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.MeasurementValue
+import org.mockito.AdditionalMatchers
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -17,7 +18,6 @@ import org.mockito.kotlin.whenever
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 class SpanFrameMetricsCollectorTest {
 
@@ -25,11 +25,15 @@ class SpanFrameMetricsCollectorTest {
         val options = SentryAndroidOptions()
         val frameMetricsCollector = mock<SentryFrameMetricsCollector>()
         var timeNanos = 0L
+        var lastKnownChoreographerFrameTimeNanos = 0L
 
         fun getSut(enabled: Boolean = true): SpanFrameMetricsCollector {
             whenever(frameMetricsCollector.startCollection(any())).thenReturn(
                 UUID.randomUUID().toString()
             )
+            whenever(frameMetricsCollector.getLastKnownFrameStartTimeNanos()).thenAnswer {
+                return@thenAnswer lastKnownChoreographerFrameTimeNanos
+            }
             options.frameMetricsCollector = frameMetricsCollector
             options.isEnableFramesTracking = enabled
             options.isEnablePerformanceV2 = enabled
@@ -254,13 +258,44 @@ class SpanFrameMetricsCollectorTest {
         // but no frames are drawn
 
         // and the span finishes
+        // and the choreographer reports a recent update
+        fixture.lastKnownChoreographerFrameTimeNanos = TimeUnit.SECONDS.toNanos(2)
         fixture.timeNanos = TimeUnit.SECONDS.toNanos(2)
         sut.onSpanFinished(span)
 
-        // then still 60 fps should be reported (1 second at 60fps)
+        // then still 60 frames should be reported (1 second at 60fps)
         verify(span).setData("frames.total", 60)
         verify(span).setData("frames.slow", 0)
         verify(span).setData("frames.frozen", 0)
+    }
+
+    @Test
+    fun `when no frame data is collected the total count is interpolated and frame delay is added`() {
+        val sut = fixture.getSut()
+
+        // given a span which lasts for 2 seconds
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
+        val span = createFakeSpan(
+            TimeUnit.SECONDS.toNanos(1),
+            TimeUnit.SECONDS.toNanos(3)
+        )
+
+        sut.onSpanStarted(span)
+        // but no frames are drawn
+
+        // and the span finishes
+        // but the choreographer has no update for the last second
+        fixture.lastKnownChoreographerFrameTimeNanos = TimeUnit.SECONDS.toNanos(2)
+        fixture.timeNanos = TimeUnit.SECONDS.toNanos(3)
+        sut.onSpanFinished(span)
+
+        // then
+        // still 60 fps should be reported for 1 seconds
+        // and one frame with frame delay should be reported (1s - 16ms)
+        verify(span).setData("frames.total", 61)
+        verify(span).setData("frames.slow", 0)
+        verify(span).setData("frames.frozen", 1)
+        verify(span).setData(eq("frames.delay"), AdditionalMatchers.eq(0.983333334, 0.01))
     }
 
     @Test
@@ -292,10 +327,10 @@ class SpanFrameMetricsCollectorTest {
         sut.onSpanFinished(span)
 
         // then 13 frames should be reported
-        // 1 frame at 800ms + 12 frames at 16ms = 992ms
-        verify(span).setData("frames.total", 13)
+        // 1 frame at 800ms + 1 frames at 16ms = 992ms
+        verify(span).setData("frames.total", 2)
         verify(span).setData("frames.slow", 0)
-        verify(span).setData("frames.frozen", 1)
+        verify(span).setData("frames.frozen", 2)
     }
 
     @Test
@@ -346,34 +381,5 @@ class SpanFrameMetricsCollectorTest {
 
         // and no span data should be attached
         verify(span0, never()).setData(any(), any())
-    }
-
-    @Test
-    fun `getInsertIdxInFrames works for continuous frames`() {
-        val frames = ArrayList<Frame>()
-        frames.add(Frame(100, 200, 100, 0, false, false, 16))
-        frames.add(Frame(200, 300, 100, 0, false, false, 16))
-        frames.add(Frame(300, 400, 100, 0, false, false, 16))
-
-        val sut = fixture.getSut()
-
-        assertEquals(-1, sut.getInsertIdxInFrames(frames, 0))
-        assertEquals(0, sut.getInsertIdxInFrames(frames, 150))
-        assertEquals(1, sut.getInsertIdxInFrames(frames, 250))
-        assertEquals(2, sut.getInsertIdxInFrames(frames, 350))
-        assertEquals(-1, sut.getInsertIdxInFrames(frames, 450))
-    }
-
-    @Test
-    fun `getInsertIdxInFrames works for non continuous frames`() {
-        val frames = ArrayList<Frame>()
-        frames.add(Frame(100, 200, 100, 0, false, false, 16))
-        frames.add(Frame(250, 300, 100, 0, false, false, 16))
-        frames.add(Frame(350, 400, 100, 0, false, false, 16))
-
-        val sut = fixture.getSut()
-
-        assertEquals(1, sut.getInsertIdxInFrames(frames, 201))
-        assertEquals(2, sut.getInsertIdxInFrames(frames, 301))
     }
 }
