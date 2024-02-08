@@ -6,6 +6,10 @@
 
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
 
+### Fixes
+
+- Don't wait on main thread when SDK restarts ([#3200](https://github.com/getsentry/sentry-java/pull/3200))
+
 ## 7.3.0
 
 ### Features
