@@ -61,6 +61,7 @@ import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.HandlerExceptionResolver
@@ -635,6 +636,23 @@ class SentryAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and RestClient is on the classpath, SentrySpanRestClientCustomizer bean is created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
+            .run {
+                assertThat(it).hasSingleBean(SentrySpanRestClientCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and RestClient is not on the classpath, SentrySpanRestClientCustomizer bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
+            .withClassLoader(FilteredClassLoader(RestClient::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SentrySpanRestClientCustomizer::class.java)
             }
     }
 
