@@ -178,7 +178,9 @@ public final class AsyncHttpTransport implements ITransport {
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Failed to shutdown the async connection async sender  within " + timeout + " ms. Trying to force it now.");
+                "Failed to shutdown the async connection async sender  within "
+                    + timeout
+                    + " ms. Trying to force it now.");
         executor.shutdownNow();
       }
     } catch (InterruptedException e) {
