@@ -7,7 +7,6 @@ import io.sentry.ISpan
 import io.sentry.SentryDate
 import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
-import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECTION_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECT_EVENT
@@ -27,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private const val PROTOCOL_KEY = "protocol"
 private const val ERROR_MESSAGE_KEY = "error_message"
-private const val RESPONSE_BODY_TIMEOUT_MILLIS = 500L
+private const val RESPONSE_BODY_TIMEOUT_MILLIS = 800L
 internal const val TRACE_ORIGIN = "auto.http.okhttp"
 
 @Suppress("TooManyFunctions")
@@ -38,6 +37,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     private var response: Response? = null
     private var clientErrorResponse: Response? = null
     private val isReadingResponseBody = AtomicBoolean(false)
+    private val isEventFinished = AtomicBoolean(false)
 
     init {
         val urlDetails = UrlUtils.parse(request.url.toString())
@@ -139,6 +139,10 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
     /** Finishes the call root span, and runs [beforeFinish] on it. Then a breadcrumb is sent. */
     fun finishEvent(finishDate: SentryDate? = null, beforeFinish: ((span: ISpan) -> Unit)? = null) {
+        // If the event already finished, we don't do anything
+        if (isEventFinished.getAndSet(true)) {
+            return
+        }
         // We put data in the hint and send a breadcrumb
         val hint = Hint()
         hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
@@ -158,10 +162,12 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
 
         // We forcefully finish all spans, even if they should already have been finished through finishSpan()
         eventSpans.values.filter { !it.isFinished }.forEach {
-            // If a status was set on the span, we use that, otherwise we set its status as error.
-            it.status = it.status ?: SpanStatus.INTERNAL_ERROR
             moveThrowableToRootSpan(it)
-            it.finish()
+            if (finishDate != null) {
+                it.finish(it.status, finishDate)
+            } else {
+                it.finish()
+            }
         }
         beforeFinish?.invoke(callRootSpan)
         // We report the client error here, after all sub-spans finished, so that it will be bound

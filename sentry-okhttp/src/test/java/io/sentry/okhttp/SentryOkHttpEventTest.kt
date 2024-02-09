@@ -23,6 +23,7 @@ import io.sentry.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEADERS_EVEN
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.getProperty
 import okhttp3.Protocol
 import okhttp3.Request
@@ -31,17 +32,15 @@ import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
-import kotlin.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -255,13 +254,11 @@ class SentryOkHttpEventTest {
     }
 
     @Test
-    fun `when finishEvent, all running spans are finished with internal_error status`() {
+    fun `when finishEvent multiple times, only one breadcrumb is captured`() {
         val sut = fixture.getSut()
-        sut.startSpan("span")
-        val spans = sut.getEventSpans()
-        assertNull(spans["span"]!!.status)
         sut.finishEvent()
-        assertEquals(SpanStatus.INTERNAL_ERROR, spans["span"]!!.status)
+        sut.finishEvent()
+        verify(fixture.hub, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
     }
 
     @Test
@@ -273,6 +270,7 @@ class SentryOkHttpEventTest {
         spans["span"]!!.status = SpanStatus.OK
         assertEquals(SpanStatus.OK, spans["span"]!!.status)
         sut.finishEvent()
+        assertTrue(spans["span"]!!.isFinished)
         assertEquals(SpanStatus.OK, spans["span"]!!.status)
     }
 
@@ -533,18 +531,15 @@ class SentryOkHttpEventTest {
     }
 
     @Test
-    fun `scheduleFinish schedules finishEvent`() {
-        val mockExecutor = mock<ISentryExecutorService>()
-        val captor = argumentCaptor<Runnable>()
-        whenever(mockExecutor.schedule(captor.capture(), any())).then {
-            captor.lastValue.run()
-            mock<Future<Runnable>>()
-        }
-        fixture.hub.options.executorService = mockExecutor
+    fun `scheduleFinish schedules finishEvent and finish running spans to specific timestamp`() {
+        fixture.hub.options.executorService = ImmediateExecutorService()
         val sut = spy(fixture.getSut())
         val timestamp = mock<SentryDate>()
+        sut.startSpan(CONNECTION_EVENT)
         sut.scheduleFinish(timestamp)
         verify(sut).finishEvent(eq(timestamp), anyOrNull())
+        val spans = sut.getEventSpans()
+        assertEquals(timestamp, spans[CONNECTION_EVENT]?.finishDate)
     }
 
     @Test

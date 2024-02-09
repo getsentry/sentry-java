@@ -15,7 +15,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class ActivityFramesTrackerTest {
@@ -382,6 +384,20 @@ class ActivityFramesTrackerTest {
         stopThread.start()
         stopThread.join(500)
         verify(fixture.handler).post(any())
+    }
+
+    @Test
+    fun `when perf-2 is enabled, activity frame metrics tracker is disabled`() {
+        fixture.options.isEnablePerformanceV2 = true
+        val sut = fixture.getSut()
+        assertFalse(sut.isFrameMetricsAggregatorAvailable)
+    }
+
+    @Test
+    fun `when perf-2 is disabled, activity frame metrics tracker is enabled`() {
+        fixture.options.isEnablePerformanceV2 = false
+        val sut = fixture.getSut()
+        assertTrue(sut.isFrameMetricsAggregatorAvailable)
     }
 
     private fun getArray(frameTime: Int = 1, numFrames: Int = 1): Array<SparseIntArray?> {

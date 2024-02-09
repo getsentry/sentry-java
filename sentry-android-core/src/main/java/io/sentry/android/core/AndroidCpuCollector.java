@@ -6,8 +6,8 @@ import android.os.SystemClock;
 import android.system.Os;
 import android.system.OsConstants;
 import io.sentry.CpuCollectionData;
-import io.sentry.ICollector;
 import io.sentry.ILogger;
+import io.sentry.IPerformanceSnapshotCollector;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryLevel;
 import io.sentry.util.FileUtils;
@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 // The content of the /proc/self/stat file is specified in
 // https://man7.org/linux/man-pages/man5/proc.5.html
 @ApiStatus.Internal
-public final class AndroidCpuCollector implements ICollector {
+public final class AndroidCpuCollector implements IPerformanceSnapshotCollector {
 
   private long lastRealtimeNanos = 0;
   private long lastCpuNanos = 0;

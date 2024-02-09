@@ -533,6 +533,17 @@ class AnrV2EventProcessorTest {
         assertEquals("ANR", exception.value)
     }
 
+    @Test
+    fun `sets default fingerprint to distinguish between background and foreground ANRs`() {
+        val backgroundHint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
+        val processedBackground = processEvent(backgroundHint, populateScopeCache = false)
+        assertEquals(listOf("{{ default }}", "background-anr"), processedBackground.fingerprints)
+
+        val foregroundHint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+        val processedForeground = processEvent(foregroundHint, populateScopeCache = false)
+        assertEquals(listOf("{{ default }}", "foreground-anr"), processedForeground.fingerprints)
+    }
+
     private fun processEvent(
         hint: Hint,
         populateScopeCache: Boolean = false,

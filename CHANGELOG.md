@@ -4,6 +4,13 @@
 
 ### Features
 
+- Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
+- Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
+
+## 7.3.0
+
+### Features
+
 - Added App Start profiling
     - This depends on the new option `io.sentry.profiling.enable-app-start`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
     - Sampler functions can check the new `isForNextAppStart` flag, to adjust startup profiling sampling programmatically.
@@ -11,11 +18,18 @@
     - Decouple Profiler from Transaction ([#3101](https://github.com/getsentry/sentry-java/pull/3101))
     - Add options and sampling logic ([#3121](https://github.com/getsentry/sentry-java/pull/3121))
     - Add ContentProvider and start profile ([#3128](https://github.com/getsentry/sentry-java/pull/3128))
-- Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
+- Extend internal performance collector APIs ([#3102](https://github.com/getsentry/sentry-java/pull/3102))
+- Collect slow and frozen frames for spans using `OnFrameMetricsAvailableListener` ([#3111](https://github.com/getsentry/sentry-java/pull/3111))
+- Interpolate total frame count to match span duration ([#3158](https://github.com/getsentry/sentry-java/pull/3158))
 
 ### Fixes
 
+- Avoid multiple breadcrumbs from OkHttpEventListener ([#3175](https://github.com/getsentry/sentry-java/pull/3175))
+- Apply OkHttp listener auto finish timestamp to all running spans ([#3167](https://github.com/getsentry/sentry-java/pull/3167))
 - Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
+- Set default fingerprint for ANRv2 events to correctly group background and foreground ANRs ([#3164](https://github.com/getsentry/sentry-java/pull/3164))
+  - This will improve grouping of ANRs that have similar stacktraces but differ in background vs foreground state. Only affects newly-ingested ANR events with `mechanism:AppExitInfo`
+- Fix UserFeedback disk cache name conflicts with linked events ([#3116](https://github.com/getsentry/sentry-java/pull/3116))
 
 ### Breaking changes
 

@@ -35,7 +35,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@982da8e78c05368c70dac0351bb82647a9e9a5d2 # pin@v2
+        uses: gradle/gradle-build-action@3b1b3b9a2104c2b47fbae53f3938079c00c9bb87 # pin@v2
 
       # Clean, build and release a test apk, but only if we will run the benchmark
       - name: Make assembleBenchmarks
@@ -80,9 +80,9 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@982da8e78c05368c70dac0351bb82647a9e9a5d2 # pin@v2
+        uses: gradle/gradle-build-action@3b1b3b9a2104c2b47fbae53f3938079c00c9bb87 # pin@v2
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: app-plain-cache
         with:
           path: sentry-android-integration-tests/test-app-plain/build/outputs/apk/release/test-app-plain-release.apk

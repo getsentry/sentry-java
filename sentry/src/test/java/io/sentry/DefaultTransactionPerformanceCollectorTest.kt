@@ -38,7 +38,8 @@ class DefaultTransactionPerformanceCollectorTest {
         var mockTimer: Timer? = null
         val deferredExecutorService = DeferredExecutorService()
 
-        val mockCpuCollector: ICollector = object : ICollector {
+        val mockCpuCollector: IPerformanceSnapshotCollector = object :
+            IPerformanceSnapshotCollector {
             override fun setup() {}
             override fun collect(performanceCollectionData: PerformanceCollectionData) {
                 performanceCollectionData.addCpuData(mock())
@@ -49,14 +50,14 @@ class DefaultTransactionPerformanceCollectorTest {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = executorService
             if (cpuCollector != null) {
-                options.addCollector(cpuCollector)
+                options.addPerformanceCollector(cpuCollector)
             }
             if (memoryCollector != null) {
-                options.addCollector(memoryCollector)
+                options.addPerformanceCollector(memoryCollector)
             }
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
@@ -80,15 +81,15 @@ class DefaultTransactionPerformanceCollectorTest {
     @Test
     fun `when no collectors are set in options, collect is ignored`() {
         val collector = fixture.getSut(null, null)
-        assertTrue(fixture.options.collectors.isEmpty())
+        assertTrue(fixture.options.performanceCollectors.isEmpty())
         collector.start(fixture.transaction1)
         verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), any())
     }
 
     @Test
     fun `collect calls collectors setup`() {
-        val memoryCollector = mock<ICollector>()
-        val cpuCollector = mock<ICollector>()
+        val memoryCollector = mock<IPerformanceSnapshotCollector>()
+        val cpuCollector = mock<IPerformanceSnapshotCollector>()
         val collector = fixture.getSut(memoryCollector, cpuCollector)
         collector.start(fixture.transaction1)
         Thread.sleep(300)
@@ -169,18 +170,21 @@ class DefaultTransactionPerformanceCollectorTest {
     }
 
     @Test
-    fun `collector has no ICollector by default`() {
+    fun `collector has no IPerformanceCollector by default`() {
         val collector = fixture.getSut(null, null)
-        assertNotNull(collector.getProperty<List<ICollector>>("collectors"))
-        assertTrue(collector.getProperty<List<ICollector>>("collectors").isEmpty())
+        assertNotNull(collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors"))
+        assertTrue(collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors").isEmpty())
+
+        assertNotNull(collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors"))
+        assertTrue(collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors").isEmpty())
     }
 
     @Test
     fun `only one of multiple same collectors are collected`() {
-        fixture.options.addCollector(JavaMemoryCollector())
+        fixture.options.addPerformanceCollector(JavaMemoryCollector())
         val collector = fixture.getSut()
         // We have 2 memory collectors and 1 cpu collector
-        assertEquals(3, fixture.options.collectors.size)
+        assertEquals(3, fixture.options.performanceCollectors.size)
 
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
@@ -201,10 +205,10 @@ class DefaultTransactionPerformanceCollectorTest {
     @Test
     fun `setup and collect happen on background thread`() {
         val threadCheckerCollector = spy(ThreadCheckerCollector())
-        fixture.options.addCollector(threadCheckerCollector)
+        fixture.options.addPerformanceCollector(threadCheckerCollector)
         val collector = fixture.getSut()
         // We have the ThreadCheckerCollector in the collectors
-        assertTrue(fixture.options.collectors.any { it is ThreadCheckerCollector })
+        assertTrue(fixture.options.performanceCollectors.any { it is ThreadCheckerCollector })
 
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
@@ -241,7 +245,84 @@ class DefaultTransactionPerformanceCollectorTest {
         verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?"), any())
     }
 
-    inner class ThreadCheckerCollector : ICollector {
+    @Test
+    fun `Continuous collectors are notified properly`() {
+        val collector = mock<IPerformanceContinuousCollector>()
+        fixture.options.performanceCollectors.add(collector)
+        val sut = fixture.getSut(memoryCollector = null, cpuCollector = null)
+
+        // when a transaction is started
+        sut.start(fixture.transaction1)
+
+        // collector should be notified
+        verify(collector).onSpanStarted(fixture.transaction1)
+
+        // when a transaction is stopped
+        sut.stop(fixture.transaction1)
+
+        // collector should be notified
+        verify(collector).onSpanFinished(fixture.transaction1)
+        // and clear should be called, as there's no more running txn
+        verify(collector).clear()
+    }
+
+    @Test
+    fun `Continuous collectors are notified properly even when multiple txn are running`() {
+        val collector = mock<IPerformanceContinuousCollector>()
+        fixture.options.performanceCollectors.add(collector)
+        val sut = fixture.getSut(memoryCollector = null, cpuCollector = null)
+
+        // when a transaction is started
+        sut.start(fixture.transaction1)
+
+        // collector should be notified
+        verify(collector).onSpanStarted(fixture.transaction1)
+
+        // when a second transaction is started
+        sut.start(fixture.transaction2)
+
+        // collector should be notified again
+        verify(collector).onSpanStarted(fixture.transaction2)
+
+        // when the first transaction is stopped
+        sut.stop(fixture.transaction1)
+
+        // collector should be notified
+        verify(collector).onSpanFinished(fixture.transaction1)
+
+        // but clear should not be called, as there's still txn 2 running
+        verify(collector, never()).clear()
+
+        // unless the txn finishes as well
+        sut.stop(fixture.transaction2)
+
+        verify(collector).onSpanFinished(fixture.transaction2)
+        verify(collector).clear()
+    }
+
+    @Test
+    fun `span start and finishes are propagated as well`() {
+        val collector = mock<IPerformanceContinuousCollector>()
+        fixture.options.performanceCollectors.add(collector)
+        val sut = fixture.getSut(memoryCollector = null, cpuCollector = null)
+
+        val span = mock<ISpan>()
+
+        // when a transaction is started
+        sut.start(fixture.transaction1)
+        sut.onSpanStarted(span)
+        sut.onSpanFinished(span)
+        sut.stop(fixture.transaction1)
+
+        verify(collector).onSpanStarted(fixture.transaction1)
+        verify(collector).onSpanStarted(span)
+        verify(collector).onSpanFinished(span)
+        verify(collector).onSpanFinished(fixture.transaction1)
+        verify(collector).clear()
+    }
+
+    inner class ThreadCheckerCollector :
+        IPerformanceSnapshotCollector {
         override fun setup() {
             if (mainThreadChecker.isMainThread) {
                 throw AssertionError("setup() was called in the main thread")

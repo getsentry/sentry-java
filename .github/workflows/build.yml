@@ -25,13 +25,15 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@982da8e78c05368c70dac0351bb82647a9e9a5d2 # pin@v2
+        uses: gradle/gradle-build-action@3b1b3b9a2104c2b47fbae53f3938079c00c9bb87 # pin@v2
+        with:
+          gradle-home-cache-cleanup: true
 
       - name: Run Tests with coverage and Lint
         run: make preMerge
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@v3
+        uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # pin@v3
         with:
           name: sentry-java
           fail_ci_if_error: false
@@ -40,6 +42,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-build
           path: |
             **/build/reports/*
+
+      - name: Test Report
+        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        if: always()
+        with:
+          name: JUnit Build
+          list-suites: 'failed'
+          list-tests: 'failed'
+          path: |
+            **/build/test-results/**/*.xml
+          reporter: java-junit
+          output-to: step-summary
+          fail-on-error: false
