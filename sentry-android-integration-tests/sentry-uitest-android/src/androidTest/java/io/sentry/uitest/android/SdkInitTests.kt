@@ -91,6 +91,9 @@ class SdkInitTests : BaseUiTest() {
 
         Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
 
+        // We want the SDK to start sending the event. If we don't wait, it's possible we don't send anything before the SDK is restarted
+        Thread.sleep(500)
+
         val beforeRestart = System.currentTimeMillis()
         // We restart the SDK. This shouldn't block the main thread, but new options (e.g. profiling) should work
         initSentry(false) { options: SentryAndroidOptions ->
@@ -140,6 +143,9 @@ class SdkInitTests : BaseUiTest() {
         }
 
         Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
+
+        // We want the SDK to start sending the event. If we don't wait, it's possible we don't send anything before the SDK is restarted
+        Thread.sleep(500)
 
         val beforeRestart = System.currentTimeMillis()
         Sentry.close()

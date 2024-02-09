@@ -28,6 +28,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.RejectedExecutionHandler
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -351,7 +352,23 @@ class AsyncHttpTransportTest {
         val sut = fixture.getSUT()
         sut.close(true)
 
-        verify(fixture.executor).awaitTermination(eq(200), eq(TimeUnit.MILLISECONDS))
+        verify(fixture.executor).awaitTermination(eq(0), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `close shuts down the executor and runs executing runnables through rejectedExecutionHandler`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val currentExecutingRunnables = listOf(mock<Runnable>(), mock<Runnable>())
+        val rejectedExecutionHandler = mock<RejectedExecutionHandler>()
+        val sut = fixture.getSUT()
+        whenever(fixture.executor.shutdownNow()).thenReturn(currentExecutingRunnables)
+        whenever(fixture.executor.rejectedExecutionHandler).thenReturn(rejectedExecutionHandler)
+
+        sut.close(true)
+
+        verify(fixture.executor).shutdownNow()
+        verify(rejectedExecutionHandler).rejectedExecution(eq(currentExecutingRunnables[0]), eq(fixture.executor))
+        verify(rejectedExecutionHandler).rejectedExecution(eq(currentExecutingRunnables[1]), eq(fixture.executor))
     }
 
     @Test

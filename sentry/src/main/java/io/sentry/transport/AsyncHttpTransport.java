@@ -21,6 +21,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -172,7 +173,7 @@ public final class AsyncHttpTransport implements ITransport {
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
       // We need a small timeout to be able to save to disk any rejected envelope
-      long timeout = isRestarting ? 200 : options.getFlushTimeoutMillis();
+      long timeout = isRestarting ? 0 : options.getFlushTimeoutMillis();
       if (!executor.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
@@ -181,7 +182,11 @@ public final class AsyncHttpTransport implements ITransport {
                 "Failed to shutdown the async connection async sender  within "
                     + timeout
                     + " ms. Trying to force it now.");
-        executor.shutdownNow();
+        final @NotNull List<Runnable> runnables = executor.shutdownNow();
+        for (final @NotNull Runnable r : runnables) {
+          // We store to disk any envelope that is currently being sent
+          executor.getRejectedExecutionHandler().rejectedExecution(r, executor);
+        }
       }
     } catch (InterruptedException e) {
       // ok, just give up then...
