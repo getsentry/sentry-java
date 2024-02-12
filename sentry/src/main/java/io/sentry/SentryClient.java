@@ -212,8 +212,8 @@ public final class SentryClient implements ISentryClient {
 
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
-      @Nullable
-      SentryEnvelope envelope = buildEnvelope(event, attachments, session, traceContext, null);
+      final @Nullable SentryEnvelope envelope =
+          buildEnvelope(event, attachments, session, traceContext, null);
 
       hint.clear();
       if (envelope != null) {
@@ -445,7 +445,7 @@ public final class SentryClient implements ISentryClient {
         .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
 
     try {
-      @Nullable SentryEnvelope envelope = buildEnvelope(userFeedback);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
       sendEnvelope(envelope, null);
     } catch (IOException e) {
       options
@@ -742,7 +742,7 @@ public final class SentryClient implements ISentryClient {
         }
       }
 
-      final SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
 
       hint.clear();
       sentryId = sendEnvelope(envelope, hint);
