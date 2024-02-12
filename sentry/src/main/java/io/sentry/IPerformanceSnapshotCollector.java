@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 /** Used for collecting data about vitals (memory, cpu, etc.) when a transaction is active. */
 @ApiStatus.Internal
-public interface ICollector {
+public interface IPerformanceSnapshotCollector extends IPerformanceCollector {
 
   void setup();
 

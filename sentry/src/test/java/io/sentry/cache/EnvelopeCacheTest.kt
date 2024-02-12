@@ -1,6 +1,7 @@
 package io.sentry.cache
 
 import io.sentry.DateUtils
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.NoOpLogger
 import io.sentry.SentryCrashLastRunState
@@ -16,6 +17,7 @@ import io.sentry.cache.EnvelopeCache.SUFFIX_SESSION_FILE
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
+import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.mock
 import java.io.File
@@ -316,5 +318,33 @@ class EnvelopeCacheTest {
             "rel",
             null
         )
+    }
+
+    @Test
+    fun `two items with the same event id can be stored side-by-side`() {
+        val cache = fixture.getSUT()
+
+        val eventId = SentryId()
+
+        val envelopeA = SentryEnvelope.from(
+            fixture.options.serializer,
+            SentryEvent().apply {
+                setEventId(eventId)
+            },
+            null
+        )
+
+        val envelopeB = SentryEnvelope.from(
+            fixture.options.serializer,
+            SentryEvent().apply {
+                setEventId(eventId)
+            },
+            null
+        )
+
+        cache.store(envelopeA, Hint())
+        cache.store(envelopeB, Hint())
+
+        assertEquals(2, cache.directory.list()?.size)
     }
 }

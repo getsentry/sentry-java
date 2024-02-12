@@ -262,6 +262,8 @@ public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
+	public fun onSpanFinished (Lio/sentry/ISpan;)V
+	public fun onSpanStarted (Lio/sentry/ISpan;)V
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
@@ -508,11 +510,6 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
 
-public abstract interface class io/sentry/ICollector {
-	public abstract fun collect (Lio/sentry/PerformanceCollectionData;)V
-	public abstract fun setup ()V
-}
-
 public abstract interface class io/sentry/IConnectionStatusProvider {
 	public abstract fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)Z
 	public abstract fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
@@ -624,6 +621,20 @@ public abstract interface class io/sentry/IOptionsObserver {
 	public abstract fun setRelease (Ljava/lang/String;)V
 	public abstract fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public abstract fun setTags (Ljava/util/Map;)V
+}
+
+public abstract interface class io/sentry/IPerformanceCollector {
+}
+
+public abstract interface class io/sentry/IPerformanceContinuousCollector : io/sentry/IPerformanceCollector {
+	public abstract fun clear ()V
+	public abstract fun onSpanFinished (Lio/sentry/ISpan;)V
+	public abstract fun onSpanStarted (Lio/sentry/ISpan;)V
+}
+
+public abstract interface class io/sentry/IPerformanceSnapshotCollector : io/sentry/IPerformanceCollector {
+	public abstract fun collect (Lio/sentry/PerformanceCollectionData;)V
+	public abstract fun setup ()V
 }
 
 public abstract interface class io/sentry/IScope {
@@ -825,7 +836,7 @@ public final class io/sentry/IpAddressUtils {
 	public static fun isDefault (Ljava/lang/String;)Z
 }
 
-public final class io/sentry/JavaMemoryCollector : io/sentry/ICollector {
+public final class io/sentry/JavaMemoryCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> ()V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
@@ -993,13 +1004,17 @@ public final class io/sentry/MemoryCollectionData {
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/MonitorSchedule;)V
 	public fun getCheckinMargin ()Ljava/lang/Long;
+	public fun getFailureIssueThreshold ()Ljava/lang/Long;
 	public fun getMaxRuntime ()Ljava/lang/Long;
+	public fun getRecoveryThreshold ()Ljava/lang/Long;
 	public fun getSchedule ()Lio/sentry/MonitorSchedule;
 	public fun getTimezone ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCheckinMargin (Ljava/lang/Long;)V
+	public fun setFailureIssueThreshold (Ljava/lang/Long;)V
 	public fun setMaxRuntime (Ljava/lang/Long;)V
+	public fun setRecoveryThreshold (Ljava/lang/Long;)V
 	public fun setSchedule (Lio/sentry/MonitorSchedule;)V
 	public fun setTimezone (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -1013,7 +1028,9 @@ public final class io/sentry/MonitorConfig$Deserializer : io/sentry/JsonDeserial
 
 public final class io/sentry/MonitorConfig$JsonKeys {
 	public static final field CHECKIN_MARGIN Ljava/lang/String;
+	public static final field FAILURE_ISSUE_THRESHOLD Ljava/lang/String;
 	public static final field MAX_RUNTIME Ljava/lang/String;
+	public static final field RECOVERY_THRESHOLD Ljava/lang/String;
 	public static final field SCHEDULE Ljava/lang/String;
 	public static final field TIMEZONE Ljava/lang/String;
 	public fun <init> ()V
@@ -1300,6 +1317,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
+	public fun onSpanFinished (Lio/sentry/ISpan;)V
+	public fun onSpanStarted (Lio/sentry/ISpan;)V
 	public fun start (Lio/sentry/ITransaction;)V
 	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
@@ -2121,7 +2140,6 @@ public class io/sentry/SentryOptions {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	public fun <init> ()V
 	public fun addBundleId (Ljava/lang/String;)V
-	public fun addCollector (Lio/sentry/ICollector;)V
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
@@ -2129,6 +2147,7 @@ public class io/sentry/SentryOptions {
 	public fun addInAppInclude (Ljava/lang/String;)V
 	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addOptionsObserver (Lio/sentry/IOptionsObserver;)V
+	public fun addPerformanceCollector (Lio/sentry/IPerformanceCollector;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
 	public static fun empty ()Lio/sentry/SentryOptions;
@@ -2140,7 +2159,6 @@ public class io/sentry/SentryOptions {
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getCacheDirPath ()Ljava/lang/String;
 	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
-	public fun getCollectors ()Ljava/util/List;
 	public fun getConnectionStatusProvider ()Lio/sentry/IConnectionStatusProvider;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
@@ -2179,6 +2197,7 @@ public class io/sentry/SentryOptions {
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
+	public fun getPerformanceCollectors ()Ljava/util/List;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
@@ -2806,6 +2825,8 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 
 public abstract interface class io/sentry/TransactionPerformanceCollector {
 	public abstract fun close ()V
+	public abstract fun onSpanFinished (Lio/sentry/ISpan;)V
+	public abstract fun onSpanStarted (Lio/sentry/ISpan;)V
 	public abstract fun start (Lio/sentry/ITransaction;)V
 	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
