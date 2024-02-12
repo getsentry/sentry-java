@@ -332,12 +332,6 @@ final class AndroidOptionsInitializer {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }
     }
-
-    if (options.getSpotlightConnectionUrl() == null) {
-      // developer machine should be the same across emulators
-      // see https://developer.android.com/studio/run/emulator-networking.html
-      options.setSpotlightConnectionUrl("http://10.0.2.2:8969/stream");
-    }
   }
 
   /**

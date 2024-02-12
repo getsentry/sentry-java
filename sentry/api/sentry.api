@@ -2239,6 +2239,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableShutdownHook ()Z
+	public fun isEnableSpotlight ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
@@ -2278,6 +2279,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableShutdownHook (Z)V
+	public fun setEnableSpotlight (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
@@ -2720,6 +2722,14 @@ public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserialize
 	public fun <init> ()V
 	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanStatus;
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
+	public fun <init> ()V
+	public fun close ()V
+	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
+	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
@@ -3257,13 +3267,6 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
-}
-
-public final class io/sentry/internal/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
-	public fun <init> ()V
-	public fun close ()V
-	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
 public abstract interface class io/sentry/internal/debugmeta/IDebugMetaLoader {

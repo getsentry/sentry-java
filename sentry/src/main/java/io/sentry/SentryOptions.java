@@ -7,7 +7,6 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
-import io.sentry.internal.SpotlightIntegration;
 import io.sentry.internal.debugmeta.IDebugMetaLoader;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
@@ -444,6 +443,8 @@ public class SentryOptions {
   private boolean sendModules = true;
 
   private @Nullable BeforeEnvelopeCallback beforeEnvelopeCallback;
+
+  private boolean enableSpotlight = false;
 
   private @Nullable String spotlightConnectionUrl;
 
@@ -2300,6 +2301,16 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
     this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableSpotlight() {
+    return enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpotlight(final boolean enableSpotlight) {
+    this.enableSpotlight = enableSpotlight;
   }
 
   /** The BeforeSend callback */
