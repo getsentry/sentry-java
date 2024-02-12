@@ -2384,11 +2384,11 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
-  /** The BeforeSend callback */
+  /** The BeforeEnvelope callback */
   public interface BeforeEnvelopeCallback {
 
     /**
-     * Mutates or drop an event before being sent
+     * Mutates or drop an envelope before being sent
      *
      * @param envelope the envelope
      * @param hint the hints
