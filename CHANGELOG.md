@@ -5,6 +5,9 @@
 ### Features
 
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
+- Experimental: Add Spotlight integration ([#3166](https://github.com/getsentry/sentry-java/pull/3166))
+    - For more details about Spotlight head over to https://spotlightjs.com/
+    - Set `options.isEnableSpotlight = true` to enable Spotlight
 
 ## 7.3.0
 
