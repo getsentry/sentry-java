@@ -31,7 +31,7 @@ public class AppStartMetrics {
     WARM
   }
 
-  private static final long CLASS_LOADED_UPTIME_MS = SystemClock.uptimeMillis();
+  private static long CLASS_LOADED_UPTIME_MS = SystemClock.uptimeMillis();
 
   private static volatile @Nullable AppStartMetrics instance;
 
@@ -175,6 +175,12 @@ public class AppStartMetrics {
 
   public @Nullable TracesSamplingDecision getAppStartSamplingDecision() {
     return appStartSamplingDecision;
+  }
+
+  @TestOnly
+  @ApiStatus.Internal
+  public void setClassLoadedUptimeMs(final long classLoadedUptimeMs) {
+    CLASS_LOADED_UPTIME_MS = classLoadedUptimeMs;
   }
 
   /**
