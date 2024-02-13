@@ -1,3 +1,32 @@
+/**
+ * Adapted from https://github.com/fzyzcjy/flutter_screen_recorder/blob/master/packages/fast_screen_recorder/android/src/main/kotlin/com/cjy/fast_screen_recorder/SimpleVideoEncoder.kt
+ *
+ * Copyright (c) 2021 fzyzcjy
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * In addition to the standard MIT license, this library requires the following:
+ * The recorder itself only saves data on user's phone locally, thus it does not have any privacy problem.
+ * However, if you are going to get the records out of the local storage (e.g. upload the records to your server),
+ * please explicitly ask the user for permission, and promise to only use the records to debug your app.
+ * This is a part of the license of this library.
+ */
 package io.sentry.android.replay.video
 
 import android.graphics.Bitmap
@@ -14,16 +43,10 @@ import io.sentry.android.replay.video.SimpleFrameMuxer
 import io.sentry.android.replay.video.SimpleMp4FrameMuxer
 import java.io.File
 
-class SimpleVideoEncoder(
+internal class SimpleVideoEncoder(
   val muxerConfig: MuxerConfig,
 ) {
-  companion object {
-    const val TAG = "SimpleVideoEncoder"
-  }
-
   private val mediaFormat: MediaFormat = run {
-    Log.i(TAG, "mediaFormat creation begin")
-
     val format = MediaFormat.createVideoFormat(
       muxerConfig.mimeType,
       muxerConfig.videoWidth,
@@ -40,20 +63,14 @@ class SimpleVideoEncoder(
     format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.frameRate)
     format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10)
 
-    Log.i(TAG, "mediaFormat creation end format=$format")
-
     format
   }
 
   private val mediaCodec: MediaCodec = run {
-    Log.i(TAG, "mediaCodec creation begin")
-
 //    val codecs = MediaCodecList(REGULAR_CODECS)
 //    val codecName = codecs.findEncoderForFormat(mediaFormat)
 //    val codec = MediaCodec.createByCodecName(codecName)
     val codec = MediaCodec.createEncoderByType(muxerConfig.mimeType)
-
-    Log.i(TAG, "mediaCodec creation end codec=$codec")
 
     codec
   }
@@ -68,8 +85,6 @@ class SimpleVideoEncoder(
     mediaCodec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
     surface = mediaCodec.createInputSurface()
     mediaCodec.start()
-
-//        drainCodec(false)
   }
 
   private fun createMediaCodecCallback(): MediaCodec.Callback {
@@ -82,8 +97,6 @@ class SimpleVideoEncoder(
         index: Int,
         info: MediaCodec.BufferInfo
       ) {
-        // need to catch, since this is from callback, so there are no
-        // things like pigeon auto-catch
           val encodedData = codec.getOutputBuffer(index)!!
 
           var effectiveSize = info.size
@@ -104,25 +117,19 @@ class SimpleVideoEncoder(
           mediaCodec.releaseOutputBuffer(index, false)
 
           if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
-            Log.i(TAG, "drainCodec end of stream reached")
             actualRelease()
           }
       }
 
       override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-        Log.e(TAG, "onError (MediaCodec.Callback)", e)
       }
 
       override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-          Log.i(TAG, "onOutputFormatChanged format=$format")
-
           // should happen before receiving buffers, and should only happen once
           if (frameMuxer.isStarted()) {
             throw RuntimeException("format changed twice")
           }
           val newFormat: MediaFormat = mediaCodec.outputFormat
-          Log.i(TAG, "encoder output format changed: $newFormat")
-
           // now that we have the Magic Goodies, start the muxer
           frameMuxer.start(newFormat)
       }
@@ -142,7 +149,6 @@ class SimpleVideoEncoder(
    * can only *start* releasing, since it is asynchronous
    */
   fun startRelease() {
-//        drainCodec(true)
     mediaCodec.signalEndOfInputStream()
   }
 
@@ -155,7 +161,7 @@ class SimpleVideoEncoder(
   }
 }
 
-data class MuxerConfig(
+internal data class MuxerConfig(
   val file: File,
   val videoWidth: Int,
   val videoHeight: Int,

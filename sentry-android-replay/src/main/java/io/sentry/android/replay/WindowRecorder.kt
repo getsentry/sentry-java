@@ -19,10 +19,6 @@ import kotlin.math.roundToInt
 
 class WindowRecorder {
 
-  companion object {
-    private const val TAG = "WindowRecorder"
-  }
-
   private val rootViewsSpy by lazy(NONE) {
     RootViewsSpy.install()
   }
@@ -61,6 +57,7 @@ class WindowRecorder {
 //        context.resources.displayMetrics.density).roundToInt() to
 //        (wm.currentWindowMetrics.bounds.right /
 //            context.resources.displayMetrics.density).roundToInt()
+      // TODO: support this for api level < 30
     val aspectRatio = wm.currentWindowMetrics.bounds.bottom.toFloat() / wm.currentWindowMetrics.bounds.right.toFloat()
 
     val videoFile = File(context.cacheDir, "sentry-sr.mp4")

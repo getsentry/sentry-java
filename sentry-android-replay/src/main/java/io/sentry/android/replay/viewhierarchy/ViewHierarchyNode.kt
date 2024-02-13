@@ -15,6 +15,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.ImageView
 import android.widget.TextView
 
+// TODO: merge with ViewHierarchyNode from sentry-core maybe?
 data class ViewHierarchyNode(
   val x: Float,
   val y: Float,
@@ -53,6 +54,8 @@ data class ViewHierarchyNode(
     }
 
     fun fromView(view: View): ViewHierarchyNode {
+        // TODO: Extract redacting into its own class/function
+        // TODO: extract redacting into a separate thread?
       var shouldRedact = false
       var dominantColor: Int? = null
       var rect: Rect? = null
@@ -89,6 +92,7 @@ data class ViewHierarchyNode(
               textStart = 0
             }
             // TODO: support known 3rd-party widgets like MaterialButton with an icon
+              // TODO: also calculate height properly based on text bounds
             rect.left += textStart + view.paddingStart
             rect.right = rect.left + (textEnd - textStart)
           }
@@ -134,6 +138,9 @@ data class ViewHierarchyNode(
 
         else -> {
           if (intrinsicHeight > 0 && intrinsicWidth > 0) {
+              // this is needed to pick a dominant color when there's a drawable from a 3rd-party image-loading lib, e.g. Coil
+              // we request the bitmap to draw onto the canvas and then downscale it to 1x1 pixels to get the dominant color
+              // TODO: maybe we should provide an option to disable this and just use black color for rectangles to save cpu time
             val bmp =
               Bitmap.createBitmap(this.intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)

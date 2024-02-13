@@ -1,3 +1,21 @@
+/**
+ * Adapted from https://github.com/square/curtains
+ *
+ * Copyright 2021 Square Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.sentry.android.replay
 
 import android.annotation.SuppressLint
@@ -40,6 +58,7 @@ internal object WindowSpy {
    */
   private val decorViewClass by lazy(NONE) {
     val sdkInt = SDK_INT
+      // TODO: we can only consider API 26
     val decorViewClassName = when {
       sdkInt >= 24 -> "com.android.internal.policy.DecorView"
       sdkInt == 23 -> "com.android.internal.policy.PhoneWindow\$DecorView"
@@ -80,12 +99,6 @@ internal object WindowSpy {
     }
   }
 
-  fun attachedToPhoneWindow(maybeDecorView: View): Boolean {
-    return decorViewClass?.let { decorViewClass ->
-      decorViewClass.isInstance(maybeDecorView)
-    } ?: false
-  }
-
   fun pullWindow(maybeDecorView: View): Window? {
     return decorViewClass?.let { decorViewClass ->
       if (decorViewClass.isInstance(maybeDecorView)) {
@@ -121,10 +134,6 @@ fun interface OnRootViewsChangedListener {
 internal class RootViewsSpy private constructor() {
 
   val listeners = CopyOnWriteArrayList<OnRootViewsChangedListener>()
-
-  fun copyRootViewList(): List<View> {
-    return delegatingViewList.toList()
-  }
 
   private val delegatingViewList = object : ArrayList<View>() {
     override fun add(element: View): Boolean {
@@ -189,23 +198,5 @@ internal object WindowManagerSpy {
     } catch (ignored: Throwable) {
       Log.w("WindowManagerSpy", ignored)
     }
-  }
-
-  fun windowManagerMViewsArray(): Array<View> {
-    val sdkInt = SDK_INT
-    if (sdkInt >= 19) {
-      return arrayOf()
-    }
-    try {
-      windowManagerInstance?.let { windowManagerInstance ->
-        mViewsField?.let { mViewsField ->
-          @Suppress("UNCHECKED_CAST")
-          return mViewsField[windowManagerInstance] as Array<View>
-        }
-      }
-    } catch (ignored: Throwable) {
-      Log.w("WindowManagerSpy", ignored)
-    }
-    return arrayOf()
   }
 }

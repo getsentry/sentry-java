@@ -22,7 +22,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.system.measureTimeMillis
 
-class ScreenshotRecorder(
+internal class ScreenshotRecorder(
   val rootView: WeakReference<View>,
   val encoder: SimpleVideoEncoder
 ) : ViewTreeObserver.OnDrawListener {
@@ -37,7 +37,6 @@ class ScreenshotRecorder(
 
   private var lastCapturedAtMs: Long? = null
   override fun onDraw() {
-    // cheap debounce for testing
     val now = SystemClock.uptimeMillis()
     if (lastCapturedAtMs != null && (now - lastCapturedAtMs!!) < 1000L) {
       return
