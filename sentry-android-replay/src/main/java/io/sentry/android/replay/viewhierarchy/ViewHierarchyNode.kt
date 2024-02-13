@@ -1,6 +1,5 @@
 package io.sentry.android.replay.viewhierarchy
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
