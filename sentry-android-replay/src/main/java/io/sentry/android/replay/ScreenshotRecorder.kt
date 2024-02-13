@@ -35,6 +35,7 @@ internal class ScreenshotRecorder(
 
     private var lastCapturedAtMs: Long? = null
     override fun onDraw() {
+        // TODO: replace with Debouncer from sentry-core
         val now = SystemClock.uptimeMillis()
         if (lastCapturedAtMs != null && (now - lastCapturedAtMs!!) < 1000L) {
             return

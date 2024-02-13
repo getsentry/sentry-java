@@ -28,6 +28,10 @@ class WindowRecorder {
 
     private val onRootViewsChangedListener = OnRootViewsChangedListener { root, added ->
         if (added) {
+            if (recorders.containsKey(root)) {
+                // TODO: log
+                return@OnRootViewsChangedListener
+            }
             // stop tracking other windows so they don't interfere in the recording like a 25th frame effect
             recorders.entries.forEach {
                 it.key.viewTreeObserver.removeOnDrawListener(it.value)
