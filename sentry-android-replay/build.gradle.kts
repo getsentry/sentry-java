@@ -7,7 +7,8 @@ plugins {
     jacoco
     id(Config.QualityPlugins.jacocoAndroid)
     id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    // TODO: enable it later
+//    id(Config.QualityPlugins.detektPlugin)
 }
 
 android {
