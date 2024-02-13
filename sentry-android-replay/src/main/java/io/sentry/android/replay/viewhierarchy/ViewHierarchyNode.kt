@@ -1,5 +1,6 @@
 package io.sentry.android.replay.viewhierarchy
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -10,6 +11,8 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.VectorDrawable
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.ImageView
@@ -61,9 +64,16 @@ data class ViewHierarchyNode(
             var rect: Rect? = null
             when (view) {
                 is TextView -> {
-                    val nodeInfo = AccessibilityNodeInfo()
+                    // TODO: API level check
+                    // TODO: perhaps this is heavy, might reconsider
+                    val nodeInfo = if (VERSION.SDK_INT >= VERSION_CODES.R) {
+                        AccessibilityNodeInfo()
+                    } else {
+                        AccessibilityNodeInfo.obtain()
+                    }
                     view.onInitializeAccessibilityNodeInfo(nodeInfo)
                     shouldRedact = nodeInfo.isVisibleToUser
+                    nodeInfo.recycle()
                     if (shouldRedact) {
                         val bounds = Rect()
                         val text = view.text.toString()

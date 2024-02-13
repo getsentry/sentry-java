@@ -1,6 +1,9 @@
 package io.sentry.android.replay
 
 import android.content.Context
+import android.graphics.Point
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.WindowManager
@@ -53,8 +56,16 @@ class WindowRecorder {
 //        context.resources.displayMetrics.density).roundToInt() to
 //        (wm.currentWindowMetrics.bounds.right /
 //            context.resources.displayMetrics.density).roundToInt()
-        // TODO: support this for api level < 30
-        val aspectRatio = wm.currentWindowMetrics.bounds.bottom.toFloat() / wm.currentWindowMetrics.bounds.right.toFloat()
+        // TODO: API level check
+        // PixelCopy takes screenshots including system bars, so we have to get the real size here
+        val aspectRatio = if (VERSION.SDK_INT >= VERSION_CODES.R) {
+            wm.currentWindowMetrics.bounds.bottom.toFloat() / wm.currentWindowMetrics.bounds.right.toFloat()
+        } else {
+            val screenResolution = Point()
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealSize(screenResolution)
+            screenResolution.y.toFloat() / screenResolution.x.toFloat()
+        }
 
         val videoFile = File(context.cacheDir, "sentry-sr.mp4")
         encoder = SimpleVideoEncoder(
