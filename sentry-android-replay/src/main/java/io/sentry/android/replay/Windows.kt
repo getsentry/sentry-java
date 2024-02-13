@@ -35,7 +35,7 @@ import kotlin.LazyThreadSafetyMode.NONE
  * Note: this property is called [phoneWindow] because the only implementation of [Window] is
  * the internal class android.view.PhoneWindow.
  */
-val View.phoneWindow: Window?
+internal val View.phoneWindow: Window?
   get() {
     return WindowSpy.pullWindow(rootView)
   }
@@ -117,7 +117,7 @@ internal object WindowSpy {
  * If you only care about either attached or detached, consider implementing [OnRootViewAddedListener]
  * or [OnRootViewRemovedListener] instead.
  */
-fun interface OnRootViewsChangedListener {
+internal fun interface OnRootViewsChangedListener {
   /**
    * Called when [android.view.WindowManager.addView] and [android.view.WindowManager.removeView]
    * are called.
