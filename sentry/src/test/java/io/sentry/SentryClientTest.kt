@@ -549,7 +549,7 @@ class SentryClientTest {
 
                 assertEquals(1, actual.items.count())
                 val item = actual.items.first()
-                assertEquals(SentryItemType.CheckIn, item.header.type)
+                assertEquals(SentryItemType.Statsd, item.header.type)
                 assertEquals("application/json", item.header.contentType)
 
                 assertEnvelopeItemDataForCheckIn(item)
@@ -573,7 +573,7 @@ class SentryClientTest {
 
                 assertEquals(1, actual.items.count())
                 val item = actual.items.first()
-                assertEquals(SentryItemType.CheckIn, item.header.type)
+                assertEquals(SentryItemType.Statsd, item.header.type)
                 assertEquals("application/json", item.header.contentType)
 
                 assertEnvelopeItemDataForCheckIn(item)

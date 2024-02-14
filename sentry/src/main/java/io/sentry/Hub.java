@@ -4,6 +4,9 @@ import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
+import io.sentry.metrics.EncodedMetrics;
+import io.sentry.metrics.IMetricsHub;
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -24,7 +27,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Hub implements IHub {
+public final class Hub implements IHub, IMetricsHub {
+
   private volatile @NotNull SentryId lastEventId;
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
@@ -33,10 +37,11 @@ public final class Hub implements IHub {
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull IMetricAggregator metricAggregator;
+  private final @NotNull MetricsApi metricsApi;
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
-
     // Integrations are no longer registered on Hub ctor, but on Sentry.init
   }
 
@@ -52,6 +57,9 @@ public final class Hub implements IHub {
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
+
+    this.metricAggregator = new MetricAggregator(this, options.getLogger());
+    this.metricsApi = new MetricsApi(metricAggregator);
   }
 
   private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
@@ -284,6 +292,31 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public void captureMetrics(final @NotNull EncodedMetrics metrics) {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureMetrics' call is a no-op.");
+    } else {
+      final StackItem item = stack.peek();
+      final SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
+
+      // TODO usually the envelope is assembled by the client
+      final SentryEnvelopeHeader envelopeHeader =
+          new SentryEnvelopeHeader(
+              new SentryId(),
+              options.getSdkVersion(),
+              item.getScope().getPropagationContext().traceContext());
+
+      final SentryEnvelope envelope =
+          new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
+      item.getClient().captureEnvelope(envelope);
+    }
+  }
+
+  @Override
   public void startSession() {
     if (!isEnabled()) {
       options
@@ -337,6 +370,13 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'close' call is a no-op.");
     } else {
       try {
+        metricAggregator.close();
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error while closing metrics aggregator.", e);
+      }
+      try {
+        metricAggregator.close();
+
         for (Integration integration : options.getIntegrations()) {
           if (integration instanceof Closeable) {
             try {
@@ -925,5 +965,10 @@ public final class Hub implements IHub {
   public @Nullable RateLimiter getRateLimiter() {
     final StackItem item = stack.peek();
     return item.getClient().getRateLimiter();
+  }
+
+  @Override
+  public @NotNull MetricsApi getMetricsApi() {
+    return metricsApi;
   }
 }

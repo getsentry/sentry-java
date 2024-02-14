@@ -19,6 +19,7 @@ public enum SentryItemType implements JsonSerializable {
   ReplayEvent("replay_event"),
   ReplayRecording("replay_recording"),
   CheckIn("check_in"),
+  Statsd("statsd"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;

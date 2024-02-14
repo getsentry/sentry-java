@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -266,5 +267,10 @@ public final class HubAdapter implements IHub {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return Sentry.getCurrentHub().getRateLimiter();
+  }
+
+  @Override
+  public @NotNull MetricsApi getMetricsApi() {
+    return Sentry.getCurrentHub().getMetricsApi();
   }
 }
