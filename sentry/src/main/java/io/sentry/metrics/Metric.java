@@ -1,7 +1,6 @@
 package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +13,7 @@ public abstract class Metric {
   private final @NotNull String key;
   private final @Nullable MeasurementUnit unit;
   private final @Nullable Map<String, String> tags;
-  private final @NotNull Calendar timestamp;
+  private final @NotNull Long timestampMs;
 
   /**
    * Creates a new instance of {@link Metric}.
@@ -23,17 +22,17 @@ public abstract class Metric {
    * @param unit An optional {@link MeasurementUnit} that describes the values being tracked
    * @param tags An optional set of key/value pairs that can be used to add dimensionality to
    *     metrics
-   * @param timestamp A time when the metric was emitted.
+   * @param timestampMs A time when the metric was emitted.
    */
   public Metric(
       @NotNull String key,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @NotNull Calendar timestamp) {
+      @NotNull Long timestampMs) {
     this.key = key;
     this.unit = unit;
     this.tags = tags;
-    this.timestamp = timestamp;
+    this.timestampMs = timestampMs;
   }
 
   /** Adds a value to the metric */
@@ -58,8 +57,9 @@ public abstract class Metric {
     return tags;
   }
 
-  public Calendar getTimeStamp() {
-    return timestamp;
+  /** the unix timestamp in milliseconds when the metric was emitted. */
+  public Long getTimeStampMs() {
+    return timestampMs;
   }
 
   public abstract @NotNull Iterable<?> getValues();

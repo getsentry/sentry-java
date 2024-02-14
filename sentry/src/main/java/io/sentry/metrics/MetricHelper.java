@@ -22,7 +22,7 @@ public final class MetricHelper {
   private static final char TAGS_KEY_VALUE_DELIMITER = '='; // Delimiter between key and value
   private static final char TAGS_ESCAPE_CHAR = '\\';
 
-  private static final double FLUSH_SHIFT_MS =
+  private static final long FLUSH_SHIFT_MS =
       (long) (new Random().nextFloat() * (ROLLUP_IN_SECONDS * 1000f));
 
   public static long getDayBucketKey(final @NotNull Calendar timestamp) {
@@ -34,8 +34,8 @@ public final class MetricHelper {
     return utc.getTimeInMillis() / 1000;
   }
 
-  public static long getTimeBucketKey(final @NotNull Calendar timestamp) {
-    final long seconds = timestamp.getTimeInMillis() / 1000;
+  public static long getTimeBucketKey(final long timestampMs) {
+    final long seconds = timestampMs / 1000;
     return (seconds / ROLLUP_IN_SECONDS) * ROLLUP_IN_SECONDS;
   }
 
@@ -43,11 +43,8 @@ public final class MetricHelper {
     return FLUSH_SHIFT_MS;
   }
 
-  public static Calendar getCutoff() {
-    final Calendar cutOff = Calendar.getInstance();
-    cutOff.add(Calendar.SECOND, -ROLLUP_IN_SECONDS);
-    cutOff.add(Calendar.MILLISECOND, (int) -FLUSH_SHIFT_MS);
-    return cutOff;
+  public static long getCutoffTimestampMs(final long nowMs) {
+    return nowMs - (ROLLUP_IN_SECONDS * 1000) - FLUSH_SHIFT_MS;
   }
 
   public static @NotNull String sanitizeKey(final @NotNull String input) {

@@ -1,6 +1,5 @@
 package io.sentry.metrics
 
-import java.util.Calendar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -13,7 +12,7 @@ class SetMetricTest {
             "test",
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertTrue(metric.values.toList().isEmpty())
 
@@ -35,7 +34,7 @@ class SetMetricTest {
             "test",
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(MetricType.Set, metric.type)
     }
@@ -46,7 +45,7 @@ class SetMetricTest {
             "test",
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(0, metric.weight)
 

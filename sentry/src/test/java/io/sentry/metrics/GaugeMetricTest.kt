@@ -1,6 +1,5 @@
 package io.sentry.metrics
 
-import java.util.Calendar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -13,7 +12,7 @@ class GaugeMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(
             listOf(
@@ -50,7 +49,7 @@ class GaugeMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(MetricType.Gauge, metric.type)
     }
@@ -62,7 +61,7 @@ class GaugeMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(5, metric.weight)
 

@@ -619,12 +619,13 @@ public abstract interface class io/sentry/IMemoryCollector {
 }
 
 public abstract interface class io/sentry/IMetricAggregator : java/io/Closeable {
-	public abstract fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public abstract fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public abstract fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public abstract fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun flush (Z)V
+	public abstract fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
 }
 
 public abstract interface class io/sentry/IMetricAggregator$TimingCallback {
@@ -1021,15 +1022,19 @@ public final class io/sentry/MemoryCollectionData {
 public final class io/sentry/MetricAggregator : io/sentry/IMetricAggregator, java/io/Closeable, java/lang/Runnable {
 	public fun <init> (Lio/sentry/metrics/IMetricsHub;Lio/sentry/ILogger;)V
 	public fun close ()V
-	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun flush (Z)V
-	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun getFlushableBuckets (Z)Ljava/util/Set;
-	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun run ()V
-	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
+}
+
+public abstract interface class io/sentry/MetricAggregator$TimeProvider {
+	public abstract fun getTimeMillis ()J
 }
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3364,7 +3369,7 @@ public final class io/sentry/metrics/CodeLocations {
 }
 
 public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;)V
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
 	public fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getValue ()D
@@ -3373,7 +3378,7 @@ public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {
 }
 
 public final class io/sentry/metrics/DistributionMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;)V
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
 	public fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getValues ()Ljava/lang/Iterable;
@@ -3386,7 +3391,7 @@ public final class io/sentry/metrics/EncodedMetrics {
 }
 
 public final class io/sentry/metrics/GaugeMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;)V
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
 	public fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getValues ()Ljava/lang/Iterable;
@@ -3398,11 +3403,11 @@ public abstract interface class io/sentry/metrics/IMetricsHub {
 }
 
 public abstract class io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public abstract fun add (D)V
 	public fun getKey ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
-	public fun getTimeStamp ()Ljava/util/Calendar;
+	public fun getTimeStampMs ()Ljava/lang/Long;
 	public abstract fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getUnit ()Lio/sentry/MeasurementUnit;
 	public abstract fun getValues ()Ljava/lang/Iterable;
@@ -3414,11 +3419,11 @@ public final class io/sentry/metrics/MetricHelper {
 	public fun <init> ()V
 	public static fun convertNanosTo (Lio/sentry/MeasurementUnit$Duration;J)D
 	public static fun encodeMetrics (JLjava/util/Collection;Ljava/lang/StringBuilder;)V
-	public static fun getCutoff ()Ljava/util/Calendar;
+	public static fun getCutoffTimestampMs (J)J
 	public static fun getDayBucketKey (Ljava/util/Calendar;)J
 	public static fun getFlushShiftMs ()D
 	public static fun getMetricBucketKey (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)Ljava/lang/String;
-	public static fun getTimeBucketKey (Ljava/util/Calendar;)J
+	public static fun getTimeBucketKey (J)J
 	public static fun sanitizeKey (Ljava/lang/String;)Ljava/lang/String;
 	public static fun sanitizeValue (Ljava/lang/String;)Ljava/lang/String;
 	public static fun toStatsdType (Lio/sentry/metrics/MetricType;)Ljava/lang/String;
@@ -3445,24 +3450,25 @@ public final class io/sentry/metrics/MetricType : java/lang/Enum {
 
 public final class io/sentry/metrics/MetricsApi {
 	public fun <init> (Lio/sentry/IMetricAggregator;)V
-	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
 }
 
 public final class io/sentry/metrics/NoopMetricAggregator : io/sentry/IMetricAggregator {
 	public fun <init> ()V
 	public fun close ()V
-	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun flush (Z)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public static fun getInstance ()Lio/sentry/metrics/NoopMetricAggregator;
-	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;I)V
-	public fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Ljava/util/Calendar;I)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Lio/sentry/IMetricAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
 }
 
 public final class io/sentry/metrics/SentryMetric : io/sentry/JsonSerializable {
@@ -3482,7 +3488,7 @@ public final class io/sentry/metrics/SentryMetric$JsonKeys {
 }
 
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/util/Calendar;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
 	public fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getValues ()Ljava/lang/Iterable;

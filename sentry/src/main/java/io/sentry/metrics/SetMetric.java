@@ -1,7 +1,6 @@
 package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
-import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -19,7 +18,7 @@ public final class SetMetric extends Metric {
       final @NotNull String key,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @NotNull Calendar timestamp) {
+      final @NotNull Long timestamp) {
     super(key, unit, tags, timestamp);
     this.values = new HashSet<>();
   }

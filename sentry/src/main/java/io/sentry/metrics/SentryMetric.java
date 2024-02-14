@@ -6,7 +6,6 @@ import io.sentry.MeasurementUnit;
 import io.sentry.ObjectWriter;
 import io.sentry.protocol.SentryId;
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +32,7 @@ public final class SentryMetric implements JsonSerializable {
   private final @NotNull String key;
   private final @Nullable MeasurementUnit unit;
   private final @Nullable Map<String, String> tags;
-  private final @NotNull Calendar timestamp;
+  private final long timestampMs;
 
   public SentryMetric(@NotNull Metric metric) {
     this.eventId = new SentryId();
@@ -42,7 +41,7 @@ public final class SentryMetric implements JsonSerializable {
     this.key = metric.getKey();
     this.unit = metric.getUnit();
     this.tags = metric.getTags();
-    this.timestamp = metric.getTimeStamp();
+    this.timestampMs = metric.getTimeStampMs();
     this.values = metric.getValues();
   }
 
@@ -53,7 +52,7 @@ public final class SentryMetric implements JsonSerializable {
     writer.name(JsonKeys.TYPE).value(MetricHelper.toStatsdType(type));
     writer.name(JsonKeys.EVENT_ID).value(logger, eventId);
     writer.name(JsonKeys.NAME).value(key);
-    writer.name(JsonKeys.TIMESTAMP).value(timestamp.getTimeInMillis() / 1000.0d);
+    writer.name(JsonKeys.TIMESTAMP).value((double) timestampMs / 1000.0d);
     if (unit != null) {
       writer.name(JsonKeys.UNIT).value(unit.apiName());
     }

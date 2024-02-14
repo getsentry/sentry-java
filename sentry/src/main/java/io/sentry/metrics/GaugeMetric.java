@@ -2,7 +2,6 @@ package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +22,7 @@ public final class GaugeMetric extends Metric {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @NotNull Calendar timestamp) {
+      final @NotNull Long timestamp) {
     super(key, unit, tags, timestamp);
 
     this.last = value;

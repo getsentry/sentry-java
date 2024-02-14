@@ -11,7 +11,6 @@ import io.sentry.metrics.MetricType;
 import io.sentry.metrics.SetMetric;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -20,12 +19,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class MetricAggregator implements IMetricAggregator, Runnable, Closeable {
 
   private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
+  private @NotNull TimeProvider timeProvider = System::currentTimeMillis;
 
   private volatile @NotNull ISentryExecutorService executorService;
   private volatile boolean isClosed = false;
@@ -49,9 +50,9 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       double value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      final long timestampMs,
       int stackLevel) {
-    add(MetricType.Counter, key, value, unit, tags, timestamp, stackLevel);
+    add(MetricType.Counter, key, value, unit, tags, timestampMs, stackLevel);
   }
 
   @Override
@@ -60,9 +61,9 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       double value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      final long timestampMs,
       int stackLevel) {
-    add(MetricType.Gauge, key, value, unit, tags, timestamp, stackLevel);
+    add(MetricType.Gauge, key, value, unit, tags, timestampMs, stackLevel);
   }
 
   @Override
@@ -71,9 +72,9 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       double value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      final long timestampMs,
       int stackLevel) {
-    add(MetricType.Distribution, key, value, unit, tags, timestamp, stackLevel);
+    add(MetricType.Distribution, key, value, unit, tags, timestampMs, stackLevel);
   }
 
   @Override
@@ -82,9 +83,9 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       int value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      final long timestampMs,
       int stackLevel) {
-    add(MetricType.Set, key, value, unit, tags, timestamp, stackLevel);
+    add(MetricType.Set, key, value, unit, tags, timestampMs, stackLevel);
   }
 
   @Override
@@ -93,11 +94,11 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       @NotNull String value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      final long timestampMs,
       int stackLevel) {
     // TODO consider using CR32 instead of hashCode
     // see https://develop.sentry.dev/sdk/metrics/#sets
-    add(MetricType.Set, key, value.hashCode(), unit, tags, timestamp, stackLevel);
+    add(MetricType.Set, key, value.hashCode(), unit, tags, timestampMs, stackLevel);
   }
 
   @Override
@@ -106,7 +107,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       @NotNull TimingCallback callback,
       @NotNull MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      final long timestampMs,
       int stackLevel) {
     final long start = System.nanoTime();
     try {
@@ -114,7 +115,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
     } finally {
       final long durationNanos = (System.nanoTime() - start);
       final double value = MetricHelper.convertNanosTo(unit, durationNanos);
-      add(MetricType.Distribution, key, value, unit, tags, timestamp, stackLevel + 1);
+      add(MetricType.Distribution, key, value, unit, tags, timestampMs, stackLevel + 1);
     }
   }
 
@@ -125,25 +126,26 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       final double value,
       @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      @Nullable Long timestampMs,
       final int stackLevel) {
-    if (timestamp == null) {
-      timestamp = Calendar.getInstance();
+
+    if (timestampMs == null) {
+      timestampMs = timeProvider.getTimeMillis();
     }
 
     final @NotNull Metric metric;
     switch (type) {
       case Counter:
-        metric = new CounterMetric(key, value, unit, tags, timestamp);
+        metric = new CounterMetric(key, value, unit, tags, timestampMs);
         break;
       case Gauge:
-        metric = new GaugeMetric(key, value, unit, tags, timestamp);
+        metric = new GaugeMetric(key, value, unit, tags, timestampMs);
         break;
       case Distribution:
-        metric = new DistributionMetric(key, value, unit, tags, timestamp);
+        metric = new DistributionMetric(key, value, unit, tags, timestampMs);
         break;
       case Set:
-        metric = new SetMetric(key, unit, tags, timestamp);
+        metric = new SetMetric(key, unit, tags, timestampMs);
         //noinspection unchecked
         metric.add((int) value);
         break;
@@ -151,7 +153,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
         throw new IllegalArgumentException("Unknown MetricType: " + type.name());
     }
 
-    final long timeBucketKey = MetricHelper.getTimeBucketKey(timestamp);
+    final long timeBucketKey = MetricHelper.getTimeBucketKey(timestampMs);
     final @NotNull Map<String, Metric> timeBucket = getOrAddTimeBucket(timeBucketKey);
 
     final @NotNull String metricKey = MetricHelper.getMetricBucketKey(type, key, unit, tags);
@@ -175,6 +177,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
     }
   }
 
+  @Override
   public void flush(final boolean force) {
     final @NotNull Set<Long> flushableBuckets = getFlushableBuckets(force);
     if (flushableBuckets.isEmpty()) {
@@ -207,7 +210,9 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       return buckets.keySet();
     } else {
       // get all keys, including the cutoff key
-      final long cutoffKey = MetricHelper.getTimeBucketKey(MetricHelper.getCutoff());
+      final long cutoffTimestampMs =
+          MetricHelper.getCutoffTimestampMs(timeProvider.getTimeMillis());
+      final long cutoffKey = MetricHelper.getTimeBucketKey(cutoffTimestampMs);
       return buckets.headMap(cutoffKey, true).keySet();
     }
   }
@@ -247,5 +252,14 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
     if (!isClosed) {
       executorService.schedule(this, MetricHelper.FLUSHER_SLEEP_TIME_MS);
     }
+  }
+
+  @TestOnly
+  void setTimeProvider(final @NotNull TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
+  }
+
+  public interface TimeProvider {
+    long getTimeMillis();
   }
 }

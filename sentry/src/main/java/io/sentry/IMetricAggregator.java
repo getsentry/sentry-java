@@ -1,7 +1,6 @@
 package io.sentry;
 
 import java.io.Closeable;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,8 +14,8 @@ public interface IMetricAggregator extends Closeable {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void increment(
@@ -24,7 +23,7 @@ public interface IMetricAggregator extends Closeable {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel);
 
   /**
@@ -34,8 +33,8 @@ public interface IMetricAggregator extends Closeable {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void gauge(
@@ -43,7 +42,7 @@ public interface IMetricAggregator extends Closeable {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel);
 
   /**
@@ -53,8 +52,8 @@ public interface IMetricAggregator extends Closeable {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void distribution(
@@ -62,7 +61,7 @@ public interface IMetricAggregator extends Closeable {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel);
 
   /**
@@ -72,8 +71,8 @@ public interface IMetricAggregator extends Closeable {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void set(
@@ -81,7 +80,7 @@ public interface IMetricAggregator extends Closeable {
       final int value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel);
 
   /**
@@ -91,8 +90,8 @@ public interface IMetricAggregator extends Closeable {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void set(
@@ -100,7 +99,7 @@ public interface IMetricAggregator extends Closeable {
       final @NotNull String value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel);
 
   /**
@@ -110,7 +109,7 @@ public interface IMetricAggregator extends Closeable {
    * @param callback The code block to measure
    * @param unit An optional unit, see {@link MeasurementUnit.Duration}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted
+   * @param timestampMs The time when the metric was emitted
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void timing(
@@ -118,8 +117,10 @@ public interface IMetricAggregator extends Closeable {
       final @NotNull TimingCallback callback,
       final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel);
+
+  void flush(boolean force);
 
   interface TimingCallback {
     void run();

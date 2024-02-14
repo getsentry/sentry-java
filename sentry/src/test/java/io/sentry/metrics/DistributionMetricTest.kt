@@ -1,6 +1,5 @@
 package io.sentry.metrics
 
-import java.util.Calendar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -13,7 +12,7 @@ class DistributionMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(listOf(1.0), metric.values.toList())
 
@@ -29,7 +28,7 @@ class DistributionMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(MetricType.Distribution, metric.type)
     }
@@ -41,7 +40,7 @@ class DistributionMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(1, metric.weight)
 
@@ -56,7 +55,7 @@ class DistributionMetricTest {
             1.0,
             null,
             null,
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         metric.add(2.0)
 

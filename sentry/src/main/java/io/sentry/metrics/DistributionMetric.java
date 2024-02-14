@@ -2,7 +2,6 @@ package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,7 +18,7 @@ public final class DistributionMetric extends Metric {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @NotNull Calendar timestamp) {
+      final @NotNull Long timestamp) {
     super(key, unit, tags, timestamp);
     this.values = new ArrayList<>();
     this.values.add(value);

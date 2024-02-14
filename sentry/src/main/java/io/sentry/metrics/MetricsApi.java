@@ -2,7 +2,6 @@ package io.sentry.metrics;
 
 import io.sentry.IMetricAggregator;
 import io.sentry.MeasurementUnit;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,8 +22,8 @@ public final class MetricsApi {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void increment(
@@ -32,9 +31,9 @@ public final class MetricsApi {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel) {
-    aggregator.increment(key, value, unit, tags, timestamp, stackLevel);
+    aggregator.increment(key, value, unit, tags, timestampMs, stackLevel);
   }
 
   /**
@@ -44,8 +43,8 @@ public final class MetricsApi {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void gauge(
@@ -53,9 +52,9 @@ public final class MetricsApi {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel) {
-    aggregator.gauge(key, value, unit, tags, timestamp, stackLevel);
+    aggregator.gauge(key, value, unit, tags, timestampMs, stackLevel);
   }
 
   /**
@@ -65,8 +64,8 @@ public final class MetricsApi {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void distribution(
@@ -74,9 +73,9 @@ public final class MetricsApi {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel) {
-    aggregator.distribution(key, value, unit, tags, timestamp, stackLevel);
+    aggregator.distribution(key, value, unit, tags, timestampMs, stackLevel);
   }
 
   /**
@@ -86,8 +85,8 @@ public final class MetricsApi {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void set(
@@ -95,9 +94,9 @@ public final class MetricsApi {
       final int value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel) {
-    aggregator.set(key, value, unit, tags, timestamp, stackLevel);
+    aggregator.set(key, value, unit, tags, timestampMs, stackLevel);
   }
 
   /**
@@ -107,8 +106,8 @@ public final class MetricsApi {
    * @param value The value to be added
    * @param unit An optional unit, see {@link MeasurementUnit}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted. Defaults to the time at which the metric
-   *     is emitted, if no value is provided.
+   * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
+   *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void set(
@@ -116,9 +115,9 @@ public final class MetricsApi {
       final @NotNull String value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel) {
-    aggregator.set(key, value, unit, tags, timestamp, stackLevel);
+    aggregator.set(key, value, unit, tags, timestampMs, stackLevel);
   }
 
   /**
@@ -128,7 +127,7 @@ public final class MetricsApi {
    * @param callback The code block to measure
    * @param unit An optional unit, see {@link MeasurementUnit.Duration}
    * @param tags Optional Tags to associate with the metric
-   * @param timestamp The time when the metric was emitted
+   * @param timestampMs The time when the metric was emitted
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void timing(
@@ -136,8 +135,8 @@ public final class MetricsApi {
       final @NotNull IMetricAggregator.TimingCallback callback,
       final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Calendar timestamp,
+      final long timestampMs,
       final int stackLevel) {
-    aggregator.timing(key, callback, unit, tags, timestamp, stackLevel);
+    aggregator.timing(key, callback, unit, tags, timestampMs, stackLevel);
   }
 }

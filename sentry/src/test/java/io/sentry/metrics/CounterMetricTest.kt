@@ -1,6 +1,5 @@
 package io.sentry.metrics
 
-import java.util.Calendar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,7 +15,7 @@ class CounterMetricTest {
                 "tag1" to "value1",
                 "tag2" to "value2"
             ),
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(1.0, metric.value)
 
@@ -39,7 +38,7 @@ class CounterMetricTest {
                 "tag1" to "value1",
                 "tag2" to "value2"
             ),
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(MetricType.Counter, metric.type)
     }
@@ -54,7 +53,7 @@ class CounterMetricTest {
                 "tag1" to "value1",
                 "tag2" to "value2"
             ),
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
         assertEquals(1, metric.weight)
     }
@@ -69,7 +68,7 @@ class CounterMetricTest {
                 "tag1" to "value1",
                 "tag2" to "value2"
             ),
-            Calendar.getInstance()
+            System.currentTimeMillis()
         )
 
         val values0 = metric.values.toList()

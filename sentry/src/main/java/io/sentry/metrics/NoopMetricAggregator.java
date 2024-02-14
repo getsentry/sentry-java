@@ -3,7 +3,6 @@ package io.sentry.metrics;
 import io.sentry.IMetricAggregator;
 import io.sentry.MeasurementUnit;
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,7 @@ public final class NoopMetricAggregator implements IMetricAggregator {
       double value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      long timestampMs,
       int stackLevel) {}
 
   @Override
@@ -33,7 +32,7 @@ public final class NoopMetricAggregator implements IMetricAggregator {
       double value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      long timestampMs,
       int stackLevel) {}
 
   @Override
@@ -42,7 +41,7 @@ public final class NoopMetricAggregator implements IMetricAggregator {
       double value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      long timestampMs,
       int stackLevel) {}
 
   @Override
@@ -51,7 +50,7 @@ public final class NoopMetricAggregator implements IMetricAggregator {
       int value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      long timestampMs,
       int stackLevel) {}
 
   @Override
@@ -60,7 +59,7 @@ public final class NoopMetricAggregator implements IMetricAggregator {
       @NotNull String value,
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      long timestampMs,
       int stackLevel) {}
 
   @Override
@@ -69,8 +68,13 @@ public final class NoopMetricAggregator implements IMetricAggregator {
       @NotNull TimingCallback callback,
       MeasurementUnit.@NotNull Duration unit,
       @Nullable Map<String, String> tags,
-      @Nullable Calendar timestamp,
+      long timestampMs,
       int stackLevel) {}
+
+  @Override
+  public void flush(boolean force) {
+    // no-op
+  }
 
   @Override
   public void close() throws IOException {}

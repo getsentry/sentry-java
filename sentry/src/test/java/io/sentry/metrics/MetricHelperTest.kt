@@ -1,6 +1,5 @@
 package io.sentry.metrics
 
-import java.util.Calendar
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -24,47 +23,27 @@ class MetricHelperTest {
     fun getTimeBucketKey() {
         assertEquals(
             10,
-            MetricHelper.getTimeBucketKey(
-                Calendar.getInstance().apply {
-                    timeInMillis = 10_000
-                }
-            )
+            MetricHelper.getTimeBucketKey(10_000)
         )
 
         assertEquals(
             10,
-            MetricHelper.getTimeBucketKey(
-                Calendar.getInstance().apply {
-                    timeInMillis = 10_001
-                }
-            )
+            MetricHelper.getTimeBucketKey(10_001)
         )
 
         assertEquals(
             20,
-            MetricHelper.getTimeBucketKey(
-                Calendar.getInstance().apply {
-                    timeInMillis = 20_000
-                }
-            )
+            MetricHelper.getTimeBucketKey(20_000)
         )
 
         assertEquals(
             20,
-            MetricHelper.getTimeBucketKey(
-                Calendar.getInstance().apply {
-                    timeInMillis = 29_999
-                }
-            )
+            MetricHelper.getTimeBucketKey(29_999)
         )
 
         assertEquals(
             30,
-            MetricHelper.getTimeBucketKey(
-                Calendar.getInstance().apply {
-                    timeInMillis = 30_000
-                }
-            )
+            MetricHelper.getTimeBucketKey(30_000)
         )
     }
 }

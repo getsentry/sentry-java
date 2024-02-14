@@ -1,7 +1,6 @@
 package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -18,7 +17,7 @@ public final class CounterMetric extends Metric {
       final double value,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      final @NotNull Calendar timestamp) {
+      final @NotNull Long timestamp) {
     super(key, unit, tags, timestamp);
     this.value = value;
   }
