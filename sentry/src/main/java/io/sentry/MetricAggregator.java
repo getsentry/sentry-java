@@ -27,7 +27,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
   private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
 
-  private @NotNull ISentryExecutorService executorService;
+  private volatile @NotNull ISentryExecutorService executorService;
   private volatile boolean isClosed = false;
 
   // The key for this dictionary is the Timestamp for the bucket, rounded down to the nearest
@@ -164,8 +164,8 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       }
     }
 
-    // spin up read executor service the first time metrics are collected
-    if (executorService instanceof NoOpSentryExecutorService) {
+    // spin up real executor service the first time metrics are collected
+    if (!isClosed && executorService instanceof NoOpSentryExecutorService) {
       synchronized (this) {
         if (!isClosed && executorService instanceof NoOpSentryExecutorService) {
           executorService = new SentryExecutorService();

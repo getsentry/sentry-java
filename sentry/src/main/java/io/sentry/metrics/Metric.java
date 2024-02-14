@@ -21,7 +21,7 @@ public abstract class Metric {
    *
    * @param key The text key to be used to identify the metric
    * @param unit An optional {@link MeasurementUnit} that describes the values being tracked
-   * @param tags An optional set of key/value paris that can be used to add dimensionality to
+   * @param tags An optional set of key/value pairs that can be used to add dimensionality to
    *     metrics
    * @param timestamp A time when the metric was emitted.
    */
