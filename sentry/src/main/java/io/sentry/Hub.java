@@ -58,7 +58,7 @@ public final class Hub implements IHub, IMetricsHub {
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
 
-    this.metricAggregator = new MetricsAggregator(this, options.getLogger());
+    this.metricAggregator = new MetricsAggregator(this, options);
     this.metricsApi = new MetricsApi(metricAggregator);
   }
 

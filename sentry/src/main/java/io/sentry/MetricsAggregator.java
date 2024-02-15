@@ -40,6 +40,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
+
   private @NotNull TimeProvider timeProvider = System::currentTimeMillis;
 
   private volatile @NotNull ISentryExecutorService executorService;
@@ -53,18 +55,18 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   // each of which has a key that uniquely identifies it within the time period
   private final NavigableMap<Long, Map<String, Metric>> buckets = new ConcurrentSkipListMap<>();
 
-  @TestOnly
-  public MetricsAggregator(final @NotNull IMetricsHub hub, final @NotNull ILogger logger) {
-    this(hub, logger, NoOpSentryExecutorService.getInstance());
+  public MetricsAggregator(final @NotNull IMetricsHub hub, final @NotNull SentryOptions options) {
+    this(hub, options, NoOpSentryExecutorService.getInstance());
   }
 
   @TestOnly
   public MetricsAggregator(
       final @NotNull IMetricsHub hub,
-      final @NotNull ILogger logger,
+      final @NotNull SentryOptions options,
       final @NotNull ISentryExecutorService executorService) {
     this.hub = hub;
-    this.logger = logger;
+    this.options = options;
+    this.logger = options.getLogger();
     this.executorService = executorService;
   }
 
@@ -167,19 +169,21 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       timestampMs = timeProvider.getTimeMillis();
     }
 
+    final @NotNull Map<String, String> enrichedTags = enrichTags(tags);
+
     final @NotNull Metric metric;
     switch (type) {
       case Counter:
-        metric = new CounterMetric(key, value, unit, tags, timestampMs);
+        metric = new CounterMetric(key, value, unit, enrichedTags, timestampMs);
         break;
       case Gauge:
-        metric = new GaugeMetric(key, value, unit, tags, timestampMs);
+        metric = new GaugeMetric(key, value, unit, enrichedTags, timestampMs);
         break;
       case Distribution:
-        metric = new DistributionMetric(key, value, unit, tags, timestampMs);
+        metric = new DistributionMetric(key, value, unit, enrichedTags, timestampMs);
         break;
       case Set:
-        metric = new SetMetric(key, unit, tags, timestampMs);
+        metric = new SetMetric(key, unit, enrichedTags, timestampMs);
         //noinspection unchecked
         metric.add((int) value);
         break;
@@ -190,7 +194,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     final long timeBucketKey = MetricsHelper.getTimeBucketKey(timestampMs);
     final @NotNull Map<String, Metric> timeBucket = getOrAddTimeBucket(timeBucketKey);
 
-    final @NotNull String metricKey = MetricsHelper.getMetricBucketKey(type, key, unit, tags);
+    final @NotNull String metricKey =
+        MetricsHelper.getMetricBucketKey(type, key, unit, enrichedTags);
     synchronized (timeBucket) {
       @Nullable Metric existingMetric = timeBucket.get(metricKey);
       if (existingMetric != null) {
@@ -215,6 +220,29 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
         }
       }
     }
+  }
+
+  @NotNull
+  private Map<String, String> enrichTags(final @Nullable Map<String, String> tags) {
+
+    final @NotNull Map<String, String> enrichedTags;
+    if (tags == null) {
+      enrichedTags = new HashMap<>();
+    } else {
+      enrichedTags = new HashMap<>(tags);
+    }
+
+    final @Nullable String release = options.getRelease();
+    if (release != null && !enrichedTags.containsKey("release")) {
+      enrichedTags.put("release", release);
+    }
+
+    final @Nullable String environment = options.getEnvironment();
+    if (environment != null && !enrichedTags.containsKey("environment")) {
+      enrichedTags.put("environment", environment);
+    }
+
+    return enrichedTags;
   }
 
   @Override
