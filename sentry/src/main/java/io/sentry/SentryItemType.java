@@ -18,6 +18,7 @@ public enum SentryItemType implements JsonSerializable {
   ClientReport("client_report"),
   ReplayEvent("replay_event"),
   ReplayRecording("replay_recording"),
+  ReplayVideo("replay_video"),
   CheckIn("check_in"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
@@ -34,6 +35,8 @@ public enum SentryItemType implements JsonSerializable {
       return ClientReport;
     } else if (item instanceof SentryReplayEvent) {
       return ReplayEvent;
+    } else if (item instanceof ReplayRecording) {
+      return ReplayRecording;
     } else {
       return Attachment;
     }

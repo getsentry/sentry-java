@@ -354,21 +354,7 @@ public final class SentryEnvelopeItem {
             try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                  final Writer writer =
                    new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-
-              // session replay recording format
-              // {"segment_id":0}\n{json-serialized-gzipped-rrweb-protocol}
-
               serializer.serialize(replayRecording, writer);
-              writer.write("\n");
-              if (replayRecording.getPayload() != null) {
-                serializer.serialize(replayRecording.getPayload(), writer);
-              }
-
-              // final byte[] payload = compressRecordingPayload(serializer, replayRecording);
-              // stream.write(payload);
-
-              writer.flush();
-              stream.flush();
               return stream.toByteArray();
             }
           } catch (Throwable t) {
@@ -376,30 +362,6 @@ public final class SentryEnvelopeItem {
             return null;
           }
         });
-
-    //    try {
-    //      final byte[] data = cachedItem.getBytes();
-    //      final String dataStr = new String(data, UTF_8);
-    //
-    //      final String[] items = dataStr.split("\n", 2);
-    //      final String header = items[0];
-    //      final String payload = items[1];
-    //
-    //      final ByteArrayInputStream byteArrayInputStream = new
-    // ByteArrayInputStream(payload.getBytes(UTF_8));
-    //      final GZIPInputStream inputStream = new GZIPInputStream(byteArrayInputStream);
-    //
-    //      final ByteArrayOutputStream decodedData = new ByteArrayOutputStream();
-    //
-    //      byte[] buf = new byte[4096];
-    //      int readLen;
-    //      while ((readLen = inputStream.read(buf, 0, buf.length)) != -1) {
-    //        decodedData.write(buf, 0, readLen);
-    //      }
-    //
-    //    } catch (Exception e) {
-    //
-    //    }
 
     final SentryEnvelopeItemHeader itemHeader =
       new SentryEnvelopeItemHeader(

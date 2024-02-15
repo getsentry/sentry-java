@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.rrweb.RRWebEvent;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
@@ -15,10 +16,8 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
   }
 
   private @Nullable Integer segmentId;
+  private @Nullable List<? extends RRWebEvent> payload;
   private @Nullable Map<String, Object> unknown;
-
-  // TODO spec it out, good enough for now
-  private @Nullable List<Object> payload;
 
   @Nullable
   public Integer getSegmentId() {
@@ -30,11 +29,11 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
   }
 
   @Nullable
-  public List<Object> getPayload() {
+  public List<? extends RRWebEvent> getPayload() {
     return payload;
   }
 
-  public void setPayload(@Nullable List<Object> payload) {
+  public void setPayload(@Nullable List<? extends RRWebEvent> payload) {
     this.payload = payload;
   }
 
@@ -53,6 +52,15 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
+
+    // session replay recording format
+    // {"segment_id":0}\n{json-serialized-gzipped-rrweb-protocol}
+
+    writer.jsonValue("\n");
+
+    if (payload != null) {
+      writer.value(logger, payload);
+    }
   }
 
   @Override

@@ -933,9 +933,9 @@ public final class Hub implements IHub {
     } else {
       try {
         StackItem item = stack.peek();
-        sentryId = item.getClient().captureReplayEvent(replay, item.getScope(), null);
+        sentryId = item.getClient().captureReplayEvent(replay, item.getScope(), hint);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
+        options.getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
       }
     }
     this.lastEventId = sentryId;

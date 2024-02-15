@@ -152,6 +152,12 @@ public final class MapObjectWriter implements ObjectWriter {
   }
 
   @Override
+  public ObjectWriter jsonValue(@Nullable String value) throws IOException {
+    // no-op
+    return this;
+  }
+
+  @Override
   public MapObjectWriter nullValue() throws IOException {
     postValue((Object) null);
     return this;
