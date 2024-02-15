@@ -1021,11 +1021,11 @@ public final class io/sentry/MemoryCollectionData {
 
 public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, java/io/Closeable, java/lang/Runnable {
 	public fun <init> (Lio/sentry/metrics/IMetricsHub;Lio/sentry/ILogger;)V
+	public fun <init> (Lio/sentry/metrics/IMetricsHub;Lio/sentry/ILogger;Lio/sentry/ISentryExecutorService;)V
 	public fun close ()V
 	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun flush (Z)V
 	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
-	public fun getFlushableBuckets (Z)Ljava/util/Set;
 	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun run ()V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
@@ -3414,16 +3414,6 @@ public abstract class io/sentry/metrics/Metric {
 	public abstract fun getWeight ()I
 }
 
-public final class io/sentry/metrics/MetricResourceIdentifier {
-	public fun <init> (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getKey ()Ljava/lang/String;
-	public fun getMetricType ()Lio/sentry/metrics/MetricType;
-	public fun getUnit ()Lio/sentry/MeasurementUnit;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class io/sentry/metrics/MetricType : java/lang/Enum {
 	public static final field Counter Lio/sentry/metrics/MetricType;
 	public static final field Distribution Lio/sentry/metrics/MetricType;
@@ -3470,22 +3460,6 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
-}
-
-public final class io/sentry/metrics/SentryMetric : io/sentry/JsonSerializable {
-	public fun <init> (Lio/sentry/metrics/Metric;)V
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-}
-
-public final class io/sentry/metrics/SentryMetric$JsonKeys {
-	public static final field EVENT_ID Ljava/lang/String;
-	public static final field NAME Ljava/lang/String;
-	public static final field TAGS Ljava/lang/String;
-	public static final field TIMESTAMP Ljava/lang/String;
-	public static final field TYPE Ljava/lang/String;
-	public static final field UNIT Ljava/lang/String;
-	public static final field VALUE Ljava/lang/String;
-	public fun <init> ()V
 }
 
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {

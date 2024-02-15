@@ -44,6 +44,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   private volatile @NotNull ISentryExecutorService executorService;
   private volatile boolean isClosed = false;
+  private volatile boolean flushScheduled = false;
 
   // The key for this dictionary is the Timestamp for the bucket, rounded down to the nearest
   // RollupInSeconds... so it
@@ -52,10 +53,19 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   // each of which has a key that uniquely identifies it within the time period
   private final NavigableMap<Long, Map<String, Metric>> buckets = new ConcurrentSkipListMap<>();
 
+  @TestOnly
   public MetricsAggregator(final @NotNull IMetricsHub hub, final @NotNull ILogger logger) {
+    this(hub, logger, NoOpSentryExecutorService.getInstance());
+  }
+
+  @TestOnly
+  public MetricsAggregator(
+      final @NotNull IMetricsHub hub,
+      final @NotNull ILogger logger,
+      final @NotNull ISentryExecutorService executorService) {
     this.hub = hub;
     this.logger = logger;
-    this.executorService = NoOpSentryExecutorService.getInstance();
+    this.executorService = executorService;
   }
 
   @Override
@@ -149,6 +159,10 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @Nullable Long timestampMs,
       final int stackLevel) {
 
+    if (isClosed) {
+      return;
+    }
+
     if (timestampMs == null) {
       timestampMs = timeProvider.getTimeMillis();
     }
@@ -187,10 +201,16 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
 
     // spin up real executor service the first time metrics are collected
-    if (!isClosed && executorService instanceof NoOpSentryExecutorService) {
+    if (!isClosed && !flushScheduled) {
       synchronized (this) {
-        if (!isClosed && executorService instanceof NoOpSentryExecutorService) {
-          executorService = new SentryExecutorService();
+        if (!isClosed && !flushScheduled) {
+          flushScheduled = true;
+          // TODO this is probably not a good idea after all
+          // as it will slow down the first metric emission
+          // maybe move to constructor?
+          if (executorService instanceof NoOpSentryExecutorService) {
+            executorService = new SentryExecutorService();
+          }
           executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
         }
       }
@@ -225,7 +245,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   }
 
   @NotNull
-  public Set<Long> getFlushableBuckets(final boolean force) {
+  private Set<Long> getFlushableBuckets(final boolean force) {
     if (force) {
       return buckets.keySet();
     } else {
@@ -242,8 +262,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   private Map<String, Metric> getOrAddTimeBucket(final long bucketKey) {
     @Nullable Map<String, Metric> bucket = buckets.get(bucketKey);
     if (bucket == null) {
-      // although buckets is thread safe, we still need to synchronize here to avoid overwriting
-      // buckets
+      // although buckets is thread safe, we still need to synchronize here to avoid creating
+      // the same bucket at the same time
       synchronized (buckets) {
         bucket = buckets.get(bucketKey);
         if (bucket == null) {
@@ -269,8 +289,10 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   public void run() {
     flush(false);
 
-    if (!isClosed) {
-      executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
+    synchronized (this) {
+      if (!isClosed) {
+        executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
+      }
     }
   }
 

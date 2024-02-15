@@ -88,7 +88,13 @@ public final class MetricsHelper {
     final @NotNull String typePrefix = toStatsdType(type);
     final @NotNull String serializedTags = GetTagsKey(tags);
 
-    return String.format("%s_%s_%s_%s", typePrefix, metricKey, unit, serializedTags);
+    final @NotNull String unitName = getUnitName(unit);
+    return String.format("%s_%s_%s_%s", typePrefix, metricKey, unitName, serializedTags);
+  }
+
+  @NotNull
+  private static String getUnitName(final @Nullable MeasurementUnit unit) {
+    return (unit != null) ? unit.apiName() : MeasurementUnit.NONE;
   }
 
   private static String GetTagsKey(final @Nullable Map<String, String> tags) {
@@ -169,7 +175,7 @@ public final class MetricsHelper {
       writer.append("@");
 
       final MeasurementUnit unit = metric.getUnit();
-      final String unitName = (unit != null) ? unit.apiName() : MeasurementUnit.NONE;
+      final String unitName = getUnitName(unit);
       final String sanitizeUnitName = sanitizeUnit(unitName);
       writer.append(sanitizeUnitName);
 

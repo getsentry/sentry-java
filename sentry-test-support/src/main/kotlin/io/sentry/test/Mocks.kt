@@ -28,24 +28,40 @@ class ImmediateExecutorService : ISentryExecutorService {
 
 class DeferredExecutorService : ISentryExecutorService {
 
-    private val runnables = ArrayList<Runnable>()
-    val scheduledRunnables = ArrayList<Runnable>()
+    private var runnables = ArrayList<Runnable>()
+    private var scheduledRunnables = ArrayList<Runnable>()
 
     fun runAll() {
-        runnables.forEach { it.run() }
-        scheduledRunnables.forEach { it.run() }
+        // take a snapshot of the runnable list in case
+        // executing the runnable itself schedules more runnables
+        val currentRunnableList = runnables
+        val currentScheduledRunnableList = scheduledRunnables
+
+        synchronized(this) {
+            runnables = ArrayList()
+            scheduledRunnables = ArrayList()
+        }
+
+        currentRunnableList.forEach { it.run() }
+        currentScheduledRunnableList.forEach { it.run() }
     }
 
     override fun submit(runnable: Runnable): Future<*> {
-        runnables.add(runnable)
+        synchronized(this) {
+            runnables.add(runnable)
+        }
         return mock()
     }
 
     override fun <T> submit(callable: Callable<T>): Future<T> = mock()
     override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-        scheduledRunnables.add(runnable)
+        synchronized(this) {
+            scheduledRunnables.add(runnable)
+        }
         return mock()
     }
     override fun close(timeoutMillis: Long) {}
     override fun isClosed(): Boolean = false
+
+    fun hasScheduledRunnables(): Boolean = scheduledRunnables.isNotEmpty()
 }
