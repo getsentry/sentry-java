@@ -6,6 +6,7 @@
 
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
 - Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
+- Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
 
 ## 7.3.0
 
