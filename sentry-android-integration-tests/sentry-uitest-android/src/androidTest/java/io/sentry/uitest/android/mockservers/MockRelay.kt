@@ -50,7 +50,7 @@ class MockRelay(
                     }
                     assertNotNull(relayResponse.envelope)
                     val envelopeId: String = relayResponse.envelope!!.header.eventId!!.toString()
-                    // If we already received the envelope (e.g. retrying mechanism) we drop it
+                    // If we already received the envelope (e.g. retrying mechanism) we ignore it
                     if (receivedEnvelopes.contains(envelopeId)) {
                         return MockResponse()
                     }
