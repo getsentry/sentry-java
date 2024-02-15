@@ -41,9 +41,9 @@ class SpanFrameMetricsCollectorTest {
                 SentryLongDate(timeNanos)
             }
 
-            return SpanFrameMetricsCollector(options) {
+            return SpanFrameMetricsCollector(options, {
                 timeNanos
-            }
+            }, frameMetricsCollector)
         }
     }
 
@@ -205,6 +205,70 @@ class SpanFrameMetricsCollectorTest {
         verify(span1).setData("frames.total", 1)
         verify(span1).setData("frames.slow", 1)
         verify(span1).setData("frames.frozen", 0)
+    }
+
+    @Test
+    fun `slow and frozen frames are calculated even when spans overlap`() {
+        val sut = fixture.getSut()
+
+        // when 4 spans are running at the same time
+        fixture.timeNanos = 0
+        val span0 = createFakeSpan(0, 2000)
+        val span1 = createFakeSpan(200, 2200)
+        val span2 = createFakeSpan(400, 2400)
+        val span3 = createFakeSpan(600, 2600)
+
+        fixture.timeNanos = 0
+        sut.onSpanStarted(span0)
+
+        fixture.timeNanos = 200
+        sut.onSpanStarted(span1)
+
+        fixture.timeNanos = 400
+        sut.onSpanStarted(span2)
+
+        fixture.timeNanos = 600
+        sut.onSpanStarted(span3)
+
+        // and one frozen frame is captured right when all spans are running
+        fixture.timeNanos = 620
+        sut.onFrameMetricCollected(620, 1620, 1000, 984, true, true, 60.0f)
+
+        fixture.timeNanos = 2000
+        fixture.lastKnownChoreographerFrameTimeNanos = 2000
+        sut.onSpanFinished(span0)
+
+        fixture.timeNanos = 2200
+        fixture.lastKnownChoreographerFrameTimeNanos = 2200
+        sut.onSpanFinished(span1)
+
+        fixture.timeNanos = 2400
+        fixture.lastKnownChoreographerFrameTimeNanos = 2400
+        sut.onSpanFinished(span2)
+
+        fixture.timeNanos = 2600
+        fixture.lastKnownChoreographerFrameTimeNanos = 2600
+        sut.onSpanFinished(span3)
+
+        // every span should contain the frozen frame information
+        verify(span0).setData("frames.frozen", 1)
+        verify(span1).setData("frames.frozen", 1)
+        verify(span2).setData("frames.frozen", 1)
+        verify(span3).setData("frames.frozen", 1)
+    }
+
+    @Test
+    fun `when a span finishes which was never started no-op`() {
+        val sut = fixture.getSut()
+
+        // when 4 spans are running at the same time
+        fixture.timeNanos = 0
+        val span = createFakeSpan(0, 2000)
+
+        sut.onFrameMetricCollected(0, 100, 1000, 984, true, true, 60.0f)
+
+        sut.onSpanFinished(span)
+        verify(span, never()).setData(any(), any())
     }
 
     @Test

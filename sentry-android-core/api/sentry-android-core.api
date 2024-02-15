@@ -349,8 +349,8 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/SpanFrameMetricsCollector$FrameTimeProvider;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/SpanFrameMetricsCollector$FrameTimeProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun clear ()V
 	public fun onFrameMetricCollected (JJJJZZF)V
 	public fun onSpanFinished (Lio/sentry/ISpan;)V

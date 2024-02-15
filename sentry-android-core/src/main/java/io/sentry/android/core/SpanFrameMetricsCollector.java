@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import androidx.annotation.NonNull;
 import io.sentry.IPerformanceContinuousCollector;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
@@ -43,40 +42,38 @@ public class SpanFrameMetricsCollector
 
   // a map of <span-id, span-start-time-nanos>
   // as spans do not contain a nano start time, it's being tracked here
-  private final @NotNull Map<String, NanoTimeStamp> spanStarts;
+  private final @NotNull Map<String, NanoTimeStamp> spanStarts = new HashMap<>();
 
   // all running spans, sorted by span start nano time
-  private final @NotNull SortedSet<SpanStart> runningSpans;
+  private final @NotNull SortedSet<SpanStart> runningSpans = new TreeSet<>();
 
   // all collected frames, sorted by frame end time
   // this is a concurrent set, as the frames are added on the main thread,
   // but span starts/finish may happen on any thread
   // the list only holds Frames, but in order to query for a specific span NanoTimeStamp is used
-  private final @NotNull ConcurrentSkipListSet<NanoTimeStamp> frames;
+  private final @NotNull ConcurrentSkipListSet<NanoTimeStamp> frames =
+      new ConcurrentSkipListSet<>();
 
   // assume 60fps until we get a value reported by the system
   private long lastKnownFrameDurationNanos = 16_666_666L;
 
-  public SpanFrameMetricsCollector(final @NotNull SentryAndroidOptions options) {
+  public SpanFrameMetricsCollector(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
     //noinspection Convert2MethodRef
-    this(options, () -> System.nanoTime());
+    this(options, () -> System.nanoTime(), frameMetricsCollector);
   }
 
   @TestOnly
   public SpanFrameMetricsCollector(
       final @NotNull SentryAndroidOptions options,
-      final @NotNull FrameTimeProvider frameTimeProvider) {
+      final @NotNull FrameTimeProvider frameTimeProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
     this.options = options;
     this.frameTimeProvider = frameTimeProvider;
+    this.frameMetricsCollector = frameMetricsCollector;
 
-    frameMetricsCollector =
-        Objects.requireNonNull(
-            options.getFrameMetricsCollector(), "FrameMetricsCollector is required");
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
-
-    frames = new ConcurrentSkipListSet<>();
-    spanStarts = new HashMap<>();
-    runningSpans = new TreeSet<>();
   }
 
   @Override
@@ -119,6 +116,14 @@ public class SpanFrameMetricsCollector
       return;
     }
 
+    // ignore span if onSpanStarted was never called for it
+    final @NotNull String spanId = span.getSpanContext().getSpanId().toString();
+    synchronized (lock) {
+      if (!spanStarts.containsKey(spanId)) {
+        return;
+      }
+    }
+
     captureFrameMetrics(span);
 
     synchronized (lock) {
@@ -127,12 +132,12 @@ public class SpanFrameMetricsCollector
       } else {
         // otherwise only remove old/irrelevant frames
         final SpanStart oldestSpan = runningSpans.first();
-        frames.tailSet(oldestSpan.timeNanos).clear();
+        frames.headSet(oldestSpan.timeNanos).clear();
       }
     }
   }
 
-  private void captureFrameMetrics(@NonNull ISpan span) {
+  private void captureFrameMetrics(@NotNull final ISpan span) {
     // TODO lock still required?
     synchronized (lock) {
       final @NotNull String id = span.getSpanContext().getSpanId().toString();
