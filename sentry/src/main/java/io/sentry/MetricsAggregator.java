@@ -29,15 +29,6 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   @SuppressWarnings({"CharsetObjectCanBeUsed"})
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
-  @SuppressWarnings("AnonymousHasLambdaAlternative")
-  private static final ThreadLocal<CRC32> crc32 =
-      new ThreadLocal<CRC32>() {
-        @Override
-        protected CRC32 initialValue() {
-          return new CRC32();
-        }
-      };
-
   private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
   private final @NotNull SentryOptions options;
@@ -125,8 +116,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     final byte[] bytes = value.getBytes(UTF8);
 
-    final CRC32 crc = crc32.get();
-    crc.reset();
+    final CRC32 crc = new CRC32();
     crc.update(bytes, 0, bytes.length);
     final int intValue = (int) crc.getValue();
 
@@ -137,17 +127,19 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   public void timing(
       @NotNull String key,
       @NotNull TimingCallback callback,
-      @NotNull MeasurementUnit.Duration unit,
+      @Nullable MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
-      final long timestampMs,
       int stackLevel) {
-    final long start = System.nanoTime();
+    final long startMs = timeProvider.getTimeMillis();
+    final long startNanos = System.nanoTime();
     try {
       callback.run();
     } finally {
-      final long durationNanos = (System.nanoTime() - start);
-      final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
-      add(MetricType.Distribution, key, value, unit, tags, timestampMs, stackLevel + 1);
+      final MeasurementUnit.Duration durationUnit =
+          unit != null ? unit : MeasurementUnit.Duration.SECOND;
+      final long durationNanos = (System.nanoTime() - startNanos);
+      final double value = MetricsHelper.convertNanosTo(durationUnit, durationNanos);
+      add(MetricType.Distribution, key, value, durationUnit, tags, startMs, stackLevel + 1);
     }
   }
 
@@ -196,6 +188,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     final @NotNull String metricKey =
         MetricsHelper.getMetricBucketKey(type, key, unit, enrichedTags);
+
+    // TODO check if we can synchronize only the metric itself
     synchronized (timeBucket) {
       @Nullable Metric existingMetric = timeBucket.get(metricKey);
       if (existingMetric != null) {

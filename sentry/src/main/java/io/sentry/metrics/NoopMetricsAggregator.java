@@ -66,9 +66,8 @@ public final class NoopMetricsAggregator implements IMetricsAggregator {
   public void timing(
       @NotNull String key,
       @NotNull TimingCallback callback,
-      MeasurementUnit.@NotNull Duration unit,
+      @Nullable MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
-      long timestampMs,
       int stackLevel) {}
 
   @Override

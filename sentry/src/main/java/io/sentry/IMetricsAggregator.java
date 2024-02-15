@@ -107,17 +107,15 @@ public interface IMetricsAggregator extends Closeable {
    *
    * @param key A unique key identifying the metric
    * @param callback The code block to measure
-   * @param unit An optional unit, see {@link MeasurementUnit.Duration}
+   * @param unit An optional unit, see {@link MeasurementUnit.Duration}, defaults to seconds
    * @param tags Optional Tags to associate with the metric
-   * @param timestampMs The time when the metric was emitted
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   void timing(
       final @NotNull String key,
       final @NotNull TimingCallback callback,
-      final @NotNull MeasurementUnit.Duration unit,
+      final @Nullable MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
-      final long timestampMs,
       final int stackLevel);
 
   void flush(boolean force);

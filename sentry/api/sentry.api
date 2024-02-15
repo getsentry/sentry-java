@@ -625,7 +625,7 @@ public abstract interface class io/sentry/IMetricsAggregator : java/io/Closeable
 	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
-	public abstract fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
+	public abstract fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
 }
 
 public abstract interface class io/sentry/IMetricsAggregator$TimingCallback {
@@ -1030,7 +1030,7 @@ public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, j
 	public fun run ()V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
-	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
 }
 
 public abstract interface class io/sentry/MetricsAggregator$TimeProvider {
@@ -3440,7 +3440,7 @@ public final class io/sentry/metrics/MetricsApi {
 	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
-	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Ljava/lang/Long;I)V
+	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
 }
 
 public final class io/sentry/metrics/MetricsHelper {
@@ -3469,7 +3469,7 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
-	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Lio/sentry/IMetricsAggregator$TimingCallback;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
 }
 
 public final class io/sentry/metrics/SentryMetric : io/sentry/JsonSerializable {

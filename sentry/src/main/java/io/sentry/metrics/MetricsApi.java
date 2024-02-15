@@ -137,7 +137,6 @@ public final class MetricsApi {
    * @param callback The code block to measure
    * @param unit An optional unit, see {@link MeasurementUnit.Duration}
    * @param tags Optional Tags to associate with the metric
-   * @param timestampMs The time when the metric was emitted
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    */
   public void timing(
@@ -145,10 +144,8 @@ public final class MetricsApi {
       final @NotNull IMetricsAggregator.TimingCallback callback,
       final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
-      final @Nullable Long timestampMs,
       final int stackLevel) {
 
-    final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
-    aggregator.timing(key, callback, unit, tags, timestamp, stackLevel);
+    aggregator.timing(key, callback, unit, tags, stackLevel);
   }
 }

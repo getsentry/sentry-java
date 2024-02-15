@@ -174,8 +174,8 @@ public final class MetricsHelper {
       writer.append(sanitizeKey(metric.getKey()));
       writer.append("@");
 
-      final MeasurementUnit unit = metric.getUnit();
-      final String unitName = getUnitName(unit);
+      final @Nullable MeasurementUnit unit = metric.getUnit();
+      final @NotNull String unitName = getUnitName(unit);
       final String sanitizeUnitName = sanitizeUnit(unitName);
       writer.append(sanitizeUnitName);
 

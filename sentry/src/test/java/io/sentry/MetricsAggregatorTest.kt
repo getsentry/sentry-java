@@ -232,8 +232,16 @@ class MetricsAggregatorTest {
             1
         )
         aggregator.set(
-            "name0",
+            "name0-string",
             "Hello",
+            MeasurementUnit.Custom("unit0"),
+            mapOf("key0" to "value0"),
+            20_001,
+            1
+        )
+        aggregator.set(
+            "name0-int",
+            1234,
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
@@ -247,12 +255,21 @@ class MetricsAggregatorTest {
             20_001,
             1
         )
+        aggregator.timing(
+            "name0",
+            {
+                Thread.sleep(2)
+            },
+            MeasurementUnit.Duration.SECOND,
+            mapOf("key0" to "value0"),
+            1
+        )
 
         aggregator.flush(true)
         verify(fixture.hub).captureMetrics(
             check {
                 val metrics = MetricsHelperTest.parseMetrics(it.statsd)
-                assertEquals(4, metrics.size)
+                assertEquals(6, metrics.size)
             }
         )
     }
