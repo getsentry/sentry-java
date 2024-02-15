@@ -60,9 +60,9 @@ class SetMetricTest {
 
     @Test
     fun toStatsdType() {
-        assertEquals("c", MetricHelper.toStatsdType(MetricType.Counter))
-        assertEquals("g", MetricHelper.toStatsdType(MetricType.Gauge))
-        assertEquals("s", MetricHelper.toStatsdType(MetricType.Set))
-        assertEquals("d", MetricHelper.toStatsdType(MetricType.Distribution))
+        assertEquals("c", MetricsHelper.toStatsdType(MetricType.Counter))
+        assertEquals("g", MetricsHelper.toStatsdType(MetricType.Gauge))
+        assertEquals("s", MetricsHelper.toStatsdType(MetricType.Set))
+        assertEquals("d", MetricsHelper.toStatsdType(MetricType.Distribution))
     }
 }

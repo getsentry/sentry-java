@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class EncodedMetrics {
-  @SuppressWarnings("unused")
+  @SuppressWarnings({"CharsetObjectCanBeUsed"})
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private final @NotNull String statsd;

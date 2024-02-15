@@ -5,7 +5,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IMetricAggregator extends Closeable {
+public interface IMetricsAggregator extends Closeable {
 
   /**
    * Emits a Counter metric

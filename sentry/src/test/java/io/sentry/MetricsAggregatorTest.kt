@@ -1,7 +1,8 @@
 package io.sentry
 
 import io.sentry.metrics.IMetricsHub
-import io.sentry.metrics.NoopMetricAggregator
+import io.sentry.metrics.MetricsHelper
+import io.sentry.metrics.NoopMetricsAggregator
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -11,16 +12,18 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class MetricAggregatorTest {
+class MetricsAggregatorTest {
 
     private val hub = mock<IMetricsHub>()
     private val logger = mock<ILogger>()
-    private var currentTimeMillis: Long = 1000
-    private var aggregator: IMetricAggregator = NoopMetricAggregator()
+    private var currentTimeMillis: Long = 0
+    private var aggregator: IMetricsAggregator =
+        NoopMetricsAggregator()
 
     @BeforeTest
     fun setup() {
-        aggregator = MetricAggregator(hub, logger).also {
+        MetricsHelper.setFlushShiftMs(0)
+        aggregator = MetricsAggregator(hub, logger).also {
             it.setTimeProvider {
                 currentTimeMillis
             }
@@ -31,7 +34,7 @@ class MetricAggregatorTest {
     @AfterTest
     fun tearDown() {
         aggregator.close()
-        aggregator = NoopMetricAggregator()
+        aggregator = NoopMetricsAggregator()
     }
 
     @Test
@@ -45,17 +48,17 @@ class MetricAggregatorTest {
     }
 
     @Test
-    fun `flush performs a flush`() {
+    fun `flush performs a flush when needed`() {
         // when a metric is emitted
-        currentTimeMillis = 2000
-        aggregator.increment("key", 1.0, null, null, 2001, 1)
+        currentTimeMillis = 20_000
+        aggregator.increment("key", 1.0, null, null, 20_001, 1)
 
         // then flush does nothing because there's no data inside the flush interval
         aggregator.flush(false)
         verify(hub, never()).captureMetrics(any())
 
         // as times moves on
-        currentTimeMillis = 20_000
+        currentTimeMillis = 30_000
 
         // the metric should be flushed
         aggregator.flush(false)

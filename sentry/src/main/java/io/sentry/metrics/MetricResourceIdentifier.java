@@ -44,7 +44,7 @@ public final class MetricResourceIdentifier {
   @Override
   public String toString() {
     return String.format(
-        "%s:%s@%s", MetricHelper.toStatsdType(metricType), MetricHelper.sanitizeKey(key), unit);
+        "%s:%s@%s", MetricsHelper.toStatsdType(metricType), MetricsHelper.sanitizeKey(key), unit);
   }
 
   @Override

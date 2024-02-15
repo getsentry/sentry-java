@@ -6,23 +6,31 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
-public final class MetricHelper {
+public final class MetricsHelper {
   public static final int FLUSHER_SLEEP_TIME_MS = 5000;
   private static final int ROLLUP_IN_SECONDS = 10;
 
-  private static final String INVALID_KEY_CHARACTERS_PATTERN = "[^a-zA-Z0-9_/.-]+";
-  private static final String INVALID_VALUE_CHARACTERS_PATTERN = "[^\\w\\d_:/@\\.\\{\\}\\[\\]$-]+";
+  private static final Pattern INVALID_KEY_CHARACTERS_PATTERN =
+      Pattern.compile("[^a-zA-Z0-9_/.-]+");
+  private static final Pattern INVALID_VALUE_CHARACTERS_PATTERN =
+      Pattern.compile("[^\\w\\d_:/@\\.\\{\\}\\[\\]$-]+");
+  // See
+  // https://docs.sysdig.com/en/docs/sysdig-monitor/integrations/working-with-integrations/custom-integrations/integrate-statsd-metrics/#characters-allowed-for-statsd-metric-names
+  private static final Pattern INVALID_METRIC_UNIT_CHARACTERS_PATTERN =
+      Pattern.compile("[^a-zA-Z0-9_/.]+");
 
   private static final char TAGS_PAIR_DELIMITER = ','; // Delimiter between key-value pairs
   private static final char TAGS_KEY_VALUE_DELIMITER = '='; // Delimiter between key and value
   private static final char TAGS_ESCAPE_CHAR = '\\';
 
-  private static final long FLUSH_SHIFT_MS =
+  private static long FLUSH_SHIFT_MS =
       (long) (new Random().nextFloat() * (ROLLUP_IN_SECONDS * 1000f));
 
   public static long getDayBucketKey(final @NotNull Calendar timestamp) {
@@ -36,11 +44,12 @@ public final class MetricHelper {
 
   public static long getTimeBucketKey(final long timestampMs) {
     final long seconds = timestampMs / 1000;
-    return (seconds / ROLLUP_IN_SECONDS) * ROLLUP_IN_SECONDS;
-  }
-
-  public static double getFlushShiftMs() {
-    return FLUSH_SHIFT_MS;
+    final long bucketKey = (seconds / ROLLUP_IN_SECONDS) * ROLLUP_IN_SECONDS;
+    // this will result into timestamps of -9999...9999 to fall into a ~20s bucket
+    // simply shift the bucket key for negative timestamp values to ensure those two are apart
+    if (timestampMs >= 0) {
+      return bucketKey;
+    } else return bucketKey - 1;
   }
 
   public static long getCutoffTimestampMs(final long nowMs) {
@@ -48,11 +57,11 @@ public final class MetricHelper {
   }
 
   public static @NotNull String sanitizeKey(final @NotNull String input) {
-    return input.replaceAll(INVALID_KEY_CHARACTERS_PATTERN, "_");
+    return INVALID_KEY_CHARACTERS_PATTERN.matcher(input).replaceAll("_");
   }
 
   public static String sanitizeValue(final @NotNull String input) {
-    return input.replaceAll(INVALID_VALUE_CHARACTERS_PATTERN, "_");
+    return INVALID_VALUE_CHARACTERS_PATTERN.matcher(input).replaceAll("_");
   }
 
   public static @NotNull String toStatsdType(final @NotNull MetricType type) {
@@ -161,7 +170,8 @@ public final class MetricHelper {
 
       final MeasurementUnit unit = metric.getUnit();
       final String unitName = (unit != null) ? unit.apiName() : MeasurementUnit.NONE;
-      writer.append(unitName);
+      final String sanitizeUnitName = sanitizeUnit(unitName);
+      writer.append(sanitizeUnitName);
 
       for (final @NotNull Object value : metric.getValues()) {
         writer.append(":");
@@ -192,5 +202,15 @@ public final class MetricHelper {
       writer.append(timestamp);
       writer.append("\n");
     }
+  }
+
+  @NotNull
+  public static String sanitizeUnit(@NotNull String unit) {
+    return INVALID_METRIC_UNIT_CHARACTERS_PATTERN.matcher(unit).replaceAll("_");
+  }
+
+  @TestOnly
+  public static void setFlushShiftMs(long flushShiftMs) {
+    FLUSH_SHIFT_MS = flushShiftMs;
   }
 }

@@ -270,7 +270,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull MetricsApi getMetricsApi() {
-    return Sentry.getCurrentHub().getMetricsApi();
+  public @NotNull MetricsApi metrics() {
+    return Sentry.getCurrentHub().metrics();
   }
 }

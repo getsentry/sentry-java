@@ -976,8 +976,8 @@ public final class Sentry {
   /** the metrics API for the current hub */
   @NotNull
   @ApiStatus.Experimental
-  public static MetricsApi getMetricsApi() {
-    return getCurrentHub().getMetricsApi();
+  public static MetricsApi metrics() {
+    return getCurrentHub().metrics();
   }
 
   /**

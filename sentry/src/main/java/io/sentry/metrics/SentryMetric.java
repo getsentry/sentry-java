@@ -49,7 +49,7 @@ public final class SentryMetric implements JsonSerializable {
   public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
 
     writer.beginObject();
-    writer.name(JsonKeys.TYPE).value(MetricHelper.toStatsdType(type));
+    writer.name(JsonKeys.TYPE).value(MetricsHelper.toStatsdType(type));
     writer.name(JsonKeys.EVENT_ID).value(logger, eventId);
     writer.name(JsonKeys.NAME).value(key);
     writer.name(JsonKeys.TIMESTAMP).value((double) timestampMs / 1000.0d);

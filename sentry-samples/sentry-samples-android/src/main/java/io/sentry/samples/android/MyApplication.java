@@ -26,7 +26,7 @@ public class MyApplication extends Application {
     //       */
     //    });
 
-    Sentry.getMetricsApi().increment("app.start.cold", 1, null, null, null, 0);
+    Sentry.metrics().increment("app.start.cold", 1, null, null, 0, 0);
   }
 
   private void strictMode() {

@@ -37,7 +37,7 @@ public final class Hub implements IHub, IMetricsHub {
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
-  private final @NotNull IMetricAggregator metricAggregator;
+  private final @NotNull IMetricsAggregator metricAggregator;
   private final @NotNull MetricsApi metricsApi;
 
   public Hub(final @NotNull SentryOptions options) {
@@ -58,7 +58,7 @@ public final class Hub implements IHub, IMetricsHub {
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
 
-    this.metricAggregator = new MetricAggregator(this, options.getLogger());
+    this.metricAggregator = new MetricsAggregator(this, options.getLogger());
     this.metricsApi = new MetricsApi(metricAggregator);
   }
 
@@ -968,7 +968,7 @@ public final class Hub implements IHub, IMetricsHub {
   }
 
   @Override
-  public @NotNull MetricsApi getMetricsApi() {
+  public @NotNull MetricsApi metrics() {
     return metricsApi;
   }
 }

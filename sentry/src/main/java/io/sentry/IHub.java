@@ -579,5 +579,5 @@ public interface IHub {
 
   @ApiStatus.Experimental
   @NotNull
-  MetricsApi getMetricsApi();
+  MetricsApi metrics();
 }

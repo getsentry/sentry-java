@@ -1,6 +1,6 @@
 package io.sentry.metrics;
 
-import io.sentry.IMetricAggregator;
+import io.sentry.IMetricsAggregator;
 import io.sentry.MeasurementUnit;
 import java.io.IOException;
 import java.util.Map;
@@ -9,11 +9,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class NoopMetricAggregator implements IMetricAggregator {
+public final class NoopMetricsAggregator implements IMetricsAggregator {
 
-  private static final NoopMetricAggregator instance = new NoopMetricAggregator();
+  private static final NoopMetricsAggregator instance = new NoopMetricsAggregator();
 
-  public static NoopMetricAggregator getInstance() {
+  public static NoopMetricsAggregator getInstance() {
     return instance;
   }
 

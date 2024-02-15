@@ -6,23 +6,37 @@ import io.sentry.metrics.EncodedMetrics;
 import io.sentry.metrics.GaugeMetric;
 import io.sentry.metrics.IMetricsHub;
 import io.sentry.metrics.Metric;
-import io.sentry.metrics.MetricHelper;
 import io.sentry.metrics.MetricType;
+import io.sentry.metrics.MetricsHelper;
 import io.sentry.metrics.SetMetric;
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.zip.CRC32;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
-public final class MetricAggregator implements IMetricAggregator, Runnable, Closeable {
+public final class MetricsAggregator implements IMetricsAggregator, Runnable, Closeable {
+
+  @SuppressWarnings({"CharsetObjectCanBeUsed"})
+  private static final Charset UTF8 = Charset.forName("UTF-8");
+
+  @SuppressWarnings("AnonymousHasLambdaAlternative")
+  private static final ThreadLocal<CRC32> crc32 =
+      new ThreadLocal<CRC32>() {
+        @Override
+        protected CRC32 initialValue() {
+          return new CRC32();
+        }
+      };
 
   private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
@@ -38,7 +52,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
   // each of which has a key that uniquely identifies it within the time period
   private final NavigableMap<Long, Map<String, Metric>> buckets = new ConcurrentSkipListMap<>();
 
-  public MetricAggregator(final @NotNull IMetricsHub hub, final @NotNull ILogger logger) {
+  public MetricsAggregator(final @NotNull IMetricsHub hub, final @NotNull ILogger logger) {
     this.hub = hub;
     this.logger = logger;
     this.executorService = NoOpSentryExecutorService.getInstance();
@@ -96,9 +110,15 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       @Nullable Map<String, String> tags,
       final long timestampMs,
       int stackLevel) {
-    // TODO consider using CR32 instead of hashCode
-    // see https://develop.sentry.dev/sdk/metrics/#sets
-    add(MetricType.Set, key, value.hashCode(), unit, tags, timestampMs, stackLevel);
+
+    final byte[] bytes = value.getBytes(UTF8);
+
+    final CRC32 crc = crc32.get();
+    crc.reset();
+    crc.update(bytes, 0, bytes.length);
+    final int intValue = (int) crc.getValue();
+
+    add(MetricType.Set, key, intValue, unit, tags, timestampMs, stackLevel);
   }
 
   @Override
@@ -114,7 +134,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       callback.run();
     } finally {
       final long durationNanos = (System.nanoTime() - start);
-      final double value = MetricHelper.convertNanosTo(unit, durationNanos);
+      final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
       add(MetricType.Distribution, key, value, unit, tags, timestampMs, stackLevel + 1);
     }
   }
@@ -153,10 +173,10 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
         throw new IllegalArgumentException("Unknown MetricType: " + type.name());
     }
 
-    final long timeBucketKey = MetricHelper.getTimeBucketKey(timestampMs);
+    final long timeBucketKey = MetricsHelper.getTimeBucketKey(timestampMs);
     final @NotNull Map<String, Metric> timeBucket = getOrAddTimeBucket(timeBucketKey);
 
-    final @NotNull String metricKey = MetricHelper.getMetricBucketKey(type, key, unit, tags);
+    final @NotNull String metricKey = MetricsHelper.getMetricBucketKey(type, key, unit, tags);
     synchronized (timeBucket) {
       @Nullable Metric existingMetric = timeBucket.get(metricKey);
       if (existingMetric != null) {
@@ -171,7 +191,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
       synchronized (this) {
         if (!isClosed && executorService instanceof NoOpSentryExecutorService) {
           executorService = new SentryExecutorService();
-          executorService.schedule(this, MetricHelper.FLUSHER_SLEEP_TIME_MS);
+          executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
         }
       }
     }
@@ -190,7 +210,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
     for (long bucketKey : flushableBuckets) {
       final @Nullable Map<String, Metric> metrics = buckets.remove(bucketKey);
       if (metrics != null) {
-        MetricHelper.encodeMetrics(bucketKey, metrics.values(), writer);
+        MetricsHelper.encodeMetrics(bucketKey, metrics.values(), writer);
       }
     }
 
@@ -211,8 +231,8 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
     } else {
       // get all keys, including the cutoff key
       final long cutoffTimestampMs =
-          MetricHelper.getCutoffTimestampMs(timeProvider.getTimeMillis());
-      final long cutoffKey = MetricHelper.getTimeBucketKey(cutoffTimestampMs);
+          MetricsHelper.getCutoffTimestampMs(timeProvider.getTimeMillis());
+      final long cutoffKey = MetricsHelper.getTimeBucketKey(cutoffTimestampMs);
       return buckets.headMap(cutoffKey, true).keySet();
     }
   }
@@ -250,7 +270,7 @@ public final class MetricAggregator implements IMetricAggregator, Runnable, Clos
     flush(false);
 
     if (!isClosed) {
-      executorService.schedule(this, MetricHelper.FLUSHER_SLEEP_TIME_MS);
+      executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
     }
   }
 
