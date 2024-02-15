@@ -21,12 +21,12 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
@@ -40,6 +40,7 @@ public final class AsyncHttpTransport implements ITransport {
   private final @NotNull RateLimiter rateLimiter;
   private final @NotNull ITransportGate transportGate;
   private final @NotNull HttpConnection connection;
+  private volatile @Nullable Runnable currentRunnable = null;
 
   public AsyncHttpTransport(
       final @NotNull SentryOptions options,
@@ -182,10 +183,10 @@ public final class AsyncHttpTransport implements ITransport {
                 "Failed to shutdown the async connection async sender  within "
                     + timeout
                     + " ms. Trying to force it now.");
-        final @NotNull List<Runnable> runnables = executor.shutdownNow();
-        for (final @NotNull Runnable r : runnables) {
+        executor.shutdownNow();
+        if (currentRunnable != null) {
           // We store to disk any envelope that is currently being sent
-          executor.getRejectedExecutionHandler().rejectedExecution(r, executor);
+          executor.getRejectedExecutionHandler().rejectedExecution(currentRunnable, executor);
         }
       }
     } catch (InterruptedException e) {
@@ -236,6 +237,7 @@ public final class AsyncHttpTransport implements ITransport {
 
     @Override
     public void run() {
+      currentRunnable = this;
       TransportResult result = this.failedResult;
       try {
         result = flush();
@@ -257,6 +259,7 @@ public final class AsyncHttpTransport implements ITransport {
                       finalResult.isSuccess());
               submissionResult.setResult(finalResult.isSuccess());
             });
+        currentRunnable = null;
       }
     }
 
