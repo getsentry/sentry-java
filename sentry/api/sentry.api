@@ -428,6 +428,7 @@ public final class io/sentry/Hub : io/sentry/IHub, io/sentry/metrics/IMetricsHub
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
+	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
@@ -479,6 +480,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
+	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
@@ -570,6 +572,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun clearBreadcrumbs ()V
 	public abstract fun clone ()Lio/sentry/IHub;
 	public abstract fun close ()V
+	public abstract fun close (Z)V
 	public abstract fun configureScope (Lio/sentry/ScopeCallback;)V
 	public abstract fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public abstract fun endSession ()V
@@ -750,6 +753,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun close ()V
+	public abstract fun close (Z)V
 	public abstract fun flush (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun isEnabled ()Z
@@ -1167,6 +1171,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
+	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
@@ -1887,6 +1892,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isEnabled ()Z
@@ -4710,6 +4716,7 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
 	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isHealthy ()Z
@@ -4726,6 +4733,7 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 }
 
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
+	public abstract fun close (Z)V
 	public abstract fun flush (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isHealthy ()Z
@@ -4747,6 +4755,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/transport/NoOpTransport;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
@@ -4780,6 +4789,7 @@ public final class io/sentry/transport/ReusableCountLatch {
 public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V

@@ -29,6 +29,9 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
+  public void close(final boolean isRestarting) {}
+
+  @Override
   public void close() {}
 
   @Override

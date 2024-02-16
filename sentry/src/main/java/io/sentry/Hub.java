@@ -364,6 +364,12 @@ public final class Hub implements IHub, IMetricsHub {
 
   @Override
   public void close() {
+    close(false);
+  }
+
+  @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void close(final boolean isRestarting) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -392,12 +398,17 @@ public final class Hub implements IHub, IMetricsHub {
         configureScope(scope -> scope.clear());
         options.getTransactionProfiler().close();
         options.getTransactionPerformanceCollector().close();
-        options.getExecutorService().close(options.getShutdownTimeoutMillis());
+        final @NotNull ISentryExecutorService executorService = options.getExecutorService();
+        if (isRestarting) {
+          executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+        } else {
+          executorService.close(options.getShutdownTimeoutMillis());
+        }
 
         // Close the top-most client
         final StackItem item = stack.peek();
         // TODO: should we end session before closing client?
-        item.getClient().close();
+        item.getClient().close(isRestarting);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
       }

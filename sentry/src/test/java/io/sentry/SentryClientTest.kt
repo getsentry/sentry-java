@@ -139,6 +139,25 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when client is closed with isRestarting false, transport waits`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close(false)
+        assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
+        verify(fixture.transport).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
+        verify(fixture.transport).close(eq(false))
+    }
+
+    @Test
+    fun `when client is closed with isRestarting true, transport does not wait`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close(true)
+        verify(fixture.transport).flush(eq(0))
+        verify(fixture.transport).close(eq(true))
+    }
+
+    @Test
     fun `when client is closed, client gets disabled`() {
         val sut = fixture.getSut()
         assertTrue(sut.isEnabled)

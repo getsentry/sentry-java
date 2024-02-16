@@ -81,6 +81,9 @@ public final class NoOpHub implements IHub {
   public void close() {}
 
   @Override
+  public void close(final boolean isRestarting) {}
+
+  @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {}
 
   @Override

@@ -238,7 +238,7 @@ public final class Sentry {
 
     currentHub.set(mainHub);
 
-    hub.close();
+    hub.close(true);
 
     // If the executorService passed in the init is the same that was previously closed, we have to
     // set a new one
@@ -485,7 +485,7 @@ public final class Sentry {
     mainHub = NoOpHub.getInstance();
     // remove thread local to avoid memory leak
     currentHub.remove();
-    hub.close();
+    hub.close(false);
   }
 
   /**
