@@ -7,6 +7,10 @@
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
 - Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
 
+## Fixes
+
+- Fix Jetpack Compose widgets are not being correctly identified for user interaction tracing ([#3209](https://github.com/getsentry/sentry-java/pull/3209))
+
 ## 7.3.0
 
 ### Features
