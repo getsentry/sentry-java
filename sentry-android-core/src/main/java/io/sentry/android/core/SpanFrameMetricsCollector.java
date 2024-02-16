@@ -306,8 +306,7 @@ public class SpanFrameMetricsCollector
     return date.diff(UNIX_START_DATE);
   }
 
-  @ApiStatus.Internal
-  public static class Frame implements Comparable<Frame> {
+  private static class Frame implements Comparable<Frame> {
     private final long startNanos;
     private final long endNanos;
     private final long durationNanos;
@@ -316,11 +315,11 @@ public class SpanFrameMetricsCollector
     private final boolean isFrozen;
     private final long expectedDurationNanos;
 
-    public Frame(final long timestampNanos) {
+    Frame(final long timestampNanos) {
       this(timestampNanos, timestampNanos, 0, 0, false, false, 0);
     }
 
-    public Frame(
+    Frame(
         final long startNanos,
         final long endNanos,
         final long durationNanos,
