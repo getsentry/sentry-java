@@ -13,12 +13,12 @@ public final class CodeLocations {
   private final @NotNull Map<MetricResourceIdentifier, SentryStackFrame> locations;
 
   public CodeLocations(
-      final double date, final @NotNull Map<MetricResourceIdentifier, SentryStackFrame> locations) {
-    this.timestamp = date;
+      final double timestamp,
+      final @NotNull Map<MetricResourceIdentifier, SentryStackFrame> locations) {
+    this.timestamp = timestamp;
     this.locations = locations;
   }
 
-  @NotNull
   public double getTimestamp() {
     return timestamp;
   }
