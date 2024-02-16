@@ -1,28 +1,26 @@
 package io.sentry.metrics;
 
 import io.sentry.protocol.SentryStackFrame;
-import java.util.Calendar;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/** Represents a collection of code locations. */
+/** Represents a collection of code locations, taken at a specific time */
 @ApiStatus.Internal
 public final class CodeLocations {
 
-  private final @NotNull Calendar date;
+  private final double timestamp;
   private final @NotNull Map<MetricResourceIdentifier, SentryStackFrame> locations;
 
   public CodeLocations(
-      final @NotNull Calendar date,
-      final @NotNull Map<MetricResourceIdentifier, SentryStackFrame> locations) {
-    this.date = date;
+      final double date, final @NotNull Map<MetricResourceIdentifier, SentryStackFrame> locations) {
+    this.timestamp = date;
     this.locations = locations;
   }
 
   @NotNull
-  public Calendar getDate() {
-    return date;
+  public double getTimestamp() {
+    return timestamp;
   }
 
   @NotNull

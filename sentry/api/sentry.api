@@ -3370,9 +3370,9 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 }
 
 public final class io/sentry/metrics/CodeLocations {
-	public fun <init> (Ljava/util/Calendar;Ljava/util/Map;)V
-	public fun getDate ()Ljava/util/Calendar;
+	public fun <init> (DLjava/util/Map;)V
 	public fun getLocations ()Ljava/util/Map;
+	public fun getTimestamp ()D
 }
 
 public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {

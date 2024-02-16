@@ -185,7 +185,7 @@ public final class SentryEnvelopeItem {
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryItemType.Statsd, () -> cachedItem.getBytes().length, "application/json", null);
+            SentryItemType.CheckIn, () -> cachedItem.getBytes().length, "application/json", null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
