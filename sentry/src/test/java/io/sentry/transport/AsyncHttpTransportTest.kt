@@ -16,6 +16,7 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.Enqueable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -356,19 +357,18 @@ class AsyncHttpTransportTest {
     }
 
     @Test
-    fun `close shuts down the executor and runs executing runnables through rejectedExecutionHandler`() {
-        fixture.sentryOptions.flushTimeoutMillis = 123
-        val currentExecutingRunnables = listOf(mock<Runnable>(), mock<Runnable>())
+    fun `close shuts down the executor and runs executing runnable through rejectedExecutionHandler`() {
         val rejectedExecutionHandler = mock<RejectedExecutionHandler>()
         val sut = fixture.getSUT()
-        whenever(fixture.executor.shutdownNow()).thenReturn(currentExecutingRunnables)
-        whenever(fixture.executor.rejectedExecutionHandler).thenReturn(rejectedExecutionHandler)
+        val runnable = mock<Runnable>()
 
+        // Emulate a runnable currently being executed
+        sut.injectForField("currentRunnable", runnable)
+        whenever(fixture.executor.rejectedExecutionHandler).thenReturn(rejectedExecutionHandler)
         sut.close(true)
 
         verify(fixture.executor).shutdownNow()
-        verify(rejectedExecutionHandler).rejectedExecution(eq(currentExecutingRunnables[0]), eq(fixture.executor))
-        verify(rejectedExecutionHandler).rejectedExecution(eq(currentExecutingRunnables[1]), eq(fixture.executor))
+        verify(rejectedExecutionHandler).rejectedExecution(eq(runnable), eq(fixture.executor))
     }
 
     @Test
