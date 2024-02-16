@@ -133,6 +133,10 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
+        override fun close(isRestarting: Boolean) {
+            TODO("Not yet implemented")
+        }
+
         override fun close() {
             TODO("Not yet implemented")
         }

@@ -192,6 +192,13 @@ public interface IHub {
   void close();
 
   /**
+   * Flushes out the queue for up to timeout seconds and disable the Hub.
+   *
+   * @param isRestarting if true, avoids locking the main thread when finishing the queue.
+   */
+  void close(boolean isRestarting);
+
+  /**
    * Adds a breadcrumb to the current Scope
    *
    * @param breadcrumb the breadcrumb
