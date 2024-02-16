@@ -54,6 +54,10 @@ class InternalSentrySdkTest {
                 options.dsn = "https://key@host/proj"
                 options.setTransportFactory { _, _ ->
                     object : ITransport {
+                        override fun close(isRestarting: Boolean) {
+                            // no-op
+                        }
+
                         override fun close() {
                             // no-op
                         }

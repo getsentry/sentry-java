@@ -1,6 +1,5 @@
 package io.sentry.uitest.android
 
-import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
@@ -199,7 +198,6 @@ class EnvelopeTests : BaseUiTest() {
 
         relay.assert {
             findEnvelope {
-                Log.e("ITEMS", it.items.joinToString { item -> item.header.type.itemType })
                 assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "timedOutProfile"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
