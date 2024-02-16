@@ -31,6 +31,7 @@ import java.util.concurrent.Executors
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class ApacheHttpClientTransportTest {
 
@@ -116,7 +117,21 @@ class ApacheHttpClientTransportTest {
     fun `close waits for shutdown`() {
         val sut = fixture.getSut()
         sut.close()
-        verify(fixture.client).awaitShutdown(any())
+        verify(fixture.client).awaitShutdown(check { assertNotEquals(0L, it.duration) })
+    }
+
+    @Test
+    fun `close with isRestarting false waits for shutdown`() {
+        val sut = fixture.getSut()
+        sut.close(false)
+        verify(fixture.client).awaitShutdown(check { assertNotEquals(0L, it.duration) })
+    }
+
+    @Test
+    fun `close with isRestarting true does not wait for shutdown`() {
+        val sut = fixture.getSut()
+        sut.close(true)
+        verify(fixture.client).awaitShutdown(check { assertEquals(0L, it.duration) })
     }
 
     @Test

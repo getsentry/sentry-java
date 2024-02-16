@@ -93,7 +93,17 @@ class HubAdapterTest {
 
     @Test fun `close calls Hub`() {
         HubAdapter.getInstance().close()
-        verify(hub).close()
+        verify(hub).close(false)
+    }
+
+    @Test fun `close with isRestarting true calls Hub with isRestarting false`() {
+        HubAdapter.getInstance().close(true)
+        verify(hub).close(false)
+    }
+
+    @Test fun `close with isRestarting false calls Hub with isRestarting false`() {
+        HubAdapter.getInstance().close(false)
+        verify(hub).close(false)
     }
 
     @Test fun `addBreadcrumb calls Hub`() {
