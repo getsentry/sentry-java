@@ -5,6 +5,7 @@ import io.sentry.ITransaction
 import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
 import io.sentry.SentryLongDate
+import io.sentry.SentryNanotimeDate
 import io.sentry.SpanContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.MeasurementValue
@@ -15,9 +16,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class SpanFrameMetricsCollectorTest {
 
@@ -41,9 +44,7 @@ class SpanFrameMetricsCollectorTest {
                 SentryLongDate(timeNanos)
             }
 
-            return SpanFrameMetricsCollector(options, {
-                timeNanos
-            }, frameMetricsCollector)
+            return SpanFrameMetricsCollector(options, frameMetricsCollector)
         }
     }
 
@@ -445,5 +446,14 @@ class SpanFrameMetricsCollectorTest {
 
         // and no span data should be attached
         verify(span0, never()).setData(any(), any())
+    }
+
+    @Test
+    fun `SentryNanoDate diff does nano precision`() {
+        // having this in here, as SpanFrameMetricsCollector relies on this behavior
+        val a = SentryNanotimeDate(Date(1234), 567)
+        val b = SentryNanotimeDate(Date(1234), 0)
+
+        assertEquals(567, a.diff(b))
     }
 }

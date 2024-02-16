@@ -349,7 +349,6 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/SpanFrameMetricsCollector$FrameTimeProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun clear ()V
 	public fun onFrameMetricCollected (JJJJZZF)V
@@ -357,26 +356,11 @@ public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerfo
 	public fun onSpanStarted (Lio/sentry/ISpan;)V
 }
 
-public class io/sentry/android/core/SpanFrameMetricsCollector$Frame : io/sentry/android/core/SpanFrameMetricsCollector$NanoTimeStamp {
-	public fun <init> (JJJJZZJ)V
-}
-
-public abstract interface class io/sentry/android/core/SpanFrameMetricsCollector$FrameTimeProvider {
-	public abstract fun now ()J
-}
-
-public class io/sentry/android/core/SpanFrameMetricsCollector$NanoTimeStamp : java/lang/Comparable {
+public class io/sentry/android/core/SpanFrameMetricsCollector$Frame : java/lang/Comparable {
 	public fun <init> (J)V
-	public fun compareTo (Lio/sentry/android/core/SpanFrameMetricsCollector$NanoTimeStamp;)I
+	public fun <init> (JJJJZZJ)V
+	public fun compareTo (Lio/sentry/android/core/SpanFrameMetricsCollector$Frame;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
-}
-
-public class io/sentry/android/core/SpanFrameMetricsCollector$SpanStart : java/lang/Comparable {
-	public fun <init> (Ljava/lang/String;Lio/sentry/android/core/SpanFrameMetricsCollector$NanoTimeStamp;)V
-	public fun compareTo (Lio/sentry/android/core/SpanFrameMetricsCollector$SpanStart;)I
-	public synthetic fun compareTo (Ljava/lang/Object;)I
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
 }
 
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {

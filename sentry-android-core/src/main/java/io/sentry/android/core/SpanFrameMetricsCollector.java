@@ -6,13 +6,12 @@ import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
 import io.sentry.SentryDate;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
-import io.sentry.util.Objects;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public class SpanFrameMetricsCollector
@@ -28,31 +26,40 @@ public class SpanFrameMetricsCollector
         SentryFrameMetricsCollector.FrameMetricsCollectorListener {
 
   // 30s span duration at 120fps = 3600 frames
+  // this is just an upper limit for frames.size, ensuring that the buffer does not
+  // grow indefinitely in case of a long running span
   private static final int MAX_FRAMES_COUNT = 3600;
   private static final long ONE_SECOND_NANOS = TimeUnit.SECONDS.toNanos(1);
+  private static final SentryNanotimeDate UNIX_START_DATE = new SentryNanotimeDate(new Date(0), 0);
 
-  private final @NotNull SentryAndroidOptions options;
-  private final @NotNull FrameTimeProvider frameTimeProvider;
   private final boolean enabled;
-
   private final @NotNull Object lock = new Object();
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
 
   private volatile @Nullable String listenerId;
 
-  // a map of <span-id, span-start-time-nanos>
-  // as spans do not contain a nano start time, it's being tracked here
-  private final @NotNull Map<String, NanoTimeStamp> spanStarts = new HashMap<>();
-
   // all running spans, sorted by span start nano time
-  private final @NotNull SortedSet<SpanStart> runningSpans = new TreeSet<>();
+  private final @NotNull SortedSet<ISpan> runningSpans =
+      new TreeSet<>(
+          (o1, o2) -> {
+            int timeDiff = o1.getStartDate().compareTo(o2.getStartDate());
+            if (timeDiff != 0) {
+              return timeDiff;
+            } else {
+              // TreeSet uses compareTo to check for duplicates, so ensure that
+              // two non-equal spans with the same start date are not considered equal
+              return o1.getSpanContext()
+                  .getSpanId()
+                  .toString()
+                  .compareTo(o2.getSpanContext().getSpanId().toString());
+            }
+          });
 
   // all collected frames, sorted by frame end time
   // this is a concurrent set, as the frames are added on the main thread,
   // but span starts/finish may happen on any thread
   // the list only holds Frames, but in order to query for a specific span NanoTimeStamp is used
-  private final @NotNull ConcurrentSkipListSet<NanoTimeStamp> frames =
-      new ConcurrentSkipListSet<>();
+  private final @NotNull ConcurrentSkipListSet<Frame> frames = new ConcurrentSkipListSet<>();
 
   // assume 60fps until we get a value reported by the system
   private long lastKnownFrameDurationNanos = 16_666_666L;
@@ -60,17 +67,6 @@ public class SpanFrameMetricsCollector
   public SpanFrameMetricsCollector(
       final @NotNull SentryAndroidOptions options,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
-    //noinspection Convert2MethodRef
-    this(options, () -> System.nanoTime(), frameMetricsCollector);
-  }
-
-  @TestOnly
-  public SpanFrameMetricsCollector(
-      final @NotNull SentryAndroidOptions options,
-      final @NotNull FrameTimeProvider frameTimeProvider,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
-    this.options = options;
-    this.frameTimeProvider = frameTimeProvider;
     this.frameMetricsCollector = frameMetricsCollector;
 
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
@@ -89,12 +85,7 @@ public class SpanFrameMetricsCollector
     }
 
     synchronized (lock) {
-      final long now = frameTimeProvider.now();
-      final NanoTimeStamp timeStamp = new NanoTimeStamp(now);
-
-      final String id = span.getSpanContext().getSpanId().toString();
-      runningSpans.add(new SpanStart(id, timeStamp));
-      spanStarts.put(id, timeStamp);
+      runningSpans.add(span);
 
       if (listenerId == null) {
         listenerId = frameMetricsCollector.startCollection(this);
@@ -117,9 +108,8 @@ public class SpanFrameMetricsCollector
     }
 
     // ignore span if onSpanStarted was never called for it
-    final @NotNull String spanId = span.getSpanContext().getSpanId().toString();
     synchronized (lock) {
-      if (!spanStarts.containsKey(spanId)) {
+      if (!runningSpans.contains(span)) {
         return;
       }
     }
@@ -131,8 +121,8 @@ public class SpanFrameMetricsCollector
         clear();
       } else {
         // otherwise only remove old/irrelevant frames
-        final SpanStart oldestSpan = runningSpans.first();
-        frames.headSet(oldestSpan.timeNanos).clear();
+        final @NotNull ISpan oldestSpan = runningSpans.first();
+        frames.headSet(new Frame(realNanos(oldestSpan.getStartDate()))).clear();
       }
     }
   }
@@ -140,29 +130,20 @@ public class SpanFrameMetricsCollector
   private void captureFrameMetrics(@NotNull final ISpan span) {
     // TODO lock still required?
     synchronized (lock) {
-      final @NotNull String id = span.getSpanContext().getSpanId().toString();
-      final @Nullable NanoTimeStamp spanStartTimeStamp = spanStarts.remove(id);
-      if (spanStartTimeStamp == null) {
+      boolean removed = runningSpans.remove(span);
+      if (!removed) {
         return;
       }
-      runningSpans.remove(new SpanStart(id, spanStartTimeStamp));
 
       // ignore spans with no finish date
       final @Nullable SentryDate spanFinishDate = span.getFinishDate();
       if (spanFinishDate == null) {
         return;
       }
+      final long spanEndNanos = realNanos(spanFinishDate);
 
       final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
-
-      // project the span end date into our nano time format
-      final @NotNull SentryDate now = options.getDateProvider().now();
-      final long nowNanos = frameTimeProvider.now();
-
-      final long diffNanos = now.diff(spanFinishDate);
-      final long spanEndNanos = nowNanos - diffNanos;
-
-      final long spanStartNanos = spanStartTimeStamp.timeNanos;
+      final long spanStartNanos = realNanos(span.getStartDate());
       if (spanStartNanos >= spanEndNanos) {
         return;
       }
@@ -172,10 +153,11 @@ public class SpanFrameMetricsCollector
 
       if (!frames.isEmpty()) {
         // determine relevant start in frames list
-        final Iterator<NanoTimeStamp> iterator =
-            frames.tailSet(new NanoTimeStamp(spanStartNanos)).iterator();
+        final Iterator<Frame> iterator = frames.tailSet(new Frame(spanStartNanos)).iterator();
+
+        //noinspection WhileLoopReplaceableByForEach
         while (iterator.hasNext()) {
-          final @NotNull Frame frame = (Frame) iterator.next();
+          final @NotNull Frame frame = iterator.next();
 
           if (frame.startNanos > spanEndNanos) {
             break;
@@ -244,7 +226,6 @@ public class SpanFrameMetricsCollector
       }
       frames.clear();
       runningSpans.clear();
-      spanStarts.clear();
     }
   }
 
@@ -314,62 +295,19 @@ public class SpanFrameMetricsCollector
     return 0;
   }
 
-  @ApiStatus.Internal
-  public interface FrameTimeProvider {
-    long now();
+  /**
+   * Because {@link SentryNanotimeDate#nanoTimestamp()} only gives you millisecond precision, but
+   * diff doesn't in case of {@link SentryNanotimeDate} ¯\_(ツ)_/¯
+   *
+   * @param date the input date
+   * @return a timestamp in nano precision
+   */
+  private static long realNanos(final @NotNull SentryDate date) {
+    return date.diff(UNIX_START_DATE);
   }
 
   @ApiStatus.Internal
-  public static class NanoTimeStamp implements Comparable<NanoTimeStamp> {
-
-    private final long timeNanos;
-
-    public NanoTimeStamp(long timeNanos) {
-      this.timeNanos = timeNanos;
-    }
-
-    @Override
-    public int compareTo(NanoTimeStamp o) {
-      return Long.compare(timeNanos, o.timeNanos);
-    }
-  }
-
-  @ApiStatus.Internal
-  public static class SpanStart implements Comparable<SpanStart> {
-
-    private final @NotNull String spanId;
-    private final @NotNull NanoTimeStamp timeNanos;
-
-    public SpanStart(@NotNull String spanId, final @NotNull NanoTimeStamp timeNanos) {
-      this.spanId = spanId;
-      this.timeNanos = timeNanos;
-    }
-
-    @Override
-    public int compareTo(SpanStart o) {
-      final int timeCompare = timeNanos.compareTo(o.timeNanos);
-      if (timeCompare == 0) {
-        return spanId.compareTo(o.spanId);
-      }
-      return timeCompare;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      final SpanStart spanStart = (SpanStart) o;
-      return timeNanos == spanStart.timeNanos && Objects.equals(spanId, spanStart.spanId);
-    }
-
-    @Override
-    public int hashCode() {
-      return java.util.Objects.hash(spanId, timeNanos);
-    }
-  }
-
-  @ApiStatus.Internal
-  public static class Frame extends NanoTimeStamp {
+  public static class Frame implements Comparable<Frame> {
     private final long startNanos;
     private final long endNanos;
     private final long durationNanos;
@@ -377,6 +315,10 @@ public class SpanFrameMetricsCollector
     private final boolean isSlow;
     private final boolean isFrozen;
     private final long expectedDurationNanos;
+
+    public Frame(final long timestampNanos) {
+      this(timestampNanos, timestampNanos, 0, 0, false, false, 0);
+    }
 
     public Frame(
         final long startNanos,
@@ -386,7 +328,6 @@ public class SpanFrameMetricsCollector
         final boolean isSlow,
         final boolean isFrozen,
         final long expectedFrameDurationNanos) {
-      super(endNanos);
       this.startNanos = startNanos;
       this.endNanos = endNanos;
       this.durationNanos = durationNanos;
@@ -394,6 +335,11 @@ public class SpanFrameMetricsCollector
       this.isSlow = isSlow;
       this.isFrozen = isFrozen;
       this.expectedDurationNanos = expectedFrameDurationNanos;
+    }
+
+    @Override
+    public int compareTo(final @NotNull Frame o) {
+      return Long.compare(this.endNanos, o.endNanos);
     }
   }
 }
