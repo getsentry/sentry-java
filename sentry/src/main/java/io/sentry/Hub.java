@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -303,7 +304,8 @@ public final class Hub implements IHub, IMetricsHub {
       final StackItem item = stack.peek();
       final SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
 
-      // TODO usually the envelope is assembled by the client
+      // TODO fine this way?
+      // Usually the envelope is assembled by the client
       final SentryEnvelopeHeader envelopeHeader =
           new SentryEnvelopeHeader(
               new SentryId(),
@@ -314,6 +316,14 @@ public final class Hub implements IHub, IMetricsHub {
           new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
       item.getClient().captureEnvelope(envelope);
     }
+  }
+
+  @Override
+  public @NotNull Map<String, String> getDefaultTagsForMetric() {
+    final Map<String, String> tags = new HashMap<>(2);
+    tags.put("release", options.getRelease());
+    tags.put("environment", options.getEnvironment());
+    return tags;
   }
 
   @Override

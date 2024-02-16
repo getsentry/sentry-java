@@ -12,6 +12,7 @@ import io.sentry.metrics.SetMetric;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -31,7 +32,6 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
-  private final @NotNull SentryOptions options;
 
   private @NotNull TimeProvider timeProvider = System::currentTimeMillis;
 
@@ -56,7 +56,6 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       final @NotNull SentryOptions options,
       final @NotNull ISentryExecutorService executorService) {
     this.hub = hub;
-    this.options = options;
     this.logger = options.getLogger();
     this.executorService = executorService;
   }
@@ -127,7 +126,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   public void timing(
       @NotNull String key,
       @NotNull TimingCallback callback,
-      @Nullable MeasurementUnit.Duration unit,
+      @NotNull MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
       int stackLevel) {
     final long startMs = timeProvider.getTimeMillis();
@@ -135,11 +134,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     try {
       callback.run();
     } finally {
-      final MeasurementUnit.Duration durationUnit =
-          unit != null ? unit : MeasurementUnit.Duration.SECOND;
       final long durationNanos = (System.nanoTime() - startNanos);
-      final double value = MetricsHelper.convertNanosTo(durationUnit, durationNanos);
-      add(MetricType.Distribution, key, value, durationUnit, tags, startMs, stackLevel + 1);
+      final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
+      add(MetricType.Distribution, key, value, unit, tags, startMs, stackLevel + 1);
     }
   }
 
@@ -218,24 +215,18 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   @NotNull
   private Map<String, String> enrichTags(final @Nullable Map<String, String> tags) {
-
-    final @NotNull Map<String, String> enrichedTags;
+    final @NotNull Map<String, String> defaultTags = hub.getDefaultTagsForMetric();
     if (tags == null) {
-      enrichedTags = new HashMap<>();
-    } else {
-      enrichedTags = new HashMap<>(tags);
+      return Collections.unmodifiableMap(defaultTags);
     }
 
-    final @Nullable String release = options.getRelease();
-    if (release != null && !enrichedTags.containsKey("release")) {
-      enrichedTags.put("release", release);
+    final @NotNull Map<String, String> enrichedTags = new HashMap<>(tags);
+    for (final @NotNull Map.Entry<String, String> defaultTag : defaultTags.entrySet()) {
+      final @NotNull String key = defaultTag.getKey();
+      if (!enrichedTags.containsKey(key)) {
+        enrichedTags.put(key, defaultTag.getValue());
+      }
     }
-
-    final @Nullable String environment = options.getEnvironment();
-    if (environment != null && !enrichedTags.containsKey("environment")) {
-      enrichedTags.put("environment", environment);
-    }
-
     return enrichedTags;
   }
 

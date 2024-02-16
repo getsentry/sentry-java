@@ -9,6 +9,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -121,7 +122,7 @@ class MetricsAggregatorTest {
                         "apples",
                         "c",
                         listOf("2.0"),
-                        mapOf("a" to "b", "environment" to "prod")
+                        mapOf("a" to "b")
                     ),
                     metrics[0]
                 )
@@ -308,9 +309,12 @@ class MetricsAggregatorTest {
     @Test
     fun `tags are enriched with environment and release`() {
         val aggregator = fixture.getSut()
-
-        fixture.options.release = "1.0"
-        fixture.options.environment = "prod"
+        whenever(fixture.hub.defaultTagsForMetric).thenReturn(
+            mapOf(
+                "release" to "1.0",
+                "environment" to "prod"
+            )
+        )
 
         // when a metric gets emitted
         fixture.currentTimeMillis = 20_000
@@ -349,9 +353,11 @@ class MetricsAggregatorTest {
     @Test
     fun `existing environment and release tags are not overwritten`() {
         val aggregator = fixture.getSut()
-
-        fixture.options.release = "1.0"
-        fixture.options.environment = "prod"
+        whenever(fixture.hub.defaultTagsForMetric).thenReturn(
+            mapOf(
+                "defaultTag" to "defaultValue"
+            )
+        )
 
         // when a metric gets emitted
         fixture.currentTimeMillis = 20_000
@@ -360,8 +366,7 @@ class MetricsAggregatorTest {
             1.0,
             MeasurementUnit.Custom("apples"),
             mapOf(
-                "release" to "2.0",
-                "environment" to "prod-2"
+                "defaultTag" to "custom-value"
             ),
             20_001,
             1
@@ -379,8 +384,7 @@ class MetricsAggregatorTest {
                         "c",
                         listOf("1.0"),
                         mapOf(
-                            "release" to "2.0",
-                            "environment" to "prod-2"
+                            "defaultTag" to "custom-value"
                         )
                     ),
                     metrics[0]

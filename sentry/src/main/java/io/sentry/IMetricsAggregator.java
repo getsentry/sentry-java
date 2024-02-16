@@ -114,7 +114,7 @@ public interface IMetricsAggregator extends Closeable {
   void timing(
       final @NotNull String key,
       final @NotNull TimingCallback callback,
-      final @Nullable MeasurementUnit.Duration unit,
+      final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
       final int stackLevel);
 
