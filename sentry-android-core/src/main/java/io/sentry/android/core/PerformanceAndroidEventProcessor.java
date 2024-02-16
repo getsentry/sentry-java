@@ -33,6 +33,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
   private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
   private static final String APP_METRICS_APPLICATION_OP = "application.load";
+  private static final String APP_METRICS_PROCESS_INIT_OP = "process.load";
+  private static final long MAX_PROCESS_INIT_APP_START_DIFF_MS = 10000;
 
   private boolean sentStartMeasurement = false;
 
@@ -77,13 +79,13 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
       final @NotNull TimeSpan appStartTimeSpan =
           AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
-      final long appStartUpInterval = appStartTimeSpan.getDurationMs();
+      final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
-      // if appStartUpInterval is 0, metrics are not ready to be sent
-      if (appStartUpInterval != 0) {
+      // if appStartUpDurationMs is 0, metrics are not ready to be sent
+      if (appStartUpDurationMs != 0) {
         final MeasurementValue value =
             new MeasurementValue(
-                (float) appStartUpInterval, MeasurementUnit.Duration.MILLISECOND.apiName());
+                (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
         final String appStartKey =
             AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
@@ -153,6 +155,25 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         parentSpanId = span.getSpanId();
         break;
       }
+    }
+
+    // Process init
+    final long classInitUptimeMs = appStartMetrics.getClassLoadedUptimeMs();
+    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+    if (appStartTimeSpan.hasStarted()
+        && Math.abs(classInitUptimeMs - appStartTimeSpan.getStartUptimeMs())
+            <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
+      final @NotNull TimeSpan processInitTimeSpan = new TimeSpan();
+      processInitTimeSpan.setStartedAt(appStartTimeSpan.getStartUptimeMs());
+      processInitTimeSpan.setStartUnixTimeMs(appStartTimeSpan.getStartTimestampMs());
+
+      processInitTimeSpan.setStoppedAt(classInitUptimeMs);
+      processInitTimeSpan.setDescription("Process Initialization");
+
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(
+                  processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
     }
 
     // Content Providers

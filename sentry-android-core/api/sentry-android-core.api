@@ -457,6 +457,7 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getClassLoadedUptimeMs ()J
 	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
@@ -468,6 +469,7 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
+	public fun setClassLoadedUptimeMs (J)V
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
