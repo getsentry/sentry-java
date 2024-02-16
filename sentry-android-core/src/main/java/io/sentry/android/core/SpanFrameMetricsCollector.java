@@ -297,7 +297,7 @@ public class SpanFrameMetricsCollector
 
   /**
    * Because {@link SentryNanotimeDate#nanoTimestamp()} only gives you millisecond precision, but
-   * diff doesn't in case of {@link SentryNanotimeDate} ¯\_(ツ)_/¯
+   * diff does ¯\_(ツ)_/¯
    *
    * @param date the input date
    * @return a timestamp in nano precision
