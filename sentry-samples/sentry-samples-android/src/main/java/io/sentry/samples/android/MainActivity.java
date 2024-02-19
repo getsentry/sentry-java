@@ -251,6 +251,9 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ProfilingActivity.class));
         });
 
+    binding.openFrameDataForSpans.setOnClickListener(
+        view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
+
     setContentView(binding.getRoot());
   }
 

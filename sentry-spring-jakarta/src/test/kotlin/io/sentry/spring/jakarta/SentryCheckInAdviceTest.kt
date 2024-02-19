@@ -21,13 +21,16 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
-import kotlin.RuntimeException
+import org.springframework.util.StringValueResolver
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,6 +38,7 @@ import kotlin.test.assertNotNull
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryCheckInAdviceTest.Config::class)
+@TestPropertySource(properties = ["my.cron.slug = mypropertycronslug"])
 class SentryCheckInAdviceTest {
 
     @Autowired
@@ -45,6 +49,9 @@ class SentryCheckInAdviceTest {
 
     @Autowired
     lateinit var sampleServiceHeartbeat: SampleServiceHeartbeat
+
+    @Autowired
+    lateinit var sampleServiceSpringProperties: SampleServiceSpringProperties
 
     @Autowired
     lateinit var hub: IHub
@@ -157,6 +164,66 @@ class SentryCheckInAdviceTest {
         verify(hub, never()).popScope()
     }
 
+    @Test
+    fun `when @SentryCheckIn is passed a spring property it is resolved correctly`() {
+        val checkInId = SentryId()
+        val checkInCaptor = argumentCaptor<CheckIn>()
+        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        val result = sampleServiceSpringProperties.hello()
+        assertEquals(1, result)
+        assertEquals(1, checkInCaptor.allValues.size)
+
+        val doneCheckIn = checkInCaptor.lastValue
+        assertEquals("mypropertycronslug", doneCheckIn.monitorSlug)
+        assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
+        assertNotNull(doneCheckIn.duration)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub).captureCheckIn(any())
+        order.verify(hub).popScope()
+    }
+
+    @Test
+    fun `when @SentryCheckIn is passed a spring property that does not exist, raw value is used`() {
+        val checkInId = SentryId()
+        val checkInCaptor = argumentCaptor<CheckIn>()
+        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        val result = sampleServiceSpringProperties.helloUnresolvedProperty()
+        assertEquals(1, result)
+        assertEquals(1, checkInCaptor.allValues.size)
+
+        val doneCheckIn = checkInCaptor.lastValue
+        assertEquals("\${my.cron.unresolved.property}", doneCheckIn.monitorSlug)
+        assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
+        assertNotNull(doneCheckIn.duration)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub).captureCheckIn(any())
+        order.verify(hub).popScope()
+    }
+
+    @Test
+    fun `when @SentryCheckIn is passed a spring property that causes an exception, raw value is used`() {
+        val checkInId = SentryId()
+        val checkInCaptor = argumentCaptor<CheckIn>()
+        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        val result = sampleServiceSpringProperties.helloExceptionProperty()
+        assertEquals(1, result)
+        assertEquals(1, checkInCaptor.allValues.size)
+
+        val doneCheckIn = checkInCaptor.lastValue
+        assertEquals("\${my.cron.exception.property}", doneCheckIn.monitorSlug)
+        assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
+        assertNotNull(doneCheckIn.duration)
+
+        val order = inOrder(hub)
+        order.verify(hub).pushScope()
+        order.verify(hub).captureCheckIn(any())
+        order.verify(hub).popScope()
+    }
+
     @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     @Import(SentryCheckInAdviceConfiguration::class, SentryCheckInPointcutConfiguration::class)
@@ -172,10 +239,19 @@ class SentryCheckInAdviceTest {
         open fun sampleServiceHeartbeat() = SampleServiceHeartbeat()
 
         @Bean
+        open fun sampleServiceSpringProperties() = SampleServiceSpringProperties()
+
+        @Bean
         open fun hub(): IHub {
             val hub = mock<IHub>()
             Sentry.setCurrentHub(hub)
             return hub
+        }
+
+        companion object {
+            @Bean
+            @JvmStatic
+            fun propertySourcesPlaceholderConfigurer() = MyPropertyPlaceholderConfigurer()
         }
     }
 
@@ -204,6 +280,35 @@ class SentryCheckInAdviceTest {
         @SentryCheckIn(monitorSlug = "monitor_slug_2e", heartbeat = true)
         open fun oops() {
             throw RuntimeException("thrown on purpose")
+        }
+    }
+
+    open class SampleServiceSpringProperties {
+
+        @SentryCheckIn("\${my.cron.slug}", heartbeat = true)
+        open fun hello() = 1
+
+        @SentryCheckIn("\${my.cron.unresolved.property}", heartbeat = true)
+        open fun helloUnresolvedProperty() = 1
+
+        @SentryCheckIn("\${my.cron.exception.property}", heartbeat = true)
+        open fun helloExceptionProperty() = 1
+    }
+
+    class MyPropertyPlaceholderConfigurer : PropertySourcesPlaceholderConfigurer() {
+
+        override fun doProcessProperties(
+            beanFactoryToProcess: ConfigurableListableBeanFactory,
+            valueResolver: StringValueResolver
+        ) {
+            val wrappedResolver = StringValueResolver { strVal: String ->
+                if ("\${my.cron.exception.property}".equals(strVal)) {
+                    throw IllegalArgumentException("Cannot resolve property: $strVal")
+                } else {
+                    valueResolver.resolveStringValue(strVal)
+                }
+            }
+            super.doProcessProperties(beanFactoryToProcess, wrappedResolver)
         }
     }
 }

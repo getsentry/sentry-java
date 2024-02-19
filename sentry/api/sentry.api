@@ -2650,6 +2650,7 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
+	public static final field FRAMES_DELAY Ljava/lang/String;
 	public static final field FRAMES_FROZEN Ljava/lang/String;
 	public static final field FRAMES_SLOW Ljava/lang/String;
 	public static final field FRAMES_TOTAL Ljava/lang/String;
@@ -3779,6 +3780,7 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field KEY_APP_START_COLD Ljava/lang/String;
 	public static final field KEY_APP_START_WARM Ljava/lang/String;
+	public static final field KEY_FRAMES_DELAY Ljava/lang/String;
 	public static final field KEY_FRAMES_FROZEN Ljava/lang/String;
 	public static final field KEY_FRAMES_SLOW Ljava/lang/String;
 	public static final field KEY_FRAMES_TOTAL Ljava/lang/String;
