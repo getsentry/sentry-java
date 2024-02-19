@@ -8,6 +8,7 @@
 - Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
 - (perf-v2): Calculate frame delay on a span level ([#3197](https://github.com/getsentry/sentry-java/pull/3197))
 - Resolve spring properties in @SentryCheckIn annotation ([#3194](https://github.com/getsentry/sentry-java/pull/3194))
+- Improve exception grouping for Android RuntimeExceptions ([#3184](https://github.com/getsentry/sentry-java/pull/3184))
 
 ### Fixes
 
