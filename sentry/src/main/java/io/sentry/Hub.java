@@ -391,8 +391,6 @@ public final class Hub implements IHub, IMetricsHub {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing metrics aggregator.", e);
       }
       try {
-        metricAggregator.close();
-
         for (Integration integration : options.getIntegrations()) {
           if (integration instanceof Closeable) {
             try {

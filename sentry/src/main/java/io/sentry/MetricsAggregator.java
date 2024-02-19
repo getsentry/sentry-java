@@ -291,7 +291,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   @Override
   public void close() throws IOException {
     synchronized (this) {
-      this.isClosed = true;
+      isClosed = true;
       executorService.close(0);
     }
     flush(true);
