@@ -27,7 +27,7 @@ import reactor.core.publisher.Hooks;
 import reactor.core.scheduler.Schedulers;
 
 /** Configures Sentry integration for Spring Webflux and Project Reactor. */
-@Autoconfiguration
+@AutoConfiguration
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBean(IHub.class)
