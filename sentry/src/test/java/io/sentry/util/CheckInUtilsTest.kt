@@ -147,4 +147,39 @@ class CheckInUtilsTest {
             }
         }
     }
+
+    @Test
+    fun `sends check-in for wrapped supplier with upsert and thresholds`() {
+        Mockito.mockStatic(Sentry::class.java).use { sentry ->
+            val hub = mock<IHub>()
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
+            val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
+                failureIssueThreshold = 10
+                recoveryThreshold = 20
+            }
+            val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
+                "test1"
+            }
+
+            assertEquals("test1", returnValue)
+            inOrder(hub) {
+                verify(hub).pushScope()
+                verify(hub).configureScope(any())
+                verify(hub).captureCheckIn(
+                    check {
+                        assertEquals("monitor-1", it.monitorSlug)
+                        assertSame(monitorConfig, it.monitorConfig)
+                        assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
+                    }
+                )
+                verify(hub).captureCheckIn(
+                    check {
+                        assertEquals("monitor-1", it.monitorSlug)
+                        assertEquals(CheckInStatus.OK.apiName(), it.status)
+                    }
+                )
+                verify(hub).popScope()
+            }
+        }
+    }
 }

@@ -20,4 +20,5 @@ public interface SpanDataConvention {
   String FRAMES_TOTAL = "frames.total";
   String FRAMES_SLOW = "frames.slow";
   String FRAMES_FROZEN = "frames.frozen";
+  String FRAMES_DELAY = "frames.delay";
 }

@@ -212,7 +212,12 @@ final class AndroidOptionsInitializer {
           new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
 
       if (options.isEnablePerformanceV2()) {
-        options.addPerformanceCollector(new SpanFrameMetricsCollector(options));
+        options.addPerformanceCollector(
+            new SpanFrameMetricsCollector(
+                options,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required")));
       }
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));

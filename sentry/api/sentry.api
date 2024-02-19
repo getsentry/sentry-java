@@ -427,6 +427,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
+	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
@@ -477,6 +478,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
+	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
@@ -567,6 +569,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun clearBreadcrumbs ()V
 	public abstract fun clone ()Lio/sentry/IHub;
 	public abstract fun close ()V
+	public abstract fun close (Z)V
 	public abstract fun configureScope (Lio/sentry/ScopeCallback;)V
 	public abstract fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public abstract fun endSession ()V
@@ -732,6 +735,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun close ()V
+	public abstract fun close (Z)V
 	public abstract fun flush (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun isEnabled ()Z
@@ -1004,13 +1008,17 @@ public final class io/sentry/MemoryCollectionData {
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/MonitorSchedule;)V
 	public fun getCheckinMargin ()Ljava/lang/Long;
+	public fun getFailureIssueThreshold ()Ljava/lang/Long;
 	public fun getMaxRuntime ()Ljava/lang/Long;
+	public fun getRecoveryThreshold ()Ljava/lang/Long;
 	public fun getSchedule ()Lio/sentry/MonitorSchedule;
 	public fun getTimezone ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCheckinMargin (Ljava/lang/Long;)V
+	public fun setFailureIssueThreshold (Ljava/lang/Long;)V
 	public fun setMaxRuntime (Ljava/lang/Long;)V
+	public fun setRecoveryThreshold (Ljava/lang/Long;)V
 	public fun setSchedule (Lio/sentry/MonitorSchedule;)V
 	public fun setTimezone (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -1024,7 +1032,9 @@ public final class io/sentry/MonitorConfig$Deserializer : io/sentry/JsonDeserial
 
 public final class io/sentry/MonitorConfig$JsonKeys {
 	public static final field CHECKIN_MARGIN Ljava/lang/String;
+	public static final field FAILURE_ISSUE_THRESHOLD Ljava/lang/String;
 	public static final field MAX_RUNTIME Ljava/lang/String;
+	public static final field RECOVERY_THRESHOLD Ljava/lang/String;
 	public static final field SCHEDULE Ljava/lang/String;
 	public static final field TIMEZONE Ljava/lang/String;
 	public fun <init> ()V
@@ -1125,6 +1135,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
+	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
@@ -1843,6 +1854,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isEnabled ()Z
@@ -2638,6 +2650,7 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
+	public static final field FRAMES_DELAY Ljava/lang/String;
 	public static final field FRAMES_FROZEN Ljava/lang/String;
 	public static final field FRAMES_SLOW Ljava/lang/String;
 	public static final field FRAMES_TOTAL Ljava/lang/String;
@@ -3767,6 +3780,7 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field KEY_APP_START_COLD Ljava/lang/String;
 	public static final field KEY_APP_START_WARM Ljava/lang/String;
+	public static final field KEY_FRAMES_DELAY Ljava/lang/String;
 	public static final field KEY_FRAMES_FROZEN Ljava/lang/String;
 	public static final field KEY_FRAMES_SLOW Ljava/lang/String;
 	public static final field KEY_FRAMES_TOTAL Ljava/lang/String;
@@ -4539,6 +4553,7 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
 	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isHealthy ()Z
@@ -4555,6 +4570,7 @@ public abstract interface class io/sentry/transport/ICurrentDateProvider {
 }
 
 public abstract interface class io/sentry/transport/ITransport : java/io/Closeable {
+	public abstract fun close (Z)V
 	public abstract fun flush (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isHealthy ()Z
@@ -4576,6 +4592,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/transport/NoOpTransport;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
@@ -4609,6 +4626,7 @@ public final class io/sentry/transport/ReusableCountLatch {
 public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V

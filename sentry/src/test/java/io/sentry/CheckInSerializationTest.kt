@@ -41,6 +41,8 @@ class CheckInSerializationTest {
                     checkinMargin = 8L
                     maxRuntime = 9L
                     timezone = ZoneId.of("Europe/Vienna").id
+                    failureIssueThreshold = 10
+                    recoveryThreshold = 20
                 }
             }
         }
@@ -90,6 +92,8 @@ class CheckInSerializationTest {
         assertEquals(expectedConfig.maxRuntime, actualConfig.maxRuntime)
         assertEquals(expectedConfig.checkinMargin, actualConfig.checkinMargin)
         assertEquals(expectedConfig.timezone, actualConfig.timezone)
+        assertEquals(expectedConfig.failureIssueThreshold, actualConfig.failureIssueThreshold)
+        assertEquals(expectedConfig.recoveryThreshold, actualConfig.recoveryThreshold)
         assertEquals(expectedSchedule.type, actualSchedule.type)
         assertEquals(expectedSchedule.value, actualSchedule.value)
         assertEquals(expectedSchedule.unit, actualSchedule.unit)
@@ -116,6 +120,8 @@ class CheckInSerializationTest {
         assertEquals(expectedConfig.maxRuntime, actualConfig.maxRuntime)
         assertEquals(expectedConfig.checkinMargin, actualConfig.checkinMargin)
         assertEquals(expectedConfig.timezone, actualConfig.timezone)
+        assertEquals(expectedConfig.failureIssueThreshold, actualConfig.failureIssueThreshold)
+        assertEquals(expectedConfig.recoveryThreshold, actualConfig.recoveryThreshold)
         assertEquals(expectedSchedule.type, actualSchedule.type)
         assertEquals(expectedSchedule.value, actualSchedule.value)
         assertEquals(expectedSchedule.unit, actualSchedule.unit)
