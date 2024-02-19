@@ -2,6 +2,7 @@ package io.sentry;
 
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
 
 import io.sentry.util.Platform;
 import java.io.Closeable;
@@ -20,24 +21,24 @@ import org.jetbrains.annotations.TestOnly;
 public final class SpotlightIntegration
     implements Integration, SentryOptions.BeforeEnvelopeCallback, Closeable {
 
-  private @NotNull SentryOptions options = SentryOptions.empty();
+  private @Nullable SentryOptions options;
+  private @NotNull ILogger logger = NoOpLogger.getInstance();
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   @Override
   public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
     this.options = options;
+    this.logger = options.getLogger();
 
     if (options.getBeforeEnvelopeCallback() == null && options.isEnableSpotlight()) {
       executorService = new SentryExecutorService();
       options.setBeforeEnvelopeCallback(this);
-      options.getLogger().log(DEBUG, "SpotlightIntegration enabled.");
+      logger.log(DEBUG, "SpotlightIntegration enabled.");
     } else {
-      options
-          .getLogger()
-          .log(
-              DEBUG,
-              "SpotlightIntegration is not enabled. "
-                  + "BeforeEnvelopeCallback is already set or spotlight is not enabled.");
+      logger.log(
+          DEBUG,
+          "SpotlightIntegration is not enabled. "
+              + "BeforeEnvelopeCallback is already set or spotlight is not enabled.");
     }
   }
 
@@ -47,14 +48,17 @@ public final class SpotlightIntegration
       final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
     try {
       executorService.submit(() -> sendEnvelope(envelope));
-    } catch (RejectedExecutionException ex) {
-      // ignored
+    } catch (RejectedExecutionException e) {
+      logger.log(WARNING, "Spotlight envelope submission rejected.", e);
     }
     return envelope;
   }
 
   private void sendEnvelope(final @NotNull SentryEnvelope envelope) {
     try {
+      if (options == null) {
+        throw new IllegalArgumentException("SentryOptions are required to send envelopes.");
+      }
       final String spotlightConnectionUrl = getSpotlightConnectionUrl();
 
       final HttpURLConnection connection = createConnection(spotlightConnectionUrl);
@@ -62,27 +66,21 @@ public final class SpotlightIntegration
           final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
         options.getSerializer().serialize(envelope, gzip);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                ERROR,
-                e,
-                "An exception occurred while submitting the envelope to the Sentry server.");
+        logger.log(
+            ERROR, e, "An exception occurred while submitting the envelope to the Sentry server.");
       } finally {
         final int responseCode = connection.getResponseCode();
-        options.getLogger().log(DEBUG, "Envelope sent to spotlight: %d", responseCode);
+        logger.log(DEBUG, "Envelope sent to spotlight: %d", responseCode);
         closeAndDisconnect(connection);
       }
     } catch (final Exception e) {
-      options
-          .getLogger()
-          .log(ERROR, e, "An exception occurred while creating the connection to spotlight.");
+      logger.log(ERROR, e, "An exception occurred while creating the connection to spotlight.");
     }
   }
 
   @TestOnly
   public String getSpotlightConnectionUrl() {
-    if (options.getSpotlightConnectionUrl() != null) {
+    if (options != null && options.getSpotlightConnectionUrl() != null) {
       return options.getSpotlightConnectionUrl();
     }
     if (Platform.isAndroid()) {
@@ -133,7 +131,7 @@ public final class SpotlightIntegration
   @Override
   public void close() throws IOException {
     executorService.close(0);
-    if (options.getBeforeEnvelopeCallback() == this) {
+    if (options != null && options.getBeforeEnvelopeCallback() == this) {
       options.setBeforeEnvelopeCallback(null);
     }
   }
