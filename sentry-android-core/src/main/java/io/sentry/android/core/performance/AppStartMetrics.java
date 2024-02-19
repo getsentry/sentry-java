@@ -31,6 +31,8 @@ public class AppStartMetrics {
     WARM
   }
 
+  private static long CLASS_LOADED_UPTIME_MS = SystemClock.uptimeMillis();
+
   private static volatile @Nullable AppStartMetrics instance;
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
@@ -121,6 +123,10 @@ public class AppStartMetrics {
     activityLifecycles.add(timeSpan);
   }
 
+  public long getClassLoadedUptimeMs() {
+    return CLASS_LOADED_UPTIME_MS;
+  }
+
   /**
    * @return the app start time span if it was started and perf-2 is enabled, falls back to the sdk
    *     init time span otherwise
@@ -169,6 +175,12 @@ public class AppStartMetrics {
 
   public @Nullable TracesSamplingDecision getAppStartSamplingDecision() {
     return appStartSamplingDecision;
+  }
+
+  @TestOnly
+  @ApiStatus.Internal
+  public void setClassLoadedUptimeMs(final long classLoadedUptimeMs) {
+    CLASS_LOADED_UPTIME_MS = classLoadedUptimeMs;
   }
 
   /**
