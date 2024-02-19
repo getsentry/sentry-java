@@ -593,29 +593,22 @@ public final class SentryClient implements ISentryClient {
       @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
     final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
         options.getBeforeEnvelopeCallback();
-    @Nullable SentryEnvelope envelopeToSend = envelope;
     if (beforeEnvelopeCallback != null) {
       try {
-        envelopeToSend = beforeEnvelopeCallback.execute(envelope, hint);
+        beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
-        // drop envelopeToSend in case of an error in beforeSend due to PII concerns
-        envelopeToSend = null;
       }
     }
-    if (envelopeToSend != null) {
-      if (hint == null) {
-        transport.send(envelope);
-      } else {
-        transport.send(envelope, hint);
-      }
-      final @Nullable SentryId id = envelope.getHeader().getEventId();
-      return id != null ? id : SentryId.EMPTY_ID;
+    if (hint == null) {
+      transport.send(envelope);
     } else {
-      return SentryId.EMPTY_ID;
+      transport.send(envelope, hint);
     }
+    final @Nullable SentryId id = envelope.getHeader().getEventId();
+    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   @Override

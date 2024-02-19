@@ -44,14 +44,12 @@ public final class SpotlightIntegration
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public @NotNull SentryEnvelope execute(
-      final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
+  public void execute(final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
     try {
       executorService.submit(() -> sendEnvelope(envelope));
     } catch (RejectedExecutionException e) {
       logger.log(WARNING, "Spotlight envelope submission rejected.", e);
     }
-    return envelope;
   }
 
   private void sendEnvelope(final @NotNull SentryEnvelope envelope) {

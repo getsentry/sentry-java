@@ -2354,7 +2354,7 @@ public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
-	public abstract fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
+	public abstract fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
@@ -2734,7 +2734,7 @@ public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserialize
 public final class io/sentry/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
 	public fun <init> ()V
 	public fun close ()V
-	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
+	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }

@@ -2385,18 +2385,16 @@ public class SentryOptions {
   }
 
   /** The BeforeEnvelope callback */
+  @ApiStatus.Internal
   public interface BeforeEnvelopeCallback {
 
     /**
-     * Mutates or drop an envelope before being sent
+     * A callback which gets called right before an envelope is about to be sent
      *
      * @param envelope the envelope
      * @param hint the hints
-     * @return the original envelope or the mutated envelope or null if the envelope should be
-     *     dropped
      */
-    @Nullable
-    SentryEnvelope execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
+    void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
   }
 
   /**
