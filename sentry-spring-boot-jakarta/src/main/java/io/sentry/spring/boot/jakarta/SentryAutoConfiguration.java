@@ -44,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import org.quartz.core.QuartzScheduler;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -69,6 +70,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
+@AutoConfiguration
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
 @Open
