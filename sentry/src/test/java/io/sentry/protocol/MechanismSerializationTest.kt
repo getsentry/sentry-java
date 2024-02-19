@@ -28,6 +28,9 @@ class MechanismSerializationTest {
                 "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd"
             )
             synthetic = false
+            isExceptionGroup = false
+            exceptionId = 1
+            parentId = 0
         }
     }
     private val fixture = Fixture()

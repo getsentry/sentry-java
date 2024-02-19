@@ -178,6 +178,20 @@ class SentryExceptionFactoryTest {
     }
 
     @Test
+    fun `the relationship between exceptions is set`() {
+        val exception = IllegalStateException("outer", IllegalStateException("inner"))
+        val exceptions = fixture.getSut().getSentryExceptions(exception)
+
+        assertFalse(exceptions.isEmpty())
+        assertEquals("inner", exceptions[0].value)
+        assertEquals(1, exceptions[0].mechanism!!.exceptionId)
+        assertEquals(0, exceptions[0].mechanism!!.parentId)
+
+        assertEquals("outer", exceptions[1].value)
+        assertEquals(0, exceptions[1].mechanism!!.exceptionId)
+    }
+
+    @Test
     fun `returns proper exception backfilled from SentryThread`() {
         val thread = SentryThread().apply {
             id = 121

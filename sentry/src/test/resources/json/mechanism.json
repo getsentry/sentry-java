@@ -11,5 +11,8 @@
     {
         "0275caba-1fd8-4de3-9ead-b6c8dcdd5666": "669cc6ad-1435-4233-b199-2800f901bbcd"
     },
-    "synthetic": false
+    "synthetic": false,
+    "is_exception_group": false,
+    "exception_id": 1,
+    "parent_id": 0
 }
