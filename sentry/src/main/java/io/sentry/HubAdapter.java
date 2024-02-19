@@ -79,6 +79,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public void close(final boolean isRestarting) {
+    Sentry.close();
+  }
+
+  @Override
   public void close() {
     Sentry.close();
   }

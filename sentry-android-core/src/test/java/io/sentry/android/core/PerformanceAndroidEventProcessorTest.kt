@@ -248,6 +248,13 @@ class PerformanceAndroidEventProcessorTest {
 
         assertTrue(
             tr.spans.any {
+                "process.load" == it.op &&
+                    appStartSpan.spanId == it.parentSpanId
+            }
+        )
+
+        assertTrue(
+            tr.spans.any {
                 "contentprovider.load" == it.op &&
                     appStartSpan.spanId == it.parentSpanId
             }
@@ -300,7 +307,7 @@ class PerformanceAndroidEventProcessorTest {
 
     @Test
     fun `does not add app start metrics more than once`() {
-        // given some WARM app start metrics
+        // given some cold app start metrics
         val appStartMetrics = AppStartMetrics.getInstance()
         appStartMetrics.appStartType = AppStartType.COLD
         appStartMetrics.appStartTimeSpan.setStartedAt(123)
@@ -347,6 +354,46 @@ class PerformanceAndroidEventProcessorTest {
         assertFalse(
             tr2.spans.any {
                 "application.load" == it.op
+            }
+        )
+    }
+
+    @Test
+    fun `does not add process init span if it happened too early`() {
+        // given some cold app start metrics
+        // where class loaded happened way before app start
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.COLD
+        appStartMetrics.appStartTimeSpan.setStartedAt(11001)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(12000)
+        appStartMetrics.classLoadedUptimeMs = 1000
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            null
+        )
+        tr.spans.add(appStartSpan)
+
+        // when the processor attaches the app start spans
+        tr = sut.process(tr, Hint())
+
+        // process load should not be included
+        assertFalse(
+            tr.spans.any {
+                "process.load" == it.op
             }
         )
     }

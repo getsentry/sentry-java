@@ -47,6 +47,18 @@ class NoOpHubTest {
     }
 
     @Test
+    fun `close with isRestarting true does not affect captureEvent`() {
+        sut.close(true)
+        assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
+    }
+
+    @Test
+    fun `close with isRestarting false does not affect captureEvent`() {
+        sut.close(false)
+        assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
+    }
+
+    @Test
     fun `close does not affect captureException`() {
         sut.close()
         assertEquals(SentryId.EMPTY_ID, sut.captureException(RuntimeException()))

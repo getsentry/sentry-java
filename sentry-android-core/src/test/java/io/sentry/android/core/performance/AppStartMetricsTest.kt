@@ -12,6 +12,7 @@ import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -99,5 +100,10 @@ class AppStartMetricsTest {
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         val sdkInitSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
         assertSame(sdkInitSpan, timeSpan)
+    }
+
+    @Test
+    fun `class load time is set`() {
+        assertNotEquals(0, AppStartMetrics.getInstance().classLoadedUptimeMs)
     }
 }
