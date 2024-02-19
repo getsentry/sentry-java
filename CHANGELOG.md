@@ -7,6 +7,7 @@
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
 - Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
 - (perf-v2): Calculate frame delay on a span level ([#3197](https://github.com/getsentry/sentry-java/pull/3197))
+- Resolve spring properties in @SentryCheckIn annotation ([#3194](https://github.com/getsentry/sentry-java/pull/3194))
 - Configurable defaults for Cron - MonitorConfig ([#3195](https://github.com/getsentry/sentry-java/pull/3195))
 
 ### Fixes
