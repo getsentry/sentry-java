@@ -33,8 +33,6 @@ public enum SentryItemType implements JsonSerializable {
       return Session;
     } else if (item instanceof ClientReport) {
       return ClientReport;
-    } else if (item instanceof SentryReplayEvent) {
-      return ReplayEvent;
     } else {
       return Attachment;
     }
