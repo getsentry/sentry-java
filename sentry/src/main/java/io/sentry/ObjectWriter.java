@@ -17,8 +17,6 @@ public interface ObjectWriter {
 
   ObjectWriter value(final @Nullable String value) throws IOException;
 
-  ObjectWriter jsonValue(final @Nullable String value) throws IOException;
-
   ObjectWriter nullValue() throws IOException;
 
   ObjectWriter value(final boolean value) throws IOException;

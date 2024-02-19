@@ -53,12 +53,6 @@ public final class JsonObjectWriter implements ObjectWriter {
   }
 
   @Override
-  public ObjectWriter jsonValue(@Nullable String value) throws IOException {
-    jsonWriter.jsonValue(value);
-    return this;
-  }
-
-  @Override
   public JsonObjectWriter nullValue() throws IOException {
     jsonWriter.nullValue();
     return this;
