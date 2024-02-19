@@ -264,7 +264,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull SentryId captureReplay(
-    final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
     return Sentry.getCurrentHub().captureReplay(replay, hint);
   }
 

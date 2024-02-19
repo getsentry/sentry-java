@@ -16,8 +16,8 @@ class RRWebMetaEventSerializationTest {
 
         fun getSut() = RRWebMetaEvent().apply {
             href = "https://sentry.io"
-            width = 1080
             height = 1920
+            width = 1080
             type = Meta
             timestamp = 1234567890
         }

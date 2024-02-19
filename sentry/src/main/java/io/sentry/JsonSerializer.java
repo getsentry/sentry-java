@@ -31,6 +31,7 @@ import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.rrweb.RRWebEventType;
 import io.sentry.rrweb.RRWebMetaEvent;
+import io.sentry.rrweb.RRWebVideoEvent;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -93,6 +94,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(Request.class, new Request.Deserializer());
     deserializersByClass.put(RRWebEventType.class, new RRWebEventType.Deserializer());
     deserializersByClass.put(RRWebMetaEvent.class, new RRWebMetaEvent.Deserializer());
+    deserializersByClass.put(RRWebVideoEvent.class, new RRWebVideoEvent.Deserializer());
     deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
     deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());
     deserializersByClass.put(SentryEnvelopeHeader.class, new SentryEnvelopeHeader.Deserializer());

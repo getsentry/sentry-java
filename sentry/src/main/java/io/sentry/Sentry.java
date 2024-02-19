@@ -1027,7 +1027,7 @@ public final class Sentry {
   }
 
   public static void captureReplay(
-    final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
     getCurrentHub().captureReplay(replay, hint);
   }
 }

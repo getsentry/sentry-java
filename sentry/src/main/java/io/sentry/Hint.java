@@ -27,11 +27,10 @@ public final class Hint {
 
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
-  private final @NotNull List<ReplayRecording> replayRecordings = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
   private @Nullable Attachment viewHierarchy = null;
-
   private @Nullable Attachment threadDump = null;
+  private @Nullable ReplayRecording replayRecording = null;
 
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hint hint = new Hint();
@@ -71,12 +70,6 @@ public final class Hint {
     internalStorage.remove(name);
   }
 
-  public void addReplayRecording(final @Nullable ReplayRecording recording) {
-    if (recording != null) {
-      replayRecordings.add(recording);
-    }
-  }
-
   public void addAttachment(@Nullable Attachment attachment) {
     if (attachment != null) {
       attachments.add(attachment);
@@ -93,10 +86,6 @@ public final class Hint {
     return new ArrayList<>(attachments);
   }
 
-  public @NotNull List<ReplayRecording> getReplayRecordings() {
-    return new ArrayList<>(replayRecordings);
-  }
-
   public void replaceAttachments(@Nullable List<Attachment> attachments) {
     clearAttachments();
     addAttachments(attachments);
@@ -104,10 +93,6 @@ public final class Hint {
 
   public void clearAttachments() {
     attachments.clear();
-  }
-
-  public void clearReplayRecordings() {
-    replayRecordings.clear();
   }
 
   /**
@@ -149,6 +134,15 @@ public final class Hint {
 
   public @Nullable Attachment getThreadDump() {
     return threadDump;
+  }
+
+  @Nullable
+  public ReplayRecording getReplayRecording() {
+    return replayRecording;
+  }
+
+  public void setReplayRecording(final @Nullable ReplayRecording replayRecording) {
+    this.replayRecording = replayRecording;
   }
 
   private boolean isCastablePrimitive(@Nullable Object hintValue, @NotNull Class<?> clazz) {

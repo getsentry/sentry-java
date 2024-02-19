@@ -19,9 +19,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -342,46 +344,69 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  public static SentryEnvelopeItem fromReplayRecording(
-    final @NotNull ISerializer serializer,
-    final @NotNull ILogger logger,
-    final @NotNull ReplayRecording replayRecording) {
+  public static SentryEnvelopeItem fromReplay(
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger,
+      final @NotNull SentryReplayEvent replayEvent,
+      final @Nullable ReplayRecording replayRecording) {
+
+    final File replayVideo = replayEvent.getVideoFile();
 
     final CachedItem cachedItem =
-      new CachedItem(
-        () -> {
-          try {
-            try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                 final Writer writer =
-                   new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-              serializer.serialize(replayRecording, writer);
-              return stream.toByteArray();
-            }
-          } catch (Throwable t) {
-            logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
-            return null;
-          }
-        });
+        new CachedItem(
+            () -> {
+              try {
+                try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    final Writer writer =
+                        new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Map<String, byte[]> replayPayload = new HashMap<>();
+                  // first serialize replay event json bytes
+                  serializer.serialize(replayEvent, writer);
+                  replayPayload.put(SentryItemType.ReplayEvent.getItemType(), stream.toByteArray());
+                  stream.reset();
+
+                  // next serialize replay recording in the following format:
+                  // {"segment_id":0}\n{json-serialized-rrweb-protocol}
+                  if (replayRecording != null) {
+                    serializer.serialize(replayRecording, writer);
+                    writer.write("\n");
+                    writer.flush();
+                    if (replayRecording.getPayload() != null) {
+                      serializer.serialize(replayRecording.getPayload(), writer);
+                    }
+                    replayPayload.put(
+                        SentryItemType.ReplayRecording.getItemType(), stream.toByteArray());
+                    stream.reset();
+                  }
+
+                  // next serialize replay video bytes from given file
+                  if (replayVideo.exists()) {
+                    final byte[] videoBytes =
+                        readBytesFromFile(
+                            replayVideo.getPath(), SentryReplayEvent.REPLAY_VIDEO_MAX_SIZE);
+                    if (videoBytes.length > 0) {
+                      replayPayload.put(SentryItemType.ReplayVideo.getItemType(), videoBytes);
+                    }
+                  }
+
+                  return serializeToMsgpack(replayPayload);
+                }
+              } catch (Throwable t) {
+                logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
+                return null;
+              } finally {
+                replayVideo.delete();
+              }
+            });
 
     final SentryEnvelopeItemHeader itemHeader =
-      new SentryEnvelopeItemHeader(
-        SentryItemType.ReplayRecording, () -> cachedItem.getBytes().length, null, null);
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ReplayVideo, () -> cachedItem.getBytes().length, null, null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    SentryEnvelopeItem item = new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
-
-    try {
-      StringWriter writer = new StringWriter();
-      serializer.serialize(item.header, writer);
-      writer.flush();
-      writer.flush();
-    } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "f", e);
-    }
-    return item;
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
-
 
   private static class CachedItem {
     private @Nullable byte[] bytes;
@@ -401,5 +426,41 @@ public final class SentryEnvelopeItem {
     private static @NotNull byte[] orEmptyArray(final @Nullable byte[] bytes) {
       return bytes != null ? bytes : new byte[] {};
     }
+  }
+
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static byte[] serializeToMsgpack(Map<String, byte[]> map) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+    // Write map header
+    baos.write((byte) (0x80 | map.size()));
+
+    // Iterate over the map and serialize each key-value pair
+    for (Map.Entry<String, byte[]> entry : map.entrySet()) {
+      // Pack the key as a string
+      byte[] keyBytes = entry.getKey().getBytes(Charset.forName("UTF-8"));
+      int keyLength = keyBytes.length;
+      if (keyLength <= 31) {
+        baos.write((byte) (0xA0 | keyLength));
+      } else {
+        baos.write((byte) (0xD9));
+        baos.write((byte) (keyLength));
+      }
+      baos.write(keyBytes);
+
+      // Pack the value as a binary string
+      byte[] valueBytes = entry.getValue();
+      int valueLength = valueBytes.length;
+      if (valueLength <= 255) {
+        baos.write((byte) (0xC4));
+        baos.write((byte) (valueLength));
+      } else {
+        baos.write((byte) (0xC5));
+        baos.write(ByteBuffer.allocate(4).putInt(valueLength).array());
+      }
+      baos.write(valueBytes);
+    }
+
+    return baos.toByteArray();
   }
 }

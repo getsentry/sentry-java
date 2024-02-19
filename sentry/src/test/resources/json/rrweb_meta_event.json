@@ -3,7 +3,7 @@
   "timestamp": 1234567890,
   "data": {
     "href": "https://sentry.io",
-    "width": 1080,
-    "height": 1920
+    "height": 1920,
+    "width": 1080
   }
 }

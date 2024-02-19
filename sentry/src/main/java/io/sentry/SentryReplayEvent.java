@@ -2,36 +2,50 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayEvent extends SentryBaseEvent
-  implements JsonUnknown, JsonSerializable {
+    implements JsonUnknown, JsonSerializable {
 
-  public static final class JsonKeys {
-    public static final String TYPE = "type";
-    public static final String REPLAY_TYPE = "replay_type";
-    public static final String REPLAY_ID = "replay_id";
-    public static final String SEGMENT_ID = "segment_id";
-    public static final String TIMESTAMP = "timestamp";
-    public static final String REPLAY_START_TIMESTAMP = "replay_start_timestamp";
-    public static final String URLS = "urls";
-    public static final String ERROR_IDS = "error_ids";
-    public static final String TRACE_IDS = "trace_ids";
+  public enum ReplayType implements JsonSerializable {
+    SESSION,
+    BUFFER;
+
+    @Override
+    public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
+        throws IOException {
+      writer.value(name().toLowerCase(Locale.ROOT));
+    }
+
+    public static final class Deserializer implements JsonDeserializer<ReplayType> {
+      @Override
+      public @NotNull ReplayType deserialize(
+          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        return ReplayType.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+      }
+    }
   }
 
-  private @Nullable String type;
-  private @Nullable String replayType;
+  public static final long REPLAY_VIDEO_MAX_SIZE = 10 * 1024 * 1024;
+  public static final String REPLAY_EVENT_TYPE = "replay_event";
+
+  private @NotNull File videoFile;
+  private @NotNull String type;
+  private @NotNull ReplayType replayType;
   private @Nullable SentryId replayId;
-  private @Nullable Integer segmentId;
-  private @Nullable Double timestamp;
-  private @Nullable Double replayStartTimestamp;
+  private int segmentId;
+  private @NotNull Date timestamp;
+  private @Nullable Date replayStartTimestamp;
   private @Nullable List<String> urls;
   private @Nullable List<String> errorIds;
   private @Nullable List<String> traceIds;
@@ -39,20 +53,30 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
   public SentryReplayEvent() {
     super();
-    this.replayId = this.getEventId();
-    this.type = "replay_event";
-    this.replayType = "session";
+    this.replayId = new SentryId();
+    this.type = REPLAY_EVENT_TYPE;
+    this.replayType = ReplayType.SESSION;
     this.errorIds = new ArrayList<>();
     this.traceIds = new ArrayList<>();
     this.urls = new ArrayList<>();
+    timestamp = DateUtils.getCurrentDateTime();
   }
 
-  @Nullable
+  @NotNull
+  public File getVideoFile() {
+    return videoFile;
+  }
+
+  public void setVideoFile(final @NotNull File videoFile) {
+    this.videoFile = videoFile;
+  }
+
+  @NotNull
   public String getType() {
     return type;
   }
 
-  public void setType(final @Nullable String type) {
+  public void setType(final @NotNull String type) {
     this.type = type;
   }
 
@@ -65,30 +89,29 @@ public final class SentryReplayEvent extends SentryBaseEvent
     this.replayId = replayId;
   }
 
-  @Nullable
-  public Integer getSegmentId() {
+  public int getSegmentId() {
     return segmentId;
   }
 
-  public void setSegmentId(final @Nullable Integer segmentId) {
+  public void setSegmentId(final int segmentId) {
     this.segmentId = segmentId;
   }
 
-  @Nullable
-  public Double getTimestamp() {
+  @NotNull
+  public Date getTimestamp() {
     return timestamp;
   }
 
-  public void setTimestamp(final @Nullable Double timestamp) {
+  public void setTimestamp(final @NotNull Date timestamp) {
     this.timestamp = timestamp;
   }
 
   @Nullable
-  public Double getReplayStartTimestamp() {
+  public Date getReplayStartTimestamp() {
     return replayStartTimestamp;
   }
 
-  public void setReplayStartTimestamp(final @Nullable Double replayStartTimestamp) {
+  public void setReplayStartTimestamp(final @Nullable Date replayStartTimestamp) {
     this.replayStartTimestamp = replayStartTimestamp;
   }
 
@@ -119,36 +142,46 @@ public final class SentryReplayEvent extends SentryBaseEvent
     this.traceIds = traceIds;
   }
 
-  @Nullable
-  public String getReplayType() {
+  @NotNull
+  public ReplayType getReplayType() {
     return replayType;
   }
 
-  public void setReplayType(@Nullable String replayType) {
+  public void setReplayType(final @NotNull ReplayType replayType) {
     this.replayType = replayType;
   }
 
+  // region json
+  public static final class JsonKeys {
+    public static final String TYPE = "type";
+    public static final String REPLAY_TYPE = "replay_type";
+    public static final String REPLAY_ID = "replay_id";
+    public static final String SEGMENT_ID = "segment_id";
+    public static final String TIMESTAMP = "timestamp";
+    public static final String REPLAY_START_TIMESTAMP = "replay_start_timestamp";
+    public static final String URLS = "urls";
+    public static final String ERROR_IDS = "error_ids";
+    public static final String TRACE_IDS = "trace_ids";
+  }
+
   @Override
+  @SuppressWarnings("JdkObsolete")
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
-    if (type != null) {
-      writer.name(JsonKeys.TYPE).value(type);
-    }
-    if (replayType != null) {
-      writer.name(JsonKeys.REPLAY_TYPE).value(replayType);
-    }
+    writer.name(JsonKeys.TYPE).value(type);
+    writer.name(JsonKeys.REPLAY_TYPE).value(logger, replayType);
+    writer.name(JsonKeys.SEGMENT_ID).value(segmentId);
+    writer
+        .name(JsonKeys.TIMESTAMP)
+        .value(logger, BigDecimal.valueOf(DateUtils.dateToSeconds(timestamp)));
     if (replayId != null) {
       writer.name(JsonKeys.REPLAY_ID).value(logger, replayId);
     }
-    if (segmentId != null) {
-      writer.name(JsonKeys.SEGMENT_ID).value(segmentId);
-    }
-    if (timestamp != null) {
-      writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
-    }
     if (replayStartTimestamp != null) {
-      writer.name(JsonKeys.REPLAY_START_TIMESTAMP).value(logger, replayStartTimestamp);
+      writer
+          .name(JsonKeys.REPLAY_START_TIMESTAMP)
+          .value(logger, BigDecimal.valueOf(DateUtils.dateToSeconds(replayStartTimestamp)));
     }
     if (urls != null) {
       writer.name(JsonKeys.URLS).value(logger, urls);
@@ -183,9 +216,10 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
   public static final class Deserializer implements JsonDeserializer<SentryReplayEvent> {
 
+    @SuppressWarnings("unchecked")
     @Override
     public @NotNull SentryReplayEvent deserialize(
-      final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
 
@@ -193,11 +227,11 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
       @Nullable Map<String, Object> unknown = null;
       @Nullable String type = null;
-      @Nullable String replayType = null;
+      @Nullable ReplayType replayType = null;
       @Nullable SentryId replayId = null;
       @Nullable Integer segmentId = null;
-      @Nullable Double timestamp = null;
-      @Nullable Double replayStartTimestamp = null;
+      @Nullable Date timestamp = null;
+      @Nullable Date replayStartTimestamp = null;
       @Nullable List<String> urls = null;
       @Nullable List<String> errorIds = null;
       @Nullable List<String> traceIds = null;
@@ -210,7 +244,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
             type = reader.nextStringOrNull();
             break;
           case JsonKeys.REPLAY_TYPE:
-            replayType = reader.nextStringOrNull();
+            replayType = reader.nextOrNull(logger, new ReplayType.Deserializer());
             break;
           case JsonKeys.REPLAY_ID:
             replayId = reader.nextOrNull(logger, new SentryId.Deserializer());
@@ -219,19 +253,19 @@ public final class SentryReplayEvent extends SentryBaseEvent
             segmentId = reader.nextIntegerOrNull();
             break;
           case JsonKeys.TIMESTAMP:
-            timestamp = nextTimestamp(reader, logger);
+            timestamp = reader.nextDateOrNull(logger);
             break;
           case JsonKeys.REPLAY_START_TIMESTAMP:
-            replayStartTimestamp = nextTimestamp(reader, logger);
+            replayStartTimestamp = reader.nextDateOrNull(logger);
             break;
           case JsonKeys.URLS:
-            urls = nextStringList(reader);
+            urls = (List<String>) reader.nextObjectOrNull();
             break;
           case JsonKeys.ERROR_IDS:
-            errorIds = nextStringList(reader);
+            errorIds = (List<String>) reader.nextObjectOrNull();
             break;
           case JsonKeys.TRACE_IDS:
-            traceIds = nextStringList(reader);
+            traceIds = (List<String>) reader.nextObjectOrNull();
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(replay, nextName, reader, logger)) {
@@ -245,11 +279,19 @@ public final class SentryReplayEvent extends SentryBaseEvent
       }
       reader.endObject();
 
-      replay.setType(type);
-      replay.setReplayType(replayType);
+      if (type != null) {
+        replay.setType(type);
+      }
+      if (replayType != null) {
+        replay.setReplayType(replayType);
+      }
+      if (segmentId != null) {
+        replay.setSegmentId(segmentId);
+      }
+      if (timestamp != null) {
+        replay.setTimestamp(timestamp);
+      }
       replay.setReplayId(replayId);
-      replay.setSegmentId(segmentId);
-      replay.setTimestamp(timestamp);
       replay.setReplayStartTimestamp(replayStartTimestamp);
       replay.setUrls(urls);
       replay.setErrorIds(errorIds);
@@ -257,34 +299,6 @@ public final class SentryReplayEvent extends SentryBaseEvent
       replay.setUnknown(unknown);
       return replay;
     }
-
-    @Nullable
-    private static Double nextTimestamp(
-      final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws IOException {
-      @Nullable Double result;
-      try {
-        result = reader.nextDoubleOrNull();
-      } catch (NumberFormatException e) {
-        final Date date = reader.nextDateOrNull(logger);
-        result = date != null ? DateUtils.dateToSeconds(date) : null;
-      }
-      return result;
-    }
-
-    @Nullable
-    private static List<String> nextStringList(final @NotNull JsonObjectReader reader)
-      throws IOException {
-      @Nullable List<String> result = null;
-      final @Nullable Object data = reader.nextObjectOrNull();
-      if (data instanceof List) {
-        result = new ArrayList<>(((List<?>) data).size());
-        for (Object item : (List<?>) data) {
-          if (item instanceof String) {
-            result.add((String) item);
-          }
-        }
-      }
-      return result;
-    }
   }
+  // endregion json
 }

@@ -152,13 +152,16 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   @Override
   public @NotNull SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
     setCommons(event);
-    setDebugMeta(event);
+    // TODO: maybe later it's needed to deobfuscate something (e.g. view hierarchy), for now the
+    // TODO: protocol does not support it
+    // setDebugMeta(event);
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
     }
     return event;
   }
+
   private void setCommons(final @NotNull SentryBaseEvent event) {
     setPlatform(event);
   }

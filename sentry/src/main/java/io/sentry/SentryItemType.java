@@ -35,8 +35,6 @@ public enum SentryItemType implements JsonSerializable {
       return ClientReport;
     } else if (item instanceof SentryReplayEvent) {
       return ReplayEvent;
-    } else if (item instanceof ReplayRecording) {
-      return ReplayRecording;
     } else {
       return Attachment;
     }

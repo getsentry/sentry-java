@@ -147,7 +147,8 @@ public interface ISentryClient {
     return captureException(throwable, scope, null);
   }
 
-  @NotNull SentryId captureReplayEvent(
+  @NotNull
+  SentryId captureReplayEvent(
       @NotNull SentryReplayEvent event, @Nullable IScope scope, @Nullable Hint hint);
 
   /**

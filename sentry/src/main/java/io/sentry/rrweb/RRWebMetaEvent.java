@@ -58,14 +58,20 @@ public final class RRWebMetaEvent extends RRWebEvent implements JsonUnknown, Jso
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
-    throws IOException {
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+    writer.beginObject();
+    new RRWebEvent.Serializer().serialize(this, writer, logger);
     writer.name(JsonKeys.DATA);
+    serializeData(writer, logger);
+    writer.endObject();
+  }
+
+  private void serializeData(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.HREF).value(href);
     writer.name(JsonKeys.HEIGHT).value(height);
     writer.name(JsonKeys.WIDTH).value(width);
-    new RRWebEvent.Serializer().serialize(this, writer, logger);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -91,18 +97,37 @@ public final class RRWebMetaEvent extends RRWebEvent implements JsonUnknown, Jso
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull RRWebMetaEvent deserialize(
-      @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       RRWebMetaEvent event = new RRWebMetaEvent();
-      Map<String, Object> unknown = null;
-
       RRWebEvent.Deserializer baseEventDeserializer = new RRWebEvent.Deserializer();
 
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.DATA:
+            deserializeData(event, reader, logger);
             break;
+          default:
+            baseEventDeserializer.deserializeValue(event, nextName, reader, logger);
+            break;
+        }
+      }
+      reader.endObject();
+      return event;
+    }
+
+    private void deserializeData(
+        final @NotNull RRWebMetaEvent event,
+        final @NotNull JsonObjectReader reader,
+        final @NotNull ILogger logger)
+        throws Exception {
+      Map<String, Object> unknown = null;
+
+      reader.beginObject();
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
           case JsonKeys.HREF:
             final String href = reader.nextStringOrNull();
             event.href = href == null ? "" : href;
@@ -116,18 +141,14 @@ public final class RRWebMetaEvent extends RRWebEvent implements JsonUnknown, Jso
             event.width = width == null ? 0 : width;
             break;
           default:
-            if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {
-              if (unknown == null) {
-                unknown = new ConcurrentHashMap<>();
-              }
-              reader.nextUnknown(logger, unknown, nextName);
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
             }
-            break;
+            reader.nextUnknown(logger, unknown, nextName);
         }
       }
       event.setUnknown(unknown);
       reader.endObject();
-      return event;
     }
   }
 }

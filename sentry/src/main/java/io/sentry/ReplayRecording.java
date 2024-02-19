@@ -52,15 +52,6 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
-
-    // session replay recording format
-    // {"segment_id":0}\n{json-serialized-gzipped-rrweb-protocol}
-
-    writer.jsonValue("\n");
-
-    if (payload != null) {
-      writer.value(logger, payload);
-    }
   }
 
   @Override
