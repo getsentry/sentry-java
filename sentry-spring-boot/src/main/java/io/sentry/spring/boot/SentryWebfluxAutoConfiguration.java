@@ -9,7 +9,6 @@ import io.sentry.spring.webflux.SentryWebFilter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -20,7 +19,6 @@ import org.springframework.core.annotation.Order;
 import reactor.core.scheduler.Schedulers;
 
 /** Configures Sentry integration for Spring Webflux and Project Reactor. */
-@AutoConfiguration
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBean(IHub.class)
