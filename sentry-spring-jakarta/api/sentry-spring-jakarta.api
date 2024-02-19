@@ -94,10 +94,11 @@ public abstract interface annotation class io/sentry/spring/jakarta/checkin/Sent
 	public abstract fun value ()Ljava/lang/String;
 }
 
-public class io/sentry/spring/jakarta/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor {
+public class io/sentry/spring/jakarta/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor, org/springframework/context/EmbeddedValueResolverAware {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+	public fun setEmbeddedValueResolver (Lorg/springframework/util/StringValueResolver;)V
 }
 
 public class io/sentry/spring/jakarta/checkin/SentryCheckInAdviceConfiguration {
