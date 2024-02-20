@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
@@ -29,8 +30,8 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
     public static final class Deserializer implements JsonDeserializer<ReplayType> {
       @Override
-      public @NotNull ReplayType deserialize(
-          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      public @NotNull ReplayType deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+          throws Exception {
         return ReplayType.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
       }
     }
@@ -39,7 +40,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
   public static final long REPLAY_VIDEO_MAX_SIZE = 10 * 1024 * 1024;
   public static final String REPLAY_EVENT_TYPE = "replay_event";
 
-  private @NotNull File videoFile;
+  private @Nullable File videoFile;
   private @NotNull String type;
   private @NotNull ReplayType replayType;
   private @Nullable SentryId replayId;
@@ -62,12 +63,12 @@ public final class SentryReplayEvent extends SentryBaseEvent
     timestamp = DateUtils.getCurrentDateTime();
   }
 
-  @NotNull
+  @Nullable
   public File getVideoFile() {
     return videoFile;
   }
 
-  public void setVideoFile(final @NotNull File videoFile) {
+  public void setVideoFile(final @Nullable File videoFile) {
     this.videoFile = videoFile;
   }
 
@@ -151,6 +152,25 @@ public final class SentryReplayEvent extends SentryBaseEvent
     this.replayType = replayType;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SentryReplayEvent that = (SentryReplayEvent) o;
+    return segmentId == that.segmentId
+        && Objects.equals(type, that.type)
+        && replayType == that.replayType
+        && Objects.equals(replayId, that.replayId)
+        && Objects.equals(urls, that.urls)
+        && Objects.equals(errorIds, that.errorIds)
+        && Objects.equals(traceIds, that.traceIds);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type, replayType, replayId, segmentId, urls, errorIds, traceIds);
+  }
+
   // region json
   public static final class JsonKeys {
     public static final String TYPE = "type";
@@ -219,7 +239,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull SentryReplayEvent deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
 

@@ -2,8 +2,8 @@ package io.sentry.rrweb
 
 import io.sentry.ILogger
 import io.sentry.JsonDeserializer
-import io.sentry.JsonObjectReader
 import io.sentry.JsonSerializable
+import io.sentry.ObjectReader
 import io.sentry.ObjectWriter
 import io.sentry.protocol.SerializationUtils.deserializeJson
 import io.sentry.protocol.SerializationUtils.sanitizedFile
@@ -27,7 +27,7 @@ class RRWebEventSerializationTest {
         }
 
         class Deserializer : JsonDeserializer<Sut> {
-            override fun deserialize(reader: JsonObjectReader, logger: ILogger): Sut {
+            override fun deserialize(reader: ObjectReader, logger: ILogger): Sut {
                 val sut = Sut()
                 reader.beginObject()
 

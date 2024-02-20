@@ -195,6 +195,7 @@ object Config {
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
+        val msgpack = "org.msgpack:msgpack-core:0.9.8"
     }
 
     object QualityPlugins {

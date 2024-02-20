@@ -2,8 +2,8 @@ package io.sentry.rrweb;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +25,7 @@ public enum RRWebEventType implements JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<RRWebEventType> {
     @Override
     public @NotNull RRWebEventType deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       return RRWebEventType.values()[reader.nextInt()];
     }
   }

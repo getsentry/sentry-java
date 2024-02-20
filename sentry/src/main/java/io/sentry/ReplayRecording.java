@@ -1,8 +1,15 @@
 package io.sentry;
 
 import io.sentry.rrweb.RRWebEvent;
+import io.sentry.rrweb.RRWebEventType;
+import io.sentry.rrweb.RRWebMetaEvent;
+import io.sentry.rrweb.RRWebVideoEvent;
+import io.sentry.util.MapObjectReader;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +45,19 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ReplayRecording that = (ReplayRecording) o;
+    return Objects.equals(segmentId, that.segmentId) && Objects.equals(payload, that.payload);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(segmentId, payload);
+  }
+
+  @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
@@ -52,6 +72,15 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
+
+    // {"segment_id":0}\n{json-serialized-rrweb-protocol}
+
+    writer.setLenient(true);
+    writer.jsonValue("\n");
+    if (payload != null) {
+      writer.value(logger, payload);
+    }
+    writer.setLenient(false);
   }
 
   @Override
@@ -66,14 +95,16 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<ReplayRecording> {
 
+    @SuppressWarnings("unchecked")
     @Override
     public @NotNull ReplayRecording deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
 
       final ReplayRecording replay = new ReplayRecording();
 
       @Nullable Map<String, Object> unknown = null;
       @Nullable Integer segmentId = null;
+      @Nullable List<RRWebEvent> payload = null;
 
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {
@@ -92,7 +123,58 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
       }
       reader.endObject();
 
+      // {"segment_id":0}\n{json-serialized-rrweb-protocol}
+
+      reader.setLenient(true);
+      List<Object> events = (List<Object>) reader.nextObjectOrNull();
+      reader.setLenient(false);
+
+      // since we lose the type of an rrweb event at runtime, we have to recover it from a map
+      if (events != null) {
+        payload = new ArrayList<>(events.size());
+        for (Object event : events) {
+          if (event instanceof Map) {
+            final Map<String, Object> eventMap = (Map<String, Object>) event;
+            final ObjectReader mapReader = new MapObjectReader(eventMap);
+            for (Map.Entry<String, Object> entry : eventMap.entrySet()) {
+              final String key = entry.getKey();
+              final Object value = entry.getValue();
+              if (key.equals("type")) {
+                RRWebEventType type = RRWebEventType.values()[(int) value];
+                switch (type) {
+                  case Meta:
+                    final RRWebEvent metaEvent =
+                        new RRWebMetaEvent.Deserializer().deserialize(mapReader, logger);
+                    payload.add(metaEvent);
+                    break;
+                  case Custom:
+                    final Map<String, Object> data =
+                        (Map<String, Object>) eventMap.getOrDefault("data", Collections.emptyMap());
+                    final String tag =
+                        (String) data.getOrDefault(RRWebEvent.JsonKeys.TAG, "default");
+                    switch (tag) {
+                      case RRWebVideoEvent.EVENT_TAG:
+                        final RRWebEvent videoEvent =
+                            new RRWebVideoEvent.Deserializer().deserialize(mapReader, logger);
+                        payload.add(videoEvent);
+                        break;
+                      default:
+                        logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                        break;
+                    }
+                    break;
+                  default:
+                    logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                    break;
+                }
+              }
+            }
+          }
+        }
+      }
+
       replay.setSegmentId(segmentId);
+      replay.setPayload(payload);
       replay.setUnknown(unknown);
       return replay;
     }

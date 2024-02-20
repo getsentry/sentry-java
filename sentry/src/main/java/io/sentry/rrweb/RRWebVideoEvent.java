@@ -2,12 +2,14 @@ package io.sentry.rrweb;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +36,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
   private int frameRate;
   private int left;
   private int top;
+  private @Nullable Map<String, Object> unknown;
   private @Nullable Map<String, Object> payloadUnknown;
   private @Nullable Map<String, Object> dataUnknown;
 
@@ -158,14 +161,62 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     this.payloadUnknown = payloadUnknown;
   }
 
+  public @Nullable Map<String, Object> getDataUnknown() {
+    return dataUnknown;
+  }
+
+  public void setDataUnknown(final @Nullable Map<String, Object> dataUnknown) {
+    this.dataUnknown = dataUnknown;
+  }
+
   @Override
   public @Nullable Map<String, Object> getUnknown() {
-    return dataUnknown;
+    return unknown;
   }
 
   @Override
   public void setUnknown(final @Nullable Map<String, Object> unknown) {
-    this.dataUnknown = unknown;
+    this.unknown = unknown;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+    RRWebVideoEvent that = (RRWebVideoEvent) o;
+    return segmentId == that.segmentId
+        && size == that.size
+        && duration == that.duration
+        && height == that.height
+        && width == that.width
+        && frameCount == that.frameCount
+        && frameRate == that.frameRate
+        && left == that.left
+        && top == that.top
+        && Objects.equals(tag, that.tag)
+        && Objects.equals(encoding, that.encoding)
+        && Objects.equals(container, that.container)
+        && Objects.equals(frameRateType, that.frameRateType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        super.hashCode(),
+        tag,
+        segmentId,
+        size,
+        duration,
+        encoding,
+        container,
+        height,
+        width,
+        frameCount,
+        frameRateType,
+        frameRate,
+        left,
+        top);
   }
 
   // region json
@@ -173,7 +224,6 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
   // rrweb uses camelCase hence the json keys are in camelCase here
   public static final class JsonKeys {
     public static final String DATA = "data";
-    public static final String TAG = "tag";
     public static final String PAYLOAD = "payload";
     public static final String SEGMENT_ID = "segmentId";
     public static final String SIZE = "size";
@@ -195,13 +245,20 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     new RRWebEvent.Serializer().serialize(this, writer, logger);
     writer.name(JsonKeys.DATA);
     serializeData(writer, logger);
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
     writer.endObject();
   }
 
   private void serializeData(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TAG).value(tag);
+    writer.name(RRWebEvent.JsonKeys.TAG).value(tag);
     writer.name(JsonKeys.PAYLOAD);
     serializePayload(writer, logger);
     if (dataUnknown != null) {
@@ -244,8 +301,10 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull RRWebVideoEvent deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
+      Map<String, Object> unknown = null;
+
       RRWebVideoEvent event = new RRWebVideoEvent();
       RRWebEvent.Deserializer baseEventDeserializer = new RRWebEvent.Deserializer();
 
@@ -256,17 +315,23 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
             deserializeData(event, reader, logger);
             break;
           default:
-            baseEventDeserializer.deserializeValue(event, nextName, reader, logger);
+            if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {
+              if (unknown == null) {
+                unknown = new HashMap<>();
+              }
+              reader.nextUnknown(logger, unknown, nextName);
+            }
             break;
         }
       }
+      event.setUnknown(unknown);
       reader.endObject();
       return event;
     }
 
     private void deserializeData(
         final @NotNull RRWebVideoEvent event,
-        final @NotNull JsonObjectReader reader,
+        final @NotNull ObjectReader reader,
         final @NotNull ILogger logger)
         throws Exception {
       Map<String, Object> dataUknown = null;
@@ -275,7 +340,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
-          case JsonKeys.TAG:
+          case RRWebEvent.JsonKeys.TAG:
             final String tag = reader.nextStringOrNull();
             event.tag = tag == null ? "" : tag;
             break;
@@ -289,13 +354,13 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
             reader.nextUnknown(logger, dataUknown, nextName);
         }
       }
-      event.setUnknown(dataUknown);
+      event.setDataUnknown(dataUknown);
       reader.endObject();
     }
 
     private void deserializePayload(
         final @NotNull RRWebVideoEvent event,
-        final @NotNull JsonObjectReader reader,
+        final @NotNull ObjectReader reader,
         final @NotNull ILogger logger)
         throws Exception {
       Map<String, Object> payloadUnknown = null;
@@ -357,7 +422,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
             reader.nextUnknown(logger, payloadUnknown, nextName);
         }
       }
-      event.setUnknown(payloadUnknown);
+      event.setPayloadUnknown(payloadUnknown);
       reader.endObject();
     }
   }

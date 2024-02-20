@@ -21,6 +21,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -365,22 +366,16 @@ public final class SentryEnvelopeItem {
                   replayPayload.put(SentryItemType.ReplayEvent.getItemType(), stream.toByteArray());
                   stream.reset();
 
-                  // next serialize replay recording in the following format:
-                  // {"segment_id":0}\n{json-serialized-rrweb-protocol}
+                  // next serialize replay recording
                   if (replayRecording != null) {
                     serializer.serialize(replayRecording, writer);
-                    writer.write("\n");
-                    writer.flush();
-                    if (replayRecording.getPayload() != null) {
-                      serializer.serialize(replayRecording.getPayload(), writer);
-                    }
                     replayPayload.put(
                         SentryItemType.ReplayRecording.getItemType(), stream.toByteArray());
                     stream.reset();
                   }
 
                   // next serialize replay video bytes from given file
-                  if (replayVideo.exists()) {
+                  if (replayVideo != null && replayVideo.exists()) {
                     final byte[] videoBytes =
                         readBytesFromFile(
                             replayVideo.getPath(), SentryReplayEvent.REPLAY_VIDEO_MAX_SIZE);
@@ -395,7 +390,9 @@ public final class SentryEnvelopeItem {
                 logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
                 return null;
               } finally {
-                replayVideo.delete();
+                if (replayVideo != null) {
+                  replayVideo.delete();
+                }
               }
             });
 
@@ -428,7 +425,7 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  @SuppressWarnings("CharsetObjectCanBeUsed")
+  @SuppressWarnings({"CharsetObjectCanBeUsed", "UnnecessaryParentheses"})
   private static byte[] serializeToMsgpack(Map<String, byte[]> map) throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -440,24 +437,17 @@ public final class SentryEnvelopeItem {
       // Pack the key as a string
       byte[] keyBytes = entry.getKey().getBytes(Charset.forName("UTF-8"));
       int keyLength = keyBytes.length;
-      if (keyLength <= 31) {
-        baos.write((byte) (0xA0 | keyLength));
-      } else {
-        baos.write((byte) (0xD9));
-        baos.write((byte) (keyLength));
-      }
+      // string up to 255 chars
+      baos.write((byte) (0xd9));
+      baos.write((byte) (keyLength));
       baos.write(keyBytes);
 
       // Pack the value as a binary string
       byte[] valueBytes = entry.getValue();
       int valueLength = valueBytes.length;
-      if (valueLength <= 255) {
-        baos.write((byte) (0xC4));
-        baos.write((byte) (valueLength));
-      } else {
-        baos.write((byte) (0xC5));
-        baos.write(ByteBuffer.allocate(4).putInt(valueLength).array());
-      }
+      // We will always use the 4 bytes data length for simplicity.
+      baos.write((byte) (0xc6));
+      baos.write(ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(valueLength).array());
       baos.write(valueBytes);
     }
 
