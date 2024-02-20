@@ -16,6 +16,9 @@ import io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME
 import io.sentry.android.core.internal.util.CpuInfoUtils
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryException
+import io.sentry.protocol.SentryStackFrame
+import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -571,6 +574,89 @@ class DefaultAndroidEventProcessorTest {
             assertNull(app.inForeground)
             val thread = it.threads!!.first()
             assertNull(thread.isMain)
+        }
+    }
+
+    @Test
+    fun `the exception list is reversed in case there's an RuntimeException`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent().apply {
+            exceptions = listOf(
+                SentryException().apply {
+                    type = "IllegalStateException"
+                    module = "com.example"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "onCreate"
+                                module = "com.example.Application"
+                                filename = "Application.java"
+                            }
+                        )
+                    )
+                },
+                SentryException().apply {
+                    type = "RuntimeException"
+                    value = "Unable to create application com.example.Application: java.lang.IllegalStateException"
+                    module = "java.lang"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "run"
+                                module = "com.android.internal.os.RuntimeInit\$MethodAndArgsCaller"
+                                filename = "RuntimeInit.java"
+                            }
+                        )
+                    )
+                }
+            )
+        }
+        val processedEvent = sut.process(event, Hint())
+        assertNotNull(processedEvent) {
+            assertEquals(2, it.exceptions!!.size)
+            assertEquals("RuntimeException", it.exceptions!![0].type)
+            assertEquals("IllegalStateException", it.exceptions!![1].type)
+        }
+    }
+
+    @Test
+    fun `the exception list is kept as-is in case there's no RuntimeException`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent().apply {
+            exceptions = listOf(
+                SentryException().apply {
+                    type = "IllegalStateException"
+                    module = "com.example"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "onCreate"
+                                module = "com.example.Application"
+                                filename = "Application.java"
+                            }
+                        )
+                    )
+                },
+                SentryException().apply {
+                    type = "IllegalArgumentException"
+                    module = "com.example"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "onCreate"
+                                module = "com.example.Application"
+                                filename = "Application.java"
+                            }
+                        )
+                    )
+                }
+            )
+        }
+        val processedEvent = sut.process(event, Hint())
+        assertNotNull(processedEvent) {
+            assertEquals(2, it.exceptions!!.size)
+            assertEquals("IllegalStateException", it.exceptions!![0].type)
+            assertEquals("IllegalArgumentException", it.exceptions!![1].type)
         }
     }
 }
