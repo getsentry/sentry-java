@@ -65,14 +65,14 @@ public final class SpotlightIntegration
         options.getSerializer().serialize(envelope, gzip);
       } catch (Throwable e) {
         logger.log(
-            ERROR, e, "An exception occurred while submitting the envelope to the Sentry server.");
+            ERROR, "An exception occurred while submitting the envelope to the Sentry server.", e);
       } finally {
         final int responseCode = connection.getResponseCode();
         logger.log(DEBUG, "Envelope sent to spotlight: %d", responseCode);
         closeAndDisconnect(connection);
       }
     } catch (final Exception e) {
-      logger.log(ERROR, e, "An exception occurred while creating the connection to spotlight.");
+      logger.log(ERROR, "An exception occurred while creating the connection to spotlight.", e);
     }
   }
 
