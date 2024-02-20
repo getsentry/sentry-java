@@ -13,6 +13,7 @@
 
 - Don't wait on main thread when SDK restarts ([#3200](https://github.com/getsentry/sentry-java/pull/3200))
 - Fix Jetpack Compose widgets are not being correctly identified for user interaction tracing ([#3209](https://github.com/getsentry/sentry-java/pull/3209))
+- Fix issue title on Android when a wrapped RuntimeException is thrown by the system ([#3212](https://github.com/getsentry/sentry-java/pull/3212))
 
 ## 7.3.0
 
