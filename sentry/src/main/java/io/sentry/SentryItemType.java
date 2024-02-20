@@ -65,7 +65,7 @@ public enum SentryItemType implements JsonSerializable {
 
     @Override
     public @NotNull SentryItemType deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       return SentryItemType.valueOfLabel(reader.nextString().toLowerCase(Locale.ROOT));
     }
   }
