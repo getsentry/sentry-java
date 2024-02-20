@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import androidx.annotation.NonNull;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -91,7 +90,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    *
    * @param event the event to process
    */
-  private static void fixExceptionOrder(final @NonNull SentryEvent event) {
+  private static void fixExceptionOrder(final @NotNull SentryEvent event) {
     boolean reverseExceptions = false;
 
     final @Nullable List<SentryException> exceptions = event.getExceptions();
@@ -102,7 +101,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         if (stacktrace != null) {
           final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
           if (frames != null) {
-            for (SentryStackFrame frame : frames) {
+            for (final @NotNull SentryStackFrame frame : frames) {
               if ("com.android.internal.os.RuntimeInit$MethodAndArgsCaller"
                   .equals(frame.getModule())) {
                 reverseExceptions = true;
