@@ -212,12 +212,12 @@ public final class SentryClient implements ISentryClient {
 
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
-      final SentryEnvelope envelope =
+      final @Nullable SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
       hint.clear();
       if (envelope != null) {
-        transport.send(envelope, hint);
+        sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
@@ -445,8 +445,8 @@ public final class SentryClient implements ISentryClient {
         .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(userFeedback);
-      transport.send(envelope);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
+      sendEnvelope(envelope, null);
     } catch (IOException e) {
       options
           .getLogger()
@@ -582,17 +582,33 @@ public final class SentryClient implements ISentryClient {
 
     try {
       hint.clear();
-      transport.send(envelope, hint);
+      return sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
-      return SentryId.EMPTY_ID;
     }
-    final SentryId eventId = envelope.getHeader().getEventId();
-    if (eventId != null) {
-      return eventId;
+    return SentryId.EMPTY_ID;
+  }
+
+  private @NotNull SentryId sendEnvelope(
+      @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
+    final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
+        options.getBeforeEnvelopeCallback();
+    if (beforeEnvelopeCallback != null) {
+      try {
+        beforeEnvelopeCallback.execute(envelope, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
+      }
+    }
+    if (hint == null) {
+      transport.send(envelope);
     } else {
-      return SentryId.EMPTY_ID;
+      transport.send(envelope, hint);
     }
+    final @Nullable SentryId id = envelope.getHeader().getEventId();
+    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   @Override
@@ -665,9 +681,7 @@ public final class SentryClient implements ISentryClient {
 
       hint.clear();
       if (envelope != null) {
-        transport.send(envelope, hint);
-      } else {
-        sentryId = SentryId.EMPTY_ID;
+        sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
@@ -729,10 +743,10 @@ public final class SentryClient implements ISentryClient {
         }
       }
 
-      final SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
 
       hint.clear();
-      transport.send(envelope, hint);
+      sentryId = sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
