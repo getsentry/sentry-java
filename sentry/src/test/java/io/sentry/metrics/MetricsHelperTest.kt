@@ -159,4 +159,12 @@ class MetricsHelperTest {
             metrics[0]
         )
     }
+
+    @Test
+    fun toStatsdType() {
+        assertEquals("c", MetricsHelper.toStatsdType(MetricType.Counter))
+        assertEquals("g", MetricsHelper.toStatsdType(MetricType.Gauge))
+        assertEquals("s", MetricsHelper.toStatsdType(MetricType.Set))
+        assertEquals("d", MetricsHelper.toStatsdType(MetricType.Distribution))
+    }
 }

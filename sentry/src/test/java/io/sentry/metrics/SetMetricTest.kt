@@ -57,12 +57,4 @@ class SetMetricTest {
         // weight should be the number of distinct items
         assertEquals(3, metric.weight)
     }
-
-    @Test
-    fun toStatsdType() {
-        assertEquals("c", MetricsHelper.toStatsdType(MetricType.Counter))
-        assertEquals("g", MetricsHelper.toStatsdType(MetricType.Gauge))
-        assertEquals("s", MetricsHelper.toStatsdType(MetricType.Set))
-        assertEquals("d", MetricsHelper.toStatsdType(MetricType.Distribution))
-    }
 }
