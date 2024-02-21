@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.metrics.IMetricsHub
+import io.sentry.metrics.IMetricsClient
 import io.sentry.metrics.MetricsHelper
 import io.sentry.metrics.MetricsHelperTest
 import io.sentry.test.DeferredExecutorService
@@ -9,7 +9,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,17 +19,21 @@ import kotlin.test.assertTrue
 class MetricsAggregatorTest {
 
     private class Fixture {
-        val options = SentryOptions()
-        val hub = mock<IMetricsHub>()
+        val client = mock<IMetricsClient>()
+        val logger = mock<ILogger>()
+        val dateProvider = SentryDateProvider {
+            SentryLongDate(TimeUnit.MILLISECONDS.toNanos(currentTimeMillis))
+        }
         var currentTimeMillis: Long = 0
         var executorService = DeferredExecutorService()
 
         fun getSut(): MetricsAggregator {
-            return MetricsAggregator(hub, options, executorService).also {
-                it.setTimeProvider {
-                    currentTimeMillis
-                }
-            }
+            return MetricsAggregator(
+                client,
+                logger,
+                dateProvider,
+                executorService
+            )
         }
     }
 
@@ -49,7 +53,7 @@ class MetricsAggregatorTest {
         // then flush does nothing
         aggregator.flush(false)
 
-        verify(fixture.hub, never()).captureMetrics(any())
+        verify(fixture.client, never()).captureMetrics(any())
     }
 
     @Test
@@ -62,14 +66,14 @@ class MetricsAggregatorTest {
 
         // then flush does nothing because there's no data inside the flush interval
         aggregator.flush(false)
-        verify(fixture.hub, never()).captureMetrics(any())
+        verify(fixture.client, never()).captureMetrics(any())
 
         // as times moves on
         fixture.currentTimeMillis = 30_000
 
         // the metric should be flushed
         aggregator.flush(false)
-        verify(fixture.hub).captureMetrics(any())
+        verify(fixture.client).captureMetrics(any())
     }
 
     @Test
@@ -81,13 +85,12 @@ class MetricsAggregatorTest {
 
         // then force flush flushes the metric
         aggregator.flush(true)
-        verify(fixture.hub).captureMetrics(any())
+        verify(fixture.client).captureMetrics(any())
     }
 
     @Test
     fun `same metrics are aggregated when in same bucket`() {
         val aggregator = fixture.getSut()
-        fixture.options.environment = "prod"
 
         fixture.currentTimeMillis = 20_000
 
@@ -111,9 +114,9 @@ class MetricsAggregatorTest {
         // then flush does nothing because there's no data inside the flush interval
         aggregator.flush(true)
 
-        verify(fixture.hub).captureMetrics(
+        verify(fixture.client).captureMetrics(
             check {
-                val metrics = MetricsHelperTest.parseMetrics(it.statsd)
+                val metrics = MetricsHelperTest.parseMetrics(it.encode())
                 assertEquals(1, metrics.size)
                 assertEquals(
                     MetricsHelperTest.Companion.StatsDMetric(
@@ -180,9 +183,9 @@ class MetricsAggregatorTest {
         aggregator.flush(true)
 
         // then all of them are emitted separately
-        verify(fixture.hub).captureMetrics(
+        verify(fixture.client).captureMetrics(
             check {
-                val metrics = MetricsHelperTest.parseMetrics(it.statsd)
+                val metrics = MetricsHelperTest.parseMetrics(it.encode())
                 assertEquals(5, metrics.size)
             }
         )
@@ -208,7 +211,7 @@ class MetricsAggregatorTest {
 
         // then the metric is never captured
         aggregator.flush(true)
-        verify(fixture.hub, never()).captureMetrics(any())
+        verify(fixture.client, never()).captureMetrics(any())
     }
 
     @Test
@@ -267,9 +270,9 @@ class MetricsAggregatorTest {
         )
 
         aggregator.flush(true)
-        verify(fixture.hub).captureMetrics(
+        verify(fixture.client).captureMetrics(
             check {
-                val metrics = MetricsHelperTest.parseMetrics(it.statsd)
+                val metrics = MetricsHelperTest.parseMetrics(it.encode())
                 assertEquals(6, metrics.size)
             }
         )
@@ -300,96 +303,9 @@ class MetricsAggregatorTest {
         // after the flush is executed, the metric is captured
         fixture.currentTimeMillis = 31_000
         fixture.executorService.runAll()
-        verify(fixture.hub).captureMetrics(any())
+        verify(fixture.client).captureMetrics(any())
 
         // and flushing is scheduled again
         assertTrue(fixture.executorService.hasScheduledRunnables())
-    }
-
-    @Test
-    fun `tags are enriched with environment and release`() {
-        val aggregator = fixture.getSut()
-        whenever(fixture.hub.defaultTagsForMetric).thenReturn(
-            mapOf(
-                "release" to "1.0",
-                "environment" to "prod"
-            )
-        )
-
-        // when a metric gets emitted
-        fixture.currentTimeMillis = 20_000
-        aggregator.increment(
-            "name",
-            1.0,
-            MeasurementUnit.Custom("apples"),
-            mapOf("a" to "b"),
-            20_001,
-            1
-        )
-
-        aggregator.flush(true)
-        verify(fixture.hub).captureMetrics(
-            check {
-                val metrics = MetricsHelperTest.parseMetrics(it.statsd)
-                assertEquals(
-                    MetricsHelperTest.Companion.StatsDMetric(
-                        20,
-                        "name",
-                        "apples",
-                        "c",
-                        listOf("1.0"),
-                        mapOf(
-                            "a" to "b",
-                            "release" to "1.0",
-                            "environment" to "prod"
-                        )
-                    ),
-                    metrics[0]
-                )
-            }
-        )
-    }
-
-    @Test
-    fun `existing environment and release tags are not overwritten`() {
-        val aggregator = fixture.getSut()
-        whenever(fixture.hub.defaultTagsForMetric).thenReturn(
-            mapOf(
-                "defaultTag" to "defaultValue"
-            )
-        )
-
-        // when a metric gets emitted
-        fixture.currentTimeMillis = 20_000
-        aggregator.increment(
-            "name",
-            1.0,
-            MeasurementUnit.Custom("apples"),
-            mapOf(
-                "defaultTag" to "custom-value"
-            ),
-            20_001,
-            1
-        )
-
-        aggregator.flush(true)
-        verify(fixture.hub).captureMetrics(
-            check {
-                val metrics = MetricsHelperTest.parseMetrics(it.statsd)
-                assertEquals(
-                    MetricsHelperTest.Companion.StatsDMetric(
-                        20,
-                        "name",
-                        "apples",
-                        "c",
-                        listOf("1.0"),
-                        mapOf(
-                            "defaultTag" to "custom-value"
-                        )
-                    ),
-                    metrics[0]
-                )
-            }
-        )
     }
 }

@@ -6,6 +6,9 @@ import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
+import io.sentry.metrics.EncodedMetrics;
+import io.sentry.metrics.IMetricsClient;
+import io.sentry.metrics.NoopMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -30,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryClient implements ISentryClient {
+public final class SentryClient implements ISentryClient, IMetricsClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
   private boolean enabled;
@@ -38,8 +41,8 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
   private final @Nullable SecureRandom random;
-
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
+  private final @NotNull IMetricsAggregator metricsAggregator;
 
   @Override
   public boolean isEnabled() {
@@ -58,6 +61,11 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
+
+    metricsAggregator =
+        options.isEnableMetrics()
+            ? new MetricsAggregator(options, this)
+            : NoopMetricsAggregator.getInstance();
 
     this.random = options.getSampleRate() == null ? null : new SecureRandom();
   }
@@ -909,7 +917,11 @@ public final class SentryClient implements ISentryClient {
   @Override
   public void close(final boolean isRestarting) {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
-
+    try {
+      metricsAggregator.close();
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, "Failed to close the metrics aggregator.", e);
+    }
     try {
       flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
       transport.close(isRestarting);
@@ -958,6 +970,24 @@ public final class SentryClient implements ISentryClient {
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;
+  }
+
+  @Override
+  public @NotNull IMetricsAggregator getMetricsAggregator() {
+    return metricsAggregator;
+  }
+
+  @Override
+  public @NotNull SentryId captureMetrics(@NotNull EncodedMetrics metrics) {
+
+    final SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(new SentryId(), options.getSdkVersion(), null);
+
+    final SentryEnvelope envelope =
+        new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
+    final @Nullable SentryId id = captureEnvelope(envelope);
+    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {

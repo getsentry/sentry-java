@@ -4,8 +4,6 @@ import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
-import io.sentry.metrics.EncodedMetrics;
-import io.sentry.metrics.IMetricsHub;
 import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -28,7 +26,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Hub implements IHub, IMetricsHub {
+public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   private volatile @NotNull SentryId lastEventId;
   private final @NotNull SentryOptions options;
@@ -38,7 +36,6 @@ public final class Hub implements IHub, IMetricsHub {
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
-  private final @NotNull IMetricsAggregator metricAggregator;
   private final @NotNull MetricsApi metricsApi;
 
   public Hub(final @NotNull SentryOptions options) {
@@ -59,12 +56,13 @@ public final class Hub implements IHub, IMetricsHub {
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
 
-    this.metricAggregator = new MetricsAggregator(this, options);
-    this.metricsApi = new MetricsApi(metricAggregator);
+    this.metricsApi = new MetricsApi(this);
   }
 
   private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
     this(options, new Stack(options.getLogger(), rootStackItem));
+
+    Sentry.metrics().increment("hub.init");
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {
@@ -293,40 +291,6 @@ public final class Hub implements IHub, IMetricsHub {
   }
 
   @Override
-  public void captureMetrics(final @NotNull EncodedMetrics metrics) {
-    if (!isEnabled()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureMetrics' call is a no-op.");
-    } else {
-      final StackItem item = stack.peek();
-      final SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
-
-      // TODO fine this way?
-      // Usually the envelope is assembled by the client
-      final SentryEnvelopeHeader envelopeHeader =
-          new SentryEnvelopeHeader(
-              new SentryId(),
-              options.getSdkVersion(),
-              item.getScope().getPropagationContext().traceContext());
-
-      final SentryEnvelope envelope =
-          new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
-      item.getClient().captureEnvelope(envelope);
-    }
-  }
-
-  @Override
-  public @NotNull Map<String, String> getDefaultTagsForMetric() {
-    final Map<String, String> tags = new HashMap<>(2);
-    tags.put("release", options.getRelease());
-    tags.put("environment", options.getEnvironment());
-    return tags;
-  }
-
-  @Override
   public void startSession() {
     if (!isEnabled()) {
       options
@@ -385,11 +349,6 @@ public final class Hub implements IHub, IMetricsHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'close' call is a no-op.");
     } else {
-      try {
-        metricAggregator.close();
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error while closing metrics aggregator.", e);
-      }
       try {
         for (Integration integration : options.getIntegrations()) {
           if (integration instanceof Closeable) {
@@ -989,5 +948,18 @@ public final class Hub implements IHub, IMetricsHub {
   @Override
   public @NotNull MetricsApi metrics() {
     return metricsApi;
+  }
+
+  @Override
+  public @NotNull IMetricsAggregator getMetricsAggregator() {
+    return stack.peek().getClient().getMetricsAggregator();
+  }
+
+  @Override
+  public @NotNull Map<String, String> getDefaultTagsForMetrics() {
+    final Map<String, String> tags = new HashMap<>(2);
+    tags.put("release", options.getRelease());
+    tags.put("environment", options.getEnvironment());
+    return tags;
   }
 }

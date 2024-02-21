@@ -3,6 +3,8 @@ package io.sentry.metrics;
 import io.sentry.MeasurementUnit;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
@@ -162,6 +164,9 @@ public final class MetricsHelper {
   /**
    * Encodes the metrics
    *
+   * <p>See <a href="https://github.com/statsd/statsd#usage">github.com/statsd/statsd#usage</a> for
+   * more details about the format
+   *
    * @param timestamp The bucket time the metrics belong to, in second resolution
    * @param metrics The metrics to encode
    * @param writer The writer to encode the metrics into
@@ -213,6 +218,22 @@ public final class MetricsHelper {
   @NotNull
   public static String sanitizeUnit(@NotNull String unit) {
     return INVALID_METRIC_UNIT_CHARACTERS_PATTERN.matcher(unit).replaceAll("_");
+  }
+
+  @NotNull
+  public static Map<String, String> mergeTags(
+      final @Nullable Map<String, String> tags, final @NotNull Map<String, String> defaultTags) {
+    if (tags == null) {
+      return Collections.unmodifiableMap(defaultTags);
+    }
+    final @NotNull Map<String, String> enrichedTags = new HashMap<>(tags);
+    for (final @NotNull Map.Entry<String, String> defaultTag : defaultTags.entrySet()) {
+      final @NotNull String key = defaultTag.getKey();
+      if (!enrichedTags.containsKey(key)) {
+        enrichedTags.put(key, defaultTag.getValue());
+      }
+    }
+    return enrichedTags;
   }
 
   @TestOnly

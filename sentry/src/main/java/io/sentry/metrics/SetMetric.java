@@ -12,25 +12,24 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SetMetric extends Metric {
 
-  private final @NotNull Set<Integer> values;
+  private final @NotNull Set<Integer> values = new HashSet<>();
 
   public SetMetric(
       final @NotNull String key,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final @NotNull Long timestamp) {
-    super(key, unit, tags, timestamp);
-    this.values = new HashSet<>();
+    super(MetricType.Set, key, unit, tags, timestamp);
   }
 
+  /**
+   * Adds a value to the set. Note: the value will be truncated to an integer.
+   *
+   * @param value the value to add to the set.
+   */
   @Override
   public void add(final double value) {
     values.add((int) value);
-  }
-
-  @Override
-  public MetricType getType() {
-    return MetricType.Set;
   }
 
   @Override

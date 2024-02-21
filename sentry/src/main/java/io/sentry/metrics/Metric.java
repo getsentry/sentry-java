@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public abstract class Metric {
 
+  private final @NotNull MetricType type;
   private final @NotNull String key;
   private final @Nullable MeasurementUnit unit;
   private final @Nullable Map<String, String> tags;
@@ -25,10 +26,12 @@ public abstract class Metric {
    * @param timestampMs A time when the metric was emitted.
    */
   public Metric(
-      @NotNull String key,
-      @Nullable MeasurementUnit unit,
-      @Nullable Map<String, String> tags,
-      @NotNull Long timestampMs) {
+      final @NotNull MetricType type,
+      final @NotNull String key,
+      final @Nullable MeasurementUnit unit,
+      final @Nullable Map<String, String> tags,
+      final @NotNull Long timestampMs) {
+    this.type = type;
     this.key = key;
     this.unit = unit;
     this.tags = tags;
@@ -38,7 +41,10 @@ public abstract class Metric {
   /** Adds a value to the metric */
   public abstract void add(final double value);
 
-  public abstract MetricType getType();
+  @NotNull
+  public MetricType getType() {
+    return type;
+  }
 
   public abstract int getWeight();
 

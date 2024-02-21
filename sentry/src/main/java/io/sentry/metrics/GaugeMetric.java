@@ -23,7 +23,7 @@ public final class GaugeMetric extends Metric {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final @NotNull Long timestamp) {
-    super(key, unit, tags, timestamp);
+    super(MetricType.Gauge, key, unit, tags, timestamp);
 
     this.last = value;
     this.min = value;
@@ -39,11 +39,6 @@ public final class GaugeMetric extends Metric {
     max = Math.max(max, value);
     sum += value;
     count++;
-  }
-
-  @Override
-  public MetricType getType() {
-    return MetricType.Gauge;
   }
 
   @Override

@@ -4,7 +4,7 @@ import io.sentry.metrics.CounterMetric;
 import io.sentry.metrics.DistributionMetric;
 import io.sentry.metrics.EncodedMetrics;
 import io.sentry.metrics.GaugeMetric;
-import io.sentry.metrics.IMetricsHub;
+import io.sentry.metrics.IMetricsClient;
 import io.sentry.metrics.Metric;
 import io.sentry.metrics.MetricType;
 import io.sentry.metrics.MetricsHelper;
@@ -12,12 +12,12 @@ import io.sentry.metrics.SetMetric;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -30,10 +30,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   @SuppressWarnings({"CharsetObjectCanBeUsed"})
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
-  private final @NotNull IMetricsHub hub;
   private final @NotNull ILogger logger;
-
-  private @NotNull TimeProvider timeProvider = System::currentTimeMillis;
+  private final @NotNull IMetricsClient client;
+  private final @NotNull SentryDateProvider dateProvider;
 
   private volatile @NotNull ISentryExecutorService executorService;
   private volatile boolean isClosed = false;
@@ -46,17 +45,24 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   // each of which has a key that uniquely identifies it within the time period
   private final NavigableMap<Long, Map<String, Metric>> buckets = new ConcurrentSkipListMap<>();
 
-  public MetricsAggregator(final @NotNull IMetricsHub hub, final @NotNull SentryOptions options) {
-    this(hub, options, NoOpSentryExecutorService.getInstance());
+  public MetricsAggregator(
+      final @NotNull SentryOptions options, final @NotNull IMetricsClient client) {
+    this(
+        client,
+        options.getLogger(),
+        options.getDateProvider(),
+        NoOpSentryExecutorService.getInstance());
   }
 
   @TestOnly
   public MetricsAggregator(
-      final @NotNull IMetricsHub hub,
-      final @NotNull SentryOptions options,
+      final @NotNull IMetricsClient client,
+      final @NotNull ILogger logger,
+      final @NotNull SentryDateProvider dateProvider,
       final @NotNull ISentryExecutorService executorService) {
-    this.hub = hub;
-    this.logger = options.getLogger();
+    this.client = client;
+    this.logger = logger;
+    this.dateProvider = dateProvider;
     this.executorService = executorService;
   }
 
@@ -125,11 +131,11 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   @Override
   public void timing(
       @NotNull String key,
-      @NotNull TimingCallback callback,
+      @NotNull Runnable callback,
       @NotNull MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
       int stackLevel) {
-    final long startMs = timeProvider.getTimeMillis();
+    final long startMs = nowMillis();
     final long startNanos = System.nanoTime();
     try {
       callback.run();
@@ -155,24 +161,22 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
 
     if (timestampMs == null) {
-      timestampMs = timeProvider.getTimeMillis();
+      timestampMs = nowMillis();
     }
-
-    final @NotNull Map<String, String> enrichedTags = enrichTags(tags);
 
     final @NotNull Metric metric;
     switch (type) {
       case Counter:
-        metric = new CounterMetric(key, value, unit, enrichedTags, timestampMs);
+        metric = new CounterMetric(key, value, unit, tags, timestampMs);
         break;
       case Gauge:
-        metric = new GaugeMetric(key, value, unit, enrichedTags, timestampMs);
+        metric = new GaugeMetric(key, value, unit, tags, timestampMs);
         break;
       case Distribution:
-        metric = new DistributionMetric(key, value, unit, enrichedTags, timestampMs);
+        metric = new DistributionMetric(key, value, unit, tags, timestampMs);
         break;
       case Set:
-        metric = new SetMetric(key, unit, enrichedTags, timestampMs);
+        metric = new SetMetric(key, unit, tags, timestampMs);
         //noinspection unchecked
         metric.add((int) value);
         break;
@@ -183,8 +187,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     final long timeBucketKey = MetricsHelper.getTimeBucketKey(timestampMs);
     final @NotNull Map<String, Metric> timeBucket = getOrAddTimeBucket(timeBucketKey);
 
-    final @NotNull String metricKey =
-        MetricsHelper.getMetricBucketKey(type, key, unit, enrichedTags);
+    final @NotNull String metricKey = MetricsHelper.getMetricBucketKey(type, key, unit, tags);
 
     // TODO check if we can synchronize only the metric itself
     synchronized (timeBucket) {
@@ -213,23 +216,6 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
   }
 
-  @NotNull
-  private Map<String, String> enrichTags(final @Nullable Map<String, String> tags) {
-    final @NotNull Map<String, String> defaultTags = hub.getDefaultTagsForMetric();
-    if (tags == null) {
-      return Collections.unmodifiableMap(defaultTags);
-    }
-
-    final @NotNull Map<String, String> enrichedTags = new HashMap<>(tags);
-    for (final @NotNull Map.Entry<String, String> defaultTag : defaultTags.entrySet()) {
-      final @NotNull String key = defaultTag.getKey();
-      if (!enrichedTags.containsKey(key)) {
-        enrichedTags.put(key, defaultTag.getValue());
-      }
-    }
-    return enrichedTags;
-  }
-
   @Override
   public void flush(final boolean force) {
     final @NotNull Set<Long> flushableBuckets = getFlushableBuckets(force);
@@ -239,22 +225,23 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
     logger.log(SentryLevel.DEBUG, "Metrics: flushing " + flushableBuckets.size() + " buckets");
 
-    final @NotNull StringBuilder writer = new StringBuilder();
+    final Map<Long, Map<String, Metric>> snapshot = new HashMap<>();
+    int totalSize = 0;
     for (long bucketKey : flushableBuckets) {
       final @Nullable Map<String, Metric> metrics = buckets.remove(bucketKey);
       if (metrics != null) {
-        MetricsHelper.encodeMetrics(bucketKey, metrics.values(), writer);
+        totalSize += metrics.size();
+        snapshot.put(bucketKey, metrics);
       }
     }
 
-    if (writer.length() == 0) {
+    if (totalSize == 0) {
       logger.log(SentryLevel.DEBUG, "Metrics: only empty buckets found");
       return;
     }
 
     logger.log(SentryLevel.DEBUG, "Metrics: capturing metrics");
-    final @NotNull EncodedMetrics encodedMetrics = new EncodedMetrics(writer.toString());
-    hub.captureMetrics(encodedMetrics);
+    client.captureMetrics(new EncodedMetrics(snapshot));
   }
 
   @NotNull
@@ -263,8 +250,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       return buckets.keySet();
     } else {
       // get all keys, including the cutoff key
-      final long cutoffTimestampMs =
-          MetricsHelper.getCutoffTimestampMs(timeProvider.getTimeMillis());
+      final long cutoffTimestampMs = MetricsHelper.getCutoffTimestampMs(nowMillis());
       final long cutoffKey = MetricsHelper.getTimeBucketKey(cutoffTimestampMs);
       return buckets.headMap(cutoffKey, true).keySet();
     }
@@ -309,12 +295,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
   }
 
-  @TestOnly
-  void setTimeProvider(final @NotNull TimeProvider timeProvider) {
-    this.timeProvider = timeProvider;
-  }
-
-  public interface TimeProvider {
-    long getTimeMillis();
+  private long nowMillis() {
+    return TimeUnit.NANOSECONDS.toMillis(dateProvider.now().nanoTimestamp());
   }
 }

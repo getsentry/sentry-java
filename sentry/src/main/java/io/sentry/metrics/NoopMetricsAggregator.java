@@ -3,13 +3,15 @@ package io.sentry.metrics;
 import io.sentry.IMetricsAggregator;
 import io.sentry.MeasurementUnit;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class NoopMetricsAggregator implements IMetricsAggregator {
+public final class NoopMetricsAggregator
+    implements IMetricsAggregator, MetricsApi.IMetricsInterface {
 
   private static final NoopMetricsAggregator instance = new NoopMetricsAggregator();
 
@@ -65,7 +67,7 @@ public final class NoopMetricsAggregator implements IMetricsAggregator {
   @Override
   public void timing(
       @NotNull String key,
-      @NotNull TimingCallback callback,
+      @NotNull Runnable callback,
       @NotNull MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
       int stackLevel) {
@@ -79,4 +81,14 @@ public final class NoopMetricsAggregator implements IMetricsAggregator {
 
   @Override
   public void close() throws IOException {}
+
+  @Override
+  public @NotNull IMetricsAggregator getMetricsAggregator() {
+    return this;
+  }
+
+  @Override
+  public @NotNull Map<String, String> getDefaultTagsForMetrics() {
+    return Collections.emptyMap();
+  }
 }

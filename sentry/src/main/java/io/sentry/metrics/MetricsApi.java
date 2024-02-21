@@ -3,15 +3,24 @@ package io.sentry.metrics;
 import io.sentry.IMetricsAggregator;
 import io.sentry.MeasurementUnit;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-// TODO: add tons of method overloads to make it delightful to use
 public final class MetricsApi {
 
-  private final @NotNull IMetricsAggregator aggregator;
+  @ApiStatus.Internal
+  public interface IMetricsInterface {
+    @NotNull
+    IMetricsAggregator getMetricsAggregator();
 
-  public MetricsApi(final @NotNull IMetricsAggregator aggregator) {
+    @NotNull
+    Map<String, String> getDefaultTagsForMetrics();
+  }
+
+  private final @NotNull MetricsApi.IMetricsInterface aggregator;
+
+  public MetricsApi(final @NotNull MetricsApi.IMetricsInterface aggregator) {
     this.aggregator = aggregator;
   }
 
@@ -31,7 +40,6 @@ public final class MetricsApi {
    * @param value The value to be added
    */
   public void increment(final @NotNull String key, final double value) {
-
     increment(key, value, null, null, null, 1);
   }
 
@@ -105,7 +113,11 @@ public final class MetricsApi {
       final int stackLevel) {
 
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
-    aggregator.increment(key, value, unit, tags, timestamp, stackLevel);
+    final @NotNull Map<String, String> enrichedTags =
+        MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    aggregator
+        .getMetricsAggregator()
+        .increment(key, value, unit, enrichedTags, timestamp, stackLevel);
   }
 
   /**
@@ -115,7 +127,6 @@ public final class MetricsApi {
    * @param value The value to be added
    */
   public void gauge(final @NotNull String key, final double value) {
-
     gauge(key, value, null, null, null, 1);
   }
 
@@ -128,7 +139,6 @@ public final class MetricsApi {
    */
   public void gauge(
       final @NotNull String key, final double value, final @Nullable MeasurementUnit unit) {
-
     gauge(key, value, unit, null, null, 1);
   }
 
@@ -189,7 +199,9 @@ public final class MetricsApi {
       final int stackLevel) {
 
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
-    aggregator.gauge(key, value, unit, tags, timestamp, stackLevel);
+    final @NotNull Map<String, String> enrichedTags =
+        MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    aggregator.getMetricsAggregator().gauge(key, value, unit, enrichedTags, timestamp, stackLevel);
   }
 
   /**
@@ -273,7 +285,11 @@ public final class MetricsApi {
       final int stackLevel) {
 
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
-    aggregator.distribution(key, value, unit, tags, timestamp, stackLevel);
+    final @NotNull Map<String, String> enrichedTags =
+        MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    aggregator
+        .getMetricsAggregator()
+        .distribution(key, value, unit, enrichedTags, timestamp, stackLevel);
   }
 
   /**
@@ -357,7 +373,9 @@ public final class MetricsApi {
       final int stackLevel) {
 
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
-    aggregator.set(key, value, unit, tags, timestamp, stackLevel);
+    final @NotNull Map<String, String> enrichedTags =
+        MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    aggregator.getMetricsAggregator().set(key, value, unit, enrichedTags, timestamp, stackLevel);
   }
 
   /**
@@ -442,7 +460,9 @@ public final class MetricsApi {
       final int stackLevel) {
 
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
-    aggregator.set(key, value, unit, tags, timestamp, stackLevel);
+    final @NotNull Map<String, String> enrichedTags =
+        MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    aggregator.getMetricsAggregator().set(key, value, unit, enrichedTags, timestamp, stackLevel);
   }
 
   /**
@@ -451,8 +471,7 @@ public final class MetricsApi {
    * @param key A unique key identifying the metric
    * @param callback The code block to measure
    */
-  public void timing(
-      final @NotNull String key, final @NotNull IMetricsAggregator.TimingCallback callback) {
+  public void timing(final @NotNull String key, final @NotNull Runnable callback) {
 
     timing(key, callback, null, null, 1);
   }
@@ -466,7 +485,7 @@ public final class MetricsApi {
    */
   public void timing(
       final @NotNull String key,
-      final @NotNull IMetricsAggregator.TimingCallback callback,
+      final @NotNull Runnable callback,
       final @NotNull MeasurementUnit.Duration unit) {
 
     timing(key, callback, unit, null, 1);
@@ -482,7 +501,7 @@ public final class MetricsApi {
    */
   public void timing(
       final @NotNull String key,
-      final @NotNull IMetricsAggregator.TimingCallback callback,
+      final @NotNull Runnable callback,
       final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags) {
 
@@ -500,13 +519,15 @@ public final class MetricsApi {
    */
   public void timing(
       final @NotNull String key,
-      final @NotNull IMetricsAggregator.TimingCallback callback,
+      final @NotNull Runnable callback,
       final @Nullable MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
       final int stackLevel) {
 
     final @NotNull MeasurementUnit.Duration durationUnit =
         unit != null ? unit : MeasurementUnit.Duration.SECOND;
-    aggregator.timing(key, callback, durationUnit, tags, stackLevel);
+    final @NotNull Map<String, String> enrichedTags =
+        MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    aggregator.getMetricsAggregator().timing(key, callback, durationUnit, enrichedTags, stackLevel);
   }
 }

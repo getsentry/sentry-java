@@ -199,12 +199,15 @@ public final class SentryEnvelopeItem {
             () -> {
               // avoid method refs on Android due to some issues with older AGP setups
               //noinspection Convert2MethodRef
-              return metrics.getStatsd();
+              return metrics.encode();
             });
 
     final @NotNull SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            SentryItemType.Statsd, () -> cachedItem.getBytes().length, null, null);
+            SentryItemType.Statsd,
+            () -> cachedItem.getBytes().length,
+            "application/octet-stream",
+            null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

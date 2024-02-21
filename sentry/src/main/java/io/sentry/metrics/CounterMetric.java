@@ -18,7 +18,7 @@ public final class CounterMetric extends Metric {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final @NotNull Long timestamp) {
-    super(key, unit, tags, timestamp);
+    super(MetricType.Counter, key, unit, tags, timestamp);
     this.value = value;
   }
 
@@ -29,11 +29,6 @@ public final class CounterMetric extends Metric {
   @Override
   public void add(final double value) {
     this.value += value;
-  }
-
-  @Override
-  public MetricType getType() {
-    return MetricType.Counter;
   }
 
   @Override
