@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
+
 ## 7.4.0
 
 ### Features
@@ -14,7 +20,6 @@
 
 ### Fixes
 
-- Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
 - Don't wait on main thread when SDK restarts ([#3200](https://github.com/getsentry/sentry-java/pull/3200))
 - Fix Jetpack Compose widgets are not being correctly identified for user interaction tracing ([#3209](https://github.com/getsentry/sentry-java/pull/3209))
 - Fix issue title on Android when a wrapping `RuntimeException` is thrown by the system ([#3212](https://github.com/getsentry/sentry-java/pull/3212))
