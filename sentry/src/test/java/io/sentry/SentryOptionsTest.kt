@@ -586,4 +586,21 @@ class SentryOptionsTest {
         options.profilingTracesHz = 13
         assertEquals(13, options.profilingTracesHz)
     }
+
+    @Test
+    fun `when options are initialized, spotlight is disabled by default and no url is set`() {
+        val options = SentryOptions()
+        assertFalse(options.isEnableSpotlight)
+        assertNull(options.spotlightConnectionUrl)
+    }
+
+    @Test
+    fun `when spotlight is configured, getters reflect that`() {
+        val options = SentryOptions().apply {
+            isEnableSpotlight = true
+            spotlightConnectionUrl = "http://localhost:8080"
+        }
+        assertTrue(options.isEnableSpotlight)
+        assertEquals("http://localhost:8080", options.spotlightConnectionUrl)
+    }
 }

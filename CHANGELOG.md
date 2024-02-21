@@ -6,12 +6,19 @@
 
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
 - Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
-- Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
+- (perf-v2): Calculate frame delay on a span level ([#3197](https://github.com/getsentry/sentry-java/pull/3197))
+- Resolve spring properties in @SentryCheckIn annotation ([#3194](https://github.com/getsentry/sentry-java/pull/3194))
+- Experimental: Add Spotlight integration ([#3166](https://github.com/getsentry/sentry-java/pull/3166))
+    - For more details about Spotlight head over to https://spotlightjs.com/
+    - Set `options.isEnableSpotlight = true` to enable Spotlight
+- Experimental: Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
 
 ### Fixes
 
 - Don't wait on main thread when SDK restarts ([#3200](https://github.com/getsentry/sentry-java/pull/3200))
 - Fix Jetpack Compose widgets are not being correctly identified for user interaction tracing ([#3209](https://github.com/getsentry/sentry-java/pull/3209))
+- Fix issue title on Android when a wrapping `RuntimeException` is thrown by the system ([#3212](https://github.com/getsentry/sentry-java/pull/3212))
+  - This will change grouping of the issues that were previously titled `RuntimeInit$MethodAndArgsCaller` to have them split up properly by the original root cause exception
 
 ## 7.3.0
 

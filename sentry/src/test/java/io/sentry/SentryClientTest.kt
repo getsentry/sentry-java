@@ -2499,6 +2499,32 @@ class SentryClientTest {
         )
     }
 
+    @Test
+    fun `beforeEnvelopeCallback is executed`() {
+        var beforeEnvelopeCalled = false
+        val sut = fixture.getSut { options ->
+            options.beforeEnvelopeCallback =
+                SentryOptions.BeforeEnvelopeCallback { _, _ -> beforeEnvelopeCalled = true }
+        }
+
+        sut.captureEvent(SentryEvent(), Hint())
+
+        assertTrue(beforeEnvelopeCalled)
+    }
+
+    @Test
+    fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
+        val sut = fixture.getSut { options ->
+            options.beforeEnvelopeCallback =
+                SentryOptions.BeforeEnvelopeCallback { _, _ ->
+                    RuntimeException("hook failed")
+                }
+        }
+
+        sut.captureEvent(SentryEvent(), Hint())
+        verify(fixture.transport).send(anyOrNull(), anyOrNull())
+    }
+
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {
         val scope = createScope(fixture.sentryOptions)
         scope.startSession()
