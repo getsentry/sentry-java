@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
+- Experimental: Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
 
 ## 7.4.0
 
@@ -17,7 +18,6 @@
 - Experimental: Add Spotlight integration ([#3166](https://github.com/getsentry/sentry-java/pull/3166))
     - For more details about Spotlight head over to https://spotlightjs.com/
     - Set `options.isEnableSpotlight = true` to enable Spotlight
-- Experimental: Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
 
 ### Fixes
 
