@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -428,7 +429,9 @@ public final class Sentry {
                   // Method trace files are normally deleted at the end of traces, but if that fails
                   // for some reason we try to clear any old files here.
                   for (File f : oldTracesDirContent) {
-                    if (f.lastModified() < classCreationTimestamp) {
+                    // We delete files 5 minutes older than class creation to account for app
+                    // start profiles, as an app start profile could have a lower creation date.
+                    if (f.lastModified() < classCreationTimestamp - TimeUnit.MINUTES.toMillis(5)) {
                       FileUtils.deleteRecursively(f);
                     }
                   }

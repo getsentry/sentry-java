@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
+
+## 7.4.0
+
 ### Features
 
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
