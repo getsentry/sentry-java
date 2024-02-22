@@ -2244,6 +2244,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
+	public fun isEnableScopePersistence ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableSpotlight ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
@@ -2284,6 +2285,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
+	public fun setEnableScopePersistence (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableSpotlight (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V

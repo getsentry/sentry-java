@@ -223,7 +223,9 @@ final class AndroidOptionsInitializer {
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
 
     if (options.getCacheDirPath() != null) {
-      options.addScopeObserver(new PersistingScopeObserver(options));
+      if (options.isEnableScopePersistence()) {
+        options.addScopeObserver(new PersistingScopeObserver(options));
+      }
       options.addOptionsObserver(new PersistingOptionsObserver(options));
     }
   }

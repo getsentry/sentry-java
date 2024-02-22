@@ -448,6 +448,9 @@ public class SentryOptions {
 
   private @Nullable String spotlightConnectionUrl;
 
+  /** Whether to enable scope persistence so the scope values are preserved if the process dies */
+  private boolean enableScopePersistence = true;
+
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
@@ -2311,6 +2314,14 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setEnableSpotlight(final boolean enableSpotlight) {
     this.enableSpotlight = enableSpotlight;
+  }
+
+  public boolean isEnableScopePersistence() {
+    return enableScopePersistence;
+  }
+
+  public void setEnableScopePersistence(boolean enableScopePersistence) {
+    this.enableScopePersistence = enableScopePersistence;
   }
 
   /** The BeforeSend callback */
