@@ -27,11 +27,12 @@ class MetricsAggregatorTest {
         var currentTimeMillis: Long = 0
         var executorService = DeferredExecutorService()
 
-        fun getSut(): MetricsAggregator {
+        fun getSut(maxWeight: Int = MetricsHelper.MAX_TOTAL_WEIGHT): MetricsAggregator {
             return MetricsAggregator(
                 client,
                 logger,
                 dateProvider,
+                maxWeight,
                 executorService
             )
         }
@@ -307,5 +308,39 @@ class MetricsAggregatorTest {
 
         // and flushing is scheduled again
         assertTrue(fixture.executorService.hasScheduledRunnables())
+    }
+
+    @Test
+    fun `weight is considered for force flushing`() {
+        // weight is determined by number of buckets + weight of metrics
+        val aggregator = fixture.getSut(5)
+
+        // when 3 values are emitted
+        for (i in 0 until 3) {
+            aggregator.distribution(
+                "name",
+                i.toDouble(),
+                null,
+                null,
+                fixture.currentTimeMillis,
+                1
+            )
+        }
+        // no metrics are captured by the client
+        aggregator.flush(false)
+        verify(fixture.client, never()).captureMetrics(any())
+
+        // once we have 4 values and one bucket = weight of 5
+        aggregator.distribution(
+            "name",
+            10.0,
+            null,
+            null,
+            fixture.currentTimeMillis,
+            1
+        )
+        // then flush without force still captures all metrics
+        aggregator.flush(false)
+        verify(fixture.client).captureMetrics(any())
     }
 }
