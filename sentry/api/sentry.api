@@ -3395,15 +3395,15 @@ public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {
 	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
 	public fun getValue ()D
-	public fun getValues ()Ljava/lang/Iterable;
 	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
 }
 
 public final class io/sentry/metrics/DistributionMetric : io/sentry/metrics/Metric {
 	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
-	public fun getValues ()Ljava/lang/Iterable;
 	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
 }
 
 public final class io/sentry/metrics/EncodedMetrics {
@@ -3414,8 +3414,8 @@ public final class io/sentry/metrics/EncodedMetrics {
 public final class io/sentry/metrics/GaugeMetric : io/sentry/metrics/Metric {
 	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
-	public fun getValues ()Ljava/lang/Iterable;
 	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
 }
 
 public abstract interface class io/sentry/metrics/IMetricsClient {
@@ -3430,8 +3430,8 @@ public abstract class io/sentry/metrics/Metric {
 	public fun getTimeStampMs ()Ljava/lang/Long;
 	public fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getUnit ()Lio/sentry/MeasurementUnit;
-	public abstract fun getValues ()Ljava/lang/Iterable;
 	public abstract fun getWeight ()I
+	public abstract fun serialize ()Ljava/lang/Iterable;
 }
 
 public final class io/sentry/metrics/MetricResourceIdentifier {
@@ -3543,8 +3543,8 @@ public final class io/sentry/metrics/SentryMetric$JsonKeys {
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
 	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
 	public fun add (D)V
-	public fun getValues ()Ljava/lang/Iterable;
 	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
