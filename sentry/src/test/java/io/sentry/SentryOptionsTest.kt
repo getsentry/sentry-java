@@ -603,4 +603,9 @@ class SentryOptionsTest {
         assertTrue(options.isEnableSpotlight)
         assertEquals("http://localhost:8080", options.spotlightConnectionUrl)
     }
+
+    @Test
+    fun `when options are initialized, enableScopePersistence is set to true by default`() {
+        assertEquals(true, SentryOptions().isEnableScopePersistence)
+    }
 }
