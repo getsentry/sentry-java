@@ -115,6 +115,9 @@ public final class SentryTransaction extends SentryBaseEvent
     this.timestamp = timestamp;
     this.spans.addAll(spans);
     this.measurements.putAll(measurements);
+    for (SentrySpan span : spans) {
+      this.measurements.putAll(span.getMeasurements());
+    }
     this.transactionInfo = transactionInfo;
   }
 
