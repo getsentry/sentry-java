@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add support for measurements at span level ([#3219](https://github.com/getsentry/sentry-java/pull/3219))
+
 ### Fixes
 
 - Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
