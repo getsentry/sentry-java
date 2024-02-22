@@ -184,7 +184,7 @@ public final class MetricsHelper {
       final String sanitizeUnitName = sanitizeUnit(unitName);
       writer.append(sanitizeUnitName);
 
-      for (final @NotNull Object value : metric.getValues()) {
+      for (final @NotNull Object value : metric.serialize()) {
         writer.append(":");
         writer.append(value);
       }

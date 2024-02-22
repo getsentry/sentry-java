@@ -22,7 +22,7 @@ class GaugeMetricTest {
                 1.0,
                 1
             ),
-            metric.values.toList()
+            metric.serialize().toList()
         )
 
         metric.add(5.0)
@@ -38,7 +38,7 @@ class GaugeMetricTest {
                 16.0, // sum
                 6 // count
             ),
-            metric.values.toList()
+            metric.serialize().toList()
         )
     }
 

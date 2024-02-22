@@ -14,18 +14,18 @@ class SetMetricTest {
             null,
             System.currentTimeMillis()
         )
-        assertTrue(metric.values.toList().isEmpty())
+        assertTrue(metric.serialize().toList().isEmpty())
 
         metric.add(1.0)
         metric.add(2.0)
         metric.add(3.0)
 
-        assertEquals(3, metric.values.toList().size)
+        assertEquals(3, metric.serialize().toList().size)
 
         // when an already existing item is added
         // size stays the same
         metric.add(3.0)
-        assertEquals(3, metric.values.toList().size)
+        assertEquals(3, metric.serialize().toList().size)
     }
 
     @Test

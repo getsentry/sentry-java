@@ -71,12 +71,12 @@ class CounterMetricTest {
             System.currentTimeMillis()
         )
 
-        val values0 = metric.values.toList()
+        val values0 = metric.serialize().toList()
         assertEquals(1, values0.size)
         assertEquals(1.0, values0[0] as Double)
 
         metric.add(1.0)
-        val values1 = metric.values.toList()
+        val values1 = metric.serialize().toList()
         assertEquals(1, values1.size)
         assertEquals(2.0, values1[0] as Double)
     }

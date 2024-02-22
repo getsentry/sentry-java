@@ -34,7 +34,7 @@ public final class DistributionMetric extends Metric {
   }
 
   @Override
-  public @NotNull Iterable<?> getValues() {
+  public @NotNull Iterable<?> serialize() {
     return values;
   }
 }

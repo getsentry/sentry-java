@@ -14,11 +14,11 @@ class DistributionMetricTest {
             null,
             System.currentTimeMillis()
         )
-        assertEquals(listOf(1.0), metric.values.toList())
+        assertEquals(listOf(1.0), metric.serialize().toList())
 
         metric.add(1.0)
         metric.add(2.0)
-        assertEquals(listOf(1.0, 1.0, 2.0), metric.values.toList())
+        assertEquals(listOf(1.0, 1.0, 2.0), metric.serialize().toList())
     }
 
     @Test
@@ -59,7 +59,7 @@ class DistributionMetricTest {
         )
         metric.add(2.0)
 
-        val values = metric.values.toList()
+        val values = metric.serialize().toList()
         assertEquals(2, values.size)
         assertEquals(listOf(1.0, 2.0), values)
     }

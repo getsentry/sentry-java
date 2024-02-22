@@ -47,7 +47,7 @@ public final class GaugeMetric extends Metric {
   }
 
   @Override
-  public @NotNull Iterable<?> getValues() {
+  public @NotNull Iterable<?> serialize() {
     return Arrays.asList(last, min, max, sum, count);
   }
 }

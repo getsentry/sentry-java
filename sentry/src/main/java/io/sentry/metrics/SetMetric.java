@@ -38,7 +38,7 @@ public final class SetMetric extends Metric {
   }
 
   @Override
-  public @NotNull Iterable<?> getValues() {
+  public @NotNull Iterable<?> serialize() {
     return values;
   }
 }

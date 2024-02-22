@@ -42,7 +42,7 @@ public final class SentryMetric implements JsonSerializable {
     this.unit = metric.getUnit();
     this.tags = metric.getTags();
     this.timestampMs = metric.getTimeStampMs();
-    this.values = metric.getValues();
+    this.values = metric.serialize();
   }
 
   @Override

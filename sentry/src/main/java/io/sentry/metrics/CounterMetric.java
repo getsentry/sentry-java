@@ -37,7 +37,7 @@ public final class CounterMetric extends Metric {
   }
 
   @Override
-  public @NotNull Iterable<?> getValues() {
+  public @NotNull Iterable<?> serialize() {
     return Collections.singletonList(value);
   }
 }

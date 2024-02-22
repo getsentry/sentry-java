@@ -68,5 +68,5 @@ public abstract class Metric {
     return timestampMs;
   }
 
-  public abstract @NotNull Iterable<?> getValues();
+  public abstract @NotNull Iterable<?> serialize();
 }
