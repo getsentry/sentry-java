@@ -6,6 +6,7 @@
 
 - Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
 - Experimental: Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
+- Force flush metrics when weight is too high ([#3217](https://github.com/getsentry/sentry-java/pull/3217))
 
 ## 7.4.0
 
