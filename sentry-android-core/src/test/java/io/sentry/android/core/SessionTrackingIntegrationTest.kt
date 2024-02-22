@@ -15,6 +15,7 @@ import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
 import io.sentry.UserFeedback
@@ -138,6 +139,14 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun flush(timeoutMillis: Long) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureReplayEvent(
+            event: SentryReplayEvent,
+            scope: IScope?,
+            hint: Hint?
+        ): SentryId {
             TODO("Not yet implemented")
         }
 
