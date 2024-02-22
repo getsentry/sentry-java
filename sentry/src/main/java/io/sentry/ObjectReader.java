@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface ObjectReader extends Closeable {
-  static @Nullable Date dateOrNull(@Nullable String dateString, final @NotNull ILogger logger) {
+  static @Nullable Date dateOrNull(
+      final @Nullable String dateString, final @NotNull ILogger logger) {
     if (dateString == null) {
       return null;
     }

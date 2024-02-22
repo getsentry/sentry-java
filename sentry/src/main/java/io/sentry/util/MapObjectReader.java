@@ -28,7 +28,8 @@ public final class MapObjectReader implements ObjectReader {
   }
 
   @Override
-  public void nextUnknown(final @NotNull ILogger logger, Map<String, Object> unknown, String name) {
+  public void nextUnknown(
+      final @NotNull ILogger logger, final Map<String, Object> unknown, final String name) {
     try {
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
@@ -63,14 +64,14 @@ public final class MapObjectReader implements ObjectReader {
   @Nullable
   @Override
   public Date nextDateOrNull(final @NotNull ILogger logger) throws IOException {
-    String dateString = nextStringOrNull();
+    final String dateString = nextStringOrNull();
     return ObjectReader.dateOrNull(dateString, logger);
   }
 
   @Nullable
   @Override
   public TimeZone nextTimeZoneOrNull(final @NotNull ILogger logger) throws IOException {
-    String timeZoneId = nextStringOrNull();
+    final String timeZoneId = nextStringOrNull();
     return timeZoneId != null ? TimeZone.getTimeZone(timeZoneId) : null;
   }
 
@@ -87,7 +88,7 @@ public final class MapObjectReader implements ObjectReader {
       return JsonToken.END_DOCUMENT;
     }
 
-    Map.Entry<String, Object> currentEntry = stack.peekLast();
+    final Map.Entry<String, Object> currentEntry = stack.peekLast();
     if (currentEntry == null) {
       return JsonToken.END_DOCUMENT;
     }
@@ -96,7 +97,7 @@ public final class MapObjectReader implements ObjectReader {
       return JsonToken.NAME;
     }
 
-    Object value = currentEntry.getValue();
+    final Object value = currentEntry.getValue();
 
     if (value instanceof Map) {
       return JsonToken.BEGIN_OBJECT;
@@ -118,7 +119,7 @@ public final class MapObjectReader implements ObjectReader {
   @NotNull
   @Override
   public String nextName() throws IOException {
-    Map.Entry<String, Object> currentEntry = stack.peekLast();
+    final Map.Entry<String, Object> currentEntry = stack.peekLast();
     if (currentEntry != null && currentEntry.getKey() != null) {
       return currentEntry.getKey();
     }
@@ -127,11 +128,11 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public void beginObject() throws IOException {
-    Map.Entry<String, Object> currentEntry = stack.removeLast();
+    final Map.Entry<String, Object> currentEntry = stack.removeLast();
     if (currentEntry == null) {
       throw new IOException("No more entries");
     }
-    Object value = currentEntry.getValue();
+    final Object value = currentEntry.getValue();
     if (value instanceof Map) {
       // insert a dummy entry to indicate end of an object
       stack.addLast(new AbstractMap.SimpleEntry<>(null, JsonToken.END_OBJECT));
@@ -153,17 +154,17 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public void beginArray() throws IOException {
-    Map.Entry<String, Object> currentEntry = stack.removeLast();
+    final Map.Entry<String, Object> currentEntry = stack.removeLast();
     if (currentEntry == null) {
       throw new IOException("No more entries");
     }
-    Object value = currentEntry.getValue();
+    final Object value = currentEntry.getValue();
     if (value instanceof List) {
       // insert a dummy entry to indicate end of an object
       stack.addLast(new AbstractMap.SimpleEntry<>(null, JsonToken.END_ARRAY));
       // extract map entries onto the stack
       for (int i = ((List<?>) value).size() - 1; i >= 0; i--) {
-        Object entry = ((List<?>) value).get(i);
+        final Object entry = ((List<?>) value).get(i);
         stack.addLast(new AbstractMap.SimpleEntry<>(null, entry));
       }
     } else {
@@ -185,7 +186,7 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public int nextInt() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).intValue();
     } else {
@@ -196,7 +197,7 @@ public final class MapObjectReader implements ObjectReader {
   @Nullable
   @Override
   public Integer nextIntegerOrNull() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).intValue();
     }
@@ -205,7 +206,7 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public long nextLong() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).longValue();
     } else {
@@ -216,7 +217,7 @@ public final class MapObjectReader implements ObjectReader {
   @Nullable
   @Override
   public Long nextLongOrNull() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).longValue();
     }
@@ -225,7 +226,7 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public String nextString() throws IOException {
-    String value = nextValueOrNull();
+    final String value = nextValueOrNull();
     if (value != null) {
       return value;
     } else {
@@ -241,7 +242,7 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public boolean nextBoolean() throws IOException {
-    Boolean value = nextValueOrNull();
+    final Boolean value = nextValueOrNull();
     if (value != null) {
       return value;
     } else {
@@ -257,7 +258,7 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public double nextDouble() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).doubleValue();
     } else {
@@ -268,7 +269,7 @@ public final class MapObjectReader implements ObjectReader {
   @Nullable
   @Override
   public Double nextDoubleOrNull() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).doubleValue();
     }
@@ -278,7 +279,7 @@ public final class MapObjectReader implements ObjectReader {
   @Nullable
   @Override
   public Float nextFloatOrNull() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).floatValue();
     }
@@ -287,7 +288,7 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public float nextFloat() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value instanceof Number) {
       return ((Number) value).floatValue();
     } else {
@@ -297,14 +298,14 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public void nextNull() throws IOException {
-    Object value = nextValueOrNull();
+    final Object value = nextValueOrNull();
     if (value != null) {
       throw new IOException("Expected null but was " + peek());
     }
   }
 
   @Override
-  public void setLenient(boolean lenient) {}
+  public void setLenient(final boolean lenient) {}
 
   @Override
   public void skipValue() throws IOException {}
@@ -324,17 +325,17 @@ public final class MapObjectReader implements ObjectReader {
   private <T> T nextValueOrNull(
       final @Nullable ILogger logger, final @Nullable JsonDeserializer<T> deserializer)
       throws Exception {
-    Map.Entry<String, Object> currentEntry = stack.peekLast();
+    final Map.Entry<String, Object> currentEntry = stack.peekLast();
     if (currentEntry == null) {
       return null;
     }
-    T value = (T) currentEntry.getValue();
+    final T value = (T) currentEntry.getValue();
     if (deserializer != null && logger != null) {
       return deserializer.deserialize(this, logger);
     } else if (value instanceof List) {
       List<Object> list = new ArrayList<>((List<Object>) value);
       if (!list.isEmpty()) {
-        T next = (T) list.remove(0);
+        final T next = (T) list.remove(0);
         if (next instanceof Map) {
           stack.addLast(new AbstractMap.SimpleEntry<>(null, next));
         }
