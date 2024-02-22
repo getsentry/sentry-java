@@ -325,17 +325,17 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(final @NotNull String key, final @NotNull Object value) {
     data.put(key, value);
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(final @NotNull String key) {
     return data.get(key);
   }
 
   @Override
-  public void setMeasurement(@NotNull String name, @NotNull Number value) {
+  public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
     if (isFinished()) {
       return;
     }
@@ -349,7 +349,9 @@ public final class Span implements ISpan {
 
   @Override
   public void setMeasurement(
-      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
+      final @NotNull String name,
+      final @NotNull Number value,
+      final @NotNull MeasurementUnit unit) {
     if (isFinished()) {
       return;
     }
