@@ -8,6 +8,7 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Deque;
 import java.util.List;
@@ -161,7 +162,8 @@ public final class MapObjectReader implements ObjectReader {
       // insert a dummy entry to indicate end of an object
       stack.addLast(new AbstractMap.SimpleEntry<>(null, JsonToken.END_ARRAY));
       // extract map entries onto the stack
-      for (Object entry : (List<?>) value) {
+      for (int i = ((List<?>) value).size() - 1; i >= 0; i--) {
+        Object entry = ((List<?>) value).get(i);
         stack.addLast(new AbstractMap.SimpleEntry<>(null, entry));
       }
     } else {
@@ -295,7 +297,10 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public void nextNull() throws IOException {
-    nextValueOrNull();
+    Object value = nextValueOrNull();
+    if (value != null) {
+      throw new IOException("Expected null but was " + peek());
+    }
   }
 
   @Override
@@ -327,7 +332,7 @@ public final class MapObjectReader implements ObjectReader {
     if (deserializer != null && logger != null) {
       return deserializer.deserialize(this, logger);
     } else if (value instanceof List) {
-      List<Object> list = (List<Object>) value;
+      List<Object> list = new ArrayList<>((List<Object>) value);
       if (!list.isEmpty()) {
         T next = (T) list.remove(0);
         if (next instanceof Map) {
