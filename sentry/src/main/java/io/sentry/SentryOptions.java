@@ -2320,7 +2320,7 @@ public class SentryOptions {
     return enableScopePersistence;
   }
 
-  public void setEnableScopePersistence(boolean enableScopePersistence) {
+  public void setEnableScopePersistence(final boolean enableScopePersistence) {
     this.enableScopePersistence = enableScopePersistence;
   }
 
