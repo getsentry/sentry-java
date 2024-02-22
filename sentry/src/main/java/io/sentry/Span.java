@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public final class Span implements ISpan {
   private @Nullable SpanFinishedCallback spanFinishedCallback;
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
 
   Span(
       final @NotNull SentryId traceId,
@@ -334,13 +336,34 @@ public final class Span implements ISpan {
 
   @Override
   public void setMeasurement(@NotNull String name, @NotNull Number value) {
-    this.transaction.setMeasurement(name, value);
+    if (isFinished()) {
+      return;
+    }
+    this.measurements.put(name, new MeasurementValue(value, null));
+    // We set the measurement in the transaction, too, but we have to check if this is the root span
+    // of the transaction, to avoid an infinite recursion
+    if (transaction.getRoot() != this) {
+      transaction.setMeasurement(name, value);
+    }
   }
 
   @Override
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
-    this.transaction.setMeasurement(name, value, unit);
+    if (isFinished()) {
+      return;
+    }
+    this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
+    // We set the measurement in the transaction, too, but we have to check if this is the root span
+    // of the transaction, to avoid an infinite recursion
+    if (transaction.getRoot() != this) {
+      transaction.setMeasurement(name, value, unit);
+    }
+  }
+
+  @NotNull
+  public Map<String, MeasurementValue> getMeasurements() {
+    return measurements;
   }
 
   @Override

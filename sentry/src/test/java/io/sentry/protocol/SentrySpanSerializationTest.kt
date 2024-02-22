@@ -29,6 +29,7 @@ class SentrySpanSerializationTest {
             SpanStatus.ALREADY_EXISTS,
             "auto.test.unit.span",
             mapOf("f1333f3a-916a-47b7-8dd6-d6d15fa96e03" to "d4a07684-5b3e-4d08-b605-f9364c398124"),
+            mapOf("test_measurement" to MeasurementValue(1, "test")),
             mapOf("518276a7-88d7-408f-ab36-af342f2d7715" to "4a1c2d6c-3f49-41cc-b2ca-d1b36f7ea5a6")
         )
     }

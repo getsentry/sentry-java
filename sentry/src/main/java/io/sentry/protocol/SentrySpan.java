@@ -40,6 +40,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   private final @NotNull Map<String, String> tags;
   private final @Nullable Map<String, Object> data;
 
+  private @NotNull final Map<String, @NotNull MeasurementValue> measurements;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -59,6 +61,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.origin = span.getSpanContext().getOrigin();
     final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
+    final Map<String, MeasurementValue> measurementsCopy =
+        CollectionUtils.newConcurrentHashMap(span.getMeasurements());
+    this.measurements = measurementsCopy != null ? measurementsCopy : new HashMap<>();
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
     this.timestamp =
         span.getFinishDate() == null
@@ -82,6 +87,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       @Nullable SpanStatus status,
       @Nullable String origin,
       @NotNull Map<String, String> tags,
+      @NotNull Map<String, MeasurementValue> measurements,
       @Nullable Map<String, Object> data) {
     this.startTimestamp = startTimestamp;
     this.timestamp = timestamp;
@@ -93,6 +99,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.status = status;
     this.tags = tags;
     this.data = data;
+    this.measurements = measurements;
     this.origin = origin;
   }
 
@@ -144,6 +151,10 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     return origin;
   }
 
+  public @NotNull Map<String, MeasurementValue> getMeasurements() {
+    return measurements;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {
@@ -158,6 +169,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     public static final String ORIGIN = "origin";
     public static final String TAGS = "tags";
     public static final String DATA = "data";
+    public static final String MEASUREMENTS = "measurements";
   }
 
   @Override
@@ -188,6 +200,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (!measurements.isEmpty()) {
+      writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -233,6 +248,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       String origin = null;
       Map<String, String> tags = null;
       Map<String, Object> data = null;
+      Map<String, MeasurementValue> measurements = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -281,6 +297,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
           case JsonKeys.DATA:
             data = (Map<String, Object>) reader.nextObjectOrNull();
             break;
+          case JsonKeys.MEASUREMENTS:
+            measurements = reader.nextMapOrNull(logger, new MeasurementValue.Deserializer());
+            break;
           default:
             if (unknown == null) {
               unknown = new ConcurrentHashMap<>();
@@ -304,6 +323,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       if (tags == null) {
         tags = new HashMap<>();
       }
+      if (measurements == null) {
+        measurements = new HashMap<>();
+      }
       SentrySpan sentrySpan =
           new SentrySpan(
               startTimestamp,
@@ -316,6 +338,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
               status,
               origin,
               tags,
+              measurements,
               data);
       sentrySpan.setUnknown(unknown);
       reader.endObject();

@@ -465,7 +465,7 @@ class SentryTracerTest {
         assertEquals("desc", transaction.description)
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
-        assertEquals(1.0f, transaction.measurements["myMetric"]!!.value)
+        assertEquals(1.0f, transaction.root.measurements["myMetric"]!!.value)
         assertEquals("name", transaction.name)
         assertEquals(ex, transaction.throwable)
     }

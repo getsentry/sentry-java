@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.Contexts;
-import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
@@ -13,7 +12,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,7 +46,6 @@ public final class SentryTracer implements ITransaction {
 
   private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
-  private final @NotNull Map<String, MeasurementValue> measurements;
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
@@ -72,7 +69,6 @@ public final class SentryTracer implements ITransaction {
       final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
-    this.measurements = new ConcurrentHashMap<>();
 
     this.root =
         new Span(context, this, hub, transactionOptions.getStartTimestamp(), transactionOptions);
@@ -263,7 +259,7 @@ public final class SentryTracer implements ITransaction {
         return;
       }
 
-      transaction.getMeasurements().putAll(measurements);
+      transaction.getMeasurements().putAll(root.getMeasurements());
       hub.captureTransaction(transaction, traceContext(), hint, profilingTraceData);
     }
   }
@@ -712,11 +708,7 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
-    if (root.isFinished()) {
-      return;
-    }
-
-    this.measurements.put(name, new MeasurementValue(value, null));
+    root.setMeasurement(name, value);
   }
 
   @Override
@@ -724,11 +716,7 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String name,
       final @NotNull Number value,
       final @NotNull MeasurementUnit unit) {
-    if (root.isFinished()) {
-      return;
-    }
-
-    this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
+    root.setMeasurement(name, value, unit);
   }
 
   public @Nullable Map<String, Object> getData() {
@@ -832,12 +820,6 @@ public final class SentryTracer implements ITransaction {
   @NotNull
   AtomicBoolean isDeadlineTimerRunning() {
     return isDeadlineTimerRunning;
-  }
-
-  @TestOnly
-  @NotNull
-  Map<String, MeasurementValue> getMeasurements() {
-    return measurements;
   }
 
   @ApiStatus.Internal
