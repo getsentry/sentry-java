@@ -1023,7 +1023,7 @@ public final class io/sentry/MemoryCollectionData {
 
 public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, java/io/Closeable, java/lang/Runnable {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/metrics/IMetricsClient;)V
-	public fun <init> (Lio/sentry/metrics/IMetricsClient;Lio/sentry/ILogger;Lio/sentry/SentryDateProvider;ILio/sentry/ISentryExecutorService;)V
+	public fun <init> (Lio/sentry/metrics/IMetricsClient;Lio/sentry/ILogger;Lio/sentry/SentryDateProvider;Lio/sentry/ISentryExecutorService;)V
 	public fun close ()V
 	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
 	public fun flush (Z)V
@@ -3494,7 +3494,6 @@ public abstract interface class io/sentry/metrics/MetricsApi$IMetricsInterface {
 
 public final class io/sentry/metrics/MetricsHelper {
 	public static final field FLUSHER_SLEEP_TIME_MS I
-	public static final field MAX_TOTAL_WEIGHT I
 	public fun <init> ()V
 	public static fun convertNanosTo (Lio/sentry/MeasurementUnit$Duration;J)D
 	public static fun encodeMetrics (JLjava/util/Collection;Ljava/lang/StringBuilder;)V
