@@ -18,6 +18,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.CRC32;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   // the metrics,
   // each of which has a key that uniquely identifies it within the time period
   private final NavigableMap<Long, Map<String, Metric>> buckets = new ConcurrentSkipListMap<>();
+  private final AtomicInteger totalBucketsWeight = new AtomicInteger();
+
+  private final int maxWeight;
 
   public MetricsAggregator(
       final @NotNull SentryOptions options, final @NotNull IMetricsClient client) {
@@ -51,6 +55,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
         client,
         options.getLogger(),
         options.getDateProvider(),
+        MetricsHelper.MAX_TOTAL_WEIGHT,
         NoOpSentryExecutorService.getInstance());
   }
 
@@ -59,10 +64,12 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       final @NotNull IMetricsClient client,
       final @NotNull ILogger logger,
       final @NotNull SentryDateProvider dateProvider,
+      final int maxWeight,
       final @NotNull ISentryExecutorService executorService) {
     this.client = client;
     this.logger = logger;
     this.dateProvider = dateProvider;
+    this.maxWeight = maxWeight;
     this.executorService = executorService;
   }
 
@@ -153,35 +160,11 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       final double value,
       @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      @Nullable Long timestampMs,
+      @NotNull Long timestampMs,
       final int stackLevel) {
 
     if (isClosed) {
       return;
-    }
-
-    if (timestampMs == null) {
-      timestampMs = nowMillis();
-    }
-
-    final @NotNull Metric metric;
-    switch (type) {
-      case Counter:
-        metric = new CounterMetric(key, value, unit, tags, timestampMs);
-        break;
-      case Gauge:
-        metric = new GaugeMetric(key, value, unit, tags, timestampMs);
-        break;
-      case Distribution:
-        metric = new DistributionMetric(key, value, unit, tags, timestampMs);
-        break;
-      case Set:
-        metric = new SetMetric(key, unit, tags, timestampMs);
-        //noinspection unchecked
-        metric.add((int) value);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown MetricType: " + type.name());
     }
 
     final long timeBucketKey = MetricsHelper.getTimeBucketKey(timestampMs);
@@ -189,13 +172,37 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     final @NotNull String metricKey = MetricsHelper.getMetricBucketKey(type, key, unit, tags);
 
-    // TODO check if we can synchronize only the metric itself
+    // TODO ideally we can synchronize only the metric itself
     synchronized (timeBucket) {
       @Nullable Metric existingMetric = timeBucket.get(metricKey);
       if (existingMetric != null) {
+        final int oldWeight = existingMetric.getWeight();
         existingMetric.add(value);
+        final int newWeight = existingMetric.getWeight();
+        totalBucketsWeight.addAndGet(newWeight - oldWeight);
       } else {
+        final @NotNull Metric metric;
+        switch (type) {
+          case Counter:
+            metric = new CounterMetric(key, value, unit, tags, timestampMs);
+            break;
+          case Gauge:
+            metric = new GaugeMetric(key, value, unit, tags, timestampMs);
+            break;
+          case Distribution:
+            metric = new DistributionMetric(key, value, unit, tags, timestampMs);
+            break;
+          case Set:
+            metric = new SetMetric(key, unit, tags, timestampMs);
+            // sets API is either ints or strings cr32 encoded into ints
+            // noinspection unchecked
+            metric.add((int) value);
+            break;
+          default:
+            throw new IllegalArgumentException("Unknown MetricType: " + type.name());
+        }
         timeBucket.put(metricKey, metric);
+        totalBucketsWeight.addAndGet(metric.getWeight());
       }
     }
 
@@ -217,7 +224,13 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   }
 
   @Override
-  public void flush(final boolean force) {
+  public void flush(boolean force) {
+    final int totalWeight = buckets.size() + totalBucketsWeight.get();
+    if (totalWeight >= maxWeight) {
+      logger.log(SentryLevel.INFO, "Metrics: total weight exceeded, flushing all buckets");
+      force = true;
+    }
+
     final @NotNull Set<Long> flushableBuckets = getFlushableBuckets(force);
     if (flushableBuckets.isEmpty()) {
       logger.log(SentryLevel.DEBUG, "Metrics: nothing to flush");
@@ -226,22 +239,35 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     logger.log(SentryLevel.DEBUG, "Metrics: flushing " + flushableBuckets.size() + " buckets");
 
     final Map<Long, Map<String, Metric>> snapshot = new HashMap<>();
-    int totalSize = 0;
+    int numMetrics = 0;
     for (long bucketKey : flushableBuckets) {
-      final @Nullable Map<String, Metric> metrics = buckets.remove(bucketKey);
-      if (metrics != null) {
-        totalSize += metrics.size();
-        snapshot.put(bucketKey, metrics);
+      final @Nullable Map<String, Metric> bucket = buckets.remove(bucketKey);
+      if (bucket != null) {
+        synchronized (bucket) {
+          final int weight = getBucketWeight(bucket);
+          totalBucketsWeight.addAndGet(-weight);
+
+          numMetrics += bucket.size();
+          snapshot.put(bucketKey, bucket);
+        }
       }
     }
 
-    if (totalSize == 0) {
+    if (numMetrics == 0) {
       logger.log(SentryLevel.DEBUG, "Metrics: only empty buckets found");
       return;
     }
 
     logger.log(SentryLevel.DEBUG, "Metrics: capturing metrics");
     client.captureMetrics(new EncodedMetrics(snapshot));
+  }
+
+  private static int getBucketWeight(final @NotNull Map<String, Metric> bucket) {
+    int weight = 0;
+    for (final @NotNull Metric value : bucket.values()) {
+      weight += value.getWeight();
+    }
+    return weight;
   }
 
   @NotNull
@@ -262,7 +288,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     @Nullable Map<String, Metric> bucket = buckets.get(bucketKey);
     if (bucket == null) {
       // although buckets is thread safe, we still need to synchronize here to avoid creating
-      // the same bucket at the same time
+      // the same bucket at the same time, overwriting each other
       synchronized (buckets) {
         bucket = buckets.get(bucketKey);
         if (bucket == null) {
