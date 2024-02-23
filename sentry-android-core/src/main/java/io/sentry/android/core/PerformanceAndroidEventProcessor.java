@@ -22,6 +22,8 @@ import io.sentry.util.Objects;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -241,8 +243,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         span.getDescription(),
         SpanStatus.OK,
         APP_METRICS_ORIGIN,
-        new HashMap<>(),
-        new HashMap<>(),
+        new ConcurrentHashMap<>(),
+        new ConcurrentHashMap<>(),
         null);
   }
 }
