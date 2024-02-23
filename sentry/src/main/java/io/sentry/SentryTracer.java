@@ -615,6 +615,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setOperation(final @NotNull String operation) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Operation %s cannot be set",
+              operation);
       return;
     }
 
@@ -629,6 +635,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setDescription(final @Nullable String description) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Description %s cannot be set",
+              description);
       return;
     }
 
@@ -643,6 +655,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setStatus(final @Nullable SpanStatus status) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Status %s cannot be set",
+              status == null ? "null" : status.name());
       return;
     }
 
@@ -657,6 +675,9 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.DEBUG, "The transaction is already finished. Throwable cannot be set");
       return;
     }
 
@@ -676,6 +697,9 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.DEBUG, "The transaction is already finished. Tag %s cannot be set", key);
       return;
     }
 
@@ -695,6 +719,10 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setData(@NotNull String key, @NotNull Object value) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG, "The transaction is already finished. Data %s cannot be set", key);
       return;
     }
 
@@ -708,7 +736,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
-    root.setMeasurement(name, value);
+    // We don't want to overwrite the root span measurement. The span itself can still overwrite it
+    if (!root.getMeasurements().containsKey(name)) {
+      root.setMeasurement(name, value);
+    }
   }
 
   @Override
@@ -716,7 +747,10 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String name,
       final @NotNull Number value,
       final @NotNull MeasurementUnit unit) {
-    root.setMeasurement(name, value, unit);
+    // We don't want to overwrite the root span measurement. The span itself can still overwrite it
+    if (!root.getMeasurements().containsKey(name)) {
+      root.setMeasurement(name, value, unit);
+    }
   }
 
   public @Nullable Map<String, Object> getData() {
@@ -747,6 +781,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Name %s cannot be set",
+              name);
       return;
     }
 

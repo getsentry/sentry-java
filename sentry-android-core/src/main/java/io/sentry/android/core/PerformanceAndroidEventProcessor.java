@@ -19,11 +19,9 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
