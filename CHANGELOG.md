@@ -12,6 +12,7 @@
 - Ensure performance measurement collection is not taken too frequently ([#3221](https://github.com/getsentry/sentry-java/pull/3221))
 - Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
 - Fix hub restore point in wrappers: SentryWrapper, SentryTaskDecorator and SentryScheduleHook ([#3225](https://github.com/getsentry/sentry-java/pull/3225))
+  - We now reset the hub to its previous value on the thread where the `Runnable`/`Callable`/`Supplier` is executed instead of setting it to the hub that was used on the thread where the `Runnable`/`Callable`/`Supplier` was created.
 
 ## 7.4.0
 
