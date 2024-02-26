@@ -4,16 +4,33 @@
 
 ### Features
 
+- Add `enableScopePersistence` option to disable `PersistingScopeObserver` used for ANR reporting which may increase performance overhead. Defaults to `true` ([#3218](https://github.com/getsentry/sentry-java/pull/3218))
+  - When disabled, the SDK will not enrich ANRv2 events with scope data (e.g. breadcrumbs, user, tags, etc.)
+- Configurable defaults for Cron - MonitorConfig ([#3195](https://github.com/getsentry/sentry-java/pull/3195))
+
+### Fixes
+
+- Ensure performance measurement collection is not taken too frequently ([#3221](https://github.com/getsentry/sentry-java/pull/3221))
+- Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
+
+## 7.4.0
+
+### Features
+
 - Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
 - Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
 - (perf-v2): Calculate frame delay on a span level ([#3197](https://github.com/getsentry/sentry-java/pull/3197))
 - Resolve spring properties in @SentryCheckIn annotation ([#3194](https://github.com/getsentry/sentry-java/pull/3194))
-- Configurable defaults for Cron - MonitorConfig ([#3195](https://github.com/getsentry/sentry-java/pull/3195))
+- Experimental: Add Spotlight integration ([#3166](https://github.com/getsentry/sentry-java/pull/3166))
+    - For more details about Spotlight head over to https://spotlightjs.com/
+    - Set `options.isEnableSpotlight = true` to enable Spotlight
 
 ### Fixes
 
 - Don't wait on main thread when SDK restarts ([#3200](https://github.com/getsentry/sentry-java/pull/3200))
 - Fix Jetpack Compose widgets are not being correctly identified for user interaction tracing ([#3209](https://github.com/getsentry/sentry-java/pull/3209))
+- Fix issue title on Android when a wrapping `RuntimeException` is thrown by the system ([#3212](https://github.com/getsentry/sentry-java/pull/3212))
+  - This will change grouping of the issues that were previously titled `RuntimeInit$MethodAndArgsCaller` to have them split up properly by the original root cause exception
 
 ## 7.3.0
 

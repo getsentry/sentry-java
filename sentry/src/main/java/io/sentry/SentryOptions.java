@@ -442,6 +442,15 @@ public class SentryOptions {
   /** Whether to send modules containing information about versions. */
   private boolean sendModules = true;
 
+  private @Nullable BeforeEnvelopeCallback beforeEnvelopeCallback;
+
+  private boolean enableSpotlight = false;
+
+  private @Nullable String spotlightConnectionUrl;
+
+  /** Whether to enable scope persistence so the scope values are preserved if the process dies */
+  private boolean enableScopePersistence = true;
+
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
@@ -2276,6 +2285,47 @@ public class SentryOptions {
     this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
+  @ApiStatus.Internal
+  @Nullable
+  public BeforeEnvelopeCallback getBeforeEnvelopeCallback() {
+    return beforeEnvelopeCallback;
+  }
+
+  @ApiStatus.Internal
+  public void setBeforeEnvelopeCallback(
+      @Nullable final BeforeEnvelopeCallback beforeEnvelopeCallback) {
+    this.beforeEnvelopeCallback = beforeEnvelopeCallback;
+  }
+
+  @ApiStatus.Experimental
+  @Nullable
+  public String getSpotlightConnectionUrl() {
+    return spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
+    this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableSpotlight() {
+    return enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpotlight(final boolean enableSpotlight) {
+    this.enableSpotlight = enableSpotlight;
+  }
+
+  public boolean isEnableScopePersistence() {
+    return enableScopePersistence;
+  }
+
+  public void setEnableScopePersistence(final boolean enableScopePersistence) {
+    this.enableScopePersistence = enableScopePersistence;
+  }
+
   @ApiStatus.Experimental
   public @Nullable Cron getCron() {
     return cron;
@@ -2357,6 +2407,19 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
+  /** The BeforeEnvelope callback */
+  @ApiStatus.Internal
+  public interface BeforeEnvelopeCallback {
+
+    /**
+     * A callback which gets called right before an envelope is about to be sent
+     *
+     * @param envelope the envelope
+     * @param hint the hints
+     */
+    void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
+  }
+
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -2390,6 +2453,7 @@ public class SentryOptions {
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
+      integrations.add(new SpotlightIntegration());
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));

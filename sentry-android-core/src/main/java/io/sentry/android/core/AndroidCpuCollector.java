@@ -14,6 +14,7 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,6 +43,7 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isEnabled = false;
+  private final @NotNull Pattern newLinePattern = Pattern.compile("[\n\t\r ]");
 
   public AndroidCpuCollector(
       final @NotNull ILogger logger, final @NotNull BuildInfoProvider buildInfoProvider) {
@@ -102,7 +104,7 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
     }
     if (stat != null) {
       stat = stat.trim();
-      String[] stats = stat.split("[\n\t\r ]");
+      String[] stats = newLinePattern.split(stat);
       try {
         // Amount of clock ticks this process has been scheduled in user mode
         long uTime = Long.parseLong(stats[13]);
