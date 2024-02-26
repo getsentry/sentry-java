@@ -13,6 +13,7 @@
 - Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
 - Fix hub restore point in wrappers: SentryWrapper, SentryTaskDecorator and SentryScheduleHook ([#3225](https://github.com/getsentry/sentry-java/pull/3225))
   - We now reset the hub to its previous value on the thread where the `Runnable`/`Callable`/`Supplier` is executed instead of setting it to the hub that was used on the thread where the `Runnable`/`Callable`/`Supplier` was created.
+- Fix add missing thread name/id to app start spans ([#3226](https://github.com/getsentry/sentry-java/pull/3226))
 
 ## 7.4.0
 
