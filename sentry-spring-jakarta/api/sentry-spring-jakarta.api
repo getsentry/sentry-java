@@ -63,11 +63,6 @@ public class io/sentry/spring/jakarta/SentrySpringServletContainerInitializer : 
 	public fun onStartup (Ljava/util/Set;Ljakarta/servlet/ServletContext;)V
 }
 
-public final class io/sentry/spring/jakarta/SentryTaskDecorator : org/springframework/core/task/TaskDecorator {
-	public fun <init> ()V
-	public fun decorate (Ljava/lang/Runnable;)Ljava/lang/Runnable;
-}
-
 public class io/sentry/spring/jakarta/SentryUserFilter : org/springframework/web/filter/OncePerRequestFilter {
 	public fun <init> (Lio/sentry/IHub;Ljava/util/List;)V
 	protected fun doFilterInternal (Ljakarta/servlet/http/HttpServletRequest;Ljakarta/servlet/http/HttpServletResponse;Ljakarta/servlet/FilterChain;)V
