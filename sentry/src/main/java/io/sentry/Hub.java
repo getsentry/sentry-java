@@ -61,8 +61,6 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
     this(options, new Stack(options.getLogger(), rootStackItem));
-
-    Sentry.metrics().increment("hub.init");
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {
