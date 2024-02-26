@@ -2159,6 +2159,7 @@ public class io/sentry/SentryOptions {
 	public static fun empty ()Lio/sentry/SentryOptions;
 	public fun getBackpressureMonitor ()Lio/sentry/backpressure/IBackpressureMonitor;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
+	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
 	public fun getBundleIds ()Ljava/util/Set;
@@ -2221,6 +2222,7 @@ public class io/sentry/SentryOptions {
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeout ()J
 	public fun getShutdownTimeoutMillis ()J
+	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracePropagationTargets ()Ljava/util/List;
@@ -2242,7 +2244,9 @@ public class io/sentry/SentryOptions {
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
+	public fun isEnableScopePersistence ()Z
 	public fun isEnableShutdownHook ()Z
+	public fun isEnableSpotlight ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
@@ -2262,6 +2266,7 @@ public class io/sentry/SentryOptions {
 	public fun setAttachThreads (Z)V
 	public fun setBackpressureMonitor (Lio/sentry/backpressure/IBackpressureMonitor;)V
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
+	public fun setBeforeEnvelopeCallback (Lio/sentry/SentryOptions$BeforeEnvelopeCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
@@ -2280,7 +2285,9 @@ public class io/sentry/SentryOptions {
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
+	public fun setEnableScopePersistence (Z)V
 	public fun setEnableShutdownHook (Z)V
+	public fun setEnableSpotlight (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V
 	public fun setEnableTracing (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
@@ -2328,6 +2335,7 @@ public class io/sentry/SentryOptions {
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeout (J)V
 	public fun setShutdownTimeoutMillis (J)V
+	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTraceOptionsRequests (Z)V
@@ -2345,6 +2353,10 @@ public class io/sentry/SentryOptions {
 
 public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback {
 	public abstract fun execute (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)Lio/sentry/Breadcrumb;
+}
+
+public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
+	public abstract fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
@@ -2719,6 +2731,14 @@ public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserialize
 	public fun <init> ()V
 	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanStatus;
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
+	public fun <init> ()V
+	public fun close ()V
+	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
