@@ -1,8 +1,7 @@
 package io.sentry.spring.webflux
 
 import io.sentry.Sentry
-import io.sentry.SentryCrashLastRunState
-import io.sentry.SentryOptions
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -13,22 +12,23 @@ import kotlin.test.assertNotEquals
 class SentryScheduleHookTest {
 
     private val dsn = "http://key@localhost/proj"
-    private val executor = Executors.newSingleThreadExecutor()
+    private lateinit var executor: ExecutorService
 
     @BeforeTest
-    @AfterTest
     fun beforeTest() {
+        executor = Executors.newSingleThreadExecutor()
+    }
+
+    @AfterTest
+    fun afterTest() {
         Sentry.close()
-        SentryCrashLastRunState.getInstance().reset()
+        executor.shutdown()
     }
 
     @Test
     fun `hub is reset to its state within the thread after hook is done`() {
         Sentry.init {
             it.dsn = dsn
-            it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                event
-            }
         }
 
         val sut = SentryScheduleHook()
