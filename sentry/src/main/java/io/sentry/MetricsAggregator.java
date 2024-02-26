@@ -206,18 +206,20 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       }
     }
 
-    // spin up real executor service the first time metrics are collected
-    if (!isClosed && !flushScheduled) {
+    final boolean isOverWeight = isOverWeight();
+    if (!isClosed && (isOverWeight || !flushScheduled)) {
       synchronized (this) {
-        if (!isClosed && !flushScheduled) {
-          flushScheduled = true;
+        if (!isClosed) {
           // TODO this is probably not a good idea after all
           // as it will slow down the first metric emission
           // maybe move to constructor?
           if (executorService instanceof NoOpSentryExecutorService) {
             executorService = new SentryExecutorService();
           }
-          executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
+
+          flushScheduled = true;
+          final long delayMs = isOverWeight ? 0 : MetricsHelper.FLUSHER_SLEEP_TIME_MS;
+          executorService.schedule(this, delayMs);
         }
       }
     }
@@ -225,8 +227,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   @Override
   public void flush(boolean force) {
-    final int totalWeight = buckets.size() + totalBucketsWeight.get();
-    if (totalWeight >= maxWeight) {
+    if (!force && isOverWeight()) {
       logger.log(SentryLevel.INFO, "Metrics: total weight exceeded, flushing all buckets");
       force = true;
     }
@@ -260,6 +261,11 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     logger.log(SentryLevel.DEBUG, "Metrics: capturing metrics");
     client.captureMetrics(new EncodedMetrics(snapshot));
+  }
+
+  private boolean isOverWeight() {
+    final int totalWeight = buckets.size() + totalBucketsWeight.get();
+    return totalWeight >= maxWeight;
   }
 
   private static int getBucketWeight(final @NotNull Map<String, Metric> bucket) {

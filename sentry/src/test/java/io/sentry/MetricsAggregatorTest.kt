@@ -6,6 +6,7 @@ import io.sentry.metrics.MetricsHelperTest
 import io.sentry.test.DeferredExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -342,5 +343,45 @@ class MetricsAggregatorTest {
         // then flush without force still captures all metrics
         aggregator.flush(false)
         verify(fixture.client).captureMetrics(any())
+    }
+
+    @Test
+    fun `flushing is immediately scheduled if add operations causes too much weight`() {
+        fixture.executorService = mock()
+        val aggregator = fixture.getSut(1)
+
+        verify(fixture.executorService, never()).schedule(any(), any())
+
+        // when 1 value is emitted
+        aggregator.distribution(
+            "name",
+            1.0,
+            null,
+            null,
+            fixture.currentTimeMillis,
+            1
+        )
+
+        // flush is immediately scheduled
+        verify(fixture.executorService).schedule(any(), eq(0))
+    }
+
+    @Test
+    fun `flushing is deferred scheduled if add operations does not cause too much weight`() {
+        fixture.executorService = mock()
+        val aggregator = fixture.getSut(10)
+
+        // when 1 value is emitted
+        aggregator.distribution(
+            "name",
+            1.0,
+            null,
+            null,
+            fixture.currentTimeMillis,
+            1
+        )
+
+        // flush is scheduled for later
+        verify(fixture.executorService).schedule(any(), eq(MetricsHelper.FLUSHER_SLEEP_TIME_MS))
     }
 }

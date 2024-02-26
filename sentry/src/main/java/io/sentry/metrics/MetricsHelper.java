@@ -16,7 +16,7 @@ import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class MetricsHelper {
-  public static final int FLUSHER_SLEEP_TIME_MS = 5000;
+  public static final long FLUSHER_SLEEP_TIME_MS = 5000;
   public static final int MAX_TOTAL_WEIGHT = 100000;
   private static final int ROLLUP_IN_SECONDS = 10;
 
