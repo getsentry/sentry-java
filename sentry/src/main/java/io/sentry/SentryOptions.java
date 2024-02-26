@@ -2673,23 +2673,6 @@ public class SentryOptions {
     private @Nullable Long defaultFailureIssueThreshold;
     private @Nullable Long defaultRecoveryThreshold;
 
-    public Cron(
-        final @Nullable Long checkinMargin,
-        final @Nullable Long maxRuntime,
-        final @Nullable String timezone,
-        final @Nullable Long failureIssueThreshold,
-        final @Nullable Long recoveryThreshold) {
-      this.defaultCheckinMargin = checkinMargin;
-      this.defaultMaxRuntime = maxRuntime;
-      this.defaultTimezone = timezone;
-      this.defaultFailureIssueThreshold = failureIssueThreshold;
-      this.defaultRecoveryThreshold = recoveryThreshold;
-    }
-
-    public Cron() {
-      this(null, null, null, null, null);
-    }
-
     public @Nullable Long getDefaultCheckinMargin() {
       return defaultCheckinMargin;
     }

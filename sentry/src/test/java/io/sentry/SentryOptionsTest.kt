@@ -370,7 +370,13 @@ class SentryOptionsTest {
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
         externalOptions.isEnableBackpressureHandling = true
-        externalOptions.cron = SentryOptions.Cron(10L, 30L, "America/New_York", 40L, 50L)
+        externalOptions.cron = SentryOptions.Cron().apply {
+            defaultCheckinMargin = 10L
+            defaultMaxRuntime = 30L
+            defaultTimezone = "America/New_York"
+            defaultFailureIssueThreshold = 40L
+            defaultRecoveryThreshold = 50L
+        }
 
         val options = SentryOptions()
 
@@ -619,7 +625,13 @@ class SentryOptionsTest {
     @Test
     fun `existing cron defaults are not overridden if not present in external options`() {
         val options = SentryOptions().apply {
-            cron = SentryOptions.Cron(1, 2, "America/New_York", 3, 4)
+            cron = SentryOptions.Cron().apply {
+                defaultCheckinMargin = 1
+                defaultMaxRuntime = 2
+                defaultTimezone = "America/New_York"
+                defaultFailureIssueThreshold = 3
+                defaultRecoveryThreshold = 4
+            }
         }
 
         val externalOptions = ExternalOptions().apply {
@@ -638,11 +650,23 @@ class SentryOptionsTest {
     @Test
     fun `all cron properties set in external options override values set in sentry options`() {
         val options = SentryOptions().apply {
-            cron = SentryOptions.Cron(1, 2, "America/New_York", 3, 4)
+            cron = SentryOptions.Cron().apply {
+                defaultCheckinMargin = 1
+                defaultMaxRuntime = 2
+                defaultTimezone = "America/New_York"
+                defaultFailureIssueThreshold = 3
+                defaultRecoveryThreshold = 4
+            }
         }
 
         val externalOptions = ExternalOptions().apply {
-            cron = SentryOptions.Cron(10, 20, "Europe/Vienna", 30, 40)
+            cron = SentryOptions.Cron().apply {
+                defaultCheckinMargin = 10
+                defaultMaxRuntime = 20
+                defaultTimezone = "Europe/Vienna"
+                defaultFailureIssueThreshold = 30
+                defaultRecoveryThreshold = 40
+            }
         }
 
         options.merge(externalOptions)

@@ -197,8 +197,10 @@ class CheckInUtilsTest {
                 SentryOptions().apply {
                     cron = SentryOptions.Cron().apply {
                         defaultCheckinMargin = 20
-                        defaultMaxRuntime = 50
+                        defaultMaxRuntime = 30
                         defaultTimezone = "America/New_York"
+                        defaultFailureIssueThreshold = 40
+                        defaultRecoveryThreshold = 50
                     }
                 }
             )
@@ -206,8 +208,10 @@ class CheckInUtilsTest {
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
 
             assertEquals(20, monitorConfig.checkinMargin)
-            assertEquals(50, monitorConfig.maxRuntime)
+            assertEquals(30, monitorConfig.maxRuntime)
             assertEquals("America/New_York", monitorConfig.timezone)
+            assertEquals(40, monitorConfig.failureIssueThreshold)
+            assertEquals(50, monitorConfig.recoveryThreshold)
         }
     }
 

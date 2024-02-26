@@ -26,6 +26,8 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
       this.checkinMargin = defaultCron.getDefaultCheckinMargin();
       this.maxRuntime = defaultCron.getDefaultMaxRuntime();
       this.timezone = defaultCron.getDefaultTimezone();
+      this.failureIssueThreshold = defaultCron.getDefaultFailureIssueThreshold();
+      this.recoveryThreshold = defaultCron.getDefaultRecoveryThreshold();
     }
   }
 
