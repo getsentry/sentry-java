@@ -328,7 +328,7 @@ class MetricsAggregatorTest {
             )
         }
         // no metrics are captured by the client
-        aggregator.flush(false)
+        fixture.executorService.runAll()
         verify(fixture.client, never()).captureMetrics(any())
 
         // once we have 4 values and one bucket = weight of 5
@@ -341,7 +341,7 @@ class MetricsAggregatorTest {
             1
         )
         // then flush without force still captures all metrics
-        aggregator.flush(false)
+        fixture.executorService.runAll()
         verify(fixture.client).captureMetrics(any())
     }
 

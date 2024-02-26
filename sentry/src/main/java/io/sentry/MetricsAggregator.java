@@ -44,8 +44,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   // aggregates all of the metrics data for a particular time period. The Value is a dictionary for
   // the metrics,
   // each of which has a key that uniquely identifies it within the time period
-  private final NavigableMap<Long, Map<String, Metric>> buckets = new ConcurrentSkipListMap<>();
-  private final AtomicInteger totalBucketsWeight = new AtomicInteger();
+  private final @NotNull NavigableMap<Long, Map<String, Metric>> buckets =
+      new ConcurrentSkipListMap<>();
+  private final @NotNull AtomicInteger totalBucketsWeight = new AtomicInteger();
 
   private final int maxWeight;
 
