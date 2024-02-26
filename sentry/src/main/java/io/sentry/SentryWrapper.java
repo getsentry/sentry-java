@@ -28,10 +28,10 @@ public final class SentryWrapper {
    * @param <U> - the result type of the {@link Callable}
    */
   public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
-    final IHub oldState = Sentry.getCurrentHub();
-    final IHub newHub = oldState.clone();
+    final IHub newHub = Sentry.getCurrentHub().clone();
 
     return () -> {
+      final IHub oldState = Sentry.getCurrentHub();
       Sentry.setCurrentHub(newHub);
       try {
         return callable.call();
@@ -52,10 +52,11 @@ public final class SentryWrapper {
    * @param <U> - the result type of the {@link Supplier}
    */
   public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
-    final IHub oldState = Sentry.getCurrentHub();
-    final IHub newHub = oldState.clone();
+
+    final IHub newHub = Sentry.getCurrentHub().clone();
 
     return () -> {
+      final IHub oldState = Sentry.getCurrentHub();
       Sentry.setCurrentHub(newHub);
       try {
         return supplier.get();
