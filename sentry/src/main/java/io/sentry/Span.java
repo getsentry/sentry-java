@@ -349,7 +349,7 @@ public final class Span implements ISpan {
     // We set the measurement in the transaction, too, but we have to check if this is the root span
     // of the transaction, to avoid an infinite recursion
     if (transaction.getRoot() != this) {
-      transaction.setMeasurement(name, value);
+      transaction.setMeasurementFromChild(name, value);
     }
   }
 
@@ -371,7 +371,7 @@ public final class Span implements ISpan {
     // We set the measurement in the transaction, too, but we have to check if this is the root span
     // of the transaction, to avoid an infinite recursion
     if (transaction.getRoot() != this) {
-      transaction.setMeasurement(name, value, unit);
+      transaction.setMeasurementFromChild(name, value, unit);
     }
   }
 

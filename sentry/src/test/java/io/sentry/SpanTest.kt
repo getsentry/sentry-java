@@ -466,6 +466,7 @@ class SpanTest {
         // We need to inject the mock, otherwise the span calls the real transaction object
         span.injectForField("transaction", transaction)
         span.setMeasurement("test", 1)
+        verify(transaction).setMeasurementFromChild(eq("test"), eq(1))
         verify(transaction).setMeasurement(eq("test"), eq(1))
         assertNotNull(span.measurements["test"])
         assertEquals(1, span.measurements["test"]!!.value)
@@ -479,8 +480,8 @@ class SpanTest {
         // We need to inject the mock, otherwise the span calls the real transaction object
         transaction.root.injectForField("transaction", transaction)
         transaction.root.setMeasurement("test", 1)
-        verify(transaction, never()).setMeasurement(any(), any())
-        verify(transaction, never()).setMeasurement(any(), any(), any())
+        verify(transaction, never()).setMeasurementFromChild(any(), any())
+        verify(transaction, never()).setMeasurementFromChild(any(), any(), any())
         assertNotNull(transaction.root.measurements["test"])
         assertEquals(1, transaction.root.measurements["test"]!!.value)
     }

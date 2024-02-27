@@ -2463,6 +2463,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
+	public fun setMeasurementFromChild (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurementFromChild (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V

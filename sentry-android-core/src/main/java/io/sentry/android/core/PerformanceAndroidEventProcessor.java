@@ -21,6 +21,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -250,6 +251,6 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         APP_METRICS_ORIGIN,
         new ConcurrentHashMap<>(),
         new ConcurrentHashMap<>(),
-      defaultSpanData);
+        defaultSpanData);
   }
 }

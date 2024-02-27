@@ -434,6 +434,7 @@ class PerformanceAndroidEventProcessorTest {
             SpanStatus.OK,
             null,
             emptyMap(),
+            emptyMap(),
             null
         )
         tr.spans.add(appStartSpan)

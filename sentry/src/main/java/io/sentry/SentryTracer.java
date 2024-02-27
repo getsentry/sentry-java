@@ -734,12 +734,28 @@ public final class SentryTracer implements ITransaction {
     return this.root.getData(key);
   }
 
+  @ApiStatus.Internal
+  public void setMeasurementFromChild(final @NotNull String name, final @NotNull Number value) {
+    // We don't want to overwrite the root span measurement, if it comes from a child.
+    if (!root.getMeasurements().containsKey(name)) {
+      setMeasurement(name, value);
+    }
+  }
+
+  @ApiStatus.Internal
+  public void setMeasurementFromChild(
+      final @NotNull String name,
+      final @NotNull Number value,
+      final @NotNull MeasurementUnit unit) {
+    // We don't want to overwrite the root span measurement, if it comes from a child.
+    if (!root.getMeasurements().containsKey(name)) {
+      setMeasurement(name, value, unit);
+    }
+  }
+
   @Override
   public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
-    // We don't want to overwrite the root span measurement. The span itself can still overwrite it
-    if (!root.getMeasurements().containsKey(name)) {
-      root.setMeasurement(name, value);
-    }
+    root.setMeasurement(name, value);
   }
 
   @Override
@@ -747,10 +763,7 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String name,
       final @NotNull Number value,
       final @NotNull MeasurementUnit unit) {
-    // We don't want to overwrite the root span measurement. The span itself can still overwrite it
-    if (!root.getMeasurements().containsKey(name)) {
-      root.setMeasurement(name, value, unit);
-    }
+    root.setMeasurement(name, value, unit);
   }
 
   public @Nullable Map<String, Object> getData() {

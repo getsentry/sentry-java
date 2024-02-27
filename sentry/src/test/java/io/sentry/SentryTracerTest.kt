@@ -987,6 +987,24 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `setting the same measurement multiple times from a child only keeps first value`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurementFromChild("metric1", 1.0f)
+        transaction.setMeasurementFromChild("metric1", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1.0f, it.measurements["metric1"]!!.value)
+                assertNull(it.measurements["metric1"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `when transaction is created, but not profiled, transactionPerformanceCollector is not started`() {
         val transaction = fixture.getSut()
         verify(fixture.transactionPerformanceCollector, never()).start(anyOrNull())
