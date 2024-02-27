@@ -6,6 +6,7 @@
 
 - Add `enableScopePersistence` option to disable `PersistingScopeObserver` used for ANR reporting which may increase performance overhead. Defaults to `true` ([#3218](https://github.com/getsentry/sentry-java/pull/3218))
   - When disabled, the SDK will not enrich ANRv2 events with scope data (e.g. breadcrumbs, user, tags, etc.)
+- Show warning if incompatible spring boot version is detected ([#3233](https://github.com/getsentry/sentry-java/pull/3233))
 
 ### Fixes
 
