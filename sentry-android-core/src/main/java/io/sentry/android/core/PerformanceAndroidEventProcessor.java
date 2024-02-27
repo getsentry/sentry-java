@@ -4,11 +4,13 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
+import android.os.Looper;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
@@ -231,6 +233,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryId traceId,
       final @NotNull String operation) {
+
+    final Map<String, Object> defaultSpanData = new HashMap<>(2);
+    defaultSpanData.put(SpanDataConvention.THREAD_ID, Looper.getMainLooper().getThread().getId());
+    defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
+
     return new SentrySpan(
         span.getStartTimestampSecs(),
         span.getProjectedStopTimestampSecs(),
@@ -243,6 +250,6 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         APP_METRICS_ORIGIN,
         new ConcurrentHashMap<>(),
         new ConcurrentHashMap<>(),
-        null);
+      defaultSpanData);
   }
 }
