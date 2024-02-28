@@ -62,7 +62,7 @@ class MetricsAggregatorTest {
 
         // when a metric is emitted
         fixture.currentTimeMillis = 20_000
-        aggregator.increment("key", 1.0, null, null, 20_001, 1)
+        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
 
         // then flush does nothing because there's no data inside the flush interval
         aggregator.flush(false)
@@ -81,7 +81,7 @@ class MetricsAggregatorTest {
         val aggregator = fixture.getSut()
         // when a metric is emitted
         fixture.currentTimeMillis = 20_000
-        aggregator.increment("key", 1.0, null, null, 20_001, 1)
+        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
 
         // then force flush flushes the metric
         aggregator.flush(true)
@@ -100,7 +100,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("apples"),
             mapOf("a" to "b"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.increment(
             "name",
@@ -108,7 +109,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("apples"),
             mapOf("a" to "b"),
             25_001,
-            1
+            1,
+            null
         )
 
         // then flush does nothing because there's no data inside the flush interval
@@ -145,7 +147,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.increment(
             "name0",
@@ -153,7 +156,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.increment(
             "name0",
@@ -161,7 +165,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit1"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.increment(
             "name0",
@@ -169,7 +174,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit1"),
             mapOf("key1" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.increment(
             "name0",
@@ -177,7 +183,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit1"),
             mapOf("key1" to "value1"),
             20_001,
-            1
+            1,
+            null
         )
 
         aggregator.flush(true)
@@ -206,7 +213,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
 
         // then the metric is never captured
@@ -225,7 +233,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.distribution(
             "name0",
@@ -233,7 +242,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.set(
             "name0-string",
@@ -241,7 +251,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.set(
             "name0-int",
@@ -249,7 +260,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.gauge(
             "name0",
@@ -257,7 +269,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
         aggregator.timing(
             "name0",
@@ -266,7 +279,8 @@ class MetricsAggregatorTest {
             },
             MeasurementUnit.Duration.SECOND,
             mapOf("key0" to "value0"),
-            1
+            1,
+            null
         )
 
         aggregator.flush(true)
@@ -294,7 +308,8 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1
+            1,
+            null
         )
 
         // then a flush is scheduled

@@ -4,6 +4,7 @@ import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -959,5 +960,14 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
     tags.put("release", options.getRelease());
     tags.put("environment", options.getEnvironment());
     return tags;
+  }
+
+  @Override
+  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
+    final @Nullable ISpan span = stack.peek().getScope().getSpan();
+    if (span != null) {
+      return span.getLocalMetricsAggregator();
+    }
+    return null;
   }
 }

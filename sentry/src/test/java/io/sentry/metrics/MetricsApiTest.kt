@@ -19,6 +19,8 @@ class MetricsApiTest {
                 return aggregator
             }
 
+            override fun getLocalMetricsAggregator(): LocalMetricsAggregator? = null
+
             override fun getDefaultTagsForMetrics(): Map<String, String> = emptyMap()
         })
 
@@ -34,6 +36,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -43,6 +46,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -52,6 +56,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -61,6 +66,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -70,6 +76,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -81,6 +88,8 @@ class MetricsApiTest {
             override fun getMetricsAggregator(): IMetricsAggregator {
                 return aggregator
             }
+
+            override fun getLocalMetricsAggregator(): LocalMetricsAggregator? = null
 
             override fun getDefaultTagsForMetrics(): Map<String, String> = emptyMap()
         })
@@ -97,6 +106,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -106,6 +116,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -115,6 +126,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -124,6 +136,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -133,6 +146,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -144,6 +158,8 @@ class MetricsApiTest {
             override fun getMetricsAggregator(): IMetricsAggregator {
                 return aggregator
             }
+
+            override fun getLocalMetricsAggregator(): LocalMetricsAggregator? = null
 
             override fun getDefaultTagsForMetrics(): Map<String, String> {
                 return mapOf(
@@ -166,6 +182,7 @@ class MetricsApiTest {
                 )
             ),
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -177,6 +194,8 @@ class MetricsApiTest {
             override fun getMetricsAggregator(): IMetricsAggregator {
                 return aggregator
             }
+
+            override fun getLocalMetricsAggregator(): LocalMetricsAggregator? = null
 
             override fun getDefaultTagsForMetrics(): Map<String, String> {
                 return mapOf(
@@ -205,6 +224,7 @@ class MetricsApiTest {
                     "environment" to "dev"
                 )
             ),
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )

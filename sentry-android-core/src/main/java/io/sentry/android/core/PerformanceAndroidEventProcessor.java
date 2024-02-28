@@ -249,6 +249,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         SpanStatus.OK,
         APP_METRICS_ORIGIN,
         new HashMap<>(),
-        defaultSpanData);
+        defaultSpanData,
+        null);
   }
 }

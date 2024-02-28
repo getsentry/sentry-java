@@ -11,6 +11,7 @@ import io.sentry.SentryLevel;
 import io.sentry.Span;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,6 +41,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   private final @Nullable String origin;
   private final @NotNull Map<String, String> tags;
   private final @Nullable Map<String, Object> data;
+  private final @Nullable Map<String, List<MetricSummary>> metricsSummaries;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -68,6 +71,13 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
     this.startTimestamp = DateUtils.nanosToSeconds(span.getStartDate().nanoTimestamp());
     this.data = data;
+
+    final @Nullable LocalMetricsAggregator localAggregator = span.getLocalMetricsAggregator();
+    if (localAggregator != null) {
+      this.metricsSummaries = localAggregator.getSummaries();
+    } else {
+      this.metricsSummaries = null;
+    }
   }
 
   @ApiStatus.Internal
@@ -82,7 +92,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       @Nullable SpanStatus status,
       @Nullable String origin,
       @NotNull Map<String, String> tags,
-      @Nullable Map<String, Object> data) {
+      @Nullable Map<String, Object> data,
+      @Nullable Map<String, List<MetricSummary>> metricSummaries) {
     this.startTimestamp = startTimestamp;
     this.timestamp = timestamp;
     this.traceId = traceId;
@@ -94,6 +105,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.tags = tags;
     this.data = data;
     this.origin = origin;
+    this.metricsSummaries = metricSummaries;
   }
 
   public boolean isFinished() {
@@ -158,6 +170,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     public static final String ORIGIN = "origin";
     public static final String TAGS = "tags";
     public static final String DATA = "data";
+    public static final String METRICS_SUMMARY = "_metrics_summary";
   }
 
   @Override
@@ -188,6 +201,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (metricsSummaries != null && !metricsSummaries.isEmpty()) {
+      writer.name(JsonKeys.METRICS_SUMMARY).value(logger, metricsSummaries);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -233,6 +249,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       String origin = null;
       Map<String, String> tags = null;
       Map<String, Object> data = null;
+      Map<String, List<MetricSummary>> metricSummaries = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -281,6 +298,25 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
           case JsonKeys.DATA:
             data = (Map<String, Object>) reader.nextObjectOrNull();
             break;
+          case JsonKeys.METRICS_SUMMARY:
+            if (reader.peek() == JsonToken.NULL) {
+              reader.nextNull();
+              break;
+            }
+            metricSummaries = new HashMap<>();
+            reader.beginObject();
+            if (reader.hasNext()) {
+              do {
+                final @NotNull String exportKey = reader.nextName();
+                final @Nullable List<MetricSummary> summaries =
+                    reader.nextListOrNull(logger, new MetricSummary.Deserializer());
+                if (summaries != null) {
+                  metricSummaries.put(exportKey, summaries);
+                }
+              } while (reader.peek() == JsonToken.BEGIN_OBJECT || reader.peek() == JsonToken.NAME);
+            }
+            reader.endObject();
+            break;
           default:
             if (unknown == null) {
               unknown = new ConcurrentHashMap<>();
@@ -316,7 +352,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
               status,
               origin,
               tags,
-              data);
+              data,
+              metricSummaries);
       sentrySpan.setUnknown(unknown);
       reader.endObject();
       return sentrySpan;

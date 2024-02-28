@@ -137,6 +137,24 @@ public final class MetricsHelper {
     return escapedString.toString();
   }
 
+  /**
+   * provides an export key for identifying the metric without it tags. suitable for metric
+   * summaries
+   *
+   * @param type the metric type
+   * @param key the metric key
+   * @param unit the metric unit
+   * @return the export key
+   */
+  @NotNull
+  public static String getExportKey(
+      final @NotNull MetricType type,
+      final @NotNull String key,
+      final @Nullable MeasurementUnit unit) {
+    final @NotNull String unitName = getUnitName(unit);
+    return String.format("%s:%s@%s", toStatsdType(type), key, unitName);
+  }
+
   public static double convertNanosTo(
       final @NotNull MeasurementUnit.Duration unit, final long durationNanos) {
     switch (unit) {
