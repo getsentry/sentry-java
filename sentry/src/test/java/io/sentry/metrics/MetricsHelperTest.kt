@@ -70,6 +70,7 @@ class MetricsHelperTest {
         assertEquals("\$foo", MetricsHelper.sanitizeValue("%\$foo"))
         assertEquals("blah{}", MetricsHelper.sanitizeValue("blah{}"))
         assertEquals("snwmn", MetricsHelper.sanitizeValue("snöwmän"))
+        assertEquals("j e n g a", MetricsHelper.sanitizeValue("j e n g a!"))
     }
 
     @Test
