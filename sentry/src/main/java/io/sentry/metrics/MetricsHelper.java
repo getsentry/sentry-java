@@ -139,8 +139,8 @@ public final class MetricsHelper {
   }
 
   /**
-   * provides an export key for identifying the metric without it tags. suitable for metric
-   * summaries
+   * Provides an export key for identifying the metric without its tags. Suitable for span level
+   * metric summaries
    *
    * @param type the metric type
    * @param key the metric key
