@@ -199,7 +199,7 @@ public final class SentryEnvelopeItem {
             () -> {
               // avoid method refs on Android due to some issues with older AGP setups
               //noinspection Convert2MethodRef
-              return metrics.encode();
+              return metrics.encodeToStatsd();
             });
 
     final @NotNull SentryEnvelopeItemHeader itemHeader =

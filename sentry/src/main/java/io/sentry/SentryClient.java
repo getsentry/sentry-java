@@ -992,13 +992,13 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
   }
 
   @Override
-  public @NotNull SentryId captureMetrics(@NotNull EncodedMetrics metrics) {
+  public @NotNull SentryId captureMetrics(final @NotNull EncodedMetrics metrics) {
 
-    final SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
-    final SentryEnvelopeHeader envelopeHeader =
+    final @NotNull SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
+    final @NotNull SentryEnvelopeHeader envelopeHeader =
         new SentryEnvelopeHeader(new SentryId(), options.getSdkVersion(), null);
 
-    final SentryEnvelope envelope =
+    final @NotNull SentryEnvelope envelope =
         new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
     final @Nullable SentryId id = captureEnvelope(envelope);
     return id != null ? id : SentryId.EMPTY_ID;

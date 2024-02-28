@@ -19,7 +19,15 @@ public final class EncodedMetrics {
     this.buckets = buckets;
   }
 
-  public byte[] encode() {
+  /**
+   * Encodes the metrics into a Statsd compatible format.
+   * <p>See <a href="https://github.com/statsd/statsd#usage">github.com/statsd/statsd#usage</a>
+   * and <a href="https://getsentry.github.io/relay/relay_metrics/index.html">getsentry.github.io/relay/relay_metrics/index.html</a> for
+   * more details about the format.
+   *
+   * @return the encoded metrics
+   */
+  public byte[] encodeToStatsd() {
     final StringBuilder statsd = new StringBuilder();
     for (Map.Entry<Long, Map<String, Metric>> entry : buckets.entrySet()) {
       MetricsHelper.encodeMetrics(entry.getKey(), entry.getValue().values(), statsd);

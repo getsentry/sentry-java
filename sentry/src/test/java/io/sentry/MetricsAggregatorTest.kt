@@ -116,7 +116,7 @@ class MetricsAggregatorTest {
 
         verify(fixture.client).captureMetrics(
             check {
-                val metrics = MetricsHelperTest.parseMetrics(it.encode())
+                val metrics = MetricsHelperTest.parseMetrics(it.encodeToStatsd())
                 assertEquals(1, metrics.size)
                 assertEquals(
                     MetricsHelperTest.Companion.StatsDMetric(
@@ -185,7 +185,7 @@ class MetricsAggregatorTest {
         // then all of them are emitted separately
         verify(fixture.client).captureMetrics(
             check {
-                val metrics = MetricsHelperTest.parseMetrics(it.encode())
+                val metrics = MetricsHelperTest.parseMetrics(it.encodeToStatsd())
                 assertEquals(5, metrics.size)
             }
         )
@@ -272,7 +272,7 @@ class MetricsAggregatorTest {
         aggregator.flush(true)
         verify(fixture.client).captureMetrics(
             check {
-                val metrics = MetricsHelperTest.parseMetrics(it.encode())
+                val metrics = MetricsHelperTest.parseMetrics(it.encodeToStatsd())
                 assertEquals(6, metrics.size)
             }
         )
