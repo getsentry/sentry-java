@@ -63,7 +63,7 @@ public final class MetricsHelper {
   }
 
   public static String sanitizeValue(final @NotNull String input) {
-    return INVALID_VALUE_CHARACTERS_PATTERN.matcher(input).replaceAll("_");
+    return INVALID_VALUE_CHARACTERS_PATTERN.matcher(input).replaceAll("");
   }
 
   public static @NotNull String toStatsdType(final @NotNull MetricType type) {
