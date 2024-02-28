@@ -435,7 +435,7 @@ public final class SentryEnvelopeItem {
     // Iterate over the map and serialize each key-value pair
     for (Map.Entry<String, byte[]> entry : map.entrySet()) {
       // Pack the key as a string
-      byte[] keyBytes = entry.getKey().getBytes(Charset.forName("UTF-8"));
+      byte[] keyBytes = entry.getKey().getBytes(UTF_8);
       int keyLength = keyBytes.length;
       // string up to 255 chars
       baos.write((byte) (0xd9));

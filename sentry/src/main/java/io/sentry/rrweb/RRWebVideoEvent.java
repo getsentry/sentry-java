@@ -36,6 +36,8 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
   private int frameRate;
   private int left;
   private int top;
+  // to support unknown json attributes with nesting, we have to have unknown map for each of the
+  // nested object in json: { ..., "data": { ..., "payload": { ... } } }
   private @Nullable Map<String, Object> unknown;
   private @Nullable Map<String, Object> payloadUnknown;
   private @Nullable Map<String, Object> dataUnknown;
@@ -334,7 +336,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
         final @NotNull ObjectReader reader,
         final @NotNull ILogger logger)
         throws Exception {
-      Map<String, Object> dataUknown = null;
+      Map<String, Object> dataUnknown = null;
 
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {
@@ -348,13 +350,13 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
             deserializePayload(event, reader, logger);
             break;
           default:
-            if (dataUknown == null) {
-              dataUknown = new ConcurrentHashMap<>();
+            if (dataUnknown == null) {
+              dataUnknown = new ConcurrentHashMap<>();
             }
-            reader.nextUnknown(logger, dataUknown, nextName);
+            reader.nextUnknown(logger, dataUnknown, nextName);
         }
       }
-      event.setDataUnknown(dataUknown);
+      event.setDataUnknown(dataUnknown);
       reader.endObject();
     }
 

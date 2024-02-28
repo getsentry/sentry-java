@@ -20,6 +20,8 @@ public final class RRWebMetaEvent extends RRWebEvent implements JsonUnknown, Jso
   private @NotNull String href;
   private int height;
   private int width;
+  // to support unknown json attributes with nesting, we have to have unknown map for each of the
+  // nested object in json: { ..., "data": { ... } }
   private @Nullable Map<String, Object> unknown;
   private @Nullable Map<String, Object> dataUnknown;
 

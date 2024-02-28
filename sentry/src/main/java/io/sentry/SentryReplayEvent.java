@@ -5,7 +5,6 @@ import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -192,16 +191,12 @@ public final class SentryReplayEvent extends SentryBaseEvent
     writer.name(JsonKeys.TYPE).value(type);
     writer.name(JsonKeys.REPLAY_TYPE).value(logger, replayType);
     writer.name(JsonKeys.SEGMENT_ID).value(segmentId);
-    writer
-        .name(JsonKeys.TIMESTAMP)
-        .value(logger, BigDecimal.valueOf(DateUtils.dateToSeconds(timestamp)));
+    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (replayId != null) {
       writer.name(JsonKeys.REPLAY_ID).value(logger, replayId);
     }
     if (replayStartTimestamp != null) {
-      writer
-          .name(JsonKeys.REPLAY_START_TIMESTAMP)
-          .value(logger, BigDecimal.valueOf(DateUtils.dateToSeconds(replayStartTimestamp)));
+      writer.name(JsonKeys.REPLAY_START_TIMESTAMP).value(logger, replayStartTimestamp);
     }
     if (urls != null) {
       writer.name(JsonKeys.URLS).value(logger, urls);
