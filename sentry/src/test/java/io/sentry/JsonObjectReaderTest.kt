@@ -285,7 +285,7 @@ class JsonObjectReaderTest {
         var bar: String? = null
     ) {
         class Deserializer : JsonDeserializer<Deserializable> {
-            override fun deserialize(reader: JsonObjectReader, logger: ILogger): Deserializable {
+            override fun deserialize(reader: ObjectReader, logger: ILogger): Deserializable {
                 return Deserializable().apply {
                     reader.beginObject()
                     reader.nextName()

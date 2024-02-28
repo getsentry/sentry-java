@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -229,7 +229,7 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<Gpu> {
     @Override
-    public @NotNull Gpu deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull Gpu deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       Gpu gpu = new Gpu();
