@@ -8,6 +8,7 @@ import io.sentry.metrics.MetricsHelperTest
 import io.sentry.test.DeferredExecutorService
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -29,11 +30,12 @@ class MetricsAggregatorTest {
         var currentTimeMillis: Long = 0
         var executorService = DeferredExecutorService()
 
-        fun getSut(): MetricsAggregator {
+        fun getSut(maxWeight: Int = MetricsHelper.MAX_TOTAL_WEIGHT): MetricsAggregator {
             return MetricsAggregator(
                 client,
                 logger,
                 dateProvider,
+                maxWeight,
                 executorService
             )
         }
@@ -335,7 +337,7 @@ class MetricsAggregatorTest {
         // when a metric gets emitted
         val type = MetricType.Counter
         val key = "name0"
-        val value = 1.0
+        val value = 4.0
         val unit = MeasurementUnit.Custom("unit0")
         val tags = mapOf("key0" to "value0")
         val timestamp = 20_001L
@@ -367,7 +369,7 @@ class MetricsAggregatorTest {
 
         val localAggregator = mock<LocalMetricsAggregator>()
 
-        // when a metric gets emitted
+        // when a new set metric gets emitted
         val type = MetricType.Set
         val key = "name0"
         val value = 1235
@@ -385,6 +387,7 @@ class MetricsAggregatorTest {
             localAggregator
         )
 
+        // then the local aggregator receives a value of 1
         verify(localAggregator).add(
             MetricsHelper.getMetricBucketKey(type, key, unit, tags),
             type,
@@ -394,5 +397,104 @@ class MetricsAggregatorTest {
             tags,
             timestamp
         )
+
+        // if the same set metric is emitted again
+        aggregator.set(
+            key,
+            value,
+            unit,
+            tags,
+            timestamp,
+            1,
+            localAggregator
+        )
+
+        // then the local aggregator receives a value of 0
+        verify(localAggregator).add(
+            MetricsHelper.getMetricBucketKey(type, key, unit, tags),
+            type,
+            key,
+            0.0,
+            unit,
+            tags,
+            timestamp
+        )
+    }
+
+    fun `weight is considered for force flushing`() {
+        // weight is determined by number of buckets + weight of metrics
+        val aggregator = fixture.getSut(5)
+
+        // when 3 values are emitted
+        for (i in 0 until 3) {
+            aggregator.distribution(
+                "name",
+                i.toDouble(),
+                null,
+                null,
+                fixture.currentTimeMillis,
+                1,
+                null
+            )
+        }
+        // no metrics are captured by the client
+        fixture.executorService.runAll()
+        verify(fixture.client, never()).captureMetrics(any())
+
+        // once we have 4 values and one bucket = weight of 5
+        aggregator.distribution(
+            "name",
+            10.0,
+            null,
+            null,
+            fixture.currentTimeMillis,
+            1,
+            null
+        )
+        // then flush without force still captures all metrics
+        fixture.executorService.runAll()
+        verify(fixture.client).captureMetrics(any())
+    }
+
+    @Test
+    fun `flushing is immediately scheduled if add operations causes too much weight`() {
+        fixture.executorService = mock()
+        val aggregator = fixture.getSut(1)
+
+        verify(fixture.executorService, never()).schedule(any(), any())
+
+        // when 1 value is emitted
+        aggregator.distribution(
+            "name",
+            1.0,
+            null,
+            null,
+            fixture.currentTimeMillis,
+            1,
+            null
+        )
+
+        // flush is immediately scheduled
+        verify(fixture.executorService).schedule(any(), eq(0))
+    }
+
+    @Test
+    fun `flushing is deferred scheduled if add operations does not cause too much weight`() {
+        fixture.executorService = mock()
+        val aggregator = fixture.getSut(10)
+
+        // when 1 value is emitted
+        aggregator.distribution(
+            "name",
+            1.0,
+            null,
+            null,
+            fixture.currentTimeMillis,
+            1,
+            null
+        )
+
+        // flush is scheduled for later
+        verify(fixture.executorService).schedule(any(), eq(MetricsHelper.FLUSHER_SLEEP_TIME_MS))
     }
 }
