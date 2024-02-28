@@ -21,9 +21,11 @@ public final class EncodedMetrics {
 
   /**
    * Encodes the metrics into a Statsd compatible format.
-   * <p>See <a href="https://github.com/statsd/statsd#usage">github.com/statsd/statsd#usage</a>
-   * and <a href="https://getsentry.github.io/relay/relay_metrics/index.html">getsentry.github.io/relay/relay_metrics/index.html</a> for
-   * more details about the format.
+   *
+   * <p>See <a href="https://github.com/statsd/statsd#usage">github.com/statsd/statsd#usage</a> and
+   * <a
+   * href="https://getsentry.github.io/relay/relay_metrics/index.html">getsentry.github.io/relay/relay_metrics/index.html</a>
+   * for more details about the format.
    *
    * @return the encoded metrics
    */
