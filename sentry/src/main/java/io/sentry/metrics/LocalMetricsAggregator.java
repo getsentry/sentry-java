@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentSkipListMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public final class LocalMetricsAggregator {
 
   // format: <export key, <metric key, gauge>>
-  private final @NotNull Map<String, Map<String, GaugeMetric>> buckets =
-      new ConcurrentSkipListMap<>();
+  private final @NotNull Map<String, Map<String, GaugeMetric>> buckets = new HashMap<>();
 
   public void add(
       final @NotNull String bucketKey,

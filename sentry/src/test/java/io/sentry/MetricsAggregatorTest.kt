@@ -1,6 +1,8 @@
 package io.sentry
 
 import io.sentry.metrics.IMetricsClient
+import io.sentry.metrics.LocalMetricsAggregator
+import io.sentry.metrics.MetricType
 import io.sentry.metrics.MetricsHelper
 import io.sentry.metrics.MetricsHelperTest
 import io.sentry.test.DeferredExecutorService
@@ -322,5 +324,75 @@ class MetricsAggregatorTest {
 
         // and flushing is scheduled again
         assertTrue(fixture.executorService.hasScheduledRunnables())
+    }
+
+    @Test
+    fun `metric emits get forwarded to local aggregator`() {
+        val aggregator = fixture.getSut()
+
+        val localAggregator = mock<LocalMetricsAggregator>()
+
+        // when a metric gets emitted
+        val type = MetricType.Counter
+        val key = "name0"
+        val value = 1.0
+        val unit = MeasurementUnit.Custom("unit0")
+        val tags = mapOf("key0" to "value0")
+        val timestamp = 20_001L
+
+        aggregator.increment(
+            key,
+            value,
+            unit,
+            tags,
+            timestamp,
+            1,
+            localAggregator
+        )
+
+        verify(localAggregator).add(
+            MetricsHelper.getMetricBucketKey(type, key, unit, tags),
+            type,
+            key,
+            value,
+            unit,
+            tags,
+            timestamp
+        )
+    }
+
+    @Test
+    fun `a set metric forwards a value of 1 to the local aggregator`() {
+        val aggregator = fixture.getSut()
+
+        val localAggregator = mock<LocalMetricsAggregator>()
+
+        // when a metric gets emitted
+        val type = MetricType.Set
+        val key = "name0"
+        val value = 1235
+        val unit = MeasurementUnit.Custom("unit0")
+        val tags = mapOf("key0" to "value0")
+        val timestamp = 20_001L
+
+        aggregator.set(
+            key,
+            value,
+            unit,
+            tags,
+            timestamp,
+            1,
+            localAggregator
+        )
+
+        verify(localAggregator).add(
+            MetricsHelper.getMetricBucketKey(type, key, unit, tags),
+            type,
+            key,
+            1.0,
+            unit,
+            tags,
+            timestamp
+        )
     }
 }
