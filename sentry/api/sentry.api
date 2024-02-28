@@ -3410,7 +3410,7 @@ public final class io/sentry/metrics/DistributionMetric : io/sentry/metrics/Metr
 
 public final class io/sentry/metrics/EncodedMetrics {
 	public fun <init> (Ljava/util/Map;)V
-	public fun encode ()[B
+	public fun encodeToStatsd ()[B
 }
 
 public final class io/sentry/metrics/GaugeMetric : io/sentry/metrics/Metric {

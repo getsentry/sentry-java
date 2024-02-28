@@ -64,7 +64,7 @@ public final class MetricsHelper {
   }
 
   public static String sanitizeValue(final @NotNull String input) {
-    return INVALID_VALUE_CHARACTERS_PATTERN.matcher(input).replaceAll("_");
+    return INVALID_VALUE_CHARACTERS_PATTERN.matcher(input).replaceAll("");
   }
 
   public static @NotNull String toStatsdType(final @NotNull MetricType type) {
@@ -165,8 +165,10 @@ public final class MetricsHelper {
   /**
    * Encodes the metrics
    *
-   * <p>See <a href="https://github.com/statsd/statsd#usage">github.com/statsd/statsd#usage</a> for
-   * more details about the format
+   * <p>See <a href="https://github.com/statsd/statsd#usage">github.com/statsd/statsd#usage</a> and
+   * <a
+   * href="https://getsentry.github.io/relay/relay_metrics/index.html">getsentry.github.io/relay/relay_metrics/index.html</a>
+   * for more details about the format.
    *
    * @param timestamp The bucket time the metrics belong to, in second resolution
    * @param metrics The metrics to encode
