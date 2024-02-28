@@ -128,9 +128,11 @@ data class ViewHierarchyNode(
         }
 
         private fun Drawable.isRedactable(): Boolean {
+            // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from network
+            // TODO: otherwise maybe check for the bitmap size and don't redact those that take a lot of height (e.g. a background of a whatsapp chat)
             return when (this) {
                 is InsetDrawable, is ColorDrawable, is VectorDrawable, is GradientDrawable -> false
-                is BitmapDrawable -> !bitmap.isRecycled && bitmap.height > 0 && bitmap.width > 0
+                is BitmapDrawable -> !bitmap.isRecycled && bitmap.height > 10 && bitmap.width > 10
                 else -> true
             }
         }

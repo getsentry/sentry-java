@@ -43,7 +43,7 @@ internal class ScreenshotRecorder(
         lastCapturedAtMs = now
 
         val root = rootView.get()
-        if (root == null || root.width <= 0 || root.height <= 0) {
+        if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
             return
         }
 
