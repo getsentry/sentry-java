@@ -67,9 +67,9 @@ class MetricsHelperTest {
 
     @Test
     fun sanitizeValue() {
-        assertEquals("_\$foo", MetricsHelper.sanitizeValue("%\$foo"))
+        assertEquals("\$foo", MetricsHelper.sanitizeValue("%\$foo"))
         assertEquals("blah{}", MetricsHelper.sanitizeValue("blah{}"))
-        assertEquals("sn_wm_n", MetricsHelper.sanitizeValue("snöwmän"))
+        assertEquals("snwmn", MetricsHelper.sanitizeValue("snöwmän"))
     }
 
     @Test
