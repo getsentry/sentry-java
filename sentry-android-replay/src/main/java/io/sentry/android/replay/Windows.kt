@@ -1,5 +1,5 @@
 /**
- * Adapted from https://github.com/square/curtains
+ * Adapted from https://github.com/square/curtains/tree/v1.2.5
  *
  * Copyright 2021 Square Inc.
  *
