@@ -285,4 +285,8 @@ public interface ISentryClient {
   default boolean isHealthy() {
     return true;
   }
+
+  @ApiStatus.Internal
+  @NotNull
+  IMetricsAggregator getMetricsAggregator();
 }
