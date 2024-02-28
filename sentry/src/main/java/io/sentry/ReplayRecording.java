@@ -31,7 +31,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
     return segmentId;
   }
 
-  public void setSegmentId(@Nullable Integer segmentId) {
+  public void setSegmentId(final @Nullable Integer segmentId) {
     this.segmentId = segmentId;
   }
 
@@ -40,7 +40,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
     return payload;
   }
 
-  public void setPayload(@Nullable List<? extends RRWebEvent> payload) {
+  public void setPayload(final @Nullable List<? extends RRWebEvent> payload) {
     this.payload = payload;
   }
 
@@ -136,11 +136,11 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
           if (event instanceof Map) {
             final Map<String, Object> eventMap = (Map<String, Object>) event;
             final ObjectReader mapReader = new MapObjectReader(eventMap);
-            for (Map.Entry<String, Object> entry : eventMap.entrySet()) {
+            for (final Map.Entry<String, Object> entry : eventMap.entrySet()) {
               final String key = entry.getKey();
               final Object value = entry.getValue();
               if (key.equals("type")) {
-                RRWebEventType type = RRWebEventType.values()[(int) value];
+                final RRWebEventType type = RRWebEventType.values()[(int) value];
                 switch (type) {
                   case Meta:
                     final RRWebEvent metaEvent =

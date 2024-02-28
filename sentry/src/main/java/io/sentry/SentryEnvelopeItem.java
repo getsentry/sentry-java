@@ -425,32 +425,34 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  @SuppressWarnings({"CharsetObjectCanBeUsed", "UnnecessaryParentheses"})
-  private static byte[] serializeToMsgpack(Map<String, byte[]> map) throws IOException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  @SuppressWarnings({"UnnecessaryParentheses"})
+  private static byte[] serializeToMsgpack(final @NotNull Map<String, byte[]> map)
+      throws IOException {
+    try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
-    // Write map header
-    baos.write((byte) (0x80 | map.size()));
+      // Write map header
+      baos.write((byte) (0x80 | map.size()));
 
-    // Iterate over the map and serialize each key-value pair
-    for (Map.Entry<String, byte[]> entry : map.entrySet()) {
-      // Pack the key as a string
-      byte[] keyBytes = entry.getKey().getBytes(UTF_8);
-      int keyLength = keyBytes.length;
-      // string up to 255 chars
-      baos.write((byte) (0xd9));
-      baos.write((byte) (keyLength));
-      baos.write(keyBytes);
+      // Iterate over the map and serialize each key-value pair
+      for (final Map.Entry<String, byte[]> entry : map.entrySet()) {
+        // Pack the key as a string
+        final byte[] keyBytes = entry.getKey().getBytes(UTF_8);
+        final int keyLength = keyBytes.length;
+        // string up to 255 chars
+        baos.write((byte) (0xd9));
+        baos.write((byte) (keyLength));
+        baos.write(keyBytes);
 
-      // Pack the value as a binary string
-      byte[] valueBytes = entry.getValue();
-      int valueLength = valueBytes.length;
-      // We will always use the 4 bytes data length for simplicity.
-      baos.write((byte) (0xc6));
-      baos.write(ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(valueLength).array());
-      baos.write(valueBytes);
+        // Pack the value as a binary string
+        final byte[] valueBytes = entry.getValue();
+        final int valueLength = valueBytes.length;
+        // We will always use the 4 bytes data length for simplicity.
+        baos.write((byte) (0xc6));
+        baos.write(ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(valueLength).array());
+        baos.write(valueBytes);
+      }
+
+      return baos.toByteArray();
     }
-
-    return baos.toByteArray();
   }
 }

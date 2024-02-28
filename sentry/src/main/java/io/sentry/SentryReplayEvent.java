@@ -22,15 +22,15 @@ public final class SentryReplayEvent extends SentryBaseEvent
     BUFFER;
 
     @Override
-    public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
+    public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
         throws IOException {
       writer.value(name().toLowerCase(Locale.ROOT));
     }
 
     public static final class Deserializer implements JsonDeserializer<ReplayType> {
       @Override
-      public @NotNull ReplayType deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
-          throws Exception {
+      public @NotNull ReplayType deserialize(
+          final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
         return ReplayType.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
       }
     }
@@ -236,7 +236,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     public @NotNull SentryReplayEvent deserialize(
         final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
 
-      SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
+      final SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
 
       final SentryReplayEvent replay = new SentryReplayEvent();
 

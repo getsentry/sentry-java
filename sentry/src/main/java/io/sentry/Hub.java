@@ -932,7 +932,7 @@ public final class Hub implements IHub {
               "Instance is disabled and this 'captureReplay' call is a no-op.");
     } else {
       try {
-        StackItem item = stack.peek();
+        final @NotNull StackItem item = stack.peek();
         sentryId = item.getClient().captureReplayEvent(replay, item.getScope(), hint);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);

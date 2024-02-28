@@ -18,14 +18,15 @@ public enum RRWebEventType implements JsonSerializable {
   Plugin;
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     writer.value(ordinal());
   }
 
   public static final class Deserializer implements JsonDeserializer<RRWebEventType> {
     @Override
     public @NotNull RRWebEventType deserialize(
-        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       return RRWebEventType.values()[reader.nextInt()];
     }
   }

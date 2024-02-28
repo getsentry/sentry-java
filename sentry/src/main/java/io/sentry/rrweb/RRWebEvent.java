@@ -60,7 +60,9 @@ public abstract class RRWebEvent {
 
   public static final class Serializer {
     public void serialize(
-        @NotNull RRWebEvent baseEvent, @NotNull ObjectWriter writer, @NotNull ILogger logger)
+        final @NotNull RRWebEvent baseEvent,
+        final @NotNull ObjectWriter writer,
+        final @NotNull ILogger logger)
         throws IOException {
       writer.name(JsonKeys.TYPE).value(logger, baseEvent.type);
       writer.name(JsonKeys.TIMESTAMP).value(baseEvent.timestamp);
@@ -70,10 +72,10 @@ public abstract class RRWebEvent {
   public static final class Deserializer {
     @SuppressWarnings("unchecked")
     public boolean deserializeValue(
-        @NotNull RRWebEvent baseEvent,
-        @NotNull String nextName,
-        @NotNull ObjectReader reader,
-        @NotNull ILogger logger)
+        final @NotNull RRWebEvent baseEvent,
+        final @NotNull String nextName,
+        final @NotNull ObjectReader reader,
+        final @NotNull ILogger logger)
         throws Exception {
       switch (nextName) {
         case JsonKeys.TYPE:

@@ -127,11 +127,11 @@ public final class RRWebMetaEvent extends RRWebEvent implements JsonUnknown, Jso
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull RRWebMetaEvent deserialize(
-        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
-      Map<String, Object> unknown = null;
-      RRWebMetaEvent event = new RRWebMetaEvent();
-      RRWebEvent.Deserializer baseEventDeserializer = new RRWebEvent.Deserializer();
+      @Nullable Map<String, Object> unknown = null;
+      final RRWebMetaEvent event = new RRWebMetaEvent();
+      final RRWebEvent.Deserializer baseEventDeserializer = new RRWebEvent.Deserializer();
 
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
@@ -159,7 +159,7 @@ public final class RRWebMetaEvent extends RRWebEvent implements JsonUnknown, Jso
         final @NotNull ObjectReader reader,
         final @NotNull ILogger logger)
         throws Exception {
-      Map<String, Object> unknown = null;
+      @Nullable Map<String, Object> unknown = null;
 
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

@@ -150,7 +150,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   @Override
-  public @NotNull SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
+  public @NotNull SentryReplayEvent process(
+      final @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
     setCommons(event);
     // TODO: maybe later it's needed to deobfuscate something (e.g. view hierarchy), for now the
     // TODO: protocol does not support it
