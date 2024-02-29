@@ -53,6 +53,8 @@ class SentryTransactionSerializationTest {
         val expected = sanitizedFile("json/sentry_transaction.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
+        // There are 1 measurement from the span and 2 from the transaction
+        assertEquals(3, fixture.getSut().measurements.size)
     }
 
     @Test
