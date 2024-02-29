@@ -7,7 +7,8 @@
 - Add support for measurements at span level ([#3219](https://github.com/getsentry/sentry-java/pull/3219))
 - Add `enableScopePersistence` option to disable `PersistingScopeObserver` used for ANR reporting which may increase performance overhead. Defaults to `true` ([#3218](https://github.com/getsentry/sentry-java/pull/3218))
   - When disabled, the SDK will not enrich ANRv2 events with scope data (e.g. breadcrumbs, user, tags, etc.)
-- Show warning if incompatible spring boot version is detected ([#3233](https://github.com/getsentry/sentry-java/pull/3233))
+- We now display a warning on startup if an incompatible version of Spring Boot is detected ([#3233](https://github.com/getsentry/sentry-java/pull/3233))
+  - This should help notice a mismatching Sentry dependency, especially when upgrading a Spring Boot application
 
 ### Fixes
 
