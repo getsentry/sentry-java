@@ -20,6 +20,14 @@
             "data":
             {
                 "518276a7-88d7-408f-ab36-af342f2d7715": "4a1c2d6c-3f49-41cc-b2ca-d1b36f7ea5a6"
+            },
+            "measurements":
+            {
+              "test_measurement":
+              {
+                "value": 1,
+                "unit": "test"
+              }
             }
         }
     ],
@@ -29,6 +37,11 @@
         "386384cb-1162-49e7-aea1-db913d4fca63":
         {
             "value": 0.30000001192092896
+        },
+        "test_measurement":
+        {
+          "value": 1,
+          "unit": "test"
         }
     },
     "transaction_info": {

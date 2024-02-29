@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -582,4 +583,8 @@ public interface IHub {
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
+
+  @ApiStatus.Experimental
+  @NotNull
+  MetricsApi metrics();
 }

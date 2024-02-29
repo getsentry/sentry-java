@@ -462,6 +462,8 @@ public class SentryOptions {
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
 
+  private boolean enableMetrics = false;
+
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
@@ -2324,6 +2326,16 @@ public class SentryOptions {
 
   public void setEnableScopePersistence(final boolean enableScopePersistence) {
     this.enableScopePersistence = enableScopePersistence;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableMetrics() {
+    return enableMetrics;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableMetrics(boolean enableMetrics) {
+    this.enableMetrics = enableMetrics;
   }
 
   @ApiStatus.Experimental

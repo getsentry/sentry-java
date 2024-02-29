@@ -410,7 +410,7 @@ public final class io/sentry/HttpStatusCodeRange {
 	public fun isInRange (I)Z
 }
 
-public final class io/sentry/Hub : io/sentry/IHub {
+public final class io/sentry/Hub : io/sentry/IHub, io/sentry/metrics/MetricsApi$IMetricsInterface {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
@@ -435,7 +435,9 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
+	public fun getDefaultTagsForMetrics ()Ljava/util/Map;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
+	public fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -444,6 +446,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
+	public fun metrics ()Lio/sentry/metrics/MetricsApi;
 	public fun popScope ()V
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
@@ -496,6 +499,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
+	public fun metrics ()Lio/sentry/metrics/MetricsApi;
 	public fun popScope ()V
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
@@ -586,6 +590,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
 	public abstract fun isHealthy ()Z
+	public abstract fun metrics ()Lio/sentry/metrics/MetricsApi;
 	public abstract fun popScope ()V
 	public abstract fun pushScope ()V
 	public abstract fun removeExtra (Ljava/lang/String;)V
@@ -617,6 +622,16 @@ public abstract interface class io/sentry/ILogger {
 
 public abstract interface class io/sentry/IMemoryCollector {
 	public abstract fun collect ()Lio/sentry/MemoryCollectionData;
+}
+
+public abstract interface class io/sentry/IMetricsAggregator : java/io/Closeable {
+	public abstract fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun flush (Z)V
+	public abstract fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public abstract fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
@@ -739,6 +754,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun close ()V
 	public abstract fun close (Z)V
 	public abstract fun flush (J)V
+	public abstract fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -1007,6 +1023,20 @@ public final class io/sentry/MemoryCollectionData {
 	public fun getUsedNativeMemory ()J
 }
 
+public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, java/io/Closeable, java/lang/Runnable {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/metrics/IMetricsClient;)V
+	public fun <init> (Lio/sentry/metrics/IMetricsClient;Lio/sentry/ILogger;Lio/sentry/SentryDateProvider;ILio/sentry/ISentryExecutorService;)V
+	public fun close ()V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun flush (Z)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun run ()V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
+}
+
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/MonitorSchedule;)V
 	public fun getCheckinMargin ()Ljava/lang/Long;
@@ -1153,6 +1183,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
+	public fun metrics ()Lio/sentry/metrics/MetricsApi;
 	public fun popScope ()V
 	public fun pushScope ()V
 	public fun removeExtra (Ljava/lang/String;)V
@@ -1705,6 +1736,7 @@ public final class io/sentry/Sentry {
 	public static fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public static fun isEnabled ()Z
 	public static fun isHealthy ()Z
+	public static fun metrics ()Lio/sentry/metrics/MetricsApi;
 	public static fun popScope ()V
 	public static fun pushScope ()V
 	public static fun removeExtra (Ljava/lang/String;)V
@@ -1848,16 +1880,18 @@ public final class io/sentry/SentryBaseEvent$Serializer {
 	public fun serialize (Lio/sentry/SentryBaseEvent;Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 }
 
-public final class io/sentry/SentryClient : io/sentry/ISentryClient {
+public final class io/sentry/SentryClient : io/sentry/ISentryClient, io/sentry/metrics/IMetricsClient {
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public fun captureMetrics (Lio/sentry/metrics/EncodedMetrics;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
 	public fun close (Z)V
 	public fun flush (J)V
+	public fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -1930,6 +1964,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromCheckIn (Lio/sentry/ISerializer;Lio/sentry/CheckIn;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromClientReport (Lio/sentry/ISerializer;Lio/sentry/clientreport/ClientReport;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromMetrics (Lio/sentry/metrics/EncodedMetrics;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
@@ -2062,6 +2097,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field ReplayEvent Lio/sentry/SentryItemType;
 	public static final field ReplayRecording Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
+	public static final field Statsd Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
 	public static final field UserFeedback Lio/sentry/SentryItemType;
@@ -2246,6 +2282,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableBackpressureHandling ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
+	public fun isEnableMetrics ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableScopePersistence ()Z
 	public fun isEnableShutdownHook ()Z
@@ -2288,6 +2325,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableBackpressureHandling (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
+	public fun setEnableMetrics (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableScopePersistence (Z)V
 	public fun setEnableShutdownHook (Z)V
@@ -2481,6 +2519,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
+	public fun setMeasurementFromChild (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurementFromChild (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -2585,6 +2625,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
+	public fun getMeasurements ()Ljava/util/Map;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -3365,6 +3406,169 @@ public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry
 
 public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
+}
+
+public final class io/sentry/metrics/CodeLocations {
+	public fun <init> (DLjava/util/Map;)V
+	public fun getLocations ()Ljava/util/Map;
+	public fun getTimestamp ()D
+}
+
+public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun add (D)V
+	public fun getValue ()D
+	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
+}
+
+public final class io/sentry/metrics/DistributionMetric : io/sentry/metrics/Metric {
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun add (D)V
+	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
+}
+
+public final class io/sentry/metrics/EncodedMetrics {
+	public fun <init> (Ljava/util/Map;)V
+	public fun encodeToStatsd ()[B
+}
+
+public final class io/sentry/metrics/GaugeMetric : io/sentry/metrics/Metric {
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun add (D)V
+	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
+}
+
+public abstract interface class io/sentry/metrics/IMetricsClient {
+	public abstract fun captureMetrics (Lio/sentry/metrics/EncodedMetrics;)Lio/sentry/protocol/SentryId;
+}
+
+public abstract class io/sentry/metrics/Metric {
+	public fun <init> (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public abstract fun add (D)V
+	public fun getKey ()Ljava/lang/String;
+	public fun getTags ()Ljava/util/Map;
+	public fun getTimeStampMs ()Ljava/lang/Long;
+	public fun getType ()Lio/sentry/metrics/MetricType;
+	public fun getUnit ()Lio/sentry/MeasurementUnit;
+	public abstract fun getWeight ()I
+	public abstract fun serialize ()Ljava/lang/Iterable;
+}
+
+public final class io/sentry/metrics/MetricResourceIdentifier {
+	public fun <init> (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKey ()Ljava/lang/String;
+	public fun getMetricType ()Lio/sentry/metrics/MetricType;
+	public fun getUnit ()Lio/sentry/MeasurementUnit;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/metrics/MetricType : java/lang/Enum {
+	public static final field Counter Lio/sentry/metrics/MetricType;
+	public static final field Distribution Lio/sentry/metrics/MetricType;
+	public static final field Gauge Lio/sentry/metrics/MetricType;
+	public static final field Set Lio/sentry/metrics/MetricType;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/metrics/MetricType;
+	public static fun values ()[Lio/sentry/metrics/MetricType;
+}
+
+public final class io/sentry/metrics/MetricsApi {
+	public fun <init> (Lio/sentry/metrics/MetricsApi$IMetricsInterface;)V
+	public fun distribution (Ljava/lang/String;D)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
+	public fun gauge (Ljava/lang/String;D)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
+	public fun increment (Ljava/lang/String;)V
+	public fun increment (Ljava/lang/String;D)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
+	public fun set (Ljava/lang/String;I)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;I)V
+	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;)V
+	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;)V
+	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;)V
+	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
+}
+
+public abstract interface class io/sentry/metrics/MetricsApi$IMetricsInterface {
+	public abstract fun getDefaultTagsForMetrics ()Ljava/util/Map;
+	public abstract fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
+}
+
+public final class io/sentry/metrics/MetricsHelper {
+	public static final field FLUSHER_SLEEP_TIME_MS J
+	public static final field MAX_TOTAL_WEIGHT I
+	public fun <init> ()V
+	public static fun convertNanosTo (Lio/sentry/MeasurementUnit$Duration;J)D
+	public static fun encodeMetrics (JLjava/util/Collection;Ljava/lang/StringBuilder;)V
+	public static fun getCutoffTimestampMs (J)J
+	public static fun getDayBucketKey (Ljava/util/Calendar;)J
+	public static fun getMetricBucketKey (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)Ljava/lang/String;
+	public static fun getTimeBucketKey (J)J
+	public static fun mergeTags (Ljava/util/Map;Ljava/util/Map;)Ljava/util/Map;
+	public static fun sanitizeKey (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeUnit (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeValue (Ljava/lang/String;)Ljava/lang/String;
+	public static fun setFlushShiftMs (J)V
+	public static fun toStatsdType (Lio/sentry/metrics/MetricType;)Ljava/lang/String;
+}
+
+public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsAggregator, io/sentry/metrics/MetricsApi$IMetricsInterface {
+	public fun <init> ()V
+	public fun close ()V
+	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun flush (Z)V
+	public fun gauge (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun getDefaultTagsForMetrics ()Ljava/util/Map;
+	public static fun getInstance ()Lio/sentry/metrics/NoopMetricsAggregator;
+	public fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
+	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JI)V
+	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;I)V
+}
+
+public final class io/sentry/metrics/SentryMetric : io/sentry/JsonSerializable {
+	public fun <init> (Lio/sentry/metrics/Metric;)V
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/metrics/SentryMetric$JsonKeys {
+	public static final field EVENT_ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field TAGS Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field UNIT Ljava/lang/String;
+	public static final field VALUE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
+	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun add (D)V
+	public fun getWeight ()I
+	public fun serialize ()Ljava/lang/Iterable;
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -4205,9 +4409,10 @@ public final class io/sentry/protocol/SentryRuntime$JsonKeys {
 public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Span;)V
 	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getMeasurements ()Ljava/util/Map;
 	public fun getOp ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
@@ -4232,6 +4437,7 @@ public final class io/sentry/protocol/SentrySpan$Deserializer : io/sentry/JsonDe
 public final class io/sentry/protocol/SentrySpan$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field DESCRIPTION Ljava/lang/String;
+	public static final field MEASUREMENTS Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
 	public static final field ORIGIN Ljava/lang/String;
 	public static final field PARENT_SPAN_ID Ljava/lang/String;
