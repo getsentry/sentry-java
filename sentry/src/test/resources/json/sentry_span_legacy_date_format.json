@@ -15,5 +15,11 @@
   "data":
   {
     "518276a7-88d7-408f-ab36-af342f2d7715": "4a1c2d6c-3f49-41cc-b2ca-d1b36f7ea5a6"
+  },
+  "measurements": {
+    "test_measurement": {
+      "value": 1,
+      "unit": "test"
+    }
   }
 }

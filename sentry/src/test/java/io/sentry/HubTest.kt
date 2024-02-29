@@ -1965,6 +1965,21 @@ class HubTest {
         assertNull(transactionContext)
     }
 
+    @Test
+    fun `hub provides default metric tags, based on options`() {
+        val hub = generateHub {
+            it.environment = "test"
+            it.release = "1.0"
+        } as Hub
+        assertEquals(
+            mapOf(
+                "environment" to "test",
+                "release" to "1.0"
+            ),
+            hub.defaultTagsForMetrics
+        )
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {

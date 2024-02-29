@@ -1019,6 +1019,8 @@ class JsonSerializerTest {
                 assertEquals("value1", it)
             }
         }
+        assertEquals(1, deserialized?.measurements?.get("test_measurement")?.value)
+        assertEquals("test", deserialized?.measurements?.get("test_measurement")?.unit)
     }
 
     @Test
@@ -1300,6 +1302,7 @@ class JsonSerializerTest {
         }
         val tracer = SentryTracer(trace, fixture.hub)
         val span = tracer.startChild("child")
+        span.setMeasurement("test_measurement", 1, MeasurementUnit.Custom("test"))
         span.finish(SpanStatus.OK)
         tracer.finish()
         return span

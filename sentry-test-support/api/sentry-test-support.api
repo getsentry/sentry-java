@@ -14,7 +14,7 @@ public final class io/sentry/SkipError : java/lang/Error {
 public final class io/sentry/test/DeferredExecutorService : io/sentry/ISentryExecutorService {
 	public fun <init> ()V
 	public fun close (J)V
-	public final fun getScheduledRunnables ()Ljava/util/ArrayList;
+	public final fun hasScheduledRunnables ()Z
 	public fun isClosed ()Z
 	public final fun runAll ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;

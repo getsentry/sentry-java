@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add support for measurements at span level ([#3219](https://github.com/getsentry/sentry-java/pull/3219))
 - Add `enableScopePersistence` option to disable `PersistingScopeObserver` used for ANR reporting which may increase performance overhead. Defaults to `true` ([#3218](https://github.com/getsentry/sentry-java/pull/3218))
   - When disabled, the SDK will not enrich ANRv2 events with scope data (e.g. breadcrumbs, user, tags, etc.)
 - Show warning if incompatible spring boot version is detected ([#3233](https://github.com/getsentry/sentry-java/pull/3233))
@@ -14,6 +15,8 @@
 - Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
 - Fix hub restore point in wrappers: SentryWrapper, SentryTaskDecorator and SentryScheduleHook ([#3225](https://github.com/getsentry/sentry-java/pull/3225))
   - We now reset the hub to its previous value on the thread where the `Runnable`/`Callable`/`Supplier` is executed instead of setting it to the hub that was used on the thread where the `Runnable`/`Callable`/`Supplier` was created.
+- Fix add missing thread name/id to app start spans ([#3226](https://github.com/getsentry/sentry-java/pull/3226))
+- Experimental: Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
 
 ## 7.4.0
 
