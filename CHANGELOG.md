@@ -7,6 +7,7 @@
 - Add support for measurements at span level ([#3219](https://github.com/getsentry/sentry-java/pull/3219))
 - Add `enableScopePersistence` option to disable `PersistingScopeObserver` used for ANR reporting which may increase performance overhead. Defaults to `true` ([#3218](https://github.com/getsentry/sentry-java/pull/3218))
   - When disabled, the SDK will not enrich ANRv2 events with scope data (e.g. breadcrumbs, user, tags, etc.)
+- Configurable defaults for Cron - MonitorConfig ([#3195](https://github.com/getsentry/sentry-java/pull/3195))
 
 ### Fixes
 

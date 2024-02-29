@@ -315,6 +315,7 @@ public final class io/sentry/ExternalOptions {
 	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getContextTags ()Ljava/util/List;
+	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDebug ()Ljava/lang/Boolean;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
@@ -343,6 +344,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
+	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
@@ -2204,6 +2206,7 @@ public class io/sentry/SentryOptions {
 	public fun getConnectionStatusProvider ()Lio/sentry/IConnectionStatusProvider;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
+	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
@@ -2309,6 +2312,7 @@ public class io/sentry/SentryOptions {
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
+	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
 	public fun setDebugMetaLoader (Lio/sentry/internal/debugmeta/IDebugMetaLoader;)V
@@ -2403,6 +2407,20 @@ public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendTransactionCallback {
 	public abstract fun execute (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+}
+
+public final class io/sentry/SentryOptions$Cron {
+	public fun <init> ()V
+	public fun getDefaultCheckinMargin ()Ljava/lang/Long;
+	public fun getDefaultFailureIssueThreshold ()Ljava/lang/Long;
+	public fun getDefaultMaxRuntime ()Ljava/lang/Long;
+	public fun getDefaultRecoveryThreshold ()Ljava/lang/Long;
+	public fun getDefaultTimezone ()Ljava/lang/String;
+	public fun setDefaultCheckinMargin (Ljava/lang/Long;)V
+	public fun setDefaultFailureIssueThreshold (Ljava/lang/Long;)V
+	public fun setDefaultMaxRuntime (Ljava/lang/Long;)V
+	public fun setDefaultRecoveryThreshold (Ljava/lang/Long;)V
+	public fun setDefaultTimezone (Ljava/lang/String;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
