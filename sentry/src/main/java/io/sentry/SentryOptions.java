@@ -464,6 +464,10 @@ public class SentryOptions {
 
   private boolean enableMetrics = false;
 
+  private boolean enableDefaultTagsForMetrics = true;
+
+  private boolean enableSpanLocalMetricAggregation = true;
+
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
@@ -2334,6 +2338,26 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setEnableMetrics(boolean enableMetrics) {
     this.enableMetrics = enableMetrics;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableSpanLocalMetricAggregation() {
+    return isEnableMetrics() && enableSpanLocalMetricAggregation;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpanLocalMetricAggregation(final boolean enableSpanLocalMetricAggregation) {
+    this.enableSpanLocalMetricAggregation = enableSpanLocalMetricAggregation;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableDefaultTagsForMetrics() {
+    return isEnableMetrics() && enableDefaultTagsForMetrics;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableDefaultTagsForMetrics(final boolean enableDefaultTagsForMetrics) {
+    this.enableDefaultTagsForMetrics = enableDefaultTagsForMetrics;
   }
 
   /** The BeforeSend callback */

@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * EncodedMetrics is a class that represents a collection of aggregated metrics, grouped by buckets.
@@ -35,5 +36,10 @@ public final class EncodedMetrics {
       MetricsHelper.encodeMetrics(entry.getKey(), entry.getValue().values(), statsd);
     }
     return statsd.toString().getBytes(UTF8);
+  }
+
+  @TestOnly
+  Map<Long, Map<String, Metric>> getBuckets() {
+    return buckets;
   }
 }

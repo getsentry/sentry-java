@@ -608,4 +608,33 @@ class SentryOptionsTest {
     fun `when options are initialized, enableScopePersistence is set to true by default`() {
         assertEquals(true, SentryOptions().isEnableScopePersistence)
     }
+
+    @Test
+    fun `when options are initialized, metrics is disabled by default`() {
+        assertFalse(SentryOptions().isEnableMetrics)
+        assertFalse(SentryOptions().isEnableDefaultTagsForMetrics)
+        assertFalse(SentryOptions().isEnableSpanLocalMetricAggregation)
+    }
+
+    @Test
+    fun `when metrics is enabled, getters reflect that`() {
+        val options = SentryOptions().apply {
+            isEnableMetrics = true
+        }
+        assertTrue(options.isEnableMetrics)
+        assertTrue(options.isEnableDefaultTagsForMetrics)
+        assertTrue(options.isEnableSpanLocalMetricAggregation)
+    }
+
+    @Test
+    fun `when metric settings are flipped, getters reflect that`() {
+        val options = SentryOptions().apply {
+            isEnableMetrics = true
+            isEnableDefaultTagsForMetrics = false
+            isEnableSpanLocalMetricAggregation = false
+        }
+        assertTrue(options.isEnableMetrics)
+        assertFalse(options.isEnableDefaultTagsForMetrics)
+        assertFalse(options.isEnableSpanLocalMetricAggregation)
+    }
 }

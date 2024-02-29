@@ -1966,18 +1966,113 @@ class HubTest {
     }
 
     @Test
-    fun `hub provides default metric tags, based on options`() {
+    fun `hub provides no tags for metrics, if metric option is disabled`() {
         val hub = generateHub {
-            it.environment = "test"
-            it.release = "1.0"
+            it.isEnableMetrics = false
+            it.isEnableDefaultTagsForMetrics = true
         } as Hub
+
+        assertTrue(
+            hub.defaultTagsForMetrics.isEmpty()
+        )
+    }
+
+    @Test
+    fun `hub provides no tags for metrics, if default tags option is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableDefaultTagsForMetrics = false
+        } as Hub
+
+        assertTrue(
+            hub.defaultTagsForMetrics.isEmpty()
+        )
+    }
+
+    @Test
+    fun `hub provides minimum default tags for metrics, if nothing is set up`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableDefaultTagsForMetrics = true
+        } as Hub
+
         assertEquals(
             mapOf(
-                "environment" to "test",
-                "release" to "1.0"
+                "environment" to "production"
             ),
             hub.defaultTagsForMetrics
         )
+    }
+
+    @Test
+    fun `hub provides default tags for metrics, based on options and running transaction`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableDefaultTagsForMetrics = true
+            it.environment = "test"
+            it.release = "1.0"
+        } as Hub
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        assertEquals(
+            mapOf(
+                "environment" to "test",
+                "release" to "1.0",
+                "transaction" to "name"
+            ),
+            hub.defaultTagsForMetrics
+        )
+    }
+
+    @Test
+    fun `hub provides no local metric aggregator if metrics feature is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = false
+            it.isEnableSpanLocalMetricAggregation = true
+        } as Hub
+
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        assertNull(hub.localMetricsAggregator)
+    }
+
+    @Test
+    fun `hub provides no local metric aggregator if local aggregation feature is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableSpanLocalMetricAggregation = false
+        } as Hub
+
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        assertNull(hub.localMetricsAggregator)
+    }
+
+    @Test
+    fun `hub provides local metric aggregator if feature is enabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableSpanLocalMetricAggregation = true
+        } as Hub
+
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+        assertNotNull(hub.localMetricsAggregator)
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

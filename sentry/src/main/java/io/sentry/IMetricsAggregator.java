@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.metrics.LocalMetricsAggregator;
 import java.io.Closeable;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +18,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
+   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void increment(
       final @NotNull String key,
@@ -24,7 +26,8 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
-      final int stackLevel);
+      final int stackLevel,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
    * Emits a Gauge metric
@@ -36,6 +39,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
+   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void gauge(
       final @NotNull String key,
@@ -43,7 +47,8 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
-      final int stackLevel);
+      final int stackLevel,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
    * Emits a Distribution metric
@@ -55,6 +60,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
+   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void distribution(
       final @NotNull String key,
@@ -62,7 +68,8 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
-      final int stackLevel);
+      final int stackLevel,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
    * Emits a Set metric
@@ -74,6 +81,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
+   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void set(
       final @NotNull String key,
@@ -81,7 +89,8 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
-      final int stackLevel);
+      final int stackLevel,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
    * Emits a Set metric
@@ -93,6 +102,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
+   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void set(
       final @NotNull String key,
@@ -100,7 +110,8 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
-      final int stackLevel);
+      final int stackLevel,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
    * Emits a distribution with the time it takes to run a given code block.
@@ -110,13 +121,15 @@ public interface IMetricsAggregator extends Closeable {
    * @param unit An optional unit, see {@link MeasurementUnit.Duration}, defaults to seconds
    * @param tags Optional Tags to associate with the metric
    * @param stackLevel Optional number of stacks levels to ignore when determining the code location
+   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void timing(
       final @NotNull String key,
       final @NotNull Runnable callback,
       final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
-      final int stackLevel);
+      final int stackLevel,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   void flush(boolean force);
 }

@@ -14,6 +14,9 @@ public final class MetricsApi {
     @NotNull
     IMetricsAggregator getMetricsAggregator();
 
+    @Nullable
+    LocalMetricsAggregator getLocalMetricsAggregator();
+
     @NotNull
     Map<String, String> getDefaultTagsForMetrics();
   }
@@ -115,9 +118,12 @@ public final class MetricsApi {
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    final @Nullable LocalMetricsAggregator localMetricsAggregator =
+        aggregator.getLocalMetricsAggregator();
+
     aggregator
         .getMetricsAggregator()
-        .increment(key, value, unit, enrichedTags, timestamp, stackLevel);
+        .increment(key, value, unit, enrichedTags, timestamp, stackLevel, localMetricsAggregator);
   }
 
   /**
@@ -201,7 +207,12 @@ public final class MetricsApi {
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
-    aggregator.getMetricsAggregator().gauge(key, value, unit, enrichedTags, timestamp, stackLevel);
+    final @Nullable LocalMetricsAggregator localMetricsAggregator =
+        aggregator.getLocalMetricsAggregator();
+
+    aggregator
+        .getMetricsAggregator()
+        .gauge(key, value, unit, enrichedTags, timestamp, stackLevel, localMetricsAggregator);
   }
 
   /**
@@ -211,7 +222,6 @@ public final class MetricsApi {
    * @param value The value to be added
    */
   public void distribution(final @NotNull String key, final double value) {
-
     distribution(key, value, null, null, null, 1);
   }
 
@@ -287,9 +297,13 @@ public final class MetricsApi {
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
+    final @Nullable LocalMetricsAggregator localMetricsAggregator =
+        aggregator.getLocalMetricsAggregator();
+
     aggregator
         .getMetricsAggregator()
-        .distribution(key, value, unit, enrichedTags, timestamp, stackLevel);
+        .distribution(
+            key, value, unit, enrichedTags, timestamp, stackLevel, localMetricsAggregator);
   }
 
   /**
@@ -299,7 +313,6 @@ public final class MetricsApi {
    * @param value The value to be added
    */
   public void set(final @NotNull String key, final int value) {
-
     set(key, value, null, null, null, 1);
   }
 
@@ -375,7 +388,12 @@ public final class MetricsApi {
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
-    aggregator.getMetricsAggregator().set(key, value, unit, enrichedTags, timestamp, stackLevel);
+    final @Nullable LocalMetricsAggregator localMetricsAggregator =
+        aggregator.getLocalMetricsAggregator();
+
+    aggregator
+        .getMetricsAggregator()
+        .set(key, value, unit, enrichedTags, timestamp, stackLevel, localMetricsAggregator);
   }
 
   /**
@@ -462,7 +480,12 @@ public final class MetricsApi {
     final long timestamp = timestampMs != null ? timestampMs : System.currentTimeMillis();
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
-    aggregator.getMetricsAggregator().set(key, value, unit, enrichedTags, timestamp, stackLevel);
+    final @Nullable LocalMetricsAggregator localMetricsAggregator =
+        aggregator.getLocalMetricsAggregator();
+
+    aggregator
+        .getMetricsAggregator()
+        .set(key, value, unit, enrichedTags, timestamp, stackLevel, localMetricsAggregator);
   }
 
   /**
@@ -528,6 +551,11 @@ public final class MetricsApi {
         unit != null ? unit : MeasurementUnit.Duration.SECOND;
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
-    aggregator.getMetricsAggregator().timing(key, callback, durationUnit, enrichedTags, stackLevel);
+    final @Nullable LocalMetricsAggregator localMetricsAggregator =
+        aggregator.getLocalMetricsAggregator();
+
+    aggregator
+        .getMetricsAggregator()
+        .timing(key, callback, durationUnit, enrichedTags, stackLevel, localMetricsAggregator);
   }
 }
