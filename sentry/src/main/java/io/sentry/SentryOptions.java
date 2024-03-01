@@ -471,6 +471,8 @@ public class SentryOptions {
    */
   private int profilingTracesHz = 101;
 
+  @ApiStatus.Experimental private @Nullable Cron cron = null;
+
   /**
    * Adds an event processor
    *
@@ -2336,6 +2338,16 @@ public class SentryOptions {
     this.enableMetrics = enableMetrics;
   }
 
+  @ApiStatus.Experimental
+  public @Nullable Cron getCron() {
+    return cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setCron(@Nullable Cron cron) {
+    this.cron = cron;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2569,6 +2581,29 @@ public class SentryOptions {
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
+
+    if (options.getCron() != null) {
+      if (getCron() == null) {
+        setCron(options.getCron());
+      } else {
+        if (options.getCron().getDefaultCheckinMargin() != null) {
+          getCron().setDefaultCheckinMargin(options.getCron().getDefaultCheckinMargin());
+        }
+        if (options.getCron().getDefaultMaxRuntime() != null) {
+          getCron().setDefaultMaxRuntime(options.getCron().getDefaultMaxRuntime());
+        }
+        if (options.getCron().getDefaultTimezone() != null) {
+          getCron().setDefaultTimezone(options.getCron().getDefaultTimezone());
+        }
+        if (options.getCron().getDefaultFailureIssueThreshold() != null) {
+          getCron()
+              .setDefaultFailureIssueThreshold(options.getCron().getDefaultFailureIssueThreshold());
+        }
+        if (options.getCron().getDefaultRecoveryThreshold() != null) {
+          getCron().setDefaultRecoveryThreshold(options.getCron().getDefaultRecoveryThreshold());
+        }
+      }
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -2640,6 +2675,54 @@ public class SentryOptions {
 
     public void setPass(final @Nullable String pass) {
       this.pass = pass;
+    }
+  }
+
+  public static final class Cron {
+    private @Nullable Long defaultCheckinMargin;
+    private @Nullable Long defaultMaxRuntime;
+    private @Nullable String defaultTimezone;
+    private @Nullable Long defaultFailureIssueThreshold;
+    private @Nullable Long defaultRecoveryThreshold;
+
+    public @Nullable Long getDefaultCheckinMargin() {
+      return defaultCheckinMargin;
+    }
+
+    public void setDefaultCheckinMargin(@Nullable Long defaultCheckinMargin) {
+      this.defaultCheckinMargin = defaultCheckinMargin;
+    }
+
+    public @Nullable Long getDefaultMaxRuntime() {
+      return defaultMaxRuntime;
+    }
+
+    public void setDefaultMaxRuntime(@Nullable Long defaultMaxRuntime) {
+      this.defaultMaxRuntime = defaultMaxRuntime;
+    }
+
+    public @Nullable String getDefaultTimezone() {
+      return defaultTimezone;
+    }
+
+    public void setDefaultTimezone(@Nullable String defaultTimezone) {
+      this.defaultTimezone = defaultTimezone;
+    }
+
+    public @Nullable Long getDefaultFailureIssueThreshold() {
+      return defaultFailureIssueThreshold;
+    }
+
+    public void setDefaultFailureIssueThreshold(@Nullable Long defaultFailureIssueThreshold) {
+      this.defaultFailureIssueThreshold = defaultFailureIssueThreshold;
+    }
+
+    public @Nullable Long getDefaultRecoveryThreshold() {
+      return defaultRecoveryThreshold;
+    }
+
+    public void setDefaultRecoveryThreshold(@Nullable Long defaultRecoveryThreshold) {
+      this.defaultRecoveryThreshold = defaultRecoveryThreshold;
     }
   }
 
