@@ -1,7 +1,6 @@
 package io.sentry.android.replay.viewhierarchy
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
+import android.annotation.TargetApi
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
@@ -18,6 +17,7 @@ import android.widget.ImageView
 import android.widget.TextView
 
 // TODO: merge with ViewHierarchyNode from sentry-core maybe?
+@TargetApi(26)
 data class ViewHierarchyNode(
     val x: Float,
     val y: Float,
@@ -47,11 +47,11 @@ data class ViewHierarchyNode(
             return actualPosition.intersects(screen.left, screen.top, screen.right, screen.bottom)
         }
 
-        fun adjustAlpha(color: Int): Int {
+        fun Int.toOpaque(): Int {
             val alpha = 255
-            val red = Color.red(color)
-            val green = Color.green(color)
-            val blue = Color.blue(color)
+            val red = Color.red(this)
+            val green = Color.green(this)
+            val blue = Color.blue(this)
             return Color.argb(alpha, red, green, blue)
         }
 
@@ -77,7 +77,7 @@ data class ViewHierarchyNode(
                         val bounds = Rect()
                         val text = view.text.toString()
                         view.paint.getTextBounds(text, 0, text.length, bounds)
-                        dominantColor = adjustAlpha(view.currentTextColor)
+                        dominantColor = view.currentTextColor.toOpaque()
                         rect = Rect()
                         view.getGlobalVisibleRect(rect)
 
@@ -110,7 +110,6 @@ data class ViewHierarchyNode(
                 is ImageView -> {
                     shouldRedact = isVisible(view) && (view.drawable?.isRedactable() ?: false)
                     if (shouldRedact) {
-                        dominantColor = adjustAlpha((view.drawable?.pickDominantColor() ?: Color.BLACK))
                         rect = Rect()
                         view.getGlobalVisibleRect(rect)
                     }
@@ -134,41 +133,6 @@ data class ViewHierarchyNode(
                 is InsetDrawable, is ColorDrawable, is VectorDrawable, is GradientDrawable -> false
                 is BitmapDrawable -> !bitmap.isRecycled && bitmap.height > 10 && bitmap.width > 10
                 else -> true
-            }
-        }
-
-        private fun Drawable.pickDominantColor(): Int {
-            // TODO: pick default color based on dark/light default theme
-            return when (this) {
-                is BitmapDrawable -> {
-                    val newBitmap = Bitmap.createScaledBitmap(bitmap, 1, 1, true)
-                    val color = newBitmap.getPixel(0, 0)
-                    newBitmap.recycle()
-                    color
-                }
-
-                else -> {
-                    if (intrinsicHeight > 0 && intrinsicWidth > 0) {
-                        // this is needed to pick a dominant color when there's a drawable from a 3rd-party image-loading lib, e.g. Coil
-                        // we request the bitmap to draw onto the canvas and then downscale it to 1x1 pixels to get the dominant color
-                        // TODO: maybe we should provide an option to disable this and just use black color for rectangles to save cpu time
-                        val bmp =
-                            Bitmap.createBitmap(this.intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
-                        val canvas = Canvas(bmp)
-                        try {
-                            draw(canvas)
-                            val newBitmap = Bitmap.createScaledBitmap(bmp, 1, 1, true)
-                            val color = newBitmap.getPixel(0, 0)
-                            newBitmap.recycle()
-                            bmp.recycle()
-                            color
-                        } catch (e: Throwable) {
-                            Color.BLACK
-                        }
-                    } else {
-                        Color.BLACK
-                    }
-                }
             }
         }
     }

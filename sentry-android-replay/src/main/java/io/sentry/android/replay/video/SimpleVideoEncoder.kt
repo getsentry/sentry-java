@@ -29,6 +29,7 @@
  */
 package io.sentry.android.replay.video
 
+import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
@@ -38,6 +39,7 @@ import android.os.Looper
 import android.view.Surface
 import java.io.File
 
+@TargetApi(26)
 internal class SimpleVideoEncoder(
     val muxerConfig: MuxerConfig
 ) {
@@ -156,10 +158,12 @@ internal class SimpleVideoEncoder(
     }
 }
 
+@TargetApi(24)
 internal data class MuxerConfig(
     val file: File,
     val videoWidth: Int,
     val videoHeight: Int,
+    val scaleFactor: Float,
     val mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
     val frameRate: Float,
     val bitrate: Int,
