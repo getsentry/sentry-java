@@ -1,21 +1,21 @@
 package io.sentry.android.replay
 
+import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Point
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.view.View
-import android.view.ViewTreeObserver
 import android.view.WindowManager
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import java.io.File
 import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
 
+@TargetApi(26)
 class WindowRecorder {
 
     private val rootViewsSpy by lazy(NONE) {
@@ -24,28 +24,20 @@ class WindowRecorder {
 
     private var encoder: SimpleVideoEncoder? = null
     private val isRecording = AtomicBoolean(false)
-    private val recorders: WeakHashMap<View, ViewTreeObserver.OnDrawListener> = WeakHashMap()
+    private val rootViews = ArrayList<WeakReference<View>>()
+    private var recorder: ScreenshotRecorder? = null
 
     private val onRootViewsChangedListener = OnRootViewsChangedListener { root, added ->
         if (added) {
-            if (recorders.containsKey(root)) {
-                // TODO: log
-                return@OnRootViewsChangedListener
-            }
-            // stop tracking other windows so they don't interfere in the recording like a 25th frame effect
-            recorders.entries.forEach {
-                it.key.viewTreeObserver.removeOnDrawListener(it.value)
-            }
-
-            val recorder = ScreenshotRecorder(WeakReference(root), encoder!!)
-            recorders[root] = recorder
-            root.viewTreeObserver?.addOnDrawListener(recorder)
+            rootViews.add(WeakReference(root))
+            recorder?.bind(root)
         } else {
-            root.viewTreeObserver?.removeOnDrawListener(recorders[root])
-            recorders.remove(root)
+            recorder?.unbind(root)
+            rootViews.removeAll { it.get() == root }
 
-            recorders.entries.forEach {
-                it.key.viewTreeObserver.addOnDrawListener(it.value)
+            val newRoot = rootViews.lastOrNull()?.get()
+            if (newRoot != null && root != newRoot) {
+                recorder?.bind(newRoot)
             }
         }
     }
@@ -62,13 +54,16 @@ class WindowRecorder {
 //            context.resources.displayMetrics.density).roundToInt()
         // TODO: API level check
         // PixelCopy takes screenshots including system bars, so we have to get the real size here
+        val height: Int
         val aspectRatio = if (VERSION.SDK_INT >= VERSION_CODES.R) {
-            wm.currentWindowMetrics.bounds.bottom.toFloat() / wm.currentWindowMetrics.bounds.right.toFloat()
+            height = wm.currentWindowMetrics.bounds.bottom
+            height.toFloat() / wm.currentWindowMetrics.bounds.right.toFloat()
         } else {
             val screenResolution = Point()
             @Suppress("DEPRECATION")
             wm.defaultDisplay.getRealSize(screenResolution)
-            screenResolution.y.toFloat() / screenResolution.x.toFloat()
+            height = screenResolution.y
+            height.toFloat() / screenResolution.x.toFloat()
         }
 
         val videoFile = File(context.cacheDir, "sentry-sr.mp4")
@@ -77,21 +72,23 @@ class WindowRecorder {
                 videoFile,
                 videoWidth = (720 / aspectRatio).roundToInt(),
                 videoHeight = 720,
-                frameRate = 1f,
+                scaleFactor = 720f / height,
+                frameRate = 2f,
                 bitrate = 500 * 1000
             )
-        )
-        encoder?.start()
+        ).also { it.start() }
+        recorder = ScreenshotRecorder(encoder!!)
         rootViewsSpy.listeners += onRootViewsChangedListener
     }
 
     fun stopRecording() {
         rootViewsSpy.listeners -= onRootViewsChangedListener
-        recorders.entries.forEach {
-            it.key.viewTreeObserver.removeOnDrawListener(it.value)
-        }
-        recorders.clear()
+        rootViews.forEach { recorder?.unbind(it.get()) }
+        recorder?.close()
+        rootViews.clear()
+        recorder = null
         encoder?.startRelease()
         encoder = null
+        isRecording.set(false)
     }
 }

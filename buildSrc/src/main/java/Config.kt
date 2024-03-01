@@ -34,7 +34,7 @@ object Config {
 
         val minSdkVersion = 19
         val minSdkVersionOkHttp = 21
-        val minSdkVersionReplay = 26
+        val minSdkVersionReplay = 19
         val minSdkVersionNdk = 19
         val minSdkVersionCompose = 21
         val targetSdkVersion = sdkVersion

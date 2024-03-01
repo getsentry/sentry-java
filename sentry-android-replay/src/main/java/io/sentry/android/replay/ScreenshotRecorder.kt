@@ -1,9 +1,11 @@
 package io.sentry.android.replay
 
+import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Handler
 import android.os.HandlerThread
@@ -20,14 +22,26 @@ import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import kotlin.system.measureTimeMillis
 
+// TODO: use ILogger of Sentry and change level
+@TargetApi(26)
 internal class ScreenshotRecorder(
-    val rootView: WeakReference<View>,
     val encoder: SimpleVideoEncoder
 ) : ViewTreeObserver.OnDrawListener {
 
+    private var rootView: WeakReference<View>? = null
     private val thread = HandlerThread("SentryReplay").also { it.start() }
     private val handler = Handler(thread.looper)
     private val bitmapToVH = WeakHashMap<Bitmap, ViewHierarchyNode>()
+    private val maskingPaint = Paint()
+    private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
+        1,
+        1,
+        Bitmap.Config.ARGB_8888
+    )
+    private val singlePixelBitmapCanvas: Canvas = Canvas(singlePixelBitmap)
+    private val prescaledMatrix = Matrix().apply {
+        preScale(encoder.muxerConfig.scaleFactor, encoder.muxerConfig.scaleFactor)
+    }
 
     companion object {
         const val TAG = "ScreenshotRecorder"
@@ -37,13 +51,13 @@ internal class ScreenshotRecorder(
     override fun onDraw() {
         // TODO: replace with Debouncer from sentry-core
         val now = SystemClock.uptimeMillis()
-        if (lastCapturedAtMs != null && (now - lastCapturedAtMs!!) < 1000L) {
+        if (lastCapturedAtMs != null && (now - lastCapturedAtMs!!) < 500L) {
             return
         }
         lastCapturedAtMs = now
 
-        val root = rootView.get()
-        if (root == null || root.width <= 0 || root.height <= 0) {
+        val root = rootView?.get()
+        if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
             return
         }
 
@@ -53,7 +67,6 @@ internal class ScreenshotRecorder(
             root.height,
             Bitmap.Config.ARGB_8888
         )
-        Log.e("BITMAP CREATED", bitmap.toString())
 
         val time = measureTimeMillis {
             val rootNode = ViewHierarchyNode.fromView(root)
@@ -62,8 +75,7 @@ internal class ScreenshotRecorder(
         }
         Log.e("TIME", time.toString())
 
-//    val latch = CountDownLatch(1)
-
+        // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).postAtFrontOfQueue {
             PixelCopy.request(
                 window,
@@ -78,26 +90,37 @@ internal class ScreenshotRecorder(
                     Log.e("BITMAP CAPTURED", bitmap.toString())
                     val viewHierarchy = bitmapToVH[bitmap]
 
-                    if (viewHierarchy != null) {
-                        val canvas = Canvas(bitmap)
-                        viewHierarchy.traverse {
-                            if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
-                                it.visibleRect ?: return@traverse
-
-                                val paint = Paint().apply {
-                                    color = it.dominantColor ?: Color.BLACK
-                                }
-                                canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, paint)
-                            }
-                        }
-                    }
-
                     val scaledBitmap = Bitmap.createScaledBitmap(
                         bitmap,
                         encoder.muxerConfig.videoWidth,
                         encoder.muxerConfig.videoHeight,
                         true
                     )
+
+                    if (viewHierarchy == null) {
+                        Log.e(TAG, "Failed to determine view hierarchy, not capturing")
+                        return@request
+                    } else {
+                        val canvas = Canvas(scaledBitmap)
+                        canvas.setMatrix(prescaledMatrix)
+                        viewHierarchy.traverse {
+                            if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
+                                it.visibleRect ?: return@traverse
+
+                                // TODO: check for view type rather than rely on absence of dominantColor here
+                                val color = if (it.dominantColor == null) {
+                                    singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
+                                    singlePixelBitmap.getPixel(0, 0)
+                                } else {
+                                    it.dominantColor
+                                }
+
+                                maskingPaint.setColor(color)
+                                canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
+                            }
+                        }
+                    }
+
 //        val baos = ByteArrayOutputStream()
 //        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, baos)
 //        val bmp = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size())
@@ -106,14 +129,30 @@ internal class ScreenshotRecorder(
                     scaledBitmap.recycle()
                     bitmap.recycle()
                     Log.i(TAG, "Captured a screenshot")
-//          latch.countDown()
                 },
                 handler
             )
         }
+    }
 
-//    val success = latch.await(200, MILLISECONDS)
-//    Log.i(TAG, "Captured a screenshot: $success")
+    fun bind(root: View) {
+        // first unbind the current root
+        unbind(rootView?.get())
+        rootView?.clear()
+
+        // next bind the new root
+        rootView = WeakReference(root)
+        root.viewTreeObserver?.addOnDrawListener(this)
+    }
+
+    fun unbind(root: View?) {
+        root?.viewTreeObserver?.removeOnDrawListener(this)
+    }
+
+    fun close() {
+        unbind(rootView?.get())
+        rootView?.clear()
+        thread.quitSafely()
     }
 
     private fun ViewHierarchyNode.traverse(callback: (ViewHierarchyNode) -> Unit) {
