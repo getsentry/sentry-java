@@ -21,8 +21,8 @@ class SentryReplayEventSerializationTest {
         fun getSut() = SentryReplayEvent().apply {
             replayId = SentryId("f715e1d64ef64ea3ad7744b5230813c3")
             segmentId = 0
-            timestamp = DateUtils.getDateTimeWithMillisPrecision("987654321.123")
-            replayStartTimestamp = DateUtils.getDateTimeWithMillisPrecision("987654321.123")
+            timestamp = DateUtils.getDateTime("1942-07-09T12:55:34.000Z")
+            replayStartTimestamp = DateUtils.getDateTime("1942-07-09T12:55:34.000Z")
             urls = listOf("ScreenOne")
             errorIds = listOf("ab3a347a4cc14fd4b4cf1dc56b670c5b")
             traceIds = listOf("340cfef948204549ac07c3b353c81c50")

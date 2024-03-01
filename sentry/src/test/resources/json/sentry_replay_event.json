@@ -2,9 +2,9 @@
     "type": "replay_event",
     "replay_type": "session",
     "segment_id": 0,
-    "timestamp": 987654321.123,
+    "timestamp": "1942-07-09T12:55:34.000Z",
     "replay_id": "f715e1d64ef64ea3ad7744b5230813c3",
-    "replay_start_timestamp": 987654321.123,
+    "replay_start_timestamp": "1942-07-09T12:55:34.000Z",
     "urls":
     [
       "ScreenOne"
