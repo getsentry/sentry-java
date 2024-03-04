@@ -58,6 +58,5 @@ public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
 
 public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Companion {
 	public final fun fromView (Landroid/view/View;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
-	public final fun toOpaque (I)I
 }
 
