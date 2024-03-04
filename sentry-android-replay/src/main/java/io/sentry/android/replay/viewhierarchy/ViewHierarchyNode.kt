@@ -1,7 +1,6 @@
 package io.sentry.android.replay.viewhierarchy
 
 import android.annotation.TargetApi
-import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
@@ -47,13 +46,8 @@ data class ViewHierarchyNode(
             return actualPosition.intersects(screen.left, screen.top, screen.right, screen.bottom)
         }
 
-        fun Int.toOpaque(): Int {
-            val alpha = 255
-            val red = Color.red(this)
-            val green = Color.green(this)
-            val blue = Color.blue(this)
-            return Color.argb(alpha, red, green, blue)
-        }
+        // TODO: check if this works on RN
+        private fun Int.toOpaque() = this or 0xFF000000.toInt()
 
         fun fromView(view: View): ViewHierarchyNode {
             // TODO: Extract redacting into its own class/function

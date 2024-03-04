@@ -90,17 +90,18 @@ internal class ScreenshotRecorder(
                     Log.e("BITMAP CAPTURED", bitmap.toString())
                     val viewHierarchy = bitmapToVH[bitmap]
 
-                    val scaledBitmap = Bitmap.createScaledBitmap(
-                        bitmap,
-                        encoder.muxerConfig.videoWidth,
-                        encoder.muxerConfig.videoHeight,
-                        true
-                    )
+                    var scaledBitmap: Bitmap? = null
 
                     if (viewHierarchy == null) {
                         Log.e(TAG, "Failed to determine view hierarchy, not capturing")
                         return@request
                     } else {
+                        scaledBitmap = Bitmap.createScaledBitmap(
+                            bitmap,
+                            encoder.muxerConfig.videoWidth,
+                            encoder.muxerConfig.videoHeight,
+                            true
+                        )
                         val canvas = Canvas(scaledBitmap)
                         canvas.setMatrix(prescaledMatrix)
                         viewHierarchy.traverse {
@@ -124,9 +125,11 @@ internal class ScreenshotRecorder(
 //        val baos = ByteArrayOutputStream()
 //        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, baos)
 //        val bmp = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size())
-                    encoder.encode(scaledBitmap)
+                    scaledBitmap?.let {
+                        encoder.encode(it)
+                        it.recycle()
+                    }
 //        bmp.recycle()
-                    scaledBitmap.recycle()
                     bitmap.recycle()
                     Log.i(TAG, "Captured a screenshot")
                 },
