@@ -1,0 +1,62 @@
+public final class io/sentry/android/replay/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/replay/WindowRecorder {
+	public fun <init> ()V
+	public final fun startRecording (Landroid/content/Context;)V
+	public final fun stopRecording ()V
+}
+
+public abstract interface class io/sentry/android/replay/video/SimpleFrameMuxer {
+	public abstract fun getVideoTime ()J
+	public abstract fun isStarted ()Z
+	public abstract fun muxVideoFrame (Ljava/nio/ByteBuffer;Landroid/media/MediaCodec$BufferInfo;)V
+	public abstract fun release ()V
+	public abstract fun start (Landroid/media/MediaFormat;)V
+}
+
+public final class io/sentry/android/replay/video/SimpleMp4FrameMuxer : io/sentry/android/replay/video/SimpleFrameMuxer {
+	public fun <init> (Ljava/lang/String;F)V
+	public fun getVideoTime ()J
+	public fun isStarted ()Z
+	public fun muxVideoFrame (Ljava/nio/ByteBuffer;Landroid/media/MediaCodec$BufferInfo;)V
+	public fun release ()V
+	public fun start (Landroid/media/MediaFormat;)V
+}
+
+public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public static final field Companion Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Companion;
+	public fun <init> (FFIIZLjava/lang/Integer;Landroid/graphics/Rect;)V
+	public synthetic fun <init> (FFIIZLjava/lang/Integer;Landroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()F
+	public final fun component2 ()F
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/Integer;
+	public final fun component7 ()Landroid/graphics/Rect;
+	public final fun copy (FFIIZLjava/lang/Integer;Landroid/graphics/Rect;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
+	public static synthetic fun copy$default (Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;FFIIZLjava/lang/Integer;Landroid/graphics/Rect;ILjava/lang/Object;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public final fun getDominantColor ()Ljava/lang/Integer;
+	public final fun getHeight ()I
+	public final fun getShouldRedact ()Z
+	public final fun getVisibleRect ()Landroid/graphics/Rect;
+	public final fun getWidth ()I
+	public final fun getX ()F
+	public final fun getY ()F
+	public fun hashCode ()I
+	public final fun setChildren (Ljava/util/List;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Companion {
+	public final fun fromView (Landroid/view/View;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
+}
+
