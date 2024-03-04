@@ -6,6 +6,9 @@ import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
+import io.sentry.metrics.EncodedMetrics;
+import io.sentry.metrics.IMetricsClient;
+import io.sentry.metrics.NoopMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -30,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryClient implements ISentryClient {
+public final class SentryClient implements ISentryClient, IMetricsClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
   private boolean enabled;
@@ -38,8 +41,8 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
   private final @Nullable SecureRandom random;
-
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
+  private final @NotNull IMetricsAggregator metricsAggregator;
 
   @Override
   public boolean isEnabled() {
@@ -58,6 +61,11 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
+
+    metricsAggregator =
+        options.isEnableMetrics()
+            ? new MetricsAggregator(options, this)
+            : NoopMetricsAggregator.getInstance();
 
     this.random = options.getSampleRate() == null ? null : new SecureRandom();
   }
@@ -212,12 +220,12 @@ public final class SentryClient implements ISentryClient {
 
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
-      final SentryEnvelope envelope =
+      final @Nullable SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
       hint.clear();
       if (envelope != null) {
-        transport.send(envelope, hint);
+        sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
@@ -445,8 +453,8 @@ public final class SentryClient implements ISentryClient {
         .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(userFeedback);
-      transport.send(envelope);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
+      sendEnvelope(envelope, null);
     } catch (IOException e) {
       options
           .getLogger()
@@ -582,17 +590,33 @@ public final class SentryClient implements ISentryClient {
 
     try {
       hint.clear();
-      transport.send(envelope, hint);
+      return sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
-      return SentryId.EMPTY_ID;
     }
-    final SentryId eventId = envelope.getHeader().getEventId();
-    if (eventId != null) {
-      return eventId;
+    return SentryId.EMPTY_ID;
+  }
+
+  private @NotNull SentryId sendEnvelope(
+      @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
+    final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
+        options.getBeforeEnvelopeCallback();
+    if (beforeEnvelopeCallback != null) {
+      try {
+        beforeEnvelopeCallback.execute(envelope, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
+      }
+    }
+    if (hint == null) {
+      transport.send(envelope);
     } else {
-      return SentryId.EMPTY_ID;
+      transport.send(envelope, hint);
     }
+    final @Nullable SentryId id = envelope.getHeader().getEventId();
+    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   @Override
@@ -665,9 +689,7 @@ public final class SentryClient implements ISentryClient {
 
       hint.clear();
       if (envelope != null) {
-        transport.send(envelope, hint);
-      } else {
-        sentryId = SentryId.EMPTY_ID;
+        sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
@@ -729,10 +751,10 @@ public final class SentryClient implements ISentryClient {
         }
       }
 
-      final SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
 
       hint.clear();
-      transport.send(envelope, hint);
+      sentryId = sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
@@ -903,11 +925,20 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void close() {
-    options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
+    close(false);
+  }
 
+  @Override
+  public void close(final boolean isRestarting) {
+    options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
     try {
-      flush(options.getShutdownTimeoutMillis());
-      transport.close();
+      metricsAggregator.close();
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, "Failed to close the metrics aggregator.", e);
+    }
+    try {
+      flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
+      transport.close(isRestarting);
     } catch (IOException e) {
       options
           .getLogger()
@@ -953,6 +984,24 @@ public final class SentryClient implements ISentryClient {
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;
+  }
+
+  @Override
+  public @NotNull IMetricsAggregator getMetricsAggregator() {
+    return metricsAggregator;
+  }
+
+  @Override
+  public @NotNull SentryId captureMetrics(final @NotNull EncodedMetrics metrics) {
+
+    final @NotNull SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
+    final @NotNull SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(new SentryId(), options.getSdkVersion(), null);
+
+    final @NotNull SentryEnvelope envelope =
+        new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
+    final @Nullable SentryId id = captureEnvelope(envelope);
+    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {

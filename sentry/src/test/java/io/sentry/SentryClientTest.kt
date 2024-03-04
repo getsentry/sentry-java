@@ -139,6 +139,25 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when client is closed with isRestarting false, transport waits`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close(false)
+        assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
+        verify(fixture.transport).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
+        verify(fixture.transport).close(eq(false))
+    }
+
+    @Test
+    fun `when client is closed with isRestarting true, transport does not wait`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close(true)
+        verify(fixture.transport).flush(eq(0))
+        verify(fixture.transport).close(eq(true))
+    }
+
+    @Test
     fun `when client is closed, client gets disabled`() {
         val sut = fixture.getSut()
         assertTrue(sut.isEnabled)
@@ -2478,6 +2497,32 @@ class SentryClientTest {
             },
             any()
         )
+    }
+
+    @Test
+    fun `beforeEnvelopeCallback is executed`() {
+        var beforeEnvelopeCalled = false
+        val sut = fixture.getSut { options ->
+            options.beforeEnvelopeCallback =
+                SentryOptions.BeforeEnvelopeCallback { _, _ -> beforeEnvelopeCalled = true }
+        }
+
+        sut.captureEvent(SentryEvent(), Hint())
+
+        assertTrue(beforeEnvelopeCalled)
+    }
+
+    @Test
+    fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
+        val sut = fixture.getSut { options ->
+            options.beforeEnvelopeCallback =
+                SentryOptions.BeforeEnvelopeCallback { _, _ ->
+                    RuntimeException("hook failed")
+                }
+        }
+
+        sut.captureEvent(SentryEvent(), Hint())
+        verify(fixture.transport).send(anyOrNull(), anyOrNull())
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {

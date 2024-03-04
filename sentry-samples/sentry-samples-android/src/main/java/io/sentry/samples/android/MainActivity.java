@@ -251,6 +251,9 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ProfilingActivity.class));
         });
 
+    binding.openFrameDataForSpans.setOnClickListener(
+        view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
+
     setContentView(binding.getRoot());
   }
 
@@ -264,7 +267,10 @@ public class MainActivity extends AppCompatActivity {
     screenLoadCount++;
     final ISpan span = Sentry.getSpan();
     if (span != null) {
-      span.setMeasurement("screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
+      ISpan measurementSpan = span.startChild("screen_load_measurement", "test measurement");
+      measurementSpan.setMeasurement(
+          "screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
+      measurementSpan.finish();
     }
     Sentry.reportFullyDisplayed();
   }

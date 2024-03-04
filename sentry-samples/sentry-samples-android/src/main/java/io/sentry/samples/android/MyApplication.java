@@ -2,6 +2,7 @@ package io.sentry.samples.android;
 
 import android.app.Application;
 import android.os.StrictMode;
+import io.sentry.Sentry;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
@@ -24,6 +25,8 @@ public class MyApplication extends Application {
     //      });
     //       */
     //    });
+
+    Sentry.metrics().increment("app.start.cold");
   }
 
   private void strictMode() {

@@ -4,6 +4,7 @@ import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -17,6 +18,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -24,7 +26,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Hub implements IHub {
+public final class Hub implements IHub, MetricsApi.IMetricsInterface {
+
   private volatile @NotNull SentryId lastEventId;
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
@@ -33,10 +36,10 @@ public final class Hub implements IHub {
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull MetricsApi metricsApi;
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
-
     // Integrations are no longer registered on Hub ctor, but on Sentry.init
   }
 
@@ -52,6 +55,8 @@ public final class Hub implements IHub {
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
+
+    this.metricsApi = new MetricsApi(this);
   }
 
   private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
@@ -331,6 +336,12 @@ public final class Hub implements IHub {
 
   @Override
   public void close() {
+    close(false);
+  }
+
+  @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void close(final boolean isRestarting) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -352,12 +363,17 @@ public final class Hub implements IHub {
         configureScope(scope -> scope.clear());
         options.getTransactionProfiler().close();
         options.getTransactionPerformanceCollector().close();
-        options.getExecutorService().close(options.getShutdownTimeoutMillis());
+        final @NotNull ISentryExecutorService executorService = options.getExecutorService();
+        if (isRestarting) {
+          executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+        } else {
+          executorService.close(options.getShutdownTimeoutMillis());
+        }
 
         // Close the top-most client
         final StackItem item = stack.peek();
         // TODO: should we end session before closing client?
-        item.getClient().close();
+        item.getClient().close(isRestarting);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
       }
@@ -925,5 +941,23 @@ public final class Hub implements IHub {
   public @Nullable RateLimiter getRateLimiter() {
     final StackItem item = stack.peek();
     return item.getClient().getRateLimiter();
+  }
+
+  @Override
+  public @NotNull MetricsApi metrics() {
+    return metricsApi;
+  }
+
+  @Override
+  public @NotNull IMetricsAggregator getMetricsAggregator() {
+    return stack.peek().getClient().getMetricsAggregator();
+  }
+
+  @Override
+  public @NotNull Map<String, String> getDefaultTagsForMetrics() {
+    final Map<String, String> tags = new HashMap<>(2);
+    tags.put("release", options.getRelease());
+    tags.put("environment", options.getEnvironment());
+    return tags;
   }
 }

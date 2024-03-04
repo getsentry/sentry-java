@@ -10,6 +10,7 @@ import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
@@ -774,7 +775,7 @@ class HubTest {
         sut.close()
 
         sut.close()
-        verify(mockClient).close() // 1 to close, but next one wont be recorded
+        verify(mockClient).close(eq(false)) // 1 to close, but next one wont be recorded
     }
 
     @Test
@@ -782,7 +783,23 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         sut.close()
-        verify(mockClient).close()
+        verify(mockClient).close(eq(false))
+    }
+
+    @Test
+    fun `when close is called with isRestarting false and client is alive, close on the client should be called with isRestarting false`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.close(false)
+        verify(mockClient).close(eq(false))
+    }
+
+    @Test
+    fun `when close is called with isRestarting true and client is alive, close on the client should be called with isRestarting true`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.close(true)
+        verify(mockClient).close(eq(true))
     }
     //endregion
 
@@ -1653,6 +1670,32 @@ class HubTest {
     }
 
     @Test
+    fun `Hub with isRestarting true should close the sentry executor in the background`() {
+        val executor = spy(DeferredExecutorService())
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            executorService = executor
+        }
+        val sut = Hub(options)
+        sut.close(true)
+        verify(executor, never()).close(any())
+        executor.runAll()
+        verify(executor).close(any())
+    }
+
+    @Test
+    fun `Hub with isRestarting false should close the sentry executor in the background`() {
+        val executor = mock<ISentryExecutorService>()
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            executorService = executor
+        }
+        val sut = Hub(options)
+        sut.close(false)
+        verify(executor).close(any())
+    }
+
+    @Test
     fun `Hub close should clear the scope`() {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -1920,6 +1963,21 @@ class HubTest {
         }
 
         assertNull(transactionContext)
+    }
+
+    @Test
+    fun `hub provides default metric tags, based on options`() {
+        val hub = generateHub {
+            it.environment = "test"
+            it.release = "1.0"
+        } as Hub
+        assertEquals(
+            mapOf(
+                "environment" to "test",
+                "release" to "1.0"
+            ),
+            hub.defaultTagsForMetrics
+        )
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

@@ -442,6 +442,15 @@ public class SentryOptions {
   /** Whether to send modules containing information about versions. */
   private boolean sendModules = true;
 
+  private @Nullable BeforeEnvelopeCallback beforeEnvelopeCallback;
+
+  private boolean enableSpotlight = false;
+
+  private @Nullable String spotlightConnectionUrl;
+
+  /** Whether to enable scope persistence so the scope values are preserved if the process dies */
+  private boolean enableScopePersistence = true;
+
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
@@ -453,12 +462,16 @@ public class SentryOptions {
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
 
+  private boolean enableMetrics = false;
+
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
    * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
    */
   private int profilingTracesHz = 101;
+
+  @ApiStatus.Experimental private @Nullable Cron cron = null;
 
   /**
    * Adds an event processor
@@ -2274,6 +2287,67 @@ public class SentryOptions {
     this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
+  @ApiStatus.Internal
+  @Nullable
+  public BeforeEnvelopeCallback getBeforeEnvelopeCallback() {
+    return beforeEnvelopeCallback;
+  }
+
+  @ApiStatus.Internal
+  public void setBeforeEnvelopeCallback(
+      @Nullable final BeforeEnvelopeCallback beforeEnvelopeCallback) {
+    this.beforeEnvelopeCallback = beforeEnvelopeCallback;
+  }
+
+  @ApiStatus.Experimental
+  @Nullable
+  public String getSpotlightConnectionUrl() {
+    return spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
+    this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableSpotlight() {
+    return enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpotlight(final boolean enableSpotlight) {
+    this.enableSpotlight = enableSpotlight;
+  }
+
+  public boolean isEnableScopePersistence() {
+    return enableScopePersistence;
+  }
+
+  public void setEnableScopePersistence(final boolean enableScopePersistence) {
+    this.enableScopePersistence = enableScopePersistence;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableMetrics() {
+    return enableMetrics;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableMetrics(boolean enableMetrics) {
+    this.enableMetrics = enableMetrics;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Cron getCron() {
+    return cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setCron(@Nullable Cron cron) {
+    this.cron = cron;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2345,6 +2419,19 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
+  /** The BeforeEnvelope callback */
+  @ApiStatus.Internal
+  public interface BeforeEnvelopeCallback {
+
+    /**
+     * A callback which gets called right before an envelope is about to be sent
+     *
+     * @param envelope the envelope
+     * @param hint the hints
+     */
+    void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
+  }
+
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -2378,6 +2465,7 @@ public class SentryOptions {
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
+      integrations.add(new SpotlightIntegration());
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
@@ -2493,6 +2581,29 @@ public class SentryOptions {
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
+
+    if (options.getCron() != null) {
+      if (getCron() == null) {
+        setCron(options.getCron());
+      } else {
+        if (options.getCron().getDefaultCheckinMargin() != null) {
+          getCron().setDefaultCheckinMargin(options.getCron().getDefaultCheckinMargin());
+        }
+        if (options.getCron().getDefaultMaxRuntime() != null) {
+          getCron().setDefaultMaxRuntime(options.getCron().getDefaultMaxRuntime());
+        }
+        if (options.getCron().getDefaultTimezone() != null) {
+          getCron().setDefaultTimezone(options.getCron().getDefaultTimezone());
+        }
+        if (options.getCron().getDefaultFailureIssueThreshold() != null) {
+          getCron()
+              .setDefaultFailureIssueThreshold(options.getCron().getDefaultFailureIssueThreshold());
+        }
+        if (options.getCron().getDefaultRecoveryThreshold() != null) {
+          getCron().setDefaultRecoveryThreshold(options.getCron().getDefaultRecoveryThreshold());
+        }
+      }
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -2564,6 +2675,54 @@ public class SentryOptions {
 
     public void setPass(final @Nullable String pass) {
       this.pass = pass;
+    }
+  }
+
+  public static final class Cron {
+    private @Nullable Long defaultCheckinMargin;
+    private @Nullable Long defaultMaxRuntime;
+    private @Nullable String defaultTimezone;
+    private @Nullable Long defaultFailureIssueThreshold;
+    private @Nullable Long defaultRecoveryThreshold;
+
+    public @Nullable Long getDefaultCheckinMargin() {
+      return defaultCheckinMargin;
+    }
+
+    public void setDefaultCheckinMargin(@Nullable Long defaultCheckinMargin) {
+      this.defaultCheckinMargin = defaultCheckinMargin;
+    }
+
+    public @Nullable Long getDefaultMaxRuntime() {
+      return defaultMaxRuntime;
+    }
+
+    public void setDefaultMaxRuntime(@Nullable Long defaultMaxRuntime) {
+      this.defaultMaxRuntime = defaultMaxRuntime;
+    }
+
+    public @Nullable String getDefaultTimezone() {
+      return defaultTimezone;
+    }
+
+    public void setDefaultTimezone(@Nullable String defaultTimezone) {
+      this.defaultTimezone = defaultTimezone;
+    }
+
+    public @Nullable Long getDefaultFailureIssueThreshold() {
+      return defaultFailureIssueThreshold;
+    }
+
+    public void setDefaultFailureIssueThreshold(@Nullable Long defaultFailureIssueThreshold) {
+      this.defaultFailureIssueThreshold = defaultFailureIssueThreshold;
+    }
+
+    public @Nullable Long getDefaultRecoveryThreshold() {
+      return defaultRecoveryThreshold;
+    }
+
+    public void setDefaultRecoveryThreshold(@Nullable Long defaultRecoveryThreshold) {
+      this.defaultRecoveryThreshold = defaultRecoveryThreshold;
     }
   }
 
