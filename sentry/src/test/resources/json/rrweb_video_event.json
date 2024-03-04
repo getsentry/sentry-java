@@ -1,0 +1,21 @@
+{
+  "type": 5,
+  "timestamp": 12345678901,
+  "data": {
+    "tag": "video",
+    "payload": {
+      "segmentId": 0,
+      "size": 4000000,
+      "duration": 5000,
+      "encoding":"h264",
+      "container":"mp4",
+      "height": 1920,
+      "width": 1080,
+      "frameCount": 5,
+      "frameRate": 1,
+      "frameRateType": "constant",
+      "left": 100,
+      "top": 100
+    }
+  }
+}

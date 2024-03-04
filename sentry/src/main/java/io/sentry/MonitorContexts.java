@@ -66,7 +66,7 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
 
     @Override
     public @NotNull MonitorContexts deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       final MonitorContexts contexts = new MonitorContexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

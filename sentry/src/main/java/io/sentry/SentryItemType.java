@@ -18,6 +18,7 @@ public enum SentryItemType implements JsonSerializable {
   ClientReport("client_report"),
   ReplayEvent("replay_event"),
   ReplayRecording("replay_recording"),
+  ReplayVideo("replay_video"),
   CheckIn("check_in"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
@@ -64,7 +65,7 @@ public enum SentryItemType implements JsonSerializable {
 
     @Override
     public @NotNull SentryItemType deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       return SentryItemType.valueOfLabel(reader.nextString().toLowerCase(Locale.ROOT));
     }
   }

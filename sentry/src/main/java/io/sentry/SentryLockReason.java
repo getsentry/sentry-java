@@ -147,7 +147,7 @@ public final class SentryLockReason implements JsonUnknown, JsonSerializable {
 
     @Override
     public @NotNull SentryLockReason deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       final SentryLockReason sentryLockReason = new SentryLockReason();
       Map<String, Object> unknown = null;
       reader.beginObject();

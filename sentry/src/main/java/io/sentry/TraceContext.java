@@ -141,7 +141,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     public static final class Deserializer implements JsonDeserializer<TraceContextUser> {
       @Override
       public @NotNull TraceContextUser deserialize(
-          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+          @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
         reader.beginObject();
 
         String id = null;
@@ -239,8 +239,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<TraceContext> {
     @Override
-    public @NotNull TraceContext deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull TraceContext deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
 
       SentryId traceId = null;
