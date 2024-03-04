@@ -23,7 +23,7 @@ public final class MetricsHelper {
   private static final Pattern INVALID_KEY_CHARACTERS_PATTERN =
       Pattern.compile("[^a-zA-Z0-9_/.-]+");
   private static final Pattern INVALID_VALUE_CHARACTERS_PATTERN =
-      Pattern.compile("[^\\w\\d_:/@\\.\\{\\}\\[\\]$-]+");
+      Pattern.compile("[^\\w\\d\\s_:/@\\.\\{\\}\\[\\]$-]+");
   // See
   // https://docs.sysdig.com/en/docs/sysdig-monitor/integrations/working-with-integrations/custom-integrations/integrate-statsd-metrics/#characters-allowed-for-statsd-metric-names
   private static final Pattern INVALID_METRIC_UNIT_CHARACTERS_PATTERN =
