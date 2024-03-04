@@ -40,7 +40,7 @@ class MetricsActivity : ComponentActivity() {
                             Text(text = "Gauge")
                         }
                         Button(onClick = {
-                            Sentry.metrics().set("example.gauge", Random.nextInt())
+                            Sentry.metrics().set("example.set", Random.nextInt())
                         }) {
                             Text(text = "Set")
                         }

@@ -983,7 +983,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
     if (!options.isEnableSpanLocalMetricAggregation()) {
       return null;
     }
-    final @Nullable ISpan span = stack.peek().getScope().getSpan();
+    final @Nullable ISpan span = getSpan();
     if (span != null) {
       return span.getLocalMetricsAggregator();
     }

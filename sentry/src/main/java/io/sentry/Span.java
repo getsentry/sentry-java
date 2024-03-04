@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -45,7 +46,14 @@ public final class Span implements ISpan {
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
 
-  private volatile @Nullable LocalMetricsAggregator metricsAggregator = null;
+  private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
+      new LazyEvaluator<>(
+          new LazyEvaluator.Evaluator<LocalMetricsAggregator>() {
+            @Override
+            public @NotNull LocalMetricsAggregator evaluate() {
+              return new LocalMetricsAggregator();
+            }
+          });
 
   Span(
       final @NotNull SentryId traceId,
@@ -398,16 +406,8 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    if (metricsAggregator == null) {
-      synchronized (this) {
-        if (metricsAggregator == null) {
-          metricsAggregator = new LocalMetricsAggregator();
-        }
-      }
-      return metricsAggregator;
-    }
-    return metricsAggregator;
+  public @NotNull LocalMetricsAggregator getLocalMetricsAggregator() {
+    return metricsAggregator.getValue();
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
