@@ -4,12 +4,14 @@ import io.sentry.*
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.*
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestClient
+import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -32,7 +34,12 @@ class SentrySpanRestClientCustomizerTest {
             transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
         }
 
-        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, includeMockServerInTracingOrigins: Boolean = true): RestClient.Builder {
+        fun getSut(
+            isTransactionActive: Boolean,
+            status: HttpStatus = HttpStatus.OK,
+            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+            includeMockServerInTracingOrigins: Boolean = true
+        ): RestClient.Builder {
             customizer.customize(restClientBuilder)
 
             if (includeMockServerInTracingOrigins) {
@@ -55,9 +62,13 @@ class SentrySpanRestClientCustomizerTest {
                 whenever(hub.span).thenReturn(transaction)
             }
 
-            return restClientBuilder.apply{
-                val requestFactory = HttpComponentsClientHttpRequestFactory()
-                requestFactory.setConnectTimeout(2)
+            return restClientBuilder.apply {
+                val httpClient = HttpClients.custom()
+                    .disableAutomaticRetries() // Required to not make another request automatically
+                    .build()
+                val requestFactory = HttpComponentsClientHttpRequestFactory(httpClient)
+                requestFactory.setConnectTimeout(Duration.ofSeconds(2))
+                requestFactory.setConnectionRequestTimeout(Duration.ofSeconds(2))
                 it.requestFactory(requestFactory)
             }
         }
@@ -89,7 +100,10 @@ class SentrySpanRestClientCustomizerTest {
         val sut = fixture.getSut(isTransactionActive = true)
         val headers = HttpHeaders()
         headers.add("baggage", "thirdPartyBaggage=someValue")
-        headers.add("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+        headers.add(
+            "baggage",
+            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
+        )
 
         sut.build()
             .get()
@@ -158,7 +172,7 @@ class SentrySpanRestClientCustomizerTest {
                 .get()
                 .uri(fixture.url)
                 .retrieve()
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
         }
         fixture.mockServer.takeRequest()
         assertThat(fixture.transaction.spans).hasSize(1)
@@ -185,7 +199,10 @@ class SentrySpanRestClientCustomizerTest {
         val sut = fixture.getSut(isTransactionActive = false)
         val headers = HttpHeaders()
         headers.add("baggage", "thirdPartyBaggage=someValue")
-        headers.add("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+        headers.add(
+            "baggage",
+            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
+        )
 
         sut.build()
             .get()
@@ -248,7 +265,7 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `when transaction is not active adds breadcrumb when http calls succeeds`() {
-        fixture.getSut(isTransactionActive = false) .build()
+        fixture.getSut(isTransactionActive = false).build()
             .post()
             .uri(fixture.url)
             .body("content")
