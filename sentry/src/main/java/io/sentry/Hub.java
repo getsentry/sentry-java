@@ -955,13 +955,12 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
-  // @SuppressWarnings("MixedMutabilityReturnType")
   public @NotNull Map<String, String> getDefaultTagsForMetrics() {
     if (!options.isEnableDefaultTagsForMetrics()) {
       return Collections.emptyMap();
     }
 
-    final Map<String, String> tags = new HashMap<>();
+    final @NotNull Map<String, String> tags = new HashMap<>();
     final @Nullable String release = options.getRelease();
     if (release != null) {
       tags.put("release", release);

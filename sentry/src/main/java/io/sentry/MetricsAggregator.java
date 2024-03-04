@@ -205,9 +205,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     final @NotNull String metricKey = MetricsHelper.getMetricBucketKey(type, key, unit, tags);
 
-    // TODO ideally we can synchronize only the metric itself
     final int addedWeight;
 
+    // TODO ideally we can synchronize only the metric itself
     synchronized (timeBucket) {
       @Nullable Metric existingMetric = timeBucket.get(metricKey);
       if (existingMetric != null) {
