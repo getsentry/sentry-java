@@ -1406,7 +1406,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isEnableScopePersistence)
+        assertTrue(fixture.options.isEnableMetrics)
     }
 
     @Test
