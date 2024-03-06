@@ -326,24 +326,8 @@ public final class SentryTransaction extends SentryBaseEvent
             }
             break;
           case SentrySpan.JsonKeys.METRICS_SUMMARY:
-            if (reader.peek() == JsonToken.NULL) {
-              reader.nextNull();
-              break;
-            }
-            final @NotNull Map<String, List<MetricSummary>> metricSummaries = new HashMap<>();
-            reader.beginObject();
-            if (reader.hasNext()) {
-              do {
-                final @NotNull String exportKey = reader.nextName();
-                final @Nullable List<MetricSummary> summaries =
-                    reader.nextListOrNull(logger, new MetricSummary.Deserializer());
-                if (summaries != null) {
-                  metricSummaries.put(exportKey, summaries);
-                }
-              } while (reader.peek() == JsonToken.BEGIN_OBJECT || reader.peek() == JsonToken.NAME);
-            }
-            reader.endObject();
-            transaction.metricSummaries = metricSummaries;
+            transaction.metricSummaries =
+                reader.nextMapOfListOrNull(logger, new MetricSummary.Deserializer());
             break;
           case JsonKeys.TRANSACTION_INFO:
             transaction.transactionInfo =

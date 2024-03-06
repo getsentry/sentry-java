@@ -322,23 +322,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
             measurements = reader.nextMapOrNull(logger, new MeasurementValue.Deserializer());
             break;
           case JsonKeys.METRICS_SUMMARY:
-            if (reader.peek() == JsonToken.NULL) {
-              reader.nextNull();
-              break;
-            }
-            metricSummaries = new HashMap<>();
-            reader.beginObject();
-            if (reader.hasNext()) {
-              do {
-                final @NotNull String exportKey = reader.nextName();
-                final @Nullable List<MetricSummary> summaries =
-                    reader.nextListOrNull(logger, new MetricSummary.Deserializer());
-                if (summaries != null) {
-                  metricSummaries.put(exportKey, summaries);
-                }
-              } while (reader.peek() == JsonToken.BEGIN_OBJECT || reader.peek() == JsonToken.NAME);
-            }
-            reader.endObject();
+            metricSummaries = reader.nextMapOfListOrNull(logger, new MetricSummary.Deserializer());
             break;
           default:
             if (unknown == null) {

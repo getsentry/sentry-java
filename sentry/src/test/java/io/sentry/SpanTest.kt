@@ -491,6 +491,7 @@ class SpanTest {
         val span = fixture.getSut()
         assertNotNull(span.localMetricsAggregator)
 
+        // ensure the getter returns the same instance
         assertSame(span.localMetricsAggregator, span.localMetricsAggregator)
     }
 
