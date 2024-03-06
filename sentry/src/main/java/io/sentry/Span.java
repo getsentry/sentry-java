@@ -46,14 +46,9 @@ public final class Span implements ISpan {
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
 
+  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
   private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
-      new LazyEvaluator<>(
-          new LazyEvaluator.Evaluator<LocalMetricsAggregator>() {
-            @Override
-            public @NotNull LocalMetricsAggregator evaluate() {
-              return new LocalMetricsAggregator();
-            }
-          });
+      new LazyEvaluator<>(() -> new LocalMetricsAggregator());
 
   Span(
       final @NotNull SentryId traceId,
