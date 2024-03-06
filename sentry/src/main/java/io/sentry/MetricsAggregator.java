@@ -5,6 +5,7 @@ import io.sentry.metrics.DistributionMetric;
 import io.sentry.metrics.EncodedMetrics;
 import io.sentry.metrics.GaugeMetric;
 import io.sentry.metrics.IMetricsClient;
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.metrics.Metric;
 import io.sentry.metrics.MetricType;
 import io.sentry.metrics.MetricsHelper;
@@ -46,8 +47,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   // each of which has a key that uniquely identifies it within the time period
   private final @NotNull NavigableMap<Long, Map<String, Metric>> buckets =
       new ConcurrentSkipListMap<>();
-  private final @NotNull AtomicInteger totalBucketsWeight = new AtomicInteger();
 
+  private final @NotNull AtomicInteger totalBucketsWeight = new AtomicInteger();
   private final int maxWeight;
 
   public MetricsAggregator(
@@ -81,8 +82,17 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       final long timestampMs,
-      int stackLevel) {
-    add(MetricType.Counter, key, value, unit, tags, timestampMs, stackLevel);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(
+        MetricType.Counter,
+        key,
+        value,
+        unit,
+        tags,
+        timestampMs,
+        stackLevel,
+        localMetricsAggregator);
   }
 
   @Override
@@ -92,8 +102,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       final long timestampMs,
-      int stackLevel) {
-    add(MetricType.Gauge, key, value, unit, tags, timestampMs, stackLevel);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(MetricType.Gauge, key, value, unit, tags, timestampMs, stackLevel, localMetricsAggregator);
   }
 
   @Override
@@ -103,8 +114,17 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       final long timestampMs,
-      int stackLevel) {
-    add(MetricType.Distribution, key, value, unit, tags, timestampMs, stackLevel);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(
+        MetricType.Distribution,
+        key,
+        value,
+        unit,
+        tags,
+        timestampMs,
+        stackLevel,
+        localMetricsAggregator);
   }
 
   @Override
@@ -114,8 +134,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       final long timestampMs,
-      int stackLevel) {
-    add(MetricType.Set, key, value, unit, tags, timestampMs, stackLevel);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(MetricType.Set, key, value, unit, tags, timestampMs, stackLevel, localMetricsAggregator);
   }
 
   @Override
@@ -125,7 +146,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       final long timestampMs,
-      int stackLevel) {
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
 
     final byte[] bytes = value.getBytes(UTF8);
 
@@ -133,7 +155,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     crc.update(bytes, 0, bytes.length);
     final int intValue = (int) crc.getValue();
 
-    add(MetricType.Set, key, intValue, unit, tags, timestampMs, stackLevel);
+    add(MetricType.Set, key, intValue, unit, tags, timestampMs, stackLevel, localMetricsAggregator);
   }
 
   @Override
@@ -142,7 +164,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       @NotNull Runnable callback,
       @NotNull MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
-      int stackLevel) {
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
     final long startMs = nowMillis();
     final long startNanos = System.nanoTime();
     try {
@@ -150,7 +173,15 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     } finally {
       final long durationNanos = (System.nanoTime() - startNanos);
       final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
-      add(MetricType.Distribution, key, value, unit, tags, startMs, stackLevel + 1);
+      add(
+          MetricType.Distribution,
+          key,
+          value,
+          unit,
+          tags,
+          startMs,
+          stackLevel + 1,
+          localMetricsAggregator);
     }
   }
 
@@ -161,8 +192,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       final double value,
       @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
-      @NotNull Long timestampMs,
-      final int stackLevel) {
+      final long timestampMs,
+      final int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
 
     if (isClosed) {
       return;
@@ -173,14 +205,15 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     final @NotNull String metricKey = MetricsHelper.getMetricBucketKey(type, key, unit, tags);
 
+    final int addedWeight;
+
     // TODO ideally we can synchronize only the metric itself
     synchronized (timeBucket) {
       @Nullable Metric existingMetric = timeBucket.get(metricKey);
       if (existingMetric != null) {
         final int oldWeight = existingMetric.getWeight();
         existingMetric.add(value);
-        final int newWeight = existingMetric.getWeight();
-        totalBucketsWeight.addAndGet(newWeight - oldWeight);
+        addedWeight = existingMetric.getWeight() - oldWeight;
       } else {
         final @NotNull Metric metric;
         switch (type) {
@@ -202,9 +235,14 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
           default:
             throw new IllegalArgumentException("Unknown MetricType: " + type.name());
         }
+        addedWeight = metric.getWeight();
         timeBucket.put(metricKey, metric);
-        totalBucketsWeight.addAndGet(metric.getWeight());
       }
+      totalBucketsWeight.addAndGet(addedWeight);
+    }
+    if (localMetricsAggregator != null) {
+      final double localValue = type == MetricType.Set ? addedWeight : value;
+      localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags, timestampMs);
     }
 
     final boolean isOverWeight = isOverWeight();

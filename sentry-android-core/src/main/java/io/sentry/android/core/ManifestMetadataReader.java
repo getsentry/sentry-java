@@ -102,6 +102,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
 
+  static final String ENABLE_METRICS = "io.sentry.enable-metrics";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -377,6 +379,9 @@ final class ManifestMetadataReader {
         options.setEnableScopePersistence(
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
+
+        options.setEnableMetrics(
+            readBool(metadata, logger, ENABLE_METRICS, options.isEnableMetrics()));
       }
 
       options

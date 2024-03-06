@@ -251,6 +251,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         APP_METRICS_ORIGIN,
         new ConcurrentHashMap<>(),
         new ConcurrentHashMap<>(),
+        null,
         defaultSpanData);
   }
 }

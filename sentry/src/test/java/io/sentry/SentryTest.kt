@@ -1139,6 +1139,18 @@ class SentryTest {
         assertTrue(appStartOption.isProfilingEnabled)
     }
 
+    @Test
+    fun `metrics calls hub getMetrics`() {
+        val hub = mock<IHub>()
+        Sentry.init({
+            it.dsn = dsn
+        }, false)
+        Sentry.setCurrentHub(hub)
+
+        Sentry.metrics()
+        verify(hub).metrics()
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Experimental: Add span summaries for metrics ([#3238](https://github.com/getsentry/sentry-java/pull/3238))
+
 ## 7.5.0
 
 ### Features

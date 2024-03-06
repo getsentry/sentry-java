@@ -41,6 +41,26 @@ public final class GaugeMetric extends Metric {
     count++;
   }
 
+  public double getLast() {
+    return last;
+  }
+
+  public double getMin() {
+    return min;
+  }
+
+  public double getMax() {
+    return max;
+  }
+
+  public double getSum() {
+    return sum;
+  }
+
+  public int getCount() {
+    return count;
+  }
+
   @Override
   public int getWeight() {
     return 5;

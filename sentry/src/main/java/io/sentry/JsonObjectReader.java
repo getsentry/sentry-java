@@ -125,6 +125,30 @@ public final class JsonObjectReader extends JsonReader {
     return map;
   }
 
+  public <T> @Nullable Map<String, List<T>> nextMapOfListOrNull(
+      @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
+
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    final @NotNull Map<String, List<T>> result = new HashMap<>();
+
+    beginObject();
+    if (hasNext()) {
+      do {
+        final @NotNull String key = nextName();
+        final @Nullable List<T> list = nextListOrNull(logger, deserializer);
+        if (list != null) {
+          result.put(key, list);
+        }
+      } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
+    }
+    endObject();
+
+    return result;
+  }
+
   public <T> @Nullable T nextOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws Exception {
     if (peek() == JsonToken.NULL) {
