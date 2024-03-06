@@ -18,6 +18,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: 'Enforce License Compliance'
         uses: getsentry/action-enforce-license-compliance@main
