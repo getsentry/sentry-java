@@ -35,6 +35,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   private final @NotNull ILogger logger;
   private final @NotNull IMetricsClient client;
   private final @NotNull SentryDateProvider dateProvider;
+  private final @Nullable SentryOptions.BeforeEmitMetricCallback beforeEmitCallback;
 
   private volatile @NotNull ISentryExecutorService executorService;
   private volatile boolean isClosed = false;
@@ -58,6 +59,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
         options.getLogger(),
         options.getDateProvider(),
         MetricsHelper.MAX_TOTAL_WEIGHT,
+        options.getBeforeEmitMetricCallback(),
         NoOpSentryExecutorService.getInstance());
   }
 
@@ -67,11 +69,13 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       final @NotNull ILogger logger,
       final @NotNull SentryDateProvider dateProvider,
       final int maxWeight,
+      final @Nullable SentryOptions.BeforeEmitMetricCallback beforeEmitCallback,
       final @NotNull ISentryExecutorService executorService) {
     this.client = client;
     this.logger = logger;
     this.dateProvider = dateProvider;
     this.maxWeight = maxWeight;
+    this.beforeEmitCallback = beforeEmitCallback;
     this.executorService = executorService;
   }
 
@@ -198,6 +202,12 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     if (isClosed) {
       return;
+    }
+
+    if (beforeEmitCallback != null) {
+      if (!beforeEmitCallback.execute(key, tags)) {
+        return;
+      }
     }
 
     final long timeBucketKey = MetricsHelper.getTimeBucketKey(timestampMs);

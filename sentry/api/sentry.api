@@ -1029,7 +1029,7 @@ public final class io/sentry/MemoryCollectionData {
 
 public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, java/io/Closeable, java/lang/Runnable {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/metrics/IMetricsClient;)V
-	public fun <init> (Lio/sentry/metrics/IMetricsClient;Lio/sentry/ILogger;Lio/sentry/SentryDateProvider;ILio/sentry/ISentryExecutorService;)V
+	public fun <init> (Lio/sentry/metrics/IMetricsClient;Lio/sentry/ILogger;Lio/sentry/SentryDateProvider;ILio/sentry/SentryOptions$BeforeEmitMetricCallback;Lio/sentry/ISentryExecutorService;)V
 	public fun close ()V
 	public fun distribution (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JILio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun flush (Z)V
@@ -2203,6 +2203,7 @@ public class io/sentry/SentryOptions {
 	public static fun empty ()Lio/sentry/SentryOptions;
 	public fun getBackpressureMonitor ()Lio/sentry/backpressure/IBackpressureMonitor;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
+	public fun getBeforeEmitMetricCallback ()Lio/sentry/SentryOptions$BeforeEmitMetricCallback;
 	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
@@ -2314,6 +2315,7 @@ public class io/sentry/SentryOptions {
 	public fun setAttachThreads (Z)V
 	public fun setBackpressureMonitor (Lio/sentry/backpressure/IBackpressureMonitor;)V
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
+	public fun setBeforeEmitMetricCallback (Lio/sentry/SentryOptions$BeforeEmitMetricCallback;)V
 	public fun setBeforeEnvelopeCallback (Lio/sentry/SentryOptions$BeforeEnvelopeCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
@@ -2405,6 +2407,10 @@ public class io/sentry/SentryOptions {
 
 public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback {
 	public abstract fun execute (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)Lio/sentry/Breadcrumb;
+}
+
+public abstract interface class io/sentry/SentryOptions$BeforeEmitMetricCallback {
+	public abstract fun execute (Ljava/lang/String;Ljava/util/Map;)Z
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
