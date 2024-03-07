@@ -6,6 +6,7 @@
 
 - Experimental: Add span summaries for metrics ([#3238](https://github.com/getsentry/sentry-java/pull/3238))
 - Experimental: Implement span creating mode in metrics.timing API ([#3248](https://github.com/getsentry/sentry-java/pull/3248))
+- Experimental: Add before_emit_metric callback to options ([#3250](https://github.com/getsentry/sentry-java/pull/3250))
 
 ## 7.5.0
 
