@@ -2075,6 +2075,27 @@ class HubTest {
         assertNotNull(hub.localMetricsAggregator)
     }
 
+    @Test
+    fun `hub startSpanForMetric starts a child span`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableSpanLocalMetricAggregation = true
+            it.sampleRate = 1.0
+        } as Hub
+
+        val txn = hub.startTransaction(
+            "name.txn",
+            "op.txn",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        val span = hub.startSpanForMetric("op", "key")!!
+
+        assertEquals("op", span.spanContext.op)
+        assertEquals("key", span.spanContext.description)
+        assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {

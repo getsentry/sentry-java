@@ -461,6 +461,7 @@ public final class io/sentry/Hub : io/sentry/IHub, io/sentry/metrics/MetricsApi$
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
+	public fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
@@ -3536,6 +3537,7 @@ public abstract interface class io/sentry/metrics/MetricsApi$IMetricsInterface {
 	public abstract fun getDefaultTagsForMetrics ()Ljava/util/Map;
 	public abstract fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public abstract fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
+	public abstract fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 }
 
 public final class io/sentry/metrics/MetricsHelper {
@@ -3570,6 +3572,7 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JILio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JILio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JILio/sentry/metrics/LocalMetricsAggregator;)V
+	public fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;ILio/sentry/metrics/LocalMetricsAggregator;)V
 }
 

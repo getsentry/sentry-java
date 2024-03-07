@@ -1,6 +1,7 @@
 package io.sentry.metrics
 
 import io.sentry.IMetricsAggregator
+import io.sentry.ISpan
 import io.sentry.metrics.MetricsApi.IMetricsInterface
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -8,6 +9,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class MetricsApiTest {
 
@@ -15,7 +17,14 @@ class MetricsApiTest {
         val aggregator = mock<IMetricsAggregator>()
         val localMetricsAggregator = mock<LocalMetricsAggregator>()
 
-        fun getSut(defaultTags: Map<String, String> = emptyMap()): MetricsApi {
+        var lastSpan: ISpan? = null
+        var lastOp: String? = null
+        var lastDescription: String? = null
+
+        fun getSut(
+            defaultTags: Map<String, String> = emptyMap(),
+            spanProvider: () -> ISpan? = { mock<ISpan>() }
+        ): MetricsApi {
             val localAggregator = localMetricsAggregator
 
             return MetricsApi(object : IMetricsInterface {
@@ -26,6 +35,13 @@ class MetricsApiTest {
                 override fun getLocalMetricsAggregator(): LocalMetricsAggregator? = localAggregator
 
                 override fun getDefaultTagsForMetrics(): Map<String, String> = defaultTags
+
+                override fun startSpanForMetric(op: String, description: String): ISpan? {
+                    lastOp = op
+                    lastDescription = description
+                    lastSpan = spanProvider()
+                    return lastSpan
+                }
             })
         }
     }
@@ -287,5 +303,47 @@ class MetricsApiTest {
             anyOrNull(),
             eq(fixture.localMetricsAggregator)
         )
+    }
+
+    @Test
+    fun `timing starts and finishes a span`() {
+        val api = fixture.getSut()
+
+        api.timing("key") {
+            // no-op
+        }
+
+        assertEquals("metric.timing", fixture.lastOp)
+        assertEquals("key", fixture.lastDescription)
+
+        verify(fixture.lastSpan!!).finish()
+    }
+
+    @Test
+    fun `if timing throws an exception, span still finishes`() {
+        val api = fixture.getSut()
+
+        try {
+            api.timing("key") {
+                throw IllegalStateException()
+            }
+        } catch (e: IllegalStateException) {
+            // ignored
+        }
+
+        assertEquals("metric.timing", fixture.lastOp)
+        assertEquals("key", fixture.lastDescription)
+        verify(fixture.lastSpan!!).finish()
+    }
+
+    @Test
+    fun `if timing does retrieve a null span, it still works`() {
+        val api = fixture.getSut(
+            spanProvider = { null }
+        )
+        api.timing("key") {
+            // no-op
+        }
+        // no crash
     }
 }

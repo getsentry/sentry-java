@@ -1,6 +1,7 @@
 package io.sentry.metrics;
 
 import io.sentry.IMetricsAggregator;
+import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import java.io.IOException;
 import java.util.Collections;
@@ -101,5 +102,10 @@ public final class NoopMetricsAggregator
   @Override
   public @NotNull Map<String, String> getDefaultTagsForMetrics() {
     return Collections.emptyMap();
+  }
+
+  @Override
+  public @Nullable ISpan startSpanForMetric(@NotNull String op, @NotNull String description) {
+    return null;
   }
 }
