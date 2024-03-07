@@ -653,12 +653,17 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `metric callback is null by default`() {
+        assertNull(SentryOptions().beforeEmitMetricCallback)
+    }
+
+    @Test
     fun `when metric callback is set, getter returns it`() {
         val callback = SentryOptions.BeforeEmitMetricCallback { _, _ -> false }
         val options = SentryOptions().apply {
             beforeEmitMetricCallback = callback
         }
-        assertSame(options.beforeEmitMetricCallback, options.beforeEmitMetricCallback)
+        assertSame(callback, options.beforeEmitMetricCallback)
     }
 
     @Test
