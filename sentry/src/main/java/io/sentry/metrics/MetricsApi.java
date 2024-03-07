@@ -1,6 +1,7 @@
 package io.sentry.metrics;
 
 import io.sentry.IMetricsAggregator;
+import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,6 +20,9 @@ public final class MetricsApi {
 
     @NotNull
     Map<String, String> getDefaultTagsForMetrics();
+
+    @Nullable
+    ISpan startSpanForMetric(final @NotNull String op, final @NotNull String description);
   }
 
   private final @NotNull MetricsApi.IMetricsInterface aggregator;
@@ -554,8 +558,20 @@ public final class MetricsApi {
     final @Nullable LocalMetricsAggregator localMetricsAggregator =
         aggregator.getLocalMetricsAggregator();
 
-    aggregator
-        .getMetricsAggregator()
-        .timing(key, callback, durationUnit, enrichedTags, stackLevel, localMetricsAggregator);
+    final @Nullable ISpan span = aggregator.startSpanForMetric("metric.timing", key);
+    if (span != null && tags != null) {
+      for (final @NotNull Map.Entry<String, String> entry : tags.entrySet()) {
+        span.setTag(entry.getKey(), entry.getValue());
+      }
+    }
+    try {
+      aggregator
+          .getMetricsAggregator()
+          .timing(key, callback, durationUnit, enrichedTags, stackLevel, localMetricsAggregator);
+    } finally {
+      if (span != null) {
+        span.finish();
+      }
+    }
   }
 }

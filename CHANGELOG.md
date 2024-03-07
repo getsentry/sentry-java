@@ -5,6 +5,7 @@
 ### Features
 
 - Experimental: Add span summaries for metrics ([#3238](https://github.com/getsentry/sentry-java/pull/3238))
+- Experimental: Implement span creating mode in metrics.timing API ([#3248](https://github.com/getsentry/sentry-java/pull/3248))
 
 ## 7.5.0
 

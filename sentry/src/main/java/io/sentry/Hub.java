@@ -979,6 +979,15 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  public @Nullable ISpan startSpanForMetric(@NotNull String op, @NotNull String description) {
+    final @Nullable ISpan span = getSpan();
+    if (span != null) {
+      return span.startChild(op, description);
+    }
+    return null;
+  }
+
+  @Override
   public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
     if (!options.isEnableSpanLocalMetricAggregation()) {
       return null;
