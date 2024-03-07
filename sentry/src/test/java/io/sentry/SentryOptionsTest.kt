@@ -12,6 +12,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryOptionsTest {
@@ -649,6 +650,15 @@ class SentryOptionsTest {
         assertTrue(options.isEnableMetrics)
         assertFalse(options.isEnableDefaultTagsForMetrics)
         assertFalse(options.isEnableSpanLocalMetricAggregation)
+    }
+
+    @Test
+    fun `when metric callback is set, getter returns it`() {
+        val callback = SentryOptions.BeforeEmitMetricCallback { _, _ -> false }
+        val options = SentryOptions().apply {
+            beforeEmitMetricCallback = callback
+        }
+        assertSame(options.beforeEmitMetricCallback, options.beforeEmitMetricCallback)
     }
 
     @Test

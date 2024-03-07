@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.SentryOptions.BeforeEmitMetricCallback
 import io.sentry.metrics.IMetricsClient
 import io.sentry.metrics.LocalMetricsAggregator
 import io.sentry.metrics.MetricType
@@ -30,12 +31,16 @@ class MetricsAggregatorTest {
         var currentTimeMillis: Long = 0
         var executorService = DeferredExecutorService()
 
-        fun getSut(maxWeight: Int = MetricsHelper.MAX_TOTAL_WEIGHT): MetricsAggregator {
+        fun getSut(
+            maxWeight: Int = MetricsHelper.MAX_TOTAL_WEIGHT,
+            beforeEmitMetricCallback: BeforeEmitMetricCallback? = null
+        ): MetricsAggregator {
             return MetricsAggregator(
                 client,
                 logger,
                 dateProvider,
                 maxWeight,
+                beforeEmitMetricCallback,
                 executorService
             )
         }
@@ -496,5 +501,40 @@ class MetricsAggregatorTest {
 
         // flush is scheduled for later
         verify(fixture.executorService).schedule(any(), eq(MetricsHelper.FLUSHER_SLEEP_TIME_MS))
+    }
+
+    @Test
+    fun `key and tags are passed down to beforeEmitMetricCallback`() {
+        var lastKey: String? = null
+        var lastTags: Map<String, String>? = null
+        val aggregator = fixture.getSut(beforeEmitMetricCallback = { key, tags ->
+            lastKey = key
+            lastTags = tags
+            return@getSut false
+        })
+
+        val key = "metric-key"
+        val tags = mapOf(
+            "tag-key" to "tag-value"
+        )
+        aggregator.increment(key, 1.0, null, tags, 20_001, 1, null)
+        assertEquals(key, lastKey)
+        assertEquals(tags, lastTags)
+    }
+
+    @Test
+    fun `if before emit callback returns true, metric is emitted`() {
+        val aggregator = fixture.getSut(beforeEmitMetricCallback = { key, tags -> true })
+        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
+        aggregator.flush(true)
+        verify(fixture.client).captureMetrics(any())
+    }
+
+    @Test
+    fun `if before emit callback returns false, metric is not emitted`() {
+        val aggregator = fixture.getSut(beforeEmitMetricCallback = { key, tags -> false })
+        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
+        aggregator.flush(true)
+        verify(fixture.client, never()).captureMetrics(any())
     }
 }
