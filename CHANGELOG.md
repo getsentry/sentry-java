@@ -17,7 +17,7 @@
         )
     )
   ```
-  To learn more about Sentry Developer Merics, head over to our [Java](https://docs.sentry.io/platforms/java/metrics/) and [Android](https://docs.sentry.io//platforms/android/metrics/) docs page.
+  To learn more about Sentry Developer Metrics, head over to our [Java](https://docs.sentry.io/platforms/java/metrics/) and [Android](https://docs.sentry.io//platforms/android/metrics/) docs page.
 
 ## 7.5.0
 
