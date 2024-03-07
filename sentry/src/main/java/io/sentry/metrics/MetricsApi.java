@@ -559,6 +559,11 @@ public final class MetricsApi {
         aggregator.getLocalMetricsAggregator();
 
     final @Nullable ISpan span = aggregator.startSpanForMetric("metric.timing", key);
+    if (span != null && tags != null) {
+      for (final @NotNull Map.Entry<String, String> entry : tags.entrySet()) {
+        span.setTag(entry.getKey(), entry.getValue());
+      }
+    }
     try {
       aggregator
           .getMetricsAggregator()
