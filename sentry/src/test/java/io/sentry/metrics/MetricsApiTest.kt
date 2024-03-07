@@ -2,11 +2,13 @@ package io.sentry.metrics
 
 import io.sentry.IMetricsAggregator
 import io.sentry.ISpan
+import io.sentry.MeasurementUnit
 import io.sentry.metrics.MetricsApi.IMetricsInterface
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -317,6 +319,27 @@ class MetricsApiTest {
         assertEquals("key", fixture.lastDescription)
 
         verify(fixture.lastSpan!!).finish()
+    }
+
+    @Test
+    fun `timing applies metric tags as span tags`() {
+        val span = mock<ISpan>()
+        val api = fixture.getSut(
+            spanProvider = {
+                span
+            },
+            defaultTags = mapOf(
+                "release" to "1.0"
+            )
+        )
+        // when timing is called
+        api.timing("key", {
+            // no-op
+        }, MeasurementUnit.Duration.NANOSECOND, mapOf("a" to "b"))
+
+        // the last span should have the metric tags, without the default ones
+        verify(fixture.lastSpan!!, never()).setTag("release", "1.0")
+        verify(fixture.lastSpan!!).setTag("a", "b")
     }
 
     @Test
