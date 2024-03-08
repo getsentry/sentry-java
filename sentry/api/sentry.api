@@ -2750,6 +2750,8 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
+	public static final field TTFD_CONTRIBUTING Ljava/lang/String;
+	public static final field TTID_CONTRIBUTING Ljava/lang/String;
 }
 
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {
@@ -4493,6 +4495,7 @@ public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, i
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 

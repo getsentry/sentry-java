@@ -7,6 +7,7 @@ import io.sentry.IHub
 import io.sentry.MeasurementUnit
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
+import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
@@ -27,6 +28,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -462,6 +464,234 @@ class PerformanceAndroidEventProcessorTest {
                     it.data!!.containsKey("thread.id")
             }
         }
+    }
+
+    @Test
+    fun `adds ttid and ttfd contributing span data`() {
+        val sut = fixture.getSut()
+
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        val tr = SentryTransaction(tracer)
+
+        // given a ttid from 0.0 -> 1.0
+        //   and a ttfd from 0.0 -> 2.0
+        val ttid = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            ActivityLifecycleIntegration.TTID_OP,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        val ttfd = SentrySpan(
+            0.0,
+            2.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            ActivityLifecycleIntegration.TTFD_OP,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(ttid)
+        tr.spans.add(ttfd)
+
+        // and 3 spans
+        // one from 0.0 -> 0.5
+        val ttidContrib = SentrySpan(
+            0.0,
+            0.5,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        // and another from 1.5 -> 3.5
+        val ttfdContrib = SentrySpan(
+            1.5,
+            3.5,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        // and another from 2.1 -> 2.2
+        val outsideSpan = SentrySpan(
+            2.1,
+            2.2,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            mutableMapOf<String, Any>(
+                "tag" to "value"
+            )
+        )
+
+        tr.spans.add(ttidContrib)
+        tr.spans.add(ttfdContrib)
+
+        // when the processor processes the txn
+        sut.process(tr, Hint())
+
+        // then the ttid/ttfd spans themselves should have no flags set
+        assertNull(ttid.data)
+        assertNull(ttfd.data)
+
+        // then the first span should have ttid and ttfd contributing flags
+        assertTrue(ttidContrib.data!![SpanDataConvention.TTID_CONTRIBUTING] == true)
+        assertTrue(ttidContrib.data!![SpanDataConvention.TTFD_CONTRIBUTING] == true)
+
+        // and the second one should contribute to ttfd only
+        assertNull(ttfdContrib.data!![SpanDataConvention.TTID_CONTRIBUTING])
+        assertTrue(ttfdContrib.data!![SpanDataConvention.TTFD_CONTRIBUTING] == true)
+
+        // and the third span should have no flags attached, as it's outside ttid/ttfd
+        assertNull(outsideSpan.data!![SpanDataConvention.TTID_CONTRIBUTING])
+        assertNull(outsideSpan.data!![SpanDataConvention.TTFD_CONTRIBUTING])
+    }
+
+    @Test
+    fun `does not overwrite ttid and ttfd contributing span data`() {
+        val sut = fixture.getSut()
+
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        val tr = SentryTransaction(tracer)
+
+        // given a ttid from 0.0 -> 1.0
+        //   and a ttfd from 0.0 -> 2.0
+        val ttid = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            ActivityLifecycleIntegration.TTID_OP,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        val ttfd = SentrySpan(
+            0.0,
+            2.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            ActivityLifecycleIntegration.TTFD_OP,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(ttid)
+        tr.spans.add(ttfd)
+
+        // and one span which has the flags already set
+        val span = SentrySpan(
+            0.0,
+            0.5,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            mapOf(
+                SpanDataConvention.TTID_CONTRIBUTING to false,
+                SpanDataConvention.TTFD_CONTRIBUTING to false
+            )
+        )
+
+        tr.spans.add(span)
+
+        // when the processor processes the txn
+        sut.process(tr, Hint())
+
+        // then the span flags should not be overwritten
+        assertTrue(span.data!![SpanDataConvention.TTID_CONTRIBUTING] == false)
+        assertTrue(span.data!![SpanDataConvention.TTFD_CONTRIBUTING] == false)
+    }
+
+    @Test
+    fun `adds no ttid and ttfd contributing span data if txn contains no ttid or ttfd`() {
+        val sut = fixture.getSut()
+
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        val tr = SentryTransaction(tracer)
+
+        val span = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        tr.spans.add(span)
+
+        // when the processor processes the txn
+        sut.process(tr, Hint())
+
+        // the span should have no flags attached
+        assertNull(span.data)
     }
 
     private fun setAppStart(options: SentryAndroidOptions, coldStart: Boolean = true) {
