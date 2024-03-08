@@ -34,11 +34,12 @@ public class PersonService {
     Sentry.metrics()
         .timing(
             "person.insert",
-            () ->
-                jdbcTemplate.update(
-                    "insert into person (firstName, lastName) values (?, ?)",
-                    person.getFirstName(),
-                    person.getLastName()));
+            () -> {
+              jdbcTemplate.update(
+                  "insert into person (firstName, lastName) values (?, ?)",
+                  person.getFirstName(),
+                  person.getLastName());
+            });
 
     return person;
   }
