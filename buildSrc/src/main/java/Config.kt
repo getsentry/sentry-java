@@ -151,10 +151,10 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
         object OpenTelemetry {
-            val otelVersion = "1.36.0-SNAPSHOT"
+            val otelVersion = "1.35.0"
             val otelAlphaVersion = "$otelVersion-alpha"
-            val otelJavaagentVersion = "2.2.0-SNAPSHOT"
-            val otelJavaagentAlphaVersion = "2.2.0-alpha-SNAPSHOT"
+            val otelJavaagentVersion = "2.1.0"
+            val otelJavaagentAlphaVersion = "2.1.0-alpha"
             val otelSemanticConvetionsVersion = "1.23.1-alpha"
 
             val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"

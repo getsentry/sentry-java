@@ -29,6 +29,9 @@ public final class SentryContextStorage implements ContextStorage {
     // or maybe shouldn't even to better align with OTEL
     // but since OTEL Context is immutable it doesn't have the same consequence for OTEL as for us
 
+    // TODO sometimes context has already gone through forking but is still an ArrayBaseContext
+    // most likely due to OTEL bridging between agent and app
+
     // incoming non sentry wrapped context that already has scopes in it
     if (toAttach instanceof SentryContextWrapper) {
       return contextStorage.attach(toAttach);
