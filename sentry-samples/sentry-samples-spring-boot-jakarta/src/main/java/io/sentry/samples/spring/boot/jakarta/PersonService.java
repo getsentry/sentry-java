@@ -31,10 +31,15 @@ public class PersonService {
       span.setMeasurement("create_count", createCount);
     }
 
-    jdbcTemplate.update(
-        "insert into person (firstName, lastName) values (?, ?)",
-        person.getFirstName(),
-        person.getLastName());
+    Sentry.metrics()
+        .timing(
+            "person.insert",
+            () ->
+                jdbcTemplate.update(
+                    "insert into person (firstName, lastName) values (?, ?)",
+                    person.getFirstName(),
+                    person.getLastName()));
+
     return person;
   }
 }
