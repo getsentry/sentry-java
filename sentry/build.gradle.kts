@@ -25,6 +25,8 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     errorprone(Config.CompileOnly.errorProneNullAway)
+    // TODO move everything that needs this to separate package
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)

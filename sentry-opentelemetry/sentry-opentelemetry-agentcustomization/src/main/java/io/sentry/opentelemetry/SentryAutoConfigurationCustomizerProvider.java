@@ -1,9 +1,11 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizer;
 import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.sentry.Instrumenter;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
@@ -49,6 +51,8 @@ public final class SentryAutoConfigurationCustomizerProvider
         SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
       }
     }
+
+    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
 
     autoConfiguration
         .addTracerProviderCustomizer(this::configureSdkTracerProvider)
@@ -140,7 +144,9 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   private SdkTracerProviderBuilder configureSdkTracerProvider(
       SdkTracerProviderBuilder tracerProvider, ConfigProperties config) {
-    return tracerProvider.addSpanProcessor(new SentrySpanProcessor());
+    return tracerProvider
+        .addSpanProcessor(new PotelSentrySpanProcessor())
+        .addSpanProcessor(BatchSpanProcessor.builder(new SentrySpanExporter()).build());
   }
 
   private Map<String, String> getDefaultProperties() {

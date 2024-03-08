@@ -1,3 +1,14 @@
+public final class io/sentry/opentelemetry/InternalSemanticAttributes {
+	public static final field BREADCRUMB_TYPE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field IS_REMOTE_PARENT Lio/opentelemetry/api/common/AttributeKey;
+	public static final field OP Lio/opentelemetry/api/common/AttributeKey;
+	public static final field ORIGIN Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PARENT_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SOURCE Lio/opentelemetry/api/common/AttributeKey;
+	public fun <init> ()V
+}
+
 public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
 	public fun <init> ()V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
@@ -10,10 +21,19 @@ public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
-public final class io/sentry/opentelemetry/SentryOtelKeys {
-	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
-	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
+public final class io/sentry/opentelemetry/PotelSentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
 	public fun <init> ()V
+	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
+	public fun fields ()Ljava/util/Collection;
+	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/PotelSentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
+	public fun <init> ()V
+	public fun isEndRequired ()Z
+	public fun isStartRequired ()Z
+	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
+	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
 }
 
 public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
@@ -21,6 +41,14 @@ public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/c
 	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
 	public fun fields ()Ljava/util/Collection;
 	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/SentrySpanExporter : io/opentelemetry/sdk/trace/export/SpanExporter {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun export (Ljava/util/Collection;)Lio/opentelemetry/sdk/common/CompletableResultCode;
+	public fun flush ()Lio/opentelemetry/sdk/common/CompletableResultCode;
+	public fun shutdown ()Lio/opentelemetry/sdk/common/CompletableResultCode;
 }
 
 public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
@@ -34,6 +62,18 @@ public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetr
 public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
 	public fun <init> ()V
 	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/OtelSpanInfo;
+}
+
+public final class io/sentry/opentelemetry/SpanNode {
+	public fun <init> (Ljava/lang/String;)V
+	public fun addChild (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun addChildren (Ljava/util/List;)V
+	public fun getChildren ()Ljava/util/List;
+	public fun getId ()Ljava/lang/String;
+	public fun getParentNode ()Lio/sentry/opentelemetry/SpanNode;
+	public fun getSpan ()Lio/opentelemetry/sdk/trace/data/SpanData;
+	public fun setParentNode (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun setSpan (Lio/opentelemetry/sdk/trace/data/SpanData;)V
 }
 
 public final class io/sentry/opentelemetry/TraceData {

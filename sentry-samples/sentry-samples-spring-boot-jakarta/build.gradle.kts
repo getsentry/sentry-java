@@ -43,6 +43,7 @@ dependencies {
     implementation(Config.Libs.springBoot3StarterQuartz)
     implementation(Config.Libs.springBoot3StarterWebflux)
     implementation(Config.Libs.springBoot3StarterAop)
+    implementation(Config.Libs.OpenTelemetry.otelSdk)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
