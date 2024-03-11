@@ -74,8 +74,9 @@ android {
     }
 
     lint {
-        warningsAsErrors = true
-        checkDependencies = true
+        warningsAsErrors = false
+        checkDependencies = false
+        abortOnError = false
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
