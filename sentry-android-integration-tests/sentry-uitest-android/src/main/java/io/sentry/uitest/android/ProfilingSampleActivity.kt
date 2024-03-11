@@ -19,10 +19,10 @@ import kotlin.random.Random
 
 public class ProfilingSampleActivity : AppCompatActivity() {
 
-    private companion object {
+    public companion object {
 
         /** The activity will set this when scrolling. */
-        val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-profilingSampleActivityScrolling")
+        public val scrollingIdlingResource: CountingIdlingResource = CountingIdlingResource("sentry-uitest-android-profilingSampleActivityScrolling")
     }
 
     private lateinit var binding: ActivityProfilingSampleBinding
