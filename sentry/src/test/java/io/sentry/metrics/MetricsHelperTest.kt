@@ -168,4 +168,11 @@ class MetricsHelperTest {
         assertEquals("s", MetricsHelper.toStatsdType(MetricType.Set))
         assertEquals("d", MetricsHelper.toStatsdType(MetricType.Distribution))
     }
+
+    @Test
+    fun exportKey() {
+        assertEquals("d:custom/background_operation@second", MetricsHelper.getExportKey(MetricType.Distribution, "custom/background_operation", MeasurementUnit.Duration.SECOND))
+        assertEquals("d:custom/background_operation@none", MetricsHelper.getExportKey(MetricType.Distribution, "custom/background_operation", null))
+        assertEquals("c:count@none", MetricsHelper.getExportKey(MetricType.Counter, "count", null))
+    }
 }

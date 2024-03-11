@@ -1,7 +1,9 @@
 package io.sentry;
 
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -43,6 +45,10 @@ public final class Span implements ISpan {
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
+
+  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
+  private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
+      new LazyEvaluator<>(() -> new LocalMetricsAggregator());
 
   Span(
       final @NotNull SentryId traceId,
@@ -392,6 +398,11 @@ public final class Span implements ISpan {
   @Override
   public boolean isNoOp() {
     return false;
+  }
+
+  @Override
+  public @NotNull LocalMetricsAggregator getLocalMetricsAggregator() {
+    return metricsAggregator.getValue();
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {

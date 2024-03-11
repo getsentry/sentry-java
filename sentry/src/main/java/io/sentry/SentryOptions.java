@@ -464,6 +464,12 @@ public class SentryOptions {
 
   private boolean enableMetrics = false;
 
+  private boolean enableDefaultTagsForMetrics = true;
+
+  private boolean enableSpanLocalMetricAggregation = true;
+
+  private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
+
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
@@ -2339,6 +2345,37 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
+  public boolean isEnableSpanLocalMetricAggregation() {
+    return isEnableMetrics() && enableSpanLocalMetricAggregation;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpanLocalMetricAggregation(final boolean enableSpanLocalMetricAggregation) {
+    this.enableSpanLocalMetricAggregation = enableSpanLocalMetricAggregation;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableDefaultTagsForMetrics() {
+    return isEnableMetrics() && enableDefaultTagsForMetrics;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableDefaultTagsForMetrics(final boolean enableDefaultTagsForMetrics) {
+    this.enableDefaultTagsForMetrics = enableDefaultTagsForMetrics;
+  }
+
+  @ApiStatus.Experimental
+  @Nullable
+  public BeforeEmitMetricCallback getBeforeEmitMetricCallback() {
+    return beforeEmitMetricCallback;
+  }
+
+  @ApiStatus.Experimental
+  public void setBeforeEmitMetricCallback(
+      final @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback) {
+    this.beforeEmitMetricCallback = beforeEmitMetricCallback;
+  }
+
   public @Nullable Cron getCron() {
     return cron;
   }
@@ -2430,6 +2467,20 @@ public class SentryOptions {
      * @param hint the hints
      */
     void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
+  }
+
+  /** The BeforeEmitMetric callback */
+  @ApiStatus.Experimental
+  public interface BeforeEmitMetricCallback {
+
+    /**
+     * A callback which gets called right before a metric is about to be emitted.
+     *
+     * @param key the metric key
+     * @param tags the metric tags
+     * @return true if the metric should be emitted, false otherwise
+     */
+    boolean execute(@NotNull String key, @Nullable Map<String, String> tags);
   }
 
   /**

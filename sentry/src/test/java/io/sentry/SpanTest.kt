@@ -486,6 +486,15 @@ class SpanTest {
         assertEquals(1, transaction.root.measurements["test"]!!.value)
     }
 
+    @Test
+    fun `span provides local metrics aggregator instance`() {
+        val span = fixture.getSut()
+        assertNotNull(span.localMetricsAggregator)
+
+        // ensure the getter returns the same instance
+        assertSame(span.localMetricsAggregator, span.localMetricsAggregator)
+    }
+
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
         return SentryTracer(transactionContext, fixture.hub)
     }

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.SentryId;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -158,5 +159,10 @@ public final class NoOpSpan implements ISpan {
   @Override
   public boolean isNoOp() {
     return true;
+  }
+
+  @Override
+  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
+    return null;
   }
 }
