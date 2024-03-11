@@ -11,8 +11,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /** A simple activity with a list of bitmaps. */
-class BenchmarkActivity : AppCompatActivity() {
-    companion object {
+public class BenchmarkActivity : AppCompatActivity() {
+    private companion object {
 
         /** The activity will set this when scrolling. */
         val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
@@ -20,7 +20,7 @@ class BenchmarkActivity : AppCompatActivity() {
         /** The refresh rate of the device, set on activity create. */
         var refreshRate: Float? = null
 
-        internal const val EXTRA_SUSTAINED_PERFORMANCE_MODE = "EXTRA_SUSTAINED_PERFORMANCE_MODE"
+        const val EXTRA_SUSTAINED_PERFORMANCE_MODE = "EXTRA_SUSTAINED_PERFORMANCE_MODE"
     }
 
     /**

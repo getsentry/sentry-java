@@ -184,7 +184,7 @@ public class SentryNavigationListener @JvmOverloads constructor(
             }.associateWith { args[it] }
         } ?: emptyMap()
 
-    private companion object {
-        const val NAVIGATION_OP = "navigation"
+    public companion object {
+        public const val NAVIGATION_OP: String = "navigation"
     }
 }

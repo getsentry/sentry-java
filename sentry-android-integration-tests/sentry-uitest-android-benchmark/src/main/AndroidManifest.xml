@@ -11,8 +11,7 @@
     <application
       android:theme="@style/Theme.AppCompat"
       android:label="Sentry Benchmark"
-      android:icon="@android:mipmap/sym_def_app_icon"
-      tools:replace="android:label">
+      android:icon="@android:mipmap/sym_def_app_icon">
 
       <activity android:name=".BenchmarkActivity" />
 

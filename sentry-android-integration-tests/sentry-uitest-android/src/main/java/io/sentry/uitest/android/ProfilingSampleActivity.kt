@@ -17,9 +17,9 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.random.Random
 
-class ProfilingSampleActivity : AppCompatActivity() {
+public class ProfilingSampleActivity : AppCompatActivity() {
 
-    companion object {
+    private companion object {
 
         /** The activity will set this when scrolling. */
         val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-profilingSampleActivityScrolling")
