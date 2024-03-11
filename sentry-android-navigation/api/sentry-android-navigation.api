@@ -7,7 +7,6 @@ public final class io/sentry/android/navigation/BuildConfig {
 }
 
 public final class io/sentry/android/navigation/SentryNavigationListener : androidx/navigation/NavController$OnDestinationChangedListener {
-	public static final field Companion Lio/sentry/android/navigation/SentryNavigationListener$Companion;
 	public static final field NAVIGATION_OP Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
@@ -16,8 +15,5 @@ public final class io/sentry/android/navigation/SentryNavigationListener : andro
 	public fun <init> (Lio/sentry/IHub;ZZLjava/lang/String;)V
 	public synthetic fun <init> (Lio/sentry/IHub;ZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun onDestinationChanged (Landroidx/navigation/NavController;Landroidx/navigation/NavDestination;Landroid/os/Bundle;)V
-}
-
-public final class io/sentry/android/navigation/SentryNavigationListener$Companion {
 }
 

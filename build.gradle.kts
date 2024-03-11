@@ -136,7 +136,7 @@ subprojects {
                 androidReports("release") {
                     xml {
                         // Change the report file name so the Codecov Github action can find it
-                        setReportFile(file("$buildDir/reports/kover/report.xml"))
+                        setReportFile(file("${layout.buildDirectory}/reports/kover/report.xml"))
                     }
                 }
             }
@@ -185,7 +185,7 @@ subprojects {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
                 val distributionFilePath =
-                    "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
+                    "${this.project.layout.buildDirectory}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
@@ -211,7 +211,7 @@ subprojects {
                 repositories {
                     maven {
                         name = "unityMaven"
-                        url = file("${rootProject.buildDir}/unityMaven").toURI()
+                        url = file("${rootProject.layout.buildDirectory}/unityMaven").toURI()
                     }
                 }
             }
@@ -248,7 +248,7 @@ spotless {
 
 gradle.projectsEvaluated {
     tasks.create("aggregateJavadocs", Javadoc::class.java) {
-        setDestinationDir(file("$buildDir/docs/javadoc"))
+        setDestinationDir(file("${layout.buildDirectory}/docs/javadoc"))
         title = "${project.name} $version API"
         val opts = options as StandardJavadocDocletOptions
         opts.quiet()

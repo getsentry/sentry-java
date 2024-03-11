@@ -33,7 +33,7 @@ private const val TRACE_ORIGIN = "auto.navigation"
  * @param enableNavigationTracing Whether the integration should start a new idle [ITransaction]
  * with [SentryOptions.idleTimeout] for navigation events.
  */
-class SentryNavigationListener @JvmOverloads constructor(
+public class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
     private val enableNavigationTracing: Boolean = true,
@@ -184,7 +184,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             }.associateWith { args[it] }
         } ?: emptyMap()
 
-    companion object {
+    private companion object {
         const val NAVIGATION_OP = "navigation"
     }
 }

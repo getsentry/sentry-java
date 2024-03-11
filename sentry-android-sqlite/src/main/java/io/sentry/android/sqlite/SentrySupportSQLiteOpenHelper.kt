@@ -30,7 +30,7 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
  *
  * @param delegate The [SupportSQLiteOpenHelper] instance to delegate calls to.
  */
-class SentrySupportSQLiteOpenHelper private constructor(
+public class SentrySupportSQLiteOpenHelper private constructor(
     private val delegate: SupportSQLiteOpenHelper
 ) : SupportSQLiteOpenHelper by delegate {
 
@@ -50,11 +50,11 @@ class SentrySupportSQLiteOpenHelper private constructor(
     override val readableDatabase: SupportSQLiteDatabase
         get() = sentryReadableDatabase
 
-    companion object {
+    public companion object {
 
         // @JvmStatic is needed to let this method be accessed by our gradle plugin
         @JvmStatic
-        fun create(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper {
+        public fun create(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper {
             return if (delegate is SentrySupportSQLiteOpenHelper) {
                 delegate
             } else {

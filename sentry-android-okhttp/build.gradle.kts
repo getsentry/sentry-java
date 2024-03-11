@@ -15,11 +15,14 @@ android {
     namespace = "io.sentry.android.okhttp"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersionOkHttp
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    }
+
+    lint {
+        targetSdk = Config.Android.targetSdkVersion
     }
 
     buildTypes {
@@ -47,11 +50,12 @@ android {
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
     }
+    buildFeatures {
+        buildConfig = true
+    }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

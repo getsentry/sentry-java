@@ -38,6 +38,7 @@ android {
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

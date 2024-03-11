@@ -20,7 +20,7 @@ class ThirdFragment : Fragment(R.layout.third_fragment) {
 
         GithubAPI.service.listRepos("getsentry").enqueue(object :
                 Callback<List<Repo>> {
-                override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
+                override fun onFailure(call: Call<List<Repo>>, t: Throwable) {
                     child?.finish(SpanStatus.UNKNOWN_ERROR)
                 }
 

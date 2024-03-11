@@ -19,13 +19,13 @@ import java.util.WeakHashMap
 private const val TRACE_ORIGIN = "auto.ui.fragment"
 
 @Suppress("TooManyFunctions")
-class SentryFragmentLifecycleCallbacks(
+public class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
-    val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
-    val enableAutoFragmentLifecycleTracing: Boolean
+    private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
+    private val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
-    constructor(
+    public constructor(
         hub: IHub,
         enableFragmentLifecycleBreadcrumbs: Boolean,
         enableAutoFragmentLifecycleTracing: Boolean
@@ -37,7 +37,7 @@ class SentryFragmentLifecycleCallbacks(
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    constructor(
+    public constructor(
         enableFragmentLifecycleBreadcrumbs: Boolean = true,
         enableAutoFragmentLifecycleTracing: Boolean = false
     ) : this(
@@ -52,7 +52,7 @@ class SentryFragmentLifecycleCallbacks(
 
     private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
 
-    val enableFragmentLifecycleBreadcrumbs: Boolean
+    public val enableFragmentLifecycleBreadcrumbs: Boolean
         get() = filterFragmentLifecycleBreadcrumbs.isNotEmpty()
 
     override fun onFragmentAttached(
@@ -186,7 +186,7 @@ class SentryFragmentLifecycleCallbacks(
         }
     }
 
-    companion object {
+    private companion object {
         const val FRAGMENT_LOAD_OP = "ui.load"
     }
 }

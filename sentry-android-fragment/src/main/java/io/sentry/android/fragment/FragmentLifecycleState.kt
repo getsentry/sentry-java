@@ -1,6 +1,6 @@
 package io.sentry.android.fragment
 
-enum class FragmentLifecycleState(internal val breadcrumbName: String) {
+public enum class FragmentLifecycleState(internal val breadcrumbName: String) {
     ATTACHED("attached"),
     SAVE_INSTANCE_STATE("save instance state"),
     CREATED("created"),

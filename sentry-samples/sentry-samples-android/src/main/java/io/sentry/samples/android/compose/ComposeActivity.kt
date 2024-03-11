@@ -91,10 +91,10 @@ fun Landing(
 
 @Composable
 fun Github(
-    user: String = "getsentry",
+    userName: String = "getsentry",
     perPage: Int = 30
 ) {
-    var user by remember { mutableStateOf(TextFieldValue(user)) }
+    var user by remember { mutableStateOf(TextFieldValue(userName)) }
     var result by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 

@@ -2,16 +2,16 @@
 import java.math.BigDecimal
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "7.4.2"
-    val kotlinVersion = "1.8.0"
+    val AGP = System.getenv("VERSION_AGP") ?: "8.2.0"
+    val kotlinVersion = "1.9.22"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
     val springBoot3Version = "3.2.0"
     val kotlinCompatibleLanguageVersion = "1.4"
 
-    val composeVersion = "1.5.3"
-    val androidComposeCompilerVersion = "1.4.0"
+    val composeVersion = "1.5.12"
+    val androidComposeCompilerVersion = "1.5.10"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
@@ -41,7 +41,7 @@ object Config {
 
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
-        fun shouldSkipDebugVariant(name: String): Boolean {
+        fun shouldSkipDebugVariant(name: String?): Boolean {
             return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
         }
     }
@@ -143,9 +143,9 @@ object Config {
         // compose deps
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
-        val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
-        val composeUi = "androidx.compose.ui:ui:$composeVersion"
-        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
+        val composeFoundation = "androidx.compose.foundation:foundation:1.6.3"
+        val composeUi = "androidx.compose.ui:ui:1.6.3"
+        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:1.6.3"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
@@ -208,7 +208,7 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.19.0"
+        val detektVersion = "1.23.5"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
