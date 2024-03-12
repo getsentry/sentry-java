@@ -14,6 +14,12 @@ android {
         versionName = "1.0"
     }
 
+    lint {
+        if (VersionNumber.parse(Config.AGP) >= VersionNumber.parse("8.2.0")) {
+            targetSdk = Config.Android.targetSdkVersion
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true

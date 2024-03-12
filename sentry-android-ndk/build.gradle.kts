@@ -45,7 +45,15 @@ android {
     }
 
     lint {
-        targetSdk = Config.Android.targetSdkVersion
+        if (VersionNumber.parse(Config.AGP) >= VersionNumber.parse("8.2.0")) {
+            targetSdk = Config.Android.targetSdkVersion
+        }
+
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
     }
 
     // we use the default NDK and CMake versions based on the AGP's version
@@ -76,13 +84,6 @@ android {
         }
     }
 
-    lint {
-        warningsAsErrors = true
-        checkDependencies = true
-
-        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-        checkReleaseBuilds = false
-    }
     buildFeatures {
         buildConfig = true
     }

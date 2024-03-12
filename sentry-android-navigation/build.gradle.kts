@@ -21,7 +21,15 @@ android {
     }
 
     lint {
-        targetSdk = Config.Android.targetSdkVersion
+        if (VersionNumber.parse(Config.AGP) >= VersionNumber.parse("8.2.0")) {
+            targetSdk = Config.Android.targetSdkVersion
+        }
+
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
     }
 
     buildTypes {
@@ -44,13 +52,6 @@ android {
         }
     }
 
-    lint {
-        warningsAsErrors = true
-        checkDependencies = true
-
-        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-        checkReleaseBuilds = false
-    }
     buildFeatures {
         buildConfig = true
     }
