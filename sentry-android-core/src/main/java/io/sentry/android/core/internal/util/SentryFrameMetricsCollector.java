@@ -77,7 +77,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, options.getLogger(), buildInfoProvider, windowFrameMetricsManager);
   }
 
-  /** @noinspection JavaReflectionMemberAccess*/
+  /**
+   * @noinspection JavaReflectionMemberAccess
+   */
   @SuppressWarnings("deprecation")
   @SuppressLint({"NewApi", "DiscouragedPrivateApi", "PrivateApi"})
   public SentryFrameMetricsCollector(
