@@ -29,6 +29,14 @@ android {
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
+    }
+
     testOptions {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
@@ -66,18 +74,6 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-
-    lint {
-        if (VersionNumber.parse(Config.AGP) >= VersionNumber.parse("8.2.0")) {
-            targetSdk = Config.Android.targetSdkVersion
-        }
-
-        warningsAsErrors = true
-        checkDependencies = true
-
-        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-        checkReleaseBuilds = false
     }
 
     androidComponents.beforeVariants {

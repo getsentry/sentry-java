@@ -21,10 +21,6 @@ android {
     }
 
     lint {
-        if (VersionNumber.parse(Config.AGP) >= VersionNumber.parse("8.2.0")) {
-            targetSdk = Config.Android.targetSdkVersion
-        }
-
         warningsAsErrors = true
         checkDependencies = true
 
