@@ -15,7 +15,8 @@ public class BenchmarkActivity : AppCompatActivity() {
     public companion object {
 
         /** The activity will set this when scrolling. */
-        public val scrollingIdlingResource: CountingIdlingResource = CountingIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
+        public val scrollingIdlingResource: CountingIdlingResource =
+            CountingIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
 
         /** The refresh rate of the device, set on activity create. */
         public var refreshRate: Float? = null
