@@ -42,12 +42,12 @@ public final class Sentry {
 
   private Sentry() {}
 
-  /** Holds Hubs per thread or only mainHub if globalHubMode is enabled. */
-  private static final @NotNull ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+  private static @NotNull ScopeStorage scopeStorage = ScopeStorageFactory.create();
 
   /** The Main Hub or NoOp if Sentry is disabled. */
   private static volatile @NotNull IHub mainHub = NoOpHub.getInstance();
 
+  private static volatile @Nullable SentryStorageToken mainScopeStorageToken = null;
   /** Default value for globalHubMode is false */
   private static final boolean GLOBAL_HUB_DEFAULT_MODE = false;
 
@@ -74,10 +74,12 @@ public final class Sentry {
     if (globalHubMode) {
       return mainHub;
     }
-    IHub hub = currentHub.get();
+    IHub hub = scopeStorage.get();
     if (hub == null || hub instanceof NoOpHub) {
       hub = mainHub.clone();
-      currentHub.set(hub);
+      // TODO how do we manage lifecycle of storage here?
+      // can this even happen with scopes already being there before Sentry.init?
+      scopeStorage.set(hub);
     }
     return hub;
   }
@@ -97,8 +99,9 @@ public final class Sentry {
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  public static void setCurrentHub(final @NotNull IHub hub) {
-    currentHub.set(hub);
+  public static SentryStorageToken setCurrentHub(final @NotNull IHub hub) {
+    // TODO returned token is new and has to be closed
+    return scopeStorage.set(hub);
   }
 
   /**
@@ -236,7 +239,11 @@ public final class Sentry {
     final IHub hub = getCurrentHub();
     mainHub = new Hub(options);
 
-    currentHub.set(mainHub);
+    final @Nullable SentryStorageToken previousStorageToken = mainScopeStorageToken;
+    if (previousStorageToken != null) {
+      previousStorageToken.close();
+    }
+    mainScopeStorageToken = scopeStorage.set(mainHub);
 
     hub.close(true);
 
@@ -486,7 +493,10 @@ public final class Sentry {
     final IHub hub = getCurrentHub();
     mainHub = NoOpHub.getInstance();
     // remove thread local to avoid memory leak
-    currentHub.remove();
+    if (mainScopeStorageToken != null) {
+      mainScopeStorageToken.close();
+    }
+    scopeStorage.close();
     hub.close(false);
   }
 

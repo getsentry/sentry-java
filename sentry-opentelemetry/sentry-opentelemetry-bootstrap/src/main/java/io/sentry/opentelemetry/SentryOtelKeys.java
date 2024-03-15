@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.context.ContextKey;
 import io.sentry.Baggage;
+import io.sentry.IHub;
 import io.sentry.Scopes;
 import io.sentry.SentryTraceHeader;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,4 +17,5 @@ public final class SentryOtelKeys {
       ContextKey.named("sentry.baggage");
   public static final @NotNull ContextKey<Scopes> SENTRY_SCOPES_KEY =
       ContextKey.named("sentry.scopes");
+  public static final @NotNull ContextKey<IHub> SENTRY_HUB_KEY = ContextKey.named("sentry.hub");
 }
