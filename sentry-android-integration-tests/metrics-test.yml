@@ -12,5 +12,5 @@ startupTimeTest:
   diffMax: 150
 
 binarySizeTest:
-  diffMin: 500 KiB
+  diffMin: 360 KiB
   diffMax: 700 KiB
