@@ -20,13 +20,25 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
+        disable.addAll(
+            listOf(
+                "FragmentTagUsage",
+                "GradleDependency",
+                "MonochromeLauncherIcon",
+                "ContentDescription",
+                "RtlHardcoded"
+            )
+        )
     }
 
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "benchmark-proguard-rules.pro"
+            )
             ndk {
                 abiFilters.clear()
                 abiFilters.add("arm64-v8a")

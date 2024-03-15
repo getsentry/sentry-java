@@ -20,6 +20,15 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
+        disable.addAll(
+            listOf(
+                "FragmentTagUsage",
+                "GradleDependency",
+                "MonochromeLauncherIcon",
+                "ContentDescription",
+                "RtlHardcoded"
+            )
+        )
     }
 
     buildTypes {
