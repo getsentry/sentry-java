@@ -13,7 +13,7 @@
         android:theme="@style/Theme.TestAppPlain"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name="io.sentry.java.tests.perf.appplain.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.TestAppPlain.NoActionBar">
             <intent-filter>
