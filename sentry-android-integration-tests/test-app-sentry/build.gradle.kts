@@ -37,7 +37,7 @@ android {
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "benchmark-proguard-rules.pro"
+                "proguard-rules.pro"
             )
             ndk {
                 abiFilters.clear()
