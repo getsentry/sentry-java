@@ -38,7 +38,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@579fbbe7221704325eb4c4d4bf20c2b0859fba76 # pin@v3
+        uses: gradle/actions/setup-gradle@60b8089f55223103fc34537afd709d793b43e290 # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
