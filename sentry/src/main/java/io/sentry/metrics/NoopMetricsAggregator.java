@@ -22,67 +22,71 @@ public final class NoopMetricsAggregator
 
   @Override
   public void increment(
-      @NotNull String key,
-      double value,
-      @Nullable MeasurementUnit unit,
-      @Nullable Map<String, String> tags,
-      long timestampMs,
-      int stackLevel,
-      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
+      final @NotNull String key,
+      final double value,
+      final @Nullable MeasurementUnit unit,
+      final @Nullable Map<String, String> tags,
+      final long timestampMs,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    // no-op
+  }
 
   @Override
   public void gauge(
-      @NotNull String key,
-      double value,
-      @Nullable MeasurementUnit unit,
-      @Nullable Map<String, String> tags,
-      long timestampMs,
-      int stackLevel,
-      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
+      final @NotNull String key,
+      final double value,
+      final @Nullable MeasurementUnit unit,
+      final @Nullable Map<String, String> tags,
+      final long timestampMs,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    // no-op
+  }
 
   @Override
   public void distribution(
-      @NotNull String key,
-      double value,
-      @Nullable MeasurementUnit unit,
-      @Nullable Map<String, String> tags,
-      long timestampMs,
-      int stackLevel,
-      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
+      final @NotNull String key,
+      final double value,
+      final @Nullable MeasurementUnit unit,
+      final @Nullable Map<String, String> tags,
+      final long timestampMs,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    // no-op
+  }
 
   @Override
   public void set(
-      @NotNull String key,
-      int value,
-      @Nullable MeasurementUnit unit,
-      @Nullable Map<String, String> tags,
-      long timestampMs,
-      int stackLevel,
-      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
+      final @NotNull String key,
+      final int value,
+      final @Nullable MeasurementUnit unit,
+      final @Nullable Map<String, String> tags,
+      final long timestampMs,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    // no-op
+  }
 
   @Override
   public void set(
-      @NotNull String key,
-      @NotNull String value,
-      @Nullable MeasurementUnit unit,
-      @Nullable Map<String, String> tags,
-      long timestampMs,
-      int stackLevel,
-      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
+      final @NotNull String key,
+      final @NotNull String value,
+      final @Nullable MeasurementUnit unit,
+      final @Nullable Map<String, String> tags,
+      final long timestampMs,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    // no-op
+  }
 
   @Override
   public void timing(
-      @NotNull String key,
-      @NotNull Runnable callback,
-      @NotNull MeasurementUnit.Duration unit,
-      @Nullable Map<String, String> tags,
-      int stackLevel,
-      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+      final @NotNull String key,
+      final @NotNull Runnable callback,
+      final @NotNull MeasurementUnit.Duration unit,
+      final @Nullable Map<String, String> tags,
+      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
     callback.run();
   }
 
   @Override
-  public void flush(boolean force) {
+  public void flush(final boolean force) {
     // no-op
   }
 
