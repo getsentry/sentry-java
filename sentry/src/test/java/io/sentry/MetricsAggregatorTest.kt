@@ -71,7 +71,7 @@ class MetricsAggregatorTest {
 
         // when a metric is emitted
         fixture.currentTimeMillis = 20_000
-        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
+        aggregator.increment("key", 1.0, null, null, 20_001, null)
 
         // then flush does nothing because there's no data inside the flush interval
         aggregator.flush(false)
@@ -90,7 +90,7 @@ class MetricsAggregatorTest {
         val aggregator = fixture.getSut()
         // when a metric is emitted
         fixture.currentTimeMillis = 20_000
-        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
+        aggregator.increment("key", 1.0, null, null, 20_001, null)
 
         // then force flush flushes the metric
         aggregator.flush(true)
@@ -109,7 +109,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("apples"),
             mapOf("a" to "b"),
             20_001,
-            1,
             null
         )
         aggregator.increment(
@@ -118,7 +117,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("apples"),
             mapOf("a" to "b"),
             25_001,
-            1,
             null
         )
 
@@ -156,7 +154,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.increment(
@@ -165,7 +162,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.increment(
@@ -174,7 +170,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit1"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.increment(
@@ -183,7 +178,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit1"),
             mapOf("key1" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.increment(
@@ -192,7 +186,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit1"),
             mapOf("key1" to "value1"),
             20_001,
-            1,
             null
         )
 
@@ -222,7 +215,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
 
@@ -242,7 +234,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.distribution(
@@ -251,7 +242,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.set(
@@ -260,7 +250,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.set(
@@ -269,7 +258,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.gauge(
@@ -278,7 +266,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
         aggregator.timing(
@@ -288,7 +275,6 @@ class MetricsAggregatorTest {
             },
             MeasurementUnit.Duration.SECOND,
             mapOf("key0" to "value0"),
-            1,
             null
         )
 
@@ -317,7 +303,6 @@ class MetricsAggregatorTest {
             MeasurementUnit.Custom("unit0"),
             mapOf("key0" to "value0"),
             20_001,
-            1,
             null
         )
 
@@ -353,7 +338,6 @@ class MetricsAggregatorTest {
             unit,
             tags,
             timestamp,
-            1,
             localAggregator
         )
 
@@ -388,7 +372,6 @@ class MetricsAggregatorTest {
             unit,
             tags,
             timestamp,
-            1,
             localAggregator
         )
 
@@ -410,7 +393,6 @@ class MetricsAggregatorTest {
             unit,
             tags,
             timestamp,
-            1,
             localAggregator
         )
 
@@ -438,7 +420,6 @@ class MetricsAggregatorTest {
                 null,
                 null,
                 fixture.currentTimeMillis,
-                1,
                 null
             )
         }
@@ -453,7 +434,6 @@ class MetricsAggregatorTest {
             null,
             null,
             fixture.currentTimeMillis,
-            1,
             null
         )
         // then flush without force still captures all metrics
@@ -475,7 +455,6 @@ class MetricsAggregatorTest {
             null,
             null,
             fixture.currentTimeMillis,
-            1,
             null
         )
 
@@ -495,7 +474,6 @@ class MetricsAggregatorTest {
             null,
             null,
             fixture.currentTimeMillis,
-            1,
             null
         )
 
@@ -517,7 +495,7 @@ class MetricsAggregatorTest {
         val tags = mapOf(
             "tag-key" to "tag-value"
         )
-        aggregator.increment(key, 1.0, null, tags, 20_001, 1, null)
+        aggregator.increment(key, 1.0, null, tags, 20_001, null)
         assertEquals(key, lastKey)
         assertEquals(tags, lastTags)
     }
@@ -525,7 +503,7 @@ class MetricsAggregatorTest {
     @Test
     fun `if before emit callback returns true, metric is emitted`() {
         val aggregator = fixture.getSut(beforeEmitMetricCallback = { key, tags -> true })
-        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
+        aggregator.increment("key", 1.0, null, null, 20_001, null)
         aggregator.flush(true)
         verify(fixture.client).captureMetrics(any())
     }
@@ -533,7 +511,7 @@ class MetricsAggregatorTest {
     @Test
     fun `if before emit callback returns false, metric is not emitted`() {
         val aggregator = fixture.getSut(beforeEmitMetricCallback = { key, tags -> false })
-        aggregator.increment("key", 1.0, null, null, 20_001, 1, null)
+        aggregator.increment("key", 1.0, null, null, 20_001, null)
         aggregator.flush(true)
         verify(fixture.client, never()).captureMetrics(any())
     }
