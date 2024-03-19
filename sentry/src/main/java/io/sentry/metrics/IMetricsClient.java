@@ -9,4 +9,7 @@ public interface IMetricsClient {
   /** Captures one or more metrics to be sent to Sentry. */
   @NotNull
   SentryId captureMetrics(final @NotNull EncodedMetrics metrics);
+
+  /** Captures one or more {@link CodeLocations} to be sent to Sentry. */
+  // void captureCodeLocations(final @NotNull CodeLocations codeLocations);
 }

@@ -17,6 +17,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param tags Optional Tags to associate with the metric
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
+   * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void increment(
@@ -25,6 +26,7 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
+      final int stackLevel,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
@@ -36,6 +38,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param tags Optional Tags to associate with the metric
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
+   * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void gauge(
@@ -44,6 +47,7 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
+      final int stackLevel,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
@@ -55,6 +59,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param tags Optional Tags to associate with the metric
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
+   * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void distribution(
@@ -63,6 +68,7 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
+      final int stackLevel,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
@@ -74,6 +80,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param tags Optional Tags to associate with the metric
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
+   * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void set(
@@ -82,6 +89,7 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
+      final int stackLevel,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
@@ -93,6 +101,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param tags Optional Tags to associate with the metric
    * @param timestampMs The time when the metric was emitted. Defaults to the time at which the
    *     metric is emitted, if no value is provided.
+   * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void set(
@@ -101,6 +110,7 @@ public interface IMetricsAggregator extends Closeable {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
+      final int stackLevel,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   /**
@@ -110,6 +120,7 @@ public interface IMetricsAggregator extends Closeable {
    * @param callback The code block to measure
    * @param unit An optional unit, see {@link MeasurementUnit.Duration}, defaults to seconds
    * @param tags Optional Tags to associate with the metric
+   * @param stackLevel Optional number of stacks levels to ignore when determining the code location
    * @param localMetricsAggregator The local metrics aggregator for creating span summaries
    */
   void timing(
@@ -117,6 +128,7 @@ public interface IMetricsAggregator extends Closeable {
       final @NotNull Runnable callback,
       final @NotNull MeasurementUnit.Duration unit,
       final @Nullable Map<String, String> tags,
+      final int stackLevel,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
   void flush(boolean force);

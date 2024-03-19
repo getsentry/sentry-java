@@ -66,6 +66,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -75,6 +76,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -84,6 +86,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -93,6 +96,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -102,6 +106,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             any(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -122,6 +127,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -131,6 +137,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -140,6 +147,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -149,6 +157,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -158,6 +167,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             eq(1234),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -184,6 +194,7 @@ class MetricsApiTest {
                     "environment" to "prod"
                 )
             ),
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )
@@ -219,6 +230,7 @@ class MetricsApiTest {
                 )
             ),
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -234,6 +246,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
+            anyOrNull(),
             eq(fixture.localMetricsAggregator)
         )
 
@@ -241,6 +254,7 @@ class MetricsApiTest {
         verify(fixture.aggregator).set(
             anyOrNull(),
             eq(1),
+            anyOrNull(),
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
@@ -254,11 +268,13 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
+            anyOrNull(),
             eq(fixture.localMetricsAggregator)
         )
 
         api.gauge("gauge", 1.0)
         verify(fixture.aggregator).gauge(
+            anyOrNull(),
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
@@ -274,6 +290,7 @@ class MetricsApiTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
+            anyOrNull(),
             eq(fixture.localMetricsAggregator)
         )
 
@@ -281,6 +298,7 @@ class MetricsApiTest {
             // no-op
         }
         verify(fixture.aggregator).timing(
+            anyOrNull(),
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),

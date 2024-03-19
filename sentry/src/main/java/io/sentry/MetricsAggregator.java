@@ -81,56 +81,77 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   @Override
   public void increment(
-      final @NotNull String key,
-      final double value,
-      final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
+      @NotNull String key,
+      double value,
+      @Nullable MeasurementUnit unit,
+      @Nullable Map<String, String> tags,
       final long timestampMs,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    add(MetricType.Counter, key, value, unit, tags, timestampMs, localMetricsAggregator);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(
+        MetricType.Counter,
+        key,
+        value,
+        unit,
+        tags,
+        timestampMs,
+        stackLevel,
+        localMetricsAggregator);
   }
 
   @Override
   public void gauge(
-      final @NotNull String key,
-      final double value,
-      final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
+      @NotNull String key,
+      double value,
+      @Nullable MeasurementUnit unit,
+      @Nullable Map<String, String> tags,
       final long timestampMs,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    add(MetricType.Gauge, key, value, unit, tags, timestampMs, localMetricsAggregator);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(MetricType.Gauge, key, value, unit, tags, timestampMs, stackLevel, localMetricsAggregator);
   }
 
   @Override
   public void distribution(
-      final @NotNull String key,
-      final double value,
-      final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
+      @NotNull String key,
+      double value,
+      @Nullable MeasurementUnit unit,
+      @Nullable Map<String, String> tags,
       final long timestampMs,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    add(MetricType.Distribution, key, value, unit, tags, timestampMs, localMetricsAggregator);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(
+        MetricType.Distribution,
+        key,
+        value,
+        unit,
+        tags,
+        timestampMs,
+        stackLevel,
+        localMetricsAggregator);
   }
 
   @Override
   public void set(
-      final @NotNull String key,
-      final int value,
-      final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
+      @NotNull String key,
+      int value,
+      @Nullable MeasurementUnit unit,
+      @Nullable Map<String, String> tags,
       final long timestampMs,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    add(MetricType.Set, key, value, unit, tags, timestampMs, localMetricsAggregator);
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
+    add(MetricType.Set, key, value, unit, tags, timestampMs, stackLevel, localMetricsAggregator);
   }
 
   @Override
   public void set(
-      final @NotNull String key,
-      final @NotNull String value,
-      final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
+      @NotNull String key,
+      @NotNull String value,
+      @Nullable MeasurementUnit unit,
+      @Nullable Map<String, String> tags,
       final long timestampMs,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
 
     final byte[] bytes = value.getBytes(UTF8);
 
@@ -138,16 +159,17 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     crc.update(bytes, 0, bytes.length);
     final int intValue = (int) crc.getValue();
 
-    add(MetricType.Set, key, intValue, unit, tags, timestampMs, localMetricsAggregator);
+    add(MetricType.Set, key, intValue, unit, tags, timestampMs, stackLevel, localMetricsAggregator);
   }
 
   @Override
   public void timing(
-      final @NotNull String key,
-      final @NotNull Runnable callback,
-      final @NotNull MeasurementUnit.Duration unit,
-      final @Nullable Map<String, String> tags,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+      @NotNull String key,
+      @NotNull Runnable callback,
+      @NotNull MeasurementUnit.Duration unit,
+      @Nullable Map<String, String> tags,
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
     final long startMs = nowMillis();
     final long startNanos = System.nanoTime();
     try {
@@ -155,7 +177,15 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     } finally {
       final long durationNanos = (System.nanoTime() - startNanos);
       final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
-      add(MetricType.Distribution, key, value, unit, tags, startMs, localMetricsAggregator);
+      add(
+          MetricType.Distribution,
+          key,
+          value,
+          unit,
+          tags,
+          startMs,
+          stackLevel + 1,
+          localMetricsAggregator);
     }
   }
 
@@ -164,10 +194,11 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       final @NotNull MetricType type,
       final @NotNull String key,
       final double value,
-      final @Nullable MeasurementUnit unit,
+      @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags,
       final long timestampMs,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
+      final int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
 
     if (isClosed) {
       return;
