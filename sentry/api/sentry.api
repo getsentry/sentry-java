@@ -3433,7 +3433,7 @@ public final class io/sentry/metrics/CodeLocations {
 }
 
 public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public fun add (D)V
 	public fun getValue ()D
 	public fun getWeight ()I
@@ -3441,7 +3441,7 @@ public final class io/sentry/metrics/CounterMetric : io/sentry/metrics/Metric {
 }
 
 public final class io/sentry/metrics/DistributionMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public fun add (D)V
 	public fun getWeight ()I
 	public fun serialize ()Ljava/lang/Iterable;
@@ -3453,7 +3453,7 @@ public final class io/sentry/metrics/EncodedMetrics {
 }
 
 public final class io/sentry/metrics/GaugeMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun <init> (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public fun add (D)V
 	public fun getCount ()I
 	public fun getLast ()D
@@ -3475,11 +3475,10 @@ public final class io/sentry/metrics/LocalMetricsAggregator {
 }
 
 public abstract class io/sentry/metrics/Metric {
-	public fun <init> (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun <init> (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public abstract fun add (D)V
 	public fun getKey ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
-	public fun getTimeStampMs ()Ljava/lang/Long;
 	public fun getType ()Lio/sentry/metrics/MetricType;
 	public fun getUnit ()Lio/sentry/MeasurementUnit;
 	public abstract fun getWeight ()I
@@ -3582,24 +3581,8 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;ILio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
-public final class io/sentry/metrics/SentryMetric : io/sentry/JsonSerializable {
-	public fun <init> (Lio/sentry/metrics/Metric;)V
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-}
-
-public final class io/sentry/metrics/SentryMetric$JsonKeys {
-	public static final field EVENT_ID Ljava/lang/String;
-	public static final field NAME Ljava/lang/String;
-	public static final field TAGS Ljava/lang/String;
-	public static final field TIMESTAMP Ljava/lang/String;
-	public static final field TYPE Ljava/lang/String;
-	public static final field UNIT Ljava/lang/String;
-	public static final field VALUE Ljava/lang/String;
-	public fun <init> ()V
-}
-
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
-	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;Ljava/lang/Long;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public fun add (D)V
 	public fun getWeight ()I
 	public fun serialize ()Ljava/lang/Iterable;
