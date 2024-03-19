@@ -19,6 +19,8 @@ android {
         targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersionReplay
 
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
@@ -67,7 +69,9 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryTestSupport)
+    testImplementation(Config.TestLibs.robolectric)
     testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)

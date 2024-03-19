@@ -20,6 +20,8 @@ package io.sentry.android.replay
 
 import android.annotation.SuppressLint
 import android.os.Build.VERSION.SDK_INT
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.Window
@@ -152,8 +154,12 @@ internal class RootViewsSpy private constructor() {
     companion object {
         fun install(): RootViewsSpy {
             return RootViewsSpy().apply {
-                WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
-                    delegatingViewList.apply { addAll(mViews) }
+                // had to do this as a first message of the main thread queue, otherwise if this is
+                // called from ContentProvider, it might be too early and the listener won't be installed
+                Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+                    WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
+                        delegatingViewList.apply { addAll(mViews) }
+                    }
                 }
             }
         }

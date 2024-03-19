@@ -11,6 +11,7 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,11 +20,12 @@ import org.jetbrains.annotations.TestOnly;
 final class LifecycleWatcher implements DefaultLifecycleObserver {
 
   private final AtomicLong lastUpdatedSession = new AtomicLong(0L);
+  private final AtomicBoolean isFreshSession = new AtomicBoolean(false);
 
   private final long sessionIntervalMillis;
 
   private @Nullable TimerTask timerTask;
-  private final @Nullable Timer timer;
+  private final @NotNull Timer timer = new Timer(true);
   private final @NotNull Object timerLock = new Object();
   private final @NotNull IHub hub;
   private final boolean enableSessionTracking;
@@ -55,11 +57,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
     this.hub = hub;
     this.currentDateProvider = currentDateProvider;
-    if (enableSessionTracking) {
-      timer = new Timer(true);
-    } else {
-      timer = null;
-    }
   }
 
   // App goes to foreground
@@ -74,41 +71,45 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void startSession() {
-    if (enableSessionTracking) {
-      cancelTask();
+    cancelTask();
 
-      final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
+    final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
 
-      hub.configureScope(
-          scope -> {
-            if (lastUpdatedSession.get() == 0L) {
-              final @Nullable Session currentSession = scope.getSession();
-              if (currentSession != null && currentSession.getStarted() != null) {
-                lastUpdatedSession.set(currentSession.getStarted().getTime());
-              }
+    hub.configureScope(
+        scope -> {
+          if (lastUpdatedSession.get() == 0L) {
+            final @Nullable Session currentSession = scope.getSession();
+            if (currentSession != null && currentSession.getStarted() != null) {
+              lastUpdatedSession.set(currentSession.getStarted().getTime());
+              isFreshSession.set(true);
             }
-          });
+          }
+        });
 
-      final long lastUpdatedSession = this.lastUpdatedSession.get();
-      if (lastUpdatedSession == 0L
-          || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+    final long lastUpdatedSession = this.lastUpdatedSession.get();
+    if (lastUpdatedSession == 0L
+        || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+      if (enableSessionTracking) {
         addSessionBreadcrumb("start");
         hub.startSession();
       }
-      this.lastUpdatedSession.set(currentTimeMillis);
+      SentryAndroid.startReplay();
+    } else if (!isFreshSession.getAndSet(false)) {
+      // only resume if it's not a fresh session, which has been started in SentryAndroid.init
+      SentryAndroid.resumeReplay();
     }
+    this.lastUpdatedSession.set(currentTimeMillis);
   }
 
   // App went to background and triggered this callback after 700ms
   // as no new screen was shown
   @Override
   public void onStop(final @NotNull LifecycleOwner owner) {
-    if (enableSessionTracking) {
-      final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
-      this.lastUpdatedSession.set(currentTimeMillis);
+    final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
+    this.lastUpdatedSession.set(currentTimeMillis);
 
-      scheduleEndSession();
-    }
+    SentryAndroid.pauseReplay();
+    scheduleEndSession();
 
     AppState.getInstance().setInBackground(true);
     addAppBreadcrumb("background");
@@ -122,8 +123,11 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
             new TimerTask() {
               @Override
               public void run() {
-                addSessionBreadcrumb("end");
-                hub.endSession();
+                if (enableSessionTracking) {
+                  addSessionBreadcrumb("end");
+                  hub.endSession();
+                }
+                SentryAndroid.stopReplay();
               }
             };
 
@@ -164,7 +168,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   @TestOnly
-  @Nullable
+  @NotNull
   Timer getTimer() {
     return timer;
   }

@@ -664,6 +664,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getLevel ()Lio/sentry/SentryLevel;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getPropagationContext ()Lio/sentry/PropagationContext;
+	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getScreen ()Ljava/lang/String;
 	public abstract fun getSession ()Lio/sentry/Session;
@@ -686,6 +687,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
 	public abstract fun setPropagationContext (Lio/sentry/PropagationContext;)V
+	public abstract fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 	public abstract fun setScreen (Ljava/lang/String;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1215,6 +1217,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
 	public fun getSession ()Lio/sentry/Session;
@@ -1237,6 +1240,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
+	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setScreen (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1639,6 +1643,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
 	public fun getSession ()Lio/sentry/Session;
@@ -1661,6 +1666,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
+	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setScreen (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -4767,7 +4773,7 @@ public final class io/sentry/rrweb/RRWebVideoEvent : io/sentry/rrweb/RRWebEvent,
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getContainer ()Ljava/lang/String;
 	public fun getDataUnknown ()Ljava/util/Map;
-	public fun getDuration ()I
+	public fun getDuration ()J
 	public fun getEncoding ()Ljava/lang/String;
 	public fun getFrameCount ()I
 	public fun getFrameRate ()I
@@ -4785,7 +4791,7 @@ public final class io/sentry/rrweb/RRWebVideoEvent : io/sentry/rrweb/RRWebEvent,
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setContainer (Ljava/lang/String;)V
 	public fun setDataUnknown (Ljava/util/Map;)V
-	public fun setDuration (I)V
+	public fun setDuration (J)V
 	public fun setEncoding (Ljava/lang/String;)V
 	public fun setFrameCount (I)V
 	public fun setFrameRate (I)V

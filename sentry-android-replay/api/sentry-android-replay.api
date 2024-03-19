@@ -6,10 +6,30 @@ public final class io/sentry/android/replay/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/replay/WindowRecorder {
-	public fun <init> ()V
-	public final fun startRecording (Landroid/content/Context;)V
-	public final fun stopRecording ()V
+public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integration, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {
+	public static final field Companion Lio/sentry/android/replay/ReplayIntegration$Companion;
+	public static final field VIDEO_BUFFER_DURATION J
+	public static final field VIDEO_SEGMENT_DURATION J
+	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
+	public fun close ()V
+	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
+	public final fun pause ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+	public final fun resume ()V
+	public final fun start ()V
+	public final fun stop ()V
+}
+
+public final class io/sentry/android/replay/ReplayIntegration$Companion {
+}
+
+public final class io/sentry/android/replay/ReplayIntegrationKt {
+	public static final fun getReplayIntegration (Lio/sentry/IHub;)Lio/sentry/android/replay/ReplayIntegration;
+	public static final fun gracefullyShutdown (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;)V
+}
+
+public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {
+	public abstract fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 }
 
 public abstract interface class io/sentry/android/replay/video/SimpleFrameMuxer {
