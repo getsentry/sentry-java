@@ -6,6 +6,8 @@ import android.graphics.Bitmap.Config.ARGB_8888
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -111,20 +113,20 @@ internal class ScreenshotRecorder(
                         val canvas = Canvas(scaledBitmap)
                         canvas.setMatrix(prescaledMatrix)
                         viewHierarchy.traverse {
-//                            if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
-//                                it.visibleRect ?: return@traverse
-//
-//                                // TODO: check for view type rather than rely on absence of dominantColor here
-//                                val color = if (it.dominantColor == null) {
-//                                    singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
-//                                    singlePixelBitmap.getPixel(0, 0)
-//                                } else {
-//                                    it.dominantColor
-//                                }
-//
-//                                maskingPaint.setColor(color)
-//                                canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
-//                            }
+                            if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
+                                it.visibleRect ?: return@traverse
+
+                                // TODO: check for view type rather than rely on absence of dominantColor here
+                                val color = if (it.dominantColor == null) {
+                                    singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
+                                    singlePixelBitmap.getPixel(0, 0)
+                                } else {
+                                    it.dominantColor
+                                }
+
+                                maskingPaint.setColor(color)
+                                canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
+                            }
                         }
                     }
 
