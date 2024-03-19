@@ -21,9 +21,8 @@ public final class GaugeMetric extends Metric {
       final @NotNull String key,
       final double value,
       final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
-      final @NotNull Long timestamp) {
-    super(MetricType.Gauge, key, unit, tags, timestamp);
+      final @Nullable Map<String, String> tags) {
+    super(MetricType.Gauge, key, unit, tags);
 
     this.last = value;
     this.min = value;

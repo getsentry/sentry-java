@@ -43,7 +43,7 @@ public final class LocalMetricsAggregator {
 
       @Nullable GaugeMetric gauge = bucket.get(bucketKey);
       if (gauge == null) {
-        gauge = new GaugeMetric(key, value, unit, tags, timestampMs);
+        gauge = new GaugeMetric(key, value, unit, tags);
         bucket.put(bucketKey, gauge);
       } else {
         gauge.add(value);

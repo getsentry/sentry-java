@@ -17,9 +17,8 @@ public final class SetMetric extends Metric {
   public SetMetric(
       final @NotNull String key,
       final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
-      final @NotNull Long timestamp) {
-    super(MetricType.Set, key, unit, tags, timestamp);
+      final @Nullable Map<String, String> tags) {
+    super(MetricType.Set, key, unit, tags);
   }
 
   /**
