@@ -137,8 +137,7 @@ class MetricsHelperTest {
                     mapOf(
                         "tag1" to "value1",
                         "tag2" to "value2"
-                    ),
-                    1000
+                    )
                 )
             ),
             stringBuilder

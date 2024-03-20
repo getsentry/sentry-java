@@ -14,8 +14,7 @@ class CounterMetricTest {
             mapOf(
                 "tag1" to "value1",
                 "tag2" to "value2"
-            ),
-            System.currentTimeMillis()
+            )
         )
         assertEquals(1.0, metric.value)
 
@@ -37,8 +36,7 @@ class CounterMetricTest {
             mapOf(
                 "tag1" to "value1",
                 "tag2" to "value2"
-            ),
-            System.currentTimeMillis()
+            )
         )
         assertEquals(MetricType.Counter, metric.type)
     }
@@ -52,8 +50,7 @@ class CounterMetricTest {
             mapOf(
                 "tag1" to "value1",
                 "tag2" to "value2"
-            ),
-            System.currentTimeMillis()
+            )
         )
         assertEquals(1, metric.weight)
     }
@@ -67,8 +64,7 @@ class CounterMetricTest {
             mapOf(
                 "tag1" to "value1",
                 "tag2" to "value2"
-            ),
-            System.currentTimeMillis()
+            )
         )
 
         val values0 = metric.serialize().toList()

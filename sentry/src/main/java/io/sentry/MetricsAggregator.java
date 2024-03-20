@@ -228,16 +228,16 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
         final @NotNull Metric metric;
         switch (type) {
           case Counter:
-            metric = new CounterMetric(key, value, unit, tags, timestampMs);
+            metric = new CounterMetric(key, value, unit, tags);
             break;
           case Gauge:
-            metric = new GaugeMetric(key, value, unit, tags, timestampMs);
+            metric = new GaugeMetric(key, value, unit, tags);
             break;
           case Distribution:
-            metric = new DistributionMetric(key, value, unit, tags, timestampMs);
+            metric = new DistributionMetric(key, value, unit, tags);
             break;
           case Set:
-            metric = new SetMetric(key, unit, tags, timestampMs);
+            metric = new SetMetric(key, unit, tags);
             // sets API is either ints or strings cr32 encoded into ints
             // noinspection unchecked
             metric.add((int) value);
