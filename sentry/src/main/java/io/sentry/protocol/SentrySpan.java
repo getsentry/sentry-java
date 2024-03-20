@@ -40,7 +40,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
 
   private final @Nullable String origin;
   private final @NotNull Map<String, String> tags;
-  private final @Nullable Map<String, Object> data;
+  private @Nullable Map<String, Object> data;
 
   private final @NotNull Map<String, @NotNull MeasurementValue> measurements;
   private final @Nullable Map<String, List<MetricSummary>> metricsSummaries;
@@ -157,6 +157,10 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
 
   public @Nullable Map<String, Object> getData() {
     return data;
+  }
+
+  public void setData(final @Nullable Map<String, Object> data) {
+    this.data = data;
   }
 
   public @Nullable String getOrigin() {
