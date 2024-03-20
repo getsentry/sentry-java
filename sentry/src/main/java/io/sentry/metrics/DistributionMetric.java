@@ -17,9 +17,8 @@ public final class DistributionMetric extends Metric {
       final @NotNull String key,
       final double value,
       final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
-      final @NotNull Long timestamp) {
-    super(MetricType.Distribution, key, unit, tags, timestamp);
+      final @Nullable Map<String, String> tags) {
+    super(MetricType.Distribution, key, unit, tags);
     this.values.add(value);
   }
 

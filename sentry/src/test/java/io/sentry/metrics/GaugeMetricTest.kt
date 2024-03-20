@@ -11,8 +11,7 @@ class GaugeMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(
             listOf(
@@ -48,8 +47,7 @@ class GaugeMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(MetricType.Gauge, metric.type)
     }
@@ -60,8 +58,7 @@ class GaugeMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(5, metric.weight)
 

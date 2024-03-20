@@ -4,6 +4,7 @@ import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -955,9 +956,46 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   @Override
   public @NotNull Map<String, String> getDefaultTagsForMetrics() {
-    final Map<String, String> tags = new HashMap<>(2);
-    tags.put("release", options.getRelease());
-    tags.put("environment", options.getEnvironment());
-    return tags;
+    if (!options.isEnableDefaultTagsForMetrics()) {
+      return Collections.emptyMap();
+    }
+
+    final @NotNull Map<String, String> tags = new HashMap<>();
+    final @Nullable String release = options.getRelease();
+    if (release != null) {
+      tags.put("release", release);
+    }
+
+    final @Nullable String environment = options.getEnvironment();
+    if (environment != null) {
+      tags.put("environment", environment);
+    }
+
+    final @Nullable String txnName = stack.peek().getScope().getTransactionName();
+    if (txnName != null) {
+      tags.put("transaction", txnName);
+    }
+    return Collections.unmodifiableMap(tags);
+  }
+
+  @Override
+  public @Nullable ISpan startSpanForMetric(@NotNull String op, @NotNull String description) {
+    final @Nullable ISpan span = getSpan();
+    if (span != null) {
+      return span.startChild(op, description);
+    }
+    return null;
+  }
+
+  @Override
+  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
+    if (!options.isEnableSpanLocalMetricAggregation()) {
+      return null;
+    }
+    final @Nullable ISpan span = getSpan();
+    if (span != null) {
+      return span.getLocalMetricsAggregator();
+    }
+    return null;
   }
 }

@@ -137,8 +137,7 @@ class MetricsHelperTest {
                     mapOf(
                         "tag1" to "value1",
                         "tag2" to "value2"
-                    ),
-                    1000
+                    )
                 )
             ),
             stringBuilder
@@ -167,5 +166,12 @@ class MetricsHelperTest {
         assertEquals("g", MetricsHelper.toStatsdType(MetricType.Gauge))
         assertEquals("s", MetricsHelper.toStatsdType(MetricType.Set))
         assertEquals("d", MetricsHelper.toStatsdType(MetricType.Distribution))
+    }
+
+    @Test
+    fun exportKey() {
+        assertEquals("d:custom/background_operation@second", MetricsHelper.getExportKey(MetricType.Distribution, "custom/background_operation", MeasurementUnit.Duration.SECOND))
+        assertEquals("d:custom/background_operation@none", MetricsHelper.getExportKey(MetricType.Distribution, "custom/background_operation", null))
+        assertEquals("c:count@none", MetricsHelper.getExportKey(MetricType.Counter, "count", null))
     }
 }

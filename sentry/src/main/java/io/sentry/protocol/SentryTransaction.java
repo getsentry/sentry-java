@@ -13,6 +13,7 @@ import io.sentry.Span;
 import io.sentry.SpanContext;
 import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -49,6 +50,8 @@ public final class SentryTransaction extends SentryBaseEvent
   private @NotNull final String type = "transaction";
 
   private @NotNull final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
+
+  private @Nullable Map<String, List<MetricSummary>> metricSummaries;
 
   private @NotNull TransactionInfo transactionInfo;
 
@@ -100,6 +103,14 @@ public final class SentryTransaction extends SentryBaseEvent
     }
 
     this.transactionInfo = new TransactionInfo(sentryTracer.getTransactionNameSource().apiName());
+
+    final @Nullable LocalMetricsAggregator localAggregator =
+        sentryTracer.getLocalMetricsAggregator();
+    if (localAggregator != null) {
+      this.metricSummaries = localAggregator.getSummaries();
+    } else {
+      this.metricSummaries = null;
+    }
   }
 
   @ApiStatus.Internal
@@ -109,6 +120,7 @@ public final class SentryTransaction extends SentryBaseEvent
       @Nullable Double timestamp,
       @NotNull List<SentrySpan> spans,
       @NotNull final Map<String, @NotNull MeasurementValue> measurements,
+      @Nullable Map<String, List<MetricSummary>> metricsSummaries,
       @NotNull final TransactionInfo transactionInfo) {
     this.transaction = transaction;
     this.startTimestamp = startTimestamp;
@@ -119,6 +131,7 @@ public final class SentryTransaction extends SentryBaseEvent
       this.measurements.putAll(span.getMeasurements());
     }
     this.transactionInfo = transactionInfo;
+    this.metricSummaries = metricsSummaries;
   }
 
   public @NotNull List<SentrySpan> getSpans() {
@@ -172,6 +185,14 @@ public final class SentryTransaction extends SentryBaseEvent
     return measurements;
   }
 
+  public @Nullable Map<String, List<MetricSummary>> getMetricSummaries() {
+    return metricSummaries;
+  }
+
+  public void setMetricSummaries(final @Nullable Map<String, List<MetricSummary>> metricSummaries) {
+    this.metricSummaries = metricSummaries;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {
@@ -181,6 +202,7 @@ public final class SentryTransaction extends SentryBaseEvent
     public static final String SPANS = "spans";
     public static final String TYPE = "type";
     public static final String MEASUREMENTS = "measurements";
+    public static final String METRICS_SUMMARY = "_metrics_summary";
     public static final String TRANSACTION_INFO = "transaction_info";
   }
 
@@ -201,6 +223,9 @@ public final class SentryTransaction extends SentryBaseEvent
     writer.name(JsonKeys.TYPE).value(type);
     if (!measurements.isEmpty()) {
       writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
+    }
+    if (metricSummaries != null && !metricSummaries.isEmpty()) {
+      writer.name(SentrySpan.JsonKeys.METRICS_SUMMARY).value(logger, metricSummaries);
     }
     writer.name(JsonKeys.TRANSACTION_INFO).value(logger, transactionInfo);
     new SentryBaseEvent.Serializer().serialize(this, writer, logger);
@@ -245,6 +270,7 @@ public final class SentryTransaction extends SentryBaseEvent
               null,
               new ArrayList<>(),
               new HashMap<>(),
+              null,
               new TransactionInfo(TransactionNameSource.CUSTOM.apiName()));
       Map<String, Object> unknown = null;
 
@@ -298,6 +324,10 @@ public final class SentryTransaction extends SentryBaseEvent
             if (deserializedMeasurements != null) {
               transaction.measurements.putAll(deserializedMeasurements);
             }
+            break;
+          case SentrySpan.JsonKeys.METRICS_SUMMARY:
+            transaction.metricSummaries =
+                reader.nextMapOfListOrNull(logger, new MetricSummary.Deserializer());
             break;
           case JsonKeys.TRANSACTION_INFO:
             transaction.transactionInfo =

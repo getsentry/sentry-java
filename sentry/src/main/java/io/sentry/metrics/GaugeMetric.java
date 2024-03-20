@@ -21,9 +21,8 @@ public final class GaugeMetric extends Metric {
       final @NotNull String key,
       final double value,
       final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
-      final @NotNull Long timestamp) {
-    super(MetricType.Gauge, key, unit, tags, timestamp);
+      final @Nullable Map<String, String> tags) {
+    super(MetricType.Gauge, key, unit, tags);
 
     this.last = value;
     this.min = value;
@@ -39,6 +38,26 @@ public final class GaugeMetric extends Metric {
     max = Math.max(max, value);
     sum += value;
     count++;
+  }
+
+  public double getLast() {
+    return last;
+  }
+
+  public double getMin() {
+    return min;
+  }
+
+  public double getMax() {
+    return max;
+  }
+
+  public double getSum() {
+    return sum;
+  }
+
+  public int getCount() {
+    return count;
   }
 
   @Override

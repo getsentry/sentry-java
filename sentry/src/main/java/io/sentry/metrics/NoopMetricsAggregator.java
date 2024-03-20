@@ -1,6 +1,7 @@
 package io.sentry.metrics;
 
 import io.sentry.IMetricsAggregator;
+import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import java.io.IOException;
 import java.util.Collections;
@@ -26,7 +27,8 @@ public final class NoopMetricsAggregator
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       long timestampMs,
-      int stackLevel) {}
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
 
   @Override
   public void gauge(
@@ -35,7 +37,8 @@ public final class NoopMetricsAggregator
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       long timestampMs,
-      int stackLevel) {}
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
 
   @Override
   public void distribution(
@@ -44,7 +47,8 @@ public final class NoopMetricsAggregator
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       long timestampMs,
-      int stackLevel) {}
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
 
   @Override
   public void set(
@@ -53,7 +57,8 @@ public final class NoopMetricsAggregator
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       long timestampMs,
-      int stackLevel) {}
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
 
   @Override
   public void set(
@@ -62,7 +67,8 @@ public final class NoopMetricsAggregator
       @Nullable MeasurementUnit unit,
       @Nullable Map<String, String> tags,
       long timestampMs,
-      int stackLevel) {}
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {}
 
   @Override
   public void timing(
@@ -70,7 +76,8 @@ public final class NoopMetricsAggregator
       @NotNull Runnable callback,
       @NotNull MeasurementUnit.Duration unit,
       @Nullable Map<String, String> tags,
-      int stackLevel) {
+      int stackLevel,
+      @Nullable LocalMetricsAggregator localMetricsAggregator) {
     callback.run();
   }
 
@@ -88,7 +95,17 @@ public final class NoopMetricsAggregator
   }
 
   @Override
+  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
+    return null;
+  }
+
+  @Override
   public @NotNull Map<String, String> getDefaultTagsForMetrics() {
     return Collections.emptyMap();
+  }
+
+  @Override
+  public @Nullable ISpan startSpanForMetric(@NotNull String op, @NotNull String description) {
+    return null;
   }
 }

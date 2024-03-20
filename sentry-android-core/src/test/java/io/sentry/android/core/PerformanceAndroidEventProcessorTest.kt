@@ -243,6 +243,7 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
+            null,
             null
         )
         tr.spans.add(appStartSpan)
@@ -339,6 +340,7 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
+            null,
             null
         )
         tr.spans.add(appStartSpan)
@@ -389,6 +391,7 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
+            null,
             null
         )
         tr.spans.add(appStartSpan)
@@ -435,6 +438,7 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
+            null,
             null
         )
         tr.spans.add(appStartSpan)
