@@ -17,12 +17,14 @@ class SentrySpanRestClientCustomizer implements RestClientCustomizer {
 
   @Override
   public void customize(final @NotNull RestClient.Builder restClientBuilder) {
-    restClientBuilder.requestInterceptors(clientHttpRequestInterceptors -> {
-      // As the SentrySpanClientHttpRequestInterceptor is being created in this class, this might not work
-      // if somebody registers it from an outside.
-      if (!clientHttpRequestInterceptors.contains(interceptor)) {
-        clientHttpRequestInterceptors.add(interceptor);
-      }
-    });
+    restClientBuilder.requestInterceptors(
+        clientHttpRequestInterceptors -> {
+          // As the SentrySpanClientHttpRequestInterceptor is being created in this class, this
+          // might not work
+          // if somebody registers it from an outside.
+          if (!clientHttpRequestInterceptors.contains(interceptor)) {
+            clientHttpRequestInterceptors.add(interceptor);
+          }
+        });
   }
 }
