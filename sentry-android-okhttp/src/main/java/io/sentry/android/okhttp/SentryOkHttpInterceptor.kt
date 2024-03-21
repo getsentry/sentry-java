@@ -33,7 +33,7 @@ import okhttp3.Response
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
-    private val captureFailedRequests: Boolean = false,
+    private val captureFailedRequests: Boolean = true,
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
     ),
