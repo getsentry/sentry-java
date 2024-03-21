@@ -21,6 +21,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.FileUtils
 import java.io.Closeable
 import java.io.File
 import java.util.Date
@@ -161,9 +162,10 @@ class ReplayIntegration(
         val segmentId = currentSegment.get()
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId.get()
+        val replayCacheDir = cache?.replayCacheDir
         saver.submit {
             createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
-            cache?.cleanup()
+            FileUtils.deleteRecursively(replayCacheDir)
         }
 
         recorder?.stopRecording()

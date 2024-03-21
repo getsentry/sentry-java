@@ -10,20 +10,30 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SentryId
-import io.sentry.util.FileUtils
 import java.io.Closeable
 import java.io.File
 
 internal class ReplayCache(
     private val options: SentryOptions,
     private val replayId: SentryId,
-    private val recorderConfig: ScreenshotRecorderConfig
+    private val recorderConfig: ScreenshotRecorderConfig,
+    private val encoderCreator: (File) -> SimpleVideoEncoder = { videoFile ->
+        SimpleVideoEncoder(
+            options,
+            MuxerConfig(
+                file = videoFile,
+                recorderConfig = recorderConfig,
+                frameRate = recorderConfig.frameRate.toFloat(),
+                bitrate = 20 * 1000
+            )
+        ).also { it.start() }
+    }
 ) : Closeable {
 
     private val encoderLock = Any()
-    private var encoder: SimpleVideoEncoder? = null
+    internal var encoder: SimpleVideoEncoder? = null
 
-    private val replayCacheDir: File? by lazy {
+    internal val replayCacheDir: File? by lazy {
         if (options.cacheDirPath.isNullOrEmpty()) {
             options.logger.log(
                 WARNING,
@@ -36,7 +46,7 @@ internal class ReplayCache(
     }
 
     // TODO: maybe account for multi-threaded access
-    private val frames = mutableListOf<ReplayFrame>()
+    internal val frames = mutableListOf<ReplayFrame>()
 
     fun addFrame(bitmap: Bitmap, frameTimestamp: Long) {
         if (replayCacheDir == null) {
@@ -66,17 +76,7 @@ internal class ReplayCache(
 
         // TODO: reuse instance of encoder and just change file path to create a different muxer
         val videoFile = File(replayCacheDir, "$segmentId.mp4")
-        encoder = synchronized(encoderLock) {
-            SimpleVideoEncoder(
-                options,
-                MuxerConfig(
-                    file = videoFile,
-                    recorderConfig = recorderConfig,
-                    frameRate = recorderConfig.frameRate.toFloat(),
-                    bitrate = 20 * 1000
-                )
-            )
-        }.also { it.start() }
+        encoder = synchronized(encoderLock) { encoderCreator(videoFile) }
 
         val step = 1000 / recorderConfig.frameRate.toLong()
         var frameCount = 0
@@ -145,10 +145,6 @@ internal class ReplayCache(
         } catch (e: Throwable) {
             options.logger.log(ERROR, e, "Failed to delete replay frame: %s", file.absolutePath)
         }
-    }
-
-    fun cleanup() {
-        FileUtils.deleteRecursively(replayCacheDir)
     }
 
     override fun close() {

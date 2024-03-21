@@ -46,7 +46,8 @@ private const val TIMEOUT_USEC = 100_000L
 @TargetApi(26)
 internal class SimpleVideoEncoder(
     val options: SentryOptions,
-    val muxerConfig: MuxerConfig
+    val muxerConfig: MuxerConfig,
+    val onClose: (() -> Unit)? = null
 ) {
     private val mediaFormat: MediaFormat = run {
         val format = MediaFormat.createVideoFormat(
@@ -68,7 +69,7 @@ internal class SimpleVideoEncoder(
         format
     }
 
-    private val mediaCodec: MediaCodec = run {
+    internal val mediaCodec: MediaCodec = run {
 //    val codecs = MediaCodecList(REGULAR_CODECS)
 //    val codecName = codecs.findEncoderForFormat(mediaFormat)
 //    val codec = MediaCodec.createByCodecName(codecName)
@@ -172,6 +173,7 @@ internal class SimpleVideoEncoder(
     }
 
     fun release() {
+        onClose?.invoke()
         drainCodec(true)
         mediaCodec.stop()
         mediaCodec.release()
@@ -185,8 +187,8 @@ internal class SimpleVideoEncoder(
 internal data class MuxerConfig(
     val file: File,
     val recorderConfig: ScreenshotRecorderConfig,
+    val bitrate: Int = 20_000,
+    val frameRate: Float = recorderConfig.frameRate.toFloat(),
     val mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
-    val frameRate: Float,
-    val bitrate: Int,
     val frameMuxer: SimpleFrameMuxer = SimpleMp4FrameMuxer(file.absolutePath, frameRate)
 )
