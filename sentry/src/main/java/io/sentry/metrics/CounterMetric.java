@@ -16,9 +16,8 @@ public final class CounterMetric extends Metric {
       final @NotNull String key,
       final double value,
       final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
-      final @NotNull Long timestamp) {
-    super(MetricType.Counter, key, unit, tags, timestamp);
+      final @Nullable Map<String, String> tags) {
+    super(MetricType.Counter, key, unit, tags);
     this.value = value;
   }
 
