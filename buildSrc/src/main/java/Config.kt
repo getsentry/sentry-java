@@ -23,8 +23,9 @@ object Config {
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
-        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
+        val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
+        val gradleMavenPublishPluginVersion = "0.28.0"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.9.20"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
     }
