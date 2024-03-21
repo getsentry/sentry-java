@@ -26,11 +26,19 @@ import org.springframework.http.client.ClientHttpResponse;
 
 @Open
 public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
-  private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.resttemplate";
+  private static final String TRACE_ORIGIN_REST_TEMPLATE = "auto.http.spring_jakarta.resttemplate";
+  private static final String TRACE_ORIGIN_REST_CLIENT = "auto.http.spring_jakarta.restclient";
   private final @NotNull IHub hub;
+  private final @NotNull String traceOrigin;
 
   public SentrySpanClientHttpRequestInterceptor(final @NotNull IHub hub) {
+    this(hub, true);
+  }
+
+  public SentrySpanClientHttpRequestInterceptor(
+      final @NotNull IHub hub, final @NotNull boolean isRestTemplate) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.traceOrigin = isRestTemplate ? TRACE_ORIGIN_REST_TEMPLATE : TRACE_ORIGIN_REST_CLIENT;
   }
 
   @Override
@@ -49,7 +57,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       }
 
       final ISpan span = activeSpan.startChild("http.client");
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
+      span.getSpanContext().setOrigin(traceOrigin);
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());

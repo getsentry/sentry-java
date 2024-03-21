@@ -12,7 +12,7 @@ class SentrySpanRestClientCustomizer implements RestClientCustomizer {
   private final @NotNull SentrySpanClientHttpRequestInterceptor interceptor;
 
   public SentrySpanRestClientCustomizer(final @NotNull IHub hub) {
-    this.interceptor = new SentrySpanClientHttpRequestInterceptor(hub);
+    this.interceptor = new SentrySpanClientHttpRequestInterceptor(hub, false);
   }
 
   @Override
