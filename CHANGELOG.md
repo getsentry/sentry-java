@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
 - Internal: Version bump Gradle=8.6, AGP=8.3.0, kotlin=1.9.22, compose=1.5.12 ([#3263](https://github.com/getsentry/sentry-java/pull/3263))
 
 **Breaking changes:**

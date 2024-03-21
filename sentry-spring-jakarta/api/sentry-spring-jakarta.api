@@ -213,6 +213,7 @@ public class io/sentry/spring/jakarta/tracing/SentrySpanAdvice : org/aopalliance
 
 public class io/sentry/spring/jakarta/tracing/SentrySpanClientHttpRequestInterceptor : org/springframework/http/client/ClientHttpRequestInterceptor {
 	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Z)V
 	public fun intercept (Lorg/springframework/http/HttpRequest;[BLorg/springframework/http/client/ClientHttpRequestExecution;)Lorg/springframework/http/client/ClientHttpResponse;
 }
 
