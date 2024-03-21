@@ -51,6 +51,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -65,6 +66,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -354,6 +356,17 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
         return new SentrySpanRestTemplateCustomizer(hub);
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @AutoConfigureBefore(RestClientAutoConfiguration.class)
+    @ConditionalOnClass(RestClient.class)
+    @Open
+    static class SentrySpanRestClientConfiguration {
+      @Bean
+      public SentrySpanRestClientCustomizer sentrySpanRestClientCustomizer(IHub hub) {
+        return new SentrySpanRestClientCustomizer(hub);
       }
     }
 
