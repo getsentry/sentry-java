@@ -227,44 +227,43 @@ public final class SentryAndroid {
   }
 
   public static synchronized void startReplay() {
-    performReplayAction(
-        "starting",
-        (replay) -> {
-          replay.start();
-        });
+    if (!ensureReplayIntegration("starting")) {
+      return;
+    }
+    final @NotNull IHub hub = Sentry.getCurrentHub();
+    ReplayIntegrationKt.getReplayIntegration(hub).start();
   }
 
   public static synchronized void stopReplay() {
-    performReplayAction(
-        "stopping",
-        (replay) -> {
-          replay.stop();
-        });
+    if (!ensureReplayIntegration("stopping")) {
+      return;
+    }
+    final @NotNull IHub hub = Sentry.getCurrentHub();
+    ReplayIntegrationKt.getReplayIntegration(hub).stop();
   }
 
   public static synchronized void resumeReplay() {
-    performReplayAction(
-        "resuming",
-        (replay) -> {
-          replay.resume();
-        });
+    if (!ensureReplayIntegration("resuming")) {
+      return;
+    }
+    final @NotNull IHub hub = Sentry.getCurrentHub();
+    ReplayIntegrationKt.getReplayIntegration(hub).resume();
   }
 
   public static synchronized void pauseReplay() {
-    performReplayAction(
-        "pausing",
-        (replay) -> {
-          replay.pause();
-        });
+    if (!ensureReplayIntegration("pausing")) {
+      return;
+    }
+    final @NotNull IHub hub = Sentry.getCurrentHub();
+    ReplayIntegrationKt.getReplayIntegration(hub).pause();
   }
 
-  private static void performReplayAction(
-      final @NotNull String actionName, final @NotNull ReplayCallable action) {
+  private static boolean ensureReplayIntegration(final @NotNull String actionName) {
     final @NotNull IHub hub = Sentry.getCurrentHub();
     if (isReplayAvailable) {
       final ReplayIntegration replay = ReplayIntegrationKt.getReplayIntegration(hub);
       if (replay != null) {
-        action.call(replay);
+        return true;
       } else {
         hub.getOptions()
             .getLogger()
@@ -279,9 +278,6 @@ public final class SentryAndroid {
               SentryLevel.INFO,
               "Session Replay wasn't found on classpath, not " + actionName + " the replay");
     }
-  }
-
-  private interface ReplayCallable {
-    void call(final @NotNull ReplayIntegration replay);
+    return false;
   }
 }

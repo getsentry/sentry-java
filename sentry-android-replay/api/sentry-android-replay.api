@@ -12,6 +12,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integr
 	public static final field VIDEO_SEGMENT_DURATION J
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun close ()V
+	public final fun isRecording ()Z
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public final fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V

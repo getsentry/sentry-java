@@ -99,6 +99,8 @@ class ReplayIntegration(
         isEnabled.set(true)
     }
 
+    fun isRecording() = isRecording.get()
+
     fun start() {
         if (!isEnabled.get()) {
             options.logger.log(
