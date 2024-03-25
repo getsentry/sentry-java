@@ -4,9 +4,10 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.IDebugImagesLoader;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
 import io.sentry.util.Objects;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,9 +46,20 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
     synchronized (debugImagesLock) {
       if (debugImages == null) {
         try {
-          final DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
+          final io.sentry.ndk.DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
           if (debugImagesArr != null) {
-            debugImages = Arrays.asList(debugImagesArr);
+            debugImages = new ArrayList<>(debugImagesArr.length);
+            for (io.sentry.ndk.DebugImage d : debugImagesArr) {
+              final DebugImage debugImage = new DebugImage();
+              debugImage.setUuid(d.getUuid());
+              debugImage.setType(d.getType());
+              debugImage.setDebugId(d.getDebugId());
+              debugImage.setCodeId(d.getCodeId());
+              debugImage.setImageAddr(d.getImageAddr());
+              debugImage.setImageSize(d.getImageSize());
+              debugImage.setArch(d.getArch());
+              debugImages.add(debugImage);
+            }
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
