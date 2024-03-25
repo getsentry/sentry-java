@@ -139,6 +139,15 @@ internal class RootViewsSpy private constructor() {
     val listeners = CopyOnWriteArrayList<OnRootViewsChangedListener>()
 
     private val delegatingViewList = object : ArrayList<View>() {
+        override fun addAll(elements: Collection<View>): Boolean {
+            listeners.forEach { listener ->
+                elements.forEach { element ->
+                    listener.onRootViewsChanged(element, true)
+                }
+            }
+            return super.addAll(elements)
+        }
+
         override fun add(element: View): Boolean {
             listeners.forEach { it.onRootViewsChanged(element, true) }
             return super.add(element)
