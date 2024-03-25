@@ -307,8 +307,8 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> ()V
-	public fun getSessionReplayOptions ()Lio/sentry/SessionReplayOptions;
-	public fun setSessionReplayOptions (Lio/sentry/SessionReplayOptions;)V
+	public fun getReplayOptions ()Lio/sentry/SentryReplayOptions;
+	public fun setReplayOptions (Lio/sentry/SentryReplayOptions;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -2540,6 +2540,19 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
+public final class io/sentry/SentryReplayOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
+	public fun getBitRate ()I
+	public fun getErrorReplayDuration ()J
+	public fun getErrorSampleRate ()Ljava/lang/Double;
+	public fun getFrameRate ()I
+	public fun getSessionSampleRate ()Ljava/lang/Double;
+	public fun getSessionSegmentDuration ()J
+	public fun setErrorSampleRate (Ljava/lang/Double;)V
+	public fun setSessionSampleRate (Ljava/lang/Double;)V
+}
+
 public final class io/sentry/SentrySpanStorage {
 	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
 	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
@@ -2691,19 +2704,6 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static final field Ok Lio/sentry/Session$State;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Session$State;
 	public static fun values ()[Lio/sentry/Session$State;
-}
-
-public final class io/sentry/SessionReplayOptions {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun getBitRate ()I
-	public fun getErrorReplayDuration ()J
-	public fun getErrorSampleRate ()Ljava/lang/Double;
-	public fun getFrameRate ()I
-	public fun getSessionSampleRate ()Ljava/lang/Double;
-	public fun getSessionSegmentDuration ()J
-	public fun setErrorSampleRate (Ljava/lang/Double;)V
-	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
 
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {

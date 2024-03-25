@@ -1,9 +1,10 @@
 package io.sentry;
 
+import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-public final class SessionReplayOptions {
+public final class SentryReplayOptions {
 
   /**
    * Indicates the percentage in which the replay for the session will be created. Specifying 0
@@ -37,9 +38,9 @@ public final class SessionReplayOptions {
   /** The maximum duration of the segment of a session replay. */
   private long sessionSegmentDuration = 5000L;
 
-  public SessionReplayOptions() {}
+  public SentryReplayOptions() {}
 
-  public SessionReplayOptions(
+  public SentryReplayOptions(
       final @Nullable Double sessionSampleRate, final @Nullable Double errorSampleRate) {
     this.sessionSampleRate = sessionSampleRate;
     this.errorSampleRate = errorSampleRate;
@@ -51,6 +52,12 @@ public final class SessionReplayOptions {
   }
 
   public void setErrorSampleRate(final @Nullable Double errorSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(errorSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + errorSampleRate
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
+    }
     this.errorSampleRate = errorSampleRate;
   }
 
@@ -60,6 +67,12 @@ public final class SessionReplayOptions {
   }
 
   public void setSessionSampleRate(final @Nullable Double sessionSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(sessionSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + sessionSampleRate
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
+    }
     this.sessionSampleRate = sessionSampleRate;
   }
 

@@ -3,8 +3,6 @@ package io.sentry.android.replay
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
-import android.os.Build.VERSION
-import android.os.Build.VERSION_CODES
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -59,7 +57,7 @@ class ReplayIntegration(
         ScreenshotRecorderConfig.from(
             context,
             targetHeight = 720,
-            options._experimental.sessionReplayOptions
+            options._experimental.replayOptions
         )
     }
 

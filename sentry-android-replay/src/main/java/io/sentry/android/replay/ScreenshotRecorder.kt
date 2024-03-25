@@ -23,7 +23,7 @@ import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
-import io.sentry.SessionReplayOptions
+import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
@@ -228,7 +228,7 @@ internal data class ScreenshotRecorderConfig(
     val bitRate: Int
 ) {
     companion object {
-        fun from(context: Context, targetHeight: Int, sessionReplayOptions: SessionReplayOptions): ScreenshotRecorderConfig {
+        fun from(context: Context, targetHeight: Int, sentryReplayOptions: SentryReplayOptions): ScreenshotRecorderConfig {
             // PixelCopy takes screenshots including system bars, so we have to get the real size here
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val screenBounds = if (VERSION.SDK_INT >= VERSION_CODES.R) {
@@ -245,8 +245,8 @@ internal data class ScreenshotRecorderConfig(
                 recordingWidth = (targetHeight / aspectRatio).roundToInt(),
                 recordingHeight = targetHeight,
                 scaleFactor = targetHeight.toFloat() / screenBounds.bottom,
-                frameRate = sessionReplayOptions.frameRate,
-                bitRate = sessionReplayOptions.bitRate
+                frameRate = sentryReplayOptions.frameRate,
+                bitRate = sentryReplayOptions.bitRate
             )
         }
     }
