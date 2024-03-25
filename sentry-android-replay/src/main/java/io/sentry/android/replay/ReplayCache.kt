@@ -20,12 +20,7 @@ internal class ReplayCache(
     private val encoderCreator: (File) -> SimpleVideoEncoder = { videoFile ->
         SimpleVideoEncoder(
             options,
-            MuxerConfig(
-                file = videoFile,
-                recorderConfig = recorderConfig,
-                frameRate = recorderConfig.frameRate.toFloat(),
-                bitrate = 20 * 1000
-            )
+            MuxerConfig(file = videoFile, recorderConfig = recorderConfig)
         ).also { it.start() }
     }
 ) : Closeable {

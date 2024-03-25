@@ -305,6 +305,12 @@ public abstract interface class io/sentry/EventProcessor {
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
+public final class io/sentry/ExperimentalOptions {
+	public fun <init> ()V
+	public fun getSessionReplayOptions ()Lio/sentry/SessionReplayOptions;
+	public fun setSessionReplayOptions (Lio/sentry/SessionReplayOptions;)V
+}
+
 public final class io/sentry/ExternalOptions {
 	public fun <init> ()V
 	public fun addBundleId (Ljava/lang/String;)V
@@ -2315,6 +2321,7 @@ public class io/sentry/SentryOptions {
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
 	public final fun getViewHierarchyExporters ()Ljava/util/List;
+	public fun get_experimental ()Lio/sentry/ExperimentalOptions;
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
@@ -2684,6 +2691,19 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static final field Ok Lio/sentry/Session$State;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Session$State;
 	public static fun values ()[Lio/sentry/Session$State;
+}
+
+public final class io/sentry/SessionReplayOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
+	public fun getBitRate ()I
+	public fun getErrorReplayDuration ()J
+	public fun getErrorSampleRate ()Ljava/lang/Double;
+	public fun getFrameRate ()I
+	public fun getSessionSampleRate ()Ljava/lang/Double;
+	public fun getSessionSegmentDuration ()J
+	public fun setErrorSampleRate (Ljava/lang/Double;)V
+	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
 
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {

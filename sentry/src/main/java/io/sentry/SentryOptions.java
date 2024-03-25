@@ -460,6 +460,8 @@ public class SentryOptions {
    */
   private int profilingTracesHz = 101;
 
+  private final @NotNull ExperimentalOptions _experimental = new ExperimentalOptions();
+
   /**
    * Adds an event processor
    *
@@ -2272,6 +2274,11 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setSessionFlushTimeoutMillis(final long sessionFlushTimeoutMillis) {
     this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
+  }
+
+  @NotNull
+  public ExperimentalOptions get_experimental() {
+    return _experimental;
   }
 
   /** The BeforeSend callback */

@@ -1,13 +1,17 @@
 package io.sentry.android.replay
 
 import android.annotation.TargetApi
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.ARGB_8888
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -15,13 +19,16 @@ import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SessionReplayOptions
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 
 @TargetApi(26)
@@ -217,8 +224,33 @@ internal data class ScreenshotRecorderConfig(
     val recordingWidth: Int,
     val recordingHeight: Int,
     val scaleFactor: Float,
-    val frameRate: Int = 2
-)
+    val frameRate: Int,
+    val bitRate: Int
+) {
+    companion object {
+        fun from(context: Context, targetHeight: Int, sessionReplayOptions: SessionReplayOptions): ScreenshotRecorderConfig {
+            // PixelCopy takes screenshots including system bars, so we have to get the real size here
+            val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val screenBounds = if (VERSION.SDK_INT >= VERSION_CODES.R) {
+                wm.currentWindowMetrics.bounds
+            } else {
+                val screenBounds = Point()
+                @Suppress("DEPRECATION")
+                wm.defaultDisplay.getRealSize(screenBounds)
+                Rect(0, 0, screenBounds.x, screenBounds.y)
+            }
+            val aspectRatio = screenBounds.bottom.toFloat() / screenBounds.right.toFloat()
+
+            return ScreenshotRecorderConfig(
+                recordingWidth = (targetHeight / aspectRatio).roundToInt(),
+                recordingHeight = targetHeight,
+                scaleFactor = targetHeight.toFloat() / screenBounds.bottom,
+                frameRate = sessionReplayOptions.frameRate,
+                bitRate = sessionReplayOptions.bitRate
+            )
+        }
+    }
+}
 
 interface ScreenshotRecorderCallback {
     fun onScreenshotRecorded(bitmap: Bitmap)
