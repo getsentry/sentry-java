@@ -2,6 +2,7 @@ package io.sentry.spring.jakarta;
 
 import io.sentry.IHub;
 import io.sentry.Sentry;
+import io.sentry.SentryStorageToken;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.task.TaskDecorator;
@@ -14,15 +15,12 @@ import org.springframework.scheduling.annotation.Async;
  */
 public final class SentryTaskDecorator implements TaskDecorator {
   @Override
+  @SuppressWarnings("try")
   public @NotNull Runnable decorate(final @NotNull Runnable runnable) {
-    final IHub oldState = Sentry.getCurrentHub();
     final IHub newHub = Sentry.getCurrentHub().clone();
     return () -> {
-      Sentry.setCurrentHub(newHub);
-      try {
+      try (final @NotNull SentryStorageToken sentryStorageToken = Sentry.setCurrentHub(newHub)) {
         runnable.run();
-      } finally {
-        Sentry.setCurrentHub(oldState);
       }
     };
   }
