@@ -3479,16 +3479,6 @@ public abstract class io/sentry/metrics/Metric {
 	public abstract fun serialize ()Ljava/lang/Iterable;
 }
 
-public final class io/sentry/metrics/MetricResourceIdentifier {
-	public fun <init> (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getKey ()Ljava/lang/String;
-	public fun getMetricType ()Lio/sentry/metrics/MetricType;
-	public fun getUnit ()Lio/sentry/MeasurementUnit;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class io/sentry/metrics/MetricType : java/lang/Enum {
 	public static final field Counter Lio/sentry/metrics/MetricType;
 	public static final field Distribution Lio/sentry/metrics/MetricType;
