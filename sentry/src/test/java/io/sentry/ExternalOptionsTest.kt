@@ -269,9 +269,9 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with enableBackpressureHandling set to true`() {
-        withPropertiesFile("enable-backpressure-handling=true") { options ->
-            assertTrue(options.isEnableBackpressureHandling == true)
+    fun `creates options with enableBackpressureHandling set to false`() {
+        withPropertiesFile("enable-backpressure-handling=false") { options ->
+            assertTrue(options.isEnableBackpressureHandling == false)
         }
     }
 

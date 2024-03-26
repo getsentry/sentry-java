@@ -63,6 +63,7 @@ class SentryHandlerTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory { _, _ -> transport }
+            it.isEnableBackpressureHandling = false
         }
         fixture = Fixture(transport = transport)
         fixture.logger.severe("testing environment field")
