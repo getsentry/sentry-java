@@ -5,6 +5,7 @@
 ### Features
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+- Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
 
 ## 7.6.0
 
