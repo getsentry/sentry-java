@@ -1370,4 +1370,46 @@ class ManifestMetadataReaderTest {
         // Assert
         assertFalse(fixture.options.isEnableAppStartProfiling)
     }
+
+    @Test
+    fun `applyMetadata reads replays errorSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options._experimental.replayOptions.errorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override replays errorSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options._experimental.replayOptions.errorSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options._experimental.replayOptions.errorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying replays errorSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options._experimental.replayOptions.errorSampleRate)
+    }
 }

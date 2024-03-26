@@ -100,6 +100,10 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
+  static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.replays.session-sample-rate";
+
+  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.replays.error-sample-rate";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -371,6 +375,21 @@ final class ManifestMetadataReader {
         options.setEnableAppStartProfiling(
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
+
+        if (options.get_experimental().getReplayOptions().getSessionSampleRate() == null) {
+          final Double sessionSampleRate =
+              readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
+          if (sessionSampleRate != -1) {
+            options.get_experimental().getReplayOptions().setSessionSampleRate(sessionSampleRate);
+          }
+        }
+
+        if (options.get_experimental().getReplayOptions().getErrorSampleRate() == null) {
+          final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+          if (errorSampleRate != -1) {
+            options.get_experimental().getReplayOptions().setErrorSampleRate(errorSampleRate);
+          }
+        }
       }
 
       options
