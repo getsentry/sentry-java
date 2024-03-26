@@ -52,7 +52,7 @@ import kotlin.test.Test
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium", "sentry.enable-backpressure-handling=false"]
 )
 class SentrySpringIntegrationTest {
 

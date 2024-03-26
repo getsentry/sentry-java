@@ -1,6 +1,5 @@
 package io.sentry
 
-import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.mock
 import java.io.File
@@ -370,7 +369,7 @@ class SentryOptionsTest {
         externalOptions.isEnablePrettySerializationOutput = false
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
-        externalOptions.isEnableBackpressureHandling = true
+        externalOptions.isEnableBackpressureHandling = false
         externalOptions.cron = SentryOptions.Cron().apply {
             defaultCheckinMargin = 10L
             defaultMaxRuntime = 30L
@@ -407,7 +406,7 @@ class SentryOptionsTest {
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
         assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
-        assertTrue(options.isEnableBackpressureHandling)
+        assertFalse(options.isEnableBackpressureHandling)
         assertNotNull(options.cron)
         assertEquals(10L, options.cron?.defaultCheckinMargin)
         assertEquals(30L, options.cron?.defaultMaxRuntime)
@@ -563,9 +562,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, enableBackpressureHandling is set to false by default`() {
-        assertFalse(SentryOptions().isEnableBackpressureHandling)
-        assertTrue(SentryOptions().backpressureMonitor is NoOpBackpressureMonitor)
+    fun `when options are initialized, enableBackpressureHandling is set to true by default`() {
+        assertTrue(SentryOptions().isEnableBackpressureHandling)
     }
 
     @Test
