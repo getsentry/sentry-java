@@ -1,7 +1,8 @@
 package io.sentry.spring.jakarta.webflux
 
 import io.sentry.IHub
-import io.sentry.NoOpHub
+import io.sentry.IScopes
+import io.sentry.NoOpScopes
 import io.sentry.Sentry
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -26,18 +27,18 @@ class ReactorUtilsTest {
 
     @AfterTest
     fun teardown() {
-        Sentry.setCurrentHub(NoOpHub.getInstance())
+        Sentry.setCurrentScopes(NoOpScopes.getInstance())
     }
 
     @Test
     fun `propagates hub inside mono`() {
-        val hubToUse = mock<IHub>()
-        var hubInside: IHub? = null
+        val hubToUse = mock<IScopes>()
+        var hubInside: IScopes? = null
         val mono = ReactorUtils.withSentryHub(
             Mono.just("hello")
                 .publishOn(Schedulers.boundedElastic())
                 .map { it ->
-                    hubInside = Sentry.getCurrentHub()
+                    hubInside = Sentry.getCurrentScopes()
                     it
                 },
             hubToUse
@@ -49,13 +50,13 @@ class ReactorUtilsTest {
 
     @Test
     fun `propagates hub inside flux`() {
-        val hubToUse = mock<IHub>()
-        var hubInside: IHub? = null
+        val hubToUse = mock<IScopes>()
+        var hubInside: IScopes? = null
         val flux = ReactorUtils.withSentryHub(
             Flux.just("hello")
                 .publishOn(Schedulers.boundedElastic())
                 .map { it ->
-                    hubInside = Sentry.getCurrentHub()
+                    hubInside = Sentry.getCurrentScopes()
                     it
                 },
             hubToUse
@@ -67,12 +68,12 @@ class ReactorUtilsTest {
 
     @Test
     fun `without reactive utils hub is not propagated to mono`() {
-        val hubToUse = mock<IHub>()
-        var hubInside: IHub? = null
+        val hubToUse = mock<IScopes>()
+        var hubInside: IScopes? = null
         val mono = Mono.just("hello")
             .publishOn(Schedulers.boundedElastic())
             .map { it ->
-                hubInside = Sentry.getCurrentHub()
+                hubInside = Sentry.getCurrentScopes()
                 it
             }
 
@@ -82,12 +83,12 @@ class ReactorUtilsTest {
 
     @Test
     fun `without reactive utils hub is not propagated to flux`() {
-        val hubToUse = mock<IHub>()
-        var hubInside: IHub? = null
+        val hubToUse = mock<IScopes>()
+        var hubInside: IScopes? = null
         val flux = Flux.just("hello")
             .publishOn(Schedulers.boundedElastic())
             .map { it ->
-                hubInside = Sentry.getCurrentHub()
+                hubInside = Sentry.getCurrentScopes()
                 it
             }
 
@@ -97,21 +98,21 @@ class ReactorUtilsTest {
 
     @Test
     fun `clones hub for mono`() {
-        val mockHub = mock<IHub>()
-        whenever(mockHub.clone()).thenReturn(mock<IHub>())
-        Sentry.setCurrentHub(mockHub)
+        val mockScopes = mock<IScopes>()
+        whenever(mockScopes.clone()).thenReturn(mock<IHub>())
+        Sentry.setCurrentScopes(mockScopes)
         ReactorUtils.withSentry(Mono.just("hello")).block()
 
-        verify(mockHub).clone()
+        verify(mockScopes).clone()
     }
 
     @Test
     fun `clones hub for flux`() {
-        val mockHub = mock<IHub>()
-        whenever(mockHub.clone()).thenReturn(mock<IHub>())
-        Sentry.setCurrentHub(mockHub)
+        val mockScopes = mock<IScopes>()
+        whenever(mockScopes.clone()).thenReturn(mock<IHub>())
+        Sentry.setCurrentScopes(mockScopes)
         ReactorUtils.withSentry(Flux.just("hello")).blockFirst()
 
-        verify(mockHub).clone()
+        verify(mockScopes).clone()
     }
 }

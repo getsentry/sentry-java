@@ -1,7 +1,7 @@
 package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.spring.jakarta.tracing.SentrySpanClientHttpRequestInterceptor;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +14,8 @@ import org.springframework.web.client.RestTemplate;
 class SentrySpanRestTemplateCustomizer implements RestTemplateCustomizer {
   private final @NotNull SentrySpanClientHttpRequestInterceptor interceptor;
 
-  public SentrySpanRestTemplateCustomizer(final @NotNull IHub hub) {
-    this.interceptor = new SentrySpanClientHttpRequestInterceptor(hub);
+  public SentrySpanRestTemplateCustomizer(final @NotNull IScopes scopes) {
+    this.interceptor = new SentrySpanClientHttpRequestInterceptor(scopes);
   }
 
   @Override

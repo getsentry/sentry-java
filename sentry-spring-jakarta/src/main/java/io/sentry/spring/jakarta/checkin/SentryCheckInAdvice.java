@@ -4,8 +4,8 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
@@ -30,16 +30,16 @@ import org.springframework.util.StringValueResolver;
 @ApiStatus.Experimental
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
   private @Nullable StringValueResolver resolver;
 
   public SentryCheckInAdvice() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
-  public SentryCheckInAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryCheckInAdvice(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @Override
@@ -66,7 +66,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         // expressions. Testing shows this can also happen if properties cannot be resolved (without
         // an exception being thrown). Sentry should alert the user about missed checkins in this
         // case since the monitor slug won't match what is configured in Sentry.
-        hub.getOptions()
+        scopes
+            .getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
@@ -76,7 +77,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
     }
 
     if (ObjectUtils.isEmpty(monitorSlug)) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
@@ -84,8 +86,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return invocation.proceed();
     }
 
-    hub.pushScope();
-    TracingUtils.startNewTrace(hub);
+    scopes.pushScope();
+    TracingUtils.startNewTrace(scopes);
 
     @Nullable SentryId checkInId = null;
     final long startTime = System.currentTimeMillis();
@@ -93,7 +95,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
 
     try {
       if (!isHeartbeatOnly) {
-        checkInId = hub.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
+        checkInId = scopes.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
       }
       return invocation.proceed();
     } catch (Throwable e) {
@@ -103,8 +105,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
       CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
       checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
-      hub.captureCheckIn(checkIn);
-      hub.popScope();
+      scopes.captureCheckIn(checkIn);
+      scopes.popScope();
     }
   }
 

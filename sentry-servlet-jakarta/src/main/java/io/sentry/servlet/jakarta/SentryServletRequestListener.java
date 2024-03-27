@@ -5,8 +5,8 @@ import static io.sentry.TypeCheckHint.SERVLET_REQUEST;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.util.Objects;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;
@@ -21,24 +21,24 @@ import org.jetbrains.annotations.NotNull;
 @Open
 public class SentryServletRequestListener implements ServletRequestListener {
 
-  private final IHub hub;
+  private final IScopes scopes;
 
-  public SentryServletRequestListener(@NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryServletRequestListener(@NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   public SentryServletRequestListener() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
   @Override
   public void requestDestroyed(@NotNull ServletRequestEvent servletRequestEvent) {
-    hub.popScope();
+    scopes.popScope();
   }
 
   @Override
   public void requestInitialized(@NotNull ServletRequestEvent servletRequestEvent) {
-    hub.pushScope();
+    scopes.pushScope();
 
     final ServletRequest servletRequest = servletRequestEvent.getServletRequest();
     if (servletRequest instanceof HttpServletRequest) {
@@ -47,10 +47,10 @@ public class SentryServletRequestListener implements ServletRequestListener {
       final Hint hint = new Hint();
       hint.set(SERVLET_REQUEST, httpRequest);
 
-      hub.addBreadcrumb(
+      scopes.addBreadcrumb(
           Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hint);
 
-      hub.configureScope(
+      scopes.configureScope(
           scope -> {
             scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(httpRequest));
           });

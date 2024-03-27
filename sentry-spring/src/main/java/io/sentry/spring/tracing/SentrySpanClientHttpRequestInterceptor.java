@@ -8,7 +8,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -27,10 +27,10 @@ import org.springframework.http.client.ClientHttpResponse;
 @Open
 public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
   private static final String TRACE_ORIGIN = "auto.http.spring.resttemplate";
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
-  public SentrySpanClientHttpRequestInterceptor(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentrySpanClientHttpRequestInterceptor(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @Override
@@ -42,7 +42,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     Integer responseStatusCode = null;
     ClientHttpResponse response = null;
     try {
-      final ISpan activeSpan = hub.getSpan();
+      final ISpan activeSpan = scopes.getSpan();
       if (activeSpan == null) {
         maybeAddTracingHeaders(request, null);
         return execution.execute(request, body);
@@ -83,7 +83,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @NotNull HttpRequest request, final @Nullable ISpan span) {
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
         TracingUtils.traceIfAllowed(
-            hub,
+            scopes,
             request.getURI().toString(),
             request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER),
             span);
@@ -120,6 +120,6 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       hint.set(SPRING_REQUEST_INTERCEPTOR_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hint);
+    scopes.addBreadcrumb(breadcrumb, hint);
   }
 }

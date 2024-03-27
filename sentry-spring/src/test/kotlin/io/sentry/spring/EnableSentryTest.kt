@@ -1,7 +1,7 @@
 package io.sentry.spring
 
 import io.sentry.EventProcessor
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.Sentry
@@ -65,9 +65,9 @@ class EnableSentryTest {
     }
 
     @Test
-    fun `creates Sentry Hub`() {
+    fun `creates Sentry Scopes`() {
         contextRunner.run {
-            assertThat(it).hasSingleBean(IHub::class.java)
+            assertThat(it).hasSingleBean(IScopes::class.java)
         }
     }
 

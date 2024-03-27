@@ -27,12 +27,12 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     if (options.isEnableShutdownHook()) {
-      thread = new Thread(() -> hub.flush(options.getFlushTimeoutMillis()));
+      thread = new Thread(() -> scopes.flush(options.getFlushTimeoutMillis()));
       runtime.addShutdownHook(thread);
       options.getLogger().log(SentryLevel.DEBUG, "ShutdownHookIntegration installed.");
       addIntegrationToSdkVersion(getClass());

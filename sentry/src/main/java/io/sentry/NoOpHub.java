@@ -11,6 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated
 public final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
@@ -21,6 +22,7 @@ public final class NoOpHub implements IHub {
 
   private NoOpHub() {}
 
+  @Deprecated
   public static NoOpHub getInstance() {
     return instance;
   }
@@ -233,5 +235,10 @@ public final class NoOpHub implements IHub {
   @Override
   public @NotNull MetricsApi metrics() {
     return metricsApi;
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return true;
   }
 }

@@ -27,6 +27,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated
 public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   private volatile @NotNull SentryId lastEventId;

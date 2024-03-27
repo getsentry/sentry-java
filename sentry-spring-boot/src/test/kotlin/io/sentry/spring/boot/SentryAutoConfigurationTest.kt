@@ -5,7 +5,7 @@ import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.NoOpTransportFactory
@@ -76,18 +76,18 @@ class SentryAutoConfigurationTest {
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
 
     @Test
-    fun `hub is not created when auto-configuration dsn is not set`() {
+    fun `scopes is not created when auto-configuration dsn is not set`() {
         contextRunner
             .run {
-                assertThat(it).doesNotHaveBean(IHub::class.java)
+                assertThat(it).doesNotHaveBean(IScopes::class.java)
             }
     }
 
     @Test
-    fun `hub is created when dsn is provided`() {
+    fun `scopes is created when dsn is provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).hasSingleBean(IHub::class.java)
+                assertThat(it).hasSingleBean(IScopes::class.java)
             }
     }
 
@@ -943,7 +943,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomIntegration : Integration {
-        override fun register(hub: IHub, options: SentryOptions) {}
+        override fun register(scopes: IScopes, options: SentryOptions) {}
     }
 
     @Configuration(proxyBeanMethods = false)

@@ -1,8 +1,8 @@
 package io.sentry.spring.jakarta
 
 import io.sentry.Breadcrumb
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -37,7 +37,7 @@ import kotlin.test.fail
 
 class SentrySpringFilterTest {
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
         lateinit var scope: IScope
@@ -45,15 +45,15 @@ class SentrySpringFilterTest {
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
             scope = Scope(options)
-            whenever(hub.options).thenReturn(options)
-            whenever(hub.isEnabled).thenReturn(true)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            whenever(scopes.options).thenReturn(options)
+            whenever(scopes.isEnabled).thenReturn(true)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
             this.request = request
                 ?: MockHttpServletRequest().apply {
                     this.requestURI = "http://localhost:8080/some-uri"
                     this.method = "post"
                 }
-            return SentrySpringFilter(hub)
+            return SentrySpringFilter(scopes)
         }
     }
 
@@ -64,7 +64,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).pushScope()
+        verify(fixture.scopes).pushScope()
     }
 
     @Test
@@ -72,7 +72,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check { it: Breadcrumb ->
                 Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
                 Assertions.assertThat(it.getData("method")).isEqualTo("POST")
@@ -87,7 +87,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).popScope()
+        verify(fixture.scopes).popScope()
     }
 
     @Test
@@ -99,7 +99,7 @@ class SentrySpringFilterTest {
             listener.doFilter(fixture.request, fixture.response, fixture.chain)
             fail()
         } catch (e: Exception) {
-            verify(fixture.hub).popScope()
+            verify(fixture.scopes).popScope()
         }
     }
 
