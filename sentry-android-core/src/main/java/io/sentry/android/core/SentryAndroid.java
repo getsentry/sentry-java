@@ -15,8 +15,6 @@ import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
-import io.sentry.android.replay.ReplayIntegration;
-import io.sentry.android.replay.ReplayIntegrationKt;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -160,7 +158,7 @@ public final class SentryAndroid {
           hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
           hub.startSession();
         }
-        startReplay();
+        hub.getOptions().getReplayController().start();
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
@@ -224,60 +222,5 @@ public final class SentryAndroid {
         options.getIntegrations().remove(integration);
       }
     }
-  }
-
-  public static synchronized void startReplay() {
-    if (!ensureReplayIntegration("starting")) {
-      return;
-    }
-    final @NotNull IHub hub = Sentry.getCurrentHub();
-    ReplayIntegrationKt.getReplayIntegration(hub).start();
-  }
-
-  public static synchronized void stopReplay() {
-    if (!ensureReplayIntegration("stopping")) {
-      return;
-    }
-    final @NotNull IHub hub = Sentry.getCurrentHub();
-    ReplayIntegrationKt.getReplayIntegration(hub).stop();
-  }
-
-  public static synchronized void resumeReplay() {
-    if (!ensureReplayIntegration("resuming")) {
-      return;
-    }
-    final @NotNull IHub hub = Sentry.getCurrentHub();
-    ReplayIntegrationKt.getReplayIntegration(hub).resume();
-  }
-
-  public static synchronized void pauseReplay() {
-    if (!ensureReplayIntegration("pausing")) {
-      return;
-    }
-    final @NotNull IHub hub = Sentry.getCurrentHub();
-    ReplayIntegrationKt.getReplayIntegration(hub).pause();
-  }
-
-  private static boolean ensureReplayIntegration(final @NotNull String actionName) {
-    final @NotNull IHub hub = Sentry.getCurrentHub();
-    if (isReplayAvailable) {
-      final ReplayIntegration replay = ReplayIntegrationKt.getReplayIntegration(hub);
-      if (replay != null) {
-        return true;
-      } else {
-        hub.getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.INFO,
-                "Session Replay wasn't registered yet, not " + actionName + " the replay");
-      }
-    } else {
-      hub.getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Session Replay wasn't found on classpath, not " + actionName + " the replay");
-    }
-    return false;
   }
 }

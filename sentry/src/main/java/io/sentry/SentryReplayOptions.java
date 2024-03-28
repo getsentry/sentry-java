@@ -51,6 +51,10 @@ public final class SentryReplayOptions {
     return errorSampleRate;
   }
 
+  public boolean isSessionReplayEnabled() {
+    return (getSessionSampleRate() != null && getSessionSampleRate() > 0);
+  }
+
   public void setErrorSampleRate(final @Nullable Double errorSampleRate) {
     if (!SampleRateUtils.isValidSampleRate(errorSampleRate)) {
       throw new IllegalArgumentException(
@@ -64,6 +68,10 @@ public final class SentryReplayOptions {
   @Nullable
   public Double getSessionSampleRate() {
     return sessionSampleRate;
+  }
+
+  public boolean isSessionReplayForErrorsEnabled() {
+    return (getErrorSampleRate() != null && getErrorSampleRate() > 0);
   }
 
   public void setSessionSampleRate(final @Nullable Double sessionSampleRate) {

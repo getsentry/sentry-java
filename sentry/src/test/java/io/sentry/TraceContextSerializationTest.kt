@@ -62,6 +62,7 @@ class TraceContextSerializationTest {
                 id = "user-id"
                 others = mapOf("segment" to "pro")
             },
+            SentryId(),
             SentryOptions().apply {
                 dsn = dsnString
                 environment = "prod"

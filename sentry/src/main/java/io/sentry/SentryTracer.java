@@ -582,12 +582,18 @@ public final class SentryTracer implements ITransaction {
     synchronized (this) {
       if (baggage.isMutable()) {
         final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+        final AtomicReference<SentryId> replayId = new AtomicReference<>();
         hub.configureScope(
             scope -> {
               userAtomicReference.set(scope.getUser());
+              replayId.set(scope.getReplayId());
             });
         baggage.setValuesFromTransaction(
-            this, userAtomicReference.get(), hub.getOptions(), this.getSamplingDecision());
+            this,
+            userAtomicReference.get(),
+            replayId.get(),
+            hub.getOptions(),
+            this.getSamplingDecision());
         baggage.freeze();
       }
     }
