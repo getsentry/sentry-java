@@ -460,7 +460,7 @@ public class SentryOptions {
    */
   private int profilingTracesHz = 101;
 
-  private final @NotNull ExperimentalOptions _experimental = new ExperimentalOptions();
+  private final @NotNull ExperimentalOptions experimental = new ExperimentalOptions();
 
   /**
    * Adds an event processor
@@ -2277,8 +2277,8 @@ public class SentryOptions {
   }
 
   @NotNull
-  public ExperimentalOptions get_experimental() {
-    return _experimental;
+  public ExperimentalOptions getExperimental() {
+    return experimental;
   }
 
   /** The BeforeSend callback */

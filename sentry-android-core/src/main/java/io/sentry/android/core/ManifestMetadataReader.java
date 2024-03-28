@@ -376,18 +376,18 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
 
-        if (options.get_experimental().getReplayOptions().getSessionSampleRate() == null) {
+        if (options.getExperimental().getReplayOptions().getSessionSampleRate() == null) {
           final Double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options.get_experimental().getReplayOptions().setSessionSampleRate(sessionSampleRate);
+            options.getExperimental().getReplayOptions().setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.get_experimental().getReplayOptions().getErrorSampleRate() == null) {
+        if (options.getExperimental().getReplayOptions().getErrorSampleRate() == null) {
           final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (errorSampleRate != -1) {
-            options.get_experimental().getReplayOptions().setErrorSampleRate(errorSampleRate);
+            options.getExperimental().getReplayOptions().setErrorSampleRate(errorSampleRate);
           }
         }
       }

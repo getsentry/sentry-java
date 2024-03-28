@@ -57,21 +57,27 @@ public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallb
 }
 
 public final class io/sentry/android/replay/ScreenshotRecorderConfig {
-	public fun <init> (IIFI)V
-	public synthetic fun <init> (IIFIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final field Companion Lio/sentry/android/replay/ScreenshotRecorderConfig$Companion;
+	public fun <init> (IIFII)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()F
 	public final fun component4 ()I
-	public final fun copy (IIFI)Lio/sentry/android/replay/ScreenshotRecorderConfig;
-	public static synthetic fun copy$default (Lio/sentry/android/replay/ScreenshotRecorderConfig;IIFIILjava/lang/Object;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public final fun component5 ()I
+	public final fun copy (IIFII)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public static synthetic fun copy$default (Lio/sentry/android/replay/ScreenshotRecorderConfig;IIFIIILjava/lang/Object;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBitRate ()I
 	public final fun getFrameRate ()I
 	public final fun getRecordingHeight ()I
 	public final fun getRecordingWidth ()I
 	public final fun getScaleFactor ()F
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/replay/ScreenshotRecorderConfig$Companion {
+	public final fun from (Landroid/content/Context;ILio/sentry/SentryReplayOptions;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
 }
 
 public abstract interface class io/sentry/android/replay/video/SimpleFrameMuxer {
