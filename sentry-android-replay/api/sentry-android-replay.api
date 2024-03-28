@@ -27,6 +27,7 @@ public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
 	public fun close ()V
 	public final fun createVideoOf (JJILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
 	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+	public final fun rotate (J)V
 }
 
 public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {

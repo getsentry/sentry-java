@@ -81,8 +81,8 @@ class ReplayIntegration(
             return
         }
 
-        if (!options._experimental.replayOptions.isSessionReplayEnabled &&
-            !options._experimental.replayOptions.isSessionReplayForErrorsEnabled
+        if (!options.experimental.replayOptions.isSessionReplayEnabled &&
+            !options.experimental.replayOptions.isSessionReplayForErrorsEnabled
         ) {
             options.logger.log(INFO, "Session replay is disabled, no sample rate specified")
             return
@@ -91,7 +91,7 @@ class ReplayIntegration(
         this.hub = hub
         recorder = WindowRecorder(options, recorderConfig, this)
         isEnabled.set(true)
-        isFullSession.set(sample(options._experimental.replayOptions.sessionSampleRate))
+        isFullSession.set(sample(options.experimental.replayOptions.sessionSampleRate))
 
         addIntegrationToSdkVersion(javaClass)
         SentryIntegrationPackageStorage.getInstance()
@@ -147,12 +147,12 @@ class ReplayIntegration(
             return
         }
 
-        if (!sample(options._experimental.replayOptions.errorSampleRate)) {
+        if (!sample(options.experimental.replayOptions.errorSampleRate)) {
             options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event %s", event.eventId)
             return
         }
 
-        val errorReplayDuration = options._experimental.replayOptions.errorReplayDuration
+        val errorReplayDuration = options.experimental.replayOptions.errorReplayDuration
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
             // in buffer mode we have to set the timestamp of the first frame as the actual start
@@ -241,7 +241,7 @@ class ReplayIntegration(
 
             val now = dateProvider.currentTimeMillis
             if (isFullSession.get() &&
-                (now - segmentTimestamp.get().time >= options._experimental.replayOptions.sessionSegmentDuration)
+                (now - segmentTimestamp.get().time >= options.experimental.replayOptions.sessionSegmentDuration)
             ) {
                 val currentSegmentTimestamp = segmentTimestamp.get()
                 val segmentId = currentSegment.get()
@@ -249,7 +249,7 @@ class ReplayIntegration(
 
                 val videoDuration =
                     createAndCaptureSegment(
-                        options._experimental.replayOptions.sessionSegmentDuration,
+                        options.experimental.replayOptions.sessionSegmentDuration,
                         currentSegmentTimestamp,
                         replayId,
                         segmentId
@@ -260,7 +260,7 @@ class ReplayIntegration(
                     segmentTimestamp.set(DateUtils.getDateTime(currentSegmentTimestamp.time + videoDuration))
                 }
             } else if (!isFullSession.get()) {
-                cache?.rotate(now - options._experimental.replayOptions.errorReplayDuration)
+                cache?.rotate(now - options.experimental.replayOptions.errorReplayDuration)
             }
         }
     }
