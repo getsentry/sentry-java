@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.ref.WeakReference
@@ -72,7 +73,12 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val window = root.phoneWindow ?: return
+        val window = root.phoneWindow
+        if (window == null) {
+            options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
+            return
+        }
+
         val bitmap = Bitmap.createBitmap(
             root.width,
             root.height,
@@ -88,59 +94,69 @@ internal class ScreenshotRecorder(
             }
             options.logger.log(DEBUG, "Took %d ms to capture view hierarchy", time)
 
-            PixelCopy.request(
-                window,
-                bitmap,
-                { copyResult: Int ->
-                    if (copyResult != PixelCopy.SUCCESS) {
-                        options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-                        return@request
-                    }
+            try {
+                PixelCopy.request(
+                    window,
+                    bitmap,
+                    { copyResult: Int ->
+                        if (copyResult != PixelCopy.SUCCESS) {
+                            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+                            bitmap.recycle()
+                            bitmapToVH.remove(bitmap)
+                            return@request
+                        }
 
-                    val viewHierarchy = bitmapToVH[bitmap]
-                    val scaledBitmap: Bitmap
+                        val viewHierarchy = bitmapToVH[bitmap]
+                        val scaledBitmap: Bitmap
 
-                    if (viewHierarchy == null) {
-                        options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-                        return@request
-                    } else {
-                        scaledBitmap = Bitmap.createScaledBitmap(
-                            bitmap,
-                            config.recordingWidth,
-                            config.recordingHeight,
-                            true
-                        )
-                        val canvas = Canvas(scaledBitmap)
-                        canvas.setMatrix(prescaledMatrix)
-                        viewHierarchy.traverse {
-                            if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
-                                it.visibleRect ?: return@traverse
+                        if (viewHierarchy == null) {
+                            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+                            bitmap.recycle()
+                            bitmapToVH.remove(bitmap)
+                            return@request
+                        } else {
+                            scaledBitmap = Bitmap.createScaledBitmap(
+                                bitmap,
+                                config.recordingWidth,
+                                config.recordingHeight,
+                                true
+                            )
+                            val canvas = Canvas(scaledBitmap)
+                            canvas.setMatrix(prescaledMatrix)
+                            viewHierarchy.traverse {
+                                if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
+                                    it.visibleRect ?: return@traverse
 
-                                // TODO: check for view type rather than rely on absence of dominantColor here
-                                val color = if (it.dominantColor == null) {
-                                    singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
-                                    singlePixelBitmap.getPixel(0, 0)
-                                } else {
-                                    it.dominantColor
+                                    // TODO: check for view type rather than rely on absence of dominantColor here
+                                    val color = if (it.dominantColor == null) {
+                                        singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
+                                        singlePixelBitmap.getPixel(0, 0)
+                                    } else {
+                                        it.dominantColor
+                                    }
+
+                                    maskingPaint.setColor(color)
+                                    canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
                                 }
-
-                                maskingPaint.setColor(color)
-                                canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
                             }
                         }
-                    }
 
-                    val screenshot = scaledBitmap.copy(ARGB_8888, false)
-                    screenshotRecorderCallback.onScreenshotRecorded(screenshot)
-                    lastScreenshot = screenshot
-                    contentChanged.set(false)
+                        val screenshot = scaledBitmap.copy(ARGB_8888, false)
+                        screenshotRecorderCallback.onScreenshotRecorded(screenshot)
+                        lastScreenshot = screenshot
+                        contentChanged.set(false)
 
-                    scaledBitmap.recycle()
-                    bitmap.recycle()
-                    bitmapToVH.remove(bitmap)
-                },
-                handler
-            )
+                        scaledBitmap.recycle()
+                        bitmap.recycle()
+                        bitmapToVH.remove(bitmap)
+                    },
+                    handler
+                )
+            } catch (e: Throwable) {
+                options.logger.log(WARNING, "Failed to capture replay recording", e)
+                bitmap.recycle()
+                bitmapToVH.remove(bitmap)
+            }
         }
     }
 
