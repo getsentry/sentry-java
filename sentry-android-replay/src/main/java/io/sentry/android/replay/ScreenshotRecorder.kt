@@ -21,8 +21,8 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.measureTimeMillis
 
 @TargetApi(26)
@@ -35,7 +35,7 @@ internal class ScreenshotRecorder(
     private var rootView: WeakReference<View>? = null
     private val thread = HandlerThread("SentryReplayRecorder").also { it.start() }
     private val handler = Handler(thread.looper)
-    private val bitmapToVH = WeakHashMap<Bitmap, ViewHierarchyNode>()
+    private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint = Paint()
     private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
         1,
@@ -51,6 +51,8 @@ internal class ScreenshotRecorder(
     private var lastScreenshot: Bitmap? = null
 
     fun capture() {
+        val viewHierarchy = pendingViewHierarchy.get()
+
         if (!isCapturing.get()) {
             options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
             return
@@ -87,13 +89,6 @@ internal class ScreenshotRecorder(
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).postAtFrontOfQueue {
-            val time = measureTimeMillis {
-                val rootNode = ViewHierarchyNode.fromView(root)
-                root.traverse(rootNode)
-                bitmapToVH[bitmap] = rootNode
-            }
-            options.logger.log(DEBUG, "Took %d ms to capture view hierarchy", time)
-
             try {
                 PixelCopy.request(
                     window,
@@ -102,17 +97,14 @@ internal class ScreenshotRecorder(
                         if (copyResult != PixelCopy.SUCCESS) {
                             options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
                             bitmap.recycle()
-                            bitmapToVH.remove(bitmap)
                             return@request
                         }
 
-                        val viewHierarchy = bitmapToVH[bitmap]
                         val scaledBitmap: Bitmap
 
                         if (viewHierarchy == null) {
                             options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
                             bitmap.recycle()
-                            bitmapToVH.remove(bitmap)
                             return@request
                         } else {
                             scaledBitmap = Bitmap.createScaledBitmap(
@@ -149,19 +141,30 @@ internal class ScreenshotRecorder(
 
                         scaledBitmap.recycle()
                         bitmap.recycle()
-                        bitmapToVH.remove(bitmap)
                     },
                     handler
                 )
             } catch (e: Throwable) {
                 options.logger.log(WARNING, "Failed to capture replay recording", e)
                 bitmap.recycle()
-                bitmapToVH.remove(bitmap)
             }
         }
     }
 
     override fun onDraw() {
+        val root = rootView?.get()
+        if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
+            options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+            return
+        }
+
+        val time = measureTimeMillis {
+            val rootNode = ViewHierarchyNode.fromView(root)
+            root.traverse(rootNode)
+            pendingViewHierarchy.set(rootNode)
+        }
+        options.logger.log(DEBUG, "Took %d ms to capture view hierarchy", time)
+
         contentChanged.set(true)
     }
 
@@ -194,7 +197,7 @@ internal class ScreenshotRecorder(
         unbind(rootView?.get())
         rootView?.clear()
         lastScreenshot?.recycle()
-        bitmapToVH.clear()
+        pendingViewHierarchy.set(null)
         isCapturing.set(false)
         thread.quitSafely()
     }
