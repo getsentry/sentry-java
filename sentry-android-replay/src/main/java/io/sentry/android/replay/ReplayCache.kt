@@ -113,13 +113,7 @@ internal class ReplayCache(
             encoder = null
         }
 
-        frames.removeAll {
-            if (it.timestamp < (from + duration)) {
-                deleteFile(it.screenshot)
-                return@removeAll true
-            }
-            return@removeAll false
-        }
+        rotate(until = (from + duration))
 
         return GeneratedVideo(videoFile, frameCount, videoDuration)
     }
@@ -139,6 +133,16 @@ internal class ReplayCache(
             }
         } catch (e: Throwable) {
             options.logger.log(ERROR, e, "Failed to delete replay frame: %s", file.absolutePath)
+        }
+    }
+
+    fun rotate(until: Long) {
+        frames.removeAll {
+            if (it.timestamp < until) {
+                deleteFile(it.screenshot)
+                return@removeAll true
+            }
+            return@removeAll false
         }
     }
 

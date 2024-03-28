@@ -45,6 +45,7 @@ public final class io/sentry/Baggage {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
+	public fun getReplayId ()Ljava/lang/String;
 	public fun getSampleRate ()Ljava/lang/String;
 	public fun getSampleRateDouble ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/String;
@@ -59,6 +60,7 @@ public final class io/sentry/Baggage {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setReplayId (Ljava/lang/String;)V
 	public fun setSampleRate (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
@@ -66,7 +68,7 @@ public final class io/sentry/Baggage {
 	public fun setUserId (Ljava/lang/String;)V
 	public fun setUserSegment (Ljava/lang/String;)V
 	public fun setValuesFromScope (Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
-	public fun setValuesFromTransaction (Lio/sentry/ITransaction;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;)V
+	public fun setValuesFromTransaction (Lio/sentry/ITransaction;Lio/sentry/protocol/User;Lio/sentry/protocol/SentryId;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
 	public fun toTraceContext ()Lio/sentry/TraceContext;
 }
@@ -76,6 +78,7 @@ public final class io/sentry/Baggage$DSCKeys {
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
+	public static final field REPLAY_ID Ljava/lang/String;
 	public static final field SAMPLED Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
@@ -1201,6 +1204,15 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
+	public static fun getInstance ()Lio/sentry/NoOpReplayController;
+	public fun pause ()V
+	public fun resume ()V
+	public fun sendReplayForEvent (Lio/sentry/SentryEvent;)V
+	public fun start ()V
+	public fun stop ()V
+}
+
 public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
@@ -1589,6 +1601,14 @@ public final class io/sentry/PropagationContext {
 	public fun setSpanId (Lio/sentry/SpanId;)V
 	public fun setTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun traceContext ()Lio/sentry/TraceContext;
+}
+
+public abstract interface class io/sentry/ReplayController {
+	public abstract fun pause ()V
+	public abstract fun resume ()V
+	public abstract fun sendReplayForEvent (Lio/sentry/SentryEvent;)V
+	public abstract fun start ()V
+	public abstract fun stop ()V
 }
 
 public final class io/sentry/ReplayRecording : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2300,6 +2320,7 @@ public class io/sentry/SentryOptions {
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
 	public fun getRelease ()Ljava/lang/String;
+	public fun getReplayController ()Lio/sentry/ReplayController;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getScopeObservers ()Ljava/util/List;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
@@ -2406,6 +2427,7 @@ public class io/sentry/SentryOptions {
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setReplayController (Lio/sentry/ReplayController;)V
 	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
@@ -2549,6 +2571,8 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getFrameRate ()I
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
+	public fun isSessionReplayEnabled ()Z
+	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun setErrorSampleRate (Ljava/lang/Double;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
@@ -2899,6 +2923,7 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun getSampleRate ()Ljava/lang/String;
 	public fun getSampled ()Ljava/lang/String;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
@@ -2920,6 +2945,7 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
+	public static final field REPLAY_ID Ljava/lang/String;
 	public static final field SAMPLED Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;

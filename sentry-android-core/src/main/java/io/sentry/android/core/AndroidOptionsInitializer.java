@@ -299,7 +299,10 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
     if (isReplayAvailable) {
-      options.addIntegration(new ReplayIntegration(context, CurrentDateProvider.getInstance()));
+      final ReplayIntegration replay =
+          new ReplayIntegration(context, CurrentDateProvider.getInstance());
+      options.addIntegration(replay);
+      options.setReplayController(replay);
     }
   }
 

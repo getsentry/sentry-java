@@ -462,6 +462,8 @@ public class SentryOptions {
 
   private final @NotNull ExperimentalOptions _experimental = new ExperimentalOptions();
 
+  private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
+
   /**
    * Adds an event processor
    *
@@ -2279,6 +2281,15 @@ public class SentryOptions {
   @NotNull
   public ExperimentalOptions get_experimental() {
     return _experimental;
+  }
+
+  public @NotNull ReplayController getReplayController() {
+    return replayController;
+  }
+
+  public void setReplayController(final @Nullable ReplayController replayController) {
+    this.replayController =
+        replayController != null ? replayController : NoOpReplayController.getInstance();
   }
 
   /** The BeforeSend callback */

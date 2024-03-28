@@ -191,6 +191,10 @@ public final class SentryClient implements ISentryClient {
       sentryId = event.getEventId();
     }
 
+    if (event != null) {
+      options.getReplayController().sendReplayForEvent(event);
+    }
+
     try {
       @Nullable TraceContext traceContext = null;
       if (HintUtils.hasType(hint, Backfillable.class)) {
@@ -227,23 +231,42 @@ public final class SentryClient implements ISentryClient {
     }
 
     // if we encountered a crash/abnormal exit finish tracing in order to persist and send
-    // any running transaction / profiling data
+    // any running transaction / profiling data. We also finish session replay, and it has priority
+    // over transactions as it takes longer to finalize replay than transactions, therefore
+    // the replay_id will be the trigger for flushing and unblocking the thread in case of a crash
     if (scope != null) {
-      final @Nullable ITransaction transaction = scope.getTransaction();
-      if (transaction != null) {
-        if (HintUtils.hasType(hint, TransactionEnd.class)) {
-          final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-          if (sentrySdkHint instanceof DiskFlushNotification) {
-            ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
-            transaction.forceFinish(SpanStatus.ABORTED, false, hint);
-          } else {
-            transaction.forceFinish(SpanStatus.ABORTED, false, null);
-          }
-        }
-      }
+      finalizeTransaction(scope, hint);
+      finalizeReplay(scope, hint);
     }
 
     return sentryId;
+  }
+
+  private void finalizeTransaction(final @NotNull IScope scope, final @NotNull Hint hint) {
+    final @Nullable ITransaction transaction = scope.getTransaction();
+    if (transaction != null) {
+      if (HintUtils.hasType(hint, TransactionEnd.class)) {
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        if (sentrySdkHint instanceof DiskFlushNotification) {
+          ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
+          transaction.forceFinish(SpanStatus.ABORTED, false, hint);
+        } else {
+          transaction.forceFinish(SpanStatus.ABORTED, false, null);
+        }
+      }
+    }
+  }
+
+  private void finalizeReplay(final @NotNull IScope scope, final @NotNull Hint hint) {
+    final @Nullable SentryId replayId = scope.getReplayId();
+    if (replayId != null) {
+      if (HintUtils.hasType(hint, TransactionEnd.class)) {
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        if (sentrySdkHint instanceof DiskFlushNotification) {
+          ((DiskFlushNotification) sentrySdkHint).setFlushable(replayId);
+        }
+      }
+    }
   }
 
   @Override
