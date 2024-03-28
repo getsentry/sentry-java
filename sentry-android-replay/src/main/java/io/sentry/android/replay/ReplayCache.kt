@@ -13,11 +13,18 @@ import io.sentry.protocol.SentryId
 import java.io.Closeable
 import java.io.File
 
-internal class ReplayCache(
+public class ReplayCache internal constructor(
     private val options: SentryOptions,
     private val replayId: SentryId,
     private val recorderConfig: ScreenshotRecorderConfig,
-    private val encoderCreator: (File) -> SimpleVideoEncoder = { videoFile ->
+    private val encoderCreator: (File) -> SimpleVideoEncoder
+) : Closeable {
+
+    public constructor(
+        options: SentryOptions,
+        replayId: SentryId,
+        recorderConfig: ScreenshotRecorderConfig
+    ) : this(options, replayId, recorderConfig, encoderCreator = { videoFile ->
         SimpleVideoEncoder(
             options,
             MuxerConfig(
@@ -27,11 +34,10 @@ internal class ReplayCache(
                 bitrate = 20 * 1000
             )
         ).also { it.start() }
-    }
-) : Closeable {
+    })
 
     private val encoderLock = Any()
-    internal var encoder: SimpleVideoEncoder? = null
+    private var encoder: SimpleVideoEncoder? = null
 
     internal val replayCacheDir: File? by lazy {
         if (options.cacheDirPath.isNullOrEmpty()) {
@@ -48,7 +54,7 @@ internal class ReplayCache(
     // TODO: maybe account for multi-threaded access
     internal val frames = mutableListOf<ReplayFrame>()
 
-    fun addFrame(bitmap: Bitmap, frameTimestamp: Long) {
+    internal fun addFrame(bitmap: Bitmap, frameTimestamp: Long) {
         if (replayCacheDir == null) {
             return
         }
@@ -61,11 +67,20 @@ internal class ReplayCache(
             it.flush()
         }
 
+        addFrame(screenshot, frameTimestamp)
+    }
+
+    public fun addFrame(screenshot: File, frameTimestamp: Long) {
         val frame = ReplayFrame(screenshot, frameTimestamp)
         frames += frame
     }
 
-    fun createVideoOf(duration: Long, from: Long, segmentId: Int): GeneratedVideo? {
+    public fun createVideoOf(
+        duration: Long,
+        from: Long,
+        segmentId: Int,
+        videoFile: File = File(replayCacheDir, "$segmentId.mp4")
+    ): GeneratedVideo? {
         if (frames.isEmpty()) {
             options.logger.log(
                 DEBUG,
@@ -75,7 +90,6 @@ internal class ReplayCache(
         }
 
         // TODO: reuse instance of encoder and just change file path to create a different muxer
-        val videoFile = File(replayCacheDir, "$segmentId.mp4")
         encoder = synchronized(encoderLock) { encoderCreator(videoFile) }
 
         val step = 1000 / recorderConfig.frameRate.toLong()
@@ -160,7 +174,7 @@ internal data class ReplayFrame(
     val timestamp: Long
 )
 
-internal data class GeneratedVideo(
+public data class GeneratedVideo(
     val video: File,
     val frameCount: Int,
     val duration: Long

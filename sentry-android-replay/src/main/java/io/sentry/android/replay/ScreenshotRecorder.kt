@@ -230,7 +230,7 @@ internal class ScreenshotRecorder(
     }
 }
 
-internal data class ScreenshotRecorderConfig(
+public data class ScreenshotRecorderConfig(
     val recordingWidth: Int,
     val recordingHeight: Int,
     val scaleFactor: Float,
