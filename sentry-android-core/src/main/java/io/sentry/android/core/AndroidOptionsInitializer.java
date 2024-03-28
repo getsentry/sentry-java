@@ -22,6 +22,7 @@ import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
@@ -29,6 +30,7 @@ import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
@@ -230,7 +232,8 @@ final class AndroidOptionsInitializer {
       final @NotNull LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final boolean isTimberAvailable,
+      final boolean isReplayAvailable) {
 
     // Integration MUST NOT cache option values in ctor, as they will be configured later by the
     // user
@@ -295,6 +298,9 @@ final class AndroidOptionsInitializer {
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
+    if (isReplayAvailable) {
+      options.addIntegration(new ReplayIntegration(context, CurrentDateProvider.getInstance()));
+    }
   }
 
   /**

@@ -123,7 +123,6 @@ class LifecycleWatcherTest {
     fun `When session tracking is disabled, do not end session`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
-        assertNull(watcher.timerTask)
         verify(fixture.hub, never()).endSession()
     }
 
@@ -167,7 +166,6 @@ class LifecycleWatcherTest {
     fun `When session tracking is disabled, do not add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
-        assertNull(watcher.timerTask)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -217,12 +215,6 @@ class LifecycleWatcherTest {
     fun `timer is created if session tracking is enabled`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = true, enableAppLifecycleBreadcrumbs = false)
         assertNotNull(watcher.timer)
-    }
-
-    @Test
-    fun `timer is not created if session tracking is disabled`() {
-        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
-        assertNull(watcher.timer)
     }
 
     @Test

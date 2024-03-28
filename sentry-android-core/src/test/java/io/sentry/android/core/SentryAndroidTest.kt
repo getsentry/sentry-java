@@ -26,6 +26,8 @@ import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.replay.ReplayIntegration
+import io.sentry.android.replay.getReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingOptionsObserver
@@ -313,12 +315,26 @@ class SentryAndroidTest {
         }
     }
 
+    @Test
+    @Config(sdk = [26])
+    fun `init starts session replay if app is in foreground`() {
+        initSentryWithForegroundImportance(true) { _ ->
+            assertTrue(Sentry.getCurrentHub().getReplayIntegration()!!.isRecording())
+        }
+    }
+
+    @Test
+    @Config(sdk = [26])
+    fun `init does not start session replay if the app is in background`() {
+        initSentryWithForegroundImportance(false) { _ ->
+            assertFalse(Sentry.getCurrentHub().getReplayIntegration()!!.isRecording())
+        }
+    }
+
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
         callback: (session: Session?) -> Unit
     ) {
-        val context = ContextUtilsTestHelper.createMockContext()
-
         Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
@@ -412,7 +428,7 @@ class SentryAndroidTest {
         fixture.initSut(context = mock<Application>()) { options ->
             optionsRef = options
             options.dsn = "https://key@sentry.io/123"
-            assertEquals(19, options.integrations.size)
+            assertEquals(20, options.integrations.size)
             options.integrations.removeAll {
                 it is UncaughtExceptionHandlerIntegration ||
                     it is ShutdownHookIntegration ||
@@ -431,7 +447,8 @@ class SentryAndroidTest {
                     it is SystemEventsBreadcrumbsIntegration ||
                     it is NetworkBreadcrumbsIntegration ||
                     it is TempSensorBreadcrumbsIntegration ||
-                    it is PhoneStateBreadcrumbsIntegration
+                    it is PhoneStateBreadcrumbsIntegration ||
+                    it is ReplayIntegration
             }
         }
         assertEquals(0, optionsRef.integrations.size)

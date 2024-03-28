@@ -6,10 +6,72 @@ public final class io/sentry/android/replay/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/replay/WindowRecorder {
-	public fun <init> ()V
-	public final fun startRecording (Landroid/content/Context;)V
-	public final fun stopRecording ()V
+public final class io/sentry/android/replay/GeneratedVideo {
+	public fun <init> (Ljava/io/File;IJ)V
+	public final fun component1 ()Ljava/io/File;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun copy (Ljava/io/File;IJ)Lio/sentry/android/replay/GeneratedVideo;
+	public static synthetic fun copy$default (Lio/sentry/android/replay/GeneratedVideo;Ljava/io/File;IJILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDuration ()J
+	public final fun getFrameCount ()I
+	public final fun getVideo ()Ljava/io/File;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
+	public final fun addFrame (Ljava/io/File;J)V
+	public fun close ()V
+	public final fun createVideoOf (JJILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
+	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+}
+
+public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integration, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {
+	public static final field Companion Lio/sentry/android/replay/ReplayIntegration$Companion;
+	public static final field VIDEO_BUFFER_DURATION J
+	public static final field VIDEO_SEGMENT_DURATION J
+	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
+	public fun close ()V
+	public final fun isRecording ()Z
+	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
+	public final fun pause ()V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+	public final fun resume ()V
+	public final fun start ()V
+	public final fun stop ()V
+}
+
+public final class io/sentry/android/replay/ReplayIntegration$Companion {
+}
+
+public final class io/sentry/android/replay/ReplayIntegrationKt {
+	public static final fun getReplayIntegration (Lio/sentry/IHub;)Lio/sentry/android/replay/ReplayIntegration;
+	public static final fun gracefullyShutdown (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;)V
+}
+
+public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {
+	public abstract fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
+}
+
+public final class io/sentry/android/replay/ScreenshotRecorderConfig {
+	public fun <init> (IIFI)V
+	public synthetic fun <init> (IIFIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()F
+	public final fun component4 ()I
+	public final fun copy (IIFI)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public static synthetic fun copy$default (Lio/sentry/android/replay/ScreenshotRecorderConfig;IIFIILjava/lang/Object;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrameRate ()I
+	public final fun getRecordingHeight ()I
+	public final fun getRecordingWidth ()I
+	public final fun getScaleFactor ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/android/replay/video/SimpleFrameMuxer {

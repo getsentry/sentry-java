@@ -26,7 +26,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
   private @NotNull String tag;
   private int segmentId;
   private long size;
-  private int duration;
+  private long duration;
   private @NotNull String encoding = REPLAY_ENCODING;
   private @NotNull String container = REPLAY_CONTAINER;
   private int height;
@@ -72,11 +72,11 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     this.size = size;
   }
 
-  public int getDuration() {
+  public long getDuration() {
     return duration;
   }
 
-  public void setDuration(final int duration) {
+  public void setDuration(final long duration) {
     this.duration = duration;
   }
 
@@ -380,7 +380,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
             event.size = size == null ? 0 : size;
             break;
           case JsonKeys.DURATION:
-            event.duration = reader.nextInt();
+            event.duration = reader.nextLong();
             break;
           case JsonKeys.CONTAINER:
             final String container = reader.nextStringOrNull();
