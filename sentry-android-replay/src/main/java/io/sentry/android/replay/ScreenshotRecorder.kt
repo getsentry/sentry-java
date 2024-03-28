@@ -22,12 +22,13 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 
@@ -41,7 +42,7 @@ internal class ScreenshotRecorder(
     private var rootView: WeakReference<View>? = null
     private val thread = HandlerThread("SentryReplayRecorder").also { it.start() }
     private val handler = Handler(thread.looper)
-    private val bitmapToVH = WeakHashMap<Bitmap, ViewHierarchyNode>()
+    private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint = Paint()
     private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
         1,
@@ -57,6 +58,8 @@ internal class ScreenshotRecorder(
     private var lastScreenshot: Bitmap? = null
 
     fun capture() {
+        val viewHierarchy = pendingViewHierarchy.get()
+
         if (!isCapturing.get()) {
             options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
             return
@@ -79,7 +82,12 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val window = root.phoneWindow ?: return
+        val window = root.phoneWindow
+        if (window == null) {
+            options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
+            return
+        }
+
         val bitmap = Bitmap.createBitmap(
             root.width,
             root.height,
@@ -88,70 +96,82 @@ internal class ScreenshotRecorder(
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).postAtFrontOfQueue {
-            val time = measureTimeMillis {
-                val rootNode = ViewHierarchyNode.fromView(root)
-                root.traverse(rootNode)
-                bitmapToVH[bitmap] = rootNode
-            }
-            options.logger.log(DEBUG, "Took %d ms to capture view hierarchy", time)
+            try {
+                PixelCopy.request(
+                    window,
+                    bitmap,
+                    { copyResult: Int ->
+                        if (copyResult != PixelCopy.SUCCESS) {
+                            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+                            bitmap.recycle()
+                            return@request
+                        }
 
-            PixelCopy.request(
-                window,
-                bitmap,
-                { copyResult: Int ->
-                    if (copyResult != PixelCopy.SUCCESS) {
-                        options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-                        return@request
-                    }
+                        val scaledBitmap: Bitmap
 
-                    val viewHierarchy = bitmapToVH[bitmap]
-                    val scaledBitmap: Bitmap
+                        if (viewHierarchy == null) {
+                            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+                            bitmap.recycle()
+                            return@request
+                        } else {
+                            scaledBitmap = Bitmap.createScaledBitmap(
+                                bitmap,
+                                config.recordingWidth,
+                                config.recordingHeight,
+                                true
+                            )
+                            val canvas = Canvas(scaledBitmap)
+                            canvas.setMatrix(prescaledMatrix)
+                            viewHierarchy.traverse {
+                                if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
+                                    it.visibleRect ?: return@traverse
 
-                    if (viewHierarchy == null) {
-                        options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-                        return@request
-                    } else {
-                        scaledBitmap = Bitmap.createScaledBitmap(
-                            bitmap,
-                            config.recordingWidth,
-                            config.recordingHeight,
-                            true
-                        )
-                        val canvas = Canvas(scaledBitmap)
-                        canvas.setMatrix(prescaledMatrix)
-                        viewHierarchy.traverse {
-                            if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
-                                it.visibleRect ?: return@traverse
+                                    // TODO: check for view type rather than rely on absence of dominantColor here
+                                    val color = if (it.dominantColor == null) {
+                                        singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
+                                        singlePixelBitmap.getPixel(0, 0)
+                                    } else {
+                                        it.dominantColor
+                                    }
 
-                                // TODO: check for view type rather than rely on absence of dominantColor here
-                                val color = if (it.dominantColor == null) {
-                                    singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
-                                    singlePixelBitmap.getPixel(0, 0)
-                                } else {
-                                    it.dominantColor
+                                    maskingPaint.setColor(color)
+                                    canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
                                 }
-
-                                maskingPaint.setColor(color)
-                                canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
                             }
                         }
-                    }
 
-                    val screenshot = scaledBitmap.copy(ARGB_8888, false)
-                    screenshotRecorderCallback.onScreenshotRecorded(screenshot)
-                    lastScreenshot = screenshot
-                    contentChanged.set(false)
+                        val screenshot = scaledBitmap.copy(ARGB_8888, false)
+                        screenshotRecorderCallback.onScreenshotRecorded(screenshot)
+                        lastScreenshot?.recycle()
+                        lastScreenshot = screenshot
+                        contentChanged.set(false)
 
-                    scaledBitmap.recycle()
-                    bitmap.recycle()
-                    bitmapToVH.remove(bitmap)
-                },
-                handler
-            )
+                        scaledBitmap.recycle()
+                        bitmap.recycle()
+                    },
+                    handler
+                )
+            } catch (e: Throwable) {
+                options.logger.log(WARNING, "Failed to capture replay recording", e)
+                bitmap.recycle()
+            }
         }
     }
 
     override fun onDraw() {
+        val root = rootView?.get()
+        if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
+            options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+            return
+        }
+
+        val time = measureTimeMillis {
+            val rootNode = ViewHierarchyNode.fromView(root)
+            root.traverse(rootNode)
+            pendingViewHierarchy.set(rootNode)
+        }
+        options.logger.log(DEBUG, "Took %d ms to capture view hierarchy", time)
+
         contentChanged.set(true)
     }
 
@@ -184,7 +204,7 @@ internal class ScreenshotRecorder(
         unbind(rootView?.get())
         rootView?.clear()
         lastScreenshot?.recycle()
-        bitmapToVH.clear()
+        pendingViewHierarchy.set(null)
         isCapturing.set(false)
         thread.quitSafely()
     }
@@ -220,7 +240,7 @@ internal class ScreenshotRecorder(
     }
 }
 
-internal data class ScreenshotRecorderConfig(
+public data class ScreenshotRecorderConfig(
     val recordingWidth: Int,
     val recordingHeight: Int,
     val scaleFactor: Float,

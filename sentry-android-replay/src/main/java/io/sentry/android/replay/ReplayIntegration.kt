@@ -62,7 +62,7 @@ class ReplayIntegration(
         ScreenshotRecorderConfig.from(
             context,
             targetHeight = 720,
-            options._experimental.replayOptions
+            options.experimental.replayOptions
         )
     }
 
