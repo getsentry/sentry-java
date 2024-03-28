@@ -1208,7 +1208,7 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
 	public fun pause ()V
 	public fun resume ()V
-	public fun sendReplayForEvent (Lio/sentry/SentryEvent;)V
+	public fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
 	public fun start ()V
 	public fun stop ()V
 }
@@ -1606,7 +1606,7 @@ public final class io/sentry/PropagationContext {
 public abstract interface class io/sentry/ReplayController {
 	public abstract fun pause ()V
 	public abstract fun resume ()V
-	public abstract fun sendReplayForEvent (Lio/sentry/SentryEvent;)V
+	public abstract fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
 	public abstract fun start ()V
 	public abstract fun stop ()V
 }

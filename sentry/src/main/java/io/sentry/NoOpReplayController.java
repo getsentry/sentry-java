@@ -25,5 +25,5 @@ public final class NoOpReplayController implements ReplayController {
   public void resume() {}
 
   @Override
-  public void sendReplayForEvent(@NotNull SentryEvent event) {}
+  public void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint) {}
 }

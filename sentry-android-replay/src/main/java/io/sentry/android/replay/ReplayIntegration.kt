@@ -136,7 +136,7 @@ class ReplayIntegration(
         recorder?.resume()
     }
 
-    override fun sendReplayForEvent(event: SentryEvent) {
+    override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
         if (isFullSession.get()) {
             options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event %s", event.eventId)
             return
@@ -164,7 +164,7 @@ class ReplayIntegration(
         val replayId = currentReplayId.get()
         saver.submit {
             val videoDuration =
-                createAndCaptureSegment(now - currentSegmentTimestamp.time, currentSegmentTimestamp, replayId, segmentId, BUFFER)
+                createAndCaptureSegment(now - currentSegmentTimestamp.time, currentSegmentTimestamp, replayId, segmentId, BUFFER, hint)
             if (videoDuration != null) {
                 currentSegment.getAndIncrement()
             }
@@ -193,7 +193,7 @@ class ReplayIntegration(
         val replayId = currentReplayId.get()
         saver.submit {
             val videoDuration =
-                createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId, SESSION)
+                createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
             if (videoDuration != null) {
                 currentSegment.getAndIncrement()
             }
@@ -218,7 +218,7 @@ class ReplayIntegration(
         saver.submit {
             // we don't flush the segment, but we still wanna clean up the folder for buffer mode
             if (isFullSession.get()) {
-                createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId, SESSION)
+                createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
             }
             FileUtils.deleteRecursively(replayCacheDir)
         }
@@ -252,8 +252,7 @@ class ReplayIntegration(
                         options._experimental.replayOptions.sessionSegmentDuration,
                         currentSegmentTimestamp,
                         replayId,
-                        segmentId,
-                        SESSION
+                        segmentId
                     )
                 if (videoDuration != null) {
                     currentSegment.getAndIncrement()
@@ -271,7 +270,8 @@ class ReplayIntegration(
         currentSegmentTimestamp: Date,
         replayId: SentryId,
         segmentId: Int,
-        replayType: ReplayType
+        replayType: ReplayType = SESSION,
+        hint: Hint? = null
     ): Long? {
         val generatedVideo = cache?.createVideoOf(
             duration,
@@ -287,7 +287,8 @@ class ReplayIntegration(
             segmentId,
             frameCount,
             videoDuration,
-            replayType
+            replayType,
+            hint
         )
         return videoDuration
     }
@@ -299,7 +300,8 @@ class ReplayIntegration(
         segmentId: Int,
         frameCount: Int,
         duration: Long,
-        replayType: ReplayType
+        replayType: ReplayType,
+        hint: Hint? = null
     ) {
         val replay = SentryReplayEvent().apply {
             eventId = currentReplayId
@@ -337,8 +339,7 @@ class ReplayIntegration(
             )
         }
 
-        val hint = Hint().apply { replayRecording = recording }
-        hub?.captureReplay(replay, hint)
+        hub?.captureReplay(replay, (hint ?: Hint()).apply { replayRecording = recording })
     }
 
     override fun close() {

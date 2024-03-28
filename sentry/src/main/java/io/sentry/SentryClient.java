@@ -192,7 +192,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (event != null) {
-      options.getReplayController().sendReplayForEvent(event);
+      options.getReplayController().sendReplayForEvent(event, hint);
     }
 
     try {
