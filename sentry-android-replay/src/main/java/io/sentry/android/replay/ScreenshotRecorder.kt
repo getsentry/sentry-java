@@ -143,6 +143,7 @@ internal class ScreenshotRecorder(
 
                         val screenshot = scaledBitmap.copy(ARGB_8888, false)
                         screenshotRecorderCallback.onScreenshotRecorded(screenshot)
+                        lastScreenshot?.recycle()
                         lastScreenshot = screenshot
                         contentChanged.set(false)
 
