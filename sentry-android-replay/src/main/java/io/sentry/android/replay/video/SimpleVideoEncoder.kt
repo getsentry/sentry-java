@@ -62,8 +62,8 @@ internal class SimpleVideoEncoder(
             MediaFormat.KEY_COLOR_FORMAT,
             MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
         )
-        format.setInteger(MediaFormat.KEY_BIT_RATE, muxerConfig.bitrate)
-        format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.frameRate)
+        format.setInteger(MediaFormat.KEY_BIT_RATE, muxerConfig.recorderConfig.bitRate)
+        format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.recorderConfig.frameRate.toFloat())
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10)
 
         format
@@ -79,7 +79,7 @@ internal class SimpleVideoEncoder(
     }
 
     private val bufferInfo: MediaCodec.BufferInfo = MediaCodec.BufferInfo()
-    private val frameMuxer = muxerConfig.frameMuxer
+    private val frameMuxer = SimpleMp4FrameMuxer(muxerConfig.file.absolutePath, muxerConfig.recorderConfig.frameRate.toFloat())
     val duration get() = frameMuxer.getVideoTime()
 
     private var surface: Surface? = null
@@ -187,8 +187,5 @@ internal class SimpleVideoEncoder(
 internal data class MuxerConfig(
     val file: File,
     val recorderConfig: ScreenshotRecorderConfig,
-    val bitrate: Int = 20_000,
-    val frameRate: Float = recorderConfig.frameRate.toFloat(),
-    val mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
-    val frameMuxer: SimpleFrameMuxer = SimpleMp4FrameMuxer(file.absolutePath, frameRate)
+    val mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC
 )
