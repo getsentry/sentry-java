@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <uses-permission android:name="android.permission.INTERNET"/>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <uses-sdk tools:overrideLibrary="androidx.compose.runtime" />
+
   <application>
     <!-- 'android:authorities' must be unique in the device, across all apps -->
     <provider
       android:name=".SentryInitProvider"
       android:authorities="${applicationId}.SentryInitProvider"
-      android:exported="false"/>
+      android:exported="false" />
 
     <provider
-        android:name=".SentryPerformanceProvider"
-        android:authorities="${applicationId}.SentryPerformanceProvider"
-        android:initOrder="200"
-        android:exported="false"/>
+      android:name=".SentryPerformanceProvider"
+      android:authorities="${applicationId}.SentryPerformanceProvider"
+      android:exported="false"
+      android:initOrder="200" />
   </application>
 </manifest>
