@@ -49,7 +49,7 @@ jobs:
             **/build/reports/*
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        uses: phoenix-actions/test-reporting@ffcf2ef5f36b35b7ad5844adb00ba806c12aff17 # pin@v13
         if: always()
         with:
           name: JUnit Build
