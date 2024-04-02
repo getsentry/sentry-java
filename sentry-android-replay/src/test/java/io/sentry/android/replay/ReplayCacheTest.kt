@@ -1,6 +1,7 @@
 package io.sentry.android.replay
 
 import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
 import android.media.MediaCodec
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -123,8 +124,15 @@ class ReplayCacheTest {
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
+        replayCache.addFrame(bitmap, 1001)
+        replayCache.addFrame(bitmap, 2001)
 
-        replayCache.createVideoOf(3000L, 0, 0)
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0)
+        assertEquals(3, segment0!!.frameCount)
+        assertEquals(3000, segment0.duration)
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
+        assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
+
         assertTrue(replayCache.frames.isEmpty())
         assertTrue(replayCache.replayCacheDir!!.listFiles()!!.none { it.extension == "jpg" })
     }
@@ -143,6 +151,7 @@ class ReplayCacheTest {
         val segment0 = replayCache.createVideoOf(5000L, 0, 0)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
         assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
     }
 
@@ -161,6 +170,7 @@ class ReplayCacheTest {
         val segment0 = replayCache.createVideoOf(5000L, 0, 0)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
         assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
     }
 
@@ -184,6 +194,7 @@ class ReplayCacheTest {
         val segment1 = replayCache.createVideoOf(5000L, 5000L, 1)
         assertEquals(5, segment1!!.frameCount)
         assertEquals(5000, segment1.duration)
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
         assertEquals(File(replayCache.replayCacheDir, "1.mp4"), segment1.video)
     }
 
@@ -203,6 +214,34 @@ class ReplayCacheTest {
         val segment0 = replayCache.createVideoOf(3000L, 0, 0)
         assertEquals(6, segment0!!.frameCount)
         assertEquals(3000, segment0.duration)
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
         assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
+    }
+
+    @Test
+    fun `addFrame with File path works`() {
+        val replayCache = fixture.getSut(
+            tmpDir,
+            frameRate = 1,
+            framesToEncode = 5
+        )
+
+        val flutterCacheDir =
+            File(fixture.options.cacheDirPath!!, "flutter_replay").also { it.mkdirs() }
+        val screenshot = File(flutterCacheDir, "1.jpg").also { it.createNewFile() }
+        val video = File(flutterCacheDir, "flutter_0.mp4")
+
+        screenshot.outputStream().use {
+            Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+            it.flush()
+        }
+        replayCache.addFrame(screenshot, frameTimestamp = 1)
+
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, videoFile = video)
+        assertEquals(5, segment0!!.frameCount)
+        assertEquals(5000, segment0.duration)
+
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
+        assertEquals(File(flutterCacheDir, "flutter_0.mp4"), segment0.video)
     }
 }
