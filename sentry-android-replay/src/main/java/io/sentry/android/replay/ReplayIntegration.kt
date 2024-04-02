@@ -53,7 +53,7 @@ class ReplayIntegration(
     // TODO: probably not everything has to be thread-safe here
     private val isEnabled = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
-    private val currentReplayId = AtomicReference<SentryId>()
+    private val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     private val segmentTimestamp = AtomicReference<Date>()
     private val currentSegment = AtomicInteger(0)
     private val saver =
@@ -177,8 +177,8 @@ class ReplayIntegration(
         cache?.close()
         currentSegment.set(0)
         segmentTimestamp.set(null)
-        currentReplayId.set(null)
-        hub?.configureScope { it.replayId = null }
+        currentReplayId.set(SentryId.EMPTY_ID)
+        hub?.configureScope { it.replayId = SentryId.EMPTY_ID }
         isRecording.set(false)
     }
 
