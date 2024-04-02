@@ -6,8 +6,8 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import io.sentry.Hint;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -24,18 +24,18 @@ import org.jetbrains.annotations.Nullable;
  */
 @Deprecated
 public final class SentryDataFetcherExceptionHandler implements DataFetcherExceptionHandler {
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @NotNull DataFetcherExceptionHandler delegate;
 
   public SentryDataFetcherExceptionHandler(
-      final @NotNull IHub hub, final @NotNull DataFetcherExceptionHandler delegate) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+      final @NotNull IScopes scopes, final @NotNull DataFetcherExceptionHandler delegate) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
     SentryIntegrationPackageStorage.getInstance().addIntegration("GrahQLLegacyExceptionHandler");
   }
 
   public SentryDataFetcherExceptionHandler(final @NotNull DataFetcherExceptionHandler delegate) {
-    this(HubAdapter.getInstance(), delegate);
+    this(ScopesAdapter.getInstance(), delegate);
   }
 
   @Override
@@ -44,7 +44,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
     final Hint hint = new Hint();
     hint.set(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
 
-    hub.captureException(handlerParameters.getException(), hint);
+    scopes.captureException(handlerParameters.getException(), hint);
     return delegate.handleException(handlerParameters);
   }
 
