@@ -266,13 +266,13 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `onDestinationChanged strips out route parameters from transaction name`() {
-        val sut = fixture.getSut(toRoute = "gitscopes/{user_id}?per_page={per_page}")
+        val sut = fixture.getSut(toRoute = "github/{user_id}?per_page={per_page}")
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.scopes).startTransaction(
             check {
-                assertEquals("/gitscopes", it.name)
+                assertEquals("/github", it.name)
                 assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
             },
             any<TransactionOptions>()
@@ -296,7 +296,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `onDestinationChanged captures arguments as additional data for transaction`() {
-        val sut = fixture.getSut(toRoute = "gitscopes/{user_id}?per_page={per_page}")
+        val sut = fixture.getSut(toRoute = "github/{user_id}?per_page={per_page}")
 
         sut.onDestinationChanged(
             fixture.navController,
@@ -306,7 +306,7 @@ class SentryNavigationListenerTest {
 
         verify(fixture.scopes).startTransaction(
             check {
-                assertEquals("/gitscopes", it.name)
+                assertEquals("/github", it.name)
                 assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
             },
             any<TransactionOptions>()

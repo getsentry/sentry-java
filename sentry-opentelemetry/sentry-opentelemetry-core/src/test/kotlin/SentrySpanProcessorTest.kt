@@ -303,7 +303,7 @@ class SentrySpanProcessorTest {
         thenChildSpanIsStarted()
 
         otelChildSpan.setStatus(StatusCode.ERROR)
-        otelChildSpan.setAttribute(SemanticAttributes.HTTP_URL, "http://gitscopes.com/getsentry/sentry-java")
+        otelChildSpan.setAttribute(SemanticAttributes.HTTP_URL, "http://github.com/getsentry/sentry-java")
         otelChildSpan.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, 404L)
 
         otelChildSpan.end()

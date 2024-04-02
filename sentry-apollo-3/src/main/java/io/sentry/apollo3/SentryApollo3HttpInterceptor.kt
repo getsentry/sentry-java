@@ -91,7 +91,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
             return httpResponse
         } catch (e: Throwable) {
-            // https://gitscopes.com/apollographql/apollo-kotlin/issues/4711 will change error handling in v4
+            // https://github.com/apollographql/apollo-kotlin/issues/4711 will change error handling in v4
             when (e) {
                 is ApolloHttpException -> {
                     statusCode = e.statusCode
