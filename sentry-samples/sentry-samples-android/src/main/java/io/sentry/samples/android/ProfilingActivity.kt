@@ -100,7 +100,7 @@ class ProfilingActivity : AppCompatActivity() {
             val traceData = ProfilingTraceData(profile, t)
             // Create envelope item from copied profile
             val item =
-                SentryEnvelopeItem.fromProfilingTrace(traceData, Long.MAX_VALUE, Sentry.getCurrentHub().options.serializer)
+                SentryEnvelopeItem.fromProfilingTrace(traceData, Long.MAX_VALUE, Sentry.getCurrentScopes().options.serializer)
             val itemData = item.data
 
             // Compress the envelope item using Gzip
