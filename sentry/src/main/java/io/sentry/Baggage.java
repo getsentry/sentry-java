@@ -384,7 +384,7 @@ public final class Baggage {
   public void setValuesFromTransaction(
       final @NotNull ITransaction transaction,
       final @Nullable User user,
-      final @NotNull SentryId replayId,
+      final @Nullable SentryId replayId,
       final @NotNull SentryOptions sentryOptions,
       final @Nullable TracesSamplingDecision samplingDecision) {
     setTraceId(transaction.getSpanContext().getTraceId().toString());
@@ -396,7 +396,7 @@ public final class Baggage {
         isHighQualityTransactionName(transaction.getTransactionNameSource())
             ? transaction.getName()
             : null);
-    if (!SentryId.EMPTY_ID.equals(replayId)) {
+    if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));

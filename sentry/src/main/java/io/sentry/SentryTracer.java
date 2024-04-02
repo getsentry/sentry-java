@@ -591,7 +591,7 @@ public final class SentryTracer implements ITransaction {
         baggage.setValuesFromTransaction(
             this,
             userAtomicReference.get(),
-            replayId.get() == null ? SentryId.EMPTY_ID : replayId.get(),
+            replayId.get(),
             hub.getOptions(),
             this.getSamplingDecision());
         baggage.freeze();
