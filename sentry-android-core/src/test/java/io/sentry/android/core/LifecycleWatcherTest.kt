@@ -7,6 +7,7 @@ import io.sentry.IHub
 import io.sentry.IScope
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
+import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.Session.State
 import io.sentry.transport.ICurrentDateProvider
@@ -34,6 +35,7 @@ class LifecycleWatcherTest {
         val ownerMock = mock<LifecycleOwner>()
         val hub = mock<IHub>()
         val dateProvider = mock<ICurrentDateProvider>()
+        val options = SentryOptions()
 
         fun getSUT(
             sessionIntervalMillis: Long = 0L,
@@ -47,6 +49,7 @@ class LifecycleWatcherTest {
             whenever(hub.configureScope(argumentCaptor.capture())).thenAnswer {
                 argumentCaptor.value.run(scope)
             }
+            whenever(hub.options).thenReturn(options)
 
             return LifecycleWatcher(
                 hub,

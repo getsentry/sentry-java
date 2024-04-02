@@ -55,8 +55,11 @@ class ReplayIntegration(
     private val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     private val segmentTimestamp = AtomicReference<Date>()
     private val currentSegment = AtomicInteger(0)
-    private val saver =
+
+    // TODO: surround with try-catch on the calling site
+    private val saver by lazy {
         Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    }
 
     private val recorderConfig by lazy(NONE) {
         ScreenshotRecorderConfig.from(
@@ -103,10 +106,6 @@ class ReplayIntegration(
     override fun start() {
         // TODO: add lifecycle state instead and manage it in start/pause/resume/stop
         if (!isEnabled.get()) {
-            options.logger.log(
-                DEBUG,
-                "Session replay is disabled due to conditions not met in Integration.register"
-            )
             return
         }
 
@@ -134,12 +133,20 @@ class ReplayIntegration(
     }
 
     override fun resume() {
+        if (!isEnabled.get()) {
+            return
+        }
+
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
         recorder?.resume()
     }
 
     override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
+        if (!isEnabled.get()) {
+            return
+        }
+
         if (isFullSession.get()) {
             options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event %s", event.eventId)
             return
@@ -183,6 +190,10 @@ class ReplayIntegration(
     }
 
     override fun pause() {
+        if (!isEnabled.get()) {
+            return
+        }
+
         val now = dateProvider.currentTimeMillis
         recorder?.pause()
 
@@ -205,10 +216,6 @@ class ReplayIntegration(
 
     override fun stop() {
         if (!isEnabled.get()) {
-            options.logger.log(
-                DEBUG,
-                "Session replay is disabled due to conditions not met in Integration.register"
-            )
             return
         }
 
@@ -346,6 +353,10 @@ class ReplayIntegration(
     }
 
     override fun close() {
+        if (!isEnabled.get()) {
+            return
+        }
+
         stop()
         saver.gracefullyShutdown(options)
     }
