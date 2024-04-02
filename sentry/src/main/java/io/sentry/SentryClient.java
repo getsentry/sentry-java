@@ -259,7 +259,7 @@ public final class SentryClient implements ISentryClient {
 
   private void finalizeReplay(final @NotNull IScope scope, final @NotNull Hint hint) {
     final @Nullable SentryId replayId = scope.getReplayId();
-    if (replayId != null) {
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
       if (HintUtils.hasType(hint, TransactionEnd.class)) {
         final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
         if (sentrySdkHint instanceof DiskFlushNotification) {
