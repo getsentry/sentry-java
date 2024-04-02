@@ -1,7 +1,7 @@
 package io.sentry.spring.jakarta.tracing
 
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.PropagationContext
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -38,7 +38,7 @@ import kotlin.test.fail
 
 class SentryTracingFilterTest {
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
@@ -50,7 +50,7 @@ class SentryTracingFilterTest {
         val logger = mock<ILogger>()
 
         init {
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
         }
 
         fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null, baggageHeaders: List<String>? = null): SentryTracingFilter {
@@ -61,16 +61,16 @@ class SentryTracingFilterTest {
             whenever(transactionNameProvider.provideTransactionSource()).thenReturn(TransactionNameSource.CUSTOM)
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
+                whenever(scopes.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
             }
             if (baggageHeaders != null) {
                 request.addHeader("baggage", baggageHeaders)
             }
             response.status = status
-            whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
-            whenever(hub.isEnabled).thenReturn(isEnabled)
-            whenever(hub.continueTrace(any(), any())).thenAnswer { TransactionContext.fromPropagationContext(PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?)) }
-            return SentryTracingFilter(hub, transactionNameProvider)
+            whenever(scopes.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
+            whenever(scopes.isEnabled).thenReturn(isEnabled)
+            whenever(scopes.continueTrace(any(), any())).thenAnswer { TransactionContext.fromPropagationContext(PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?)) }
+            return SentryTracingFilter(scopes, transactionNameProvider)
         }
     }
 
@@ -82,7 +82,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check<TransactionContext> {
                 assertEquals("POST /product/12", it.name)
                 assertEquals(TransactionNameSource.URL, it.transactionNameSource)
@@ -95,7 +95,7 @@ class SentryTracingFilterTest {
             }
         )
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.transaction).isEqualTo("POST /product/{id}")
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
@@ -114,7 +114,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
@@ -130,7 +130,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.status).isNull()
             },
@@ -146,7 +146,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
@@ -163,7 +163,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
             },
@@ -174,15 +174,15 @@ class SentryTracingFilterTest {
     }
 
     @Test
-    fun `when hub is disabled, components are not invoked`() {
+    fun `when scopes is disabled, components are not invoked`() {
         val filter = fixture.getSut(isEnabled = false)
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
-        verify(fixture.hub).isEnabled
-        verifyNoMoreInteractions(fixture.hub)
+        verify(fixture.scopes).isEnabled
+        verifyNoMoreInteractions(fixture.scopes)
         verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }
 
@@ -196,7 +196,7 @@ class SentryTracingFilterTest {
             fail("filter is expected to rethrow exception")
         } catch (_: Exception) {
         }
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
@@ -216,10 +216,10 @@ class SentryTracingFilterTest {
 
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
-        verify(fixture.hub).isEnabled
-        verify(fixture.hub).continueTrace(anyOrNull(), anyOrNull())
-        verify(fixture.hub, times(2)).options
-        verifyNoMoreInteractions(fixture.hub)
+        verify(fixture.scopes).isEnabled
+        verify(fixture.scopes).continueTrace(anyOrNull(), anyOrNull())
+        verify(fixture.scopes, times(2)).options
+        verifyNoMoreInteractions(fixture.scopes)
         verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }
 
@@ -233,7 +233,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
@@ -253,7 +253,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
@@ -275,9 +275,9 @@ class SentryTracingFilterTest {
 
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
-        verify(fixture.hub).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
+        verify(fixture.scopes).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
 
-        verify(fixture.hub, never()).captureTransaction(
+        verify(fixture.scopes, never()).captureTransaction(
             anyOrNull<SentryTransaction>(),
             anyOrNull<TraceContext>(),
             anyOrNull(),

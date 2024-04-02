@@ -8,8 +8,8 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -29,26 +29,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Open
 public class SentrySpringFilter extends OncePerRequestFilter {
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @NotNull SentryRequestResolver requestResolver;
   private final @NotNull TransactionNameProvider transactionNameProvider;
 
   public SentrySpringFilter(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull SentryRequestResolver requestResolver,
       final @NotNull TransactionNameProvider transactionNameProvider) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
   }
 
-  public SentrySpringFilter(final @NotNull IHub hub) {
-    this(hub, new SentryRequestResolver(hub), new SpringMvcTransactionNameProvider());
+  public SentrySpringFilter(final @NotNull IScopes scopes) {
+    this(scopes, new SentryRequestResolver(scopes), new SpringMvcTransactionNameProvider());
   }
 
   public SentrySpringFilter() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
   @Override
@@ -57,20 +57,20 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull HttpServletResponse response,
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
-    if (hub.isEnabled()) {
+    if (scopes.isEnabled()) {
       // request may qualify for caching request body, if so resolve cached request
       final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
-      hub.pushScope();
+      scopes.pushScope();
       try {
         final Hint hint = new Hint();
         hint.set(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
         hint.set(SPRING_REQUEST_FILTER_RESPONSE, response);
 
-        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hint);
+        scopes.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hint);
         configureScope(request);
         filterChain.doFilter(request, response);
       } finally {
-        hub.popScope();
+        scopes.popScope();
       }
     } else {
       filterChain.doFilter(servletRequest, response);
@@ -79,7 +79,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
 
   private void configureScope(HttpServletRequest request) {
     try {
-      hub.configureScope(
+      scopes.configureScope(
           scope -> {
             // set basic request information on the scope
             scope.setRequest(requestResolver.resolveSentryRequest(request));
@@ -92,11 +92,12 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             // request processing
             if (request instanceof CachedBodyHttpServletRequest) {
               scope.addEventProcessor(
-                  new RequestBodyExtractingEventProcessor(request, hub.getOptions()));
+                  new RequestBodyExtractingEventProcessor(request, scopes.getOptions()));
             }
           });
     } catch (Throwable e) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
     }
@@ -104,12 +105,13 @@ public class SentrySpringFilter extends OncePerRequestFilter {
 
   private @NotNull HttpServletRequest resolveHttpServletRequest(
       final @NotNull HttpServletRequest request) {
-    if (hub.getOptions().isSendDefaultPii()
-        && qualifiesForCaching(request, hub.getOptions().getMaxRequestBodySize())) {
+    if (scopes.getOptions().isSendDefaultPii()
+        && qualifiesForCaching(request, scopes.getOptions().getMaxRequestBodySize())) {
       try {
         return new CachedBodyHttpServletRequest(request);
       } catch (IOException e) {
-        hub.getOptions()
+        scopes
+            .getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,

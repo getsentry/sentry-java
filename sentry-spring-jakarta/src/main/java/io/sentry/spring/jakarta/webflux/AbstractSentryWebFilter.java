@@ -7,10 +7,10 @@ import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.CustomSamplingContext;
 import io.sentry.Hint;
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ITransaction;
-import io.sentry.NoOpHub;
+import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -34,16 +34,17 @@ import org.springframework.web.server.WebFilter;
 @ApiStatus.Experimental
 public abstract class AbstractSentryWebFilter implements WebFilter {
   private final @NotNull SentryRequestResolver sentryRequestResolver;
-  public static final String SENTRY_HUB_KEY = "sentry-hub";
+  public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
+  @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
   private static final String TRANSACTION_OP = "http.server";
 
-  public AbstractSentryWebFilter(final @NotNull IHub hub) {
-    Objects.requireNonNull(hub, "hub is required");
-    this.sentryRequestResolver = new SentryRequestResolver(hub);
+  public AbstractSentryWebFilter(final @NotNull IScopes scopes) {
+    Objects.requireNonNull(scopes, "scopes are required");
+    this.sentryRequestResolver = new SentryRequestResolver(scopes);
   }
 
   protected @Nullable ITransaction maybeStartTransaction(
-      final @NotNull IHub requestHub, final @NotNull ServerHttpRequest request) {
+      final @NotNull IScopes requestHub, final @NotNull ServerHttpRequest request) {
     if (requestHub.isEnabled()) {
       final @NotNull HttpHeaders headers = request.getHeaders();
       final @Nullable String sentryTraceHeader =
@@ -62,21 +63,23 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
 
   protected void doFinally(
       final @NotNull ServerWebExchange serverWebExchange,
-      final @NotNull IHub requestHub,
+      final @NotNull IScopes requestHub,
       final @Nullable ITransaction transaction) {
     if (transaction != null) {
       finishTransaction(serverWebExchange, transaction);
     }
     if (requestHub.isEnabled()) {
+      // TODO close lifecycle token instead of popscope
       requestHub.popScope();
     }
-    Sentry.setCurrentHub(NoOpHub.getInstance());
+    Sentry.setCurrentScopes(NoOpScopes.getInstance());
   }
 
   protected void doFirst(
-      final @NotNull ServerWebExchange serverWebExchange, final @NotNull IHub requestHub) {
+      final @NotNull ServerWebExchange serverWebExchange, final @NotNull IScopes requestHub) {
     if (requestHub.isEnabled()) {
-      serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
+      serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
+      // TODO fork instead
       requestHub.pushScope();
       final ServerHttpRequest request = serverWebExchange.getRequest();
       final ServerHttpResponse response = serverWebExchange.getResponse();
@@ -100,8 +103,8 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   protected boolean shouldTraceRequest(
-      final @NotNull IHub hub, final @NotNull ServerHttpRequest request) {
-    return hub.getOptions().isTraceOptionsRequests()
+      final @NotNull IScopes scopes, final @NotNull ServerHttpRequest request) {
+    return scopes.getOptions().isTraceOptionsRequests()
         || !HttpMethod.OPTIONS.equals(request.getMethod());
   }
 
@@ -130,7 +133,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   protected @NotNull ITransaction startTransaction(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull ServerHttpRequest request,
       final @Nullable TransactionContext transactionContext) {
     final @NotNull String name = request.getMethod() + " " + request.getURI().getPath();
@@ -146,10 +149,10 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation(TRANSACTION_OP);
 
-      return hub.startTransaction(transactionContext, transactionOptions);
+      return scopes.startTransaction(transactionContext, transactionOptions);
     }
 
-    return hub.startTransaction(
+    return scopes.startTransaction(
         new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
         transactionOptions);
   }
