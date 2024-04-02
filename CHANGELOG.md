@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+
 ## 7.6.0
 
 ### Features

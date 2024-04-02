@@ -219,6 +219,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       }
       totalBucketsWeight.addAndGet(addedWeight);
     }
+
+    // For sets, we only record that a value has been added to the set but not which one.
+    // See develop docs: https://develop.sentry.dev/sdk/metrics/#sets
     if (localMetricsAggregator != null) {
       final double localValue = type == MetricType.Set ? addedWeight : value;
       localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags, timestampMs);
