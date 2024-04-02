@@ -92,22 +92,23 @@ public class ReplayCache internal constructor(
         var lastFrame: ReplayFrame = frames.first()
         for (timestamp in from until (from + (duration)) step step) {
             val iter = frames.iterator()
-            val frameCountBefore = frameCount
             while (iter.hasNext()) {
                 val frame = iter.next()
                 if (frame.timestamp in (timestamp..timestamp + step)) {
-                    frameCount++
-                    encode(frame)
                     lastFrame = frame
                     break // we only support 1 frame per given interval
                 }
+
+                // assuming frames are in order, if out of bounds exit early
+                if (frame.timestamp > timestamp + step) {
+                    break
+                }
             }
 
-            // if the frame count hasn't changed we just replicate the last known frame to respect
-            // the video duration.
-            if (frameCountBefore == frameCount) {
+            // we either encode a new frame within the step bounds or replicate the last known frame
+            // to respect the video duration
+            if (encode(lastFrame)) {
                 frameCount++
-                encode(lastFrame)
             }
         }
 
@@ -138,12 +139,18 @@ public class ReplayCache internal constructor(
         return GeneratedVideo(videoFile, frameCount, videoDuration)
     }
 
-    private fun encode(frame: ReplayFrame) {
-        val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
-        synchronized(encoderLock) {
-            encoder?.encode(bitmap)
+    private fun encode(frame: ReplayFrame): Boolean {
+        return try {
+            val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
+            synchronized(encoderLock) {
+                encoder?.encode(bitmap)
+            }
+            bitmap.recycle()
+            true
+        } catch (e: Throwable) {
+            options.logger.log(WARNING, "Unable to decode bitmap and encode it into a video, skipping frame", e)
+            false
         }
-        bitmap.recycle()
     }
 
     private fun deleteFile(file: File) {

@@ -47,7 +47,7 @@ class ReplayIntegration(
     // TODO: probably not everything has to be thread-safe here
     private val isEnabled = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
-    private val currentReplayId = AtomicReference<SentryId>()
+    private val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     private val segmentTimestamp = AtomicReference<Date>()
     private val currentSegment = AtomicInteger(0)
     private val saver =
@@ -79,6 +79,7 @@ class ReplayIntegration(
     fun isRecording() = isRecording.get()
 
     fun start() {
+        // TODO: add lifecycle state instead and manage it in start/pause/resume/stop
         if (!isEnabled.get()) {
             options.logger.log(
                 DEBUG,
@@ -101,11 +102,13 @@ class ReplayIntegration(
         cache = ReplayCache(options, currentReplayId.get(), recorderConfig)
 
         recorder?.startRecording()
+        // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
         // TODO: finalize old recording if there's some left on disk and send it using the replayId from persisted scope (e.g. for ANRs)
     }
 
     fun resume() {
+        // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
         recorder?.resume()
     }
@@ -151,8 +154,8 @@ class ReplayIntegration(
         cache?.close()
         currentSegment.set(0)
         segmentTimestamp.set(null)
-        currentReplayId.set(null)
-        hub?.configureScope { it.replayId = null }
+        currentReplayId.set(SentryId.EMPTY_ID)
+        hub?.configureScope { it.replayId = SentryId.EMPTY_ID }
         isRecording.set(false)
     }
 
@@ -239,7 +242,7 @@ class ReplayIntegration(
                 RRWebVideoEvent().apply {
                     this.timestamp = segmentTimestamp.time
                     this.segmentId = segmentId
-                    this.duration = duration
+                    this.durationMs = duration
                     this.frameCount = frameCount
                     size = video.length()
                     frameRate = recorderConfig.frameRate

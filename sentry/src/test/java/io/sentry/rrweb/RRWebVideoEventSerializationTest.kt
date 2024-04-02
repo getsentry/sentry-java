@@ -17,7 +17,7 @@ class RRWebVideoEventSerializationTest {
             tag = "video"
             segmentId = 0
             size = 4_000_000L
-            duration = 5000
+            durationMs = 5000
             height = 1920
             width = 1080
             frameCount = 5
