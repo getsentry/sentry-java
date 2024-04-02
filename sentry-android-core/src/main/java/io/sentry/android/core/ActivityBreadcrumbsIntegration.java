@@ -8,7 +8,7 @@ import android.app.Application;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -23,7 +23,7 @@ public final class ActivityBreadcrumbsIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private boolean enabled;
 
   public ActivityBreadcrumbsIntegration(final @NotNull Application application) {
@@ -31,13 +31,13 @@ public final class ActivityBreadcrumbsIntegration
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     final SentryAndroidOptions androidOptions =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.enabled = androidOptions.isEnableActivityLifecycleBreadcrumbs();
     options
         .getLogger()
@@ -54,8 +54,9 @@ public final class ActivityBreadcrumbsIntegration
   public void close() throws IOException {
     if (enabled) {
       application.unregisterActivityLifecycleCallbacks(this);
-      if (hub != null) {
-        hub.getOptions()
+      if (scopes != null) {
+        scopes
+            .getOptions()
             .getLogger()
             .log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration removed.");
       }
@@ -100,7 +101,7 @@ public final class ActivityBreadcrumbsIntegration
   }
 
   private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {
-    if (hub == null) {
+    if (scopes == null) {
       return;
     }
 
@@ -114,7 +115,7 @@ public final class ActivityBreadcrumbsIntegration
     final Hint hint = new Hint();
     hint.set(ANDROID_ACTIVITY, activity);
 
-    hub.addBreadcrumb(breadcrumb, hint);
+    scopes.addBreadcrumb(breadcrumb, hint);
   }
 
   private @NotNull String getActivityName(final @NotNull Activity activity) {

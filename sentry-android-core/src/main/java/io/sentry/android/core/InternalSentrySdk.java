@@ -4,12 +4,12 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import io.sentry.DateUtils;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -39,12 +39,12 @@ import org.jetbrains.annotations.Nullable;
 public final class InternalSentrySdk {
 
   /**
-   * @return a copy of the current hub's topmost scope, or null in case the hub is disabled
+   * @return a copy of the current scopes's topmost scope, or null in case the scopes is disabled
    */
   @Nullable
   public static IScope getCurrentScope() {
     final @NotNull AtomicReference<IScope> scopeRef = new AtomicReference<>();
-    HubAdapter.getInstance()
+    ScopesAdapter.getInstance()
         .configureScope(
             scope -> {
               scopeRef.set(scope.clone());
@@ -134,8 +134,8 @@ public final class InternalSentrySdk {
   }
 
   /**
-   * Captures the provided envelope. Compared to {@link IHub#captureEvent(SentryEvent)} this method
-   * <br>
+   * Captures the provided envelope. Compared to {@link IScopes#captureEvent(SentryEvent)} this
+   * method <br>
    * - will not enrich events with additional data (e.g. scope)<br>
    * - will not execute beforeSend: it's up to the caller to take care of this<br>
    * - will not perform any sampling: it's up to the caller to take care of this<br>
@@ -147,8 +147,8 @@ public final class InternalSentrySdk {
    */
   @Nullable
   public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) {
-    final @NotNull IHub hub = HubAdapter.getInstance();
-    final @NotNull SentryOptions options = hub.getOptions();
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
 
     try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
       final @NotNull ISerializer serializer = options.getSerializer();
@@ -178,7 +178,7 @@ public final class InternalSentrySdk {
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
+      final @Nullable Session session = updateSession(scopes, options, status, crashedOrErrored);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
@@ -186,7 +186,7 @@ public final class InternalSentrySdk {
 
       final SentryEnvelope repackagedEnvelope =
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
-      return hub.captureEnvelope(repackagedEnvelope);
+      return scopes.captureEnvelope(repackagedEnvelope);
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
@@ -195,12 +195,12 @@ public final class InternalSentrySdk {
 
   @Nullable
   private static Session updateSession(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull SentryOptions options,
       final @Nullable Session.State status,
       final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
-    hub.configureScope(
+    scopes.configureScope(
         scope -> {
           final @Nullable Session session = scope.getSession();
           if (session != null) {

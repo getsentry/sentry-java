@@ -4,8 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
@@ -144,10 +144,11 @@ public final class SentryAndroid {
           },
           true);
 
-      final @NotNull IHub hub = Sentry.getCurrentHub();
-      if (hub.getOptions().isEnableAutoSessionTracking() && ContextUtils.isForegroundImportance()) {
-        hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-        hub.startSession();
+      final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+      if (scopes.getOptions().isEnableAutoSessionTracking()
+          && ContextUtils.isForegroundImportance()) {
+        scopes.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+        scopes.startSession();
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
