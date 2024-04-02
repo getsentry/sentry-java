@@ -70,8 +70,8 @@ public final class NoOpScope implements IScope {
   public void setScreen(@Nullable String screen) {}
 
   @Override
-  public @Nullable SentryId getReplayId() {
-    return null;
+  public @NotNull SentryId getReplayId() {
+    return SentryId.EMPTY_ID;
   }
 
   @Override

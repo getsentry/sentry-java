@@ -259,12 +259,12 @@ public data class ScreenshotRecorderConfig(
                 wm.defaultDisplay.getRealSize(screenBounds)
                 Rect(0, 0, screenBounds.x, screenBounds.y)
             }
-            val aspectRatio = screenBounds.bottom.toFloat() / screenBounds.right.toFloat()
+            val aspectRatio = screenBounds.height().toFloat() / screenBounds.width().toFloat()
 
             return ScreenshotRecorderConfig(
                 recordingWidth = (targetHeight / aspectRatio).roundToInt(),
                 recordingHeight = targetHeight,
-                scaleFactor = targetHeight.toFloat() / screenBounds.bottom,
+                scaleFactor = targetHeight.toFloat() / screenBounds.height(),
                 frameRate = sentryReplayOptions.frameRate,
                 bitRate = sentryReplayOptions.bitRate
             )

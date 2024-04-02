@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit.MICROSECONDS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class SimpleMp4FrameMuxer(path: String, fps: Float) : SimpleFrameMuxer {
-    private val frameUsec: Long = (TimeUnit.SECONDS.toMicros(1L) / fps).toLong()
+    private val frameDurationUsec: Long = (TimeUnit.SECONDS.toMicros(1L) / fps).toLong()
 
     private val muxer: MediaMuxer = MediaMuxer(path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
 
@@ -59,7 +59,7 @@ class SimpleMp4FrameMuxer(path: String, fps: Float) : SimpleFrameMuxer {
         // This code will break if the encoder supports B frames.
         // Ideally we would use set the value in the encoder,
         // don't know how to do that without using OpenGL
-        finalVideoTime = frameUsec * videoFrames++
+        finalVideoTime = frameDurationUsec * videoFrames++
         bufferInfo.presentationTimeUs = finalVideoTime
 
 //        encodedData.position(bufferInfo.offset)
@@ -78,6 +78,6 @@ class SimpleMp4FrameMuxer(path: String, fps: Float) : SimpleFrameMuxer {
             return 0
         }
         // have to add one sec as we calculate it 0-based above
-        return MILLISECONDS.convert(finalVideoTime + frameUsec, MICROSECONDS)
+        return MILLISECONDS.convert(finalVideoTime + frameDurationUsec, MICROSECONDS)
     }
 }

@@ -91,7 +91,7 @@ public interface IScope {
    * @return the id of the current session replay
    */
   @ApiStatus.Internal
-  @Nullable
+  @NotNull
   SentryId getReplayId();
 
   /**
@@ -100,7 +100,7 @@ public interface IScope {
    * @param replayId the id of the current session replay
    */
   @ApiStatus.Internal
-  void setReplayId(final @Nullable SentryId replayId);
+  void setReplayId(final @NotNull SentryId replayId);
 
   /**
    * Returns the Scope's request

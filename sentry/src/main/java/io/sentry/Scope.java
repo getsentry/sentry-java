@@ -82,7 +82,7 @@ public final class Scope implements IScope {
   private @NotNull PropagationContext propagationContext;
 
   /** Scope's session replay id */
-  private @Nullable SentryId replayId;
+  private @NotNull SentryId replayId = SentryId.EMPTY_ID;
 
   /**
    * Scope's ctor
@@ -318,12 +318,12 @@ public final class Scope implements IScope {
   }
 
   @Override
-  public @Nullable SentryId getReplayId() {
+  public @NotNull SentryId getReplayId() {
     return replayId;
   }
 
   @Override
-  public void setReplayId(final @Nullable SentryId replayId) {
+  public void setReplayId(final @NotNull SentryId replayId) {
     this.replayId = replayId;
 
     // TODO: set to contexts and notify observers to persist this as well
