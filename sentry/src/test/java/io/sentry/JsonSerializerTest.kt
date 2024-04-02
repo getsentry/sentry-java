@@ -43,7 +43,7 @@ class JsonSerializerTest {
     private class Fixture {
         val logger: ILogger = mock()
         val serializer: ISerializer
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val traceFile = Files.createTempFile("test", "here").toFile()
         val options = SentryOptions()
 
@@ -51,7 +51,7 @@ class JsonSerializerTest {
             options.dsn = "https://key@sentry.io/proj"
             options.setLogger(logger)
             options.isDebug = true
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
             serializer = JsonSerializer(options)
             options.setSerializer(serializer)
             options.setEnvelopeReader(EnvelopeReader(serializer))
@@ -830,7 +830,7 @@ class JsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         trace.sampled = true
-        val tracer = SentryTracer(trace, fixture.hub)
+        val tracer = SentryTracer(trace, fixture.scopes)
         tracer.setData("dataKey", "dataValue")
         val span = tracer.startChild("child")
         span.finish(SpanStatus.OK)
@@ -1300,7 +1300,7 @@ class JsonSerializerTest {
             status = SpanStatus.OK
             setTag("myTag", "myValue")
         }
-        val tracer = SentryTracer(trace, fixture.hub)
+        val tracer = SentryTracer(trace, fixture.scopes)
         val span = tracer.startChild("child")
         span.setMeasurement("test_measurement", 1, MeasurementUnit.Custom("test"))
         span.finish(SpanStatus.OK)

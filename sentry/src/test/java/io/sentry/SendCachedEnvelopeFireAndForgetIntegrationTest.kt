@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 
 class SendCachedEnvelopeFireAndForgetIntegrationTest {
     private class Fixture {
-        var hub: IHub = mock()
+        var scopes: IScopes = mock()
         var logger: ILogger = mock()
         var options = SentryOptions()
         val sender = mock<SendFireAndForget>()
@@ -45,7 +45,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     fun `when cacheDirPath returns null, register logs and exit`() {
         fixture.options.cacheDirPath = null
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("No cache dir path is defined in options."))
         verify(fixture.sender, never()).send()
     }
@@ -73,7 +73,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         val sut = SendCachedEnvelopeFireAndForgetIntegration(CustomFactory())
         fixture.options.cacheDirPath = "abc"
         fixture.options.executorService = ImmediateExecutorService()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("SendFireAndForget factory is null."))
         verify(fixture.sender, never()).send()
     }
@@ -85,7 +85,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
             mock()
         )
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         assertNotNull(fixture.options.sdkVersion)
         assert(fixture.options.sdkVersion!!.integrationSet.contains("SendCachedEnvelopeFireAndForget"))
     }
@@ -96,7 +96,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.executorService.close(0)
         whenever(fixture.callback.create(any(), any())).thenReturn(mock())
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?"), any())
     }
 
@@ -108,7 +108,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "cache"
 
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(connectionStatusProvider).addConnectionStatusObserver(any())
     }
 
@@ -122,9 +122,9 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "cache"
 
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.sender, never()).send()
     }
 
@@ -139,7 +139,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "cache"
 
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.sender).send()
     }
@@ -155,7 +155,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.cacheDirPath = "cache"
 
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // when there's no connection no factory create call should be done
         verify(fixture.sender, never()).send()
@@ -183,9 +183,9 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         val rateLimiter = mock<RateLimiter> {
             whenever(mock.isActiveForCategory(any())).thenReturn(true)
         }
-        whenever(fixture.hub.rateLimiter).thenReturn(rateLimiter)
+        whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // no factory call should be done if there's rate limiting active
         verify(fixture.sender, never()).send()
@@ -196,8 +196,8 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.executorService = ImmediateExecutorService()
         fixture.options.cacheDirPath = "cache"
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-        verify(fixture.callback).create(eq(fixture.hub), eq(fixture.options))
+        sut.register(fixture.scopes, fixture.options)
+        verify(fixture.callback).create(eq(fixture.scopes), eq(fixture.options))
     }
 
     @Test
@@ -205,7 +205,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.executorService = mock()
         fixture.options.cacheDirPath = "cache"
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.callback, never()).create(any(), any())
     }
 
@@ -215,7 +215,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         fixture.options.executorService = deferredExecutorService
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.sender, never()).send()
         sut.close()
 
@@ -224,7 +224,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
-        override fun create(hub: IHub, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
+        override fun create(scopes: IScopes, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
             return null
         }
     }
