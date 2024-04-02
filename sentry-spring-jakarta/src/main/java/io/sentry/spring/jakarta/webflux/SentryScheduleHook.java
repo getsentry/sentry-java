@@ -1,6 +1,6 @@
 package io.sentry.spring.jakarta.webflux;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Sentry;
 import java.util.function.Function;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,16 +13,18 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public final class SentryScheduleHook implements Function<Runnable, Runnable> {
   @Override
+  @SuppressWarnings("deprecation")
   public Runnable apply(final @NotNull Runnable runnable) {
-    final IHub newHub = Sentry.getCurrentHub().clone();
+    // TODO fork instead
+    final IScopes newHub = Sentry.getCurrentScopes().clone();
 
     return () -> {
-      final IHub oldState = Sentry.getCurrentHub();
-      Sentry.setCurrentHub(newHub);
+      final IScopes oldState = Sentry.getCurrentScopes();
+      Sentry.setCurrentScopes(newHub);
       try {
         runnable.run();
       } finally {
-        Sentry.setCurrentHub(oldState);
+        Sentry.setCurrentScopes(oldState);
       }
     };
   }

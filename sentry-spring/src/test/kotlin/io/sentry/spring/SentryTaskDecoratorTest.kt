@@ -32,28 +32,28 @@ class SentryTaskDecoratorTest {
 
         val sut = SentryTaskDecorator()
 
-        val mainHub = Sentry.getCurrentHub()
-        val threadedHub = Sentry.getCurrentHub().clone()
+        val mainHub = Sentry.getCurrentScopes()
+        val threadedHub = Sentry.getCurrentScopes().clone()
 
         executor.submit {
-            Sentry.setCurrentHub(threadedHub)
+            Sentry.setCurrentScopes(threadedHub)
         }.get()
 
-        assertEquals(mainHub, Sentry.getCurrentHub())
+        assertEquals(mainHub, Sentry.getCurrentScopes())
 
         val callableFuture =
             executor.submit(
                 sut.decorate {
-                    assertNotEquals(mainHub, Sentry.getCurrentHub())
-                    assertNotEquals(threadedHub, Sentry.getCurrentHub())
+                    assertNotEquals(mainHub, Sentry.getCurrentScopes())
+                    assertNotEquals(threadedHub, Sentry.getCurrentScopes())
                 }
             )
 
         callableFuture.get()
 
         executor.submit {
-            assertNotEquals(mainHub, Sentry.getCurrentHub())
-            assertEquals(threadedHub, Sentry.getCurrentHub())
+            assertNotEquals(mainHub, Sentry.getCurrentScopes())
+            assertEquals(threadedHub, Sentry.getCurrentScopes())
         }.get()
     }
 }

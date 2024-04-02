@@ -7,10 +7,10 @@ import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.CustomSamplingContext;
 import io.sentry.Hint;
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ITransaction;
-import io.sentry.NoOpHub;
+import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -34,22 +34,24 @@ import reactor.core.publisher.Mono;
 /** Manages {@link IScope} in Webflux request processing. */
 @ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
-  public static final String SENTRY_HUB_KEY = "sentry-hub";
+  public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
+  @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
   private static final String TRANSACTION_OP = "http.server";
   private static final String TRACE_ORIGIN = "auto.spring.webflux";
 
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
-  public SentryWebFilter(final @NotNull IHub hub) {
-    Objects.requireNonNull(hub, "hub is required");
-    this.sentryRequestResolver = new SentryRequestResolver(hub);
+  public SentryWebFilter(final @NotNull IScopes scopes) {
+    Objects.requireNonNull(scopes, "scopes are required");
+    this.sentryRequestResolver = new SentryRequestResolver(scopes);
   }
 
   @Override
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
-    @NotNull IHub requestHub = Sentry.cloneMainHub();
+    @NotNull IScopes requestHub = Sentry.cloneMainHub();
+    // TODO do not push / pop, use fork instead
     if (!requestHub.isEnabled()) {
       return webFilterChain.filter(serverWebExchange);
     }
@@ -80,7 +82,8 @@ public final class SentryWebFilter implements WebFilter {
                 finishTransaction(serverWebExchange, transaction);
               }
               requestHub.popScope();
-              Sentry.setCurrentHub(NoOpHub.getInstance());
+              // TODO token based cleanup instead?
+              Sentry.setCurrentScopes(NoOpScopes.getInstance());
             })
         .doOnError(
             e -> {
@@ -91,8 +94,8 @@ public final class SentryWebFilter implements WebFilter {
             })
         .doFirst(
             () -> {
-              serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
-              Sentry.setCurrentHub(requestHub);
+              serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
+              Sentry.setCurrentScopes(requestHub);
               requestHub.pushScope();
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
@@ -109,13 +112,13 @@ public final class SentryWebFilter implements WebFilter {
   }
 
   private boolean shouldTraceRequest(
-      final @NotNull IHub hub, final @NotNull ServerHttpRequest request) {
-    return hub.getOptions().isTraceOptionsRequests()
+      final @NotNull IScopes scopes, final @NotNull ServerHttpRequest request) {
+    return scopes.getOptions().isTraceOptionsRequests()
         || !HttpMethod.OPTIONS.equals(request.getMethod());
   }
 
   private @NotNull ITransaction startTransaction(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull ServerHttpRequest request,
       final @Nullable TransactionContext transactionContext) {
     final @NotNull String name = request.getMethod() + " " + request.getURI().getPath();
@@ -131,10 +134,10 @@ public final class SentryWebFilter implements WebFilter {
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation(TRANSACTION_OP);
 
-      return hub.startTransaction(transactionContext, transactionOptions);
+      return scopes.startTransaction(transactionContext, transactionOptions);
     }
 
-    return hub.startTransaction(
+    return scopes.startTransaction(
         new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
         transactionOptions);
   }
