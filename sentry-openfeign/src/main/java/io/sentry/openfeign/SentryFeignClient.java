@@ -9,7 +9,7 @@ import feign.Response;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -30,15 +30,15 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryFeignClient implements Client {
   private static final String TRACE_ORIGIN = "auto.http.openfeign";
   private final @NotNull Client delegate;
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @Nullable BeforeSpanCallback beforeSpan;
 
   public SentryFeignClient(
       final @NotNull Client delegate,
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @Nullable BeforeSpanCallback beforeSpan) {
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.beforeSpan = beforeSpan;
   }
 
@@ -47,7 +47,7 @@ public final class SentryFeignClient implements Client {
       throws IOException {
     Response response = null;
     try {
-      final ISpan activeSpan = hub.getSpan();
+      final ISpan activeSpan = scopes.getSpan();
 
       if (activeSpan == null) {
         final @NotNull Request modifiedRequest = maybeAddTracingHeaders(request, null);
@@ -102,7 +102,7 @@ public final class SentryFeignClient implements Client {
 
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
         TracingUtils.traceIfAllowed(
-            hub,
+            scopes,
             request.url(),
             (requestBaggageHeaders != null ? new ArrayList<>(requestBaggageHeaders) : null),
             span);
@@ -139,7 +139,7 @@ public final class SentryFeignClient implements Client {
       hint.set(OPEN_FEIGN_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hint);
+    scopes.addBreadcrumb(breadcrumb, hint);
   }
 
   static final class RequestWrapper {
