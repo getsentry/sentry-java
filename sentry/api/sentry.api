@@ -4773,7 +4773,7 @@ public final class io/sentry/rrweb/RRWebVideoEvent : io/sentry/rrweb/RRWebEvent,
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getContainer ()Ljava/lang/String;
 	public fun getDataUnknown ()Ljava/util/Map;
-	public fun getDuration ()J
+	public fun getDurationMs ()J
 	public fun getEncoding ()Ljava/lang/String;
 	public fun getFrameCount ()I
 	public fun getFrameRate ()I
@@ -4791,7 +4791,7 @@ public final class io/sentry/rrweb/RRWebVideoEvent : io/sentry/rrweb/RRWebEvent,
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setContainer (Ljava/lang/String;)V
 	public fun setDataUnknown (Ljava/util/Map;)V
-	public fun setDuration (J)V
+	public fun setDurationMs (J)V
 	public fun setEncoding (Ljava/lang/String;)V
 	public fun setFrameCount (I)V
 	public fun setFrameRate (I)V

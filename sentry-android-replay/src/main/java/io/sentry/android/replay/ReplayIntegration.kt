@@ -265,7 +265,7 @@ class ReplayIntegration(
                 RRWebVideoEvent().apply {
                     this.timestamp = segmentTimestamp.time
                     this.segmentId = segmentId
-                    this.duration = duration
+                    this.durationMs = duration
                     this.frameCount = frameCount
                     size = video.length()
                     frameRate = recorderConfig.frameRate
