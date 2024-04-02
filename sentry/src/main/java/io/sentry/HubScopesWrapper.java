@@ -10,276 +10,270 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated use {@link ScopesAdapter} instead
- */
+@SuppressWarnings("deprecation")
 @Deprecated
-public final class HubAdapter implements IHub {
+public final class HubScopesWrapper implements IHub {
 
-  private static final HubAdapter INSTANCE = new HubAdapter();
+  private final IScopes scopes;
 
-  private HubAdapter() {}
-
-  public static HubAdapter getInstance() {
-    return INSTANCE;
+  public HubScopesWrapper(final @NotNull IScopes scopes) {
+    this.scopes = scopes;
   }
 
   @Override
   public boolean isEnabled() {
-    return Sentry.isEnabled();
+    return scopes.isEnabled();
   }
 
   @Override
   public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
-    return Sentry.captureEvent(event, hint);
+    return scopes.captureEvent(event, hint);
   }
 
   @Override
   public @NotNull SentryId captureEvent(
       @NotNull SentryEvent event, @Nullable Hint hint, @NotNull ScopeCallback callback) {
-    return Sentry.captureEvent(event, hint, callback);
+    return scopes.captureEvent(event, hint, callback);
   }
 
   @Override
   public @NotNull SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level) {
-    return Sentry.captureMessage(message, level);
+    return scopes.captureMessage(message, level);
   }
 
   @Override
   public @NotNull SentryId captureMessage(
       @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback) {
-    return Sentry.captureMessage(message, level, callback);
+    return scopes.captureMessage(message, level, callback);
   }
 
-  @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
-    return Sentry.getCurrentScopes().captureEnvelope(envelope, hint);
+    return scopes.captureEnvelope(envelope, hint);
   }
 
   @Override
   public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
-    return Sentry.captureException(throwable, hint);
+    return scopes.captureException(throwable, hint);
   }
 
   @Override
   public @NotNull SentryId captureException(
       @NotNull Throwable throwable, @Nullable Hint hint, @NotNull ScopeCallback callback) {
-    return Sentry.captureException(throwable, hint, callback);
+    return scopes.captureException(throwable, hint, callback);
   }
 
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
-    Sentry.captureUserFeedback(userFeedback);
+    scopes.captureUserFeedback(userFeedback);
   }
 
   @Override
   public void startSession() {
-    Sentry.startSession();
+    scopes.startSession();
   }
 
   @Override
   public void endSession() {
-    Sentry.endSession();
-  }
-
-  @Override
-  public void close(final boolean isRestarting) {
-    Sentry.close();
+    scopes.endSession();
   }
 
   @Override
   public void close() {
-    Sentry.close();
+    scopes.close();
+  }
+
+  @Override
+  public void close(boolean isRestarting) {
+    scopes.close(isRestarting);
   }
 
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
-    Sentry.addBreadcrumb(breadcrumb, hint);
+    scopes.addBreadcrumb(breadcrumb, hint);
   }
 
   @Override
-  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
-    addBreadcrumb(breadcrumb, new Hint());
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
+    scopes.addBreadcrumb(breadcrumb);
   }
 
   @Override
   public void setLevel(@Nullable SentryLevel level) {
-    Sentry.setLevel(level);
+    scopes.setLevel(level);
   }
 
   @Override
   public void setTransaction(@Nullable String transaction) {
-    Sentry.setTransaction(transaction);
+    scopes.setTransaction(transaction);
   }
 
   @Override
   public void setUser(@Nullable User user) {
-    Sentry.setUser(user);
+    scopes.setUser(user);
   }
 
   @Override
   public void setFingerprint(@NotNull List<String> fingerprint) {
-    Sentry.setFingerprint(fingerprint);
+    scopes.setFingerprint(fingerprint);
   }
 
   @Override
   public void clearBreadcrumbs() {
-    Sentry.clearBreadcrumbs();
+    scopes.clearBreadcrumbs();
   }
 
   @Override
   public void setTag(@NotNull String key, @NotNull String value) {
-    Sentry.setTag(key, value);
+    scopes.setTag(key, value);
   }
 
   @Override
   public void removeTag(@NotNull String key) {
-    Sentry.removeTag(key);
+    scopes.removeTag(key);
   }
 
   @Override
   public void setExtra(@NotNull String key, @NotNull String value) {
-    Sentry.setExtra(key, value);
+    scopes.setExtra(key, value);
   }
 
   @Override
   public void removeExtra(@NotNull String key) {
-    Sentry.removeExtra(key);
+    scopes.removeExtra(key);
   }
 
   @Override
   public @NotNull SentryId getLastEventId() {
-    return Sentry.getLastEventId();
+    return scopes.getLastEventId();
   }
 
   @Override
   public void pushScope() {
-    Sentry.pushScope();
+    scopes.pushScope();
   }
 
   @Override
   public void popScope() {
-    Sentry.popScope();
+    scopes.popScope();
   }
 
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
-    Sentry.withScope(callback);
+    scopes.withScope(callback);
   }
 
   @Override
   public void configureScope(@NotNull ScopeCallback callback) {
-    Sentry.configureScope(callback);
+    scopes.configureScope(callback);
   }
 
   @Override
   public void bindClient(@NotNull ISentryClient client) {
-    Sentry.bindClient(client);
+    scopes.bindClient(client);
   }
 
   @Override
   public boolean isHealthy() {
-    return Sentry.isHealthy();
+    return scopes.isHealthy();
   }
 
   @Override
   public void flush(long timeoutMillis) {
-    Sentry.flush(timeoutMillis);
+    scopes.flush(timeoutMillis);
   }
 
   @Override
   public @NotNull IHub clone() {
-    return Sentry.getCurrentScopes().clone();
+    return scopes.clone();
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
-    return Sentry.getCurrentScopes()
-        .captureTransaction(transaction, traceContext, hint, profilingTraceData);
+    return scopes.captureTransaction(transaction, traceContext, hint, profilingTraceData);
   }
 
   @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
-    return Sentry.startTransaction(transactionContext, transactionOptions);
+    return scopes.startTransaction(transactionContext, transactionOptions);
   }
 
-  @Deprecated
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
-    return Sentry.traceHeaders();
+    return scopes.traceHeaders();
   }
 
+  @ApiStatus.Internal
   @Override
   public void setSpanContext(
-      final @NotNull Throwable throwable,
-      final @NotNull ISpan span,
-      final @NotNull String transactionName) {
-    Sentry.getCurrentScopes().setSpanContext(throwable, span, transactionName);
+      @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName) {
+    scopes.setSpanContext(throwable, span, transactionName);
   }
 
   @Override
   public @Nullable ISpan getSpan() {
-    return Sentry.getCurrentScopes().getSpan();
+    return scopes.getSpan();
   }
 
-  @Override
   @ApiStatus.Internal
+  @Override
   public @Nullable ITransaction getTransaction() {
-    return Sentry.getCurrentScopes().getTransaction();
+    return scopes.getTransaction();
   }
 
   @Override
   public @NotNull SentryOptions getOptions() {
-    return Sentry.getCurrentScopes().getOptions();
+    return scopes.getOptions();
   }
 
   @Override
   public @Nullable Boolean isCrashedLastRun() {
-    return Sentry.isCrashedLastRun();
+    return scopes.isCrashedLastRun();
   }
 
   @Override
   public void reportFullyDisplayed() {
-    Sentry.reportFullyDisplayed();
+    scopes.reportFullyDisplayed();
   }
 
   @Override
   public @Nullable TransactionContext continueTrace(
-      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
-    return Sentry.continueTrace(sentryTrace, baggageHeaders);
+      @Nullable String sentryTrace, @Nullable List<String> baggageHeaders) {
+    return scopes.continueTrace(sentryTrace, baggageHeaders);
   }
 
   @Override
   public @Nullable SentryTraceHeader getTraceparent() {
-    return Sentry.getTraceparent();
+    return scopes.getTraceparent();
   }
 
   @Override
   public @Nullable BaggageHeader getBaggage() {
-    return Sentry.getBaggage();
+    return scopes.getBaggage();
   }
 
-  @Override
   @ApiStatus.Experimental
-  public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
-    return Sentry.captureCheckIn(checkIn);
+  @Override
+  public @NotNull SentryId captureCheckIn(@NotNull CheckIn checkIn) {
+    return scopes.captureCheckIn(checkIn);
   }
 
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {
-    return Sentry.getCurrentScopes().getRateLimiter();
+    return scopes.getRateLimiter();
   }
 
+  @ApiStatus.Experimental
   @Override
   public @NotNull MetricsApi metrics() {
-    return Sentry.getCurrentScopes().metrics();
+    return scopes.metrics();
   }
 }

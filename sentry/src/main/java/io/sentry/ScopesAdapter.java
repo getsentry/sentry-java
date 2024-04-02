@@ -10,17 +10,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated use {@link ScopesAdapter} instead
- */
-@Deprecated
-public final class HubAdapter implements IHub {
+public final class ScopesAdapter implements IScopes {
 
-  private static final HubAdapter INSTANCE = new HubAdapter();
+  private static final ScopesAdapter INSTANCE = new ScopesAdapter();
 
-  private HubAdapter() {}
+  private ScopesAdapter() {}
 
-  public static HubAdapter getInstance() {
+  public static ScopesAdapter getInstance() {
     return INSTANCE;
   }
 
@@ -189,10 +185,12 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public @NotNull IHub clone() {
     return Sentry.getCurrentScopes().clone();
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
@@ -212,10 +210,12 @@ public final class HubAdapter implements IHub {
 
   @Deprecated
   @Override
+  @SuppressWarnings("deprecation")
   public @Nullable SentryTraceHeader traceHeaders() {
     return Sentry.traceHeaders();
   }
 
+  @ApiStatus.Internal
   @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
@@ -278,6 +278,7 @@ public final class HubAdapter implements IHub {
     return Sentry.getCurrentScopes().getRateLimiter();
   }
 
+  @ApiStatus.Experimental
   @Override
   public @NotNull MetricsApi metrics() {
     return Sentry.getCurrentScopes().metrics();
