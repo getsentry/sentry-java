@@ -1,14 +1,14 @@
 package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.DEFAULT_CAPTURE_FAILED_REQUESTS
 
 @JvmOverloads
 fun ApolloClient.Builder.sentryTracing(
-    hub: IHub = HubAdapter.getInstance(),
+    scopes: IScopes = ScopesAdapter.getInstance(),
     captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
     failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
     beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null
@@ -16,7 +16,7 @@ fun ApolloClient.Builder.sentryTracing(
     addInterceptor(SentryApollo3Interceptor())
     addHttpInterceptor(
         SentryApollo3HttpInterceptor(
-            hub = hub,
+            scopes = scopes,
             captureFailedRequests = captureFailedRequests,
             failedRequestTargets = failedRequestTargets,
             beforeSpan = beforeSpan
@@ -31,7 +31,7 @@ fun ApolloClient.Builder.sentryTracing(
     beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null
 ): ApolloClient.Builder {
     return sentryTracing(
-        hub = HubAdapter.getInstance(),
+        scopes = ScopesAdapter.getInstance(),
         captureFailedRequests = captureFailedRequests,
         failedRequestTargets = failedRequestTargets,
         beforeSpan = beforeSpan
