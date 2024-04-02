@@ -73,7 +73,7 @@ class ReplayIntegration(
     }
 
     private val aspectRatio by lazy(NONE) {
-        screenBounds.bottom.toFloat() / screenBounds.right.toFloat()
+        screenBounds.height().toFloat() / screenBounds.width().toFloat()
     }
 
     private val recorderConfig by lazy(NONE) {
