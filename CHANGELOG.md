@@ -6,6 +6,12 @@
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.1 ([#3278](https://github.com/getsentry/sentry-java/pull/3278))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#071)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.1)
+
 ## 7.6.0
 
 ### Features
