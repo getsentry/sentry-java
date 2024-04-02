@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
@@ -21,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 
 /** Scope data to be sent with the event */
 public final class Scope implements IScope {
+
+  private volatile @NotNull SentryId lastEventId;
 
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
@@ -80,6 +83,8 @@ public final class Scope implements IScope {
 
   private @NotNull PropagationContext propagationContext;
 
+  private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
+
   /**
    * Scope's ctor
    *
@@ -89,6 +94,7 @@ public final class Scope implements IScope {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
     this.propagationContext = new PropagationContext();
+    this.lastEventId = SentryId.EMPTY_ID;
   }
 
   private Scope(final @NotNull Scope scope) {
@@ -97,6 +103,8 @@ public final class Scope implements IScope {
     this.session = scope.session;
     this.options = scope.options;
     this.level = scope.level;
+    // TODO should we do this? didn't do it for Hub
+    this.lastEventId = scope.getLastEventId();
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
@@ -943,6 +951,26 @@ public final class Scope implements IScope {
   @Override
   public @NotNull IScope clone() {
     return new Scope(this);
+  }
+
+  @Override
+  public void setLastEventId(@NotNull SentryId lastEventId) {
+    this.lastEventId = lastEventId;
+  }
+
+  @Override
+  public @NotNull SentryId getLastEventId() {
+    return lastEventId;
+  }
+
+  @Override
+  public void setClient(@NotNull ISentryClient client) {
+    this.client = client;
+  }
+
+  @Override
+  public @NotNull ISentryClient getClient() {
+    return client;
   }
 
   /** The IWithTransaction callback */

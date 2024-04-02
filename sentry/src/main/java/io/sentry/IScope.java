@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
 import java.util.List;
@@ -370,4 +371,14 @@ public interface IScope {
    */
   @NotNull
   IScope clone();
+
+  void setLastEventId(final @NotNull SentryId lastEventId);
+
+  @NotNull
+  SentryId getLastEventId();
+
+  void setClient(final @NotNull ISentryClient client);
+
+  @NotNull
+  ISentryClient getClient();
 }
