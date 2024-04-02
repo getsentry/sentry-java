@@ -7,7 +7,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -26,16 +26,16 @@ import reactor.core.publisher.Mono;
 @Open
 public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction {
   private static final String TRACE_ORIGIN = "auto.http.spring.webclient";
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
-  public SentrySpanClientWebRequestFilter(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentrySpanClientWebRequestFilter(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @Override
   public @NotNull Mono<ClientResponse> filter(
       final @NotNull ClientRequest request, final @NotNull ExchangeFunction next) {
-    final ISpan activeSpan = hub.getSpan();
+    final ISpan activeSpan = scopes.getSpan();
     if (activeSpan == null) {
       addBreadcrumb(request, null);
       return next.exchange(maybeAddHeaders(request, null));
@@ -76,7 +76,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
         TracingUtils.traceIfAllowed(
-            hub,
+            scopes,
             request.url().toString(),
             request.headers().get(BaggageHeader.BAGGAGE_HEADER),
             span);
@@ -113,6 +113,6 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
       hint.set(SPRING_EXCHANGE_FILTER_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hint);
+    scopes.addBreadcrumb(breadcrumb, hint);
   }
 }
