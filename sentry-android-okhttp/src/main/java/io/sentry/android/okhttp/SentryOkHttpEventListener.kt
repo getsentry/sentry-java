@@ -1,7 +1,7 @@
 package io.sentry.android.okhttp
 
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 import okhttp3.Call
 import okhttp3.Connection
 import okhttp3.EventListener
@@ -42,35 +42,35 @@ import java.net.Proxy
 )
 @Suppress("TooManyFunctions")
 class SentryOkHttpEventListener(
-    hub: IHub = HubAdapter.getInstance(),
+    scopes: IScopes = ScopesAdapter.getInstance(),
     originalEventListenerCreator: ((call: Call) -> EventListener)? = null
 ) : EventListener() {
     constructor() : this(
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         originalEventListenerCreator = null
     )
 
     constructor(originalEventListener: EventListener) : this(
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         originalEventListenerCreator = { originalEventListener }
     )
 
     constructor(originalEventListenerFactory: Factory) : this(
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         originalEventListenerCreator = { originalEventListenerFactory.create(it) }
     )
 
-    constructor(hub: IHub = HubAdapter.getInstance(), originalEventListener: EventListener) : this(
-        hub,
+    constructor(scopes: IScopes = ScopesAdapter.getInstance(), originalEventListener: EventListener) : this(
+        scopes,
         originalEventListenerCreator = { originalEventListener }
     )
 
-    constructor(hub: IHub = HubAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
-        hub,
+    constructor(scopes: IScopes = ScopesAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
+        scopes,
         originalEventListenerCreator = { originalEventListenerFactory.create(it) }
     )
 
-    private val delegate = io.sentry.okhttp.SentryOkHttpEventListener(hub, originalEventListenerCreator)
+    private val delegate = io.sentry.okhttp.SentryOkHttpEventListener(scopes, originalEventListenerCreator)
 
     override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
         delegate.cacheConditionalHit(call, cachedResponse)
