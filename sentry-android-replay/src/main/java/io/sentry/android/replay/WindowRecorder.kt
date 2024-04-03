@@ -1,31 +1,34 @@
 package io.sentry.android.replay
 
 import android.annotation.TargetApi
-import android.content.Context
-import android.graphics.Point
-import android.os.Build.VERSION
-import android.os.Build.VERSION_CODES
 import android.view.View
-import android.view.WindowManager
-import io.sentry.android.replay.video.MuxerConfig
-import io.sentry.android.replay.video.SimpleVideoEncoder
-import java.io.File
+import io.sentry.SentryLevel.ERROR
+import io.sentry.SentryOptions
+import java.io.Closeable
 import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
-import kotlin.math.roundToInt
 
 @TargetApi(26)
-class WindowRecorder {
+internal class WindowRecorder(
+    private val options: SentryOptions,
+    private val recorderConfig: ScreenshotRecorderConfig,
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback
+) : Closeable {
 
     private val rootViewsSpy by lazy(NONE) {
         RootViewsSpy.install()
     }
 
-    private var encoder: SimpleVideoEncoder? = null
     private val isRecording = AtomicBoolean(false)
     private val rootViews = ArrayList<WeakReference<View>>()
     private var recorder: ScreenshotRecorder? = null
+    private var capturingTask: ScheduledFuture<*>? = null
+    private val capturer = Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
 
     private val onRootViewsChangedListener = OnRootViewsChangedListener { root, added ->
         if (added) {
@@ -42,44 +45,30 @@ class WindowRecorder {
         }
     }
 
-    fun startRecording(context: Context) {
+    fun startRecording() {
         if (isRecording.getAndSet(true)) {
             return
         }
 
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 //    val (height, width) = (wm.currentWindowMetrics.bounds.bottom /
 //        context.resources.displayMetrics.density).roundToInt() to
 //        (wm.currentWindowMetrics.bounds.right /
 //            context.resources.displayMetrics.density).roundToInt()
-        // TODO: API level check
-        // PixelCopy takes screenshots including system bars, so we have to get the real size here
-        val height: Int
-        val aspectRatio = if (VERSION.SDK_INT >= VERSION_CODES.R) {
-            height = wm.currentWindowMetrics.bounds.bottom
-            height.toFloat() / wm.currentWindowMetrics.bounds.right.toFloat()
-        } else {
-            val screenResolution = Point()
-            @Suppress("DEPRECATION")
-            wm.defaultDisplay.getRealSize(screenResolution)
-            height = screenResolution.y
-            height.toFloat() / screenResolution.x.toFloat()
-        }
 
-        val videoFile = File(context.cacheDir, "sentry-sr.mp4")
-        encoder = SimpleVideoEncoder(
-            MuxerConfig(
-                videoFile,
-                videoWidth = (720 / aspectRatio).roundToInt(),
-                videoHeight = 720,
-                scaleFactor = 720f / height,
-                frameRate = 2f,
-                bitrate = 500 * 1000
-            )
-        ).also { it.start() }
-        recorder = ScreenshotRecorder(encoder!!)
+        recorder = ScreenshotRecorder(recorderConfig, options, screenshotRecorderCallback)
         rootViewsSpy.listeners += onRootViewsChangedListener
+        capturingTask = capturer.scheduleAtFixedRate({
+            try {
+                recorder?.capture()
+            } catch (e: Throwable) {
+                options.logger.log(ERROR, "Failed to capture a screenshot with exception:", e)
+                // TODO: I guess schedule the capturer again, cause it will stop executing the runnable?
+            }
+        }, 0L, 1000L / recorderConfig.frameRate, MILLISECONDS)
     }
+
+    fun resume() = recorder?.resume()
+    fun pause() = recorder?.pause()
 
     fun stopRecording() {
         rootViewsSpy.listeners -= onRootViewsChangedListener
@@ -87,8 +76,22 @@ class WindowRecorder {
         recorder?.close()
         rootViews.clear()
         recorder = null
-        encoder?.startRelease()
-        encoder = null
+        capturingTask?.cancel(false)
+        capturingTask = null
         isRecording.set(false)
+    }
+
+    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
+        private var cnt = 0
+        override fun newThread(r: Runnable): Thread {
+            val ret = Thread(r, "SentryWindowRecorder-" + cnt++)
+            ret.setDaemon(true)
+            return ret
+        }
+    }
+
+    override fun close() {
+        stopRecording()
+        capturer.gracefullyShutdown(options)
     }
 }

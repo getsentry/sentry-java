@@ -15,6 +15,7 @@ import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.AndroidMainThreadChecker
 import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
@@ -83,6 +84,7 @@ class AndroidOptionsInitializerTest {
                 loadClass,
                 activityFramesTracker,
                 false,
+                false,
                 false
             )
 
@@ -99,7 +101,8 @@ class AndroidOptionsInitializerTest {
             minApi: Int = Build.VERSION_CODES.KITKAT,
             classesToLoad: List<String> = emptyList(),
             isFragmentAvailable: Boolean = false,
-            isTimberAvailable: Boolean = false
+            isTimberAvailable: Boolean = false,
+            isReplayAvailable: Boolean = false
         ) {
             mockContext = ContextUtilsTestHelper.mockMetaData(
                 mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext = true),
@@ -126,7 +129,8 @@ class AndroidOptionsInitializerTest {
                 loadClass,
                 activityFramesTracker,
                 isFragmentAvailable,
-                isTimberAvailable
+                isTimberAvailable,
+                isReplayAvailable
             )
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -479,6 +483,24 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ReplayIntegration added to the integration list if available on classpath`() {
+        fixture.initSutWithClassLoader(isReplayAvailable = true)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is ReplayIntegration }
+        assertNotNull(actual)
+    }
+
+    @Test
+    fun `ReplayIntegration won't be enabled, it throws class not found`() {
+        fixture.initSutWithClassLoader(isReplayAvailable = false)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is ReplayIntegration }
+        assertNull(actual)
+    }
+
+    @Test
     fun `AndroidEnvelopeCache is set to options`() {
         fixture.initSut()
 
@@ -633,6 +655,7 @@ class AndroidOptionsInitializerTest {
             mock(),
             mock(),
             mock(),
+            false,
             false,
             false
         )

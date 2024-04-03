@@ -26,7 +26,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
   private @NotNull String tag;
   private int segmentId;
   private long size;
-  private int duration;
+  private long durationMs;
   private @NotNull String encoding = REPLAY_ENCODING;
   private @NotNull String container = REPLAY_CONTAINER;
   private int height;
@@ -72,12 +72,12 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     this.size = size;
   }
 
-  public int getDuration() {
-    return duration;
+  public long getDurationMs() {
+    return durationMs;
   }
 
-  public void setDuration(final int duration) {
-    this.duration = duration;
+  public void setDurationMs(final long durationMs) {
+    this.durationMs = durationMs;
   }
 
   @NotNull
@@ -189,7 +189,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     RRWebVideoEvent that = (RRWebVideoEvent) o;
     return segmentId == that.segmentId
         && size == that.size
-        && duration == that.duration
+        && durationMs == that.durationMs
         && height == that.height
         && width == that.width
         && frameCount == that.frameCount
@@ -209,7 +209,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
         tag,
         segmentId,
         size,
-        duration,
+        durationMs,
         encoding,
         container,
         height,
@@ -279,7 +279,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
     writer.beginObject();
     writer.name(JsonKeys.SEGMENT_ID).value(segmentId);
     writer.name(JsonKeys.SIZE).value(size);
-    writer.name(JsonKeys.DURATION).value(duration);
+    writer.name(JsonKeys.DURATION).value(durationMs);
     writer.name(JsonKeys.ENCODING).value(encoding);
     writer.name(JsonKeys.CONTAINER).value(container);
     writer.name(JsonKeys.HEIGHT).value(height);
@@ -380,7 +380,7 @@ public final class RRWebVideoEvent extends RRWebEvent implements JsonUnknown, Js
             event.size = size == null ? 0 : size;
             break;
           case JsonKeys.DURATION:
-            event.duration = reader.nextInt();
+            event.durationMs = reader.nextLong();
             break;
           case JsonKeys.CONTAINER:
             final String container = reader.nextStringOrNull();

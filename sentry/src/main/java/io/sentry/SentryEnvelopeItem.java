@@ -23,7 +23,7 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
@@ -360,7 +360,8 @@ public final class SentryEnvelopeItem {
                 try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     final Writer writer =
                         new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-                  final Map<String, byte[]> replayPayload = new HashMap<>();
+                  // relay expects the payload to be in this exact order: [event,rrweb,video]
+                  final Map<String, byte[]> replayPayload = new LinkedHashMap<>();
                   // first serialize replay event json bytes
                   serializer.serialize(replayEvent, writer);
                   replayPayload.put(SentryItemType.ReplayEvent.getItemType(), stream.toByteArray());

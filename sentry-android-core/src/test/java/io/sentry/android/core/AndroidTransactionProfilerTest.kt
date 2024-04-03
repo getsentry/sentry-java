@@ -125,6 +125,7 @@ class AndroidTransactionProfilerTest {
             loadClass,
             activityFramesTracker,
             false,
+            false,
             false
         )
 
