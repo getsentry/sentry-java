@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
 
@@ -54,6 +55,7 @@ class ReplayIntegration(
     private val isRecording = AtomicBoolean(false)
     private val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     private val segmentTimestamp = AtomicReference<Date>()
+    private val replayStartTimestamp = AtomicLong()
     private val currentSegment = AtomicInteger(0)
 
     // TODO: surround with try-catch on the calling site
@@ -136,6 +138,7 @@ class ReplayIntegration(
         recorder?.startRecording()
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
+        replayStartTimestamp.set(dateProvider.currentTimeMillis)
         // TODO: finalize old recording if there's some left on disk and send it using the replayId from persisted scope (e.g. for ANRs)
     }
 
@@ -243,6 +246,7 @@ class ReplayIntegration(
         recorder?.stopRecording()
         cache?.close()
         currentSegment.set(0)
+        replayStartTimestamp.set(0)
         segmentTimestamp.set(null)
         currentReplayId.set(SentryId.EMPTY_ID)
         hub?.configureScope { it.replayId = SentryId.EMPTY_ID }
@@ -276,6 +280,11 @@ class ReplayIntegration(
                     // set next segment timestamp as close to the previous one as possible to avoid gaps
                     segmentTimestamp.set(DateUtils.getDateTime(currentSegmentTimestamp.time + videoDuration))
                 }
+            } else if (isFullSession.get() &&
+                (now - replayStartTimestamp.get() >= options.experimental.sessionReplayOptions.sessionDuration)
+            ) {
+                stop()
+                options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
             } else if (!isFullSession.get()) {
                 cache?.rotate(now - options.experimental.sessionReplayOptions.errorReplayDuration)
             }

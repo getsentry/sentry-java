@@ -156,5 +156,7 @@
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
 
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1.0" />
+
     </application>
 </manifest>

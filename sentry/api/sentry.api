@@ -2569,6 +2569,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getErrorReplayDuration ()J
 	public fun getErrorSampleRate ()Ljava/lang/Double;
 	public fun getFrameRate ()I
+	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
 	public fun isSessionReplayEnabled ()Z
