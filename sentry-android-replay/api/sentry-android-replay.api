@@ -33,7 +33,7 @@ public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
 public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun close ()V
-	public final fun isRecording ()Z
+	public fun isRecording ()Z
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
@@ -44,8 +44,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integr
 }
 
 public final class io/sentry/android/replay/ReplayIntegrationKt {
-	public static final fun getReplayIntegration (Lio/sentry/IHub;)Lio/sentry/android/replay/ReplayIntegration;
-	public static final fun gracefullyShutdown (Ljava/util/concurrent/ExecutorService;Lio/sentry/SentryOptions;)V
+	public static final fun submitSafely (Ljava/util/concurrent/ExecutorService;Lio/sentry/ILogger;Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 }
 
 public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {

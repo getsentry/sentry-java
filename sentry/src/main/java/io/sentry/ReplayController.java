@@ -13,5 +13,7 @@ public interface ReplayController {
 
   void resume();
 
+  boolean isRecording();
+
   void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint);
 }
