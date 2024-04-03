@@ -310,8 +310,8 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> ()V
-	public fun getReplayOptions ()Lio/sentry/SentryReplayOptions;
-	public fun setReplayOptions (Lio/sentry/SentryReplayOptions;)V
+	public fun getSessionReplayOptions ()Lio/sentry/SentryReplayOptions;
+	public fun setSessionReplayOptions (Lio/sentry/SentryReplayOptions;)V
 }
 
 public final class io/sentry/ExternalOptions {
