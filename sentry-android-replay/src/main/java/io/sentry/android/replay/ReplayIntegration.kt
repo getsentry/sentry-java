@@ -91,10 +91,17 @@ class ReplayIntegration(
             return
         }
 
+        isFullSession.set(sample(options.experimental.sessionReplayOptions.sessionSampleRate))
+        if (!isFullSession.get() &&
+            !options.experimental.sessionReplayOptions.isSessionReplayForErrorsEnabled
+        ) {
+            options.logger.log(INFO, "Session replay is disabled, full session was not sampled and errorSampleRate is not specified")
+            return
+        }
+
         this.hub = hub
         recorder = WindowRecorder(options, recorderConfig, this)
         isEnabled.set(true)
-        isFullSession.set(sample(options.experimental.sessionReplayOptions.sessionSampleRate))
 
         addIntegrationToSdkVersion(javaClass)
         SentryIntegrationPackageStorage.getInstance()

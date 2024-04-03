@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Experimental options for new features, these options are going to be promoted to SentryOptions
  * before GA.
- * <p>
- * Beware that experimental options can change at any time.
+ *
+ * <p>Beware that experimental options can change at any time.
  */
 public final class ExperimentalOptions {
   private @NotNull SentryReplayOptions sessionReplayOptions = new SentryReplayOptions();
