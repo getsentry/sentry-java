@@ -13,6 +13,19 @@ import io.sentry.protocol.SentryId
 import java.io.Closeable
 import java.io.File
 
+/**
+ * A basic in-memory and disk cache for Session Replay frames. Frames are stored in order under the
+ * [SentryOptions.cacheDirPath] + [replayId] folder. The class is also capable of creating an mp4
+ * video segment out of the stored frames, provided start time and duration using the available
+ * on-device [android.media.MediaCodec].
+ *
+ * This class is not thread-safe, meaning, [addFrame] cannot be called concurrently with
+ * [createVideoOf], and they should be invoked from the same thread.
+ *
+ * @param options SentryOptions instance, used for logging and cacheDir
+ * @param replayId the current replay id, used for giving a unique name to the replay folder
+ * @param recorderConfig ScreenshotRecorderConfig, used for video resolution and frame-rate
+ */
 public class ReplayCache internal constructor(
     private val options: SentryOptions,
     private val replayId: SentryId,
@@ -54,6 +67,16 @@ public class ReplayCache internal constructor(
     // TODO: maybe account for multi-threaded access
     internal val frames = mutableListOf<ReplayFrame>()
 
+    /**
+     * Stores the current frame screenshot to in-memory cache as well as disk with [frameTimestamp]
+     * as filename. Uses [Bitmap.CompressFormat.JPEG] format with quality 80. The frames are stored
+     * under [replayCacheDir].
+     *
+     * This method is not thread-safe.
+     *
+     * @param bitmap the frame screenshot
+     * @param frameTimestamp the timestamp when the frame screenshot was taken
+     */
     internal fun addFrame(bitmap: Bitmap, frameTimestamp: Long) {
         if (replayCacheDir == null) {
             return
@@ -70,11 +93,36 @@ public class ReplayCache internal constructor(
         addFrame(screenshot, frameTimestamp)
     }
 
+    /**
+     * Same as [addFrame], but accepts frame screenshot as [File], the file should contain
+     * a bitmap/image by the time [createVideoOf] is invoked.
+     *
+     * This method is not thread-safe.
+     *
+     * @param screenshot file containing the frame screenshot
+     * @param frameTimestamp the timestamp when the frame screenshot was taken
+     */
     public fun addFrame(screenshot: File, frameTimestamp: Long) {
         val frame = ReplayFrame(screenshot, frameTimestamp)
         frames += frame
     }
 
+    /**
+     * Creates a video out of currently stored [frames] given the start time and duration using the
+     * on-device codecs [android.media.MediaCodec]. The generated video will be stored in
+     * [videoFile] location, which defaults to "[replayCacheDir]/[segmentId].mp4".
+     *
+     * This method is not thread-safe.
+     *
+     * @param duration desired video duration in milliseconds
+     * @param from desired start of the video represented as unix timestamp in milliseconds
+     * @param segmentId current segment id, used for inferring the filename to store the
+     * result video under [replayCacheDir], e.g. "replay_<uuid>/0.mp4", where segmentId=0
+     * @param videoFile optional, location of the file to store the result video. If this is
+     * provided, [segmentId] from above is disregarded and not used.
+     * @return a generated video of type [GeneratedVideo], which contains the resulting video file
+     * location, frame count and duration in milliseconds.
+     */
     public fun createVideoOf(
         duration: Long,
         from: Long,
