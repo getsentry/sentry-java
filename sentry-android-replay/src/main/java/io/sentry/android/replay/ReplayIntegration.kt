@@ -59,7 +59,7 @@ class ReplayIntegration(
     private val currentSegment = AtomicInteger(0)
 
     // TODO: surround with try-catch on the calling site
-    private val saver by lazy {
+    private val replayExecutor by lazy {
         Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     }
 
@@ -128,6 +128,18 @@ class ReplayIntegration(
 
         currentSegment.set(0)
         currentReplayId.set(SentryId())
+        replayExecutor.submit {
+            // clean up old replays
+            options.cacheDirPath?.let { cacheDir ->
+                File(cacheDir).listFiles { dir, name ->
+                    // TODO: also exclude persisted replay_id from scope when implementing ANRs
+                    if (name.startsWith("replay_") && !name.contains(currentReplayId.get().toString())) {
+                        FileUtils.deleteRecursively(File(dir, name))
+                    }
+                    false
+                }
+            }
+        }
         if (isFullSession.get()) {
             // only set replayId on the scope if it's a full session, otherwise all events will be
             // tagged with the replay that might never be sent when we're recording in buffer mode
@@ -182,7 +194,7 @@ class ReplayIntegration(
         }
         val segmentId = currentSegment.get()
         val replayId = currentReplayId.get()
-        saver.submit {
+        replayExecutor.submit {
             val videoDuration =
                 createAndCaptureSegment(now - currentSegmentTimestamp.time, currentSegmentTimestamp, replayId, segmentId, BUFFER, hint)
             if (videoDuration != null) {
@@ -215,7 +227,7 @@ class ReplayIntegration(
         val segmentId = currentSegment.get()
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId.get()
-        saver.submit {
+        replayExecutor.submit {
             val videoDuration =
                 createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
             if (videoDuration != null) {
@@ -235,7 +247,7 @@ class ReplayIntegration(
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId.get()
         val replayCacheDir = cache?.replayCacheDir
-        saver.submit {
+        replayExecutor.submit {
             // we don't flush the segment, but we still wanna clean up the folder for buffer mode
             if (isFullSession.get()) {
                 createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
@@ -257,7 +269,7 @@ class ReplayIntegration(
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
-        saver.submit {
+        replayExecutor.submit {
             cache?.addFrame(bitmap, frameTimestamp)
 
             val now = dateProvider.currentTimeMillis
@@ -374,7 +386,7 @@ class ReplayIntegration(
         }
 
         stop()
-        saver.gracefullyShutdown(options)
+        replayExecutor.gracefullyShutdown(options)
     }
 
     private class ReplayExecutorServiceThreadFactory : ThreadFactory {
