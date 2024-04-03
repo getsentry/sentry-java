@@ -205,6 +205,11 @@ public class ReplayCache internal constructor(
         }
     }
 
+    /**
+     * Removes frames from the in-memory and disk cache from start to [until].
+     *
+     * @param until value until whose the frames should be removed, represented as unix timestamp
+     */
     fun rotate(until: Long) {
         frames.removeAll {
             if (it.timestamp < until) {
