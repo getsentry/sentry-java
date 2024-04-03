@@ -94,10 +94,11 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
         hub.startSession();
       }
       hub.getOptions().getReplayController().start();
-    } else if (!isFreshSession.getAndSet(false)) {
+    } else if (!isFreshSession.get()) {
       // only resume if it's not a fresh session, which has been started in SentryAndroid.init
       hub.getOptions().getReplayController().resume();
     }
+    isFreshSession.set(false);
     this.lastUpdatedSession.set(currentTimeMillis);
   }
 

@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.Scope.IWithPropagationContext
+import io.sentry.SentryLevel.WARNING
 import io.sentry.Session.State.Crashed
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
@@ -2272,6 +2273,41 @@ class SentryClientTest {
     @Test
     fun `when event has DiskFlushNotification, TransactionEnds set transaction id as flushable`() {
         val sut = fixture.getSut()
+        val replayId = SentryId()
+        val scope = mock<Scope> {
+            whenever(it.replayId).thenReturn(replayId)
+            whenever(it.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+            whenever(it.extras).thenReturn(emptyMap())
+            whenever(it.contexts).thenReturn(Contexts())
+        }
+        val scopePropagationContext = PropagationContext()
+        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
+        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
+
+        var capturedEventId: SentryId? = null
+        val transactionEnd = object : TransactionEnd, DiskFlushNotification {
+            override fun markFlushed() {}
+            override fun isFlushable(eventId: SentryId?): Boolean = true
+            override fun setFlushable(eventId: SentryId) {
+                capturedEventId = eventId
+            }
+        }
+        val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
+
+        sut.captureEvent(SentryEvent(), scope, transactionEndHint)
+
+        assertEquals(replayId, capturedEventId)
+        verify(fixture.transport).send(
+            check {
+                assertEquals(1, it.items.count())
+            },
+            any()
+        )
+    }
+
+    @Test
+    fun `when event has DiskFlushNotification, TransactionEnds set replay id as flushable`() {
+        val sut = fixture.getSut()
 
         // build up a running transaction
         val spanContext = SpanContext("op.load")
@@ -2582,6 +2618,21 @@ class SentryClientTest {
             fixture.sentryOptions.clientReportRecorder,
             listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Replay.category, 1))
         )
+    }
+
+    @Test
+    fun `calls sendReplayForEvent on replay controller for error events`() {
+        var called = false
+        fixture.sentryOptions.setReplayController(object : ReplayController by NoOpReplayController.getInstance() {
+            override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
+                assertEquals("Test", event.message?.formatted)
+                called = true
+            }
+        })
+        val sut = fixture.getSut()
+
+        sut.captureMessage("Test", WARNING)
+        assertTrue(called)
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {

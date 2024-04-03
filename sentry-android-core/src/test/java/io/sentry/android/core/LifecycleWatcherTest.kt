@@ -5,6 +5,7 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.ReplayController
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -36,6 +37,7 @@ class LifecycleWatcherTest {
         val hub = mock<IHub>()
         val dateProvider = mock<ICurrentDateProvider>()
         val options = SentryOptions()
+        val replayController = mock<ReplayController>()
 
         fun getSUT(
             sessionIntervalMillis: Long = 0L,
@@ -49,6 +51,7 @@ class LifecycleWatcherTest {
             whenever(hub.configureScope(argumentCaptor.capture())).thenAnswer {
                 argumentCaptor.value.run(scope)
             }
+            options.setReplayController(replayController)
             whenever(hub.options).thenReturn(options)
 
             return LifecycleWatcher(
@@ -73,6 +76,7 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub).startSession()
+        verify(fixture.replayController).start()
     }
 
     @Test
@@ -82,6 +86,7 @@ class LifecycleWatcherTest {
         watcher.onStart(fixture.ownerMock)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub, times(2)).startSession()
+        verify(fixture.replayController, times(2)).start()
     }
 
     @Test
@@ -91,6 +96,7 @@ class LifecycleWatcherTest {
         watcher.onStart(fixture.ownerMock)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub).startSession()
+        verify(fixture.replayController).start()
     }
 
     @Test
@@ -99,6 +105,7 @@ class LifecycleWatcherTest {
         watcher.onStart(fixture.ownerMock)
         watcher.onStop(fixture.ownerMock)
         verify(fixture.hub, timeout(10000)).endSession()
+        verify(fixture.replayController, timeout(10000)).stop()
     }
 
     @Test
@@ -113,6 +120,7 @@ class LifecycleWatcherTest {
         assertNull(watcher.timerTask)
 
         verify(fixture.hub, never()).endSession()
+        verify(fixture.replayController, never()).stop()
     }
 
     @Test
@@ -244,6 +252,7 @@ class LifecycleWatcherTest {
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub, never()).startSession()
+        verify(fixture.replayController, never()).start()
     }
 
     @Test
@@ -270,6 +279,7 @@ class LifecycleWatcherTest {
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub).startSession()
+        verify(fixture.replayController).start()
     }
 
     @Test
@@ -284,5 +294,51 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT()
         watcher.onStop(fixture.ownerMock)
         assertTrue(AppState.getInstance().isInBackground!!)
+    }
+
+    @Test
+    fun `if the hub has already a fresh session running, doesn't resume replay`() {
+        val watcher = fixture.getSUT(
+            enableAppLifecycleBreadcrumbs = false,
+            session = Session(
+                State.Ok,
+                DateUtils.getCurrentDateTime(),
+                DateUtils.getCurrentDateTime(),
+                0,
+                "abc",
+                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                true,
+                0,
+                10.0,
+                null,
+                null,
+                null,
+                "release",
+                null
+            )
+        )
+
+        watcher.onStart(fixture.ownerMock)
+        verify(fixture.replayController, never()).resume()
+    }
+
+    @Test
+    fun `background-foreground replay`() {
+        whenever(fixture.dateProvider.currentTimeMillis).thenReturn(1L)
+        val watcher = fixture.getSUT(
+            sessionIntervalMillis = 2L,
+            enableAppLifecycleBreadcrumbs = false
+        )
+        watcher.onStart(fixture.ownerMock)
+        verify(fixture.replayController).start()
+
+        watcher.onStop(fixture.ownerMock)
+        verify(fixture.replayController).pause()
+
+        watcher.onStart(fixture.ownerMock)
+        verify(fixture.replayController).resume()
+
+        watcher.onStop(fixture.ownerMock)
+        verify(fixture.replayController, timeout(10000)).stop()
     }
 }

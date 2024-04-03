@@ -492,6 +492,13 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ReplayIntegration set as ReplayController if available on classpath`() {
+        fixture.initSutWithClassLoader(isReplayAvailable = true)
+
+        assertTrue(fixture.sentryOptions.replayController is ReplayIntegration)
+    }
+
+    @Test
     fun `ReplayIntegration won't be enabled, it throws class not found`() {
         fixture.initSutWithClassLoader(isReplayAvailable = false)
 
