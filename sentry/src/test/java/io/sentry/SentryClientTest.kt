@@ -2286,6 +2286,7 @@ class SentryClientTest {
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
+        whenever(scope.replayId).thenReturn(SentryId.EMPTY_ID)
         val scopePropagationContext = PropagationContext()
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
         doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
@@ -2358,6 +2359,7 @@ class SentryClientTest {
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
+        whenever(scope.replayId).thenReturn(SentryId())
         val scopePropagationContext = PropagationContext()
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
         doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
@@ -2426,6 +2428,8 @@ class SentryClientTest {
         whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
         whenever(scope.extras).thenReturn(emptyMap())
         whenever(scope.contexts).thenReturn(Contexts())
+        val replayId = SentryId()
+        whenever(scope.replayId).thenReturn(replayId)
         val scopePropagationContext = PropagationContext()
         doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
         whenever(scope.propagationContext).thenReturn(scopePropagationContext)
@@ -2438,6 +2442,7 @@ class SentryClientTest {
             check {
                 assertNotNull(it.header.traceContext)
                 assertEquals(scopePropagationContext.traceId, it.header.traceContext!!.traceId)
+                assertEquals(replayId, it.header.traceContext!!.replayId)
             },
             any()
         )
