@@ -100,9 +100,9 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
-  static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.replays.session-sample-rate";
+  static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
 
-  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.replays.error-sample-rate";
+  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.error-sample-rate";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -376,18 +376,21 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
 
-        if (options.getExperimental().getReplayOptions().getSessionSampleRate() == null) {
+        if (options.getExperimental().getSessionReplayOptions().getSessionSampleRate() == null) {
           final Double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options.getExperimental().getReplayOptions().setSessionSampleRate(sessionSampleRate);
+            options
+                .getExperimental()
+                .getSessionReplayOptions()
+                .setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.getExperimental().getReplayOptions().getErrorSampleRate() == null) {
+        if (options.getExperimental().getSessionReplayOptions().getErrorSampleRate() == null) {
           final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (errorSampleRate != -1) {
-            options.getExperimental().getReplayOptions().setErrorSampleRate(errorSampleRate);
+            options.getExperimental().getSessionReplayOptions().setErrorSampleRate(errorSampleRate);
           }
         }
       }

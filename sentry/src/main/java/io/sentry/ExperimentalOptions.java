@@ -2,15 +2,19 @@ package io.sentry;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Experimental options for new features, these options are going to be promoted to SentryOptions
+ * before GA
+ */
 public final class ExperimentalOptions {
-  private @NotNull SentryReplayOptions replayOptions = new SentryReplayOptions();
+  private @NotNull SentryReplayOptions sessionReplayOptions = new SentryReplayOptions();
 
   @NotNull
-  public SentryReplayOptions getReplayOptions() {
-    return replayOptions;
+  public SentryReplayOptions getSessionReplayOptions() {
+    return sessionReplayOptions;
   }
 
-  public void setReplayOptions(final @NotNull SentryReplayOptions replayOptions) {
-    this.replayOptions = replayOptions;
+  public void setSessionReplayOptions(final @NotNull SentryReplayOptions sessionReplayOptions) {
+    this.sessionReplayOptions = sessionReplayOptions;
   }
 }
