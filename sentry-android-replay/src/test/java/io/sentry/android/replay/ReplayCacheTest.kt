@@ -37,7 +37,7 @@ class ReplayCacheTest {
             frameRate: Int,
             framesToEncode: Int = 0
         ): ReplayCache {
-            val recorderConfig = ScreenshotRecorderConfig(100, 200, 1f, frameRate)
+            val recorderConfig = ScreenshotRecorderConfig(100, 200, 1f, frameRate = frameRate, bitRate = 20_000)
             options.run {
                 cacheDirPath = dir?.newFolder()?.absolutePath
             }
@@ -46,9 +46,7 @@ class ReplayCacheTest {
                     options,
                     MuxerConfig(
                         file = videoFile,
-                        recorderConfig = recorderConfig,
-                        frameRate = recorderConfig.frameRate.toFloat(),
-                        bitrate = 20 * 1000
+                        recorderConfig = recorderConfig
                     ),
                     onClose = {
                         encodeFrame(framesToEncode, frameRate, size = 0, flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM)

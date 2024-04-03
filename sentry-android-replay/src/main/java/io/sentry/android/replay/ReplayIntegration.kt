@@ -2,12 +2,7 @@ package io.sentry.android.replay
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Point
-import android.graphics.Rect
 import android.os.Build
-import android.os.Build.VERSION
-import android.os.Build.VERSION_CODES
-import android.view.WindowManager
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -33,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
-import kotlin.math.roundToInt
 
 class ReplayIntegration(
     private val context: Context,
@@ -59,28 +53,11 @@ class ReplayIntegration(
     private val saver =
         Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
 
-    private val screenBounds by lazy(NONE) {
-        // PixelCopy takes screenshots including system bars, so we have to get the real size here
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        if (VERSION.SDK_INT >= VERSION_CODES.R) {
-            wm.currentWindowMetrics.bounds
-        } else {
-            val screenBounds = Point()
-            @Suppress("DEPRECATION")
-            wm.defaultDisplay.getRealSize(screenBounds)
-            Rect(0, 0, screenBounds.x, screenBounds.y)
-        }
-    }
-
-    private val aspectRatio by lazy(NONE) {
-        screenBounds.height().toFloat() / screenBounds.width().toFloat()
-    }
-
     private val recorderConfig by lazy(NONE) {
-        ScreenshotRecorderConfig(
-            recordingWidth = (720 / aspectRatio).roundToInt(),
-            recordingHeight = 720,
-            scaleFactor = 720f / screenBounds.bottom
+        ScreenshotRecorderConfig.from(
+            context,
+            targetHeight = 720,
+            options.experimental.sessionReplayOptions
         )
     }
 
