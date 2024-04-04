@@ -6,6 +6,10 @@
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
 
+### Fixes
+
+- Fixed default deadline timeout to 30s instead of 300s ([#3322](https://github.com/getsentry/sentry-java/pull/3322))
+
 ## 7.6.0
 
 ### Features
