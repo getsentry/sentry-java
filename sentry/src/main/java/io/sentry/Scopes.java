@@ -9,19 +9,15 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import io.sentry.util.Pair;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,10 +36,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
   private final @NotNull TracesSampler tracesSampler;
-
-  // TODO should this go on global scope?
-  private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
-      Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
   private final @NotNull MetricsApi metricsApi;
 
@@ -120,7 +112,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   // TODO add to IScopes interface
   public @NotNull Scopes forkedCurrentScope(final @NotNull String creator) {
-    return new Scopes(scope.clone(), isolationScope, this, options, creator);
+    IScope clone = scope.clone();
+    // TODO should use isolation scope
+    //    return new Scopes(clone, isolationScope, this, options, creator);
+    return new Scopes(clone, clone, this, options, creator);
   }
 
   //  // TODO in Sentry.init?
@@ -180,23 +175,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
-    if (options.isTracingEnabled() && event.getThrowable() != null) {
-      final Pair<WeakReference<ISpan>, String> pair =
-          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
-      if (pair != null) {
-        final WeakReference<ISpan> spanWeakRef = pair.getFirst();
-        if (event.getContexts().getTrace() == null && spanWeakRef != null) {
-          final ISpan span = spanWeakRef.get();
-          if (span != null) {
-            event.getContexts().setTrace(span.getSpanContext());
-          }
-        }
-        final String transactionName = pair.getSecond();
-        if (event.getTransaction() == null && transactionName != null) {
-          event.setTransaction(transactionName);
-        }
-      }
-    }
+    Sentry.getGlobalScope().assignTraceContext(event);
   }
 
   private IScope buildLocalScope(
@@ -691,10 +670,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else {
       if (client != null) {
         options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
-        getDefaultWriteScope().setClient(client);
+        getDefaultWriteScope().bindClient(client);
       } else {
         options.getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
-        getDefaultWriteScope().setClient(NoOpSentryClient.getInstance());
+        getDefaultWriteScope().bindClient(NoOpSentryClient.getInstance());
       }
     }
   }
@@ -871,34 +850,26 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,
       final @NotNull String transactionName) {
-    Objects.requireNonNull(throwable, "throwable is required");
-    Objects.requireNonNull(span, "span is required");
-    Objects.requireNonNull(transactionName, "transactionName is required");
-    // to match any cause, span context is always attached to the root cause of the exception
-    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-    // the most inner span should be assigned to a throwable
-    if (!throwableToSpan.containsKey(rootCause)) {
-      throwableToSpan.put(rootCause, new Pair<>(new WeakReference<>(span), transactionName));
-    }
+    Sentry.getGlobalScope().setSpanContext(throwable, span, transactionName);
   }
 
-  // TODO this seems unused
-  @Nullable
-  SpanContext getSpanContext(final @NotNull Throwable throwable) {
-    Objects.requireNonNull(throwable, "throwable is required");
-    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-    final Pair<WeakReference<ISpan>, String> pair = this.throwableToSpan.get(rootCause);
-    if (pair != null) {
-      final WeakReference<ISpan> spanWeakRef = pair.getFirst();
-      if (spanWeakRef != null) {
-        final ISpan span = spanWeakRef.get();
-        if (span != null) {
-          return span.getSpanContext();
-        }
-      }
-    }
-    return null;
-  }
+  //  // TODO this seems unused
+  //  @Nullable
+  //  SpanContext getSpanContext(final @NotNull Throwable throwable) {
+  //    Objects.requireNonNull(throwable, "throwable is required");
+  //    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
+  //    final Pair<WeakReference<ISpan>, String> pair = this.throwableToSpan.get(rootCause);
+  //    if (pair != null) {
+  //      final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+  //      if (spanWeakRef != null) {
+  //        final ISpan span = spanWeakRef.get();
+  //        if (span != null) {
+  //          return span.getSpanContext();
+  //        }
+  //      }
+  //    }
+  //    return null;
+  //  }
 
   @Override
   public @Nullable ISpan getSpan() {

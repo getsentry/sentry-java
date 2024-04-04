@@ -377,8 +377,17 @@ public interface IScope {
   @NotNull
   SentryId getLastEventId();
 
-  void setClient(final @NotNull ISentryClient client);
+  void bindClient(final @NotNull ISentryClient client);
 
   @NotNull
   ISentryClient getClient();
+
+  @ApiStatus.Internal
+  void assignTraceContext(final @NotNull SentryEvent event);
+
+  @ApiStatus.Internal
+  void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName);
 }
