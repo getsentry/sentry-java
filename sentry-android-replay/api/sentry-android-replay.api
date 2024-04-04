@@ -43,10 +43,6 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integr
 	public fun stop ()V
 }
 
-public final class io/sentry/android/replay/ReplayIntegrationKt {
-	public static final fun submitSafely (Ljava/util/concurrent/ExecutorService;Lio/sentry/ILogger;Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
-}
-
 public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {
 	public abstract fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 }
