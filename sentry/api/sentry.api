@@ -259,6 +259,13 @@ public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
+public final class io/sentry/DefaultScopesStorage : io/sentry/IScopesStorage {
+	public fun <init> ()V
+	public fun close ()V
+	public fun get ()Lio/sentry/IScopes;
+	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
+}
+
 public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
@@ -792,6 +799,12 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun withScope (Lio/sentry/ScopeCallback;)V
 }
 
+public abstract interface class io/sentry/IScopesStorage {
+	public abstract fun close ()V
+	public abstract fun get ()Lio/sentry/IScopes;
+	public abstract fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
+}
+
 public abstract interface class io/sentry/ISentryClient {
 	public abstract fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
@@ -829,6 +842,10 @@ public abstract interface class io/sentry/ISentryExecutorService {
 	public abstract fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
+public abstract interface class io/sentry/ISentryLifecycleToken : java/lang/AutoCloseable {
+	public abstract fun close ()V
 }
 
 public abstract interface class io/sentry/ISerializer {
@@ -1388,6 +1405,13 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
+}
+
+public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
+	public fun close ()V
+	public fun get ()Lio/sentry/IScopes;
+	public static fun getInstance ()Lio/sentry/NoOpScopesStorage;
+	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
