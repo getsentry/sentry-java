@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add description to OkHttp spans ([#3320](https://github.com/getsentry/sentry-java/pull/3320))
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
 
 ## 7.6.0
