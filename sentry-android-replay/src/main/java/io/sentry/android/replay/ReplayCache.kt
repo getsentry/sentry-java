@@ -176,13 +176,7 @@ public class ReplayCache internal constructor(
             encoder = null
         }
 
-        frames.removeAll {
-            if (it.timestamp < (from + duration)) {
-                deleteFile(it.screenshot)
-                return@removeAll true
-            }
-            return@removeAll false
-        }
+        rotate(until = (from + duration))
 
         return GeneratedVideo(videoFile, frameCount, videoDuration)
     }
@@ -208,6 +202,21 @@ public class ReplayCache internal constructor(
             }
         } catch (e: Throwable) {
             options.logger.log(ERROR, e, "Failed to delete replay frame: %s", file.absolutePath)
+        }
+    }
+
+    /**
+     * Removes frames from the in-memory and disk cache from start to [until].
+     *
+     * @param until value until whose the frames should be removed, represented as unix timestamp
+     */
+    fun rotate(until: Long) {
+        frames.removeAll {
+            if (it.timestamp < until) {
+                deleteFile(it.screenshot)
+                return@removeAll true
+            }
+            return@removeAll false
         }
     }
 

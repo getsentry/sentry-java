@@ -93,11 +93,12 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
         addSessionBreadcrumb("start");
         hub.startSession();
       }
-      SentryAndroid.startReplay();
-    } else if (!isFreshSession.getAndSet(false)) {
+      hub.getOptions().getReplayController().start();
+    } else if (!isFreshSession.get()) {
       // only resume if it's not a fresh session, which has been started in SentryAndroid.init
-      SentryAndroid.resumeReplay();
+      hub.getOptions().getReplayController().resume();
     }
+    isFreshSession.set(false);
     this.lastUpdatedSession.set(currentTimeMillis);
   }
 
@@ -108,7 +109,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
     this.lastUpdatedSession.set(currentTimeMillis);
 
-    SentryAndroid.pauseReplay();
+    hub.getOptions().getReplayController().pause();
     scheduleEndSession();
 
     AppState.getInstance().setInBackground(true);
@@ -127,7 +128,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
                   addSessionBreadcrumb("end");
                   hub.endSession();
                 }
-                SentryAndroid.stopReplay();
+                hub.getOptions().getReplayController().stop();
               }
             };
 
