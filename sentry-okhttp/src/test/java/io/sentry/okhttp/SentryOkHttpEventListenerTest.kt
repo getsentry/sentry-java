@@ -168,28 +168,35 @@ class SentryOkHttpEventListenerTest {
                 }
                 1 -> {
                     assertEquals("http.client.proxy_select", span.operation)
+                    assertEquals("http.client.proxy_select", span.description)
                     assertNotNull(span.data["proxies"])
                 }
                 2 -> {
                     assertEquals("http.client.dns", span.operation)
+                    assertEquals("http.client.dns", span.description)
                     assertNotNull(span.data["domain_name"])
                     assertNotNull(span.data["dns_addresses"])
                 }
                 3 -> {
                     assertEquals("http.client.connect", span.operation)
+                    assertEquals("http.client.connect", span.description)
                 }
                 4 -> {
                     assertEquals("http.client.connection", span.operation)
+                    assertEquals("http.client.connection", span.description)
                 }
                 5 -> {
                     assertEquals("http.client.request_headers", span.operation)
+                    assertEquals("http.client.request_headers", span.description)
                 }
                 6 -> {
                     assertEquals("http.client.response_headers", span.operation)
+                    assertEquals("http.client.response_headers", span.description)
                     assertEquals(201, span.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
                 }
                 7 -> {
                     assertEquals("http.client.response_body", span.operation)
+                    assertEquals("http.client.response_body", span.description)
                 }
             }
         }

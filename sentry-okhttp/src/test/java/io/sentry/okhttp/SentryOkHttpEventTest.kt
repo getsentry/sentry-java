@@ -158,6 +158,7 @@ class SentryOkHttpEventTest {
         assertNotNull(span)
         assertTrue(spans.containsKey("span"))
         assertEquals("http.client.span", span.operation)
+        assertEquals("http.client.span", span.description)
         assertFalse(span.isFinished)
     }
 
@@ -196,6 +197,7 @@ class SentryOkHttpEventTest {
         sut.finishSpan("span") {
             if (called == 0) {
                 assertEquals("http.client.span", it.operation)
+                assertEquals("http.client.span", it.description)
             } else {
                 assertEquals(sut.callRootSpan, it)
             }

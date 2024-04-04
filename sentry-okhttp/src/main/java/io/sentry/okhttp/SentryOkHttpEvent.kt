@@ -113,7 +113,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     fun startSpan(event: String) {
         // Find the parent of the span being created. E.g. secureConnect is child of connect
         val parentSpan = findParentSpan(event)
-        val span = parentSpan?.startChild("http.client.$event") ?: return
+        val span = parentSpan?.startChild("http.client.$event", "http.client.$event") ?: return
         if (event == RESPONSE_BODY_EVENT) {
             // We save this event is reading the response body, so that it will not be auto-finished
             isReadingResponseBody.set(true)
