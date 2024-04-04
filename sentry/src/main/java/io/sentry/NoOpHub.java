@@ -124,7 +124,9 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void pushScope() {}
+  public @NotNull ISentryLifecycleToken pushScope() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
 
   @Override
   public void popScope() {}

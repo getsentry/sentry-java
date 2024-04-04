@@ -154,8 +154,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void pushScope() {
-    Sentry.pushScope();
+  public @NotNull ISentryLifecycleToken pushScope() {
+    return Sentry.pushScope();
   }
 
   @Override

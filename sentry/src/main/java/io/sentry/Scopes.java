@@ -595,20 +595,21 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   // TODO needs to be deprecated because there's no more stack
   // TODO needs to return a lifecycle token
   @Override
-  public void pushScope() {
+  public ISentryLifecycleToken pushScope() {
     if (!isEnabled()) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
+      return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
     } else {
-      //      Scopes scopes = this.forkedScopes("pushScope");
-      //      return scopes.makeCurrent();
+      Scopes scopes = this.forkedCurrentScope("pushScope");
+      return scopes.makeCurrent();
     }
   }
 
-  //  public SentryLifecycleToken makeCurrent() {
-  //    // TODO store.set(this);
-  //  }
+  public ISentryLifecycleToken makeCurrent() {
+    return Sentry.setCurrentScopes(this);
+  }
 
   // TODO needs to be deprecated because there's no more stack
   @Override
@@ -618,8 +619,11 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
     } else {
-      // TODO how to remove fork?
-      // TODO getParentScopes().makeCurrent()?
+      final @Nullable Scopes parent = getParent();
+      if (parent != null) {
+        // TODO this is never closed
+        parent.makeCurrent();
+      }
     }
   }
 
@@ -634,7 +638,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       }
 
     } else {
-      Scopes forkedScopes = forkedScopes("withScope");
+      Scopes forkedScopes = forkedCurrentScope("withScope");
       // TODO should forkedScopes be made current inside callback?
       // TODO forkedScopes.makeCurrent()?
       try {
@@ -705,7 +709,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     if (!isEnabled()) {
       options.getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
     }
-    return new HubScopesWrapper(forkedScopes("scopes clone"));
+    // TODO should this fork isolation scope as well?
+    return new HubScopesWrapper(forkedCurrentScope("scopes clone"));
   }
 
   @ApiStatus.Internal

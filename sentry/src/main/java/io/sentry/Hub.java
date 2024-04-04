@@ -526,7 +526,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
-  public void pushScope() {
+  public @NotNull ISentryLifecycleToken pushScope() {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -536,6 +536,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       final StackItem newItem = new StackItem(options, item.getClient(), item.getScope().clone());
       stack.push(newItem);
     }
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override

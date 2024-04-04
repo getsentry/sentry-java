@@ -149,8 +149,8 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void pushScope() {
-    scopes.pushScope();
+  public @NotNull ISentryLifecycleToken pushScope() {
+    return scopes.pushScope();
   }
 
   @Override
