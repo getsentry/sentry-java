@@ -580,8 +580,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   // TODO add to IScopes interface
   public @NotNull IScope getGlobalScope() {
     // TODO should be:
-    //    return Sentry.getGlobalScope();
-    return scope;
+    return Sentry.getGlobalScope();
+    //    return scope;
   }
 
   @Override
