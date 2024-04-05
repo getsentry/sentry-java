@@ -14,6 +14,7 @@ import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.ImageView
 import android.widget.TextView
+import io.sentry.SentryOptions
 
 // TODO: merge with ViewHierarchyNode from sentry-core maybe?
 @TargetApi(26)
@@ -49,14 +50,14 @@ data class ViewHierarchyNode(
         // TODO: check if this works on RN
         private fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-        fun fromView(view: View): ViewHierarchyNode {
+        fun fromView(view: View, options: SentryOptions): ViewHierarchyNode {
             // TODO: Extract redacting into its own class/function
             // TODO: extract redacting into a separate thread?
             var shouldRedact = false
             var dominantColor: Int? = null
             var rect: Rect? = null
-            when (view) {
-                is TextView -> {
+            when {
+                view is TextView && options.experimental.sessionReplay.redactAllText -> {
                     // TODO: API level check
                     // TODO: perhaps this is heavy, might reconsider
                     val nodeInfo = if (VERSION.SDK_INT >= VERSION_CODES.R) {
@@ -101,7 +102,7 @@ data class ViewHierarchyNode(
                     }
                 }
 
-                is ImageView -> {
+                view is ImageView && options.experimental.sessionReplay.redactAllImages -> {
                     shouldRedact = isVisible(view) && (view.drawable?.isRedactable() ?: false)
                     if (shouldRedact) {
                         rect = Rect()

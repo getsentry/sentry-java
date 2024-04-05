@@ -341,7 +341,7 @@ class SentryAndroidTest {
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
-                options.experimental.sessionReplayOptions.errorSampleRate = 1.0
+                options.experimental.sessionReplay.errorSampleRate = 1.0
             }
 
             var session: Session? = null

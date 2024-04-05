@@ -104,6 +104,10 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.error-sample-rate";
 
+  static final String REPLAYS_REDACT_ALL_TEXT = "io.sentry.session-replay.redact-all-text";
+
+  static final String REPLAYS_REDACT_ALL_IMAGES = "io.sentry.session-replay.redact-all-images";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -376,23 +380,40 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
 
-        if (options.getExperimental().getSessionReplayOptions().getSessionSampleRate() == null) {
+        if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options
-                .getExperimental()
-                .getSessionReplayOptions()
-                .setSessionSampleRate(sessionSampleRate);
+            options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.getExperimental().getSessionReplayOptions().getErrorSampleRate() == null) {
+        if (options.getExperimental().getSessionReplay().getErrorSampleRate() == null) {
           final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (errorSampleRate != -1) {
-            options.getExperimental().getSessionReplayOptions().setErrorSampleRate(errorSampleRate);
+            options.getExperimental().getSessionReplay().setErrorSampleRate(errorSampleRate);
           }
         }
+
+        options
+            .getExperimental()
+            .getSessionReplay()
+            .setRedactAllText(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_REDACT_ALL_TEXT,
+                    options.getExperimental().getSessionReplay().getRedactAllText()));
+
+        options
+            .getExperimental()
+            .getSessionReplay()
+            .setRedactAllImages(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_REDACT_ALL_IMAGES,
+                    options.getExperimental().getSessionReplay().getRedactAllImages()));
       }
 
       options
