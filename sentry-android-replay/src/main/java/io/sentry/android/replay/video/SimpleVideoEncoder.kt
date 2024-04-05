@@ -221,13 +221,17 @@ internal class SimpleVideoEncoder(
     }
 
     fun release() {
-        onClose?.invoke()
-        drainCodec(true)
-        mediaCodec.stop()
-        mediaCodec.release()
-        surface?.release()
+        try {
+            onClose?.invoke()
+            drainCodec(true)
+            mediaCodec.stop()
+            mediaCodec.release()
+            surface?.release()
 
-        frameMuxer.release()
+            frameMuxer.release()
+        } catch (e: Throwable) {
+            options.logger.log(DEBUG, "Failed to properly release video encoder", e)
+        }
     }
 }
 
