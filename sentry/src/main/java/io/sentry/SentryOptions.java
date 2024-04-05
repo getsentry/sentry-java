@@ -2680,11 +2680,11 @@ public class SentryOptions {
     private @Nullable java.net.Proxy.Type type;
 
     public Proxy() {
-      this(null, null, null, null);
+      this(null, null, null, null, null);
     }
 
     public Proxy(@Nullable String host, @Nullable String port) {
-      this(host, port, null, null);
+      this(host, port, null, null, null);
     }
 
     public Proxy(@Nullable String host, @Nullable String port, @Nullable java.net.Proxy.Type type) {
