@@ -37,7 +37,7 @@ class ReplayCacheTest {
             frameRate: Int,
             framesToEncode: Int = 0
         ): ReplayCache {
-            val recorderConfig = ScreenshotRecorderConfig(100, 200, 1f, frameRate = frameRate, bitRate = 20_000)
+            val recorderConfig = ScreenshotRecorderConfig(100, 200, 1f, 1f, frameRate = frameRate, bitRate = 20_000)
             options.run {
                 cacheDirPath = dir?.newFolder()?.absolutePath
             }
