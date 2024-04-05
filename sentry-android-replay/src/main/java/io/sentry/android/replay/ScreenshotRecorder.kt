@@ -30,7 +30,6 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
-import kotlin.system.measureTimeMillis
 
 @TargetApi(26)
 internal class ScreenshotRecorder(
@@ -51,14 +50,14 @@ internal class ScreenshotRecorder(
     )
     private val singlePixelBitmapCanvas: Canvas = Canvas(singlePixelBitmap)
     private val prescaledMatrix = Matrix().apply {
-        preScale(config.scaleFactor, config.scaleFactor)
+        preScale(config.scaleFactorX, config.scaleFactorY)
     }
     private val contentChanged = AtomicBoolean(false)
     private val isCapturing = AtomicBoolean(true)
     private var lastScreenshot: Bitmap? = null
 
     fun capture() {
-        val viewHierarchy = pendingViewHierarchy.get()
+        val viewHierarchy = pendingViewHierarchy.getAndSet(null)
 
         if (!isCapturing.get()) {
             options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
@@ -165,12 +164,9 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val time = measureTimeMillis {
-            val rootNode = ViewHierarchyNode.fromView(root)
-            root.traverse(rootNode)
-            pendingViewHierarchy.set(rootNode)
-        }
-        options.logger.log(DEBUG, "Took %d ms to capture view hierarchy", time)
+        val rootNode = ViewHierarchyNode.fromView(root)
+        root.traverse(rootNode)
+        pendingViewHierarchy.set(rootNode)
 
         contentChanged.set(true)
     }
@@ -243,12 +239,29 @@ internal class ScreenshotRecorder(
 public data class ScreenshotRecorderConfig(
     val recordingWidth: Int,
     val recordingHeight: Int,
-    val scaleFactor: Float,
+    val scaleFactorX: Float,
+    val scaleFactorY: Float,
     val frameRate: Int,
     val bitRate: Int
 ) {
     companion object {
-        fun from(context: Context, targetHeight: Int, sentryReplayOptions: SentryReplayOptions): ScreenshotRecorderConfig {
+        /**
+         * Since codec block size is 16, so we have to adjust the width and height to it, otherwise
+         * the codec might fail to configure on some devices, see https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
+         */
+        private fun Int.adjustToBlockSize(): Int {
+            val remainder = this % 16
+            return if (remainder <= 8) {
+                this - remainder
+            } else {
+                this + (16 - remainder)
+            }
+        }
+
+        fun from(
+            context: Context,
+            sentryReplayOptions: SentryReplayOptions
+        ): ScreenshotRecorderConfig {
             // PixelCopy takes screenshots including system bars, so we have to get the real size here
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val screenBounds = if (VERSION.SDK_INT >= VERSION_CODES.R) {
@@ -259,12 +272,21 @@ public data class ScreenshotRecorderConfig(
                 wm.defaultDisplay.getRealSize(screenBounds)
                 Rect(0, 0, screenBounds.x, screenBounds.y)
             }
-            val aspectRatio = screenBounds.height().toFloat() / screenBounds.width().toFloat()
+
+            // use the baseline density of 1x (mdpi)
+            val (height, width) =
+                (screenBounds.height() / context.resources.displayMetrics.density)
+                    .roundToInt()
+                    .adjustToBlockSize() to
+                    (screenBounds.width() / context.resources.displayMetrics.density)
+                        .roundToInt()
+                        .adjustToBlockSize()
 
             return ScreenshotRecorderConfig(
-                recordingWidth = (targetHeight / aspectRatio).roundToInt(),
-                recordingHeight = targetHeight,
-                scaleFactor = targetHeight.toFloat() / screenBounds.height(),
+                recordingWidth = width,
+                recordingHeight = height,
+                scaleFactorX = width.toFloat() / screenBounds.width(),
+                scaleFactorY = height.toFloat() / screenBounds.height(),
                 frameRate = sentryReplayOptions.frameRate,
                 bitRate = sentryReplayOptions.bitRate
             )

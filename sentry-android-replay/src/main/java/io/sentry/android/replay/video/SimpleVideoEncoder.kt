@@ -40,6 +40,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import java.io.File
 import java.nio.ByteBuffer
+import kotlin.LazyThreadSafetyMode.NONE
 
 private const val TIMEOUT_USEC = 100_000L
 
@@ -49,33 +50,75 @@ internal class SimpleVideoEncoder(
     val muxerConfig: MuxerConfig,
     val onClose: (() -> Unit)? = null
 ) {
-    private val mediaFormat: MediaFormat = run {
+
+    internal val mediaCodec: MediaCodec = run {
+        val codec = MediaCodec.createEncoderByType(muxerConfig.mimeType)
+
+        codec
+    }
+
+    private val mediaFormat: MediaFormat by lazy(NONE) {
+        val videoCapabilities = mediaCodec.codecInfo
+            .getCapabilitiesForType(muxerConfig.mimeType)
+            .videoCapabilities
+
+        var bitRate = muxerConfig.recorderConfig.bitRate
+        if (!videoCapabilities.bitrateRange.contains(bitRate)) {
+            options.logger.log(
+                DEBUG,
+                "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one"
+            )
+            bitRate = videoCapabilities.bitrateRange.clamp(bitRate)
+        }
+
+        // TODO: if this ever becomes a problem, move this to ScreenshotRecorderConfig.from()
+        // TODO: because the screenshot config has to match the video config
+
+//        var frameRate = muxerConfig.recorderConfig.frameRate
+//        if (!videoCapabilities.supportedFrameRates.contains(frameRate)) {
+//            options.logger.log(DEBUG, "Encoder doesn't support the provided frameRate: $frameRate, the value will be clamped to the closest one")
+//            frameRate = videoCapabilities.supportedFrameRates.clamp(frameRate)
+//        }
+
+//        var height = muxerConfig.recorderConfig.recordingHeight
+//        var width = muxerConfig.recorderConfig.recordingWidth
+//        val aspectRatio = height.toFloat() / width.toFloat()
+//        while (!videoCapabilities.supportedHeights.contains(height) || !videoCapabilities.supportedWidths.contains(width)) {
+//            options.logger.log(DEBUG, "Encoder doesn't support the provided height x width: ${height}x${width}, the values will be clamped to the closest ones")
+//            if (!videoCapabilities.supportedHeights.contains(height)) {
+//                height = videoCapabilities.supportedHeights.clamp(height)
+//                width = (height / aspectRatio).roundToInt()
+//            } else if (!videoCapabilities.supportedWidths.contains(width)) {
+//                width = videoCapabilities.supportedWidths.clamp(width)
+//                height = (width * aspectRatio).roundToInt()
+//            }
+//        }
+
         val format = MediaFormat.createVideoFormat(
             muxerConfig.mimeType,
             muxerConfig.recorderConfig.recordingWidth,
             muxerConfig.recorderConfig.recordingHeight
         )
 
+        // this allows reducing bitrate on newer devices, where they enforce higher quality in VBR
+        // mode, see https://developer.android.com/reference/android/media/MediaCodec#qualityFloor
+        // TODO: maybe enable this back later, for now variable bitrate seems to provide much better
+        // TODO: quality with almost no overhead in terms of video size, let's monitor that
+//        format.setInteger(
+//            MediaFormat.KEY_BITRATE_MODE,
+//            MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
+//        )
         // Set some properties.  Failing to specify some of these can cause the MediaCodec
         // configure() call to throw an unhelpful exception.
         format.setInteger(
             MediaFormat.KEY_COLOR_FORMAT,
             MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
         )
-        format.setInteger(MediaFormat.KEY_BIT_RATE, muxerConfig.recorderConfig.bitRate)
+        format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
         format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.recorderConfig.frameRate.toFloat())
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10)
 
         format
-    }
-
-    internal val mediaCodec: MediaCodec = run {
-//    val codecs = MediaCodecList(REGULAR_CODECS)
-//    val codecName = codecs.findEncoderForFormat(mediaFormat)
-//    val codec = MediaCodec.createByCodecName(codecName)
-        val codec = MediaCodec.createEncoderByType(muxerConfig.mimeType)
-
-        codec
     }
 
     private val bufferInfo: MediaCodec.BufferInfo = MediaCodec.BufferInfo()
