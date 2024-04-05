@@ -2447,13 +2447,17 @@ public final class io/sentry/SentryOptions$Proxy {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/net/Proxy$Type;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/net/Proxy$Type;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getHost ()Ljava/lang/String;
 	public fun getPass ()Ljava/lang/String;
 	public fun getPort ()Ljava/lang/String;
+	public fun getType ()Ljava/net/Proxy$Type;
 	public fun getUser ()Ljava/lang/String;
 	public fun setHost (Ljava/lang/String;)V
 	public fun setPass (Ljava/lang/String;)V
 	public fun setPort (Ljava/lang/String;)V
+	public fun setType (Ljava/net/Proxy$Type;)V
 	public fun setUser (Ljava/lang/String;)V
 }
 
