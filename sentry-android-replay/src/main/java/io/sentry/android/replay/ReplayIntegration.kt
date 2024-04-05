@@ -1,6 +1,8 @@
 package io.sentry.android.replay
 
+import android.content.ComponentCallbacks
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Build
 import io.sentry.DateUtils
@@ -41,7 +43,7 @@ import kotlin.LazyThreadSafetyMode.NONE
 class ReplayIntegration(
     private val context: Context,
     private val dateProvider: ICurrentDateProvider
-) : Integration, Closeable, ScreenshotRecorderCallback, ReplayController {
+) : Integration, Closeable, ScreenshotRecorderCallback, ReplayController, ComponentCallbacks {
 
     internal companion object {
         private const val TAG = "ReplayIntegration"
@@ -391,6 +393,12 @@ class ReplayIntegration(
         stop()
         replayExecutor.gracefullyShutdown(options)
     }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+
+    }
+
+    override fun onLowMemory() = Unit
 
     private class ReplayExecutorServiceThreadFactory : ThreadFactory {
         private var cnt = 0
