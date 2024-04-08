@@ -90,9 +90,9 @@ class MetricsHelperTest {
         assertEquals("plain\\rtext", MetricsHelper.sanitizeTagValue("plain\rtext"))
         assertEquals("plain\\ttext", MetricsHelper.sanitizeTagValue("plain\ttext"))
 
-        // Unescapable control characters
-        assertEquals("plaintext", MetricsHelper.sanitizeTagValue("plain\u0007text"))
-        assertEquals("plaintext", MetricsHelper.sanitizeTagValue("plain\u009ctext"))
+        // Unescapable control characters remain, as they'll be stripped by relay
+        assertEquals("plain\u0007text", MetricsHelper.sanitizeTagValue("plain\u0007text"))
+        assertEquals("plain\u009Ctext", MetricsHelper.sanitizeTagValue("plain\u009ctext"))
     }
 
     @Test

@@ -61,9 +61,6 @@ public final class MetricsHelper {
   @NotNull
   public static String sanitizeTagValue(final @NotNull String input) {
     // see https://develop.sentry.dev/sdk/metrics/#tag-values-replacement-map
-    // see
-    // https://github.com/getsentry/relay/blob/3208e3ce5b1fe4d147aa44e0e966807c256993de/relay-metrics/src/protocol.rs#L51
-    // Control codes   -> stripped
     // Line feed       -> \n
     // Carriage return -> \r
     // Tab             -> \t
@@ -85,7 +82,7 @@ public final class MetricsHelper {
         output.append("\\u{7c}");
       } else if (ch == ',') {
         output.append("\\u{2c}");
-      } else if (!Character.isISOControl(ch)) { // control codes are simply stripped
+      } else {
         output.append(ch);
       }
     }
@@ -114,7 +111,7 @@ public final class MetricsHelper {
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags) {
     final @NotNull String typePrefix = toStatsdType(type);
-    final @NotNull String serializedTags = GetTagsKey(tags);
+    final @NotNull String serializedTags = getTagsKey(tags);
 
     final @NotNull String unitName = getUnitName(unit);
     return String.format("%s_%s_%s_%s", typePrefix, metricKey, unitName, serializedTags);
@@ -125,7 +122,8 @@ public final class MetricsHelper {
     return (unit != null) ? unit.apiName() : MeasurementUnit.NONE;
   }
 
-  private static String GetTagsKey(final @Nullable Map<String, String> tags) {
+  @NotNull
+  private static String getTagsKey(final @Nullable Map<String, String> tags) {
     if (tags == null || tags.isEmpty()) {
       return "";
     }
