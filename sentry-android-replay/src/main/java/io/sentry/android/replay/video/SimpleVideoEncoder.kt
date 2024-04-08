@@ -58,17 +58,22 @@ internal class SimpleVideoEncoder(
     }
 
     private val mediaFormat: MediaFormat by lazy(NONE) {
-        val videoCapabilities = mediaCodec.codecInfo
-            .getCapabilitiesForType(muxerConfig.mimeType)
-            .videoCapabilities
-
         var bitRate = muxerConfig.bitRate
-        if (!videoCapabilities.bitrateRange.contains(bitRate)) {
-            options.logger.log(
-                DEBUG,
-                "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one"
-            )
-            bitRate = videoCapabilities.bitrateRange.clamp(bitRate)
+
+        try {
+            val videoCapabilities = mediaCodec.codecInfo
+                .getCapabilitiesForType(muxerConfig.mimeType)
+                .videoCapabilities
+
+            if (!videoCapabilities.bitrateRange.contains(bitRate)) {
+                options.logger.log(
+                    DEBUG,
+                    "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one"
+                )
+                bitRate = videoCapabilities.bitrateRange.clamp(bitRate)
+            }
+        } catch (e: Throwable) {
+            options.logger.log(DEBUG, "Could not retrieve MediaCodec info", e)
         }
 
         // TODO: if this ever becomes a problem, move this to ScreenshotRecorderConfig.from()
@@ -216,13 +221,17 @@ internal class SimpleVideoEncoder(
     }
 
     fun release() {
-        onClose?.invoke()
-        drainCodec(true)
-        mediaCodec.stop()
-        mediaCodec.release()
-        surface?.release()
+        try {
+            onClose?.invoke()
+            drainCodec(true)
+            mediaCodec.stop()
+            mediaCodec.release()
+            surface?.release()
 
-        frameMuxer.release()
+            frameMuxer.release()
+        } catch (e: Throwable) {
+            options.logger.log(DEBUG, "Failed to properly release video encoder", e)
+        }
     }
 }
 
