@@ -20,7 +20,11 @@ import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
+import io.sentry.android.replay.capture.BufferCaptureStrategy
+import io.sentry.android.replay.capture.CaptureStrategy
+import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebMetaEvent
@@ -32,50 +36,25 @@ import java.io.Closeable
 import java.io.File
 import java.security.SecureRandom
 import java.util.Date
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
 class ReplayIntegration(
     private val context: Context,
     private val dateProvider: ICurrentDateProvider
 ) : Integration, Closeable, ScreenshotRecorderCallback, ReplayController, ComponentCallbacks {
 
-    internal companion object {
-        private const val TAG = "ReplayIntegration"
-    }
-
     private lateinit var options: SentryOptions
     private var hub: IHub? = null
     private var recorder: WindowRecorder? = null
-    private var cache: ReplayCache? = null
     private val random by lazy { SecureRandom() }
 
     // TODO: probably not everything has to be thread-safe here
     private val isFullSession = AtomicBoolean(false)
     private val isEnabled = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
-    private val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
-    private val segmentTimestamp = AtomicReference<Date>()
-    private val replayStartTimestamp = AtomicLong()
-    private val currentSegment = AtomicInteger(0)
-
-    // TODO: surround with try-catch on the calling site
-    private val replayExecutor by lazy {
-        Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
-    }
+    private var captureStrategy: CaptureStrategy? = null
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
-
-    private fun sample(rate: Double?): Boolean {
-        if (rate != null) {
-            return !(rate < random.nextDouble()) // bad luck
-        }
-        return false
-    }
 
     override fun register(hub: IHub, options: SentryOptions) {
         this.options = options
@@ -92,7 +71,7 @@ class ReplayIntegration(
             return
         }
 
-        isFullSession.set(sample(options.experimental.sessionReplay.sessionSampleRate))
+        isFullSession.set(random.sample(options.experimental.sessionReplay.sessionSampleRate))
         if (!isFullSession.get() &&
             !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled
         ) {
@@ -103,6 +82,11 @@ class ReplayIntegration(
         this.hub = hub
         recorder = WindowRecorder(options, this)
         isEnabled.set(true)
+        captureStrategy = if (isFullSession.get()) {
+            SessionCaptureStrategy(options, hub, dateProvider)
+        } else {
+            BufferCaptureStrategy(options, hub, dateProvider, random)
+        }
 
         try {
             context.registerComponentCallbacks(this)
@@ -131,33 +115,9 @@ class ReplayIntegration(
             return
         }
 
-        currentSegment.set(0)
-        currentReplayId.set(SentryId())
-        replayExecutor.submitSafely(options, "$TAG.replays_cleanup") {
-            // clean up old replays
-            options.cacheDirPath?.let { cacheDir ->
-                File(cacheDir).listFiles { dir, name ->
-                    // TODO: also exclude persisted replay_id from scope when implementing ANRs
-                    if (name.startsWith("replay_") && !name.contains(currentReplayId.get().toString())) {
-                        FileUtils.deleteRecursively(File(dir, name))
-                    }
-                    false
-                }
-            }
-        }
-        if (isFullSession.get()) {
-            // only set replayId on the scope if it's a full session, otherwise all events will be
-            // tagged with the replay that might never be sent when we're recording in buffer mode
-            hub?.configureScope { it.replayId = currentReplayId.get() }
-        }
         recorderConfig = ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
-        cache = ReplayCache(options, currentReplayId.get(), recorderConfig)
-
+        captureStrategy?.start()
         recorder?.startRecording(recorderConfig)
-        // TODO: replace it with dateProvider.currentTimeMillis to also test it
-        segmentTimestamp.set(DateUtils.getCurrentDateTime())
-        replayStartTimestamp.set(dateProvider.currentTimeMillis)
-        // TODO: finalize old recording if there's some left on disk and send it using the replayId from persisted scope (e.g. for ANRs)
     }
 
     override fun resume() {
@@ -165,8 +125,7 @@ class ReplayIntegration(
             return
         }
 
-        // TODO: replace it with dateProvider.currentTimeMillis to also test it
-        segmentTimestamp.set(DateUtils.getCurrentDateTime())
+        captureStrategy?.resume()
         recorder?.resume()
     }
 
@@ -180,49 +139,9 @@ class ReplayIntegration(
             return
         }
 
-        val sampled = sample(options.experimental.sessionReplay.errorSampleRate)
-
-        // only tag event if it's a session mode or buffer mode that got sampled
-        if (isFullSession.get() || sampled) {
-            // don't ask me why
-            event.setTag("replayId", currentReplayId.get().toString())
-        }
-
-        if (isFullSession.get()) {
-            options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event %s", event.eventId)
-            return
-        }
-
-        if (!sampled) {
-            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event %s", event.eventId)
-            return
-        }
-
-        val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
-        val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
-            // in buffer mode we have to set the timestamp of the first frame as the actual start
-            DateUtils.getDateTime(cache!!.frames.first().timestamp)
-        } else {
-            DateUtils.getDateTime(now - errorReplayDuration)
-        }
-        val segmentId = currentSegment.get()
-        val replayId = currentReplayId.get()
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
-        replayExecutor.submitSafely(options, "$TAG.send_replay_for_event") {
-            val videoDuration =
-                createAndCaptureSegment(now - currentSegmentTimestamp.time, currentSegmentTimestamp, replayId, segmentId, height, width, BUFFER, hint)
-            if (videoDuration != null) {
-                currentSegment.getAndIncrement()
-            }
-            // since we're switching to session mode, even if the video is not sent for an error
-            // we still set the timestamp to now, because session is technically started "now"
-            segmentTimestamp.set(DateUtils.getDateTime(now))
-        }
-
-        hub?.configureScope { it.replayId = currentReplayId.get() }
+        captureStrategy?.sendReplayForEvent(event, hint)
         isFullSession.set(true)
+        captureStrategy = captureStrategy?.convert()
     }
 
     override fun pause() {
@@ -230,26 +149,8 @@ class ReplayIntegration(
             return
         }
 
-        val now = dateProvider.currentTimeMillis
         recorder?.pause()
-
-        if (!isFullSession.get()) {
-            return
-        }
-
-        val currentSegmentTimestamp = segmentTimestamp.get()
-        val segmentId = currentSegment.get()
-        val duration = now - currentSegmentTimestamp.time
-        val replayId = currentReplayId.get()
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
-        replayExecutor.submitSafely(options, "$TAG.pause") {
-            val videoDuration =
-                createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
-            if (videoDuration != null) {
-                currentSegment.getAndIncrement()
-            }
-        }
+        captureStrategy?.pause()
     }
 
     override fun stop() {
@@ -325,91 +226,6 @@ class ReplayIntegration(
         }
     }
 
-    private fun createAndCaptureSegment(
-        duration: Long,
-        currentSegmentTimestamp: Date,
-        replayId: SentryId,
-        segmentId: Int,
-        height: Int,
-        width: Int,
-        replayType: ReplayType = SESSION,
-        hint: Hint? = null
-    ): Long? {
-        val generatedVideo = cache?.createVideoOf(
-            duration,
-            currentSegmentTimestamp.time,
-            segmentId,
-            height,
-            width
-        ) ?: return null
-
-        val (video, frameCount, videoDuration) = generatedVideo
-        captureReplay(
-            video,
-            replayId,
-            currentSegmentTimestamp,
-            segmentId,
-            height,
-            width,
-            frameCount,
-            videoDuration,
-            replayType,
-            hint
-        )
-        return videoDuration
-    }
-
-    private fun captureReplay(
-        video: File,
-        currentReplayId: SentryId,
-        segmentTimestamp: Date,
-        segmentId: Int,
-        height: Int,
-        width: Int,
-        frameCount: Int,
-        duration: Long,
-        replayType: ReplayType,
-        hint: Hint? = null
-    ) {
-        val replay = SentryReplayEvent().apply {
-            eventId = currentReplayId
-            replayId = currentReplayId
-            this.segmentId = segmentId
-            this.timestamp = DateUtils.getDateTime(segmentTimestamp.time + duration)
-            if (segmentId == 0) {
-                replayStartTimestamp = segmentTimestamp
-            }
-            this.replayType = replayType
-            videoFile = video
-        }
-
-        val recording = ReplayRecording().apply {
-            this.segmentId = segmentId
-            payload = listOf(
-                RRWebMetaEvent().apply {
-                    this.timestamp = segmentTimestamp.time
-                    this.height = height
-                    this.width = width
-                },
-                RRWebVideoEvent().apply {
-                    this.timestamp = segmentTimestamp.time
-                    this.segmentId = segmentId
-                    this.durationMs = duration
-                    this.frameCount = frameCount
-                    size = video.length()
-                    frameRate = recorderConfig.frameRate
-                    this.height = height
-                    this.width = width
-                    // TODO: support non-fullscreen windows later
-                    left = 0
-                    top = 0
-                }
-            )
-        }
-
-        hub?.captureReplay(replay, (hint ?: Hint()).apply { replayRecording = recording })
-    }
-
     override fun close() {
         if (!isEnabled.get()) {
             return
@@ -420,7 +236,8 @@ class ReplayIntegration(
         } catch (ignored: Throwable) {
         }
         stop()
-        replayExecutor.gracefullyShutdown(options)
+        captureStrategy?.close()
+        captureStrategy = null
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -453,13 +270,4 @@ class ReplayIntegration(
     }
 
     override fun onLowMemory() = Unit
-
-    private class ReplayExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
-            ret.setDaemon(true)
-            return ret
-        }
-    }
 }
