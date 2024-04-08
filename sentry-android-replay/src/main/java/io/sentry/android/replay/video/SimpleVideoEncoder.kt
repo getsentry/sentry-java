@@ -62,7 +62,7 @@ internal class SimpleVideoEncoder(
             .getCapabilitiesForType(muxerConfig.mimeType)
             .videoCapabilities
 
-        var bitRate = muxerConfig.recorderConfig.bitRate
+        var bitRate = muxerConfig.bitRate
         if (!videoCapabilities.bitrateRange.contains(bitRate)) {
             options.logger.log(
                 DEBUG,
@@ -96,8 +96,8 @@ internal class SimpleVideoEncoder(
 
         val format = MediaFormat.createVideoFormat(
             muxerConfig.mimeType,
-            muxerConfig.recorderConfig.recordingWidth,
-            muxerConfig.recorderConfig.recordingHeight
+            muxerConfig.recordingWidth,
+            muxerConfig.recordingHeight
         )
 
         // this allows reducing bitrate on newer devices, where they enforce higher quality in VBR
@@ -115,14 +115,14 @@ internal class SimpleVideoEncoder(
             MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
         )
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
-        format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.recorderConfig.frameRate.toFloat())
+        format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.frameRate.toFloat())
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10)
 
         format
     }
 
     private val bufferInfo: MediaCodec.BufferInfo = MediaCodec.BufferInfo()
-    private val frameMuxer = SimpleMp4FrameMuxer(muxerConfig.file.absolutePath, muxerConfig.recorderConfig.frameRate.toFloat())
+    private val frameMuxer = SimpleMp4FrameMuxer(muxerConfig.file.absolutePath, muxerConfig.frameRate.toFloat())
     val duration get() = frameMuxer.getVideoTime()
 
     private var surface: Surface? = null
@@ -229,6 +229,9 @@ internal class SimpleVideoEncoder(
 @TargetApi(24)
 internal data class MuxerConfig(
     val file: File,
-    val recorderConfig: ScreenshotRecorderConfig,
+    var recordingWidth: Int,
+    var recordingHeight: Int,
+    val frameRate: Int,
+    val bitRate: Int,
     val mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC
 )

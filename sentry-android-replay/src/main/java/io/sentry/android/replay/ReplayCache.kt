@@ -30,17 +30,23 @@ public class ReplayCache internal constructor(
     private val options: SentryOptions,
     private val replayId: SentryId,
     private val recorderConfig: ScreenshotRecorderConfig,
-    private val encoderCreator: (File) -> SimpleVideoEncoder
+    private val encoderCreator: (videoFile: File, height: Int, width: Int) -> SimpleVideoEncoder
 ) : Closeable {
 
     public constructor(
         options: SentryOptions,
         replayId: SentryId,
         recorderConfig: ScreenshotRecorderConfig
-    ) : this(options, replayId, recorderConfig, encoderCreator = { videoFile ->
+    ) : this(options, replayId, recorderConfig, encoderCreator = { videoFile, height, width ->
         SimpleVideoEncoder(
             options,
-            MuxerConfig(file = videoFile, recorderConfig = recorderConfig)
+            MuxerConfig(
+                file = videoFile,
+                recordingHeight = height,
+                recordingWidth = width,
+                frameRate = recorderConfig.frameRate,
+                bitRate = recorderConfig.bitRate
+            )
         ).also { it.start() }
     })
 
@@ -113,6 +119,10 @@ public class ReplayCache internal constructor(
      * @param from desired start of the video represented as unix timestamp in milliseconds
      * @param segmentId current segment id, used for inferring the filename to store the
      * result video under [replayCacheDir], e.g. "replay_<uuid>/0.mp4", where segmentId=0
+     * @param height desired height of the video in pixels (e.g. it can change from the initial one
+     * in case of window resize or orientation change)
+     * @param width desired width of the video in pixels (e.g. it can change from the initial one
+     * in case of window resize or orientation change)
      * @param videoFile optional, location of the file to store the result video. If this is
      * provided, [segmentId] from above is disregarded and not used.
      * @return a generated video of type [GeneratedVideo], which contains the resulting video file
@@ -122,6 +132,8 @@ public class ReplayCache internal constructor(
         duration: Long,
         from: Long,
         segmentId: Int,
+        height: Int,
+        width: Int,
         videoFile: File = File(replayCacheDir, "$segmentId.mp4")
     ): GeneratedVideo? {
         if (frames.isEmpty()) {
@@ -133,7 +145,7 @@ public class ReplayCache internal constructor(
         }
 
         // TODO: reuse instance of encoder and just change file path to create a different muxer
-        encoder = synchronized(encoderLock) { encoderCreator(videoFile) }
+        encoder = synchronized(encoderLock) { encoderCreator(videoFile, height, width) }
 
         val step = 1000 / recorderConfig.frameRate.toLong()
         var frameCount = 0

@@ -17,7 +17,6 @@ import kotlin.LazyThreadSafetyMode.NONE
 @TargetApi(26)
 internal class WindowRecorder(
     private val options: SentryOptions,
-    private val recorderConfig: ScreenshotRecorderConfig,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback
 ) : Closeable {
 
@@ -50,7 +49,7 @@ internal class WindowRecorder(
         }
     }
 
-    fun startRecording() {
+    fun startRecording(recorderConfig: ScreenshotRecorderConfig) {
         if (isRecording.getAndSet(true)) {
             return
         }
