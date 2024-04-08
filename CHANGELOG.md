@@ -5,6 +5,7 @@
 ### Features
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+- Metrics: Update normalization of keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
 
 ### Fixes
 
