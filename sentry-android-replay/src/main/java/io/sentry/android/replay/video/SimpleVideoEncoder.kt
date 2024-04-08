@@ -37,7 +37,6 @@ import android.media.MediaFormat
 import android.view.Surface
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
-import io.sentry.android.replay.ScreenshotRecorderConfig
 import java.io.File
 import java.nio.ByteBuffer
 import kotlin.LazyThreadSafetyMode.NONE
