@@ -430,6 +430,7 @@ class ReplayIntegration(
 
         recorder?.stopRecording()
 
+        // TODO: support buffer mode and breadcrumb/rrweb_event
         if (isFullSession.get()) {
             val now = dateProvider.currentTimeMillis
             val currentSegmentTimestamp = segmentTimestamp.get()
