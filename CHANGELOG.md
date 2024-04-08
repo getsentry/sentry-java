@@ -1,12 +1,18 @@
 # Changelog
 
+## Unreleased
+
+## Features
+
+- Update normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
+
+
 ## 7.7.0
 
 ### Features
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
 - Extend Proxy options with proxy type ([#3326](https://github.com/getsentry/sentry-java/pull/3326))
-- Update normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
 
 ### Fixes
 
