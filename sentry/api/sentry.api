@@ -3535,14 +3535,14 @@ public final class io/sentry/metrics/MetricsHelper {
 	public static fun convertNanosTo (Lio/sentry/MeasurementUnit$Duration;J)D
 	public static fun encodeMetrics (JLjava/util/Collection;Ljava/lang/StringBuilder;)V
 	public static fun getCutoffTimestampMs (J)J
-	public static fun getDayBucketKey (Ljava/util/Calendar;)J
 	public static fun getExportKey (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;)Ljava/lang/String;
 	public static fun getMetricBucketKey (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)Ljava/lang/String;
 	public static fun getTimeBucketKey (J)J
 	public static fun mergeTags (Ljava/util/Map;Ljava/util/Map;)Ljava/util/Map;
-	public static fun sanitizeKey (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeName (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeTagKey (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeTagValue (Ljava/lang/String;)Ljava/lang/String;
 	public static fun sanitizeUnit (Ljava/lang/String;)Ljava/lang/String;
-	public static fun sanitizeValue (Ljava/lang/String;)Ljava/lang/String;
 	public static fun setFlushShiftMs (J)V
 	public static fun toStatsdType (Lio/sentry/metrics/MetricType;)Ljava/lang/String;
 }

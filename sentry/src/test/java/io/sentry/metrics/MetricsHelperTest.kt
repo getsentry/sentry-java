@@ -59,31 +59,46 @@ class MetricsHelperTest {
     }
 
     @Test
-    fun sanitizeKey() {
-        assertEquals("foo-bar", MetricsHelper.sanitizeKey("foo-bar"))
-        assertEquals("foo_bar", MetricsHelper.sanitizeKey("foo\$\$\$bar"))
-        assertEquals("fo_-bar", MetricsHelper.sanitizeKey("foö-bar"))
+    fun sanitizeName() {
+        assertEquals("foo-bar", MetricsHelper.sanitizeName("foo-bar"))
+        assertEquals("foo_bar", MetricsHelper.sanitizeName("foo\$\$\$bar"))
+        assertEquals("fo_-bar", MetricsHelper.sanitizeName("foö-bar"))
     }
 
     @Test
-    fun sanitizeValue() {
-        assertEquals("\$foo", MetricsHelper.sanitizeValue("%\$foo"))
-        assertEquals("blah{}", MetricsHelper.sanitizeValue("blah{}"))
-        assertEquals("snwmn", MetricsHelper.sanitizeValue("snöwmän"))
-        assertEquals("j e n g a", MetricsHelper.sanitizeValue("j e n g a!"))
+    fun sanitizeTagKey() {
+        // no replacement characters for tag keys
+        // - and / should be allowed
+        assertEquals("a/weird/tag-key/", MetricsHelper.sanitizeTagKey("a/weird/tag-key/:ä"))
+    }
+
+    @Test
+    fun sanitizeTagValue() {
+        // https://github.com/getsentry/relay/blob/3208e3ce5b1fe4d147aa44e0e966807c256993de/relay-metrics/src/protocol.rs#L142
+        assertEquals("plain", MetricsHelper.sanitizeTagValue("plain"))
+        assertEquals("plain text", MetricsHelper.sanitizeTagValue("plain text"))
+        assertEquals("plain%text", MetricsHelper.sanitizeTagValue("plain%text"))
+
+        // Escape sequences
+        assertEquals("plain \\\\ text", MetricsHelper.sanitizeTagValue("plain \\ text"))
+        assertEquals("plain\\u{2c}text", MetricsHelper.sanitizeTagValue("plain,text"))
+        assertEquals("plain\\u{7c}text", MetricsHelper.sanitizeTagValue("plain|text"))
+        assertEquals("plain 😅", MetricsHelper.sanitizeTagValue("plain 😅"))
+
+        // Escapable control characters (may be stripped by the parser)
+        assertEquals("plain\\ntext", MetricsHelper.sanitizeTagValue("plain\ntext"))
+        assertEquals("plain\\rtext", MetricsHelper.sanitizeTagValue("plain\rtext"))
+        assertEquals("plain\\ttext", MetricsHelper.sanitizeTagValue("plain\ttext"))
+
+        // Unescapable control characters remain, as they'll be stripped by relay
+        assertEquals("plain\u0007text", MetricsHelper.sanitizeTagValue("plain\u0007text"))
+        assertEquals("plain\u009Ctext", MetricsHelper.sanitizeTagValue("plain\u009ctext"))
     }
 
     @Test
     fun sanitizeUnit() {
-        val items = listOf(
-            "Test123_." to "Test123_.",
-            "test{value}" to "test_value_",
-            "test-value" to "test_value"
-        )
-
-        for (item in items) {
-            assertEquals(item.second, MetricsHelper.sanitizeUnit(item.first))
-        }
+        // no replacement characters for units
+        assertEquals("abcABC123_abcABC123", MetricsHelper.sanitizeUnit("abcABC123_-./äöü\$%&abcABC123"))
     }
 
     @Test
