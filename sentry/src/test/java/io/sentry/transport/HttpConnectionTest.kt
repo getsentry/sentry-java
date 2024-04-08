@@ -231,7 +231,7 @@ class HttpConnectionTest {
     }
 
     @Test
-    fun `When Proxy type is not set, iot defaults to HTTP`() {
+    fun `When Proxy type is not set, it defaults to HTTP`() {
         fixture.proxy = Proxy("proxy.example.com", "8080")
         val transport = fixture.getSUT()
 
