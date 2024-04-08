@@ -296,15 +296,21 @@ public class SentryAutoConfiguration {
         return filter;
       }
 
-      @Bean
-      @ConditionalOnMissingBean
+      /** Wraps exception resolver @Bean because the return type is loaded too early otherwise */
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(HandlerExceptionResolver.class)
-      public @NotNull SentryExceptionResolver sentryExceptionResolver(
-          final @NotNull IHub sentryHub,
-          final @NotNull TransactionNameProvider transactionNameProvider,
-          final @NotNull SentryProperties options) {
-        return new SentryExceptionResolver(
-            sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
+      @Open
+      static class SentryExceptionResolverConfigurationWrapper {
+
+        @Bean
+        @ConditionalOnMissingBean
+        public @NotNull SentryExceptionResolver sentryExceptionResolver(
+            final @NotNull IHub sentryHub,
+            final @NotNull TransactionNameProvider transactionNameProvider,
+            final @NotNull SentryProperties options) {
+          return new SentryExceptionResolver(
+              sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
+        }
       }
     }
 
