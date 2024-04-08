@@ -153,8 +153,8 @@ public final class CollectionUtils {
    * @return true if the element is present in the array, false otherwise.
    */
   public static <T> boolean contains(final @NotNull T[] array, final @NotNull T element) {
-    for (T t : array) {
-      if (t.equals(element)) {
+    for (final T t : array) {
+      if (element.equals(t)) {
         return true;
       }
     }
