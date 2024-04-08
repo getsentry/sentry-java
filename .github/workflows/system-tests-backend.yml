@@ -71,7 +71,7 @@ jobs:
             spring-server.txt
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        uses: phoenix-actions/test-reporting@324c51f0cea38b773386b2e7623fda46e826c895 # pin@v14
         if: always()
         with:
           name: JUnit System Tests ${{ matrix.sample }}
