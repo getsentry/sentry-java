@@ -5,6 +5,7 @@
 ### Features
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+- Extend Proxy options with proxy type ([#3326](https://github.com/getsentry/sentry-java/pull/3326))
 
 ### Fixes
 
