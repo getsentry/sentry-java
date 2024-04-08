@@ -10,6 +10,7 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,7 @@ public final class StringUtils {
 
   private static final String CORRUPTED_NIL_UUID = "0000-0000";
   private static final String PROPER_NIL_UUID = "00000000-0000-0000-0000-000000000000";
+  private static final @NotNull Pattern wordsPattern = Pattern.compile("[\\W_]+");
 
   private StringUtils() {}
 
@@ -48,6 +50,25 @@ public final class StringUtils {
     }
 
     return str.substring(0, 1).toUpperCase(Locale.ROOT) + str.substring(1).toLowerCase(Locale.ROOT);
+  }
+
+  /**
+   * Converts a String to CamelCase format. E.g. metric_bucket => MetricBucket;
+   *
+   * @param str the String to convert
+   * @return the camel case converted String or itself if empty or null
+   */
+  public static @Nullable String camelCase(final @Nullable String str) {
+    if (str == null || str.isEmpty()) {
+      return str;
+    }
+
+    String[] words = wordsPattern.split(str, -1);
+    StringBuilder builder = new StringBuilder();
+    for (String w : words) {
+      builder.append(capitalize(w));
+    }
+    return builder.toString();
   }
 
   /**
