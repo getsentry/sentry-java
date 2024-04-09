@@ -455,10 +455,9 @@ public class SentryOptions {
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
-  @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
-  @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
+  private boolean enableBackpressureHandling = true;
 
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
