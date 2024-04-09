@@ -294,7 +294,7 @@ public class SentryAutoConfiguration {
       @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(HandlerExceptionResolver.class)
       @Open
-      static class SentryNonServletOnlyModeConfig {
+      static class SentryMvcModeConfig {
 
         @Bean
         @ConditionalOnMissingBean
