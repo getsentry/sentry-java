@@ -161,7 +161,7 @@ class ReplayIntegration(
     }
 
     override fun resume() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -171,7 +171,7 @@ class ReplayIntegration(
     }
 
     override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -182,8 +182,9 @@ class ReplayIntegration(
 
         val sampled = sample(options.experimental.sessionReplay.errorSampleRate)
 
+        val replayId = currentReplayId.get()
         // only tag event if it's a session mode or buffer mode that got sampled
-        if (isFullSession.get() || sampled) {
+        if (!replayId.equals(SentryId.EMPTY_ID) && (isFullSession.get() || sampled)) {
             // don't ask me why
             event.setTag("replayId", currentReplayId.get().toString())
         }
@@ -207,7 +208,6 @@ class ReplayIntegration(
             DateUtils.getDateTime(now - errorReplayDuration)
         }
         val segmentId = currentSegment.get()
-        val replayId = currentReplayId.get()
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.send_replay_for_event") {
@@ -221,12 +221,12 @@ class ReplayIntegration(
             segmentTimestamp.set(DateUtils.getDateTime(now))
         }
 
-        hub?.configureScope { it.replayId = currentReplayId.get() }
+        hub?.configureScope { it.replayId = replayId }
         isFullSession.set(true)
     }
 
     override fun pause() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -253,7 +253,7 @@ class ReplayIntegration(
     }
 
     override fun stop() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -424,7 +424,7 @@ class ReplayIntegration(
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
