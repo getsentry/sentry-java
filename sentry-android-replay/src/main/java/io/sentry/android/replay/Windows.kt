@@ -136,9 +136,17 @@ internal fun interface OnRootViewsChangedListener {
  */
 internal class RootViewsSpy private constructor() {
 
-    val listeners = CopyOnWriteArrayList<OnRootViewsChangedListener>()
+    val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> = object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
+        override fun add(element: OnRootViewsChangedListener?): Boolean {
+            // notify listener about existing root views immediately
+            delegatingViewList.forEach {
+                element?.onRootViewsChanged(it, true)
+            }
+            return super.add(element)
+        }
+    }
 
-    private val delegatingViewList = object : ArrayList<View>() {
+    private val delegatingViewList: ArrayList<View> = object : ArrayList<View>() {
         override fun addAll(elements: Collection<View>): Boolean {
             listeners.forEach { listener ->
                 elements.forEach { element ->
