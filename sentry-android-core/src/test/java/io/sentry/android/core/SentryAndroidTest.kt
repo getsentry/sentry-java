@@ -27,7 +27,6 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
-import io.sentry.android.replay.getReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingOptionsObserver
@@ -319,7 +318,7 @@ class SentryAndroidTest {
     @Config(sdk = [26])
     fun `init starts session replay if app is in foreground`() {
         initSentryWithForegroundImportance(true) { _ ->
-            assertTrue(Sentry.getCurrentHub().getReplayIntegration()!!.isRecording())
+            assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
         }
     }
 
@@ -327,7 +326,7 @@ class SentryAndroidTest {
     @Config(sdk = [26])
     fun `init does not start session replay if the app is in background`() {
         initSentryWithForegroundImportance(false) { _ ->
-            assertFalse(Sentry.getCurrentHub().getReplayIntegration()!!.isRecording())
+            assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
         }
     }
 

@@ -25,5 +25,10 @@ public final class NoOpReplayController implements ReplayController {
   public void resume() {}
 
   @Override
+  public boolean isRecording() {
+    return false;
+  }
+
+  @Override
   public void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint) {}
 }

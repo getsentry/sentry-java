@@ -2,8 +2,9 @@ package io.sentry.android.replay
 
 import android.annotation.TargetApi
 import android.view.View
-import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
+import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import java.io.Closeable
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
@@ -19,6 +20,10 @@ internal class WindowRecorder(
     private val recorderConfig: ScreenshotRecorderConfig,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback
 ) : Closeable {
+
+    internal companion object {
+        private const val TAG = "WindowRecorder"
+    }
 
     private val rootViewsSpy by lazy(NONE) {
         RootViewsSpy.install()
@@ -57,14 +62,15 @@ internal class WindowRecorder(
 
         recorder = ScreenshotRecorder(recorderConfig, options, screenshotRecorderCallback)
         rootViewsSpy.listeners += onRootViewsChangedListener
-        capturingTask = capturer.scheduleAtFixedRate({
-            try {
-                recorder?.capture()
-            } catch (e: Throwable) {
-                options.logger.log(ERROR, "Failed to capture a screenshot with exception:", e)
-                // TODO: I guess schedule the capturer again, cause it will stop executing the runnable?
-            }
-        }, 0L, 1000L / recorderConfig.frameRate, MILLISECONDS)
+        capturingTask = capturer.scheduleAtFixedRateSafely(
+            options,
+            "$TAG.capture",
+            0L,
+            1000L / recorderConfig.frameRate,
+            MILLISECONDS
+        ) {
+            recorder?.capture()
+        }
     }
 
     fun resume() = recorder?.resume()

@@ -18,6 +18,8 @@ import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
+import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
@@ -28,12 +30,11 @@ import java.io.Closeable
 import java.io.File
 import java.security.SecureRandom
 import java.util.Date
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
 
@@ -41,6 +42,10 @@ class ReplayIntegration(
     private val context: Context,
     private val dateProvider: ICurrentDateProvider
 ) : Integration, Closeable, ScreenshotRecorderCallback, ReplayController {
+
+    internal companion object {
+        private const val TAG = "ReplayIntegration"
+    }
 
     private lateinit var options: SentryOptions
     private var hub: IHub? = null
@@ -54,10 +59,11 @@ class ReplayIntegration(
     private val isRecording = AtomicBoolean(false)
     private val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     private val segmentTimestamp = AtomicReference<Date>()
+    private val replayStartTimestamp = AtomicLong()
     private val currentSegment = AtomicInteger(0)
 
     // TODO: surround with try-catch on the calling site
-    private val saver by lazy {
+    private val replayExecutor by lazy {
         Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     }
 
@@ -108,7 +114,7 @@ class ReplayIntegration(
             .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
     }
 
-    fun isRecording() = isRecording.get()
+    override fun isRecording() = isRecording.get()
 
     override fun start() {
         // TODO: add lifecycle state instead and manage it in start/pause/resume/stop
@@ -126,6 +132,18 @@ class ReplayIntegration(
 
         currentSegment.set(0)
         currentReplayId.set(SentryId())
+        replayExecutor.submitSafely(options, "$TAG.replays_cleanup") {
+            // clean up old replays
+            options.cacheDirPath?.let { cacheDir ->
+                File(cacheDir).listFiles { dir, name ->
+                    // TODO: also exclude persisted replay_id from scope when implementing ANRs
+                    if (name.startsWith("replay_") && !name.contains(currentReplayId.get().toString())) {
+                        FileUtils.deleteRecursively(File(dir, name))
+                    }
+                    false
+                }
+            }
+        }
         if (isFullSession.get()) {
             // only set replayId on the scope if it's a full session, otherwise all events will be
             // tagged with the replay that might never be sent when we're recording in buffer mode
@@ -136,6 +154,7 @@ class ReplayIntegration(
         recorder?.startRecording()
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
+        replayStartTimestamp.set(dateProvider.currentTimeMillis)
         // TODO: finalize old recording if there's some left on disk and send it using the replayId from persisted scope (e.g. for ANRs)
     }
 
@@ -179,7 +198,7 @@ class ReplayIntegration(
         }
         val segmentId = currentSegment.get()
         val replayId = currentReplayId.get()
-        saver.submit {
+        replayExecutor.submitSafely(options, "$TAG.send_replay_for_event") {
             val videoDuration =
                 createAndCaptureSegment(now - currentSegmentTimestamp.time, currentSegmentTimestamp, replayId, segmentId, BUFFER, hint)
             if (videoDuration != null) {
@@ -212,7 +231,7 @@ class ReplayIntegration(
         val segmentId = currentSegment.get()
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId.get()
-        saver.submit {
+        replayExecutor.submitSafely(options, "$TAG.pause") {
             val videoDuration =
                 createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
             if (videoDuration != null) {
@@ -232,7 +251,7 @@ class ReplayIntegration(
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId.get()
         val replayCacheDir = cache?.replayCacheDir
-        saver.submit {
+        replayExecutor.submitSafely(options, "$TAG.stop") {
             // we don't flush the segment, but we still wanna clean up the folder for buffer mode
             if (isFullSession.get()) {
                 createAndCaptureSegment(duration, currentSegmentTimestamp, replayId, segmentId)
@@ -243,6 +262,7 @@ class ReplayIntegration(
         recorder?.stopRecording()
         cache?.close()
         currentSegment.set(0)
+        replayStartTimestamp.set(0)
         segmentTimestamp.set(null)
         currentReplayId.set(SentryId.EMPTY_ID)
         hub?.configureScope { it.replayId = SentryId.EMPTY_ID }
@@ -253,7 +273,7 @@ class ReplayIntegration(
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
-        saver.submit {
+        replayExecutor.submitSafely(options, "$TAG.add_frame") {
             cache?.addFrame(bitmap, frameTimestamp)
 
             val now = dateProvider.currentTimeMillis
@@ -276,6 +296,11 @@ class ReplayIntegration(
                     // set next segment timestamp as close to the previous one as possible to avoid gaps
                     segmentTimestamp.set(DateUtils.getDateTime(currentSegmentTimestamp.time + videoDuration))
                 }
+            } else if (isFullSession.get() &&
+                (now - replayStartTimestamp.get() >= options.experimental.sessionReplayOptions.sessionDuration)
+            ) {
+                stop()
+                options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
             } else if (!isFullSession.get()) {
                 cache?.rotate(now - options.experimental.sessionReplayOptions.errorReplayDuration)
             }
@@ -365,7 +390,7 @@ class ReplayIntegration(
         }
 
         stop()
-        saver.gracefullyShutdown(options)
+        replayExecutor.gracefullyShutdown(options)
     }
 
     private class ReplayExecutorServiceThreadFactory : ThreadFactory {
@@ -374,28 +399,6 @@ class ReplayIntegration(
             val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
             ret.setDaemon(true)
             return ret
-        }
-    }
-}
-
-/**
- * Retrieves the [ReplayIntegration] from the list of integrations in [SentryOptions]
- */
-fun IHub.getReplayIntegration(): ReplayIntegration? =
-    options.integrations.find { it is ReplayIntegration } as? ReplayIntegration
-
-fun ExecutorService.gracefullyShutdown(options: SentryOptions) {
-    synchronized(this) {
-        if (!isShutdown) {
-            shutdown()
-        }
-        try {
-            if (!awaitTermination(options.shutdownTimeoutMillis, MILLISECONDS)) {
-                shutdownNow()
-            }
-        } catch (e: InterruptedException) {
-            shutdownNow()
-            Thread.currentThread().interrupt()
         }
     }
 }

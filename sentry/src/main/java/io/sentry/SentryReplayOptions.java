@@ -22,21 +22,24 @@ public final class SentryReplayOptions {
 
   /**
    * Defines the quality of the session replay. Higher bit rates have better replay quality, but
-   * also affect the final payload size to transfer. The default value is 20kbps;
+   * also affect the final payload size to transfer, defaults to 20kbps.
    */
   private int bitRate = 20_000;
 
   /**
    * Number of frames per second of the replay. The bigger the number, the more accurate the replay
-   * will be, but also more data to transfer and more CPU load.
+   * will be, but also more data to transfer and more CPU load, defaults to 1fps.
    */
   private int frameRate = 1;
 
-  /** The maximum duration of replays for error events. */
+  /** The maximum duration of replays for error events, defaults to 30s. */
   private long errorReplayDuration = 30_000L;
 
-  /** The maximum duration of the segment of a session replay. */
+  /** The maximum duration of the segment of a session replay, defaults to 5s. */
   private long sessionSegmentDuration = 5000L;
+
+  /** The maximum duration of a full session replay, defaults to 1h. */
+  private long sessionDuration = 60 * 60 * 1000L;
 
   public SentryReplayOptions() {}
 
@@ -102,5 +105,10 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public long getSessionSegmentDuration() {
     return sessionSegmentDuration;
+  }
+
+  @ApiStatus.Internal
+  public long getSessionDuration() {
+    return sessionDuration;
   }
 }
