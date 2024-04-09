@@ -55,11 +55,6 @@ internal class WindowRecorder(
             return
         }
 
-//    val (height, width) = (wm.currentWindowMetrics.bounds.bottom /
-//        context.resources.displayMetrics.density).roundToInt() to
-//        (wm.currentWindowMetrics.bounds.right /
-//            context.resources.displayMetrics.density).roundToInt()
-
         recorder = ScreenshotRecorder(recorderConfig, options, screenshotRecorderCallback)
         rootViewsSpy.listeners += onRootViewsChangedListener
         capturingTask = capturer.scheduleAtFixedRateSafely(

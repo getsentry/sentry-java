@@ -22,9 +22,9 @@ public final class SentryReplayOptions {
 
   /**
    * Defines the quality of the session replay. Higher bit rates have better replay quality, but
-   * also affect the final payload size to transfer, defaults to 20kbps.
+   * also affect the final payload size to transfer, defaults to 100kbps.
    */
-  private int bitRate = 20_000;
+  private int bitRate = 100_000;
 
   /**
    * Number of frames per second of the replay. The bigger the number, the more accurate the replay

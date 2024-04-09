@@ -70,7 +70,6 @@ class ReplayIntegration(
     private val recorderConfig by lazy(NONE) {
         ScreenshotRecorderConfig.from(
             context,
-            targetHeight = 720,
             options.experimental.sessionReplayOptions
         )
     }
