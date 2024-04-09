@@ -26,6 +26,8 @@ import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentryTracingFilter
+import io.sentry.spring.tracing.SpringServletTransactionNameProvider
+import io.sentry.spring.tracing.TransactionNameProvider
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
@@ -441,6 +443,17 @@ class SentryAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentryExceptionResolver::class.java)
+            }
+    }
+
+    @Test
+    fun `when Spring MVC is not on the classpath, fallback TransactionNameProvider is configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
+            .run {
+                assertThat(it.getBean(TransactionNameProvider::class.java)).isInstanceOf(
+                    SpringServletTransactionNameProvider::class.java
+                )
             }
     }
 

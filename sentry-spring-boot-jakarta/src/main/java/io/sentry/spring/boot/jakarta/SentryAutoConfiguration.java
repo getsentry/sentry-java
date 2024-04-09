@@ -33,6 +33,7 @@ import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
 import io.sentry.spring.jakarta.tracing.SentryTransactionPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
+import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
@@ -49,6 +50,7 @@ import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration;
@@ -290,7 +292,6 @@ public class SentryAutoConfiguration {
         return filter;
       }
 
-      /** Wraps exception resolver @Bean because the return type is loaded too early otherwise */
       @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(HandlerExceptionResolver.class)
       @Open
@@ -310,6 +311,18 @@ public class SentryAutoConfiguration {
         @ConditionalOnMissingBean(TransactionNameProvider.class)
         public @NotNull TransactionNameProvider transactionNameProvider() {
           return new SpringMvcTransactionNameProvider();
+        }
+      }
+
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnMissingClass("org.springframework.web.servlet.HandlerExceptionResolver")
+      @Open
+      static class SentryServletModeConfig {
+
+        @Bean
+        @ConditionalOnMissingBean(TransactionNameProvider.class)
+        public @NotNull TransactionNameProvider transactionNameProvider() {
+          return new SpringServletTransactionNameProvider();
         }
       }
     }
