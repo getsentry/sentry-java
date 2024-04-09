@@ -161,7 +161,8 @@ public final class Geo implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<Geo> {
 
     @Override
-    public Geo deserialize(@NotNull ObjectReader reader, ILogger logger) throws Exception {
+    public @NotNull Geo deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       final Geo geo = new Geo();
       Map<String, Object> unknown = null;

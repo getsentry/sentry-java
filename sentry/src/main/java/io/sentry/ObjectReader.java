@@ -36,6 +36,9 @@ public interface ObjectReader extends Closeable {
   <T> @Nullable Map<String, T> nextMapOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException;
 
+  <T> @Nullable Map<String, List<T>> nextMapOfListOrNull(
+      @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException;
+
   <T> @Nullable T nextOrNull(@NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer)
       throws Exception;
 

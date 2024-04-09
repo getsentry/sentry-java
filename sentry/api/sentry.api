@@ -1451,6 +1451,7 @@ public abstract interface class io/sentry/ObjectReader : java/io/Closeable {
 	public abstract fun nextListOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public abstract fun nextLong ()J
 	public abstract fun nextLongOrNull ()Ljava/lang/Long;
+	public abstract fun nextMapOfListOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/Map;
 	public abstract fun nextMapOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/Map;
 	public abstract fun nextName ()Ljava/lang/String;
 	public abstract fun nextNull ()V
@@ -4346,8 +4347,8 @@ public final class io/sentry/protocol/MetricSummary : io/sentry/JsonSerializable
 
 public final class io/sentry/protocol/MetricSummary$Deserializer : io/sentry/JsonDeserializer {
 	public fun <init> ()V
-	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/MetricSummary;
-	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/MetricSummary;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/protocol/MetricSummary$JsonKeys {
@@ -5406,6 +5407,7 @@ public final class io/sentry/util/MapObjectReader : io/sentry/ObjectReader {
 	public fun nextListOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public fun nextLong ()J
 	public fun nextLongOrNull ()Ljava/lang/Long;
+	public fun nextMapOfListOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/Map;
 	public fun nextMapOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/Map;
 	public fun nextName ()Ljava/lang/String;
 	public fun nextNull ()V

@@ -137,6 +137,7 @@ public final class JsonObjectReader implements ObjectReader {
     return map;
   }
 
+  @Override
   public <T> @Nullable Map<String, List<T>> nextMapOfListOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
 

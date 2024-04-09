@@ -53,6 +53,12 @@ public final class MapObjectReader implements ObjectReader {
     return nextValueOrNull();
   }
 
+  @Override
+  public @Nullable <T> Map<String, List<T>> nextMapOfListOrNull(
+      @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
+    return nextValueOrNull();
+  }
+
   @Nullable
   @Override
   public <T> T nextOrNull(
