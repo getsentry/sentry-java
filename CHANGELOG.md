@@ -5,13 +5,13 @@
 ### Features
 
 - Add description to OkHttp spans ([#3320](https://github.com/getsentry/sentry-java/pull/3320))
-- Update normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
 - Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
 
 ### Fixes
 
 - Add rate limit to Metrics ([#3334](https://github.com/getsentry/sentry-java/pull/3334))
 - Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerMapping in Spring Boot Servlet mode without WebMVC ([#3336](https://github.com/getsentry/sentry-java/pull/3336))
+- Fix normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
 
 ## 7.7.0
 
