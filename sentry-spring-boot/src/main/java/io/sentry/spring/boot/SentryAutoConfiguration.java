@@ -266,12 +266,6 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      @ConditionalOnMissingBean(TransactionNameProvider.class)
-      public @NotNull TransactionNameProvider transactionNameProvider() {
-        return new SpringMvcTransactionNameProvider();
-      }
-
-      @Bean
       @ConditionalOnMissingBean(name = "sentrySpringFilter")
       public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
           final @NotNull IHub hub,
@@ -298,7 +292,7 @@ public class SentryAutoConfiguration {
       @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(HandlerExceptionResolver.class)
       @Open
-      static class SentryExceptionResolverConfigurationWrapper {
+      static class SentryNonServletOnlyModeConfig {
 
         @Bean
         @ConditionalOnMissingBean
@@ -308,6 +302,12 @@ public class SentryAutoConfiguration {
             final @NotNull SentryProperties options) {
           return new SentryExceptionResolver(
               sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(TransactionNameProvider.class)
+        public @NotNull TransactionNameProvider transactionNameProvider() {
+          return new SpringMvcTransactionNameProvider();
         }
       }
     }
