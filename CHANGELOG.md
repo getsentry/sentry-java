@@ -4,7 +4,12 @@
 
 ### Features
 
+- Update normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
 - Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
+
+### Fixes
+
+- Add rate limit to Metrics ([#3334](https://github.com/getsentry/sentry-java/pull/3334))
 
 ## 7.7.0
 
