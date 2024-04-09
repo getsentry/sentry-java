@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add description to OkHttp spans ([#3320](https://github.com/getsentry/sentry-java/pull/3320))
 - Update normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
 - Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
 
