@@ -4,11 +4,13 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
+import android.os.Looper;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
@@ -22,6 +24,7 @@ import io.sentry.util.Objects;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +36,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
   private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
   private static final String APP_METRICS_APPLICATION_OP = "application.load";
+  private static final String APP_METRICS_PROCESS_INIT_OP = "process.load";
+  private static final long MAX_PROCESS_INIT_APP_START_DIFF_MS = 10000;
 
   private boolean sentStartMeasurement = false;
 
@@ -77,13 +82,13 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
       final @NotNull TimeSpan appStartTimeSpan =
           AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
-      final long appStartUpInterval = appStartTimeSpan.getDurationMs();
+      final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
-      // if appStartUpInterval is 0, metrics are not ready to be sent
-      if (appStartUpInterval != 0) {
+      // if appStartUpDurationMs is 0, metrics are not ready to be sent
+      if (appStartUpDurationMs != 0) {
         final MeasurementValue value =
             new MeasurementValue(
-                (float) appStartUpInterval, MeasurementUnit.Duration.MILLISECOND.apiName());
+                (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
         final String appStartKey =
             AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
@@ -155,6 +160,25 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
+    // Process init
+    final long classInitUptimeMs = appStartMetrics.getClassLoadedUptimeMs();
+    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+    if (appStartTimeSpan.hasStarted()
+        && Math.abs(classInitUptimeMs - appStartTimeSpan.getStartUptimeMs())
+            <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
+      final @NotNull TimeSpan processInitTimeSpan = new TimeSpan();
+      processInitTimeSpan.setStartedAt(appStartTimeSpan.getStartUptimeMs());
+      processInitTimeSpan.setStartUnixTimeMs(appStartTimeSpan.getStartTimestampMs());
+
+      processInitTimeSpan.setStoppedAt(classInitUptimeMs);
+      processInitTimeSpan.setDescription("Process Initialization");
+
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(
+                  processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
+    }
+
     // Content Providers
     final @NotNull List<TimeSpan> contentProviderOnCreates =
         appStartMetrics.getContentProviderOnCreateTimeSpans();
@@ -210,6 +234,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryId traceId,
       final @NotNull String operation) {
+
+    final Map<String, Object> defaultSpanData = new HashMap<>(2);
+    defaultSpanData.put(SpanDataConvention.THREAD_ID, Looper.getMainLooper().getThread().getId());
+    defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
+
     return new SentrySpan(
         span.getStartTimestampSecs(),
         span.getProjectedStopTimestampSecs(),
@@ -220,7 +249,9 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         span.getDescription(),
         SpanStatus.OK,
         APP_METRICS_ORIGIN,
-        new HashMap<>(),
-        null);
+        new ConcurrentHashMap<>(),
+        new ConcurrentHashMap<>(),
+        null,
+        defaultSpanData);
   }
 }

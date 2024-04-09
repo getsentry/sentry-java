@@ -21,6 +21,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
+import io.sentry.SpotlightIntegration
 import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -448,6 +449,7 @@ class SentryAndroidTest {
                     it is NetworkBreadcrumbsIntegration ||
                     it is TempSensorBreadcrumbsIntegration ||
                     it is PhoneStateBreadcrumbsIntegration ||
+                    it is SpotlightIntegration ||
                     it is ReplayIntegration
             }
         }

@@ -33,6 +33,13 @@ public interface ISentryClient {
   void close();
 
   /**
+   * Flushes out the queue for up to timeout seconds and disable the client.
+   *
+   * @param isRestarting if true, avoids locking the main thread when finishing the queue.
+   */
+  void close(boolean isRestarting);
+
+  /**
    * Flushes events queued up, but keeps the client enabled. Not implemented yet.
    *
    * @param timeoutMillis time in milliseconds
@@ -282,4 +289,8 @@ public interface ISentryClient {
   default boolean isHealthy() {
     return true;
   }
+
+  @ApiStatus.Internal
+  @NotNull
+  IMetricsAggregator getMetricsAggregator();
 }

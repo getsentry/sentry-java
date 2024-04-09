@@ -94,10 +94,11 @@ public abstract interface annotation class io/sentry/spring/jakarta/checkin/Sent
 	public abstract fun value ()Ljava/lang/String;
 }
 
-public class io/sentry/spring/jakarta/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor {
+public class io/sentry/spring/jakarta/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor, org/springframework/context/EmbeddedValueResolverAware {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
+	public fun setEmbeddedValueResolver (Lorg/springframework/util/StringValueResolver;)V
 }
 
 public class io/sentry/spring/jakarta/checkin/SentryCheckInAdviceConfiguration {
@@ -212,6 +213,7 @@ public class io/sentry/spring/jakarta/tracing/SentrySpanAdvice : org/aopalliance
 
 public class io/sentry/spring/jakarta/tracing/SentrySpanClientHttpRequestInterceptor : org/springframework/http/client/ClientHttpRequestInterceptor {
 	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Z)V
 	public fun intercept (Lorg/springframework/http/HttpRequest;[BLorg/springframework/http/client/ClientHttpRequestExecution;)Lorg/springframework/http/client/ClientHttpResponse;
 }
 
@@ -254,6 +256,12 @@ public class io/sentry/spring/jakarta/tracing/SentryTransactionPointcutConfigura
 }
 
 public final class io/sentry/spring/jakarta/tracing/SpringMvcTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
+	public fun <init> ()V
+	public fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
+public final class io/sentry/spring/jakarta/tracing/SpringServletTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
 	public fun <init> ()V
 	public fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;

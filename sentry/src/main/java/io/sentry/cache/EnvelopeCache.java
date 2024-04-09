@@ -353,23 +353,18 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Returns the envelope's file path. If the envelope has no eventId header, it generates a random
-   * file name to it.
+   * Returns the envelope's file path. If the envelope wasn't added to the cache beforehand, a
+   * random file name is assigned.
    *
    * @param envelope the SentryEnvelope object
    * @return the file
    */
   private synchronized @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
-    String fileName;
+    final @NotNull String fileName;
     if (fileNameMap.containsKey(envelope)) {
       fileName = fileNameMap.get(envelope);
     } else {
-      if (envelope.getHeader().getEventId() != null) {
-        fileName = envelope.getHeader().getEventId().toString();
-      } else {
-        fileName = UUID.randomUUID().toString();
-      }
-      fileName += SUFFIX_ENVELOPE_FILE;
+      fileName = UUID.randomUUID() + SUFFIX_ENVELOPE_FILE;
       fileNameMap.put(envelope, fileName);
     }
 

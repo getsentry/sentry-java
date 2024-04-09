@@ -4,6 +4,89 @@
 
 ### Features
 
+- Add description to OkHttp spans ([#3320](https://github.com/getsentry/sentry-java/pull/3320))
+- Update normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
+- Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
+
+### Fixes
+
+- Add rate limit to Metrics ([#3334](https://github.com/getsentry/sentry-java/pull/3334))
+- Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerMapping in Spring Boot Servlet mode without WebMVC ([#3336](https://github.com/getsentry/sentry-java/pull/3336))
+
+## 7.7.0
+
+### Features
+
+- Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+- Extend Proxy options with proxy type ([#3326](https://github.com/getsentry/sentry-java/pull/3326))
+
+### Fixes
+
+- Fixed default deadline timeout to 30s instead of 300s ([#3322](https://github.com/getsentry/sentry-java/pull/3322))
+- Fixed `Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerExceptionResolver` in Spring Boot Servlet mode without WebMVC ([#3333](https://github.com/getsentry/sentry-java/pull/3333))
+
+## 7.6.0
+
+### Features
+
+- Experimental: Add support for Sentry Developer Metrics ([#3205](https://github.com/getsentry/sentry-java/pull/3205), [#3238](https://github.com/getsentry/sentry-java/pull/3238), [#3248](https://github.com/getsentry/sentry-java/pull/3248), [#3250](https://github.com/getsentry/sentry-java/pull/3250))  
+  Use the Metrics API to track processing time, download sizes, user signups, and conversion rates and correlate them back to tracing data in order to get deeper insights and solve issues faster. Our API supports counters, distributions, sets, gauges and timers, and it's easy to get started:
+  ```kotlin
+  Sentry.metrics()
+    .increment(
+        "button_login_click", // key
+        1.0,                  // value
+        null,                 // unit
+        mapOf(                // tags
+            "provider" to "e-mail"
+        )
+    )
+  ```
+  To learn more about Sentry Developer Metrics, head over to our [Java](https://docs.sentry.io/platforms/java/metrics/) and [Android](https://docs.sentry.io//platforms/android/metrics/) docs page.
+
+## 7.5.0
+
+### Features
+
+- Add support for measurements at span level ([#3219](https://github.com/getsentry/sentry-java/pull/3219))
+- Add `enableScopePersistence` option to disable `PersistingScopeObserver` used for ANR reporting which may increase performance overhead. Defaults to `true` ([#3218](https://github.com/getsentry/sentry-java/pull/3218))
+  - When disabled, the SDK will not enrich ANRv2 events with scope data (e.g. breadcrumbs, user, tags, etc.)
+- Configurable defaults for Cron - MonitorConfig ([#3195](https://github.com/getsentry/sentry-java/pull/3195))
+- We now display a warning on startup if an incompatible version of Spring Boot is detected ([#3233](https://github.com/getsentry/sentry-java/pull/3233))
+  - This should help notice a mismatching Sentry dependency, especially when upgrading a Spring Boot application
+- Experimental: Add Metrics API ([#3205](https://github.com/getsentry/sentry-java/pull/3205))
+
+### Fixes
+
+- Ensure performance measurement collection is not taken too frequently ([#3221](https://github.com/getsentry/sentry-java/pull/3221))
+- Fix old profiles deletion on SDK init ([#3216](https://github.com/getsentry/sentry-java/pull/3216))
+- Fix hub restore point in wrappers: SentryWrapper, SentryTaskDecorator and SentryScheduleHook ([#3225](https://github.com/getsentry/sentry-java/pull/3225))
+  - We now reset the hub to its previous value on the thread where the `Runnable`/`Callable`/`Supplier` is executed instead of setting it to the hub that was used on the thread where the `Runnable`/`Callable`/`Supplier` was created.
+- Fix add missing thread name/id to app start spans ([#3226](https://github.com/getsentry/sentry-java/pull/3226))
+
+## 7.4.0
+
+### Features
+
+- Add new threshold parameters to monitor config ([#3181](https://github.com/getsentry/sentry-java/pull/3181))
+- Report process init time as a span for app start performance ([#3159](https://github.com/getsentry/sentry-java/pull/3159))
+- (perf-v2): Calculate frame delay on a span level ([#3197](https://github.com/getsentry/sentry-java/pull/3197))
+- Resolve spring properties in @SentryCheckIn annotation ([#3194](https://github.com/getsentry/sentry-java/pull/3194))
+- Experimental: Add Spotlight integration ([#3166](https://github.com/getsentry/sentry-java/pull/3166))
+    - For more details about Spotlight head over to https://spotlightjs.com/
+    - Set `options.isEnableSpotlight = true` to enable Spotlight
+
+### Fixes
+
+- Don't wait on main thread when SDK restarts ([#3200](https://github.com/getsentry/sentry-java/pull/3200))
+- Fix Jetpack Compose widgets are not being correctly identified for user interaction tracing ([#3209](https://github.com/getsentry/sentry-java/pull/3209))
+- Fix issue title on Android when a wrapping `RuntimeException` is thrown by the system ([#3212](https://github.com/getsentry/sentry-java/pull/3212))
+  - This will change grouping of the issues that were previously titled `RuntimeInit$MethodAndArgsCaller` to have them split up properly by the original root cause exception
+
+## 7.3.0
+
+### Features
+
 - Added App Start profiling
     - This depends on the new option `io.sentry.profiling.enable-app-start`, other than the already existing `io.sentry.traces.profiling.sample-rate`.
     - Sampler functions can check the new `isForNextAppStart` flag, to adjust startup profiling sampling programmatically.
@@ -17,10 +100,12 @@
 
 ### Fixes
 
+- Avoid multiple breadcrumbs from OkHttpEventListener ([#3175](https://github.com/getsentry/sentry-java/pull/3175))
 - Apply OkHttp listener auto finish timestamp to all running spans ([#3167](https://github.com/getsentry/sentry-java/pull/3167))
 - Fix not eligible for auto proxying warnings ([#3154](https://github.com/getsentry/sentry-java/pull/3154))
 - Set default fingerprint for ANRv2 events to correctly group background and foreground ANRs ([#3164](https://github.com/getsentry/sentry-java/pull/3164))
   - This will improve grouping of ANRs that have similar stacktraces but differ in background vs foreground state. Only affects newly-ingested ANR events with `mechanism:AppExitInfo`
+- Fix UserFeedback disk cache name conflicts with linked events ([#3116](https://github.com/getsentry/sentry-java/pull/3116))
 
 ### Breaking changes
 

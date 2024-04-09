@@ -20,7 +20,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_RELEASE_PAT }}
+          # Needs to be set, otherwise git describe --tags will fail with: No names found, cannot describe anything
           fetch-depth: 0
+          submodules: 'recursive'
       - name: Prepare release
         uses: getsentry/action-prepare-release@v1
         env:

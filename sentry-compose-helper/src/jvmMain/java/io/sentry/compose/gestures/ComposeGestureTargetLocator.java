@@ -48,8 +48,6 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
       }
     }
 
-    @Nullable String targetTag = null;
-
     if (!(root instanceof Owner)) {
       return null;
     }
@@ -57,6 +55,11 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
     final @NotNull Queue<LayoutNode> queue = new LinkedList<>();
     queue.add(((Owner) root).getRoot());
 
+    // the final tag to return
+    @Nullable String targetTag = null;
+
+    // the last known tag when iterating the node tree
+    @Nullable String lastKnownTag = null;
     while (!queue.isEmpty()) {
       final @Nullable LayoutNode node = queue.poll();
       if (node == null) {
@@ -66,7 +69,6 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
       if (node.isPlaced() && layoutNodeBoundsContain(composeHelper, node, x, y)) {
         boolean isClickable = false;
         boolean isScrollable = false;
-        @Nullable String testTag = null;
 
         final List<ModifierInfo> modifiers = node.getModifierInfo();
         for (ModifierInfo modifierInfo : modifiers) {
@@ -83,7 +85,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
                 isClickable = true;
               } else if ("SentryTag".equals(key) || "TestTag".equals(key)) {
                 if (entry.getValue() instanceof String) {
-                  testTag = (String) entry.getValue();
+                  lastKnownTag = (String) entry.getValue();
                 }
               }
             }
@@ -100,10 +102,10 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
         }
 
         if (isClickable && targetType == UiElement.Type.CLICKABLE) {
-          targetTag = testTag;
+          targetTag = lastKnownTag;
         }
         if (isScrollable && targetType == UiElement.Type.SCROLLABLE) {
-          targetTag = testTag;
+          targetTag = lastKnownTag;
           // skip any children for scrollable targets
           break;
         }
