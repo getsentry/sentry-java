@@ -1,5 +1,9 @@
 # Changelog
 
+## 7.8.0-alpha.0
+
+- No documented changes.
+
 ## 7.8.0
 
 ### Features
