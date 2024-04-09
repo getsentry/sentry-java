@@ -9,14 +9,14 @@ import org.jetbrains.annotations.NotNull;
  * <p>Beware that experimental options can change at any time.
  */
 public final class ExperimentalOptions {
-  private @NotNull SentryReplayOptions sessionReplayOptions = new SentryReplayOptions();
+  private @NotNull SentryReplayOptions sessionReplay = new SentryReplayOptions();
 
   @NotNull
-  public SentryReplayOptions getSessionReplayOptions() {
-    return sessionReplayOptions;
+  public SentryReplayOptions getSessionReplay() {
+    return sessionReplay;
   }
 
-  public void setSessionReplayOptions(final @NotNull SentryReplayOptions sessionReplayOptions) {
-    this.sessionReplayOptions = sessionReplayOptions;
+  public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
+    this.sessionReplay = sessionReplayOptions;
   }
 }

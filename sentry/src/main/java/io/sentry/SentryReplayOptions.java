@@ -21,6 +21,24 @@ public final class SentryReplayOptions {
   private @Nullable Double errorSampleRate;
 
   /**
+   * Redact all text content. Draws a rectangle of text bounds with text color on top. By default
+   * only views extending TextView are redacted.
+   *
+   * <p>Default is enabled.
+   */
+  private boolean redactAllText = true;
+
+  /**
+   * Redact all image content. Draws a rectangle of image bounds with image's dominant color on top.
+   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
+   * redacted. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
+   * from the apk.
+   *
+   * <p>Default is enabled.
+   */
+  private boolean redactAllImages = true;
+
+  /**
    * Defines the quality of the session replay. Higher bit rates have better replay quality, but
    * also affect the final payload size to transfer, defaults to 100kbps.
    */
@@ -85,6 +103,22 @@ public final class SentryReplayOptions {
               + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
     this.sessionSampleRate = sessionSampleRate;
+  }
+
+  public boolean getRedactAllText() {
+    return redactAllText;
+  }
+
+  public void setRedactAllText(final boolean redactAllText) {
+    this.redactAllText = redactAllText;
+  }
+
+  public boolean getRedactAllImages() {
+    return redactAllImages;
+  }
+
+  public void setRedactAllImages(final boolean redactAllImages) {
+    this.redactAllImages = redactAllImages;
   }
 
   @ApiStatus.Internal

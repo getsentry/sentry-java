@@ -310,8 +310,8 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> ()V
-	public fun getSessionReplayOptions ()Lio/sentry/SentryReplayOptions;
-	public fun setSessionReplayOptions (Lio/sentry/SentryReplayOptions;)V
+	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
+	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -2571,12 +2571,16 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getErrorReplayDuration ()J
 	public fun getErrorSampleRate ()Ljava/lang/Double;
 	public fun getFrameRate ()I
+	public fun getRedactAllImages ()Z
+	public fun getRedactAllText ()Z
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun setErrorSampleRate (Ljava/lang/Double;)V
+	public fun setRedactAllImages (Z)V
+	public fun setRedactAllText (Z)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
 

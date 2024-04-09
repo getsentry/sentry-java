@@ -164,7 +164,7 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val rootNode = ViewHierarchyNode.fromView(root)
+        val rootNode = ViewHierarchyNode.fromView(root, options)
         root.traverse(rootNode)
         pendingViewHierarchy.set(rootNode)
 
@@ -227,7 +227,7 @@ internal class ScreenshotRecorder(
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child != null) {
-                val childNode = ViewHierarchyNode.fromView(child)
+                val childNode = ViewHierarchyNode.fromView(child, options)
                 childNodes.add(childNode)
                 child.traverse(childNode)
             }
@@ -260,7 +260,7 @@ public data class ScreenshotRecorderConfig(
 
         fun from(
             context: Context,
-            sentryReplayOptions: SentryReplayOptions
+            sessionReplay: SentryReplayOptions
         ): ScreenshotRecorderConfig {
             // PixelCopy takes screenshots including system bars, so we have to get the real size here
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -287,8 +287,8 @@ public data class ScreenshotRecorderConfig(
                 recordingHeight = height,
                 scaleFactorX = width.toFloat() / screenBounds.width(),
                 scaleFactorY = height.toFloat() / screenBounds.height(),
-                frameRate = sentryReplayOptions.frameRate,
-                bitRate = sentryReplayOptions.bitRate
+                frameRate = sessionReplay.frameRate,
+                bitRate = sessionReplay.bitRate
             )
         }
     }

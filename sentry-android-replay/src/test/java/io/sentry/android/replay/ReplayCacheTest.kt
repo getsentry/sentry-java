@@ -41,12 +41,15 @@ class ReplayCacheTest {
             options.run {
                 cacheDirPath = dir?.newFolder()?.absolutePath
             }
-            return ReplayCache(options, replayId, recorderConfig, encoderCreator = { videoFile ->
+            return ReplayCache(options, replayId, recorderConfig, encoderCreator = { videoFile, height, width ->
                 encoder = SimpleVideoEncoder(
                     options,
                     MuxerConfig(
                         file = videoFile,
-                        recorderConfig = recorderConfig
+                        recordingHeight = height,
+                        recordingWidth = width,
+                        frameRate = recorderConfig.frameRate,
+                        bitRate = recorderConfig.bitRate
                     ),
                     onClose = {
                         encodeFrame(framesToEncode, frameRate, size = 0, flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM)
@@ -107,7 +110,7 @@ class ReplayCacheTest {
             frameRate = 1
         )
 
-        val video = replayCache.createVideoOf(5000L, 0, 0)
+        val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
 
         assertNull(video)
     }
@@ -125,7 +128,7 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1001)
         replayCache.addFrame(bitmap, 2001)
 
-        val segment0 = replayCache.createVideoOf(3000L, 0, 0)
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200)
         assertEquals(3, segment0!!.frameCount)
         assertEquals(3000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -146,7 +149,7 @@ class ReplayCacheTest {
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -165,7 +168,7 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1)
         replayCache.addFrame(bitmap, 3001)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -184,12 +187,12 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1)
         replayCache.addFrame(bitmap, 5001)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
         assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
 
-        val segment1 = replayCache.createVideoOf(5000L, 5000L, 1)
+        val segment1 = replayCache.createVideoOf(5000L, 5000L, 1, 100, 200)
         assertEquals(5, segment1!!.frameCount)
         assertEquals(5000, segment1.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -209,7 +212,7 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1001)
         replayCache.addFrame(bitmap, 1501)
 
-        val segment0 = replayCache.createVideoOf(3000L, 0, 0)
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200)
         assertEquals(6, segment0!!.frameCount)
         assertEquals(3000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -235,7 +238,7 @@ class ReplayCacheTest {
         }
         replayCache.addFrame(screenshot, frameTimestamp = 1)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0, videoFile = video)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, videoFile = video)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
 
