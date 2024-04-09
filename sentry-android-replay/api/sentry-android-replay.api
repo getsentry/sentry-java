@@ -25,15 +25,17 @@ public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public final fun addFrame (Ljava/io/File;J)V
 	public fun close ()V
-	public final fun createVideoOf (JJILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
-	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+	public final fun createVideoOf (JJIIILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
+	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJIIILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
 	public final fun rotate (J)V
 }
 
-public final class io/sentry/android/replay/ReplayIntegration : io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {
+public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun close ()V
 	public fun isRecording ()Z
+	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
+	public fun onLowMemory ()V
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V

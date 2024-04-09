@@ -121,7 +121,7 @@ class ReplayIntegration(
     }
 
     override fun resume() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -130,7 +130,7 @@ class ReplayIntegration(
     }
 
     override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -145,7 +145,7 @@ class ReplayIntegration(
     }
 
     override fun pause() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -154,7 +154,7 @@ class ReplayIntegration(
     }
 
     override fun stop() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
@@ -241,12 +241,13 @@ class ReplayIntegration(
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
         recorder?.stopRecording()
 
+        // TODO: support buffer mode and breadcrumb/rrweb_event
         if (isFullSession.get()) {
             val now = dateProvider.currentTimeMillis
             val currentSegmentTimestamp = segmentTimestamp.get()

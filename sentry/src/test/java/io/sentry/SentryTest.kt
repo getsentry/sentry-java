@@ -63,6 +63,30 @@ class SentryTest {
     }
 
     @Test
+    fun `init multiple times calls hub close with isRestarting true`() {
+        val hub = mock<IHub>()
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentHub(hub)
+        Sentry.init {
+            it.dsn = dsn
+        }
+        verify(hub).close(eq(true))
+    }
+
+    @Test
+    fun `close calls hub close with isRestarting false`() {
+        val hub = mock<IHub>()
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentHub(hub)
+        Sentry.close()
+        verify(hub).close(eq(false))
+    }
+
+    @Test
     fun `outboxPath should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
@@ -1113,6 +1137,18 @@ class SentryTest {
         assertEquals(0.5, appStartOption.traceSampleRate)
         assertEquals(0.2, appStartOption.profileSampleRate)
         assertTrue(appStartOption.isProfilingEnabled)
+    }
+
+    @Test
+    fun `metrics calls hub getMetrics`() {
+        val hub = mock<IHub>()
+        Sentry.init({
+            it.dsn = dsn
+        }, false)
+        Sentry.setCurrentHub(hub)
+
+        Sentry.metrics()
+        verify(hub).metrics()
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

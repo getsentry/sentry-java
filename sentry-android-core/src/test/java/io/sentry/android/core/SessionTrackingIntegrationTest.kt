@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CheckIn
 import io.sentry.Hint
+import io.sentry.IMetricsAggregator
 import io.sentry.IScope
 import io.sentry.ISentryClient
 import io.sentry.ProfilingTraceData
@@ -134,6 +135,10 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
+        override fun close(isRestarting: Boolean) {
+            TODO("Not yet implemented")
+        }
+
         override fun close() {
             TODO("Not yet implemented")
         }
@@ -177,6 +182,10 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun getRateLimiter(): RateLimiter? {
+            TODO("Not yet implemented")
+        }
+
+        override fun getMetricsAggregator(): IMetricsAggregator {
             TODO("Not yet implemented")
         }
     }

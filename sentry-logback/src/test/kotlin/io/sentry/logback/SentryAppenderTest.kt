@@ -86,6 +86,7 @@ class SentryAppenderTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
+            it.isEnableBackpressureHandling = false
         }
         fixture.logger.error("testing environment field")
 

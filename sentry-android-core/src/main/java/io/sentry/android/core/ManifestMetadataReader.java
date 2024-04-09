@@ -100,6 +100,10 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
+  static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
+
+  static final String ENABLE_METRICS = "io.sentry.enable-metrics";
+
   static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
 
   static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.error-sample-rate";
@@ -379,6 +383,13 @@ final class ManifestMetadataReader {
         options.setEnableAppStartProfiling(
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
+
+        options.setEnableScopePersistence(
+            readBool(
+                metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
+
+        options.setEnableMetrics(
+            readBool(metadata, logger, ENABLE_METRICS, options.isEnableMetrics()));
 
         if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =

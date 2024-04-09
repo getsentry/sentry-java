@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -190,6 +191,13 @@ public interface IHub {
 
   /** Flushes out the queue for up to timeout seconds and disable the Hub. */
   void close();
+
+  /**
+   * Flushes out the queue for up to timeout seconds and disable the Hub.
+   *
+   * @param isRestarting if true, avoids locking the main thread when finishing the queue.
+   */
+  void close(boolean isRestarting);
 
   /**
    * Adds a breadcrumb to the current Scope
@@ -578,4 +586,8 @@ public interface IHub {
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
+
+  @ApiStatus.Experimental
+  @NotNull
+  MetricsApi metrics();
 }

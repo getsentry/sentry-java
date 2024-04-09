@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.ContentProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.MeasurementUnit
@@ -18,6 +19,7 @@ import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
+import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -27,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@RunWith(AndroidJUnit4::class)
 class PerformanceAndroidEventProcessorTest {
 
     private class Fixture {
@@ -239,12 +242,21 @@ class PerformanceAndroidEventProcessorTest {
             SpanStatus.OK,
             null,
             emptyMap(),
+            emptyMap(),
+            null,
             null
         )
         tr.spans.add(appStartSpan)
 
         // then the app start metrics should be attached
         tr = sut.process(tr, Hint())
+
+        assertTrue(
+            tr.spans.any {
+                "process.load" == it.op &&
+                    appStartSpan.spanId == it.parentSpanId
+            }
+        )
 
         assertTrue(
             tr.spans.any {
@@ -300,7 +312,7 @@ class PerformanceAndroidEventProcessorTest {
 
     @Test
     fun `does not add app start metrics more than once`() {
-        // given some WARM app start metrics
+        // given some cold app start metrics
         val appStartMetrics = AppStartMetrics.getInstance()
         appStartMetrics.appStartType = AppStartType.COLD
         appStartMetrics.appStartTimeSpan.setStartedAt(123)
@@ -327,6 +339,8 @@ class PerformanceAndroidEventProcessorTest {
             SpanStatus.OK,
             null,
             emptyMap(),
+            emptyMap(),
+            null,
             null
         )
         tr.spans.add(appStartSpan)
@@ -349,6 +363,105 @@ class PerformanceAndroidEventProcessorTest {
                 "application.load" == it.op
             }
         )
+    }
+
+    @Test
+    fun `does not add process init span if it happened too early`() {
+        // given some cold app start metrics
+        // where class loaded happened way before app start
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.COLD
+        appStartMetrics.appStartTimeSpan.setStartedAt(11001)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(12000)
+        appStartMetrics.classLoadedUptimeMs = 1000
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(appStartSpan)
+
+        // when the processor attaches the app start spans
+        tr = sut.process(tr, Hint())
+
+        // process load should not be included
+        assertFalse(
+            tr.spans.any {
+                "process.load" == it.op
+            }
+        )
+    }
+
+    @Test
+    fun `adds main thread name and id to app start spans`() {
+        // given some cold app start metrics
+        // where class loaded happened way before app start
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.COLD
+        appStartMetrics.appStartTimeSpan.setStartedAt(1)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(3000)
+
+        AppStartMetrics.getInstance().applicationOnCreateTimeSpan.apply {
+            setStartedAt(1000)
+            description = "com.example.App.onCreate"
+            setStoppedAt(2000)
+        }
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(appStartSpan)
+
+        // when the processor attaches the app start spans
+        tr = sut.process(tr, Hint())
+
+        // thread name and id should be set
+        assertTrue {
+            tr.spans.any {
+                it.op == "process.load" &&
+                    it.data!!["thread.name"] == "main" &&
+                    it.data!!.containsKey("thread.id")
+            }
+        }
+
+        assertTrue {
+            tr.spans.any {
+                it.op == "application.load" &&
+                    it.data!!["thread.name"] == "main" &&
+                    it.data!!.containsKey("thread.id")
+            }
+        }
     }
 
     private fun setAppStart(options: SentryAndroidOptions, coldStart: Boolean = true) {

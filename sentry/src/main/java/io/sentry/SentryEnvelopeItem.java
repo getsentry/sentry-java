@@ -6,6 +6,7 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.metrics.EncodedMetrics;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -188,6 +189,28 @@ public final class SentryEnvelopeItem {
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
             SentryItemType.CheckIn, () -> cachedItem.getBytes().length, "application/json", null);
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromMetrics(final @NotNull EncodedMetrics metrics) {
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              // avoid method refs on Android due to some issues with older AGP setups
+              //noinspection Convert2MethodRef
+              return metrics.encodeToStatsd();
+            });
+
+    final @NotNull SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.Statsd,
+            () -> cachedItem.getBytes().length,
+            "application/octet-stream",
+            null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

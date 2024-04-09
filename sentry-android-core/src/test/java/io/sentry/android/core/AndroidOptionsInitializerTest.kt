@@ -683,4 +683,11 @@ class AndroidOptionsInitializerTest {
             fixture.sentryOptions.integrations.firstOrNull { it is AnrIntegration }
         assertNull(anrv1Integration)
     }
+
+    @Test
+    fun `PersistingScopeObserver is not set to options, if scope persistence is disabled`() {
+        fixture.initSut(configureOptions = { isEnableScopePersistence = false })
+
+        assertTrue { fixture.sentryOptions.scopeObservers.none { it is PersistingScopeObserver } }
+    }
 }

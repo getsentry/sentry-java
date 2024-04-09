@@ -1372,6 +1372,56 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads enableScopePersistence flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_SCOPE_PERSISTENCE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableScopePersistence)
+    }
+
+    @Test
+    fun `applyMetadata reads enableScopePersistence flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableScopePersistence)
+    }
+
+    @Test
+    fun `applyMetadata reads enableMetrics flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableMetrics)
+    }
+
+    @Test
+    fun `applyMetadata reads enableMetrics flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableMetrics)
+    }
+
+    @Test
     fun `applyMetadata reads replays errorSampleRate from metadata`() {
         // Arrange
         val expectedSampleRate = 0.99f

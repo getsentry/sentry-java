@@ -1,9 +1,9 @@
 package io.sentry
 
-import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.mock
 import java.io.File
+import java.net.Proxy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,6 +12,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryOptionsTest {
@@ -349,7 +350,7 @@ class SentryOptionsTest {
         externalOptions.environment = "environment"
         externalOptions.release = "release"
         externalOptions.serverName = "serverName"
-        externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
+        externalOptions.proxy = SentryOptions.Proxy("example.com", "8090", Proxy.Type.SOCKS)
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
@@ -369,7 +370,14 @@ class SentryOptionsTest {
         externalOptions.isEnablePrettySerializationOutput = false
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
-        externalOptions.isEnableBackpressureHandling = true
+        externalOptions.isEnableBackpressureHandling = false
+        externalOptions.cron = SentryOptions.Cron().apply {
+            defaultCheckinMargin = 10L
+            defaultMaxRuntime = 30L
+            defaultTimezone = "America/New_York"
+            defaultFailureIssueThreshold = 40L
+            defaultRecoveryThreshold = 50L
+        }
 
         val options = SentryOptions()
 
@@ -383,6 +391,7 @@ class SentryOptionsTest {
         assertNotNull(options.proxy)
         assertEquals("example.com", options.proxy!!.host)
         assertEquals("8090", options.proxy!!.port)
+        assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
         assertEquals(true, options.enableTracing)
@@ -399,7 +408,13 @@ class SentryOptionsTest {
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
         assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
-        assertTrue(options.isEnableBackpressureHandling)
+        assertFalse(options.isEnableBackpressureHandling)
+        assertNotNull(options.cron)
+        assertEquals(10L, options.cron?.defaultCheckinMargin)
+        assertEquals(30L, options.cron?.defaultMaxRuntime)
+        assertEquals(40L, options.cron?.defaultFailureIssueThreshold)
+        assertEquals(50L, options.cron?.defaultRecoveryThreshold)
+        assertEquals("America/New_York", options.cron?.defaultTimezone)
     }
 
     @Test
@@ -549,9 +564,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, enableBackpressureHandling is set to false by default`() {
-        assertFalse(SentryOptions().isEnableBackpressureHandling)
-        assertTrue(SentryOptions().backpressureMonitor is NoOpBackpressureMonitor)
+    fun `when options are initialized, enableBackpressureHandling is set to true by default`() {
+        assertTrue(SentryOptions().isEnableBackpressureHandling)
     }
 
     @Test
@@ -585,5 +599,126 @@ class SentryOptionsTest {
         val options = SentryOptions()
         options.profilingTracesHz = 13
         assertEquals(13, options.profilingTracesHz)
+    }
+
+    @Test
+    fun `when options are initialized, spotlight is disabled by default and no url is set`() {
+        val options = SentryOptions()
+        assertFalse(options.isEnableSpotlight)
+        assertNull(options.spotlightConnectionUrl)
+    }
+
+    @Test
+    fun `when spotlight is configured, getters reflect that`() {
+        val options = SentryOptions().apply {
+            isEnableSpotlight = true
+            spotlightConnectionUrl = "http://localhost:8080"
+        }
+        assertTrue(options.isEnableSpotlight)
+        assertEquals("http://localhost:8080", options.spotlightConnectionUrl)
+    }
+
+    @Test
+    fun `when options are initialized, enableScopePersistence is set to true by default`() {
+        assertEquals(true, SentryOptions().isEnableScopePersistence)
+    }
+
+    @Test
+    fun `when options are initialized, metrics is disabled by default`() {
+        assertFalse(SentryOptions().isEnableMetrics)
+        assertFalse(SentryOptions().isEnableDefaultTagsForMetrics)
+        assertFalse(SentryOptions().isEnableSpanLocalMetricAggregation)
+    }
+
+    @Test
+    fun `when metrics is enabled, getters reflect that`() {
+        val options = SentryOptions().apply {
+            isEnableMetrics = true
+        }
+        assertTrue(options.isEnableMetrics)
+        assertTrue(options.isEnableDefaultTagsForMetrics)
+        assertTrue(options.isEnableSpanLocalMetricAggregation)
+    }
+
+    @Test
+    fun `when metric settings are flipped, getters reflect that`() {
+        val options = SentryOptions().apply {
+            isEnableMetrics = true
+            isEnableDefaultTagsForMetrics = false
+            isEnableSpanLocalMetricAggregation = false
+        }
+        assertTrue(options.isEnableMetrics)
+        assertFalse(options.isEnableDefaultTagsForMetrics)
+        assertFalse(options.isEnableSpanLocalMetricAggregation)
+    }
+
+    @Test
+    fun `metric callback is null by default`() {
+        assertNull(SentryOptions().beforeEmitMetricCallback)
+    }
+
+    @Test
+    fun `when metric callback is set, getter returns it`() {
+        val callback = SentryOptions.BeforeEmitMetricCallback { _, _ -> false }
+        val options = SentryOptions().apply {
+            beforeEmitMetricCallback = callback
+        }
+        assertSame(callback, options.beforeEmitMetricCallback)
+    }
+
+    @Test
+    fun `existing cron defaults are not overridden if not present in external options`() {
+        val options = SentryOptions().apply {
+            cron = SentryOptions.Cron().apply {
+                defaultCheckinMargin = 1
+                defaultMaxRuntime = 2
+                defaultTimezone = "America/New_York"
+                defaultFailureIssueThreshold = 3
+                defaultRecoveryThreshold = 4
+            }
+        }
+
+        val externalOptions = ExternalOptions().apply {
+            cron = SentryOptions.Cron()
+        }
+
+        options.merge(externalOptions)
+
+        assertEquals(1, options.cron?.defaultCheckinMargin)
+        assertEquals(2, options.cron?.defaultMaxRuntime)
+        assertEquals("America/New_York", options.cron?.defaultTimezone)
+        assertEquals(3, options.cron?.defaultFailureIssueThreshold)
+        assertEquals(4, options.cron?.defaultRecoveryThreshold)
+    }
+
+    @Test
+    fun `all cron properties set in external options override values set in sentry options`() {
+        val options = SentryOptions().apply {
+            cron = SentryOptions.Cron().apply {
+                defaultCheckinMargin = 1
+                defaultMaxRuntime = 2
+                defaultTimezone = "America/New_York"
+                defaultFailureIssueThreshold = 3
+                defaultRecoveryThreshold = 4
+            }
+        }
+
+        val externalOptions = ExternalOptions().apply {
+            cron = SentryOptions.Cron().apply {
+                defaultCheckinMargin = 10
+                defaultMaxRuntime = 20
+                defaultTimezone = "Europe/Vienna"
+                defaultFailureIssueThreshold = 30
+                defaultRecoveryThreshold = 40
+            }
+        }
+
+        options.merge(externalOptions)
+
+        assertEquals(10, options.cron?.defaultCheckinMargin)
+        assertEquals(20, options.cron?.defaultMaxRuntime)
+        assertEquals("Europe/Vienna", options.cron?.defaultTimezone)
+        assertEquals(30, options.cron?.defaultFailureIssueThreshold)
+        assertEquals(40, options.cron?.defaultRecoveryThreshold)
     }
 }
