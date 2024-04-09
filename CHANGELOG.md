@@ -10,6 +10,7 @@
 ### Fixes
 
 - Add rate limit to Metrics ([#3334](https://github.com/getsentry/sentry-java/pull/3334))
+- Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerMapping in Spring Boot Servlet mode without WebMVC ([#3336](https://github.com/getsentry/sentry-java/pull/3336))
 
 ## 7.7.0
 

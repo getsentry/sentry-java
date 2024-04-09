@@ -261,6 +261,12 @@ public final class io/sentry/spring/jakarta/tracing/SpringMvcTransactionNameProv
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
+public final class io/sentry/spring/jakarta/tracing/SpringServletTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
+	public fun <init> ()V
+	public fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
 public abstract interface class io/sentry/spring/jakarta/tracing/TransactionNameProvider {
 	public abstract fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
