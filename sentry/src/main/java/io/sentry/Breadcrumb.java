@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Series of application events */
-public final class Breadcrumb implements JsonUnknown, JsonSerializable {
+public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparable<Breadcrumb> {
 
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
@@ -658,6 +658,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   @Override
   public void setUnknown(@Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  @Override
+  @SuppressWarnings("JavaUtilDate")
+  public int compareTo(@NotNull Breadcrumb o) {
+    return timestamp.compareTo(o.timestamp);
   }
 
   public static final class JsonKeys {

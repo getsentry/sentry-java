@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
@@ -17,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
+@Open
+public class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
 
   /** Response lock, Ops should be atomic */

@@ -118,7 +118,7 @@ class InternalSentrySdkTest {
 
     @Test
     fun `current scope returns obj when hub is active`() {
-        Sentry.setCurrentHub(
+        Sentry.setCurrentScopes(
             Hub(
                 SentryOptions().apply {
                     dsn = "https://key@uri/1234567"
@@ -131,7 +131,7 @@ class InternalSentrySdkTest {
 
     @Test
     fun `current scope returns a copy of the scope`() {
-        Sentry.setCurrentHub(
+        Sentry.setCurrentScopes(
             Hub(
                 SentryOptions().apply {
                     dsn = "https://key@uri/1234567"
