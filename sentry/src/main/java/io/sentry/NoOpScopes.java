@@ -127,6 +127,11 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public @NotNull ISentryLifecycleToken pushIsolationScope() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
   public void popScope() {}
 
   @Override
@@ -152,6 +157,31 @@ public final class NoOpScopes implements IScopes {
   @Override
   public @NotNull IHub clone() {
     return NoOpHub.getInstance();
+  }
+
+  @Override
+  public @NotNull IScopes forkedScopes(@NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
+  public @NotNull IScopes forkedCurrentScope(@NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
+  public @NotNull IScope getScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  public @NotNull IScope getIsolationScope() {
+    return NoOpScope.getInstance();
   }
 
   @Override

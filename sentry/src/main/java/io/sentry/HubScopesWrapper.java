@@ -154,6 +154,11 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public @NotNull ISentryLifecycleToken pushIsolationScope() {
+    return scopes.pushIsolationScope();
+  }
+
+  @Override
   public void popScope() {
     scopes.popScope();
   }
@@ -186,6 +191,31 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public @NotNull IHub clone() {
     return scopes.clone();
+  }
+
+  @Override
+  public @NotNull IScopes forkedScopes(@NotNull String creator) {
+    return scopes.forkedScopes(creator);
+  }
+
+  @Override
+  public @NotNull IScopes forkedCurrentScope(@NotNull String creator) {
+    return scopes.forkedCurrentScope(creator);
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return scopes.makeCurrent();
+  }
+
+  @Override
+  public @NotNull IScope getScope() {
+    return scopes.getScope();
+  }
+
+  @Override
+  public @NotNull IScope getIsolationScope() {
+    return scopes.getIsolationScope();
   }
 
   @ApiStatus.Internal

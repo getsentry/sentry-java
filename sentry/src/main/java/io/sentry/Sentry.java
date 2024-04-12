@@ -113,6 +113,14 @@ public final class Sentry {
     return mainScopes.clone();
   }
 
+  public static @NotNull IScopes forkedScopes(final @NotNull String creator) {
+    return getCurrentScopes().forkedScopes(creator);
+  }
+
+  public static @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
+    return getCurrentScopes().forkedCurrentScope(creator);
+  }
+
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
   @SuppressWarnings({"deprecation", "InlineMeSuggester"})
@@ -822,11 +830,19 @@ public final class Sentry {
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
+  /** Pushes a new isolation and current scope while inheriting the current scope's data. */
+  public static @NotNull ISentryLifecycleToken pushIsolationScope() {
+    // pushScope is no-op in global hub mode
+    if (!globalHubMode) {
+      return getCurrentScopes().pushIsolationScope();
+    }
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
   /** Removes the first scope */
   public static void popScope() {
     // popScope is no-op in global hub mode
     if (!globalHubMode) {
-      // TODO this might have to behave differently from Scopes.popScope
       getCurrentScopes().popScope();
     }
   }
@@ -837,7 +853,6 @@ public final class Sentry {
    * @param callback the callback
    */
   public static void withScope(final @NotNull ScopeCallback callback) {
-    // TODO this might have to behave differently from Scopes.withScope
     getCurrentScopes().withScope(callback);
   }
 

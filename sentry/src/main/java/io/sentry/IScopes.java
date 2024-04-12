@@ -309,6 +309,9 @@ public interface IScopes {
   @NotNull
   ISentryLifecycleToken pushScope();
 
+  @NotNull
+  ISentryLifecycleToken pushIsolationScope();
+
   /** Removes the first scope */
   void popScope();
 
@@ -354,11 +357,53 @@ public interface IScopes {
   /**
    * Clones the Hub
    *
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
    * @return the cloned Hub
    */
   @NotNull
   @Deprecated
   IHub clone();
+
+  /**
+   * Creates a fork of both current and isolation scope.
+   *
+   * @param creator debug information to see why scopes where forked
+   * @return forked Scopes
+   */
+  @NotNull
+  IScopes forkedScopes(final @NotNull String creator);
+
+  /**
+   * Creates a fork of current scope without forking isolation scope.
+   *
+   * @param creator debug information to see why scopes where forked
+   * @return forked Scopes
+   */
+  @NotNull
+  IScopes forkedCurrentScope(final @NotNull String creator);
+
+  /**
+   * Stores this Scopes in store, making it the current one that is used by static API.
+   *
+   * @return a token you should call .close() on when you're done.
+   */
+  @NotNull
+  ISentryLifecycleToken makeCurrent();
+
+  /**
+   * Returns the current scope of this Scopes.
+   *
+   * @return scope
+   */
+  public @NotNull IScope getScope();
+
+  /**
+   * Returns the isolation scope of this Scopes.
+   *
+   * @return isolation scope
+   */
+  public @NotNull IScope getIsolationScope();
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
