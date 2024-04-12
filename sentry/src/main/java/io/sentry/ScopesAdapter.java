@@ -170,8 +170,8 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void configureScope(@NotNull ScopeCallback callback) {
-    Sentry.configureScope(callback);
+  public void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback) {
+    Sentry.configureScope(scopeType, callback);
   }
 
   @Override

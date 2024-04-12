@@ -142,7 +142,7 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void configureScope(@NotNull ScopeCallback callback) {}
+  public void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback) {}
 
   @Override
   public void bindClient(@NotNull ISentryClient client) {}

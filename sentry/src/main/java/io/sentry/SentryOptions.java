@@ -479,6 +479,8 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private @Nullable Cron cron = null;
 
+  private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
+
   /**
    * Adds an event processor
    *
@@ -2383,6 +2385,14 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setCron(@Nullable Cron cron) {
     this.cron = cron;
+  }
+
+  public void setDefaultScopeType(final @NotNull ScopeType scopeType) {
+    this.defaultScopeType = scopeType;
+  }
+
+  public @NotNull ScopeType getDefaultScopeType() {
+    return defaultScopeType;
   }
 
   /** The BeforeSend callback */

@@ -857,7 +857,17 @@ public final class Sentry {
    * @param callback The configure scope callback.
    */
   public static void configureScope(final @NotNull ScopeCallback callback) {
-    getCurrentScopes().configureScope(callback);
+    configureScope(null, callback);
+  }
+
+  /**
+   * Configures the scope through the callback.
+   *
+   * @param callback The configure scope callback.
+   */
+  public static void configureScope(
+      final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
+    getCurrentScopes().configureScope(scopeType, callback);
   }
 
   /**

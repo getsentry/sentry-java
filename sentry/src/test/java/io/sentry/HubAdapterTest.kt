@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -185,7 +186,7 @@ class HubAdapterTest {
     @Test fun `configureScope calls Hub`() {
         val scopeCallback = mock<ScopeCallback>()
         HubAdapter.getInstance().configureScope(scopeCallback)
-        verify(scopes).configureScope(eq(scopeCallback))
+        verify(scopes).configureScope(anyOrNull(), eq(scopeCallback))
     }
 
     @Test fun `bindClient calls Hub`() {

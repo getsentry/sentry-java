@@ -594,7 +594,8 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
-  public void configureScope(final @NotNull ScopeCallback callback) {
+  public void configureScope(
+      final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
       options
           .getLogger()

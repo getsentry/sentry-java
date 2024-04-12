@@ -428,16 +428,31 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     }
   }
 
-  private IScope getDefaultConfigureScope() {
-    // TODO configurable default scope via SentryOptions, Android = global or isolation, backend =
-    // isolation
-    return scope;
-  }
+  private IScope getSpecificScope(final @Nullable ScopeType scopeType) {
+    if (scopeType != null) {
+      switch (scopeType) {
+        case CURRENT:
+          return scope;
+        case ISOLATION:
+          return isolationScope;
+        case GLOBAL:
+          return getGlobalScope();
+        default:
+          break;
+      }
+    }
 
-  private IScope getDefaultWriteScope() {
-    // TODO configurable default scope via SentryOptions, Android = global or isolation, backend =
-    // isolation
-    return getIsolationScope();
+    switch (getOptions().getDefaultScopeType()) {
+      case CURRENT:
+        return scope;
+      case ISOLATION:
+        return isolationScope;
+      case GLOBAL:
+        return getGlobalScope();
+      default:
+        // calm the compiler
+        return scope;
+    }
   }
 
   @Override
@@ -657,7 +672,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   @Override
-  public void configureScope(final @NotNull ScopeCallback callback) {
+  public void configureScope(
+      final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -666,7 +682,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       try {
-        callback.run(getDefaultConfigureScope());
+        callback.run(getSpecificScope(scopeType));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
       }

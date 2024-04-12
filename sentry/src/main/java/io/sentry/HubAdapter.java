@@ -174,8 +174,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void configureScope(@NotNull ScopeCallback callback) {
-    Sentry.configureScope(callback);
+  public void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback) {
+    Sentry.configureScope(scopeType, callback);
   }
 
   @Override

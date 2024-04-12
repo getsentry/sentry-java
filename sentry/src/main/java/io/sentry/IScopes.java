@@ -331,7 +331,16 @@ public interface IScopes {
    *
    * @param callback The configure scope callback.
    */
-  void configureScope(@NotNull ScopeCallback callback);
+  default void configureScope(@NotNull ScopeCallback callback) {
+    configureScope(null, callback);
+  }
+
+  /**
+   * Configures the scope through the callback.
+   *
+   * @param callback The configure scope callback.
+   */
+  void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback);
 
   /**
    * Binds a different client to the hub

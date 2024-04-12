@@ -169,8 +169,8 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void configureScope(@NotNull ScopeCallback callback) {
-    scopes.configureScope(callback);
+  public void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback) {
+    scopes.configureScope(scopeType, callback);
   }
 
   @Override
