@@ -282,10 +282,10 @@ public final class io/sentry/spring/jakarta/webflux/ReactorUtils {
 	public fun <init> ()V
 	public static fun withSentry (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
 	public static fun withSentry (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
-	public static fun withSentryHub (Lreactor/core/publisher/Flux;Lio/sentry/IScopes;)Lreactor/core/publisher/Flux;
-	public static fun withSentryHub (Lreactor/core/publisher/Mono;Lio/sentry/IScopes;)Lreactor/core/publisher/Mono;
-	public static fun withSentryNewMainHubClone (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
-	public static fun withSentryNewMainHubClone (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
+	public static fun withSentryForkedRoots (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
+	public static fun withSentryForkedRoots (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
+	public static fun withSentryScopes (Lreactor/core/publisher/Flux;Lio/sentry/IScopes;)Lreactor/core/publisher/Flux;
+	public static fun withSentryScopes (Lreactor/core/publisher/Mono;Lio/sentry/IScopes;)Lreactor/core/publisher/Mono;
 }
 
 public final class io/sentry/spring/jakarta/webflux/SentryReactorThreadLocalAccessor : io/micrometer/context/ThreadLocalAccessor {

@@ -1,6 +1,7 @@
 package io.sentry.spring;
 
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Sentry;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.NotNull;
@@ -14,18 +15,13 @@ import org.springframework.scheduling.annotation.Async;
  */
 public final class SentryTaskDecorator implements TaskDecorator {
   @Override
-  @SuppressWarnings("deprecation")
+  // TODO should there also be a SentryIsolatedTaskDecorator or similar that uses forkedScopes()?
   public @NotNull Runnable decorate(final @NotNull Runnable runnable) {
-    // TODO fork instead
-    final IScopes newHub = Sentry.getCurrentScopes().clone();
+    final IScopes newHub = Sentry.getCurrentScopes().forkedCurrentScope("spring.taskDecorator");
 
     return () -> {
-      final IScopes oldState = Sentry.getCurrentScopes();
-      Sentry.setCurrentScopes(newHub);
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = newHub.makeCurrent()) {
         runnable.run();
-      } finally {
-        Sentry.setCurrentScopes(oldState);
       }
     };
   }

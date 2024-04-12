@@ -3,6 +3,7 @@ package io.sentry.spring
 import io.sentry.Breadcrumb
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.ISentryLifecycleToken
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -39,6 +40,7 @@ class SentrySpringFilterTest {
     private class Fixture {
         val scopes = mock<IScopes>()
         val response = MockHttpServletResponse()
+        val lifecycleToken = mock<ISentryLifecycleToken>()
         val chain = mock<FilterChain>()
         lateinit var scope: IScope
         lateinit var request: HttpServletRequest
@@ -47,6 +49,7 @@ class SentrySpringFilterTest {
             scope = Scope(options)
             whenever(scopes.options).thenReturn(options)
             whenever(scopes.isEnabled).thenReturn(true)
+            whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
             this.request = request
                 ?: MockHttpServletRequest().apply {
@@ -64,7 +67,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.scopes).pushScope()
+        verify(fixture.scopes).pushIsolationScope()
     }
 
     @Test
@@ -87,7 +90,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.scopes).popScope()
+        verify(fixture.lifecycleToken).close()
     }
 
     @Test
@@ -99,7 +102,7 @@ class SentrySpringFilterTest {
             listener.doFilter(fixture.request, fixture.response, fixture.chain)
             fail()
         } catch (e: Exception) {
-            verify(fixture.scopes).popScope()
+            verify(fixture.lifecycleToken).close()
         }
     }
 

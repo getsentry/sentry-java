@@ -50,7 +50,7 @@ public final class SentryWebFilter implements WebFilter {
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
-    @NotNull IScopes requestHub = Sentry.cloneMainHub();
+    @NotNull IScopes requestHub = Sentry.forkedRootScopes("request.webflux");
     // TODO do not push / pop, use fork instead
     if (!requestHub.isEnabled()) {
       return webFilterChain.filter(serverWebExchange);
@@ -81,8 +81,6 @@ public final class SentryWebFilter implements WebFilter {
               if (transaction != null) {
                 finishTransaction(serverWebExchange, transaction);
               }
-              requestHub.popScope(); // TODO don't
-              // TODO token based cleanup instead?
               Sentry.setCurrentScopes(NoOpScopes.getInstance());
             })
         .doOnError(
@@ -96,7 +94,6 @@ public final class SentryWebFilter implements WebFilter {
             () -> {
               serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
               Sentry.setCurrentScopes(requestHub);
-              requestHub.pushScope(); // TODO don't
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
               final Hint hint = new Hint();

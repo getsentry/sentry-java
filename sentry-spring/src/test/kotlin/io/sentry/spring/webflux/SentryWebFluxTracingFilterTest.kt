@@ -89,7 +89,7 @@ class SentryWebFluxTracingFilterTest {
     fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
         it.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(fixture.scopes))
         it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
-        it.`when`<Any> { Sentry.cloneMainHub() }.thenReturn(fixture.scopes)
+        it.`when`<Any> { Sentry.forkedRootScopes(any()) }.thenReturn(fixture.scopes)
         closure.invoke()
     }
 
@@ -253,10 +253,8 @@ class SentryWebFluxTracingFilterTest {
             verify(fixture.scopes).isEnabled
             verify(fixture.scopes, times(2)).options
             verify(fixture.scopes).continueTrace(anyOrNull(), anyOrNull())
-            verify(fixture.scopes).pushScope() // TODO don't
             verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), any<Hint>())
             verify(fixture.scopes).configureScope(any<ScopeCallback>())
-            verify(fixture.scopes).popScope() // TODO don't
             verifyNoMoreInteractions(fixture.scopes)
         }
     }

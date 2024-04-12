@@ -28,7 +28,7 @@ public class SentryWebFilter extends AbstractSentryWebFilter {
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
-    @NotNull IScopes requestScopes = Sentry.cloneMainHub();
+    @NotNull IScopes requestScopes = Sentry.forkedRootScopes("request.webflux");
     final ServerHttpRequest request = serverWebExchange.getRequest();
     final @Nullable ITransaction transaction = maybeStartTransaction(requestScopes, request);
     if (transaction != null) {

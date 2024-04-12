@@ -68,10 +68,6 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     if (transaction != null) {
       finishTransaction(serverWebExchange, transaction);
     }
-    if (requestHub.isEnabled()) {
-      // TODO close lifecycle token instead of popscope
-      requestHub.popScope();
-    }
     Sentry.setCurrentScopes(NoOpScopes.getInstance());
   }
 
@@ -79,8 +75,6 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull IScopes requestHub) {
     if (requestHub.isEnabled()) {
       serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
-      // TODO fork instead
-      requestHub.pushScope();
       final ServerHttpRequest request = serverWebExchange.getRequest();
       final ServerHttpResponse response = serverWebExchange.getResponse();
 

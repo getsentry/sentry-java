@@ -26,7 +26,7 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
     final @NotNull TransactionContainer transactionContainer = new TransactionContainer();
-    return ReactorUtils.withSentryNewMainHubClone(
+    return ReactorUtils.withSentryForkedRoots(
         webFilterChain
             .filter(serverWebExchange)
             .doFinally(

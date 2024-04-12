@@ -1,9 +1,9 @@
 package io.sentry.spring.jakarta.webflux
 
-import io.sentry.IHub
 import io.sentry.IScopes
 import io.sentry.NoOpScopes
 import io.sentry.Sentry
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -31,88 +31,88 @@ class ReactorUtilsTest {
     }
 
     @Test
-    fun `propagates hub inside mono`() {
-        val hubToUse = mock<IScopes>()
-        var hubInside: IScopes? = null
-        val mono = ReactorUtils.withSentryHub(
+    fun `propagates scopes inside mono`() {
+        val scopesToUse = mock<IScopes>()
+        var scopesInside: IScopes? = null
+        val mono = ReactorUtils.withSentryScopes(
             Mono.just("hello")
                 .publishOn(Schedulers.boundedElastic())
                 .map { it ->
-                    hubInside = Sentry.getCurrentScopes()
+                    scopesInside = Sentry.getCurrentScopes()
                     it
                 },
-            hubToUse
+            scopesToUse
         )
 
         assertEquals("hello", mono.block())
-        assertSame(hubToUse, hubInside)
+        assertSame(scopesToUse, scopesInside)
     }
 
     @Test
-    fun `propagates hub inside flux`() {
-        val hubToUse = mock<IScopes>()
-        var hubInside: IScopes? = null
-        val flux = ReactorUtils.withSentryHub(
+    fun `propagates scopes inside flux`() {
+        val scopesToUse = mock<IScopes>()
+        var scopesInside: IScopes? = null
+        val flux = ReactorUtils.withSentryScopes(
             Flux.just("hello")
                 .publishOn(Schedulers.boundedElastic())
                 .map { it ->
-                    hubInside = Sentry.getCurrentScopes()
+                    scopesInside = Sentry.getCurrentScopes()
                     it
                 },
-            hubToUse
+            scopesToUse
         )
 
         assertEquals("hello", flux.blockFirst())
-        assertSame(hubToUse, hubInside)
+        assertSame(scopesToUse, scopesInside)
     }
 
     @Test
-    fun `without reactive utils hub is not propagated to mono`() {
-        val hubToUse = mock<IScopes>()
-        var hubInside: IScopes? = null
+    fun `without reactive utils scopes is not propagated to mono`() {
+        val scopesToUse = mock<IScopes>()
+        var scopesInside: IScopes? = null
         val mono = Mono.just("hello")
             .publishOn(Schedulers.boundedElastic())
             .map { it ->
-                hubInside = Sentry.getCurrentScopes()
+                scopesInside = Sentry.getCurrentScopes()
                 it
             }
 
         assertEquals("hello", mono.block())
-        assertNotSame(hubToUse, hubInside)
+        assertNotSame(scopesToUse, scopesInside)
     }
 
     @Test
-    fun `without reactive utils hub is not propagated to flux`() {
-        val hubToUse = mock<IScopes>()
-        var hubInside: IScopes? = null
+    fun `without reactive utils scopes is not propagated to flux`() {
+        val scopesToUse = mock<IScopes>()
+        var scopesInside: IScopes? = null
         val flux = Flux.just("hello")
             .publishOn(Schedulers.boundedElastic())
             .map { it ->
-                hubInside = Sentry.getCurrentScopes()
+                scopesInside = Sentry.getCurrentScopes()
                 it
             }
 
         assertEquals("hello", flux.blockFirst())
-        assertNotSame(hubToUse, hubInside)
+        assertNotSame(scopesToUse, scopesInside)
     }
 
     @Test
-    fun `clones hub for mono`() {
+    fun `clones scopes for mono`() {
         val mockScopes = mock<IScopes>()
-        whenever(mockScopes.clone()).thenReturn(mock<IHub>())
+        whenever(mockScopes.forkedCurrentScope(any())).thenReturn(mock<IScopes>())
         Sentry.setCurrentScopes(mockScopes)
         ReactorUtils.withSentry(Mono.just("hello")).block()
 
-        verify(mockScopes).clone()
+        verify(mockScopes).forkedCurrentScope(any())
     }
 
     @Test
-    fun `clones hub for flux`() {
+    fun `clones scopes for flux`() {
         val mockScopes = mock<IScopes>()
-        whenever(mockScopes.clone()).thenReturn(mock<IHub>())
+        whenever(mockScopes.forkedCurrentScope(any())).thenReturn(mock<IScopes>())
         Sentry.setCurrentScopes(mockScopes)
         ReactorUtils.withSentry(Flux.just("hello")).blockFirst()
 
-        verify(mockScopes).clone()
+        verify(mockScopes).forkedCurrentScope(any())
     }
 }
