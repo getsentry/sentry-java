@@ -3,5 +3,8 @@ package io.sentry;
 public enum ScopeType {
   CURRENT,
   ISOLATION,
-  GLOBAL;
+  GLOBAL,
+
+  // TODO do we need a combined as well so configureScope
+  COMBINED;
 }

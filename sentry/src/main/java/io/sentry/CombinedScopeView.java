@@ -237,6 +237,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void removeTag(@NotNull String key) {
+    // TODO should this go to all scopes?
     getDefaultWriteScope().removeTag(key);
   }
 
@@ -256,6 +257,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void removeExtra(@NotNull String key) {
+    // TODO should this go to all scopes?
     getDefaultWriteScope().removeExtra(key);
   }
 
@@ -305,10 +307,12 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void removeContexts(@NotNull String key) {
+    // TODO should this go to all scopes?
     getDefaultWriteScope().removeContexts(key);
   }
 
   private @NotNull IScope getDefaultWriteScope() {
+    // TODO use Scopes.getSpecificScope?
     if (ScopeType.CURRENT.equals(getOptions().getDefaultScopeType())) {
       return scope;
     }
