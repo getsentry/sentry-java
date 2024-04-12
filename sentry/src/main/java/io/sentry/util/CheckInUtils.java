@@ -4,6 +4,7 @@ import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.MonitorConfig;
 import io.sentry.Sentry;
 import io.sentry.protocol.SentryId;
@@ -30,12 +31,11 @@ public final class CheckInUtils {
       final @Nullable MonitorConfig monitorConfig,
       final @NotNull Callable<U> callable)
       throws Exception {
+    final @NotNull ISentryLifecycleToken lifecycleToken = Sentry.pushIsolationScope();
     final @NotNull IScopes scopes = Sentry.getCurrentScopes();
     final long startTime = System.currentTimeMillis();
     boolean didError = false;
 
-    // TODO fork instead
-    scopes.pushScope();
     TracingUtils.startNewTrace(scopes);
 
     CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
@@ -53,7 +53,7 @@ public final class CheckInUtils {
       CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
       checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
       scopes.captureCheckIn(checkIn);
-      scopes.popScope();
+      lifecycleToken.close();
     }
   }
 

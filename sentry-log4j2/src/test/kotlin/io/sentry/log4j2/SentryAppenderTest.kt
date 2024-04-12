@@ -78,6 +78,7 @@ class SentryAppenderTest {
     @BeforeTest
     fun `clear MDC`() {
         ThreadContext.clearAll()
+        Sentry.close()
     }
 
     @Test

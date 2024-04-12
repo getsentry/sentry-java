@@ -5,6 +5,7 @@ import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
@@ -89,7 +90,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return invocation.proceed();
     }
 
-    scopes.pushScope();
+    final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
     TracingUtils.startNewTrace(scopes);
 
     @Nullable SentryId checkInId = null;
@@ -109,7 +110,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
       checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
       scopes.captureCheckIn(checkIn);
-      scopes.popScope();
+      lifecycleToken.close();
     }
   }
 
