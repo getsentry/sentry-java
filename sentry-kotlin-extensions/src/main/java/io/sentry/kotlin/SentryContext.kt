@@ -9,23 +9,19 @@ import kotlin.coroutines.CoroutineContext
 /**
  * Sentry context element for [CoroutineContext].
  */
-@SuppressWarnings("deprecation")
-// TODO fork instead
-public class SentryContext(private val scopes: IScopes = Sentry.getCurrentScopes().clone()) :
+public class SentryContext(private val scopes: IScopes = Sentry.forkedCurrentScope("coroutine")) :
     CopyableThreadContextElement<IScopes>, AbstractCoroutineContextElement(Key) {
 
     private companion object Key : CoroutineContext.Key<SentryContext>
 
     @SuppressWarnings("deprecation")
     override fun copyForChild(): CopyableThreadContextElement<IScopes> {
-        // TODO fork instead
-        return SentryContext(scopes.clone())
+        return SentryContext(scopes.forkedCurrentScope("coroutine.child"))
     }
 
     @SuppressWarnings("deprecation")
     override fun mergeForChild(overwritingElement: CoroutineContext.Element): CoroutineContext {
-        // TODO fork instead?
-        return overwritingElement[Key] ?: SentryContext(scopes.clone())
+        return overwritingElement[Key] ?: SentryContext(scopes.forkedCurrentScope("coroutine.child"))
     }
 
     override fun updateThreadContext(context: CoroutineContext): IScopes {
