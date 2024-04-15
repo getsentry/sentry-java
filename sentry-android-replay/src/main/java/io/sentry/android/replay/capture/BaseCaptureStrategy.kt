@@ -2,16 +2,14 @@ package io.sentry.android.replay.capture
 
 import io.sentry.DateUtils
 import io.sentry.Hint
+import io.sentry.IHub
 import io.sentry.ReplayRecording
-import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.ReplayCache
-import io.sentry.android.replay.ReplayIntegration
-import io.sentry.android.replay.ReplayIntegration.Companion
-import io.sentry.android.replay.ReplayIntegration.ReplayExecutorServiceThreadFactory
+import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
@@ -22,6 +20,7 @@ import io.sentry.util.FileUtils
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -29,7 +28,9 @@ import java.util.concurrent.atomic.AtomicReference
 
 abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
-    private val dateProvider: ICurrentDateProvider
+    private val dateProvider: ICurrentDateProvider,
+    protected var recorderConfig: ScreenshotRecorderConfig,
+    executor: ScheduledExecutorService? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -37,13 +38,13 @@ abstract class BaseCaptureStrategy(
     }
 
     protected var cache: ReplayCache? = null
-    protected val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     protected val segmentTimestamp = AtomicReference<Date>()
     protected val replayStartTimestamp = AtomicLong()
-    protected val currentSegment = AtomicInteger(0)
+    override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
+    override val currentSegment = AtomicInteger(0)
 
-    protected val replayExecutor by lazy {
-        Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    protected val replayExecutor: ScheduledExecutorService by lazy {
+        executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     }
 
     override fun start(segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
@@ -81,7 +82,17 @@ abstract class BaseCaptureStrategy(
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
     }
 
-    protected fun createAndCaptureSegment(
+    override fun pause() = Unit
+
+    override fun stop() {
+        cache?.close()
+        currentSegment.set(0)
+        replayStartTimestamp.set(0)
+        segmentTimestamp.set(null)
+        currentReplayId.set(SentryId.EMPTY_ID)
+    }
+
+    protected fun createSegment(
         duration: Long,
         currentSegmentTimestamp: Date,
         replayId: SentryId,
@@ -89,18 +100,17 @@ abstract class BaseCaptureStrategy(
         height: Int,
         width: Int,
         replayType: ReplayType = SESSION,
-        hint: Hint? = null
-    ): Long? {
+    ): ReplaySegment {
         val generatedVideo = cache?.createVideoOf(
             duration,
             currentSegmentTimestamp.time,
             segmentId,
             height,
             width
-        ) ?: return null
+        ) ?: return ReplaySegment.Failed
 
         val (video, frameCount, videoDuration) = generatedVideo
-        captureReplay(
+        return buildReplay(
             video,
             replayId,
             currentSegmentTimestamp,
@@ -110,12 +120,10 @@ abstract class BaseCaptureStrategy(
             frameCount,
             videoDuration,
             replayType,
-            hint
         )
-        return videoDuration
     }
 
-    private fun captureReplay(
+    private fun buildReplay(
         video: File,
         currentReplayId: SentryId,
         segmentTimestamp: Date,
@@ -125,16 +133,13 @@ abstract class BaseCaptureStrategy(
         frameCount: Int,
         duration: Long,
         replayType: ReplayType,
-        hint: Hint? = null
-    ) {
+    ): ReplaySegment {
         val replay = SentryReplayEvent().apply {
             eventId = currentReplayId
             replayId = currentReplayId
             this.segmentId = segmentId
             this.timestamp = DateUtils.getDateTime(segmentTimestamp.time + duration)
-            if (segmentId == 0) {
-                replayStartTimestamp = segmentTimestamp
-            }
+            replayStartTimestamp = segmentTimestamp
             this.replayType = replayType
             videoFile = video
         }
@@ -163,7 +168,11 @@ abstract class BaseCaptureStrategy(
             )
         }
 
-//        hub?.captureReplay(replay, (hint ?: Hint()).apply { replayRecording = recording })
+        return ReplaySegment.Created(videoDuration = duration, replay = replay, recording = recording)
+    }
+
+    override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
+        this.recorderConfig = recorderConfig
     }
 
     override fun close() {
@@ -176,6 +185,28 @@ abstract class BaseCaptureStrategy(
             val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
             ret.setDaemon(true)
             return ret
+        }
+    }
+
+    protected sealed class ReplaySegment {
+        object Failed : ReplaySegment()
+        data class Created(
+            val videoDuration: Long,
+            val replay: SentryReplayEvent,
+            val recording: ReplayRecording
+        ): ReplaySegment() {
+            fun capture(hub: IHub?, hint: Hint = Hint()) {
+                hub?.captureReplay(replay, hint.apply { replayRecording = recording })
+            }
+
+            fun setSegmentId(segmentId: Int) {
+                replay.segmentId = segmentId
+                recording.payload?.forEach {
+                    when (it) {
+                        is RRWebVideoEvent -> it.segmentId = segmentId
+                    }
+                }
+            }
         }
     }
 }
