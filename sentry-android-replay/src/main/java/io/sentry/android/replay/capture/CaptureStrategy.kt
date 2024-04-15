@@ -8,7 +8,7 @@ import io.sentry.protocol.SentryId
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
-interface CaptureStrategy {
+internal interface CaptureStrategy {
     val currentSegment: AtomicInteger
     val currentReplayId: AtomicReference<SentryId>
 

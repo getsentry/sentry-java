@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
-abstract class BaseCaptureStrategy(
+internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
     private val dateProvider: ICurrentDateProvider,
     protected var recorderConfig: ScreenshotRecorderConfig,
@@ -52,7 +52,7 @@ abstract class BaseCaptureStrategy(
         currentReplayId.set(replayId)
 
         if (cleanupOldReplays) {
-            replayExecutor.submitSafely(options, "${TAG}.replays_cleanup") {
+            replayExecutor.submitSafely(options, "$TAG.replays_cleanup") {
                 // clean up old replays
                 options.cacheDirPath?.let { cacheDir ->
                     File(cacheDir).listFiles { dir, name ->
@@ -99,7 +99,7 @@ abstract class BaseCaptureStrategy(
         segmentId: Int,
         height: Int,
         width: Int,
-        replayType: ReplayType = SESSION,
+        replayType: ReplayType = SESSION
     ): ReplaySegment {
         val generatedVideo = cache?.createVideoOf(
             duration,
@@ -119,7 +119,7 @@ abstract class BaseCaptureStrategy(
             width,
             frameCount,
             videoDuration,
-            replayType,
+            replayType
         )
     }
 
@@ -132,7 +132,7 @@ abstract class BaseCaptureStrategy(
         width: Int,
         frameCount: Int,
         duration: Long,
-        replayType: ReplayType,
+        replayType: ReplayType
     ): ReplaySegment {
         val replay = SentryReplayEvent().apply {
             eventId = currentReplayId
@@ -194,7 +194,7 @@ abstract class BaseCaptureStrategy(
             val videoDuration: Long,
             val replay: SentryReplayEvent,
             val recording: ReplayRecording
-        ): ReplaySegment() {
+        ) : ReplaySegment() {
             fun capture(hub: IHub?, hint: Hint = Hint()) {
                 hub?.captureReplay(replay, hint.apply { replayRecording = recording })
             }

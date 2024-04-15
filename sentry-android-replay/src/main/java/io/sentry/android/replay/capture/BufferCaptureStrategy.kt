@@ -17,12 +17,12 @@ import io.sentry.util.FileUtils
 import java.io.File
 import java.security.SecureRandom
 
-class BufferCaptureStrategy(
+internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     recorderConfig: ScreenshotRecorderConfig,
-    private val random: SecureRandom,
+    private val random: SecureRandom
 ) : BaseCaptureStrategy(options, dateProvider, recorderConfig) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
@@ -33,7 +33,7 @@ class BufferCaptureStrategy(
 
     override fun stop() {
         val replayCacheDir = cache?.replayCacheDir
-        replayExecutor.submitSafely(options, "${TAG}.stop") {
+        replayExecutor.submitSafely(options, "$TAG.stop") {
             FileUtils.deleteRecursively(replayCacheDir)
         }
         super.stop()
@@ -150,7 +150,7 @@ class BufferCaptureStrategy(
         val replayId = currentReplayId.get()
         val height = this.recorderConfig.recordingHeight
         val width = this.recorderConfig.recordingWidth
-        replayExecutor.submitSafely(options, "${TAG}.onConfigurationChanged") {
+        replayExecutor.submitSafely(options, "$TAG.onConfigurationChanged") {
             val segment =
                 createSegment(duration, currentSegmentTimestamp, replayId, segmentId, height, width, BUFFER)
             if (segment is ReplaySegment.Created) {

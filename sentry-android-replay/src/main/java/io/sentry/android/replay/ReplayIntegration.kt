@@ -129,7 +129,7 @@ class ReplayIntegration(
             return
         }
 
-        captureStrategy?.sendReplayForEvent(event, hint, onSegmentSent = { captureStrategy?.currentSegment?.getAndIncrement()})
+        captureStrategy?.sendReplayForEvent(event, hint, onSegmentSent = { captureStrategy?.currentSegment?.getAndIncrement() })
         captureStrategy = captureStrategy?.convert()
     }
 

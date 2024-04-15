@@ -15,7 +15,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.util.concurrent.ScheduledExecutorService
 
-class SessionCaptureStrategy(
+internal class SessionCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
