@@ -207,7 +207,7 @@ public final class ScopesAdapter implements IScopes {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    // TODO this wouldn't do anything since it replaced the current with the same Scopes
+    // TODO [HSM] this wouldn't do anything since it replaced the current with the same Scopes
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 

@@ -47,7 +47,7 @@ public final class Sentry {
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
-  // TODO cannot pass options here
+  // TODO [HSM] cannot pass options here
   private static volatile @NotNull IScope globalScope = new Scope(new SentryOptions());
 
   /** Default value for globalHubMode is false */
@@ -271,7 +271,7 @@ public final class Sentry {
     final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
     final IScope rootIsolationScope = new Scope(options);
-    // TODO shouldn't replace global scope
+    // TODO [HSM] shouldn't replace global scope
     globalScope = new Scope(options);
     globalScope.bindClient(new SentryClient(options));
     rootScopes = new Scopes(rootScope, rootIsolationScope, options, "Sentry.init");
@@ -819,7 +819,6 @@ public final class Sentry {
   public static @NotNull ISentryLifecycleToken pushScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
-      // TODO this might have to behave differently from Scopes.pushScope
       return getCurrentScopes().pushScope();
     }
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();

@@ -9,8 +9,8 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 @ApiStatus.Experimental
-// TODO do we keep old methods around and deprecate them?
-// TODO do we need to offer isolated variants?
+// TODO [HSM] do we keep old methods around and deprecate them?
+// TODO [HSM] do we need to offer isolated variants?
 public final class ReactorUtils {
 
   /**

@@ -15,7 +15,8 @@ import org.springframework.scheduling.annotation.Async;
  */
 public final class SentryTaskDecorator implements TaskDecorator {
   @Override
-  // TODO should there also be a SentryIsolatedTaskDecorator or similar that uses forkedScopes()?
+  // TODO [HSM] should there also be a SentryIsolatedTaskDecorator or similar that uses
+  // forkedScopes()?
   public @NotNull Runnable decorate(final @NotNull Runnable runnable) {
     final IScopes newHub = Sentry.getCurrentScopes().forkedCurrentScope("spring.taskDecorator");
 

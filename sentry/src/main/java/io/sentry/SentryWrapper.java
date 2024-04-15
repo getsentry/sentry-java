@@ -27,7 +27,7 @@ public final class SentryWrapper {
    * @return the wrapped {@link Callable}
    * @param <U> - the result type of the {@link Callable}
    */
-  // TODO adapt javadoc
+  // TODO [HSM] adapt javadoc
   public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
     final IScopes newScopes = Sentry.getCurrentScopes().forkedCurrentScope("wrapCallable");
 

@@ -164,7 +164,6 @@ public final class CombinedScopeView implements IScope {
     allBreadcrumbs.addAll(scope.getBreadcrumbs());
     Collections.sort(allBreadcrumbs);
 
-    // TODO test oldest are removed first
     final @NotNull Queue<Breadcrumb> breadcrumbs =
         createBreadcrumbsList(scope.getOptions().getMaxBreadcrumbs());
     breadcrumbs.addAll(allBreadcrumbs);
@@ -178,7 +177,7 @@ public final class CombinedScopeView implements IScope {
    * @param maxBreadcrumb the max number of breadcrumbs
    * @return the breadcrumbs queue
    */
-  // TODO copied from Scope, should reuse instead
+  // TODO [HSM] copied from Scope, should reuse instead
   private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
     return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
   }
@@ -237,7 +236,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void removeTag(@NotNull String key) {
-    // TODO should this go to all scopes?
+    // TODO [HSM] should this go to all scopes?
     getDefaultWriteScope().removeTag(key);
   }
 
@@ -257,7 +256,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void removeExtra(@NotNull String key) {
-    // TODO should this go to all scopes?
+    // TODO [HSM] should this go to all scopes?
     getDefaultWriteScope().removeExtra(key);
   }
 
@@ -307,12 +306,12 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void removeContexts(@NotNull String key) {
-    // TODO should this go to all scopes?
+    // TODO [HSM] should this go to all scopes?
     getDefaultWriteScope().removeContexts(key);
   }
 
   private @NotNull IScope getDefaultWriteScope() {
-    // TODO use Scopes.getSpecificScope?
+    // TODO [HSM] use Scopes.getSpecificScope?
     if (ScopeType.CURRENT.equals(getOptions().getDefaultScopeType())) {
       return scope;
     }
@@ -343,7 +342,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull List<EventProcessor> getEventProcessors() {
-    // TODO mechanism for ordering event processors
+    // TODO [HSM] mechanism for ordering event processors
     final @NotNull List<EventProcessor> allEventProcessors = new CopyOnWriteArrayList<>();
     allEventProcessors.addAll(globalScope.getEventProcessors());
     allEventProcessors.addAll(isolationScope.getEventProcessors());
@@ -412,7 +411,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull IScope clone() {
-    // TODO just return a new CombinedScopeView with forked scope?
+    // TODO [HSM] just return a new CombinedScopeView with forked scope?
     return getDefaultWriteScope().clone();
   }
 
@@ -435,7 +434,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull ISentryClient getClient() {
-    // TODO checking for noop here doesn't allow disabling via client, is that ok?
+    // TODO [HSM] checking for noop here doesn't allow disabling via client, is that ok?
     final @Nullable ISentryClient current = scope.getClient();
     if (!(current instanceof NoOpSentryClient)) {
       return current;
