@@ -102,8 +102,6 @@ public final class Sentry {
    * @return the hub
    */
   @ApiStatus.Internal
-  @ApiStatus.Experimental
-  @SuppressWarnings("deprecation")
   public static @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
     if (globalHubMode) {
       return rootScopes;

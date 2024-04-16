@@ -669,6 +669,11 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return Sentry.forkedRootScopes(creator);
+  }
+
+  @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
@@ -681,6 +686,11 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @Override
   public @NotNull IScope getIsolationScope() {
     return Sentry.getCurrentScopes().getIsolationScope();
+  }
+
+  @Override
+  public @NotNull IScope getGlobalScope() {
+    return Sentry.getGlobalScope();
   }
 
   @ApiStatus.Internal

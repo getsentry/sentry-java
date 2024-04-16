@@ -186,6 +186,16 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull IScope getGlobalScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,

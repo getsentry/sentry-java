@@ -375,7 +375,7 @@ public interface IScopes {
   IHub clone();
 
   /**
-   * Creates a fork of both current and isolation scope.
+   * Creates a fork of both current and isolation scope from current scopes.
    *
    * @param creator debug information to see why scopes where forked
    * @return forked Scopes
@@ -391,6 +391,15 @@ public interface IScopes {
    */
   @NotNull
   IScopes forkedCurrentScope(final @NotNull String creator);
+
+  /**
+   * Creates a fork of both current and isolation scope from root scopes.
+   *
+   * @param creator debug information to see why scopes where forked
+   * @return forked Scopes
+   */
+  @NotNull
+  IScopes forkedRootScopes(final @NotNull String creator);
 
   /**
    * Stores this Scopes in store, making it the current one that is used by static API.
@@ -413,6 +422,13 @@ public interface IScopes {
    * @return isolation scope
    */
   public @NotNull IScope getIsolationScope();
+
+  /**
+   * Returns the global scope.
+   *
+   * @return global scope
+   */
+  public @NotNull IScope getGlobalScope();
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.

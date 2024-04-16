@@ -115,6 +115,11 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return new Scopes(scope.clone(), isolationScope, this, options, creator);
   }
 
+  @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return Sentry.forkedRootScopes(creator);
+  }
+
   // TODO [HSM] always read from root scope?
   @Override
   public boolean isEnabled() {
@@ -582,7 +587,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     getCombinedScopeView().setLastEventId(lastEventId);
   }
 
-  // TODO [HSM] add to IScopes interface
+  @Override
   public @NotNull IScope getGlobalScope() {
     return Sentry.getGlobalScope();
   }
