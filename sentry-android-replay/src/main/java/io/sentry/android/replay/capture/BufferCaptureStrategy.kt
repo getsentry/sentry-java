@@ -1,6 +1,5 @@
 package io.sentry.android.replay.capture
 
-import android.graphics.Bitmap
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -9,9 +8,11 @@ import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
+import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
@@ -22,8 +23,9 @@ internal class BufferCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     recorderConfig: ScreenshotRecorderConfig,
-    private val random: SecureRandom
-) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig) {
+    private val random: SecureRandom,
+    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
 
@@ -91,12 +93,12 @@ internal class BufferCaptureStrategy(
         }
     }
 
-    override fun onScreenshotRecorded(bitmap: Bitmap) {
+    override fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit) {
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
         replayExecutor.submitSafely(options, "$TAG.add_frame") {
-            cache?.addFrame(bitmap, frameTimestamp)
+            cache?.store(frameTimestamp)
 
             val now = dateProvider.currentTimeMillis
             val bufferLimit = now - options.experimental.sessionReplay.errorReplayDuration

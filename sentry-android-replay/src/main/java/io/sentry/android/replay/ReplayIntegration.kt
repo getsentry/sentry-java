@@ -22,17 +22,30 @@ import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.io.Closeable
+import java.io.File
 import java.security.SecureRandom
 import java.util.concurrent.atomic.AtomicBoolean
 
-class ReplayIntegration(
+public class ReplayIntegration(
     private val context: Context,
-    private val dateProvider: ICurrentDateProvider
+    private val dateProvider: ICurrentDateProvider,
+    private val recorderProvider: (() -> Recorder)? = null,
+    private val recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : Integration, Closeable, ScreenshotRecorderCallback, ReplayController, ComponentCallbacks {
+
+    // needed for the Java's call site
+    constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
+        context,
+        dateProvider,
+        null,
+        null,
+        null
+    )
 
     private lateinit var options: SentryOptions
     private var hub: IHub? = null
-    private var recorder: WindowRecorder? = null
+    private var recorder: Recorder? = null
     private val random by lazy { SecureRandom() }
 
     // TODO: probably not everything has to be thread-safe here
@@ -58,7 +71,7 @@ class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = WindowRecorder(options, this)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this)
         isEnabled.set(true)
 
         try {
@@ -94,15 +107,15 @@ class ReplayIntegration(
             return
         }
 
-        recorderConfig = ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+        recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy = if (isFullSession) {
-            SessionCaptureStrategy(options, hub, dateProvider, recorderConfig)
+            SessionCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider)
         } else {
-            BufferCaptureStrategy(options, hub, dateProvider, recorderConfig, random)
+            BufferCaptureStrategy(options, hub, dateProvider, recorderConfig, random, replayCacheProvider)
         }
 
         captureStrategy?.start()
-        recorder?.startRecording(recorderConfig)
+        recorder?.start(recorderConfig)
     }
 
     override fun resume() {
@@ -133,6 +146,8 @@ class ReplayIntegration(
         captureStrategy = captureStrategy?.convert()
     }
 
+    override fun getReplayId(): SentryId = captureStrategy?.currentReplayId?.get() ?: SentryId.EMPTY_ID
+
     override fun pause() {
         if (!isEnabled.get() || !isRecording.get()) {
             return
@@ -147,14 +162,22 @@ class ReplayIntegration(
             return
         }
 
-        recorder?.stopRecording()
+        recorder?.stop()
         captureStrategy?.stop()
         isRecording.set(false)
         captureStrategy = null
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
-        captureStrategy?.onScreenshotRecorded(bitmap)
+        captureStrategy?.onScreenshotRecorded { frameTimeStamp ->
+            addFrame(bitmap, frameTimeStamp)
+        }
+    }
+
+    override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
+        captureStrategy?.onScreenshotRecorded { _ ->
+            addFrame(screenshot, frameTimestamp)
+        }
     }
 
     override fun close() {
@@ -169,6 +192,8 @@ class ReplayIntegration(
         stop()
         captureStrategy?.close()
         captureStrategy = null
+        recorder?.close()
+        recorder = null
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -176,13 +201,13 @@ class ReplayIntegration(
             return
         }
 
-        recorder?.stopRecording()
+        recorder?.stop()
 
         // refresh config based on new device configuration
-        recorderConfig = ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+        recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy?.onConfigurationChanged(recorderConfig)
 
-        recorder?.startRecording(recorderConfig)
+        recorder?.start(recorderConfig)
     }
 
     override fun onLowMemory() = Unit

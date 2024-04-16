@@ -5,7 +5,6 @@ import android.view.View
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
-import java.io.Closeable
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
@@ -17,8 +16,8 @@ import kotlin.LazyThreadSafetyMode.NONE
 @TargetApi(26)
 internal class WindowRecorder(
     private val options: SentryOptions,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback
-) : Closeable {
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null
+) : Recorder {
 
     internal companion object {
         private const val TAG = "WindowRecorder"
@@ -51,7 +50,7 @@ internal class WindowRecorder(
         }
     }
 
-    fun startRecording(recorderConfig: ScreenshotRecorderConfig) {
+    override fun start(recorderConfig: ScreenshotRecorderConfig) {
         if (isRecording.getAndSet(true)) {
             return
         }
@@ -69,10 +68,14 @@ internal class WindowRecorder(
         }
     }
 
-    fun resume() = recorder?.resume()
-    fun pause() = recorder?.pause()
+    override fun resume() {
+        recorder?.resume()
+    }
+    override fun pause() {
+        recorder?.pause()
+    }
 
-    fun stopRecording() {
+    override fun stop() {
         rootViewsSpy.listeners -= onRootViewsChangedListener
         rootViews.forEach { recorder?.unbind(it.get()) }
         recorder?.close()
@@ -93,7 +96,7 @@ internal class WindowRecorder(
     }
 
     override fun close() {
-        stopRecording()
+        stop()
         capturer.gracefullyShutdown(options)
     }
 }
