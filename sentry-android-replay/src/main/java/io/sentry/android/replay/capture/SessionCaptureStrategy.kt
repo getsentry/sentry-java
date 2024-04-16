@@ -21,7 +21,7 @@ internal class SessionCaptureStrategy(
     private val dateProvider: ICurrentDateProvider,
     recorderConfig: ScreenshotRecorderConfig,
     executor: ScheduledExecutorService? = null
-) : BaseCaptureStrategy(options, dateProvider, recorderConfig, executor) {
+) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, executor) {
 
     internal companion object {
         private const val TAG = "SessionCaptureStrategy"
