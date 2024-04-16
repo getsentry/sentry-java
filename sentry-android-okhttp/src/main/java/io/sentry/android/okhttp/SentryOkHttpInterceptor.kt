@@ -1,9 +1,9 @@
 package io.sentry.android.okhttp
 
 import io.sentry.HttpStatusCodeRange
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
+import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.android.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
@@ -17,7 +17,7 @@ import okhttp3.Response
  * out of the active span bound to the scope for each HTTP Request.
  * If [captureFailedRequests] is enabled, the SDK will capture HTTP Client errors as well.
  *
- * @param hub The [IHub], internal and only used for testing.
+ * @param scopes The [IScopes], internal and only used for testing.
  * @param beforeSpan The [ISpan] can be customized or dropped with the [BeforeSpanCallback].
  * @param captureFailedRequests The SDK will only capture HTTP Client errors if it is enabled,
  * Defaults to false.
@@ -31,7 +31,7 @@ import okhttp3.Response
     ReplaceWith("SentryOkHttpInterceptor", "io.sentry.okhttp.SentryOkHttpInterceptor")
 )
 class SentryOkHttpInterceptor(
-    private val hub: IHub = HubAdapter.getInstance(),
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = true,
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
@@ -39,7 +39,7 @@ class SentryOkHttpInterceptor(
     ),
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor by io.sentry.okhttp.SentryOkHttpInterceptor(
-    hub,
+    scopes,
     { span, request, response ->
         beforeSpan ?: return@SentryOkHttpInterceptor span
         beforeSpan.execute(span, request, response)
@@ -49,9 +49,9 @@ class SentryOkHttpInterceptor(
     failedRequestTargets
 ) {
 
-    constructor() : this(HubAdapter.getInstance())
-    constructor(hub: IHub) : this(hub, null)
-    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+    constructor() : this(ScopesAdapter.getInstance())
+    constructor(scopes: IScopes) : this(scopes, null)
+    constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion(javaClass)
