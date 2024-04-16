@@ -1,7 +1,7 @@
 package io.sentry.spring.jakarta.exception
 
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.exception.ExceptionMechanismException
 import org.junit.runner.RunWith
@@ -30,18 +30,18 @@ class SentryCaptureExceptionParameterAdviceTest {
     lateinit var sampleService: SampleService
 
     @Autowired
-    lateinit var hub: IHub
+    lateinit var scopes: IScopes
 
     @BeforeTest
     fun setup() {
-        reset(hub)
+        reset(scopes)
     }
 
     @Test
     fun `captures exception passed to method annotated with @SentryCaptureException`() {
         val exception = RuntimeException("test exception")
         sampleService.methodTakingAnException(exception)
-        verify(hub).captureException(
+        verify(scopes).captureException(
             check {
                 assertTrue(it is ExceptionMechanismException)
                 assertEquals(exception, it.throwable)
@@ -60,10 +60,10 @@ class SentryCaptureExceptionParameterAdviceTest {
         open fun sampleService() = SampleService()
 
         @Bean
-        open fun hub(): IHub {
-            val hub = mock<IHub>()
-            Sentry.setCurrentHub(hub)
-            return hub
+        open fun scopes(): IScopes {
+            val scopes = mock<IScopes>()
+            Sentry.setCurrentScopes(scopes)
+            return scopes
         }
     }
 

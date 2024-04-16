@@ -1,9 +1,9 @@
 package io.sentry.spring.jakarta.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ITransaction;
+import io.sentry.ScopesAdapter;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -28,14 +28,14 @@ import org.springframework.util.StringUtils;
 public class SentryTransactionAdvice implements MethodInterceptor {
   private static final String TRACE_ORIGIN = "auto.function.spring_jakarta.advice";
 
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
   public SentryTransactionAdvice() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
-  public SentryTransactionAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryTransactionAdvice(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @SuppressWarnings("deprecation")
@@ -68,11 +68,11 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       } else {
         operation = "bean";
       }
-      hub.pushScope();
+      scopes.pushScope();
       final TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setBindToScope(true);
       final ITransaction transaction =
-          hub.startTransaction(
+          scopes.startTransaction(
               new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
               transactionOptions);
       transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
@@ -86,7 +86,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
         throw e;
       } finally {
         transaction.finish();
-        hub.popScope();
+        scopes.popScope();
       }
     }
   }
@@ -106,7 +106,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
   }
 
   private boolean isTransactionActive() {
-    return hub.getSpan() != null;
+    return scopes.getSpan() != null;
   }
 
   private static class TransactionNameAndSource {
