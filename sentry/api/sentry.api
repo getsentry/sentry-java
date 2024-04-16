@@ -1255,6 +1255,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 
 public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
 	public fun pause ()V
 	public fun resume ()V
@@ -1657,6 +1658,7 @@ public final class io/sentry/PropagationContext {
 }
 
 public abstract interface class io/sentry/ReplayController {
+	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
 	public abstract fun resume ()V
@@ -5032,6 +5034,46 @@ public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
 	public static final field WIDTH Ljava/lang/String;
 	public static final field X Ljava/lang/String;
 	public static final field Y Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/rrweb/RRWebBreadcrumbEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field EVENT_TAG Ljava/lang/String;
+	public fun <init> ()V
+	public fun getBreadcrumbTimestamp ()J
+	public fun getBreadcrumbType ()Ljava/lang/String;
+	public fun getCategory ()Ljava/lang/String;
+	public fun getData ()Ljava/util/Map;
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getMessage ()Ljava/lang/String;
+	public fun getPayloadUnknown ()Ljava/util/Map;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setBreadcrumbTimestamp (J)V
+	public fun setBreadcrumbType (Ljava/lang/String;)V
+	public fun setCategory (Ljava/lang/String;)V
+	public fun setData (Ljava/util/Map;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setMessage (Ljava/lang/String;)V
+	public fun setPayloadUnknown (Ljava/util/Map;)V
+	public fun setTag (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/rrweb/RRWebBreadcrumbEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebBreadcrumbEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebBreadcrumbEvent$JsonKeys {
+	public static final field CATEGORY Ljava/lang/String;
+	public static final field DATA Ljava/lang/String;
+	public static final field MESSAGE Ljava/lang/String;
+	public static final field PAYLOAD Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 }
 

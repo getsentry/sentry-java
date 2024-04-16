@@ -1,6 +1,5 @@
 package io.sentry.rrweb;
 
-import io.sentry.Breadcrumb;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -16,7 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknown, JsonSerializable {
+public final class RRWebBreadcrumbEvent extends RRWebEvent
+    implements JsonUnknown, JsonSerializable {
   public static final String EVENT_TAG = "breadcrumb";
 
   private @NotNull String tag;
@@ -30,7 +30,6 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
   private @Nullable Map<String, Object> unknown;
   private @Nullable Map<String, Object> payloadUnknown;
   private @Nullable Map<String, Object> dataUnknown;
-
 
   public RRWebBreadcrumbEvent() {
     super(RRWebEventType.Custom);
@@ -128,8 +127,8 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
     public static final String MESSAGE = "message";
   }
 
-  @Override public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
-    throws IOException {
+  @Override
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     new RRWebEvent.Serializer().serialize(this, writer, logger);
     writer.name(JsonKeys.DATA);
@@ -145,7 +144,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
   }
 
   private void serializeData(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
     writer.name(RRWebEvent.JsonKeys.TAG).value(tag);
     writer.name(JsonKeys.PAYLOAD);
@@ -161,7 +160,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
   }
 
   private void serializePayload(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
     if (breadcrumbType != null) {
       writer.name(JsonKeys.TYPE).value(breadcrumbType);
@@ -174,7 +173,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
       writer.name(JsonKeys.MESSAGE).value(message);
     }
     if (data != null) {
-      writer.name(Breadcrumb.JsonKeys.DATA).value(logger, data);
+      writer.name(JsonKeys.DATA).value(logger, data);
     }
     if (payloadUnknown != null) {
       for (final String key : payloadUnknown.keySet()) {
@@ -188,8 +187,9 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
 
   public static final class Deserializer implements JsonDeserializer<RRWebBreadcrumbEvent> {
 
-    @Override public @NotNull RRWebBreadcrumbEvent deserialize(@NotNull ObjectReader reader,
-      @NotNull ILogger logger) throws Exception {
+    @Override
+    public @NotNull RRWebBreadcrumbEvent deserialize(
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       @Nullable Map<String, Object> unknown = null;
 
@@ -219,10 +219,10 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
     }
 
     private void deserializeData(
-      final @NotNull RRWebBreadcrumbEvent event,
-      final @NotNull ObjectReader reader,
-      final @NotNull ILogger logger)
-      throws Exception {
+        final @NotNull RRWebBreadcrumbEvent event,
+        final @NotNull ObjectReader reader,
+        final @NotNull ILogger logger)
+        throws Exception {
       @Nullable Map<String, Object> dataUnknown = null;
 
       reader.beginObject();
@@ -247,11 +247,12 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
       reader.endObject();
     }
 
-    @SuppressWarnings("unchecked") private void deserializePayload(
-      final @NotNull RRWebBreadcrumbEvent event,
-      final @NotNull ObjectReader reader,
-      final @NotNull ILogger logger)
-      throws Exception {
+    @SuppressWarnings("unchecked")
+    private void deserializePayload(
+        final @NotNull RRWebBreadcrumbEvent event,
+        final @NotNull ObjectReader reader,
+        final @NotNull ILogger logger)
+        throws Exception {
       @Nullable Map<String, Object> payloadUnknown = null;
 
       reader.beginObject();
@@ -272,8 +273,8 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent implements JsonUnknow
             break;
           case JsonKeys.DATA:
             Map<String, Object> deserializedData =
-              CollectionUtils.newConcurrentHashMap(
-                (Map<String, Object>) reader.nextObjectOrNull());
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, Object>) reader.nextObjectOrNull());
             if (deserializedData != null) {
               event.data = deserializedData;
             }
