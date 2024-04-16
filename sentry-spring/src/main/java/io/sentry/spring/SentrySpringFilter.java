@@ -24,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -156,6 +157,11 @@ public class SentrySpringFilter extends OncePerRequestFilter {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }
       return event;
+    }
+
+    @Override
+    public @Nullable Long getOrder() {
+      return 3000L;
     }
   }
 }

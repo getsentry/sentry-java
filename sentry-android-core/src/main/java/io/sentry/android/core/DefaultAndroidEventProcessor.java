@@ -303,4 +303,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     return transaction;
   }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 8000L;
+  }
 }

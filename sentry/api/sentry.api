@@ -255,6 +255,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getOrderedEventProcessors ()Ljava/util/List;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
@@ -342,6 +343,7 @@ public final class io/sentry/DateUtils {
 
 public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
@@ -377,6 +379,7 @@ public final class io/sentry/DsnUtil {
 
 public final class io/sentry/DuplicateEventDetectionEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
@@ -392,6 +395,7 @@ public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
 }
 
 public abstract interface class io/sentry/EventProcessor {
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -788,6 +792,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLevel ()Lio/sentry/SentryLevel;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
+	public abstract fun getOrderedEventProcessors ()Ljava/util/List;
 	public abstract fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getScreen ()Ljava/lang/String;
@@ -1160,6 +1165,7 @@ public abstract interface class io/sentry/JsonUnknown {
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -1447,6 +1453,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getOrderedEventProcessors ()Ljava/util/List;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
@@ -1889,6 +1896,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getOrderedEventProcessors ()Ljava/util/List;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
@@ -1958,6 +1966,7 @@ public abstract class io/sentry/ScopeObserverAdapter : io/sentry/IScopeObserver 
 }
 
 public final class io/sentry/ScopeType : java/lang/Enum {
+	public static final field COMBINED Lio/sentry/ScopeType;
 	public static final field CURRENT Lio/sentry/ScopeType;
 	public static final field GLOBAL Lio/sentry/ScopeType;
 	public static final field ISOLATION Lio/sentry/ScopeType;
@@ -3805,6 +3814,14 @@ public final class io/sentry/internal/debugmeta/ResourcesDebugMetaLoader : io/se
 	public fun loadDebugMeta ()Ljava/util/List;
 }
 
+public final class io/sentry/internal/eventprocessor/EventProcessorAndOrder : java/lang/Comparable {
+	public fun <init> (Lio/sentry/EventProcessor;Ljava/lang/Long;)V
+	public fun compareTo (Lio/sentry/internal/eventprocessor/EventProcessorAndOrder;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun getEventProcessor ()Lio/sentry/EventProcessor;
+	public fun getOrder ()Ljava/lang/Long;
+}
+
 public abstract interface class io/sentry/internal/gestures/GestureTargetLocator {
 	public abstract fun locate (Ljava/lang/Object;FFLio/sentry/internal/gestures/UiElement$Type;)Lio/sentry/internal/gestures/UiElement;
 }
@@ -5379,6 +5396,11 @@ public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public fun <init> ()V
 	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/List;)V
 	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
+}
+
+public final class io/sentry/util/EventProcessorUtils {
+	public fun <init> ()V
+	public static fun unwrap (Ljava/util/List;)Ljava/util/List;
 }
 
 public final class io/sentry/util/ExceptionUtils {
