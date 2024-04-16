@@ -2,7 +2,7 @@ package io.sentry.android.core;
 
 import io.sentry.DataCategory;
 import io.sentry.IConnectionStatusProvider;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SentryLevel;
@@ -28,7 +28,7 @@ final class SendCachedEnvelopeIntegration
   private final @NotNull LazyEvaluator<Boolean> startupCrashMarkerEvaluator;
   private final AtomicBoolean startupCrashHandled = new AtomicBoolean(false);
   private @Nullable IConnectionStatusProvider connectionStatusProvider;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
   private @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender;
   private final AtomicBoolean isInitialized = new AtomicBoolean(false);
@@ -42,8 +42,8 @@ final class SendCachedEnvelopeIntegration
   }
 
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -55,7 +55,7 @@ final class SendCachedEnvelopeIntegration
       return;
     }
 
-    sendCachedEnvelopes(hub, this.options);
+    sendCachedEnvelopes(scopes, this.options);
   }
 
   @Override
@@ -69,14 +69,14 @@ final class SendCachedEnvelopeIntegration
   @Override
   public void onConnectionStatusChanged(
       final @NotNull IConnectionStatusProvider.ConnectionStatus status) {
-    if (hub != null && options != null) {
-      sendCachedEnvelopes(hub, options);
+    if (scopes != null && options != null) {
+      sendCachedEnvelopes(scopes, options);
     }
   }
 
   @SuppressWarnings({"NullAway"})
   private synchronized void sendCachedEnvelopes(
-      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
+      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     try {
       final Future<?> future =
           options
@@ -97,7 +97,7 @@ final class SendCachedEnvelopeIntegration
                         connectionStatusProvider = options.getConnectionStatusProvider();
                         connectionStatusProvider.addConnectionStatusObserver(this);
 
-                        sender = factory.create(hub, options);
+                        sender = factory.create(scopes, options);
                       }
 
                       if (connectionStatusProvider != null
@@ -110,7 +110,7 @@ final class SendCachedEnvelopeIntegration
                       }
 
                       // in case there's rate limiting active, skip processing
-                      final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+                      final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
                       if (rateLimiter != null
                           && rateLimiter.isActiveForCategory(DataCategory.All)) {
                         options

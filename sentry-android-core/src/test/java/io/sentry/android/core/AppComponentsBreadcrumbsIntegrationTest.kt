@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -37,8 +37,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When app components breadcrumb is enabled, it registers callback`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         verify(fixture.context).registerComponentCallbacks(any())
     }
 
@@ -46,10 +46,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When app components breadcrumb is enabled, but ComponentCallbacks is not ready, do not throw`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         whenever(fixture.context.registerComponentCallbacks(any())).thenThrow(NullPointerException())
-        sut.register(hub, options)
+        sut.register(scopes, options)
         assertFalse(options.isEnableAppComponentBreadcrumbs)
     }
 
@@ -59,8 +59,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             isEnableAppComponentBreadcrumbs = false
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         verify(fixture.context, never()).registerComponentCallbacks(any())
     }
 
@@ -68,8 +68,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When AppComponentsBreadcrumbsIntegrationTest is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.close()
         verify(fixture.context).unregisterComponentCallbacks(any())
     }
@@ -78,10 +78,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When app components breadcrumb is closed, but ComponentCallbacks is not ready, do not throw`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         whenever(fixture.context.registerComponentCallbacks(any())).thenThrow(NullPointerException())
         whenever(fixture.context.unregisterComponentCallbacks(any())).thenThrow(NullPointerException())
-        sut.register(hub, options)
+        sut.register(scopes, options)
         sut.close()
     }
 
@@ -89,10 +89,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When low memory event, a breadcrumb with type, category and level should be set`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onLowMemory()
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -105,10 +105,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When trim memory event with level, a breadcrumb with type, category and level should be set`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -121,20 +121,20 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `When trim memory event with level not so high, do not add a breadcrumb`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
-        verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When device orientation event, a breadcrumb with type, category and level should be set`() {
         val sut = AppComponentsBreadcrumbsIntegration(ApplicationProvider.getApplicationContext())
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onConfigurationChanged(mock())
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.orientation", it.category)
                 assertEquals("navigation", it.type)

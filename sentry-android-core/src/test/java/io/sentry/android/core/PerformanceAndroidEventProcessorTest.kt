@@ -3,7 +3,7 @@ package io.sentry.android.core
 import android.content.ContentProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.MeasurementUnit
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
@@ -35,7 +35,7 @@ class PerformanceAndroidEventProcessorTest {
     private class Fixture {
         val options = SentryAndroidOptions()
 
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val context = TransactionContext("name", "op", TracesSamplingDecision(true))
         lateinit var tracer: SentryTracer
         val activityFramesTracker = mock<ActivityFramesTracker>()
@@ -46,8 +46,8 @@ class PerformanceAndroidEventProcessorTest {
         ): PerformanceAndroidEventProcessor {
             options.tracesSampleRate = tracesSampleRate
             options.isEnablePerformanceV2 = enablePerformanceV2
-            whenever(hub.options).thenReturn(options)
-            tracer = SentryTracer(context, hub)
+            whenever(scopes.options).thenReturn(options)
+            tracer = SentryTracer(context, scopes)
             return PerformanceAndroidEventProcessor(options, activityFramesTracker)
         }
     }
@@ -181,7 +181,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `add slow and frozen frames if auto transaction`() {
         val sut = fixture.getSut()
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         val metrics = mapOf(
@@ -227,7 +227,7 @@ class PerformanceAndroidEventProcessorTest {
         // when an activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // and it contains an app.start.cold span
@@ -297,7 +297,7 @@ class PerformanceAndroidEventProcessorTest {
         // when an activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // then the app start metrics should not be attached
@@ -326,7 +326,7 @@ class PerformanceAndroidEventProcessorTest {
         // when the first activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
         val appStartSpan = SentrySpan(
             0.0,
@@ -377,7 +377,7 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
         val appStartSpan = SentrySpan(
             0.0,
@@ -424,7 +424,7 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
         val appStartSpan = SentrySpan(
             0.0,
