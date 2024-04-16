@@ -1,6 +1,5 @@
 package io.sentry.rrweb;
 
-import io.sentry.Breadcrumb;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -174,7 +173,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
       writer.name(JsonKeys.MESSAGE).value(message);
     }
     if (data != null) {
-      writer.name(Breadcrumb.JsonKeys.DATA).value(logger, data);
+      writer.name(JsonKeys.DATA).value(logger, data);
     }
     if (payloadUnknown != null) {
       for (final String key : payloadUnknown.keySet()) {
