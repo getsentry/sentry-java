@@ -2,7 +2,7 @@ package io.sentry.spring
 
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
@@ -55,19 +55,19 @@ class SentryCheckInAdviceTest {
     lateinit var sampleServiceSpringProperties: SampleServiceSpringProperties
 
     @Autowired
-    lateinit var hub: IHub
+    lateinit var scopes: IScopes
 
     @BeforeTest
     fun setup() {
-        reset(hub)
-        whenever(hub.options).thenReturn(SentryOptions())
+        reset(scopes)
+        whenever(scopes.options).thenReturn(SentryOptions())
     }
 
     @Test
     fun `when method is annotated with @SentryCheckIn, every method call creates two check-ins`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         val result = sampleService.hello()
         assertEquals(1, result)
         assertEquals(2, checkInCaptor.allValues.size)
@@ -80,17 +80,17 @@ class SentryCheckInAdviceTest {
         assertEquals("monitor_slug_1", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub, times(2)).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes, times(2)).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Test
     fun `when method is annotated with @SentryCheckIn, every method call creates two check-ins error`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         assertThrows<RuntimeException> {
             sampleService.oops()
         }
@@ -104,17 +104,17 @@ class SentryCheckInAdviceTest {
         assertEquals("monitor_slug_1e", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub, times(2)).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes, times(2)).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Test
     fun `when method is annotated with @SentryCheckIn and heartbeat only, every method call creates only one check-in at the end`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         val result = sampleServiceHeartbeat.hello()
         assertEquals(1, result)
         assertEquals(1, checkInCaptor.allValues.size)
@@ -124,17 +124,17 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Test
     fun `when method is annotated with @SentryCheckIn and heartbeat only, every method call creates only one check-in at the end with error`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         assertThrows<RuntimeException> {
             sampleServiceHeartbeat.oops()
         }
@@ -145,31 +145,31 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Test
     fun `when method is annotated with @SentryCheckIn but slug is missing, does not create check-in`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         val result = sampleServiceNoSlug.hello()
         assertEquals(1, result)
         assertEquals(0, checkInCaptor.allValues.size)
 
-        verify(hub, never()).pushScope()
-        verify(hub, never()).captureCheckIn(any())
-        verify(hub, never()).popScope()
+        verify(scopes, never()).pushScope()
+        verify(scopes, never()).captureCheckIn(any())
+        verify(scopes, never()).popScope()
     }
 
     @Test
     fun `when @SentryCheckIn is passed a spring property it is resolved correctly`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         val result = sampleServiceSpringProperties.hello()
         assertEquals(1, result)
         assertEquals(1, checkInCaptor.allValues.size)
@@ -179,17 +179,17 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Test
     fun `when @SentryCheckIn is passed a spring property that does not exist, raw value is used`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         val result = sampleServiceSpringProperties.helloUnresolvedProperty()
         assertEquals(1, result)
         assertEquals(1, checkInCaptor.allValues.size)
@@ -199,17 +199,17 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Test
     fun `when @SentryCheckIn is passed a spring property that causes an exception, raw value is used`() {
         val checkInId = SentryId()
         val checkInCaptor = argumentCaptor<CheckIn>()
-        whenever(hub.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
+        whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(checkInId)
         val result = sampleServiceSpringProperties.helloExceptionProperty()
         assertEquals(1, result)
         assertEquals(1, checkInCaptor.allValues.size)
@@ -219,10 +219,10 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(hub)
-        order.verify(hub).pushScope()
-        order.verify(hub).captureCheckIn(any())
-        order.verify(hub).popScope()
+        val order = inOrder(scopes)
+        order.verify(scopes).pushScope()
+        order.verify(scopes).captureCheckIn(any())
+        order.verify(scopes).popScope()
     }
 
     @Configuration
@@ -243,10 +243,10 @@ class SentryCheckInAdviceTest {
         open fun sampleServiceSpringProperties() = SampleServiceSpringProperties()
 
         @Bean
-        open fun hub(): IHub {
-            val hub = mock<IHub>()
-            Sentry.setCurrentHub(hub)
-            return hub
+        open fun scopes(): IScopes {
+            val scopes = mock<IScopes>()
+            Sentry.setCurrentScopes(scopes)
+            return scopes
         }
 
         companion object {
