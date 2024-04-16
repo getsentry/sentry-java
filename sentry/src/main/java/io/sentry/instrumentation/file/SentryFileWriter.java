@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -30,8 +30,8 @@ public final class SentryFileWriter extends OutputStreamWriter {
     super(new SentryFileOutputStream(fd));
   }
 
-  SentryFileWriter(final @NotNull File file, final boolean append, final @NotNull IHub hub)
+  SentryFileWriter(final @NotNull File file, final boolean append, final @NotNull IScopes scopes)
       throws FileNotFoundException {
-    super(new SentryFileOutputStream(file, append, hub));
+    super(new SentryFileOutputStream(file, append, scopes));
   }
 }

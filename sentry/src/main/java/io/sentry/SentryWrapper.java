@@ -27,16 +27,18 @@ public final class SentryWrapper {
    * @return the wrapped {@link Callable}
    * @param <U> - the result type of the {@link Callable}
    */
+  @SuppressWarnings("deprecation")
   public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
-    final IHub newHub = Sentry.getCurrentHub().clone();
+    // TODO replace with forking
+    final IScopes newHub = Sentry.getCurrentScopes().clone();
 
     return () -> {
-      final IHub oldState = Sentry.getCurrentHub();
-      Sentry.setCurrentHub(newHub);
+      final IScopes oldState = Sentry.getCurrentScopes();
+      Sentry.setCurrentScopes(newHub);
       try {
         return callable.call();
       } finally {
-        Sentry.setCurrentHub(oldState);
+        Sentry.setCurrentScopes(oldState);
       }
     };
   }
@@ -51,17 +53,18 @@ public final class SentryWrapper {
    * @return the wrapped {@link Supplier}
    * @param <U> - the result type of the {@link Supplier}
    */
+  @SuppressWarnings("deprecation")
   public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
-
-    final IHub newHub = Sentry.getCurrentHub().clone();
+    // TODO replace with forking
+    final IScopes newHub = Sentry.getCurrentScopes().clone();
 
     return () -> {
-      final IHub oldState = Sentry.getCurrentHub();
-      Sentry.setCurrentHub(newHub);
+      final IScopes oldState = Sentry.getCurrentScopes();
+      Sentry.setCurrentScopes(newHub);
       try {
         return supplier.get();
       } finally {
-        Sentry.setCurrentHub(oldState);
+        Sentry.setCurrentScopes(oldState);
       }
     };
   }

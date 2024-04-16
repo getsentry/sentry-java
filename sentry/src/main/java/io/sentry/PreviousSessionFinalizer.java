@@ -33,11 +33,11 @@ final class PreviousSessionFinalizer implements Runnable {
 
   private final @NotNull SentryOptions options;
 
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
-  PreviousSessionFinalizer(final @NotNull SentryOptions options, final @NotNull IHub hub) {
+  PreviousSessionFinalizer(final @NotNull SentryOptions options, final @NotNull IScopes scopes) {
     this.options = options;
-    this.hub = hub;
+    this.scopes = scopes;
   }
 
   @Override
@@ -116,7 +116,7 @@ final class PreviousSessionFinalizer implements Runnable {
           // SdkVersion will be outdated.
           final SentryEnvelope fromSession =
               SentryEnvelope.from(serializer, session, options.getSdkVersion());
-          hub.captureEnvelope(fromSession);
+          scopes.captureEnvelope(fromSession);
         }
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);

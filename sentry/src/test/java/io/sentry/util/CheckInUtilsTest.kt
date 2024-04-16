@@ -1,7 +1,8 @@
 package io.sentry.util
 
 import io.sentry.CheckInStatus
-import io.sentry.IHub
+import io.sentry.HubScopesWrapper
+import io.sentry.IScopes
 import io.sentry.MonitorConfig
 import io.sentry.MonitorSchedule
 import io.sentry.MonitorScheduleUnit
@@ -56,30 +57,31 @@ class CheckInUtilsTest {
     @Test
     fun `sends check-in for wrapped supplier`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
-            val hub = mock<IHub>()
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
-            whenever(hub.options).thenReturn(SentryOptions())
+            val scopes = mock<IScopes>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            whenever(scopes.options).thenReturn(SentryOptions())
             val returnValue = CheckInUtils.withCheckIn("monitor-1") {
                 return@withCheckIn "test1"
             }
 
             assertEquals("test1", returnValue)
-            inOrder(hub) {
-                verify(hub).pushScope()
-                verify(hub).configureScope(any())
-                verify(hub).captureCheckIn(
+            inOrder(scopes) {
+                verify(scopes).pushScope()
+                verify(scopes).configureScope(any())
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
                     }
                 )
-                verify(hub).captureCheckIn(
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
                     }
                 )
-                verify(hub).popScope()
+                verify(scopes).popScope()
             }
         }
     }
@@ -87,8 +89,9 @@ class CheckInUtilsTest {
     @Test
     fun `sends check-in for wrapped supplier with exception`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
-            val hub = mock<IHub>()
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
+            val scopes = mock<IScopes>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
 
             try {
                 CheckInUtils.withCheckIn("monitor-1") {
@@ -99,22 +102,22 @@ class CheckInUtilsTest {
                 assertEquals("thrown on purpose", e.message)
             }
 
-            inOrder(hub) {
-                verify(hub).pushScope()
-                verify(hub).configureScope(any())
-                verify(hub).captureCheckIn(
+            inOrder(scopes) {
+                verify(scopes).pushScope()
+                verify(scopes).configureScope(any())
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
                     }
                 )
-                verify(hub).captureCheckIn(
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.ERROR.apiName(), it.status)
                     }
                 )
-                verify(hub).popScope()
+                verify(scopes).popScope()
             }
         }
     }
@@ -122,32 +125,33 @@ class CheckInUtilsTest {
     @Test
     fun `sends check-in for wrapped supplier with upsert`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
-            val hub = mock<IHub>()
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
-            whenever(hub.options).thenReturn(SentryOptions())
+            val scopes = mock<IScopes>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
             val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
                 "test1"
             }
 
             assertEquals("test1", returnValue)
-            inOrder(hub) {
-                verify(hub).pushScope()
-                verify(hub).configureScope(any())
-                verify(hub).captureCheckIn(
+            inOrder(scopes) {
+                verify(scopes).pushScope()
+                verify(scopes).configureScope(any())
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertSame(monitorConfig, it.monitorConfig)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
                     }
                 )
-                verify(hub).captureCheckIn(
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
                     }
                 )
-                verify(hub).popScope()
+                verify(scopes).popScope()
             }
         }
     }
@@ -155,9 +159,10 @@ class CheckInUtilsTest {
     @Test
     fun `sends check-in for wrapped supplier with upsert and thresholds`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
-            val hub = mock<IHub>()
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
-            whenever(hub.options).thenReturn(SentryOptions())
+            val scopes = mock<IScopes>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
                 failureIssueThreshold = 10
                 recoveryThreshold = 20
@@ -167,23 +172,23 @@ class CheckInUtilsTest {
             }
 
             assertEquals("test1", returnValue)
-            inOrder(hub) {
-                verify(hub).pushScope()
-                verify(hub).configureScope(any())
-                verify(hub).captureCheckIn(
+            inOrder(scopes) {
+                verify(scopes).pushScope()
+                verify(scopes).configureScope(any())
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertSame(monitorConfig, it.monitorConfig)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
                     }
                 )
-                verify(hub).captureCheckIn(
+                verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
                     }
                 )
-                verify(hub).popScope()
+                verify(scopes).popScope()
             }
         }
     }
@@ -191,9 +196,10 @@ class CheckInUtilsTest {
     @Test
     fun `sets defaults for MonitorConfig from SentryOptions`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
-            val hub = mock<IHub>()
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
-            whenever(hub.options).thenReturn(
+            val scopes = mock<IScopes>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     cron = SentryOptions.Cron().apply {
                         defaultCheckinMargin = 20
@@ -218,9 +224,10 @@ class CheckInUtilsTest {
     @Test
     fun `defaults for MonitorConfig from SentryOptions can be overridden`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
-            val hub = mock<IHub>()
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
-            whenever(hub.options).thenReturn(
+            val scopes = mock<IScopes>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     cron = SentryOptions.Cron().apply {
                         defaultCheckinMargin = 20
