@@ -105,7 +105,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         options.addIntegration(integrationMock)
         options.cacheDirPath = fixture.file.absolutePath
         options.setSerializer(mock())
-        val scopes = Hub(options)
+        val scopes = Scopes(Scope(options), Scope(options), Scope(options), "test")
         scopes.close()
         verify(integrationMock).close()
     }

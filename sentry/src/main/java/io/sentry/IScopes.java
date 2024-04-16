@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public interface IScopes {
 
   /**
-   * Check if the Hub is enabled/active.
+   * Check if Sentry is enabled/active.
    *
    * @return true if its enabled or false otherwise.
    */
@@ -188,11 +188,11 @@ public interface IScopes {
   /** Ends the current session */
   void endSession();
 
-  /** Flushes out the queue for up to timeout seconds and disable the Hub. */
+  /** Flushes out the queue for up to timeout seconds and disable the Scopes. */
   void close();
 
   /**
-   * Flushes out the queue for up to timeout seconds and disable the Hub.
+   * Flushes out the queue for up to timeout seconds and disable the Scopes.
    *
    * @param isRestarting if true, avoids locking the main thread when finishing the queue.
    */
@@ -320,7 +320,7 @@ public interface IScopes {
    * SDK in globalHubMode (defaults to true on Android) {@link
    * Sentry#init(Sentry.OptionsConfiguration, boolean)} calling withScope is discouraged, as scope
    * changes may be dropped when executed in parallel. Use {@link
-   * IHub#configureScope(ScopeCallback)} instead.
+   * IScopes#configureScope(ScopeCallback)} instead.
    *
    * @param callback the callback
    */
@@ -343,7 +343,7 @@ public interface IScopes {
   void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback);
 
   /**
-   * Binds a different client to the hub
+   * Binds a different client to the scopes
    *
    * @param client the client.
    */
@@ -357,7 +357,7 @@ public interface IScopes {
   boolean isHealthy();
 
   /**
-   * Flushes events queued up, but keeps the Hub enabled. Not implemented yet.
+   * Flushes events queued up, but keeps the scopes enabled. Not implemented yet.
    *
    * @param timeoutMillis time in milliseconds
    */
@@ -540,9 +540,9 @@ public interface IScopes {
 
   /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
+   * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
    *
-   * @deprecated please use {@link IHub#getTraceparent()} instead.
+   * @deprecated please use {@link IScopes#getTraceparent()} instead.
    * @return sentry trace header or null
    */
   @Deprecated
@@ -610,7 +610,7 @@ public interface IScopes {
   void reportFullyDisplayed();
 
   /**
-   * @deprecated See {@link IHub#reportFullyDisplayed()}.
+   * @deprecated See {@link IScopes#reportFullyDisplayed()}.
    */
   @Deprecated
   default void reportFullDisplayed() {
@@ -631,7 +631,7 @@ public interface IScopes {
 
   /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link IHub#getBaggage()}.
+   * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
    *
    * @return sentry trace header or null
    */
@@ -640,7 +640,7 @@ public interface IScopes {
 
   /**
    * Returns the "baggage" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link IHub#getTraceparent()}.
+   * &lt;meta&gt; HTML tags. Also see {@link IScopes#getTraceparent()}.
    *
    * @return baggage header or null
    */

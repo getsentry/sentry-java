@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
-/** Registers hook that flushes {@link Hub} when main thread shuts down. */
+/** Registers hook that flushes {@link Scopes} when main thread shuts down. */
 public final class ShutdownHookIntegration implements Integration, Closeable {
 
   private final @NotNull Runtime runtime;

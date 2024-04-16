@@ -26,6 +26,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   private final @NotNull IScope scope;
   private final @NotNull IScope isolationScope;
+  private final @NotNull IScope globalScope;
 
   @SuppressWarnings("UnusedVariable")
   private final @Nullable Scopes parentScopes;
@@ -38,21 +39,24 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   private final @NotNull CombinedScopeView combinedScope;
 
-  Scopes(
+  public Scopes(
       final @NotNull IScope scope,
       final @NotNull IScope isolationScope,
+      final @NotNull IScope globalScope,
       final @NotNull String creator) {
-    this(scope, isolationScope, null, creator);
+    this(scope, isolationScope, globalScope, null, creator);
   }
 
   private Scopes(
       final @NotNull IScope scope,
       final @NotNull IScope isolationScope,
+      final @NotNull IScope globalScope,
       final @Nullable Scopes parentScopes,
       final @NotNull String creator) {
-    this.combinedScope = new CombinedScopeView(getGlobalScope(), isolationScope, scope);
+    this.combinedScope = new CombinedScopeView(globalScope, isolationScope, scope);
     this.scope = scope;
     this.isolationScope = isolationScope;
+    this.globalScope = globalScope;
     this.parentScopes = parentScopes;
     this.creator = creator;
 
@@ -106,12 +110,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   @Override
   public @NotNull IScopes forkedScopes(final @NotNull String creator) {
-    return new Scopes(scope.clone(), isolationScope.clone(), this, creator);
+    return new Scopes(scope.clone(), isolationScope.clone(), globalScope, this, creator);
   }
 
   @Override
   public @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
-    return new Scopes(scope.clone(), isolationScope, this, creator);
+    return new Scopes(scope.clone(), isolationScope, globalScope, this, creator);
   }
 
   @Override
@@ -419,7 +423,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         // TODO: should we end session before closing client?
         getClient().close(isRestarting);
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
       isEnabled = false;
     }
@@ -572,7 +576,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   @Override
   public @NotNull IScope getGlobalScope() {
-    return Sentry.getGlobalScope();
+    return globalScope;
   }
 
   @Override
@@ -712,7 +716,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   @SuppressWarnings("deprecation")
   public @NotNull IHub clone() {
     if (!isEnabled()) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Scopes cloned.");
     }
     // TODO [HSM] should this fork isolation scope as well?
     return new HubScopesWrapper(forkedCurrentScope("scopes clone"));
@@ -1054,7 +1058,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {
       throw new IllegalArgumentException(
-          "Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.");
+          "Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.");
     }
   }
 }

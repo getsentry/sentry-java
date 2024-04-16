@@ -28,7 +28,6 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Breadcrumb
-import io.sentry.HubScopesWrapper
 import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
@@ -358,7 +357,6 @@ class SentryInstrumentationAnotherTest {
     }
 
     fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(fixture.scopes))
         it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
         closure.invoke()
     }

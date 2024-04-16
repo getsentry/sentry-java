@@ -58,7 +58,7 @@ public final class Sentry {
   /** Default value for globalHubMode is false */
   private static final boolean GLOBAL_HUB_DEFAULT_MODE = false;
 
-  /** whether to use a single (global) Hub as opposed to one per thread. */
+  /** whether to use a single (global) Scopes as opposed to one per thread. */
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
 
   @ApiStatus.Internal
@@ -104,7 +104,7 @@ public final class Sentry {
   /**
    * Returns a new Scopes which is cloned from the rootScopes.
    *
-   * @return the hub
+   * @return the forked scopes
    */
   @ApiStatus.Internal
   public static @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
@@ -139,7 +139,7 @@ public final class Sentry {
   }
 
   /**
-   * Check if the current Hub is enabled/active.
+   * Check if Sentry is enabled/active.
    *
    * @return true if its enabled or false otherwise.
    */
@@ -276,7 +276,7 @@ public final class Sentry {
     final IScope rootScope = new Scope(options);
     final IScope rootIsolationScope = new Scope(options);
     globalScope.bindClient(new SentryClient(options));
-    rootScopes = new Scopes(rootScope, rootIsolationScope, "Sentry.init");
+    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
     getScopesStorage().set(rootScopes);
 
@@ -288,10 +288,10 @@ public final class Sentry {
       options.setExecutorService(new SentryExecutorService());
     }
 
-    // when integrations are registered on Hub ctor and async integrations are fired,
+    // when integrations are registered on Scopes ctor and async integrations are fired,
     // it might and actually happened that integrations called captureSomething
-    // and hub was still NoOp.
-    // Registering integrations here make sure that Hub is already created.
+    // and Scopes was still NoOp.
+    // Registering integrations here make sure that Scopes is already created.
     for (final Integration integration : options.getIntegrations()) {
       integration.register(ScopesAdapter.getInstance(), options);
     }
@@ -872,7 +872,7 @@ public final class Sentry {
   }
 
   /**
-   * Binds a different client to the current hub
+   * Binds a different client to the current Scopes
    *
    * @param client the client.
    */
@@ -885,7 +885,7 @@ public final class Sentry {
   }
 
   /**
-   * Flushes events queued up to the current hub. Not implemented yet.
+   * Flushes events queued up to the current Scopes. Not implemented yet.
    *
    * @param timeoutMillis time in milliseconds
    */
@@ -1037,7 +1037,7 @@ public final class Sentry {
     reportFullyDisplayed();
   }
 
-  /** the metrics API for the current hub */
+  /** the metrics API for the current Scopes */
   @NotNull
   @ApiStatus.Experimental
   public static MetricsApi metrics() {

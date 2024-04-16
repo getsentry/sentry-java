@@ -315,7 +315,7 @@ public class SentryOptions {
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
-  /** Registers hook that flushes {@link Hub} when main thread shuts down. */
+  /** Registers hook that flushes {@link Scopes} when main thread shuts down. */
   private boolean enableShutdownHook = true;
 
   /**
@@ -2496,7 +2496,7 @@ public class SentryOptions {
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
-   * <p>Used by {@link NoOpHub}.
+   * <p>Used by {@link NoOpScopes}.
    *
    * @return SentryOptions
    */

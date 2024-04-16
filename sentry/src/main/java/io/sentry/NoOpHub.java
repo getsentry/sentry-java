@@ -12,6 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Deprecated
+/**
+ * @deprecated use {@link NoOpScopes} instead.
+ */
 public final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
