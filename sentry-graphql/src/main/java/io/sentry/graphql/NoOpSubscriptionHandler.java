@@ -1,7 +1,7 @@
 package io.sentry.graphql;
 
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import org.jetbrains.annotations.NotNull;
 
 public final class NoOpSubscriptionHandler implements SentrySubscriptionHandler {
@@ -17,7 +17,7 @@ public final class NoOpSubscriptionHandler implements SentrySubscriptionHandler 
   @Override
   public @NotNull Object onSubscriptionResult(
       @NotNull Object result,
-      @NotNull IHub hub,
+      @NotNull IScopes scopes,
       @NotNull ExceptionReporter exceptionReporter,
       @NotNull InstrumentationFieldFetchParameters parameters) {
     return result;
