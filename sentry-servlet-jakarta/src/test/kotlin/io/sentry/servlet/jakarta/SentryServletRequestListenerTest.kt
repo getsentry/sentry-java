@@ -1,7 +1,7 @@
 package io.sentry.servlet.jakarta
 
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import jakarta.servlet.ServletRequestEvent
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -13,9 +13,9 @@ import kotlin.test.assertEquals
 
 class SentryServletRequestListenerTest {
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val listener =
-            SentryServletRequestListener(hub)
+            SentryServletRequestListener(scopes)
         val request = mockRequest(
             url = "http://localhost:8080/some-uri",
             method = "POST"
@@ -33,14 +33,14 @@ class SentryServletRequestListenerTest {
     fun `pushes scope when request gets initialized`() {
         fixture.listener.requestInitialized(fixture.event)
 
-        verify(fixture.hub).pushScope()
+        verify(fixture.scopes).pushScope()
     }
 
     @Test
     fun `adds breadcrumb when request gets initialized`() {
         fixture.listener.requestInitialized(fixture.event)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check { it: Breadcrumb ->
                 assertEquals("/some-uri", it.getData("url"))
                 assertEquals("POST", it.getData("method"))
@@ -54,6 +54,6 @@ class SentryServletRequestListenerTest {
     fun `pops scope when request gets destroyed`() {
         fixture.listener.requestDestroyed(fixture.event)
 
-        verify(fixture.hub).popScope()
+        verify(fixture.scopes).popScope()
     }
 }

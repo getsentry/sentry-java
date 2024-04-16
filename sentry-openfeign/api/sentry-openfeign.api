@@ -1,12 +1,12 @@
 public final class io/sentry/openfeign/SentryCapability : feign/Capability {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/openfeign/SentryFeignClient$BeforeSpanCallback;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/openfeign/SentryFeignClient$BeforeSpanCallback;)V
 	public fun <init> (Lio/sentry/openfeign/SentryFeignClient$BeforeSpanCallback;)V
 	public fun enrich (Lfeign/Client;)Lfeign/Client;
 }
 
 public final class io/sentry/openfeign/SentryFeignClient : feign/Client {
-	public fun <init> (Lfeign/Client;Lio/sentry/IHub;Lio/sentry/openfeign/SentryFeignClient$BeforeSpanCallback;)V
+	public fun <init> (Lfeign/Client;Lio/sentry/IScopes;Lio/sentry/openfeign/SentryFeignClient$BeforeSpanCallback;)V
 	public fun execute (Lfeign/Request;Lfeign/Request$Options;)Lfeign/Response;
 }
 

@@ -119,7 +119,7 @@ class SentryContextTest {
 
             val c2 = launch(
                 SentryContext(
-                    Sentry.getCurrentHub().clone().also {
+                    Sentry.getCurrentScopes().clone().also {
                         it.setTag("cloned", "clonedValue")
                     }
                 )
@@ -145,7 +145,7 @@ class SentryContextTest {
     @Test
     fun `mergeForChild returns copy of initial context if Key not present`() {
         val initialContextElement = SentryContext(
-            Sentry.getCurrentHub().clone().also {
+            Sentry.getCurrentScopes().clone().also {
                 it.setTag("cloned", "clonedValue")
             }
         )
@@ -158,7 +158,7 @@ class SentryContextTest {
     @Test
     fun `mergeForChild returns passed context`() {
         val initialContextElement = SentryContext(
-            Sentry.getCurrentHub().clone().also {
+            Sentry.getCurrentScopes().clone().also {
                 it.setTag("cloned", "clonedValue")
             }
         )
