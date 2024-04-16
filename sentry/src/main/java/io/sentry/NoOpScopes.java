@@ -11,19 +11,17 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Deprecated
-public final class NoOpHub implements IHub {
+public final class NoOpScopes implements IScopes {
 
-  private static final NoOpHub instance = new NoOpHub();
+  private static final NoOpScopes instance = new NoOpScopes();
 
   private final @NotNull SentryOptions emptyOptions = SentryOptions.empty();
   private final @NotNull MetricsApi metricsApi =
       new MetricsApi(NoopMetricsAggregator.getInstance());
 
-  private NoOpHub() {}
+  private NoOpScopes() {}
 
-  @Deprecated
-  public static NoOpHub getInstance() {
+  public static NoOpScopes getInstance() {
     return instance;
   }
 
@@ -148,9 +146,10 @@ public final class NoOpHub implements IHub {
   @Override
   public void flush(long timeoutMillis) {}
 
+  @Deprecated
   @Override
   public @NotNull IHub clone() {
-    return instance;
+    return NoOpHub.getInstance();
   }
 
   @Override
