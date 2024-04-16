@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.Scope.createBreadcrumbsList;
+
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
@@ -173,17 +175,6 @@ public final class CombinedScopeView implements IScope {
     return breadcrumbs;
   }
 
-  /**
-   * Creates a breadcrumb list with the max number of breadcrumbs
-   *
-   * @param maxBreadcrumb the max number of breadcrumbs
-   * @return the breadcrumbs queue
-   */
-  // TODO [HSM] copied from Scope, should reuse instead
-  private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
-    return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
-  }
-
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     getDefaultWriteScope().addBreadcrumb(breadcrumb, hint);
@@ -313,14 +304,34 @@ public final class CombinedScopeView implements IScope {
   }
 
   private @NotNull IScope getDefaultWriteScope() {
-    // TODO [HSM] use Scopes.getSpecificScope?
-    if (ScopeType.CURRENT.equals(getOptions().getDefaultScopeType())) {
-      return scope;
+    return getSpecificScope(null);
+  }
+
+  IScope getSpecificScope(final @Nullable ScopeType scopeType) {
+    if (scopeType != null) {
+      switch (scopeType) {
+        case CURRENT:
+          return scope;
+        case ISOLATION:
+          return isolationScope;
+        case GLOBAL:
+          return globalScope;
+        default:
+          break;
+      }
     }
-    if (ScopeType.ISOLATION.equals(getOptions().getDefaultScopeType())) {
-      return isolationScope;
+
+    switch (getOptions().getDefaultScopeType()) {
+      case CURRENT:
+        return scope;
+      case ISOLATION:
+        return isolationScope;
+      case GLOBAL:
+        return globalScope;
+      default:
+        // calm the compiler
+        return scope;
     }
-    return globalScope;
   }
 
   @Override
