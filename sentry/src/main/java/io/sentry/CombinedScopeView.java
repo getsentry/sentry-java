@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -395,7 +396,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull SentryOptions getOptions() {
-    return scope.getOptions();
+    return globalScope.getOptions();
   }
 
   @Override
@@ -473,5 +474,11 @@ public final class CombinedScopeView implements IScope {
   public void setSpanContext(
       @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName) {
     globalScope.setSpanContext(throwable, span, transactionName);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void replaceOptions(@NotNull SentryOptions options) {
+    globalScope.replaceOptions(options);
   }
 }

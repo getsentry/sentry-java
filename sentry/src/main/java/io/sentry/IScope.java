@@ -396,4 +396,7 @@ public interface IScope {
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,
       final @NotNull String transactionName);
+
+  @ApiStatus.Internal
+  void replaceOptions(final @NotNull SentryOptions options);
 }
