@@ -634,7 +634,6 @@ public abstract interface class io/sentry/IMetricsAggregator : java/io/Closeable
 	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
-	public abstract fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
@@ -1039,7 +1038,6 @@ public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, j
 	public fun run ()V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
-	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3561,7 +3559,6 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
