@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
+
 ## 7.8.0
 
 ### Features
