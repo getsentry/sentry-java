@@ -220,7 +220,7 @@ internal abstract class BaseCaptureStrategy(
                             breadcrumbType = "default"
                             category = breadcrumbCategory
                             message = breadcrumbMessage
-                            data = if (breadcrumbData.isEmpty()) null else breadcrumbData
+                            data = breadcrumbData
                         }
                     }
                 }
@@ -229,7 +229,7 @@ internal abstract class BaseCaptureStrategy(
 
         val recording = ReplayRecording().apply {
             this.segmentId = segmentId
-            payload = recordingPayload
+            payload = recordingPayload.sortedBy { it.timestamp }
         }
 
         return ReplaySegment.Created(
