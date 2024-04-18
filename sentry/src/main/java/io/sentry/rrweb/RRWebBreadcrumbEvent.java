@@ -9,6 +9,7 @@ import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +21,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
   public static final String EVENT_TAG = "breadcrumb";
 
   private @NotNull String tag;
-  private long breadcrumbTimestamp;
+  private double breadcrumbTimestamp;
   private @Nullable String breadcrumbType;
   private @Nullable String category;
   private @Nullable String message;
@@ -45,11 +46,11 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
     this.tag = tag;
   }
 
-  public long getBreadcrumbTimestamp() {
+  public double getBreadcrumbTimestamp() {
     return breadcrumbTimestamp;
   }
 
-  public void setBreadcrumbTimestamp(final long breadcrumbTimestamp) {
+  public void setBreadcrumbTimestamp(final double breadcrumbTimestamp) {
     this.breadcrumbTimestamp = breadcrumbTimestamp;
   }
 
@@ -165,7 +166,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
     if (breadcrumbType != null) {
       writer.name(JsonKeys.TYPE).value(breadcrumbType);
     }
-    writer.name(JsonKeys.TIMESTAMP).value(breadcrumbTimestamp);
+    writer.name(JsonKeys.TIMESTAMP).value(logger, BigDecimal.valueOf(breadcrumbTimestamp));
     if (category != null) {
       writer.name(JsonKeys.CATEGORY).value(category);
     }
@@ -263,7 +264,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
             event.breadcrumbType = reader.nextStringOrNull();
             break;
           case JsonKeys.TIMESTAMP:
-            event.breadcrumbTimestamp = reader.nextLong();
+            event.breadcrumbTimestamp = reader.nextDouble();
             break;
           case JsonKeys.CATEGORY:
             event.category = reader.nextStringOrNull();
