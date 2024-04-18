@@ -170,14 +170,60 @@ internal abstract class BaseCaptureStrategy(
 
         hub?.configureScope { scope ->
             scope.breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.after(segmentTimestamp) && breadcrumb.timestamp.before(endTimestamp)) {
-                    recordingPayload += RRWebBreadcrumbEvent().apply {
-                        timestamp = breadcrumb.timestamp.time
-                        breadcrumbTimestamp = breadcrumb.timestamp.time
-                        breadcrumbType = breadcrumb.type
-                        category = breadcrumb.category
-                        message = breadcrumb.message
-                        data = breadcrumb.data
+                if (breadcrumb.timestamp.after(segmentTimestamp) && breadcrumb.timestamp.before(
+                        endTimestamp
+                    )
+                ) {
+                    // TODO: rework this later when aligned with iOS and frontend
+                    var breadcrumbMessage: String? = null
+                    val breadcrumbCategory: String?
+                    val breadcrumbData = mutableMapOf<String, Any?>()
+                    when {
+                        breadcrumb.category == "http" -> return@forEach
+
+                        breadcrumb.category == "device.orientation" -> {
+                            breadcrumbCategory = breadcrumb.category!!
+                            breadcrumbMessage = breadcrumb.data["position"] as? String ?: ""
+                        }
+
+                        breadcrumb.type == "navigation" -> {
+                            breadcrumbCategory = "navigation"
+                            breadcrumbData["to"] = when {
+                                breadcrumb.data["state"] == "resumed" -> breadcrumb.data["screen"] as? String
+                                breadcrumb.category == "app.lifecycle" -> breadcrumb.data["state"] as? String
+                                "to" in breadcrumb.data -> breadcrumb.data["to"] as? String
+                                else -> return@forEach
+                            } ?: return@forEach
+                        }
+
+                        breadcrumb.category in setOf("ui.click", "ui.scroll", "ui.swipe") -> {
+                            breadcrumbCategory = breadcrumb.category!!
+                            breadcrumbMessage = (
+                                breadcrumb.data["view.id"]
+                                    ?: breadcrumb.data["view.class"]
+                                    ?: breadcrumb.data["view.tag"]
+                                ) as? String ?: ""
+                        }
+
+                        breadcrumb.type == "system" -> {
+                            breadcrumbCategory = breadcrumb.type!!
+                            breadcrumbMessage = breadcrumb.data.entries.joinToString() as? String ?: ""
+                        }
+
+                        else -> {
+                            breadcrumbCategory = breadcrumb.category
+                            breadcrumbMessage = breadcrumb.message
+                        }
+                    }
+                    if (!breadcrumbCategory.isNullOrEmpty()) {
+                        recordingPayload += RRWebBreadcrumbEvent().apply {
+                            timestamp = breadcrumb.timestamp.time
+                            breadcrumbTimestamp = breadcrumb.timestamp.time / 1000.0
+                            breadcrumbType = "default"
+                            category = breadcrumbCategory
+                            message = breadcrumbMessage
+                            data = if (breadcrumbData.isEmpty()) null else breadcrumbData
+                        }
                     }
                 }
             }
@@ -188,7 +234,11 @@ internal abstract class BaseCaptureStrategy(
             payload = recordingPayload
         }
 
-        return ReplaySegment.Created(videoDuration = duration, replay = replay, recording = recording)
+        return ReplaySegment.Created(
+            videoDuration = duration,
+            replay = replay,
+            recording = recording
+        )
     }
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
