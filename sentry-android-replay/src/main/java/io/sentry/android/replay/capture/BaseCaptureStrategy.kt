@@ -170,10 +170,8 @@ internal abstract class BaseCaptureStrategy(
 
         hub?.configureScope { scope ->
             scope.breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.after(segmentTimestamp) && breadcrumb.timestamp.before(
-                        endTimestamp
-                    )
-                ) {
+                if (breadcrumb.timestamp.after(segmentTimestamp) &&
+                    breadcrumb.timestamp.before(endTimestamp)) {
                     // TODO: rework this later when aligned with iOS and frontend
                     var breadcrumbMessage: String? = null
                     val breadcrumbCategory: String?
