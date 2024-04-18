@@ -5,12 +5,14 @@ import io.sentry.SentryEvent
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.protocol.SentryId
+import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 internal interface CaptureStrategy {
     val currentSegment: AtomicInteger
     val currentReplayId: AtomicReference<SentryId>
+    val replayCacheDir: File?
 
     fun start(segmentId: Int = 0, replayId: SentryId = SentryId(), cleanupOldReplays: Boolean = true)
 

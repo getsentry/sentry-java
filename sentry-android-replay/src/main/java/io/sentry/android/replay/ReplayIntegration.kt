@@ -52,6 +52,7 @@ public class ReplayIntegration(
     private val isEnabled = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
     private var captureStrategy: CaptureStrategy? = null
+    public val replayCacheDir: File? get() = captureStrategy?.replayCacheDir
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
 

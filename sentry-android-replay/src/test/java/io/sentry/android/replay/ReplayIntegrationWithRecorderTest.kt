@@ -184,9 +184,9 @@ class ReplayIntegrationWithRecorderTest {
         // start again and capture some frames
         replay.start()
 
-        val flutterCacheDir =
-            File(fixture.options.cacheDirPath!!, "flutter_replay").also { it.mkdirs() }
-        val screenshot = File(flutterCacheDir, "1.jpg").also { it.createNewFile() }
+        // have to access 'replayCacheDir' after calling replay.start(), BUT can already be accessed
+        // inside recorder.start()
+        val screenshot = File(replay.replayCacheDir, "1.jpg").also { it.createNewFile() }
 
         screenshot.outputStream().use {
             Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)

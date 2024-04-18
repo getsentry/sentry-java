@@ -46,6 +46,7 @@ internal abstract class BaseCaptureStrategy(
     protected val replayStartTimestamp = AtomicLong()
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
+    override val replayCacheDir: File? get() = cache?.replayCacheDir
 
     protected val replayExecutor: ScheduledExecutorService by lazy {
         executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
