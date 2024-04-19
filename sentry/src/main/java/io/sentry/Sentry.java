@@ -254,8 +254,9 @@ public final class Sentry {
     Sentry.globalHubMode = globalHubMode;
 
     final IScopes hub = getCurrentScopes();
-    // TODO new Scopes()
-    mainScopes = new Hub(options);
+    final IScope rootScope = new Scope(options);
+    final IScope rootIsolationScope = new Scope(options);
+    mainScopes = new Scopes(rootScope, rootIsolationScope, options, "Sentry.init");
 
     currentScopes.set(mainScopes);
 
@@ -800,6 +801,7 @@ public final class Sentry {
   public static void pushScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
+      // TODO this might have to behave differently from Scopes.pushScope
       getCurrentScopes().pushScope();
     }
   }
@@ -808,6 +810,7 @@ public final class Sentry {
   public static void popScope() {
     // popScope is no-op in global hub mode
     if (!globalHubMode) {
+      // TODO this might have to behave differently from Scopes.popScope
       getCurrentScopes().popScope();
     }
   }
@@ -818,6 +821,7 @@ public final class Sentry {
    * @param callback the callback
    */
   public static void withScope(final @NotNull ScopeCallback callback) {
+    // TODO this might have to behave differently from Scopes.withScope
     getCurrentScopes().withScope(callback);
   }
 

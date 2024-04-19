@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -236,6 +237,9 @@ public final class NoOpScope implements IScope {
     return new PropagationContext();
   }
 
+  @Override
+  public void setLastEventId(@NotNull SentryId lastEventId) {}
+
   /**
    * Clones the Scope
    *
@@ -244,5 +248,18 @@ public final class NoOpScope implements IScope {
   @Override
   public @NotNull IScope clone() {
     return NoOpScope.getInstance();
+  }
+
+  @Override
+  public @NotNull SentryId getLastEventId() {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public void setClient(@NotNull ISentryClient client) {}
+
+  @Override
+  public @NotNull ISentryClient getClient() {
+    return NoOpSentryClient.getInstance();
   }
 }
