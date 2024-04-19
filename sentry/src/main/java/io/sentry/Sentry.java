@@ -45,8 +45,8 @@ public final class Sentry {
 
   private static volatile @NotNull IScopesStorage scopesStorage = new DefaultScopesStorage();
 
-  /** The Main Hub or NoOp if Sentry is disabled. */
-  private static volatile @NotNull IScopes mainScopes = NoOpScopes.getInstance();
+  /** The root Scopes or NoOp if Sentry is disabled. */
+  private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
   // TODO cannot pass options here
   private static volatile @NotNull IScope globalScope = new Scope(new SentryOptions());
 
@@ -67,7 +67,7 @@ public final class Sentry {
   private static final long classCreationTimestamp = System.currentTimeMillis();
 
   /**
-   * Returns the current (threads) hub, if none, clones the mainScopes and returns it.
+   * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
    *
    * @return the hub
    */
@@ -82,12 +82,11 @@ public final class Sentry {
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
     if (globalHubMode) {
-      return mainScopes;
+      return rootScopes;
     }
     IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
-      // TODO fork instead
-      scopes = mainScopes.clone();
+      scopes = rootScopes.forkedScopes("getCurrentScopes");
       getScopesStorage().set(scopes);
     }
     return scopes;
@@ -98,19 +97,18 @@ public final class Sentry {
   }
 
   /**
-   * Returns a new hub which is cloned from the mainScopes.
+   * Returns a new Scopes which is cloned from the rootScopes.
    *
    * @return the hub
    */
   @ApiStatus.Internal
   @ApiStatus.Experimental
   @SuppressWarnings("deprecation")
-  public static @NotNull IScopes cloneMainHub() {
+  public static @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
     if (globalHubMode) {
-      return mainScopes;
+      return rootScopes;
     }
-    // TODO fork instead
-    return mainScopes.clone();
+    return rootScopes.forkedScopes(creator);
   }
 
   public static @NotNull IScopes forkedScopes(final @NotNull String creator) {
@@ -123,9 +121,9 @@ public final class Sentry {
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
-  @SuppressWarnings({"deprecation", "InlineMeSuggester"})
-  public static void setCurrentHub(final @NotNull IHub hub) {
-    setCurrentScopes(hub);
+  @SuppressWarnings({"deprecation"})
+  public static @NotNull ISentryLifecycleToken setCurrentHub(final @NotNull IHub hub) {
+    return setCurrentScopes(hub);
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -272,16 +270,13 @@ public final class Sentry {
 
     final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
-    // TODO should use separate isolation scope:
-    //    final IScope rootIsolationScope = new Scope(options);
-    // TODO should be:
-    //    getGlobalScope().bindClient(new SentryClient(options));
-    rootScope.bindClient(new SentryClient(options));
+    final IScope rootIsolationScope = new Scope(options);
     // TODO shouldn't replace global scope
-    globalScope = rootScope;
-    mainScopes = new Scopes(rootScope, rootScope, options, "Sentry.init");
+    globalScope = new Scope(options);
+    globalScope.bindClient(new SentryClient(options));
+    rootScopes = new Scopes(rootScope, rootIsolationScope, options, "Sentry.init");
 
-    getScopesStorage().set(mainScopes);
+    getScopesStorage().set(rootScopes);
 
     scopes.close(true);
 
@@ -529,7 +524,7 @@ public final class Sentry {
   /** Close the SDK */
   public static synchronized void close() {
     final IScopes scopes = getCurrentScopes();
-    mainScopes = NoOpScopes.getInstance();
+    rootScopes = NoOpScopes.getInstance();
     // remove thread local to avoid memory leak
     getScopesStorage().close();
     scopes.close(false);

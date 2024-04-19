@@ -422,7 +422,7 @@ class SentryTest {
         assertNotNull(scopes)
         assertFalse(Sentry.getCurrentScopes().isNoOp)
 
-        val newMainHubClone = Sentry.cloneMainHub()
+        val newMainHubClone = Sentry.forkedRootScopes("test")
         newMainHubClone.addBreadcrumb("breadcrumbMainClone")
 
         scopes.captureMessage("messageCurrent")
@@ -473,7 +473,7 @@ class SentryTest {
         assertNotNull(scopes)
         assertFalse(scopes.isNoOp)
 
-        val newMainHubClone = Sentry.cloneMainHub()
+        val newMainHubClone = Sentry.forkedRootScopes("test")
         newMainHubClone.addBreadcrumb("breadcrumbMainClone")
 
         scopes.captureMessage("messageCurrent")
@@ -921,7 +921,7 @@ class SentryTest {
     }
 
     @Test
-    fun `getSpan calls returns root span if globalscopes mode is enabled on Android`() {
+    fun `getSpan calls returns root span if globalHubMode is enabled on Android`() {
         PlatformTestManipulator.pretendIsAndroid(true)
         Sentry.init({
             it.dsn = dsn
@@ -938,7 +938,7 @@ class SentryTest {
     }
 
     @Test
-    fun `getSpan calls returns child span if globalscopes mode is enabled, but the platform is not Android`() {
+    fun `getSpan calls returns child span if globalHubMode is enabled, but the platform is not Android`() {
         PlatformTestManipulator.pretendIsAndroid(false)
         Sentry.init({
             it.dsn = dsn
@@ -954,7 +954,7 @@ class SentryTest {
     }
 
     @Test
-    fun `getSpan calls returns child span if globalscopes mode is disabled`() {
+    fun `getSpan calls returns child span if globalHubMode is disabled`() {
         Sentry.init({
             it.dsn = dsn
             it.enableTracing = true
