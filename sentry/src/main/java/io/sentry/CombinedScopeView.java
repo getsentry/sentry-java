@@ -318,6 +318,8 @@ public final class CombinedScopeView implements IScope {
           return isolationScope;
         case GLOBAL:
           return globalScope;
+        case COMBINED:
+          return this;
         default:
           break;
       }
@@ -431,8 +433,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull IScope clone() {
-    // TODO [HSM] just return a new CombinedScopeView with forked scope?
-    return getDefaultWriteScope().clone();
+    return new CombinedScopeView(globalScope, isolationScope.clone(), scope.clone());
   }
 
   @Override
@@ -454,7 +455,6 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull ISentryClient getClient() {
-    // TODO [HSM] checking for noop here doesn't allow disabling via client, is that ok?
     final @Nullable ISentryClient current = scope.getClient();
     if (!(current instanceof NoOpSentryClient)) {
       return current;

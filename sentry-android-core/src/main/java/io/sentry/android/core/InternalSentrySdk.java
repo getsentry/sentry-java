@@ -9,6 +9,7 @@ import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
@@ -44,9 +45,9 @@ public final class InternalSentrySdk {
   @Nullable
   public static IScope getCurrentScope() {
     final @NotNull AtomicReference<IScope> scopeRef = new AtomicReference<>();
-    // TODO [HSM] should this retrieve combined scope?
     ScopesAdapter.getInstance()
         .configureScope(
+            ScopeType.COMBINED,
             scope -> {
               scopeRef.set(scope.clone());
             });
