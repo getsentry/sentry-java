@@ -210,6 +210,9 @@ public final class io/sentry/CheckInStatus : java/lang/Enum {
 
 public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts {
 	public fun <init> (Lio/sentry/protocol/Contexts;Lio/sentry/protocol/Contexts;Lio/sentry/protocol/Contexts;Lio/sentry/ScopeType;)V
+	public fun containsKey (Ljava/lang/Object;)Z
+	public fun entrySet ()Ljava/util/Set;
+	public fun get (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun getApp ()Lio/sentry/protocol/App;
 	public fun getBrowser ()Lio/sentry/protocol/Browser;
 	public fun getDevice ()Lio/sentry/protocol/Device;
@@ -217,7 +220,12 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getResponse ()Lio/sentry/protocol/Response;
 	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
+	public fun getSize ()I
 	public fun getTrace ()Lio/sentry/SpanContext;
+	public fun isEmpty ()Z
+	public fun keys ()Ljava/util/Enumeration;
+	public fun put (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun remove (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
@@ -227,6 +235,7 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun setResponse (Lio/sentry/protocol/Response;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun size ()I
 	public fun withResponse (Lio/sentry/util/HintUtils$SentryConsumer;)V
 }
 
@@ -4162,9 +4171,13 @@ public final class io/sentry/protocol/Browser$JsonKeys {
 	public fun <init> ()V
 }
 
-public class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap, io/sentry/JsonSerializable {
+public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
+	public fun containsKey (Ljava/lang/Object;)Z
+	public fun entrySet ()Ljava/util/Set;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun get (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun getApp ()Lio/sentry/protocol/App;
 	public fun getBrowser ()Lio/sentry/protocol/Browser;
 	public fun getDevice ()Lio/sentry/protocol/Device;
@@ -4172,8 +4185,17 @@ public class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMa
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getResponse ()Lio/sentry/protocol/Response;
 	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
+	public fun getSize ()I
 	public fun getTrace ()Lio/sentry/SpanContext;
+	public fun hashCode ()I
+	public fun isEmpty ()Z
+	public fun keys ()Ljava/util/Enumeration;
+	public fun put (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun putAll (Lio/sentry/protocol/Contexts;)V
+	public fun putAll (Ljava/util/Map;)V
+	public fun remove (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
@@ -4182,6 +4204,7 @@ public class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMa
 	public fun setResponse (Lio/sentry/protocol/Response;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun size ()I
 	public fun withResponse (Lio/sentry/util/HintUtils$SentryConsumer;)V
 }
 
