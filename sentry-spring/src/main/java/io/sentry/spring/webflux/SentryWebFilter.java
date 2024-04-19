@@ -81,7 +81,7 @@ public final class SentryWebFilter implements WebFilter {
               if (transaction != null) {
                 finishTransaction(serverWebExchange, transaction);
               }
-              requestHub.popScope();
+              requestHub.popScope(); // TODO don't
               // TODO token based cleanup instead?
               Sentry.setCurrentScopes(NoOpScopes.getInstance());
             })
@@ -96,7 +96,7 @@ public final class SentryWebFilter implements WebFilter {
             () -> {
               serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
               Sentry.setCurrentScopes(requestHub);
-              requestHub.pushScope();
+              requestHub.pushScope(); // TODO don't
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
               final Hint hint = new Hint();

@@ -252,10 +252,10 @@ class SentryWebFluxTracingFilterTest {
             verify(fixture.scopes, times(3)).isEnabled
             verify(fixture.scopes, times(2)).options
             verify(fixture.scopes).continueTrace(anyOrNull(), anyOrNull())
-            verify(fixture.scopes).pushScope()
+            verify(fixture.scopes).pushScope() // TODO don't
             verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), any<Hint>())
             verify(fixture.scopes).configureScope(any<ScopeCallback>())
-            verify(fixture.scopes).popScope()
+            verify(fixture.scopes).popScope() // TODO don't
             verifyNoMoreInteractions(fixture.scopes)
         }
     }

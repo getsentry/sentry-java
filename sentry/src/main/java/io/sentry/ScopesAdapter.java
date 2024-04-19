@@ -150,8 +150,8 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void pushScope() {
-    Sentry.pushScope();
+  public @NotNull ISentryLifecycleToken pushScope() {
+    return Sentry.pushScope();
   }
 
   @Override

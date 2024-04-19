@@ -306,7 +306,8 @@ public interface IScopes {
   SentryId getLastEventId();
 
   /** Pushes a new scope while inheriting the current scope's data. */
-  void pushScope();
+  @NotNull
+  ISentryLifecycleToken pushScope();
 
   /** Removes the first scope */
   void popScope();

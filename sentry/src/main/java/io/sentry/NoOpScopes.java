@@ -122,7 +122,9 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
-  public void pushScope() {}
+  public @NotNull ISentryLifecycleToken pushScope() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
 
   @Override
   public void popScope() {}

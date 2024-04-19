@@ -813,12 +813,13 @@ public final class Sentry {
   }
 
   /** Pushes a new scope while inheriting the current scope's data. */
-  public static void pushScope() {
+  public static @NotNull ISentryLifecycleToken pushScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
       // TODO this might have to behave differently from Scopes.pushScope
-      getCurrentScopes().pushScope();
+      return getCurrentScopes().pushScope();
     }
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
   /** Removes the first scope */
