@@ -43,8 +43,7 @@ public final class Sentry {
 
   private Sentry() {}
 
-  /** Holds Hubs per thread or only mainScopes if globalHubMode is enabled. */
-  private static final @NotNull ThreadLocal<IScopes> currentScopes = new ThreadLocal<>();
+  private static volatile @NotNull IScopesStorage scopesStorage = new DefaultScopesStorage();
 
   /** The Main Hub or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes mainScopes = NoOpScopes.getInstance();
@@ -83,13 +82,17 @@ public final class Sentry {
     if (globalHubMode) {
       return mainScopes;
     }
-    IScopes hub = currentScopes.get();
-    if (hub == null || hub.isNoOp()) {
+    IScopes scopes = getScopesStorage().get();
+    if (scopes == null || scopes.isNoOp()) {
       // TODO fork instead
-      hub = mainScopes.clone();
-      currentScopes.set(hub);
+      scopes = mainScopes.clone();
+      getScopesStorage().set(scopes);
     }
-    return hub;
+    return scopes;
+  }
+
+  private static @NotNull IScopesStorage getScopesStorage() {
+    return scopesStorage;
   }
 
   /**
@@ -110,14 +113,15 @@ public final class Sentry {
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({"deprecation", "InlineMeSuggester"})
   public static void setCurrentHub(final @NotNull IHub hub) {
-    currentScopes.set(hub);
+    setCurrentScopes(hub);
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  public static void setCurrentScopes(final @NotNull IScopes scopes) {
-    currentScopes.set(scopes);
+  public static @NotNull ISentryLifecycleToken setCurrentScopes(final @NotNull IScopes scopes) {
+    return getScopesStorage().set(scopes);
+  }
   }
 
   /**
@@ -253,14 +257,18 @@ public final class Sentry {
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
 
-    final IScopes hub = getCurrentScopes();
+    final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
-    final IScope rootIsolationScope = new Scope(options);
-    mainScopes = new Scopes(rootScope, rootIsolationScope, options, "Sentry.init");
+    // TODO should use separate isolation scope:
+    //    final IScope rootIsolationScope = new Scope(options);
+    // TODO should be:
+    //    getGlobalScope().bindClient(new SentryClient(options));
+    rootScope.bindClient(new SentryClient(options));
+    mainScopes = new Scopes(rootScope, rootScope, options, "Sentry.init");
 
-    currentScopes.set(mainScopes);
+    getScopesStorage().set(mainScopes);
 
-    hub.close(true);
+    scopes.close(true);
 
     // If the executorService passed in the init is the same that was previously closed, we have to
     // set a new one
@@ -508,7 +516,7 @@ public final class Sentry {
     final IScopes scopes = getCurrentScopes();
     mainScopes = NoOpScopes.getInstance();
     // remove thread local to avoid memory leak
-    currentScopes.remove();
+    getScopesStorage().close();
     scopes.close(false);
   }
 
