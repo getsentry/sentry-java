@@ -129,6 +129,11 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull ISentryLifecycleToken pushIsolationScope() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
   public void popScope() {}
 
   @Override
@@ -153,6 +158,31 @@ public final class NoOpHub implements IHub {
   @Override
   public @NotNull IHub clone() {
     return instance;
+  }
+
+  @Override
+  public @NotNull IScopes forkedScopes(@NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
+  public @NotNull IScopes forkedCurrentScope(@NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
+  public @NotNull IScope getScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  public @NotNull IScope getIsolationScope() {
+    return NoOpScope.getInstance();
   }
 
   @Override

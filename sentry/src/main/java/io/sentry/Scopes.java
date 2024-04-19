@@ -72,12 +72,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return creator;
   }
 
-  // TODO add to IScopes interface
+  @Override
   public @NotNull IScope getScope() {
     return scope;
   }
 
-  // TODO add to IScopes interface
+  @Override
   public @NotNull IScope getIsolationScope() {
     return isolationScope;
   }
@@ -105,24 +105,15 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return false;
   }
 
-  // TODO add to IScopes interface
-  public @NotNull Scopes forkedScopes(final @NotNull String creator) {
+  @Override
+  public @NotNull IScopes forkedScopes(final @NotNull String creator) {
     return new Scopes(scope.clone(), isolationScope.clone(), this, options, creator);
   }
 
-  // TODO add to IScopes interface
-  public @NotNull Scopes forkedCurrentScope(final @NotNull String creator) {
-    IScope clone = scope.clone();
-    // TODO should use isolation scope
-    //    return new Scopes(clone, isolationScope, this, options, creator);
-    return new Scopes(clone, clone, this, options, creator);
+  @Override
+  public @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
+    return new Scopes(scope.clone(), isolationScope, this, options, creator);
   }
-
-  //  // TODO in Sentry.init?
-  //  public static Scopes forkedRoots(final @NotNull SentryOptions options, final @NotNull String
-  // creator) {
-  //    return new Scopes(ROOT_SCOPE.clone(), ROOT_ISOLATION_SCOPE.clone(), options, creator);
-  //  }
 
   // TODO always read from root scope?
   @Override
@@ -602,12 +593,28 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
       return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
     } else {
-      Scopes scopes = this.forkedCurrentScope("pushScope");
+      final @NotNull IScopes scopes = this.forkedCurrentScope("pushScope");
       return scopes.makeCurrent();
     }
   }
 
-  public ISentryLifecycleToken makeCurrent() {
+  @Override
+  public ISentryLifecycleToken pushIsolationScope() {
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'pushIsolationScope' call is a no-op.");
+      return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    } else {
+      final @NotNull IScopes scopes = this.forkedScopes("pushIsolationScope");
+      return scopes.makeCurrent();
+    }
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
     return Sentry.setCurrentScopes(this);
   }
 
@@ -638,7 +645,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       }
 
     } else {
-      Scopes forkedScopes = forkedCurrentScope("withScope");
+      final @NotNull IScopes forkedScopes = forkedCurrentScope("withScope");
       // TODO should forkedScopes be made current inside callback?
       // TODO forkedScopes.makeCurrent()?
       try {

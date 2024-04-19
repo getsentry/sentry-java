@@ -159,6 +159,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public @NotNull ISentryLifecycleToken pushIsolationScope() {
+    return Sentry.pushIsolationScope();
+  }
+
+  @Override
   public void popScope() {
     Sentry.popScope();
   }
@@ -191,6 +196,32 @@ public final class HubAdapter implements IHub {
   @Override
   public @NotNull IHub clone() {
     return Sentry.getCurrentScopes().clone();
+  }
+
+  @Override
+  public @NotNull IScopes forkedScopes(@NotNull String creator) {
+    return Sentry.forkedScopes(creator);
+  }
+
+  @Override
+  public @NotNull IScopes forkedCurrentScope(@NotNull String creator) {
+    return Sentry.forkedCurrentScope(creator);
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    // TODO this wouldn't do anything since it replaced the current with the same Scopes
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
+  public @NotNull IScope getScope() {
+    return Sentry.getCurrentScopes().getScope();
+  }
+
+  @Override
+  public @NotNull IScope getIsolationScope() {
+    return Sentry.getCurrentScopes().getIsolationScope();
   }
 
   @Override
