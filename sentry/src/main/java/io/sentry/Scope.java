@@ -7,13 +7,18 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.Pair;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -85,6 +90,11 @@ public final class Scope implements IScope {
 
   private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
 
+  // TODO intended only for global scope
+  // TODO test for memory leak
+  private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
+      Collections.synchronizedMap(new WeakHashMap<>());
+
   /**
    * Scope's ctor
    *
@@ -103,6 +113,7 @@ public final class Scope implements IScope {
     this.session = scope.session;
     this.options = scope.options;
     this.level = scope.level;
+    this.client = scope.client;
     // TODO should we do this? didn't do it for Hub
     this.lastEventId = scope.getLastEventId();
 
@@ -964,13 +975,52 @@ public final class Scope implements IScope {
   }
 
   @Override
-  public void setClient(@NotNull ISentryClient client) {
+  public void bindClient(@NotNull ISentryClient client) {
     this.client = client;
   }
 
   @Override
   public @NotNull ISentryClient getClient() {
     return client;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public void assignTraceContext(final @NotNull SentryEvent event) {
+    if (options.isTracingEnabled() && event.getThrowable() != null) {
+      final Pair<WeakReference<ISpan>, String> pair =
+          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
+      if (pair != null) {
+        final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+        if (event.getContexts().getTrace() == null && spanWeakRef != null) {
+          final ISpan span = spanWeakRef.get();
+          if (span != null) {
+            event.getContexts().setTrace(span.getSpanContext());
+          }
+        }
+        final String transactionName = pair.getSecond();
+        if (event.getTransaction() == null && transactionName != null) {
+          event.setTransaction(transactionName);
+        }
+      }
+    }
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    Objects.requireNonNull(span, "span is required");
+    Objects.requireNonNull(transactionName, "transactionName is required");
+    // to match any cause, span context is always attached to the root cause of the exception
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
+    // the most inner span should be assigned to a throwable
+    if (!throwableToSpan.containsKey(rootCause)) {
+      throwableToSpan.put(rootCause, new Pair<>(new WeakReference<>(span), transactionName));
+    }
   }
 
   /** The IWithTransaction callback */

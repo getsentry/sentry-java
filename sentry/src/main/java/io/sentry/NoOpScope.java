@@ -256,10 +256,17 @@ public final class NoOpScope implements IScope {
   }
 
   @Override
-  public void setClient(@NotNull ISentryClient client) {}
+  public void bindClient(@NotNull ISentryClient client) {}
 
   @Override
   public @NotNull ISentryClient getClient() {
     return NoOpSentryClient.getInstance();
   }
+
+  @Override
+  public void assignTraceContext(@NotNull SentryEvent event) {}
+
+  @Override
+  public void setSpanContext(
+      @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName) {}
 }
