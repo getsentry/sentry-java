@@ -197,7 +197,7 @@ internal abstract class BaseCaptureStrategy(
                             }
                             recordingPayload += RRWebSpanEvent().apply {
                                 timestamp = breadcrumb.timestamp.time
-                                op = "resource.xhr" // TODO: should be 'http' when supported on FE
+                                op = "resource.http"
                                 description = breadcrumb.data["url"] as String
                                 startTimestamp =
                                     (breadcrumb.data["start_timestamp"] as Long) / 1000.0
