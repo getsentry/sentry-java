@@ -663,6 +663,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @Override
   @SuppressWarnings("JavaUtilDate")
   public int compareTo(@NotNull Breadcrumb o) {
+    // TODO also use nano time if equal
     return timestamp.compareTo(o.timestamp);
   }
 

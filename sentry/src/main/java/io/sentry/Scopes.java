@@ -363,6 +363,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private IScope getCombinedScopeView() {
+    // TODO create in ctor?
     return new CombinedScopeView(getGlobalScope(), isolationScope, scope);
   }
 
@@ -428,6 +429,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private IScope getSpecificScope(final @Nullable ScopeType scopeType) {
+    // TODO extract and reuse
     if (scopeType != null) {
       switch (scopeType) {
         case CURRENT:
