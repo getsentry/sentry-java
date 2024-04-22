@@ -58,6 +58,7 @@ public final class SentryWrapper {
    * @return the wrapped {@link Supplier}
    * @param <U> - the result type of the {@link Supplier}
    */
+  @SuppressWarnings("deprecation")
   public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
     final IScopes newScopes = Sentry.forkedCurrentScope("wrapSupplier");
 
