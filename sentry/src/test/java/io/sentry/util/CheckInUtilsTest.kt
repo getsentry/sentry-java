@@ -3,6 +3,7 @@ package io.sentry.util
 import io.sentry.CheckInStatus
 import io.sentry.HubScopesWrapper
 import io.sentry.IScopes
+import io.sentry.ISentryLifecycleToken
 import io.sentry.MonitorConfig
 import io.sentry.MonitorSchedule
 import io.sentry.MonitorScheduleUnit
@@ -58,16 +59,21 @@ class CheckInUtilsTest {
     fun `sends check-in for wrapped supplier`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
+            val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
+                scopes.pushIsolationScope()
+                lifecycleToken
+            }
             whenever(scopes.options).thenReturn(SentryOptions())
             val returnValue = CheckInUtils.withCheckIn("monitor-1") {
                 return@withCheckIn "test1"
             }
 
             assertEquals("test1", returnValue)
-            inOrder(scopes) {
-                verify(scopes).pushScope()
+            inOrder(scopes, lifecycleToken) {
+                verify(scopes).pushIsolationScope()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -81,7 +87,7 @@ class CheckInUtilsTest {
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
                     }
                 )
-                verify(scopes).popScope()
+                verify(lifecycleToken).close()
             }
         }
     }
@@ -90,8 +96,13 @@ class CheckInUtilsTest {
     fun `sends check-in for wrapped supplier with exception`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
+            val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
+                scopes.pushIsolationScope()
+                lifecycleToken
+            }
 
             try {
                 CheckInUtils.withCheckIn("monitor-1") {
@@ -102,8 +113,8 @@ class CheckInUtilsTest {
                 assertEquals("thrown on purpose", e.message)
             }
 
-            inOrder(scopes) {
-                verify(scopes).pushScope()
+            inOrder(scopes, lifecycleToken) {
+                verify(scopes).pushIsolationScope()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -117,7 +128,7 @@ class CheckInUtilsTest {
                         assertEquals(CheckInStatus.ERROR.apiName(), it.status)
                     }
                 )
-                verify(scopes).popScope()
+                verify(lifecycleToken).close()
             }
         }
     }
@@ -126,8 +137,13 @@ class CheckInUtilsTest {
     fun `sends check-in for wrapped supplier with upsert`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
+            val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
+                scopes.pushIsolationScope()
+                lifecycleToken
+            }
             whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
             val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
@@ -135,8 +151,8 @@ class CheckInUtilsTest {
             }
 
             assertEquals("test1", returnValue)
-            inOrder(scopes) {
-                verify(scopes).pushScope()
+            inOrder(scopes, lifecycleToken) {
+                verify(scopes).pushIsolationScope()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -151,7 +167,7 @@ class CheckInUtilsTest {
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
                     }
                 )
-                verify(scopes).popScope()
+                verify(lifecycleToken).close()
             }
         }
     }
@@ -160,8 +176,13 @@ class CheckInUtilsTest {
     fun `sends check-in for wrapped supplier with upsert and thresholds`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
+            val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
             sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
+            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
+                scopes.pushIsolationScope()
+                lifecycleToken
+            }
             whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
                 failureIssueThreshold = 10
@@ -172,8 +193,8 @@ class CheckInUtilsTest {
             }
 
             assertEquals("test1", returnValue)
-            inOrder(scopes) {
-                verify(scopes).pushScope()
+            inOrder(scopes, lifecycleToken) {
+                verify(scopes).pushIsolationScope()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -188,7 +209,7 @@ class CheckInUtilsTest {
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
                     }
                 )
-                verify(scopes).popScope()
+                verify(lifecycleToken).close()
             }
         }
     }

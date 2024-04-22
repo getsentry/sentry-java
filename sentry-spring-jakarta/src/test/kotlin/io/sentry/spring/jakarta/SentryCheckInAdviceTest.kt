@@ -3,6 +3,7 @@ package io.sentry.spring.jakarta
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.IScopes
+import io.sentry.ISentryLifecycleToken
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
@@ -56,10 +57,13 @@ class SentryCheckInAdviceTest {
     @Autowired
     lateinit var scopes: IScopes
 
+    val lifecycleToken = mock<ISentryLifecycleToken>()
+
     @BeforeTest
     fun setup() {
         reset(scopes)
         whenever(scopes.options).thenReturn(SentryOptions())
+        whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
     }
 
     @Test
@@ -79,10 +83,10 @@ class SentryCheckInAdviceTest {
         assertEquals("monitor_slug_1", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes, times(2)).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Test
@@ -103,10 +107,10 @@ class SentryCheckInAdviceTest {
         assertEquals("monitor_slug_1e", doneCheckIn.monitorSlug)
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes, times(2)).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Test
@@ -123,10 +127,10 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Test
@@ -144,10 +148,10 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Test
@@ -178,10 +182,10 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Test
@@ -198,10 +202,10 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Test
@@ -218,10 +222,10 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
         assertNotNull(doneCheckIn.duration)
 
-        val order = inOrder(scopes)
-        order.verify(scopes).pushScope()
+        val order = inOrder(scopes, lifecycleToken)
+        order.verify(scopes).pushIsolationScope()
         order.verify(scopes).captureCheckIn(any())
-        order.verify(scopes).popScope()
+        order.verify(lifecycleToken).close()
     }
 
     @Configuration

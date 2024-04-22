@@ -4,10 +4,12 @@ import io.sentry.BuildConfig;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LifecycleHelper;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -23,6 +25,7 @@ public final class SentryJobListener implements JobListener {
 
   public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
   public static final String SENTRY_SLUG_KEY = "sentry-slug";
+  public static final String SENTRY_LIFECYCLE_TOKEN_KEY = "sentry-lifecycle";
 
   private final @NotNull IScopes scopes;
 
@@ -49,13 +52,14 @@ public final class SentryJobListener implements JobListener {
       if (maybeSlug == null) {
         return;
       }
-      scopes.pushScope();
+      final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
       TracingUtils.startNewTrace(scopes);
       final @NotNull String slug = maybeSlug;
       final @NotNull CheckIn checkIn = new CheckIn(slug, CheckInStatus.IN_PROGRESS);
       final @NotNull SentryId checkInId = scopes.captureCheckIn(checkIn);
       context.put(SENTRY_CHECK_IN_ID_KEY, checkInId);
       context.put(SENTRY_SLUG_KEY, slug);
+      context.put(SENTRY_LIFECYCLE_TOKEN_KEY, lifecycleToken);
     } catch (Throwable t) {
       scopes
           .getOptions()
@@ -103,7 +107,7 @@ public final class SentryJobListener implements JobListener {
           .getLogger()
           .log(SentryLevel.ERROR, "Unable to capture check-in in jobWasExecuted.", t);
     } finally {
-      scopes.popScope();
+      LifecycleHelper.close(context.get(SENTRY_LIFECYCLE_TOKEN_KEY));
     }
   }
 }
