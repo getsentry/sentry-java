@@ -1,5 +1,6 @@
 package io.sentry.kotlin
 
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.joinAll
@@ -38,11 +39,40 @@ class SentryContextTest {
             Sentry.setTag("c2", "c2value")
             assertEquals("c2value", getTag("c2"))
             assertEquals("parentValue", getTag("parent"))
-            assertNull(getTag("c1"))
+            assertNotNull(getTag("c1"))
         }
         listOf(c1, c2).joinAll()
-        assertNull(getTag("c1"))
-        assertNull(getTag("c2"))
+        assertNotNull(getTag("parent"))
+        assertNotNull(getTag("c1"))
+        assertNotNull(getTag("c2"))
+        return@runBlocking
+    }
+
+    @Test
+    fun testContextIsNotPassedByDefaultBetweenCoroutinesCurrentScope() = runBlocking {
+        Sentry.configureScope(ScopeType.CURRENT) { scope ->
+            scope.setTag("parent", "parentValue")
+        }
+        val c1 = launch(SentryContext()) {
+            Sentry.configureScope(ScopeType.CURRENT) { scope ->
+                scope.setTag("c1", "c1value")
+            }
+            assertEquals("c1value", getTag("c1", ScopeType.CURRENT))
+            assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+            assertNull(getTag("c2", ScopeType.CURRENT))
+        }
+        val c2 = launch(SentryContext()) {
+            Sentry.configureScope(ScopeType.CURRENT) { scope ->
+                scope.setTag("c2", "c2value")
+            }
+            assertEquals("c2value", getTag("c2", ScopeType.CURRENT))
+            assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+            assertNull(getTag("c1", ScopeType.CURRENT))
+        }
+        listOf(c1, c2).joinAll()
+        assertNotNull(getTag("parent", ScopeType.CURRENT))
+        assertNull(getTag("c1", ScopeType.CURRENT))
+        assertNull(getTag("c2", ScopeType.CURRENT))
     }
 
     @Test
@@ -84,7 +114,7 @@ class SentryContextTest {
     }
 
     @Test
-    fun testContextIsClonedWhenPassedToChild() = runBlocking {
+    fun testContextIsClonedWhenPassedToChildCurrentScope() = runBlocking {
         Sentry.setTag("parent", "parentValue")
         launch(SentryContext()) {
             Sentry.setTag("c1", "c1value")
@@ -102,10 +132,44 @@ class SentryContextTest {
             c2.join()
 
             assertNotNull(getTag("c1"))
-            assertNull(getTag("c2"))
+            assertNotNull(getTag("c2"))
+        }.join()
+        assertNotNull(getTag("parent"))
+        assertNotNull(getTag("c1"))
+        assertNotNull(getTag("c2"))
+        return@runBlocking
+    }
+
+    @Test
+    fun testContextIsClonedWhenPassedToChild() = runBlocking {
+        Sentry.configureScope(ScopeType.CURRENT) { scope ->
+            scope.setTag("parent", "parentValue")
         }
-        assertNull(getTag("c1"))
-        assertNull(getTag("c2"))
+        launch(SentryContext()) {
+            Sentry.configureScope(ScopeType.CURRENT) { scope ->
+                scope.setTag("c1", "c1value")
+            }
+            assertEquals("c1value", getTag("c1", ScopeType.CURRENT))
+            assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+            assertNull(getTag("c2", ScopeType.CURRENT))
+
+            val c2 = launch() {
+                Sentry.configureScope(ScopeType.CURRENT) { scope ->
+                    scope.setTag("c2", "c2value")
+                }
+                assertEquals("c2value", getTag("c2", ScopeType.CURRENT))
+                assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+                assertNotNull(getTag("c1", ScopeType.CURRENT))
+            }
+
+            c2.join()
+
+            assertNotNull(getTag("c1", ScopeType.CURRENT))
+            assertNull(getTag("c2", ScopeType.CURRENT))
+        }.join()
+        assertNotNull(getTag("parent", ScopeType.CURRENT))
+        assertNull(getTag("c1", ScopeType.CURRENT))
+        assertNull(getTag("c2", ScopeType.CURRENT))
     }
 
     @Test
@@ -120,7 +184,7 @@ class SentryContextTest {
             val c2 = launch(
                 SentryContext(
                     Sentry.getCurrentScopes().clone().also {
-                        it.setTag("cloned", "clonedValue")
+                        Sentry.setTag("cloned", "clonedValue")
                     }
                 )
             ) {
@@ -134,12 +198,56 @@ class SentryContextTest {
             c2.join()
 
             assertNotNull(getTag("c1"))
-            assertNull(getTag("c2"))
-            assertNull(getTag("cloned"))
+            assertNotNull(getTag("c2"))
+            assertNotNull(getTag("cloned"))
+        }.join()
+
+        assertNotNull(getTag("c1"))
+        assertNotNull(getTag("c2"))
+        assertNotNull(getTag("cloned"))
+        return@runBlocking
+    }
+
+    @Test
+    fun testExplicitlyPassedContextOverridesPropagatedContextCurrentScope() = runBlocking {
+        Sentry.configureScope(ScopeType.CURRENT) { scope ->
+            scope.setTag("parent", "parentValue")
         }
-        assertNull(getTag("c1"))
-        assertNull(getTag("c2"))
-        assertNull(getTag("cloned"))
+        launch(SentryContext()) {
+            Sentry.configureScope(ScopeType.CURRENT) { scope ->
+                scope.setTag("c1", "c1value")
+            }
+            assertEquals("c1value", getTag("c1", ScopeType.CURRENT))
+            assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+            assertNull(getTag("c2", ScopeType.CURRENT))
+
+            val c2 = launch(
+                SentryContext(
+                    Sentry.getCurrentScopes().clone().also {
+                        it.configureScope(ScopeType.CURRENT) { scope ->
+                            scope.setTag("cloned", "clonedValue")
+                        }
+                    }
+                )
+            ) {
+                Sentry.configureScope(ScopeType.CURRENT) { scope ->
+                    scope.setTag("c2", "c2value")
+                }
+                assertEquals("c2value", getTag("c2", ScopeType.CURRENT))
+                assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+                assertNotNull(getTag("c1", ScopeType.CURRENT))
+                assertNotNull(getTag("cloned", ScopeType.CURRENT))
+            }
+
+            c2.join()
+
+            assertNotNull(getTag("c1", ScopeType.CURRENT))
+            assertNull(getTag("c2", ScopeType.CURRENT))
+            assertNull(getTag("cloned", ScopeType.CURRENT))
+        }
+        assertNull(getTag("c1", ScopeType.CURRENT))
+        assertNull(getTag("c2", ScopeType.CURRENT))
+        assertNull(getTag("cloned", ScopeType.CURRENT))
     }
 
     @Test
@@ -167,9 +275,9 @@ class SentryContextTest {
         assertEquals(initialContextElement, mergedContextElement)
     }
 
-    private fun getTag(tag: String): String? {
+    private fun getTag(tag: String, scopeType: ScopeType = ScopeType.ISOLATION): String? {
         var value: String? = null
-        Sentry.configureScope {
+        Sentry.configureScope(scopeType) {
             value = it.tags[tag]
         }
         return value

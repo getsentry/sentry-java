@@ -27,18 +27,23 @@ public final class SentryWrapper {
    * @return the wrapped {@link Callable}
    * @param <U> - the result type of the {@link Callable}
    */
-  @SuppressWarnings("deprecation")
+  // TODO adapt javadoc
   public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
-    // TODO replace with forking
-    final IScopes newHub = Sentry.getCurrentScopes().clone();
+    final IScopes newScopes = Sentry.getCurrentScopes().forkedCurrentScope("wrapCallable");
 
     return () -> {
-      final IScopes oldState = Sentry.getCurrentScopes();
-      Sentry.setCurrentScopes(newHub);
-      try {
+      try (ISentryLifecycleToken ignored = newScopes.makeCurrent()) {
         return callable.call();
-      } finally {
-        Sentry.setCurrentScopes(oldState);
+      }
+    };
+  }
+
+  public static <U> Callable<U> wrapCallableIsolated(final @NotNull Callable<U> callable) {
+    final IScopes newScopes = Sentry.getCurrentScopes().forkedScopes("wrapCallable");
+
+    return () -> {
+      try (ISentryLifecycleToken ignored = newScopes.makeCurrent()) {
+        return callable.call();
       }
     };
   }
@@ -55,16 +60,21 @@ public final class SentryWrapper {
    */
   @SuppressWarnings("deprecation")
   public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
-    // TODO replace with forking
-    final IScopes newHub = Sentry.getCurrentScopes().clone();
+    final IScopes newScopes = Sentry.forkedCurrentScope("wrapSupplier");
 
     return () -> {
-      final IScopes oldState = Sentry.getCurrentScopes();
-      Sentry.setCurrentScopes(newHub);
-      try {
+      try (ISentryLifecycleToken ignore = newScopes.makeCurrent()) {
         return supplier.get();
-      } finally {
-        Sentry.setCurrentScopes(oldState);
+      }
+    };
+  }
+
+  public static <U> Supplier<U> wrapSupplierIsolated(final @NotNull Supplier<U> supplier) {
+    final IScopes newScopes = Sentry.forkedScopes("wrapSupplier");
+
+    return () -> {
+      try (ISentryLifecycleToken ignore = newScopes.makeCurrent()) {
+        return supplier.get();
       }
     };
   }
