@@ -166,7 +166,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
-    Sentry.getGlobalScope().assignTraceContext(event);
+    getCombinedScopeView().assignTraceContext(event);
   }
 
   private IScope buildLocalScope(
@@ -363,8 +363,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private IScope getCombinedScopeView() {
-    // TODO combine global, isolation and current scope
-    return scope;
+    return new CombinedScopeView(getGlobalScope(), isolationScope, scope);
   }
 
   @Override
@@ -424,7 +423,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else if (breadcrumb == null) {
       options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
-      getDefaultWriteScope().addBreadcrumb(breadcrumb, hint);
+      getCombinedScopeView().addBreadcrumb(breadcrumb, hint);
     }
   }
 
@@ -467,7 +466,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setLevel' call is a no-op.");
     } else {
-      getDefaultWriteScope().setLevel(level);
+      getCombinedScopeView().setLevel(level);
     }
   }
 
@@ -480,7 +479,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               SentryLevel.WARNING,
               "Instance is disabled and this 'setTransaction' call is a no-op.");
     } else if (transaction != null) {
-      getDefaultWriteScope().setTransaction(transaction);
+      getCombinedScopeView().setTransaction(transaction);
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
@@ -493,7 +492,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
     } else {
-      getDefaultWriteScope().setUser(user);
+      getCombinedScopeView().setUser(user);
     }
   }
 
@@ -508,7 +507,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else if (fingerprint == null) {
       options.getLogger().log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
     } else {
-      getDefaultWriteScope().setFingerprint(fingerprint);
+      getCombinedScopeView().setFingerprint(fingerprint);
     }
   }
 
@@ -521,7 +520,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               SentryLevel.WARNING,
               "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
     } else {
-      getDefaultWriteScope().clearBreadcrumbs();
+      getCombinedScopeView().clearBreadcrumbs();
     }
   }
 
@@ -534,7 +533,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else if (key == null || value == null) {
       options.getLogger().log(SentryLevel.WARNING, "setTag called with null parameter.");
     } else {
-      getDefaultWriteScope().setTag(key, value);
+      getCombinedScopeView().setTag(key, value);
     }
   }
 
@@ -547,7 +546,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else if (key == null) {
       options.getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
     } else {
-      getDefaultWriteScope().removeTag(key);
+      getCombinedScopeView().removeTag(key);
     }
   }
 
@@ -560,7 +559,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else if (key == null || value == null) {
       options.getLogger().log(SentryLevel.WARNING, "setExtra called with null parameter.");
     } else {
-      getDefaultWriteScope().setExtra(key, value);
+      getCombinedScopeView().setExtra(key, value);
     }
   }
 
@@ -573,14 +572,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else if (key == null) {
       options.getLogger().log(SentryLevel.WARNING, "removeExtra called with null parameter.");
     } else {
-      getDefaultWriteScope().removeExtra(key);
+      getCombinedScopeView().removeExtra(key);
     }
   }
 
   private void updateLastEventId(final @NotNull SentryId lastEventId) {
-    scope.setLastEventId(lastEventId);
-    isolationScope.setLastEventId(lastEventId);
-    getGlobalScope().setLastEventId(lastEventId);
+    getCombinedScopeView().setLastEventId(lastEventId);
   }
 
   // TODO add to IScopes interface
@@ -592,14 +589,9 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   @Override
   public @NotNull SentryId getLastEventId() {
-    // TODO read all scopes here / read default scope?
-    // returning scope.lastEventId isn't ideal because changed to child scope are not stored in
-    // there
-    return getGlobalScope().getLastEventId();
+    return getCombinedScopeView().getLastEventId();
   }
 
-  // TODO needs to be deprecated because there's no more stack
-  // TODO needs to return a lifecycle token
   @Override
   public ISentryLifecycleToken pushScope() {
     if (!isEnabled()) {
@@ -698,10 +690,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else {
       if (client != null) {
         options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
-        getDefaultWriteScope().bindClient(client);
+        getCombinedScopeView().bindClient(client);
       } else {
         options.getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
-        getDefaultWriteScope().bindClient(NoOpSentryClient.getInstance());
+        getCombinedScopeView().bindClient(NoOpSentryClient.getInstance());
       }
     }
   }
@@ -879,7 +871,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,
       final @NotNull String transactionName) {
-    Sentry.getGlobalScope().setSpanContext(throwable, span, transactionName);
+    getCombinedScopeView().setSpanContext(throwable, span, transactionName);
   }
 
   //  // TODO this seems unused
@@ -908,7 +900,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      span = getScope().getSpan();
+      span = getCombinedScopeView().getSpan();
     }
     return span;
   }
@@ -924,7 +916,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               SentryLevel.WARNING,
               "Instance is disabled and this 'getTransaction' call is a no-op.");
     } else {
-      span = getScope().getTransaction();
+      span = getCombinedScopeView().getTransaction();
     }
     return span;
   }

@@ -121,7 +121,7 @@ public final class Sentry {
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
-  @SuppressWarnings({"deprecation"})
+  @SuppressWarnings({"deprecation", "InlineMeSuggester"})
   public static @NotNull ISentryLifecycleToken setCurrentHub(final @NotNull IHub hub) {
     return setCurrentScopes(hub);
   }
