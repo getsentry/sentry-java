@@ -16,6 +16,7 @@ import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
+import io.sentry.protocol.App
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
@@ -27,6 +28,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -462,6 +464,66 @@ class PerformanceAndroidEventProcessorTest {
                     it.data!!.containsKey("thread.id")
             }
         }
+    }
+
+    @Test
+    fun `does not set start_type field for txns without app start span`() {
+        // given some cold app start metrics
+        // where class loaded happened way before app start
+        setAppStart(fixture.options, coldStart = true)
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+        // usually set by DefaultAndroidEventProcessor
+        tr.contexts.setApp(App())
+
+        // when the processor attaches the app start spans
+        tr = sut.process(tr, Hint())
+
+        // start_type should not be set
+        assertNull(tr.contexts.app!!.startType)
+    }
+
+    @Test
+    fun `sets start_type field for app context`() {
+        // given some cold app start metrics
+        // where class loaded happened way before app start
+        setAppStart(fixture.options, coldStart = true)
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+        // usually set by DefaultAndroidEventProcessor
+        tr.contexts.setApp(App())
+
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(appStartSpan)
+
+        // when the processor attaches the app start spans
+        tr = sut.process(tr, Hint())
+
+        // start_type should be set
+        assertEquals(
+            "cold",
+            tr.contexts.app!!.startType
+        )
     }
 
     private fun setAppStart(options: SentryAndroidOptions, coldStart: Boolean = true) {
