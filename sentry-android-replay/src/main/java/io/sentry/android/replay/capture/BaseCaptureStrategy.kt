@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -16,6 +17,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -39,6 +41,14 @@ internal abstract class BaseCaptureStrategy(
 
     internal companion object {
         private const val TAG = "CaptureStrategy"
+        private val supportedNetworkData = setOf(
+            "status_code",
+            "method",
+            "response_content_length",
+            "request_content_length",
+            "http.response_content_length",
+            "http.request_content_length"
+        )
     }
 
     protected var cache: ReplayCache? = null
@@ -74,7 +84,8 @@ internal abstract class BaseCaptureStrategy(
             }
         }
 
-        cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId, recorderConfig)
+        cache =
+            replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId, recorderConfig)
 
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
@@ -180,7 +191,32 @@ internal abstract class BaseCaptureStrategy(
                     val breadcrumbCategory: String?
                     val breadcrumbData = mutableMapOf<String, Any?>()
                     when {
-                        breadcrumb.category == "http" -> return@forEach
+                        breadcrumb.category == "http" -> {
+                            if (!breadcrumb.isValidForRRWebSpan()) {
+                                return@forEach
+                            }
+                            recordingPayload += RRWebSpanEvent().apply {
+                                timestamp = breadcrumb.timestamp.time
+                                op = "resource.xhr" // TODO: should be 'http' when supported on FE
+                                description = breadcrumb.data["url"] as String
+                                startTimestamp =
+                                    (breadcrumb.data["start_timestamp"] as Long) / 1000.0
+                                this.endTimestamp =
+                                    (breadcrumb.data["end_timestamp"] as Long) / 1000.0
+                                for ((key, value) in breadcrumb.data) {
+                                    if (key in supportedNetworkData) {
+                                        breadcrumbData[
+                                            key
+                                                .replace("content_length", "body_size")
+                                                .substringAfter(".")
+                                                .snakeToCamelCase()
+                                        ] = value
+                                    }
+                                }
+                                data = breadcrumbData
+                            }
+                            return@forEach
+                        }
 
                         breadcrumb.category == "device.orientation" -> {
                             breadcrumbCategory = breadcrumb.category!!
@@ -208,7 +244,8 @@ internal abstract class BaseCaptureStrategy(
 
                         breadcrumb.type == "system" -> {
                             breadcrumbCategory = breadcrumb.type!!
-                            breadcrumbMessage = breadcrumb.data.entries.joinToString() as? String ?: ""
+                            breadcrumbMessage =
+                                breadcrumb.data.entries.joinToString() as? String ?: ""
                         }
 
                         else -> {
@@ -279,5 +316,16 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
         }
+    }
+
+    private fun Breadcrumb.isValidForRRWebSpan(): Boolean {
+        return !(data["url"] as? String).isNullOrEmpty() &&
+            "start_timestamp" in data &&
+            "end_timestamp" in data
+    }
+
+    private fun String.snakeToCamelCase(): String {
+        val pattern = "_[a-z]".toRegex()
+        return replace(pattern) { it.value.last().uppercase() }
     }
 }

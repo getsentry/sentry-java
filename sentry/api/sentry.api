@@ -5155,6 +5155,46 @@ public final class io/sentry/rrweb/RRWebMetaEvent$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/rrweb/RRWebSpanEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field EVENT_TAG Ljava/lang/String;
+	public fun <init> ()V
+	public fun getData ()Ljava/util/Map;
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getDescription ()Ljava/lang/String;
+	public fun getEndTimestamp ()D
+	public fun getOp ()Ljava/lang/String;
+	public fun getPayloadUnknown ()Ljava/util/Map;
+	public fun getStartTimestamp ()D
+	public fun getTag ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setDescription (Ljava/lang/String;)V
+	public fun setEndTimestamp (D)V
+	public fun setOp (Ljava/lang/String;)V
+	public fun setPayloadUnknown (Ljava/util/Map;)V
+	public fun setStartTimestamp (D)V
+	public fun setTag (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/rrweb/RRWebSpanEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebSpanEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebSpanEvent$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field DESCRIPTION Ljava/lang/String;
+	public static final field END_TIMESTAMP Ljava/lang/String;
+	public static final field OP Ljava/lang/String;
+	public static final field PAYLOAD Ljava/lang/String;
+	public static final field START_TIMESTAMP Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/rrweb/RRWebVideoEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field EVENT_TAG Ljava/lang/String;
 	public static final field REPLAY_CONTAINER Ljava/lang/String;

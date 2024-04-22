@@ -15,6 +15,7 @@ import io.sentry.okhttp.SentryOkHttpEventListener.Companion.REQUEST_HEADERS_EVEN
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_BODY_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.RESPONSE_HEADERS_EVENT
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.SECURE_CONNECT_EVENT
+import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
 import okhttp3.Request
@@ -58,6 +59,8 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         breadcrumb = Breadcrumb.http(url, method)
         breadcrumb.setData("host", host)
         breadcrumb.setData("path", encodedPath)
+        // needs this as unix timestamp for rrweb
+        breadcrumb.setData("start_timestamp", CurrentDateProvider.getInstance().currentTimeMillis)
 
         // We add the same data to the root call span
         callRootSpan?.setData("url", url)
@@ -150,6 +153,8 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
         response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
 
+        // needs this as unix timestamp for rrweb
+        breadcrumb.setData("end_timestamp", CurrentDateProvider.getInstance().currentTimeMillis)
         // We send the breadcrumb even without spans.
         hub.addBreadcrumb(breadcrumb, hint)
 

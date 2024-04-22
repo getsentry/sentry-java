@@ -1,8 +1,10 @@
 package io.sentry;
 
+import io.sentry.rrweb.RRWebBreadcrumbEvent;
 import io.sentry.rrweb.RRWebEvent;
 import io.sentry.rrweb.RRWebEventType;
 import io.sentry.rrweb.RRWebMetaEvent;
+import io.sentry.rrweb.RRWebSpanEvent;
 import io.sentry.rrweb.RRWebVideoEvent;
 import io.sentry.util.MapObjectReader;
 import io.sentry.util.Objects;
@@ -148,19 +150,33 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
                     payload.add(metaEvent);
                     break;
                   case Custom:
-                    final Map<String, Object> data =
-                        (Map<String, Object>) eventMap.getOrDefault("data", Collections.emptyMap());
-                    final String tag =
-                        (String) data.getOrDefault(RRWebEvent.JsonKeys.TAG, "default");
-                    switch (tag) {
-                      case RRWebVideoEvent.EVENT_TAG:
-                        final RRWebEvent videoEvent =
-                            new RRWebVideoEvent.Deserializer().deserialize(mapReader, logger);
-                        payload.add(videoEvent);
-                        break;
-                      default:
-                        logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
-                        break;
+                    Map<String, Object> data = (Map<String, Object>) eventMap.get("data");
+                    if (data == null) {
+                      data = Collections.emptyMap();
+                    }
+                    final String tag = (String) data.get(RRWebEvent.JsonKeys.TAG);
+                    if (tag != null) {
+                      switch (tag) {
+                        case RRWebVideoEvent.EVENT_TAG:
+                          final RRWebEvent videoEvent =
+                              new RRWebVideoEvent.Deserializer().deserialize(mapReader, logger);
+                          payload.add(videoEvent);
+                          break;
+                        case RRWebBreadcrumbEvent.EVENT_TAG:
+                          final RRWebEvent breadcrumbEvent =
+                              new RRWebBreadcrumbEvent.Deserializer()
+                                  .deserialize(mapReader, logger);
+                          payload.add(breadcrumbEvent);
+                          break;
+                        case RRWebSpanEvent.EVENT_TAG:
+                          final RRWebEvent spanEvent =
+                              new RRWebSpanEvent.Deserializer().deserialize(mapReader, logger);
+                          payload.add(spanEvent);
+                          break;
+                        default:
+                          logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                          break;
+                      }
                     }
                     break;
                   default:
