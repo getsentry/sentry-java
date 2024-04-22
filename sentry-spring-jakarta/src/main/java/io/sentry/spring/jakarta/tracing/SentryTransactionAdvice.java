@@ -2,6 +2,7 @@ package io.sentry.spring.jakarta.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
 import io.sentry.ScopesAdapter;
 import io.sentry.SpanStatus;
@@ -68,7 +69,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       } else {
         operation = "bean";
       }
-      scopes.pushScope();
+      final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
       final TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setBindToScope(true);
       final ITransaction transaction =
@@ -86,7 +87,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
         throw e;
       } finally {
         transaction.finish();
-        scopes.popScope();
+        lifecycleToken.close();
       }
     }
   }

@@ -9,6 +9,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -60,7 +61,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     if (scopes.isEnabled()) {
       // request may qualify for caching request body, if so resolve cached request
       final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
-      scopes.pushScope();
+      final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
       try {
         final Hint hint = new Hint();
         hint.set(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
@@ -70,7 +71,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
         configureScope(request);
         filterChain.doFilter(request, response);
       } finally {
-        scopes.popScope();
+        lifecycleToken.close();
       }
     } else {
       filterChain.doFilter(servletRequest, response);

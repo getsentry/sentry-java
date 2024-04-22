@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta.tracing
 
 import io.sentry.IScopes
+import io.sentry.ISentryLifecycleToken
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -46,6 +47,8 @@ class SentryTransactionAdviceTest {
     @Autowired
     lateinit var scopes: IScopes
 
+    val lifecycleToken = mock<ISentryLifecycleToken>()
+
     @BeforeTest
     fun setup() {
         reset(scopes)
@@ -55,6 +58,7 @@ class SentryTransactionAdviceTest {
                 dsn = "https://key@sentry.io/proj"
             }
         )
+        whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
     }
 
     @Test
@@ -141,13 +145,13 @@ class SentryTransactionAdviceTest {
     @Test
     fun `pushes the scope when advice starts`() {
         classAnnotatedSampleService.hello()
-        verify(scopes).pushScope()
+        verify(scopes).pushIsolationScope()
     }
 
     @Test
     fun `pops the scope when advice finishes`() {
         classAnnotatedSampleService.hello()
-        verify(scopes).popScope()
+        verify(lifecycleToken).close()
     }
 
     @Configuration
