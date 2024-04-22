@@ -6,7 +6,9 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ScopesAdapter;
+import io.sentry.util.LifecycleHelper;
 import io.sentry.util.Objects;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;
@@ -21,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 @Open
 public class SentryServletRequestListener implements ServletRequestListener {
 
+  public static final String SENTRY_LIFECYCLE_TOKEN_KEY = "sentry-lifecycle";
+
   private final IScopes scopes;
 
   public SentryServletRequestListener(@NotNull IScopes scopes) {
@@ -33,14 +37,16 @@ public class SentryServletRequestListener implements ServletRequestListener {
 
   @Override
   public void requestDestroyed(@NotNull ServletRequestEvent servletRequestEvent) {
-    scopes.popScope();
+    final ServletRequest servletRequest = servletRequestEvent.getServletRequest();
+    LifecycleHelper.close(servletRequest.getAttribute(SENTRY_LIFECYCLE_TOKEN_KEY));
   }
 
   @Override
   public void requestInitialized(@NotNull ServletRequestEvent servletRequestEvent) {
-    scopes.pushScope();
+    final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
 
     final ServletRequest servletRequest = servletRequestEvent.getServletRequest();
+    servletRequest.setAttribute(SENTRY_LIFECYCLE_TOKEN_KEY, lifecycleToken);
     if (servletRequest instanceof HttpServletRequest) {
       final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
 
