@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A measurement for time critical components on a macro (ms) level. Based on {@link
  * SystemClock#uptimeMillis()} to ensure linear time progression (as opposed to a syncable clock).
@@ -22,6 +24,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
 
   private @Nullable String description;
 
+  private long startSystemNanos;
   private long startUnixTimeMs;
   private long startUptimeMs;
   private long stopUptimeMs;
@@ -30,6 +33,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
   public void start() {
     startUptimeMs = SystemClock.uptimeMillis();
     startUnixTimeMs = System.currentTimeMillis();
+    startSystemNanos = System.nanoTime();
   }
 
   /**
@@ -41,6 +45,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
 
     final long shiftMs = SystemClock.uptimeMillis() - startUptimeMs;
     startUnixTimeMs = System.currentTimeMillis() - shiftMs;
+    startSystemNanos = System.nanoTime() - TimeUnit.MILLISECONDS.toNanos(shiftMs);
   }
 
   /** Stops the time span */
@@ -92,7 +97,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
   public @Nullable SentryDate getStartTimestamp() {
     if (hasStarted()) {
       return new SentryNanotimeDate(
-          DateUtils.nanosToDate(DateUtils.millisToNanos(getStartTimestampMs())), System.nanoTime());
+          DateUtils.nanosToDate(DateUtils.millisToNanos(getStartTimestampMs())), startSystemNanos);
     }
     return null;
   }
@@ -164,6 +169,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
     startUptimeMs = 0;
     stopUptimeMs = 0;
     startUnixTimeMs = 0;
+    startSystemNanos = 0;
   }
 
   @Override
