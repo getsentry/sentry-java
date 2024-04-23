@@ -16,7 +16,6 @@ import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
-import io.sentry.protocol.App
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
@@ -468,36 +467,30 @@ class PerformanceAndroidEventProcessorTest {
 
     @Test
     fun `does not set start_type field for txns without app start span`() {
-        // given some cold app start metrics
-        // where class loaded happened way before app start
+        // given some ui.load txn
         setAppStart(fixture.options, coldStart = true)
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
-        // usually set by DefaultAndroidEventProcessor
-        tr.contexts.setApp(App())
 
-        // when the processor attaches the app start spans
+        // when it contains no app start span and is processed
         tr = sut.process(tr, Hint())
 
         // start_type should not be set
-        assertNull(tr.contexts.app!!.startType)
+        assertNull(tr.contexts.app?.startType)
     }
 
     @Test
     fun `sets start_type field for app context`() {
-        // given some cold app start metrics
-        // where class loaded happened way before app start
+        // given some cold app start
         setAppStart(fixture.options, coldStart = true)
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
-        // usually set by DefaultAndroidEventProcessor
-        tr.contexts.setApp(App())
 
         val appStartSpan = SentrySpan(
             0.0,
@@ -519,7 +512,7 @@ class PerformanceAndroidEventProcessorTest {
         // when the processor attaches the app start spans
         tr = sut.process(tr, Hint())
 
-        // start_type should be set
+        // start_type should be set as well
         assertEquals(
             "cold",
             tr.contexts.app!!.startType

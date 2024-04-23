@@ -104,14 +104,16 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         }
       }
 
-      final @Nullable App appContext = transaction.getContexts().getApp();
-      if (appContext != null) {
-        final String appStartType =
-            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
-                ? "cold"
-                : "warm";
-        appContext.setStartType(appStartType);
+      @Nullable App appContext = transaction.getContexts().getApp();
+      if (appContext == null) {
+        appContext = new App();
+        transaction.getContexts().setApp(appContext);
       }
+      final String appStartType =
+          AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+              ? "cold"
+              : "warm";
+      appContext.setStartType(appStartType);
     }
 
     final SentryId eventId = transaction.getEventId();
