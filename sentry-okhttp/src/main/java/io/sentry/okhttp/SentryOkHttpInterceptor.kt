@@ -164,8 +164,8 @@ public open class SentryOkHttpInterceptor(
             hint[OKHTTP_RESPONSE] = it
         }
         // needs this as unix timestamp for rrweb
-        breadcrumb.setData("start_timestamp", startTimestamp)
-        breadcrumb.setData("end_timestamp", CurrentDateProvider.getInstance().currentTimeMillis)
+        breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, startTimestamp)
+        breadcrumb.setData(SpanDataConvention.HTTP_END_TIMESTAMP, CurrentDateProvider.getInstance().currentTimeMillis)
 
         hub.addBreadcrumb(breadcrumb, hint)
     }

@@ -9,6 +9,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
+import io.sentry.SpanDataConvention
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
@@ -41,6 +42,7 @@ internal abstract class BaseCaptureStrategy(
 
     internal companion object {
         private const val TAG = "CaptureStrategy"
+        private val snakecasePattern = "_[a-z]".toRegex()
         private val supportedNetworkData = setOf(
             "status_code",
             "method",
@@ -192,28 +194,8 @@ internal abstract class BaseCaptureStrategy(
                     val breadcrumbData = mutableMapOf<String, Any?>()
                     when {
                         breadcrumb.category == "http" -> {
-                            if (!breadcrumb.isValidForRRWebSpan()) {
-                                return@forEach
-                            }
-                            recordingPayload += RRWebSpanEvent().apply {
-                                timestamp = breadcrumb.timestamp.time
-                                op = "resource.http"
-                                description = breadcrumb.data["url"] as String
-                                startTimestamp =
-                                    (breadcrumb.data["start_timestamp"] as Long) / 1000.0
-                                this.endTimestamp =
-                                    (breadcrumb.data["end_timestamp"] as Long) / 1000.0
-                                for ((key, value) in breadcrumb.data) {
-                                    if (key in supportedNetworkData) {
-                                        breadcrumbData[
-                                            key
-                                                .replace("content_length", "body_size")
-                                                .substringAfter(".")
-                                                .snakeToCamelCase()
-                                        ] = value
-                                    }
-                                }
-                                data = breadcrumbData
+                            if (breadcrumb.isValidForRRWebSpan()) {
+                                recordingPayload += breadcrumb.toRRWebSpanEvent()
                             }
                             return@forEach
                         }
@@ -320,12 +302,37 @@ internal abstract class BaseCaptureStrategy(
 
     private fun Breadcrumb.isValidForRRWebSpan(): Boolean {
         return !(data["url"] as? String).isNullOrEmpty() &&
-            "start_timestamp" in data &&
-            "end_timestamp" in data
+            SpanDataConvention.HTTP_START_TIMESTAMP in data &&
+            SpanDataConvention.HTTP_END_TIMESTAMP in data
     }
 
     private fun String.snakeToCamelCase(): String {
-        val pattern = "_[a-z]".toRegex()
-        return replace(pattern) { it.value.last().uppercase() }
+        return replace(snakecasePattern) { it.value.last().uppercase() }
+    }
+
+    private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent {
+        val breadcrumb = this
+        return RRWebSpanEvent().apply {
+            timestamp = breadcrumb.timestamp.time
+            op = "resource.http"
+            description = breadcrumb.data["url"] as String
+            startTimestamp =
+                (breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP] as Long) / 1000.0
+            endTimestamp =
+                (breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP] as Long) / 1000.0
+
+            val breadcrumbData = mutableMapOf<String, Any?>()
+            for ((key, value) in breadcrumb.data) {
+                if (key in supportedNetworkData) {
+                    breadcrumbData[
+                        key
+                            .replace("content_length", "body_size")
+                            .substringAfter(".")
+                            .snakeToCamelCase()
+                    ] = value
+                }
+            }
+            data = breadcrumbData
+        }
     }
 }

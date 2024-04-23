@@ -60,7 +60,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         breadcrumb.setData("host", host)
         breadcrumb.setData("path", encodedPath)
         // needs this as unix timestamp for rrweb
-        breadcrumb.setData("start_timestamp", CurrentDateProvider.getInstance().currentTimeMillis)
+        breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, CurrentDateProvider.getInstance().currentTimeMillis)
 
         // We add the same data to the root call span
         callRootSpan?.setData("url", url)
@@ -154,7 +154,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
 
         // needs this as unix timestamp for rrweb
-        breadcrumb.setData("end_timestamp", CurrentDateProvider.getInstance().currentTimeMillis)
+        breadcrumb.setData(SpanDataConvention.HTTP_END_TIMESTAMP, CurrentDateProvider.getInstance().currentTimeMillis)
         // We send the breadcrumb even without spans.
         hub.addBreadcrumb(breadcrumb, hint)
 

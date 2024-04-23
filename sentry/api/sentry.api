@@ -2961,10 +2961,12 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field FRAMES_FROZEN Ljava/lang/String;
 	public static final field FRAMES_SLOW Ljava/lang/String;
 	public static final field FRAMES_TOTAL Ljava/lang/String;
+	public static final field HTTP_END_TIMESTAMP Ljava/lang/String;
 	public static final field HTTP_FRAGMENT_KEY Ljava/lang/String;
 	public static final field HTTP_METHOD_KEY Ljava/lang/String;
 	public static final field HTTP_QUERY_KEY Ljava/lang/String;
 	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
+	public static final field HTTP_START_TIMESTAMP Ljava/lang/String;
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
