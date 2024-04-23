@@ -64,7 +64,7 @@ class ScrollingFragment : Fragment() {
     @SuppressLint("NewApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<ScrollView>(R.id.scrolling_container).setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+        view.findViewById<ScrollView>(R.id.scrolling_container).setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
             if (abs(oldScrollY - scrollY) > 100) {
                 val child = Sentry.getSpan()?.startChild("load_more")
                 lifecycleScope.launch {

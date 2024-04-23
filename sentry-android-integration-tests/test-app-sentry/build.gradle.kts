@@ -14,11 +14,31 @@ android {
         versionName = "1.0"
     }
 
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
+        disable.addAll(
+            listOf(
+                "FragmentTagUsage",
+                "GradleDependency",
+                "MonochromeLauncherIcon",
+                "ContentDescription",
+                "RtlHardcoded"
+            )
+        )
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             ndk {
                 abiFilters.clear()
                 abiFilters.add("arm64-v8a")
@@ -41,18 +61,17 @@ android {
         }
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.3.0")
-    implementation("com.google.android.material:material:1.4.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.0.4")
-    implementation("androidx.navigation:navigation-fragment:2.3.5")
-    implementation("androidx.navigation:navigation-ui:2.3.5")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.fragment:fragment:1.6.2")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.navigation:navigation-fragment:2.7.7")
+    implementation("androidx.navigation:navigation-ui:2.7.7")
     implementation(projects.sentryAndroid)
 }

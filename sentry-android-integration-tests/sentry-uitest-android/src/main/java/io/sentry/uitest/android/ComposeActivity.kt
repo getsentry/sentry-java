@@ -18,9 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
-class ComposeActivity : AppCompatActivity() {
+public class ComposeActivity : AppCompatActivity() {
 
-    companion object {
+    private companion object {
         private const val ITEM_COUNT: Int = 100
     }
 
