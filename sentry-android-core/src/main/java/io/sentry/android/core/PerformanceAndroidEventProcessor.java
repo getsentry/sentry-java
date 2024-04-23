@@ -16,6 +16,7 @@ import io.sentry.SpanStatus;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.protocol.App;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
@@ -79,27 +80,40 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
     // the app start measurement is only sent once and only if the transaction has
     // the app.start span, which is automatically created by the SDK.
-    if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
-      final @NotNull TimeSpan appStartTimeSpan =
-          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
-      final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
+    if (hasAppStartSpan(transaction)) {
+      if (!sentStartMeasurement) {
+        final @NotNull TimeSpan appStartTimeSpan =
+            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+        final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
-      // if appStartUpDurationMs is 0, metrics are not ready to be sent
-      if (appStartUpDurationMs != 0) {
-        final MeasurementValue value =
-            new MeasurementValue(
-                (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
+        // if appStartUpDurationMs is 0, metrics are not ready to be sent
+        if (appStartUpDurationMs != 0) {
+          final MeasurementValue value =
+              new MeasurementValue(
+                  (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
-        final String appStartKey =
-            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
-                ? MeasurementValue.KEY_APP_START_COLD
-                : MeasurementValue.KEY_APP_START_WARM;
+          final String appStartKey =
+              AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+                  ? MeasurementValue.KEY_APP_START_COLD
+                  : MeasurementValue.KEY_APP_START_WARM;
 
-        transaction.getMeasurements().put(appStartKey, value);
+          transaction.getMeasurements().put(appStartKey, value);
 
-        attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
-        sentStartMeasurement = true;
+          attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
+          sentStartMeasurement = true;
+        }
       }
+
+      @Nullable App appContext = transaction.getContexts().getApp();
+      if (appContext == null) {
+        appContext = new App();
+        transaction.getContexts().setApp(appContext);
+      }
+      final String appStartType =
+          AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+              ? "cold"
+              : "warm";
+      appContext.setStartType(appStartType);
     }
 
     final SentryId eventId = transaction.getEventId();

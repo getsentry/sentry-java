@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+
 ### Fixes
 
 - Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
