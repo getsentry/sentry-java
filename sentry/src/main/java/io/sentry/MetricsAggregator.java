@@ -141,24 +141,6 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     add(MetricType.Set, key, intValue, unit, tags, timestampMs, localMetricsAggregator);
   }
 
-  @Override
-  public void timing(
-      final @NotNull String key,
-      final @NotNull Runnable callback,
-      final @NotNull MeasurementUnit.Duration unit,
-      final @Nullable Map<String, String> tags,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    final long startMs = nowMillis();
-    final long startNanos = System.nanoTime();
-    try {
-      callback.run();
-    } finally {
-      final long durationNanos = (System.nanoTime() - startNanos);
-      final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
-      add(MetricType.Distribution, key, value, unit, tags, startMs, localMetricsAggregator);
-    }
-  }
-
   @SuppressWarnings({"FutureReturnValueIgnored", "UnusedVariable"})
   private void add(
       final @NotNull MetricType type,
@@ -219,6 +201,9 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       }
       totalBucketsWeight.addAndGet(addedWeight);
     }
+
+    // For sets, we only record that a value has been added to the set but not which one.
+    // See develop docs: https://develop.sentry.dev/sdk/metrics/#sets
     if (localMetricsAggregator != null) {
       final double localValue = type == MetricType.Set ? addedWeight : value;
       localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags, timestampMs);

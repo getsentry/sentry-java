@@ -76,16 +76,6 @@ public final class NoopMetricsAggregator
   }
 
   @Override
-  public void timing(
-      final @NotNull String key,
-      final @NotNull Runnable callback,
-      final @NotNull MeasurementUnit.Duration unit,
-      final @Nullable Map<String, String> tags,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    callback.run();
-  }
-
-  @Override
   public void flush(final boolean force) {
     // no-op
   }

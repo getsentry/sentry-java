@@ -3,12 +3,39 @@
 ## Unreleased
 
 ### Features
-
-- Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
 - Internal: Version bump Gradle=8.6, AGP=8.3.0, kotlin=1.9.22, compose=1.5.12 ([#3263](https://github.com/getsentry/sentry-java/pull/3263))
 
 **Breaking changes:**
 - The min supported Kotlin language version has been bumped to `1.5`, please consider using previous version of the SDK if you have to support compatibility with earlier Kotlin versions
+
+### Fixes
+
+- Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
+
+## 7.8.0
+
+### Features
+
+- Add description to OkHttp spans ([#3320](https://github.com/getsentry/sentry-java/pull/3320))
+- Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
+
+### Fixes
+
+- Add rate limit to Metrics ([#3334](https://github.com/getsentry/sentry-java/pull/3334))
+- Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerMapping in Spring Boot Servlet mode without WebMVC ([#3336](https://github.com/getsentry/sentry-java/pull/3336))
+- Fix normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
+
+## 7.7.0
+
+### Features
+
+- Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+- Extend Proxy options with proxy type ([#3326](https://github.com/getsentry/sentry-java/pull/3326))
+
+### Fixes
+
+- Fixed default deadline timeout to 30s instead of 300s ([#3322](https://github.com/getsentry/sentry-java/pull/3322))
+- Fixed `Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerExceptionResolver` in Spring Boot Servlet mode without WebMVC ([#3333](https://github.com/getsentry/sentry-java/pull/3333))
 
 ## 7.6.0
 
