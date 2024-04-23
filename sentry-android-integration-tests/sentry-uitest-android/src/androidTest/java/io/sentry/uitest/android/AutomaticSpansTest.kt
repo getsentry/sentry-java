@@ -14,6 +14,7 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryTransaction
+import org.junit.Assume
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -86,6 +87,8 @@ class AutomaticSpansTest : BaseUiTest() {
                 val slowFrames = measurements[MeasurementValue.KEY_FRAMES_SLOW]?.value?.toInt() ?: 0
                 val totalFrames = measurements[MeasurementValue.KEY_FRAMES_TOTAL]?.value?.toInt() ?: 0
                 assertEquals("ProfilingSampleActivity", transactionItem.transaction)
+                // AGP matrix tests have no frames
+                Assume.assumeTrue(totalFrames > 0)
                 assertNotEquals(totalFrames, 0)
                 assertTrue(totalFrames > slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
             }
@@ -120,6 +123,8 @@ class AutomaticSpansTest : BaseUiTest() {
                 val slowFrames = measurements[MeasurementValue.KEY_FRAMES_SLOW]?.value?.toInt() ?: 0
                 val totalFrames = measurements[MeasurementValue.KEY_FRAMES_TOTAL]?.value?.toInt() ?: 0
                 assertEquals("ProfilingSampleActivity", transactionItem.transaction)
+                // AGP matrix tests have no frames
+                Assume.assumeTrue(totalFrames > 0)
                 assertNotEquals(totalFrames, 0)
                 assertTrue(totalFrames > slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
             }

@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
 - Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
 
 ## 7.8.0
