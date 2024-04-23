@@ -52,6 +52,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
+	public fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
 	public fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
 	public fun start ()V
 	public fun stop ()V
