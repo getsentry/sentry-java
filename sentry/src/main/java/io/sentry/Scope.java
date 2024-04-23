@@ -779,7 +779,7 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @NotNull
   @Override
-  public List<EventProcessorAndOrder> getOrderedEventProcessors() {
+  public List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
     // TODO [HSM] This isn't actually ordered but only gets ordered in CombinedScopeView
     return eventProcessors;
   }

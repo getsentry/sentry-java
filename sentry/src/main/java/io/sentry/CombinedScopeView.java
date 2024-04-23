@@ -358,18 +358,18 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
-  public @NotNull List<EventProcessorAndOrder> getOrderedEventProcessors() {
+  public @NotNull List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
     final @NotNull List<EventProcessorAndOrder> allEventProcessors = new CopyOnWriteArrayList<>();
-    allEventProcessors.addAll(globalScope.getOrderedEventProcessors());
-    allEventProcessors.addAll(isolationScope.getOrderedEventProcessors());
-    allEventProcessors.addAll(scope.getOrderedEventProcessors());
+    allEventProcessors.addAll(globalScope.getEventProcessorsWithOrder());
+    allEventProcessors.addAll(isolationScope.getEventProcessorsWithOrder());
+    allEventProcessors.addAll(scope.getEventProcessorsWithOrder());
     Collections.sort(allEventProcessors);
     return allEventProcessors;
   }
 
   @Override
   public @NotNull List<EventProcessor> getEventProcessors() {
-    return EventProcessorUtils.unwrap(getOrderedEventProcessors());
+    return EventProcessorUtils.unwrap(getEventProcessorsWithOrder());
   }
 
   @Override

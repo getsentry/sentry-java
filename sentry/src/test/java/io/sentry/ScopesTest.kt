@@ -85,9 +85,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
-//        val expected = HubAdapter.getInstance()
         val scopes = createScopes(options)
-//        verify(integrationMock).register(expected, options)
         scopes.forkedScopes("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -100,9 +98,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
-//        val expected = HubAdapter.getInstance()
         val scopes = createScopes(options)
-//        verify(integrationMock).register(expected, options)
         scopes.forkedCurrentScope("test")
         verifyNoMoreInteractions(integrationMock)
     }

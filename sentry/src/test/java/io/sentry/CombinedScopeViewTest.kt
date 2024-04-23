@@ -282,7 +282,7 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `prefers transaction andspan from current scope`() {
+    fun `prefers transaction and span from current scope`() {
         val combined = fixture.getSut()
         fixture.scope.setTransaction(createTransaction("scopeTransaction"))
         fixture.isolationScope.setTransaction(createTransaction("isolationTransaction"))
@@ -293,7 +293,7 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `uses isolation scope transaction andspan if none in current scope`() {
+    fun `uses isolation scope transaction and span if none in current scope`() {
         val combined = fixture.getSut()
         fixture.isolationScope.setTransaction(createTransaction("isolationTransaction"))
         fixture.globalScope.setTransaction(createTransaction("globalTransaction"))
@@ -303,7 +303,7 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `uses global transaction andscope span if none in current or isolation scope`() {
+    fun `uses global transaction and scope span if none in current or isolation scope`() {
         val combined = fixture.getSut()
         fixture.globalScope.setTransaction(createTransaction("globalTransaction"))
 
