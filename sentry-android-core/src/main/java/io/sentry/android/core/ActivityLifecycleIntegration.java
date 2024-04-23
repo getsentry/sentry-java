@@ -560,7 +560,7 @@ public final class ActivityLifecycleIntegration
       if (ttfdSpan != null && ttfdSpan.isFinished()) {
         ttfdSpan.updateEndDate(endDate);
         // If the ttfd span was finished before the first frame we adjust the measurement, too
-        ttidSpan.setMeasurement(
+        ttfdSpan.setMeasurement(
             MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
       }
       finishSpan(ttidSpan, endDate);
