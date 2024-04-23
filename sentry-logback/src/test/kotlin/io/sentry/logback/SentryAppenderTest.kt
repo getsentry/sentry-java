@@ -77,6 +77,7 @@ class SentryAppenderTest {
     @BeforeTest
     fun `clear MDC`() {
         MDC.clear()
+        Sentry.close()
     }
 
     @Test

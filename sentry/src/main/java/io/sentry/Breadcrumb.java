@@ -22,6 +22,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
 
+  private final @NotNull Long nanos;
+
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
 
@@ -46,10 +48,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    * @param timestamp the timestamp
    */
   public Breadcrumb(final @NotNull Date timestamp) {
+    this.nanos = System.nanoTime();
     this.timestamp = timestamp;
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    this.nanos = System.nanoTime();
     this.timestamp = breadcrumb.timestamp;
     this.message = breadcrumb.message;
     this.type = breadcrumb.type;
@@ -663,8 +667,11 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @Override
   @SuppressWarnings("JavaUtilDate")
   public int compareTo(@NotNull Breadcrumb o) {
-    // TODO also use nano time if equal
-    return timestamp.compareTo(o.timestamp);
+    int timestampCompare = timestamp.compareTo(o.timestamp);
+    if (timestampCompare == 0) {
+      return nanos.compareTo(o.nanos);
+    }
+    return timestampCompare;
   }
 
   public static final class JsonKeys {
