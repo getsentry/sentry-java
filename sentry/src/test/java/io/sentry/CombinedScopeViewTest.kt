@@ -172,10 +172,10 @@ class CombinedScopeViewTest {
 
         val eventProcessors = combined.eventProcessors
 
-        assertEquals(first, eventProcessors.get(0))
-        assertEquals(second, eventProcessors.get(1))
-        assertEquals(third, eventProcessors.get(2))
-        assertEquals(fourth, eventProcessors.get(3))
+        assertEquals(first, eventProcessors[0])
+        assertEquals(second, eventProcessors[1])
+        assertEquals(third, eventProcessors[2])
+        assertEquals(fourth, eventProcessors[3])
     }
 
     @Test
@@ -525,7 +525,7 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `prefer scope value for tags with same key`() {
+    fun `prefer current scope value for tags with same key`() {
         val combined = fixture.getSut()
 
         fixture.scope.setTag("aTag", "scopeValue")
@@ -596,7 +596,7 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `prefer scope value for extras with same key`() {
+    fun `prefer current scope value for extras with same key`() {
         val combined = fixture.getSut()
 
         fixture.scope.setExtra("someExtra", "scopeValue")
@@ -852,19 +852,19 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `getSpecificScope(CURRENT) returns scope`() {
+    fun `getSpecificScope(CURRENT) returns current scope`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.ISOLATION })
         assertSame(fixture.scope, combined.getSpecificScope(ScopeType.CURRENT))
     }
 
     @Test
-    fun `getSpecificScope(ISOLATION) returns scope`() {
+    fun `getSpecificScope(ISOLATION) returns isolation scope`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
         assertSame(fixture.isolationScope, combined.getSpecificScope(ScopeType.ISOLATION))
     }
 
     @Test
-    fun `getSpecificScope(GLOBAL) returns scope`() {
+    fun `getSpecificScope(GLOBAL) returns global scope`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
         assertSame(fixture.globalScope, combined.getSpecificScope(ScopeType.GLOBAL))
     }
