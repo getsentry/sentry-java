@@ -11,8 +11,7 @@ class DistributionMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(listOf(1.0), metric.serialize().toList())
 
@@ -27,8 +26,7 @@ class DistributionMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(MetricType.Distribution, metric.type)
     }
@@ -39,8 +37,7 @@ class DistributionMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(1, metric.weight)
 
@@ -54,8 +51,7 @@ class DistributionMetricTest {
             "test",
             1.0,
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         metric.add(2.0)
 

@@ -26,6 +26,8 @@ import io.sentry.spring.jakarta.SentryUserFilter
 import io.sentry.spring.jakarta.SentryUserProvider
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter
+import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider
+import io.sentry.spring.jakarta.tracing.TransactionNameProvider
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
@@ -61,6 +63,7 @@ import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.HandlerExceptionResolver
@@ -168,7 +171,7 @@ class SentryAutoConfigurationTest {
             "sentry.enabled=false",
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
-            "sentry.enable-backpressure-handling=true",
+            "sentry.enable-backpressure-handling=false",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
@@ -205,7 +208,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
-            assertThat(options.isEnableBackpressureHandling).isEqualTo(true)
+            assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.cron).isNotNull
             assertThat(options.cron!!.defaultCheckinMargin).isEqualTo(10L)
             assertThat(options.cron!!.defaultMaxRuntime).isEqualTo(30L)
@@ -445,6 +448,15 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `when Spring MVC is not on the classpath, fallback TransactionNameProvider is configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
+            .run {
+                assertThat(it.getBean(TransactionNameProvider::class.java)).isInstanceOf(SpringServletTransactionNameProvider::class.java)
+            }
+    }
+
+    @Test
     fun `when tracing is enabled, creates tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
@@ -646,6 +658,23 @@ class SentryAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and RestClient is on the classpath, SentrySpanRestClientCustomizer bean is created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
+            .run {
+                assertThat(it).hasSingleBean(SentrySpanRestClientCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and RestClient is not on the classpath, SentrySpanRestClientCustomizer bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
+            .withClassLoader(FilteredClassLoader(RestClient::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SentrySpanRestClientCustomizer::class.java)
             }
     }
 

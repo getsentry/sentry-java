@@ -1,5 +1,6 @@
 package io.sentry.samples.spring.jakarta.web;
 
+import io.sentry.Sentry;
 import io.sentry.spring.jakarta.tracing.SentrySpan;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -29,10 +30,16 @@ public class PersonService {
 
   @SentrySpan
   Person create(Person person) {
-    try {
-      Thread.sleep(100);
-    } catch (InterruptedException e) {
-    }
+    Sentry.metrics()
+        .timing(
+            "person.insert",
+            () -> {
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException e) {
+                // ignored
+              }
+            });
     return person;
   }
 }

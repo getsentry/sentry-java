@@ -11,8 +11,7 @@ class SetMetricTest {
         val metric = SetMetric(
             "test",
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertTrue(metric.serialize().toList().isEmpty())
 
@@ -33,8 +32,7 @@ class SetMetricTest {
         val metric = SetMetric(
             "test",
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(MetricType.Set, metric.type)
     }
@@ -44,8 +42,7 @@ class SetMetricTest {
         val metric = SetMetric(
             "test",
             null,
-            null,
-            System.currentTimeMillis()
+            null
         )
         assertEquals(0, metric.weight)
 
