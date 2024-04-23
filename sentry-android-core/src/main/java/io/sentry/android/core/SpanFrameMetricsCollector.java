@@ -144,7 +144,7 @@ public class SpanFrameMetricsCollector
         return;
       }
       // Note: The comparison between two values obtained by realNanos() works only if both are the
-      // same kind of dates (both SentryNanotimeDate or both SentryLongDate)
+      // same kind of dates (both are SentryNanotimeDate or both SentryLongDate)
       final long spanEndNanos = realNanos(spanFinishDate);
 
       final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
