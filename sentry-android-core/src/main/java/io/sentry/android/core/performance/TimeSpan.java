@@ -5,12 +5,11 @@ import io.sentry.DateUtils;
 import io.sentry.SentryDate;
 import io.sentry.SentryLongDate;
 import io.sentry.SentryNanotimeDate;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * A measurement for time critical components on a macro (ms) level. Based on {@link
