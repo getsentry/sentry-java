@@ -409,7 +409,7 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
-  // TODO this should default to false on the next major
+  // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 

@@ -51,7 +51,6 @@ public final class SentryWebFilter implements WebFilter {
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
     @NotNull IScopes requestHub = Sentry.forkedRootScopes("request.webflux");
-    // TODO do not push / pop, use fork instead
     if (!requestHub.isEnabled()) {
       return webFilterChain.filter(serverWebExchange);
     }

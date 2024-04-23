@@ -5,6 +5,6 @@ public enum ScopeType {
   ISOLATION,
   GLOBAL,
 
-  // TODO do we need a combined as well so configureScope
+  // TODO [HSM] do we need a combined as well so configureScope
   COMBINED;
 }

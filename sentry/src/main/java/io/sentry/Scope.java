@@ -90,8 +90,8 @@ public final class Scope implements IScope {
 
   private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
 
-  // TODO intended only for global scope
-  // TODO test for memory leak
+  // TODO [HSM] intended only for global scope
+  // TODO [HSM] test for memory leak
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
@@ -114,7 +114,7 @@ public final class Scope implements IScope {
     this.options = scope.options;
     this.level = scope.level;
     this.client = scope.client;
-    // TODO should we do this? didn't do it for Hub
+    // TODO [HSM] should we do this? didn't do it for Hub
     this.lastEventId = scope.getLastEventId();
 
     final User userRef = scope.user;

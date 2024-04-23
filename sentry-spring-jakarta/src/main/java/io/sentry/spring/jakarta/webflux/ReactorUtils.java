@@ -10,8 +10,8 @@ import reactor.util.context.Context;
 
 // TODO deprecate and replace with "withSentryScopes" etc.
 @ApiStatus.Experimental
-// TODO do we keep old methods around and deprecate them?
-// TODO do we need to offer isolated variants?
+// TODO [HSM] do we keep old methods around and deprecate them?
+// TODO [HSM] do we need to offer isolated variants?
 public final class ReactorUtils {
 
   /**

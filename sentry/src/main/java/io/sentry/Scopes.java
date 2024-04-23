@@ -26,13 +26,13 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   private final @NotNull IScope scope;
   private final @NotNull IScope isolationScope;
-  // TODO just for debugging
+
   @SuppressWarnings("UnusedVariable")
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
 
-  // TODO should this be set on all scopes (global, isolation, current)?
+  // TODO [HSM] should this be set on all scopes (global, isolation, current)?
   private final @NotNull SentryOptions options;
   private volatile boolean isEnabled;
   private final @NotNull TracesSampler tracesSampler;
@@ -82,12 +82,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return isolationScope;
   }
 
-  // TODO add to IScopes interface?
+  // TODO [HSM] add to IScopes interface?
   public @Nullable Scopes getParent() {
     return parentScopes;
   }
 
-  // TODO add to IScopes interface?
+  // TODO [HSM] add to IScopes interface?
   public boolean isAncestorOf(final @Nullable Scopes otherScopes) {
     if (otherScopes == null) {
       return false;
@@ -115,7 +115,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return new Scopes(scope.clone(), isolationScope, this, options, creator);
   }
 
-  // TODO always read from root scope?
+  // TODO [HSM] always read from root scope?
   @Override
   public boolean isEnabled() {
     return isEnabled;
@@ -363,7 +363,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private IScope getCombinedScopeView() {
-    // TODO create in ctor?
+    // TODO [HSM] create in ctor?
     return new CombinedScopeView(getGlobalScope(), isolationScope, scope);
   }
 
@@ -393,7 +393,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           }
         }
 
-        // TODO which scopes do we call this on? isolation and current scope?
+        // TODO [HSM] which scopes do we call this on? isolation and current scope?
         configureScope(scope -> scope.clear());
         options.getTransactionProfiler().close();
         options.getTransactionPerformanceCollector().close();
@@ -429,7 +429,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private IScope getSpecificScope(final @Nullable ScopeType scopeType) {
-    // TODO extract and reuse
+    // TODO [HSM] extract and reuse
     if (scopeType != null) {
       switch (scopeType) {
         case CURRENT:
@@ -582,11 +582,9 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     getCombinedScopeView().setLastEventId(lastEventId);
   }
 
-  // TODO add to IScopes interface
+  // TODO [HSM] add to IScopes interface
   public @NotNull IScope getGlobalScope() {
-    // TODO should be:
     return Sentry.getGlobalScope();
-    //    return scope;
   }
 
   @Override
@@ -627,7 +625,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return Sentry.setCurrentScopes(this);
   }
 
-  // TODO needs to be deprecated because there's no more stack
+  // TODO [HSM] needs to be deprecated because there's no more stack
   @Override
   public void popScope() {
     if (!isEnabled()) {
@@ -637,13 +635,13 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else {
       final @Nullable Scopes parent = getParent();
       if (parent != null) {
-        // TODO this is never closed
+        // TODO [HSM] this is never closed
         parent.makeCurrent();
       }
     }
   }
 
-  // TODO lots of testing required to see how ThreadLocal is affected
+  // TODO [HSM] lots of testing required to see how ThreadLocal is affected
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
@@ -655,8 +653,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
     } else {
       final @NotNull IScopes forkedScopes = forkedCurrentScope("withScope");
-      // TODO should forkedScopes be made current inside callback?
-      // TODO forkedScopes.makeCurrent()?
+      // TODO [HSM] should forkedScopes be made current inside callback?
+      // TODO [HSM] forkedScopes.makeCurrent()?
       try {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
@@ -726,7 +724,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     if (!isEnabled()) {
       options.getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
     }
-    // TODO should this fork isolation scope as well?
+    // TODO [HSM] should this fork isolation scope as well?
     return new HubScopesWrapper(forkedCurrentScope("scopes clone"));
   }
 
@@ -876,24 +874,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     getCombinedScopeView().setSpanContext(throwable, span, transactionName);
   }
 
-  //  // TODO this seems unused
-  //  @Nullable
-  //  SpanContext getSpanContext(final @NotNull Throwable throwable) {
-  //    Objects.requireNonNull(throwable, "throwable is required");
-  //    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-  //    final Pair<WeakReference<ISpan>, String> pair = this.throwableToSpan.get(rootCause);
-  //    if (pair != null) {
-  //      final WeakReference<ISpan> spanWeakRef = pair.getFirst();
-  //      if (spanWeakRef != null) {
-  //        final ISpan span = spanWeakRef.get();
-  //        if (span != null) {
-  //          return span.getSpanContext();
-  //        }
-  //      }
-  //    }
-  //    return null;
-  //  }
-
   @Override
   public @Nullable ISpan getSpan() {
     ISpan span = null;
@@ -947,7 +927,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     @NotNull
     PropagationContext propagationContext =
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
-    // TODO should this go on isolation scope?
+    // TODO [HSM] should this go on isolation scope?
     configureScope(
         (scope) -> {
           scope.setPropagationContext(propagationContext);
