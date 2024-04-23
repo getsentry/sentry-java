@@ -170,6 +170,11 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
@@ -181,6 +186,11 @@ public final class NoOpScopes implements IScopes {
 
   @Override
   public @NotNull IScope getIsolationScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  public @NotNull IScope getGlobalScope() {
     return NoOpScope.getInstance();
   }
 

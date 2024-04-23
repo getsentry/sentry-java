@@ -528,9 +528,11 @@ public final class io/sentry/Hub : io/sentry/IHub, io/sentry/metrics/MetricsApi$
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
 	public fun getDefaultTagsForMetrics ()Ljava/util/Map;
+	public fun getGlobalScope ()Lio/sentry/IScope;
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
@@ -590,8 +592,10 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
+	public fun getGlobalScope ()Lio/sentry/IScope;
 	public static fun getInstance ()Lio/sentry/HubAdapter;
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
@@ -650,8 +654,10 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
+	public fun getGlobalScope ()Lio/sentry/IScope;
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
@@ -874,8 +880,10 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun endSession ()V
 	public abstract fun flush (J)V
 	public abstract fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public abstract fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public abstract fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public abstract fun getBaggage ()Lio/sentry/BaggageHeader;
+	public abstract fun getGlobalScope ()Lio/sentry/IScope;
 	public abstract fun getIsolationScope ()Lio/sentry/IScope;
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
@@ -1369,8 +1377,10 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
+	public fun getGlobalScope ()Lio/sentry/IScope;
 	public static fun getInstance ()Lio/sentry/NoOpHub;
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
@@ -1500,8 +1510,10 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
+	public fun getGlobalScope ()Lio/sentry/IScope;
 	public static fun getInstance ()Lio/sentry/NoOpScopes;
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
@@ -1980,6 +1992,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes, io/sentry/metrics/Metri
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
 	public fun getCreator ()Ljava/lang/String;
@@ -2046,8 +2059,10 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
+	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun getBaggage ()Lio/sentry/BaggageHeader;
+	public fun getGlobalScope ()Lio/sentry/IScope;
 	public static fun getInstance ()Lio/sentry/ScopesAdapter;
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;

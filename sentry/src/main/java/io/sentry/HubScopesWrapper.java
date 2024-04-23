@@ -204,6 +204,11 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return Sentry.forkedRootScopes(creator);
+  }
+
+  @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return scopes.makeCurrent();
   }
@@ -216,6 +221,11 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public @NotNull IScope getIsolationScope() {
     return scopes.getIsolationScope();
+  }
+
+  @Override
+  public @NotNull IScope getGlobalScope() {
+    return Sentry.getGlobalScope();
   }
 
   @ApiStatus.Internal
