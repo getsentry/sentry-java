@@ -40,9 +40,7 @@ class SpanFrameMetricsCollectorTest {
             options.frameMetricsCollector = frameMetricsCollector
             options.isEnableFramesTracking = enabled
             options.isEnablePerformanceV2 = enabled
-            options.setDateProvider {
-                SentryLongDate(timeNanos)
-            }
+            options.dateProvider = SentryAndroidDateProvider()
 
             return SpanFrameMetricsCollector(options, frameMetricsCollector)
         }

@@ -157,7 +157,7 @@ class EnvelopeTests : BaseUiTest() {
                     // Timestamps of measurements should differ at least 10 milliseconds from each other
                     (1 until values.size).forEach { i ->
                         assertTrue(
-                            values[i].relativeStartNs.toLong() > values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(
+                            values[i].relativeStartNs.toLong() >= values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(
                                 10
                             ),
                             "Measurement value timestamp for '$name' does not differ at least 10ms"
