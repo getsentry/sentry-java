@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+
 ### Fixes
 
 - Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
