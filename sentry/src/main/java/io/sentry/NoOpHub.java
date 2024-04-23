@@ -137,10 +137,16 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  @Deprecated
   public void popScope() {}
 
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
+    callback.run(NoOpScope.getInstance());
+  }
+
+  @Override
+  public void withIsolationScope(@NotNull ScopeCallback callback) {
     callback.run(NoOpScope.getInstance());
   }
 
@@ -179,16 +185,19 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getScope() {
     return NoOpScope.getInstance();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getIsolationScope() {
     return NoOpScope.getInstance();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getGlobalScope() {
     return NoOpScope.getInstance();
   }

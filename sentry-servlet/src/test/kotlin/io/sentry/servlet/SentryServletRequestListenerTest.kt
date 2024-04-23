@@ -4,6 +4,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
@@ -26,7 +27,8 @@ class SentryServletRequestListenerTest {
             request.requestURI = "http://localhost:8080/some-uri"
             request.method = "post"
             whenever(event.servletRequest).thenReturn(request)
-            whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
+            whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
         }
     }
 
@@ -36,7 +38,8 @@ class SentryServletRequestListenerTest {
     fun `pushes scope when request gets initialized`() {
         fixture.listener.requestInitialized(fixture.event)
 
-        verify(fixture.scopes).pushIsolationScope()
+        verify(fixture.scopes).forkedScopes(any())
+        verify(fixture.scopes).makeCurrent()
     }
 
     @Test
@@ -51,12 +54,12 @@ class SentryServletRequestListenerTest {
             },
             anyOrNull()
         )
-        assertSame(fixture.lifecycleToken, fixture.request.getAttribute("sentry-lifecycle"))
+        assertSame(fixture.lifecycleToken, fixture.request.getAttribute("sentry-scope-lifecycle"))
     }
 
     @Test
     fun `pops scope when request gets destroyed`() {
-        fixture.request.setAttribute("sentry-lifecycle", fixture.lifecycleToken)
+        fixture.request.setAttribute("sentry-scope-lifecycle", fixture.lifecycleToken)
 
         fixture.listener.requestDestroyed(fixture.event)
         verify(fixture.lifecycleToken).close()

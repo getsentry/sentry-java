@@ -9,8 +9,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 @ApiStatus.Experimental
-// TODO [HSM] do we keep old methods around and deprecate them?
-// TODO [HSM] do we need to offer isolated variants?
 public final class ReactorUtils {
 
   /**
@@ -28,7 +26,7 @@ public final class ReactorUtils {
   }
 
   /**
-   * Writes a new Sentry {@link IScopes} cloned from the main scopes to the {@link Context} and uses
+   * Writes a new Sentry {@link IScopes} forked from the main scopes to the {@link Context} and uses
    * {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
@@ -76,7 +74,7 @@ public final class ReactorUtils {
   }
 
   /**
-   * Writes a new Sentry {@link IScopes} cloned from the main scopes to the {@link Context} and uses
+   * Writes a new Sentry {@link IScopes} forked from the main scopes to the {@link Context} and uses
    * {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
@@ -99,7 +97,7 @@ public final class ReactorUtils {
   public static <T> Flux<T> withSentryScopes(
       final @NotNull Flux<T> flux, final @NotNull IScopes scopes) {
     /**
-     * WARNING: Cannot set the scopes as current. It would be used by others to clone again causing
+     * WARNING: Cannot set the scopes as current. It would be used by others to fork again causing
      * shared scopes and thus leading to issues like unrelated breadcrumbs showing up in events.
      */
     // Sentry.setCurrentScopes(forkedScopes);

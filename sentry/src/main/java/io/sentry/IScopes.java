@@ -312,12 +312,19 @@ public interface IScopes {
   @NotNull
   ISentryLifecycleToken pushIsolationScope();
 
-  /** Removes the first scope */
+  /**
+   * Removes the first scope and restores its parent.
+   *
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
+  @Deprecated
   void popScope();
 
   /**
-   * Runs the callback with a new scope which gets dropped at the end. If you're using the Sentry
-   * SDK in globalHubMode (defaults to true on Android) {@link
+   * Runs the callback with a new current scope which gets dropped at the end.
+   *
+   * <p>If you're using the Sentry SDK in globalHubMode (defaults to true on Android) {@link
    * Sentry#init(Sentry.OptionsConfiguration, boolean)} calling withScope is discouraged, as scope
    * changes may be dropped when executed in parallel. Use {@link
    * IScopes#configureScope(ScopeCallback)} instead.
@@ -325,6 +332,19 @@ public interface IScopes {
    * @param callback the callback
    */
   void withScope(@NotNull ScopeCallback callback);
+
+  /**
+   * Runs the callback with a new isolation scope which gets dropped at the end. Current scope is
+   * also forked.
+   *
+   * <p>If you're using the Sentry SDK in globalHubMode (defaults to true on Android) {@link
+   * Sentry#init(Sentry.OptionsConfiguration, boolean)} calling withScope is discouraged, as scope
+   * changes may be dropped when executed in parallel. Use {@link IScopes#configureScope(ScopeType,
+   * ScopeCallback)} instead.
+   *
+   * @param callback the callback
+   */
+  void withIsolationScope(@NotNull ScopeCallback callback);
 
   /**
    * Configures the scope through the callback.
@@ -414,21 +434,27 @@ public interface IScopes {
    *
    * @return scope
    */
-  public @NotNull IScope getScope();
+  @ApiStatus.Internal
+  @NotNull
+  IScope getScope();
 
   /**
    * Returns the isolation scope of this Scopes.
    *
    * @return isolation scope
    */
-  public @NotNull IScope getIsolationScope();
+  @ApiStatus.Internal
+  @NotNull
+  IScope getIsolationScope();
 
   /**
    * Returns the global scope.
    *
    * @return global scope
    */
-  public @NotNull IScope getGlobalScope();
+  @ApiStatus.Internal
+  @NotNull
+  IScope getGlobalScope();
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.

@@ -137,7 +137,6 @@ class InternalSentrySdkTest {
         Sentry.setCurrentScopes(
             Scopes(Scope(options), Scope(options), Scope(options), "test")
         )
-        // TODO [HSM] add breadcrumbs to all scopes and assert they are there
         Sentry.addBreadcrumb("test")
         Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.addBreadcrumb(Breadcrumb("currentBreadcrumb")) }
         Sentry.configureScope(ScopeType.ISOLATION) { scope -> scope.addBreadcrumb(Breadcrumb("isolationBreadcrumb")) }

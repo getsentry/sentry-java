@@ -159,6 +159,7 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  @Deprecated
   public void popScope() {
     scopes.popScope();
   }
@@ -166,6 +167,11 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
     scopes.withScope(callback);
+  }
+
+  @Override
+  public void withIsolationScope(@NotNull ScopeCallback callback) {
+    scopes.withIsolationScope(callback);
   }
 
   @Override
@@ -214,16 +220,19 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getScope() {
     return scopes.getScope();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getIsolationScope() {
     return scopes.getIsolationScope();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getGlobalScope() {
     return Sentry.getGlobalScope();
   }

@@ -667,11 +667,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @Override
   @SuppressWarnings("JavaUtilDate")
   public int compareTo(@NotNull Breadcrumb o) {
-    int timestampCompare = timestamp.compareTo(o.timestamp);
-    if (timestampCompare == 0) {
-      return nanos.compareTo(o.nanos);
-    }
-    return timestampCompare;
+    return nanos.compareTo(o.nanos);
   }
 
   public static final class JsonKeys {

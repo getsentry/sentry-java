@@ -883,6 +883,43 @@ class ScopesTest {
     }
     //endregion
 
+    //region withIsolationScope tests
+    @Test
+    fun `when withIsolationScope is called on disabled client, execute on NoOpScope`() {
+        val (sut) = getEnabledScopes()
+
+        val scopeCallback = mock<ScopeCallback>()
+        sut.close()
+
+        sut.withIsolationScope(scopeCallback)
+        verify(scopeCallback).run(NoOpScope.getInstance())
+    }
+
+    @Test
+    fun `when withIsolationScope is called with alive client, run should be called`() {
+        val (sut) = getEnabledScopes()
+
+        val scopeCallback = mock<ScopeCallback>()
+
+        sut.withIsolationScope(scopeCallback)
+        verify(scopeCallback).run(any())
+    }
+
+    @Test
+    fun `when withIsolationScope throws an exception then it should be caught`() {
+        val (scopes, _, logger) = getEnabledScopes()
+
+        val exception = Exception("scope callback exception")
+        val scopeCallback = ScopeCallback {
+            throw exception
+        }
+
+        scopes.withIsolationScope(scopeCallback)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+    //endregion
+
     //region configureScope tests
     @Test
     fun `when configureScope is called on disabled client, do nothing`() {

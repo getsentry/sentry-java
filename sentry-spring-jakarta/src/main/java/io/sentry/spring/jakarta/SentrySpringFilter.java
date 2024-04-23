@@ -31,7 +31,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Open
 public class SentrySpringFilter extends OncePerRequestFilter {
-  private final @NotNull IScopes scopes;
+  private final @NotNull IScopes scopesBeforeForking;
   private final @NotNull SentryRequestResolver requestResolver;
   private final @NotNull TransactionNameProvider transactionNameProvider;
 
@@ -39,7 +39,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull IScopes scopes,
       final @NotNull SentryRequestResolver requestResolver,
       final @NotNull TransactionNameProvider transactionNameProvider) {
-    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+    this.scopesBeforeForking = Objects.requireNonNull(scopes, "scopes are required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
@@ -59,27 +59,28 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull HttpServletResponse response,
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
-    if (scopes.isEnabled()) {
+    if (scopesBeforeForking.isEnabled()) {
       // request may qualify for caching request body, if so resolve cached request
-      final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
-      final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
-      try {
+      final HttpServletRequest request =
+          resolveHttpServletRequest(scopesBeforeForking, servletRequest);
+      final @NotNull IScopes forkedScopes = scopesBeforeForking.forkedScopes("SentrySpringFilter");
+      try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         final Hint hint = new Hint();
         hint.set(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
         hint.set(SPRING_REQUEST_FILTER_RESPONSE, response);
 
-        scopes.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hint);
-        configureScope(request);
+        forkedScopes.addBreadcrumb(
+            Breadcrumb.http(request.getRequestURI(), request.getMethod()), hint);
+        configureScope(forkedScopes, request);
         filterChain.doFilter(request, response);
-      } finally {
-        lifecycleToken.close();
       }
     } else {
       filterChain.doFilter(servletRequest, response);
     }
   }
 
-  private void configureScope(HttpServletRequest request) {
+  private void configureScope(
+      final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
     try {
       scopes.configureScope(
           scope -> {
@@ -106,7 +107,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
   }
 
   private @NotNull HttpServletRequest resolveHttpServletRequest(
-      final @NotNull HttpServletRequest request) {
+      final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
     if (scopes.getOptions().isSendDefaultPii()
         && qualifiesForCaching(request, scopes.getOptions().getMaxRequestBodySize())) {
       try {

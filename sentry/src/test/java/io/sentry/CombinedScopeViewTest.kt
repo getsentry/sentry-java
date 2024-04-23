@@ -712,8 +712,6 @@ class CombinedScopeViewTest {
         assertNull(fixture.globalScope.contexts["someList"])
     }
 
-    // TODO [HSM] test all setContext methods
-
     @Test
     fun `combines attachments from all scopes`() {
         val combined = fixture.getSut()

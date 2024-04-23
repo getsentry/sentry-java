@@ -54,7 +54,7 @@ public final class CombinedContextsView extends Contexts {
     getDefaultContexts().setTrace(traceContext);
   }
 
-  private Contexts getDefaultContexts() {
+  private @NotNull Contexts getDefaultContexts() {
     switch (defaultScopeType) {
       case CURRENT:
         return currentContexts;
