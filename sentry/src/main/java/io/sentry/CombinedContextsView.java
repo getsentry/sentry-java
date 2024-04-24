@@ -248,7 +248,6 @@ public final class CombinedContextsView extends Contexts {
 
   @Override
   public @Nullable Object remove(final @NotNull Object key) {
-    // TODO [HSM] should this remove from all contexts?
     return getDefaultContexts().remove(key);
   }
 

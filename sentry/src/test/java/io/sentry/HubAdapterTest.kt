@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.createSentryClientMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -190,7 +191,7 @@ class HubAdapterTest {
     }
 
     @Test fun `bindClient calls Hub`() {
-        val client = mock<ISentryClient>()
+        val client = createSentryClientMock()
         HubAdapter.getInstance().bindClient(client)
         verify(scopes).bindClient(eq(client))
     }

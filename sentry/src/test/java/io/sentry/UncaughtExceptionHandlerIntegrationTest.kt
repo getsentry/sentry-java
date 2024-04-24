@@ -5,6 +5,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.EventDropReason.MULTITHREADED_DEDUPLICATION
 import io.sentry.protocol.SentryId
+import io.sentry.test.createTestScopes
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
@@ -105,7 +106,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         options.addIntegration(integrationMock)
         options.cacheDirPath = fixture.file.absolutePath
         options.setSerializer(mock())
-        val scopes = Scopes(Scope(options), Scope(options), Scope(options), "test")
+        val scopes = createTestScopes(options)
         scopes.close()
         verify(integrationMock).close()
     }

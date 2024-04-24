@@ -31,7 +31,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
-  private volatile boolean isEnabled;
   private final @NotNull TracesSampler tracesSampler;
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
   private final @NotNull MetricsApi metricsApi;
@@ -63,10 +62,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     validateOptions(options);
     this.tracesSampler = new TracesSampler(options);
     this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
-
-    // TODO [HSM] Checking isEnabled may not be what we want with global scope anymore
-    this.isEnabled = true;
-
     this.metricsApi = new MetricsApi(this);
   }
 
@@ -124,10 +119,9 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return Sentry.forkedRootScopes(creator);
   }
 
-  // TODO [HSM] always read from root scope?
   @Override
   public boolean isEnabled() {
-    return isEnabled;
+    return getClient().isEnabled();
   }
 
   @Override
@@ -428,7 +422,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
-      isEnabled = false;
     }
   }
 
@@ -695,18 +688,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   @Override
   public void bindClient(final @NotNull ISentryClient client) {
-    if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'bindClient' call is a no-op.");
+    if (client != null) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
+      getCombinedScopeView().bindClient(client);
     } else {
-      if (client != null) {
-        getOptions().getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
-        getCombinedScopeView().bindClient(client);
-      } else {
-        getOptions().getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
-        getCombinedScopeView().bindClient(NoOpSentryClient.getInstance());
-      }
+      getOptions().getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
+      getCombinedScopeView().bindClient(NoOpSentryClient.getInstance());
     }
   }
 
@@ -939,7 +926,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     @NotNull
     PropagationContext propagationContext =
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
-    // TODO [HSM] should this go on isolation scope?
     configureScope(
         (scope) -> {
           scope.setPropagationContext(propagationContext);

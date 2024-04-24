@@ -8,7 +8,6 @@ import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeType
-import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -24,6 +23,7 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.createTestScopes
 import io.sentry.transport.ITransport
 import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
@@ -106,13 +106,14 @@ class InternalSentrySdkTest {
 
     @BeforeTest
     fun `set up`() {
+        Sentry.close()
         context = ApplicationProvider.getApplicationContext()
         DeviceInfoUtil.resetInstance()
     }
 
     @Test
     fun `current scope returns null when scopes is no-op`() {
-        Sentry.getCurrentScopes().close()
+        Sentry.setCurrentScopes(createTestScopes(enabled = false))
         val scope = InternalSentrySdk.getCurrentScope()
         assertNull(scope)
     }
@@ -122,9 +123,7 @@ class InternalSentrySdkTest {
         val options = SentryOptions().apply {
             dsn = "https://key@uri/1234567"
         }
-        Sentry.setCurrentScopes(
-            Scopes(Scope(options), Scope(options), Scope(options), "test")
-        )
+        Sentry.setCurrentScopes(createTestScopes(options))
         val scope = InternalSentrySdk.getCurrentScope()
         assertNotNull(scope)
     }
@@ -134,9 +133,7 @@ class InternalSentrySdkTest {
         val options = SentryOptions().apply {
             dsn = "https://key@uri/1234567"
         }
-        Sentry.setCurrentScopes(
-            Scopes(Scope(options), Scope(options), Scope(options), "test")
-        )
+        Sentry.setCurrentScopes(createTestScopes(options))
         Sentry.addBreadcrumb("test")
         Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.addBreadcrumb(Breadcrumb("currentBreadcrumb")) }
         Sentry.configureScope(ScopeType.ISOLATION) { scope -> scope.addBreadcrumb(Breadcrumb("isolationBreadcrumb")) }

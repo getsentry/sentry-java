@@ -4,6 +4,7 @@ import io.sentry.protocol.Device
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.createTestScopes
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Assert.assertNotEquals
@@ -38,7 +39,7 @@ class CombinedScopeViewTest {
             globalScope = Scope(options)
             isolationScope = Scope(options)
             scope = Scope(options)
-            scopes = Scopes(scope, isolationScope, globalScope, "test")
+            scopes = createTestScopes(options, scope = scope, isolationScope = isolationScope, globalScope = globalScope)
 
             return CombinedScopeView(globalScope, isolationScope, scope)
         }
@@ -801,6 +802,9 @@ class CombinedScopeViewTest {
     @Test
     fun `uses isolation scope client if noop on current scope`() {
         val combined = fixture.getSut()
+        fixture.scope.bindClient(NoOpSentryClient.getInstance())
+        fixture.isolationScope.bindClient(NoOpSentryClient.getInstance())
+        fixture.globalScope.bindClient(NoOpSentryClient.getInstance())
 
         val isolationClient = SentryClient(fixture.options)
         fixture.isolationScope.bindClient(isolationClient)
@@ -814,6 +818,9 @@ class CombinedScopeViewTest {
     @Test
     fun `uses global scope client if noop on current and isolation scope`() {
         val combined = fixture.getSut()
+        fixture.scope.bindClient(NoOpSentryClient.getInstance())
+        fixture.isolationScope.bindClient(NoOpSentryClient.getInstance())
+        fixture.globalScope.bindClient(NoOpSentryClient.getInstance())
 
         val globalClient = SentryClient(fixture.options)
         fixture.globalScope.bindClient(globalClient)
@@ -824,6 +831,10 @@ class CombinedScopeViewTest {
     @Test
     fun `binds client to default scope`() {
         val combined = fixture.getSut()
+        fixture.scope.bindClient(NoOpSentryClient.getInstance())
+        fixture.isolationScope.bindClient(NoOpSentryClient.getInstance())
+        fixture.globalScope.bindClient(NoOpSentryClient.getInstance())
+
         val client = SentryClient(fixture.options)
         combined.bindClient(client)
 
@@ -880,7 +891,7 @@ class CombinedScopeViewTest {
         whenever(globalScope.options).thenReturn(options)
 
         val exception = RuntimeException("someEx")
-        val transaction = createTransaction("aTransaction", Scopes(scope, isolationScope, globalScope, "test"))
+        val transaction = createTransaction("aTransaction", createTestScopes(options = options, scope = scope, isolationScope = isolationScope, globalScope = globalScope))
         combined.setSpanContext(exception, transaction, "aTransaction")
 
         verify(scope, never()).setSpanContext(any(), any(), any())
