@@ -116,7 +116,6 @@ public final class Scope implements IScope {
     this.options = scope.options;
     this.level = scope.level;
     this.client = scope.client;
-    // TODO [HSM] should we do this? didn't do it for Hub
     this.lastEventId = scope.getLastEventId();
 
     final User userRef = scope.user;
@@ -838,7 +837,7 @@ public final class Scope implements IScope {
     SessionPair pair = null;
     synchronized (sessionLock) {
       if (session != null) {
-        // Assumes session will NOT flush itself (Not passing any hub to it)
+        // Assumes session will NOT flush itself (Not passing any scopes to it)
         session.end();
       }
       previousSession = session;
