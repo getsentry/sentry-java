@@ -234,7 +234,7 @@ internal abstract class BaseCaptureStrategy(
                         }
 
                         breadcrumb.type == "system" -> {
-                            breadcrumbCategory = null
+                            breadcrumbCategory = breadcrumb.type!!
                             breadcrumbMessage =
                                 breadcrumb.data.entries.joinToString() as? String ?: ""
                         }
