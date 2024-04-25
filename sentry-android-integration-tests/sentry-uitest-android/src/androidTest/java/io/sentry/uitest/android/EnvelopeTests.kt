@@ -1,6 +1,5 @@
 package io.sentry.uitest.android
 
-import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
@@ -158,7 +157,7 @@ class EnvelopeTests : BaseUiTest() {
                     // Timestamps of measurements should differ at least 10 milliseconds from each other
                     (1 until values.size).forEach { i ->
                         assertTrue(
-                            values[i].relativeStartNs.toLong() > values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(
+                            values[i].relativeStartNs.toLong() >= values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(
                                 10
                             ),
                             "Measurement value timestamp for '$name' does not differ at least 10ms"
@@ -199,7 +198,6 @@ class EnvelopeTests : BaseUiTest() {
 
         relay.assert {
             findEnvelope {
-                Log.e("ITEMS", it.items.joinToString { item -> item.header.type.itemType })
                 assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "timedOutProfile"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()

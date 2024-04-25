@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.metrics.LocalMetricsAggregator;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -254,4 +255,12 @@ public interface ISpan {
    */
   @ApiStatus.Internal
   boolean isNoOp();
+
+  /**
+   * Returns the metrics aggregator for this span.
+   *
+   * @return the metrics aggregator
+   */
+  @Nullable
+  LocalMetricsAggregator getLocalMetricsAggregator();
 }

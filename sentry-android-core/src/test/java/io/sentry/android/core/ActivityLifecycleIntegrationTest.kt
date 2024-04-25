@@ -1024,7 +1024,7 @@ class ActivityLifecycleIntegrationTest {
         // Assert the ttfd span is running and a timeout autoCancel task has been scheduled
         assertNotNull(ttfdSpan)
         assertFalse(ttfdSpan.isFinished)
-        assertTrue(deferredExecutorService.scheduledRunnables.isNotEmpty())
+        assertTrue(deferredExecutorService.hasScheduledRunnables())
 
         // Run the autoClose task and assert the ttfd span is finished with deadlineExceeded
         deferredExecutorService.runAll()

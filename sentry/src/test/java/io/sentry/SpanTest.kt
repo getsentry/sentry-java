@@ -1,8 +1,12 @@
 package io.sentry
 
 import io.sentry.protocol.SentryId
+import io.sentry.test.injectForField
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
@@ -437,6 +441,58 @@ class SpanTest {
         assertNotNull(span.finishDate)
         assertTrue(span.updateEndDate(endDate))
         assertEquals(endDate, span.finishDate)
+    }
+
+    @Test
+    fun `setMeasurement sets a measurement`() {
+        val span = fixture.getSut()
+        span.setMeasurement("test", 1)
+        assertNotNull(span.measurements["test"])
+        assertEquals(1, span.measurements["test"]!!.value)
+    }
+
+    @Test
+    fun `setMeasurement does not set a measurement if a span is finished`() {
+        val span = fixture.getSut()
+        span.finish()
+        span.setMeasurement("test", 1)
+        assertTrue(span.measurements.isEmpty())
+    }
+
+    @Test
+    fun `setMeasurement also set a measurement to the transaction root span`() {
+        val transaction = spy(getTransaction())
+        val span = transaction.startChild("op") as Span
+        // We need to inject the mock, otherwise the span calls the real transaction object
+        span.injectForField("transaction", transaction)
+        span.setMeasurement("test", 1)
+        verify(transaction).setMeasurementFromChild(eq("test"), eq(1))
+        verify(transaction).setMeasurement(eq("test"), eq(1))
+        assertNotNull(span.measurements["test"])
+        assertEquals(1, span.measurements["test"]!!.value)
+        assertNotNull(transaction.root.measurements["test"])
+        assertEquals(1, transaction.root.measurements["test"]!!.value)
+    }
+
+    @Test
+    fun `setMeasurement on transaction root span does not call transaction setMeasurement to avoid infinite recursion`() {
+        val transaction = spy(getTransaction())
+        // We need to inject the mock, otherwise the span calls the real transaction object
+        transaction.root.injectForField("transaction", transaction)
+        transaction.root.setMeasurement("test", 1)
+        verify(transaction, never()).setMeasurementFromChild(any(), any())
+        verify(transaction, never()).setMeasurementFromChild(any(), any(), any())
+        assertNotNull(transaction.root.measurements["test"])
+        assertEquals(1, transaction.root.measurements["test"]!!.value)
+    }
+
+    @Test
+    fun `span provides local metrics aggregator instance`() {
+        val span = fixture.getSut()
+        assertNotNull(span.localMetricsAggregator)
+
+        // ensure the getter returns the same instance
+        assertSame(span.localMetricsAggregator, span.localMetricsAggregator)
     }
 
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {

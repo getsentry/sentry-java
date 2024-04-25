@@ -11,6 +11,7 @@ import io.sentry.SentryLevel;
 import io.sentry.Span;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,6 +42,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   private final @NotNull Map<String, String> tags;
   private final @Nullable Map<String, Object> data;
 
+  private final @NotNull Map<String, @NotNull MeasurementValue> measurements;
+  private final @Nullable Map<String, List<MetricSummary>> metricsSummaries;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -59,6 +64,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.origin = span.getSpanContext().getOrigin();
     final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
+    final Map<String, MeasurementValue> measurementsCopy =
+        CollectionUtils.newConcurrentHashMap(span.getMeasurements());
+    this.measurements = measurementsCopy != null ? measurementsCopy : new ConcurrentHashMap<>();
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
     this.timestamp =
         span.getFinishDate() == null
@@ -68,6 +76,13 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
     this.startTimestamp = DateUtils.nanosToSeconds(span.getStartDate().nanoTimestamp());
     this.data = data;
+
+    final @Nullable LocalMetricsAggregator localAggregator = span.getLocalMetricsAggregator();
+    if (localAggregator != null) {
+      this.metricsSummaries = localAggregator.getSummaries();
+    } else {
+      this.metricsSummaries = null;
+    }
   }
 
   @ApiStatus.Internal
@@ -82,6 +97,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       @Nullable SpanStatus status,
       @Nullable String origin,
       @NotNull Map<String, String> tags,
+      @NotNull Map<String, MeasurementValue> measurements,
+      @Nullable Map<String, List<MetricSummary>> metricSummaries,
       @Nullable Map<String, Object> data) {
     this.startTimestamp = startTimestamp;
     this.timestamp = timestamp;
@@ -91,9 +108,11 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.op = op;
     this.description = description;
     this.status = status;
-    this.tags = tags;
-    this.data = data;
     this.origin = origin;
+    this.tags = tags;
+    this.measurements = measurements;
+    this.metricsSummaries = metricSummaries;
+    this.data = data;
   }
 
   public boolean isFinished() {
@@ -144,6 +163,14 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     return origin;
   }
 
+  public @NotNull Map<String, MeasurementValue> getMeasurements() {
+    return measurements;
+  }
+
+  public @Nullable Map<String, List<MetricSummary>> getMetricsSummaries() {
+    return metricsSummaries;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {
@@ -157,6 +184,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     public static final String STATUS = "status";
     public static final String ORIGIN = "origin";
     public static final String TAGS = "tags";
+    public static final String MEASUREMENTS = "measurements";
+    public static final String METRICS_SUMMARY = "_metrics_summary";
     public static final String DATA = "data";
   }
 
@@ -188,6 +217,12 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (!measurements.isEmpty()) {
+      writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
+    }
+    if (metricsSummaries != null && !metricsSummaries.isEmpty()) {
+      writer.name(JsonKeys.METRICS_SUMMARY).value(logger, metricsSummaries);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -232,6 +267,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       SpanStatus status = null;
       String origin = null;
       Map<String, String> tags = null;
+      Map<String, MeasurementValue> measurements = null;
+      Map<String, List<MetricSummary>> metricSummaries = null;
       Map<String, Object> data = null;
 
       Map<String, Object> unknown = null;
@@ -281,6 +318,12 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
           case JsonKeys.DATA:
             data = (Map<String, Object>) reader.nextObjectOrNull();
             break;
+          case JsonKeys.MEASUREMENTS:
+            measurements = reader.nextMapOrNull(logger, new MeasurementValue.Deserializer());
+            break;
+          case JsonKeys.METRICS_SUMMARY:
+            metricSummaries = reader.nextMapOfListOrNull(logger, new MetricSummary.Deserializer());
+            break;
           default:
             if (unknown == null) {
               unknown = new ConcurrentHashMap<>();
@@ -304,6 +347,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
       if (tags == null) {
         tags = new HashMap<>();
       }
+      if (measurements == null) {
+        measurements = new HashMap<>();
+      }
       SentrySpan sentrySpan =
           new SentrySpan(
               startTimestamp,
@@ -316,6 +362,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
               status,
               origin,
               tags,
+              measurements,
+              metricSummaries,
               data);
       sentrySpan.setUnknown(unknown);
       reader.endObject();

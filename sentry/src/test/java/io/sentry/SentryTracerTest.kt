@@ -465,7 +465,7 @@ class SentryTracerTest {
         assertEquals("desc", transaction.description)
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
-        assertEquals(1.0f, transaction.measurements["myMetric"]!!.value)
+        assertEquals(1.0f, transaction.root.measurements["myMetric"]!!.value)
         assertEquals("name", transaction.name)
         assertEquals(ex, transaction.throwable)
     }
@@ -987,9 +987,27 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction is created, but not profiled, transactionPerformanceCollector is not started`() {
+    fun `setting the same measurement multiple times from a child only keeps first value`() {
         val transaction = fixture.getSut()
-        verify(fixture.transactionPerformanceCollector, never()).start(anyOrNull())
+        transaction.setMeasurementFromChild("metric1", 1.0f)
+        transaction.setMeasurementFromChild("metric1", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1.0f, it.measurements["metric1"]!!.value)
+                assertNull(it.measurements["metric1"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
+        val transaction = fixture.getSut()
+        verify(fixture.transactionPerformanceCollector).start(anyOrNull())
     }
 
     @Test

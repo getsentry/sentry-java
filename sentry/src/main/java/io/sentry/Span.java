@@ -1,6 +1,9 @@
 package io.sentry;
 
+import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -41,6 +44,11 @@ public final class Span implements ISpan {
   private @Nullable SpanFinishedCallback spanFinishedCallback;
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
+
+  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
+  private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
+      new LazyEvaluator<>(() -> new LocalMetricsAggregator());
 
   Span(
       final @NotNull SentryId traceId,
@@ -323,24 +331,59 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(final @NotNull String key, final @NotNull Object value) {
     data.put(key, value);
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(final @NotNull String key) {
     return data.get(key);
   }
 
   @Override
-  public void setMeasurement(@NotNull String name, @NotNull Number value) {
-    this.transaction.setMeasurement(name, value);
+  public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
+    if (isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The span is already finished. Measurement %s cannot be set",
+              name);
+      return;
+    }
+    this.measurements.put(name, new MeasurementValue(value, null));
+    // We set the measurement in the transaction, too, but we have to check if this is the root span
+    // of the transaction, to avoid an infinite recursion
+    if (transaction.getRoot() != this) {
+      transaction.setMeasurementFromChild(name, value);
+    }
   }
 
   @Override
   public void setMeasurement(
-      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
-    this.transaction.setMeasurement(name, value, unit);
+      final @NotNull String name,
+      final @NotNull Number value,
+      final @NotNull MeasurementUnit unit) {
+    if (isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The span is already finished. Measurement %s cannot be set",
+              name);
+      return;
+    }
+    this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
+    // We set the measurement in the transaction, too, but we have to check if this is the root span
+    // of the transaction, to avoid an infinite recursion
+    if (transaction.getRoot() != this) {
+      transaction.setMeasurementFromChild(name, value, unit);
+    }
+  }
+
+  @NotNull
+  public Map<String, MeasurementValue> getMeasurements() {
+    return measurements;
   }
 
   @Override
@@ -355,6 +398,11 @@ public final class Span implements ISpan {
   @Override
   public boolean isNoOp() {
     return false;
+  }
+
+  @Override
+  public @NotNull LocalMetricsAggregator getLocalMetricsAggregator() {
+    return metricsAggregator.getValue();
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {

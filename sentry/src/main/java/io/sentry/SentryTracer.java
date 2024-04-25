@@ -1,7 +1,7 @@
 package io.sentry;
 
+import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
-import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
@@ -13,7 +13,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,7 +47,6 @@ public final class SentryTracer implements ITransaction {
 
   private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
-  private final @NotNull Map<String, MeasurementValue> measurements;
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
@@ -72,7 +70,6 @@ public final class SentryTracer implements ITransaction {
       final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
-    this.measurements = new ConcurrentHashMap<>();
 
     this.root =
         new Span(context, this, hub, transactionOptions.getStartTimestamp(), transactionOptions);
@@ -90,9 +87,9 @@ public final class SentryTracer implements ITransaction {
       this.baggage = new Baggage(hub.getOptions().getLogger());
     }
 
-    // We are currently sending the performance data only in profiles, so there's no point in
-    // collecting them if a profile is not sampled
-    if (transactionPerformanceCollector != null && Boolean.TRUE.equals(isProfileSampled())) {
+    // We are currently sending the performance data only in profiles, but we are always sending
+    // performance measurements.
+    if (transactionPerformanceCollector != null) {
       transactionPerformanceCollector.start(this);
     }
 
@@ -263,7 +260,7 @@ public final class SentryTracer implements ITransaction {
         return;
       }
 
-      transaction.getMeasurements().putAll(measurements);
+      transaction.getMeasurements().putAll(root.getMeasurements());
       hub.captureTransaction(transaction, traceContext(), hint, profilingTraceData);
     }
   }
@@ -619,6 +616,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setOperation(final @NotNull String operation) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Operation %s cannot be set",
+              operation);
       return;
     }
 
@@ -633,6 +636,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setDescription(final @Nullable String description) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Description %s cannot be set",
+              description);
       return;
     }
 
@@ -647,6 +656,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setStatus(final @Nullable SpanStatus status) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Status %s cannot be set",
+              status == null ? "null" : status.name());
       return;
     }
 
@@ -661,6 +676,9 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.DEBUG, "The transaction is already finished. Throwable cannot be set");
       return;
     }
 
@@ -680,6 +698,9 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.DEBUG, "The transaction is already finished. Tag %s cannot be set", key);
       return;
     }
 
@@ -699,6 +720,10 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setData(@NotNull String key, @NotNull Object value) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG, "The transaction is already finished. Data %s cannot be set", key);
       return;
     }
 
@@ -710,13 +735,28 @@ public final class SentryTracer implements ITransaction {
     return this.root.getData(key);
   }
 
+  @ApiStatus.Internal
+  public void setMeasurementFromChild(final @NotNull String name, final @NotNull Number value) {
+    // We don't want to overwrite the root span measurement, if it comes from a child.
+    if (!root.getMeasurements().containsKey(name)) {
+      setMeasurement(name, value);
+    }
+  }
+
+  @ApiStatus.Internal
+  public void setMeasurementFromChild(
+      final @NotNull String name,
+      final @NotNull Number value,
+      final @NotNull MeasurementUnit unit) {
+    // We don't want to overwrite the root span measurement, if it comes from a child.
+    if (!root.getMeasurements().containsKey(name)) {
+      setMeasurement(name, value, unit);
+    }
+  }
+
   @Override
   public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
-    if (root.isFinished()) {
-      return;
-    }
-
-    this.measurements.put(name, new MeasurementValue(value, null));
+    root.setMeasurement(name, value);
   }
 
   @Override
@@ -724,11 +764,7 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String name,
       final @NotNull Number value,
       final @NotNull MeasurementUnit unit) {
-    if (root.isFinished()) {
-      return;
-    }
-
-    this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
+    root.setMeasurement(name, value, unit);
   }
 
   public @Nullable Map<String, Object> getData() {
@@ -759,6 +795,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {
     if (root.isFinished()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The transaction is already finished. Name %s cannot be set",
+              name);
       return;
     }
 
@@ -834,12 +876,6 @@ public final class SentryTracer implements ITransaction {
     return isDeadlineTimerRunning;
   }
 
-  @TestOnly
-  @NotNull
-  Map<String, MeasurementValue> getMeasurements() {
-    return measurements;
-  }
-
   @ApiStatus.Internal
   @Override
   public void setContext(final @NotNull String key, final @NotNull Object context) {
@@ -860,6 +896,11 @@ public final class SentryTracer implements ITransaction {
   @Override
   public boolean isNoOp() {
     return false;
+  }
+
+  @Override
+  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
+    return root.getLocalMetricsAggregator();
   }
 
   private static final class FinishStatus {

@@ -4,6 +4,7 @@ import io.sentry.spring.jakarta.webflux.ReactorUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Hooks;
@@ -14,10 +15,12 @@ import reactor.core.scheduler.Schedulers;
 public class TodoController {
   private final RestTemplate restTemplate;
   private final WebClient webClient;
+  private final RestClient restClient;
 
-  public TodoController(RestTemplate restTemplate, WebClient webClient) {
+  public TodoController(RestTemplate restTemplate, WebClient webClient, RestClient restClient) {
     this.restTemplate = restTemplate;
     this.webClient = webClient;
+    this.restClient = restClient;
   }
 
   @GetMapping("/todo/{id}")
@@ -41,5 +44,14 @@ public class TodoController {
                             .bodyToMono(Todo.class)
                             .map(response -> response)))
         .block();
+  }
+
+  @GetMapping("/todo-restclient/{id}")
+  Todo todoRestClient(@PathVariable Long id) {
+    return restClient
+        .get()
+        .uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
+        .retrieve()
+        .body(Todo.class);
   }
 }

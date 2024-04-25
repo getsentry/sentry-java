@@ -38,13 +38,15 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     private var clientErrorResponse: Response? = null
     private val isReadingResponseBody = AtomicBoolean(false)
     private val isEventFinished = AtomicBoolean(false)
+    private val url: String
+    private val method: String
 
     init {
         val urlDetails = UrlUtils.parse(request.url.toString())
-        val url = urlDetails.urlOrFallback
+        url = urlDetails.urlOrFallback
         val host: String = request.url.host
         val encodedPath: String = request.url.encodedPath
-        val method: String = request.method
+        method = request.method
 
         // We start the call span that will contain all the others
         val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
@@ -113,7 +115,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
     fun startSpan(event: String) {
         // Find the parent of the span being created. E.g. secureConnect is child of connect
         val parentSpan = findParentSpan(event)
-        val span = parentSpan?.startChild("http.client.$event") ?: return
+        val span = parentSpan?.startChild("http.client.$event", "$method $url") ?: return
         if (event == RESPONSE_BODY_EVENT) {
             // We save this event is reading the response body, so that it will not be auto-finished
             isReadingResponseBody.set(true)

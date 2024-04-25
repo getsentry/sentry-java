@@ -13,6 +13,7 @@ import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
+import io.sentry.metrics.NoopMetricsAggregator
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
@@ -58,6 +59,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -136,6 +138,25 @@ class SentryClientTest {
         fixture.sentryOptions.dsn = dsnStringLegacy
         val sut = fixture.getSut()
         assertTrue(sut.isEnabled)
+    }
+
+    @Test
+    fun `when client is closed with isRestarting false, transport waits`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close(false)
+        assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
+        verify(fixture.transport).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
+        verify(fixture.transport).close(eq(false))
+    }
+
+    @Test
+    fun `when client is closed with isRestarting true, transport does not wait`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close(true)
+        verify(fixture.transport).flush(eq(0))
+        verify(fixture.transport).close(eq(true))
     }
 
     @Test
@@ -2478,6 +2499,48 @@ class SentryClientTest {
             },
             any()
         )
+    }
+
+    @Test
+    fun `beforeEnvelopeCallback is executed`() {
+        var beforeEnvelopeCalled = false
+        val sut = fixture.getSut { options ->
+            options.beforeEnvelopeCallback =
+                SentryOptions.BeforeEnvelopeCallback { _, _ -> beforeEnvelopeCalled = true }
+        }
+
+        sut.captureEvent(SentryEvent(), Hint())
+
+        assertTrue(beforeEnvelopeCalled)
+    }
+
+    @Test
+    fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
+        val sut = fixture.getSut { options ->
+            options.beforeEnvelopeCallback =
+                SentryOptions.BeforeEnvelopeCallback { _, _ ->
+                    RuntimeException("hook failed")
+                }
+        }
+
+        sut.captureEvent(SentryEvent(), Hint())
+        verify(fixture.transport).send(anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `no-op metrics aggregator is returned when metrics is disabled`() {
+        val sut = fixture.getSut { options ->
+            options.isEnableMetrics = false
+        }
+        assertSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
+    }
+
+    @Test
+    fun `metrics aggregator is returned when metrics is disabled`() {
+        val sut = fixture.getSut { options ->
+            options.isEnableMetrics = true
+        }
+        assertNotSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {

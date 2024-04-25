@@ -15,11 +15,16 @@ import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.protocol.SentryException;
+import io.sentry.protocol.SentryStackFrame;
+import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -68,7 +73,49 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     setCommons(event, true, applyScopeData);
 
+    fixExceptionOrder(event);
+
     return event;
+  }
+
+  /**
+   * The last exception is usually used for picking the issue title, but the convention is to send
+   * inner exceptions first, e.g. [inner, outer] This doesn't work very well on Android, as some
+   * hooks like Application.onCreate is wrapped by Android framework with a RuntimeException. Thus,
+   * if the last exception is a RuntimeInit$MethodAndArgsCaller, reverse the order to get a better
+   * issue title. This is a quick fix, for more details see: <a
+   * href="https://github.com/getsentry/sentry/issues/64074">#64074</a> <a
+   * href="https://github.com/getsentry/sentry/issues/59679">#59679</a> <a
+   * href="https://github.com/getsentry/sentry/issues/64088">#64088</a>
+   *
+   * @param event the event to process
+   */
+  private static void fixExceptionOrder(final @NotNull SentryEvent event) {
+    boolean reverseExceptions = false;
+
+    final @Nullable List<SentryException> exceptions = event.getExceptions();
+    if (exceptions != null && exceptions.size() > 1) {
+      final @NotNull SentryException lastException = exceptions.get(exceptions.size() - 1);
+      if ("java.lang".equals(lastException.getModule())) {
+        final @Nullable SentryStackTrace stacktrace = lastException.getStacktrace();
+        if (stacktrace != null) {
+          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
+          if (frames != null) {
+            for (final @NotNull SentryStackFrame frame : frames) {
+              if ("com.android.internal.os.RuntimeInit$MethodAndArgsCaller"
+                  .equals(frame.getModule())) {
+                reverseExceptions = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (reverseExceptions) {
+      Collections.reverse(exceptions);
+    }
   }
 
   private void setCommons(

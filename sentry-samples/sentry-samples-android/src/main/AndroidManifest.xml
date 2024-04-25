@@ -26,6 +26,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/AppTheme"
+        android:networkSecurityConfig="@xml/network"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
         <activity
@@ -61,6 +62,12 @@
       <activity
             android:name=".compose.ComposeActivity"
             android:exported="false" />
+
+      <activity android:name=".FrameDataForSpansActivity"
+        android:exported="false"/>
+
+      <activity android:name=".MetricsActivity"
+        android:exported="false"/>
 
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
         <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559" />
@@ -155,6 +162,8 @@
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
+
+      <meta-data android:name="io.sentry.enable-metrics" android:value="true" />
 
     </application>
 </manifest>

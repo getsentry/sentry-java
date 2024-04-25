@@ -40,7 +40,13 @@ class RelayAsserter(
         filter: (envelope: SentryEnvelope) -> Boolean = { true }
     ): RelayResponse {
         val relayResponseIndex = unassertedEnvelopes.indexOfFirst { it.envelope?.let(filter) ?: false }
-        if (relayResponseIndex == -1) throw AssertionError("No envelope request found with specified filter")
+        if (relayResponseIndex == -1) {
+            throw AssertionError(
+                "No envelope request found with specified filter.\n" +
+                    "There was a total of ${originalUnassertedEnvelopes.size} envelopes: " +
+                    originalUnassertedEnvelopes.joinToString { describeEnvelope(it.envelope!!) }
+            )
+        }
         return unassertedEnvelopes.removeAt(relayResponseIndex)
     }
 

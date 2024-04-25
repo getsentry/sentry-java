@@ -51,6 +51,8 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean enableBackpressureHandling;
 
+  private @Nullable SentryOptions.Cron cron;
+
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
       final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
@@ -156,6 +158,32 @@ public final class ExternalOptions {
             ignoredExceptionType);
       }
     }
+
+    final Long cronDefaultCheckinMargin =
+        propertiesProvider.getLongProperty("cron.default-checkin-margin");
+    final Long cronDefaultMaxRuntime =
+        propertiesProvider.getLongProperty("cron.default-max-runtime");
+    final String cronDefaultTimezone = propertiesProvider.getProperty("cron.default-timezone");
+    final Long cronDefaultFailureIssueThreshold =
+        propertiesProvider.getLongProperty("cron.default-failure-issue-threshold");
+    final Long cronDefaultRecoveryThreshold =
+        propertiesProvider.getLongProperty("cron.default-recovery-threshold");
+
+    if (cronDefaultCheckinMargin != null
+        || cronDefaultMaxRuntime != null
+        || cronDefaultTimezone != null
+        || cronDefaultFailureIssueThreshold != null
+        || cronDefaultRecoveryThreshold != null) {
+      SentryOptions.Cron cron = new SentryOptions.Cron();
+      cron.setDefaultCheckinMargin(cronDefaultCheckinMargin);
+      cron.setDefaultMaxRuntime(cronDefaultMaxRuntime);
+      cron.setDefaultTimezone(cronDefaultTimezone);
+      cron.setDefaultFailureIssueThreshold(cronDefaultFailureIssueThreshold);
+      cron.setDefaultRecoveryThreshold(cronDefaultRecoveryThreshold);
+
+      options.setCron(cron);
+    }
+
     return options;
   }
 
@@ -411,5 +439,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable SentryOptions.Cron getCron() {
+    return cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setCron(final @Nullable SentryOptions.Cron cron) {
+    this.cron = cron;
   }
 }

@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       - name: Setup Java Version
         uses: actions/setup-java@v4
@@ -25,7 +27,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@a8f75513eafdebd8141bd1cd4e30fcd194af8dfa # pin@v2
+        uses: gradle/actions/setup-gradle@579fbbe7221704325eb4c4d4bf20c2b0859fba76 # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -33,7 +35,7 @@ jobs:
         run: make preMerge
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@4fe8c5f003fae66aa5ebb77cfd3e7bfbbda0b6b0 # pin@v3
+        uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # pin@v3
         with:
           name: sentry-java
           fail_ci_if_error: false

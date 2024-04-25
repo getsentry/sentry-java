@@ -10,6 +10,7 @@ import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
@@ -774,7 +775,7 @@ class HubTest {
         sut.close()
 
         sut.close()
-        verify(mockClient).close() // 1 to close, but next one wont be recorded
+        verify(mockClient).close(eq(false)) // 1 to close, but next one wont be recorded
     }
 
     @Test
@@ -782,7 +783,23 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         sut.close()
-        verify(mockClient).close()
+        verify(mockClient).close(eq(false))
+    }
+
+    @Test
+    fun `when close is called with isRestarting false and client is alive, close on the client should be called with isRestarting false`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.close(false)
+        verify(mockClient).close(eq(false))
+    }
+
+    @Test
+    fun `when close is called with isRestarting true and client is alive, close on the client should be called with isRestarting true`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.close(true)
+        verify(mockClient).close(eq(true))
     }
     //endregion
 
@@ -1653,6 +1670,32 @@ class HubTest {
     }
 
     @Test
+    fun `Hub with isRestarting true should close the sentry executor in the background`() {
+        val executor = spy(DeferredExecutorService())
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            executorService = executor
+        }
+        val sut = Hub(options)
+        sut.close(true)
+        verify(executor, never()).close(any())
+        executor.runAll()
+        verify(executor).close(any())
+    }
+
+    @Test
+    fun `Hub with isRestarting false should close the sentry executor in the background`() {
+        val executor = mock<ISentryExecutorService>()
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            executorService = executor
+        }
+        val sut = Hub(options)
+        sut.close(false)
+        verify(executor).close(any())
+    }
+
+    @Test
     fun `Hub close should clear the scope`() {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -1920,6 +1963,137 @@ class HubTest {
         }
 
         assertNull(transactionContext)
+    }
+
+    @Test
+    fun `hub provides no tags for metrics, if metric option is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = false
+            it.isEnableDefaultTagsForMetrics = true
+        } as Hub
+
+        assertTrue(
+            hub.defaultTagsForMetrics.isEmpty()
+        )
+    }
+
+    @Test
+    fun `hub provides no tags for metrics, if default tags option is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableDefaultTagsForMetrics = false
+        } as Hub
+
+        assertTrue(
+            hub.defaultTagsForMetrics.isEmpty()
+        )
+    }
+
+    @Test
+    fun `hub provides minimum default tags for metrics, if nothing is set up`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableDefaultTagsForMetrics = true
+        } as Hub
+
+        assertEquals(
+            mapOf(
+                "environment" to "production"
+            ),
+            hub.defaultTagsForMetrics
+        )
+    }
+
+    @Test
+    fun `hub provides default tags for metrics, based on options and running transaction`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableDefaultTagsForMetrics = true
+            it.environment = "test"
+            it.release = "1.0"
+        } as Hub
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        assertEquals(
+            mapOf(
+                "environment" to "test",
+                "release" to "1.0",
+                "transaction" to "name"
+            ),
+            hub.defaultTagsForMetrics
+        )
+    }
+
+    @Test
+    fun `hub provides no local metric aggregator if metrics feature is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = false
+            it.isEnableSpanLocalMetricAggregation = true
+        } as Hub
+
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        assertNull(hub.localMetricsAggregator)
+    }
+
+    @Test
+    fun `hub provides no local metric aggregator if local aggregation feature is disabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableSpanLocalMetricAggregation = false
+        } as Hub
+
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        assertNull(hub.localMetricsAggregator)
+    }
+
+    @Test
+    fun `hub provides local metric aggregator if feature is enabled`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableSpanLocalMetricAggregation = true
+        } as Hub
+
+        hub.startTransaction(
+            "name",
+            "op",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+        assertNotNull(hub.localMetricsAggregator)
+    }
+
+    @Test
+    fun `hub startSpanForMetric starts a child span`() {
+        val hub = generateHub {
+            it.isEnableMetrics = true
+            it.isEnableSpanLocalMetricAggregation = true
+            it.sampleRate = 1.0
+        } as Hub
+
+        val txn = hub.startTransaction(
+            "name.txn",
+            "op.txn",
+            TransactionOptions().apply { isBindToScope = true }
+        )
+
+        val span = hub.startSpanForMetric("op", "key")!!
+
+        assertEquals("op", span.spanContext.op)
+        assertEquals("key", span.spanContext.description)
+        assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

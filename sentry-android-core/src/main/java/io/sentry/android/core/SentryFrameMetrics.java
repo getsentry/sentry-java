@@ -24,6 +24,7 @@ final class SentryFrameMetrics {
       final int frozenFrameCount,
       final long frozenFrameDelayNanos,
       final long totalDurationNanos) {
+
     this.normalFrameCount = normalFrameCount;
 
     this.slowFrameCount = slowFrameCount;
@@ -34,21 +35,21 @@ final class SentryFrameMetrics {
     this.totalDurationNanos = totalDurationNanos;
   }
 
-  public void addSlowFrame(final long durationNanos, final long delayNanos) {
+  public void addFrame(
+      final long durationNanos,
+      final long delayNanos,
+      final boolean isSlow,
+      final boolean isFrozen) {
     totalDurationNanos += durationNanos;
-    slowFrameDelayNanos += delayNanos;
-    slowFrameCount++;
-  }
-
-  public void addFrozenFrame(final long durationNanos, final long delayNanos) {
-    totalDurationNanos += durationNanos;
-    frozenFrameDelayNanos += delayNanos;
-    frozenFrameCount++;
-  }
-
-  public void addNormalFrame(final long durationNanos) {
-    totalDurationNanos += durationNanos;
-    normalFrameCount++;
+    if (isFrozen) {
+      frozenFrameDelayNanos += delayNanos;
+      frozenFrameCount += 1;
+    } else if (isSlow) {
+      slowFrameDelayNanos += delayNanos;
+      slowFrameCount += 1;
+    } else {
+      normalFrameCount += 1;
+    }
   }
 
   public int getNormalFrameCount() {
