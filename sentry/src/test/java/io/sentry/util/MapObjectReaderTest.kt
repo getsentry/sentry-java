@@ -74,10 +74,12 @@ class MapObjectReaderTest {
         writer.name("UUID").value(logger, UUID.fromString("00000000-1111-2222-3333-444444444444"))
         writer.name("Currency").value(logger, Currency.getInstance("EUR"))
         writer.name("Enum").value(logger, MapObjectWriterTest.BasicEnum.A)
+        writer.name("data").value(logger, mapOf("screen" to "MainActivity"))
 
         val reader = MapObjectReader(data)
         reader.beginObject()
         assertEquals(JsonToken.NAME, reader.peek())
+        assertEquals(mapOf("screen" to "MainActivity"), reader.nextObjectOrNull())
         assertEquals("Enum", reader.nextName())
         assertEquals(BasicEnum.A, BasicEnum.valueOf(reader.nextString()))
         assertEquals("Currency", reader.nextName())
