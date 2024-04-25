@@ -1,10 +1,12 @@
 package io.sentry.android.replay.capture
 
+import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ReplayRecording
+import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
@@ -17,6 +19,11 @@ import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.rrweb.RRWebIncrementalSnapshotEvent
+import io.sentry.rrweb.RRWebInteractionEvent
+import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
+import io.sentry.rrweb.RRWebInteractionMoveEvent
+import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.rrweb.RRWebVideoEvent
@@ -42,6 +49,7 @@ internal abstract class BaseCaptureStrategy(
 
     internal companion object {
         private const val TAG = "CaptureStrategy"
+        private const val DEBOUNCE_TIMEOUT = 200
         private val snakecasePattern = "_[a-z]".toRegex()
         private val supportedNetworkData = setOf(
             "status_code",
@@ -59,6 +67,8 @@ internal abstract class BaseCaptureStrategy(
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
+    private val currentEvents = mutableListOf<RRWebEvent>()
+    private val lastExecutionTime = AtomicLong(0)
 
     protected val replayExecutor: ScheduledExecutorService by lazy {
         executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
@@ -225,7 +235,7 @@ internal abstract class BaseCaptureStrategy(
                         }
 
                         breadcrumb.type == "system" -> {
-                            breadcrumbCategory = breadcrumb.type!!
+                            breadcrumbCategory = null
                             breadcrumbMessage =
                                 breadcrumb.data.entries.joinToString() as? String ?: ""
                         }
@@ -248,6 +258,12 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
         }
+        currentEvents.removeAll {
+            if (it.timestamp > segmentTimestamp.time && it.timestamp < endTimestamp.time) {
+                recordingPayload += it
+            }
+            it.timestamp < endTimestamp.time
+        }
 
         val recording = ReplayRecording().apply {
             this.segmentId = segmentId
@@ -263,6 +279,13 @@ internal abstract class BaseCaptureStrategy(
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
         this.recorderConfig = recorderConfig
+    }
+
+    override fun onTouchEvent(event: MotionEvent) {
+        val rrwebEvent = event.toRRWebIncrementalSnapshotEvent()
+        if (rrwebEvent != null) {
+            currentEvents += rrwebEvent
+        }
     }
 
     override fun close() {
@@ -333,6 +356,47 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
             data = breadcrumbData
+        }
+    }
+
+    private fun MotionEvent.toRRWebIncrementalSnapshotEvent(): RRWebIncrementalSnapshotEvent? {
+        val event = this
+        return when(val action = event.actionMasked) {
+           MotionEvent.ACTION_MOVE -> {
+               // we only throttle move events as those can be overwhelming
+               val now = dateProvider.getCurrentTimeMillis()
+               if (lastExecutionTime.get() != 0L && lastExecutionTime.get() + DEBOUNCE_TIMEOUT > now) {
+                   return null
+               }
+               lastExecutionTime.set(now)
+
+               RRWebInteractionMoveEvent().apply {
+                   timestamp = dateProvider.currentTimeMillis
+                   positions = listOf(
+                       Position().apply {
+                           x = event.x * recorderConfig.scaleFactorX
+                           y = event.y * recorderConfig.scaleFactorY
+                           id = event.getPointerId(event.actionIndex)
+                           timeOffset = 0 // TODO: is this needed?
+                       }
+                   ) // TODO: support multiple pointers
+               }
+           }
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                RRWebInteractionEvent().apply {
+                    timestamp = dateProvider.currentTimeMillis
+                    x = event.x * recorderConfig.scaleFactorX
+                    y = event.y * recorderConfig.scaleFactorY
+                    id = event.getPointerId(event.actionIndex)
+                    interactionType = when (action) {
+                        MotionEvent.ACTION_UP -> InteractionType.TouchEnd
+                        MotionEvent.ACTION_DOWN -> InteractionType.TouchStart
+                        MotionEvent.ACTION_CANCEL -> InteractionType.TouchCancel
+                        else -> InteractionType.TouchMove_Departed // should not happen
+                    }
+                }
+            }
+            else -> null
         }
     }
 }
