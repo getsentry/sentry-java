@@ -32,7 +32,9 @@ internal class WindowRecorder(
     private val rootViews = ArrayList<WeakReference<View>>()
     private var recorder: ScreenshotRecorder? = null
     private var capturingTask: ScheduledFuture<*>? = null
-    private val capturer = Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
+    private val capturer by lazy {
+        Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
+    }
 
     private val onRootViewsChangedListener = OnRootViewsChangedListener { root, added ->
         if (added) {

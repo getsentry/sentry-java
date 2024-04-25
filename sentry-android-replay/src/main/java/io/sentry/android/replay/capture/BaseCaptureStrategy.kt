@@ -1,0 +1,212 @@
+package io.sentry.android.replay.capture
+
+import io.sentry.DateUtils
+import io.sentry.Hint
+import io.sentry.IHub
+import io.sentry.ReplayRecording
+import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
+import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayEvent.ReplayType.SESSION
+import io.sentry.android.replay.ReplayCache
+import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.submitSafely
+import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.FileUtils
+import java.io.File
+import java.util.Date
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
+
+internal abstract class BaseCaptureStrategy(
+    private val options: SentryOptions,
+    private val dateProvider: ICurrentDateProvider,
+    protected var recorderConfig: ScreenshotRecorderConfig,
+    executor: ScheduledExecutorService? = null
+) : CaptureStrategy {
+
+    internal companion object {
+        private const val TAG = "CaptureStrategy"
+    }
+
+    protected var cache: ReplayCache? = null
+    protected val segmentTimestamp = AtomicReference<Date>()
+    protected val replayStartTimestamp = AtomicLong()
+    override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
+    override val currentSegment = AtomicInteger(0)
+
+    protected val replayExecutor: ScheduledExecutorService by lazy {
+        executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    }
+
+    override fun start(segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
+        currentSegment.set(segmentId)
+        currentReplayId.set(replayId)
+
+        if (cleanupOldReplays) {
+            replayExecutor.submitSafely(options, "$TAG.replays_cleanup") {
+                // clean up old replays
+                options.cacheDirPath?.let { cacheDir ->
+                    File(cacheDir).listFiles { dir, name ->
+                        // TODO: also exclude persisted replay_id from scope when implementing ANRs
+                        if (name.startsWith("replay_") && !name.contains(
+                                currentReplayId.get().toString()
+                            )
+                        ) {
+                            FileUtils.deleteRecursively(File(dir, name))
+                        }
+                        false
+                    }
+                }
+            }
+        }
+
+        cache = ReplayCache(options, currentReplayId.get(), recorderConfig)
+
+        // TODO: replace it with dateProvider.currentTimeMillis to also test it
+        segmentTimestamp.set(DateUtils.getCurrentDateTime())
+        replayStartTimestamp.set(dateProvider.currentTimeMillis)
+        // TODO: finalize old recording if there's some left on disk and send it using the replayId from persisted scope (e.g. for ANRs)
+    }
+
+    override fun resume() {
+        // TODO: replace it with dateProvider.currentTimeMillis to also test it
+        segmentTimestamp.set(DateUtils.getCurrentDateTime())
+    }
+
+    override fun pause() = Unit
+
+    override fun stop() {
+        cache?.close()
+        currentSegment.set(0)
+        replayStartTimestamp.set(0)
+        segmentTimestamp.set(null)
+        currentReplayId.set(SentryId.EMPTY_ID)
+    }
+
+    protected fun createSegment(
+        duration: Long,
+        currentSegmentTimestamp: Date,
+        replayId: SentryId,
+        segmentId: Int,
+        height: Int,
+        width: Int,
+        replayType: ReplayType = SESSION
+    ): ReplaySegment {
+        val generatedVideo = cache?.createVideoOf(
+            duration,
+            currentSegmentTimestamp.time,
+            segmentId,
+            height,
+            width
+        ) ?: return ReplaySegment.Failed
+
+        val (video, frameCount, videoDuration) = generatedVideo
+        return buildReplay(
+            video,
+            replayId,
+            currentSegmentTimestamp,
+            segmentId,
+            height,
+            width,
+            frameCount,
+            videoDuration,
+            replayType
+        )
+    }
+
+    private fun buildReplay(
+        video: File,
+        currentReplayId: SentryId,
+        segmentTimestamp: Date,
+        segmentId: Int,
+        height: Int,
+        width: Int,
+        frameCount: Int,
+        duration: Long,
+        replayType: ReplayType
+    ): ReplaySegment {
+        val replay = SentryReplayEvent().apply {
+            eventId = currentReplayId
+            replayId = currentReplayId
+            this.segmentId = segmentId
+            this.timestamp = DateUtils.getDateTime(segmentTimestamp.time + duration)
+            replayStartTimestamp = segmentTimestamp
+            this.replayType = replayType
+            videoFile = video
+        }
+
+        val recording = ReplayRecording().apply {
+            this.segmentId = segmentId
+            payload = listOf(
+                RRWebMetaEvent().apply {
+                    this.timestamp = segmentTimestamp.time
+                    this.height = height
+                    this.width = width
+                },
+                RRWebVideoEvent().apply {
+                    this.timestamp = segmentTimestamp.time
+                    this.segmentId = segmentId
+                    this.durationMs = duration
+                    this.frameCount = frameCount
+                    size = video.length()
+                    frameRate = recorderConfig.frameRate
+                    this.height = height
+                    this.width = width
+                    // TODO: support non-fullscreen windows later
+                    left = 0
+                    top = 0
+                }
+            )
+        }
+
+        return ReplaySegment.Created(videoDuration = duration, replay = replay, recording = recording)
+    }
+
+    override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
+        this.recorderConfig = recorderConfig
+    }
+
+    override fun close() {
+        replayExecutor.gracefullyShutdown(options)
+    }
+
+    private class ReplayExecutorServiceThreadFactory : ThreadFactory {
+        private var cnt = 0
+        override fun newThread(r: Runnable): Thread {
+            val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
+            ret.setDaemon(true)
+            return ret
+        }
+    }
+
+    protected sealed class ReplaySegment {
+        object Failed : ReplaySegment()
+        data class Created(
+            val videoDuration: Long,
+            val replay: SentryReplayEvent,
+            val recording: ReplayRecording
+        ) : ReplaySegment() {
+            fun capture(hub: IHub?, hint: Hint = Hint()) {
+                hub?.captureReplay(replay, hint.apply { replayRecording = recording })
+            }
+
+            fun setSegmentId(segmentId: Int) {
+                replay.segmentId = segmentId
+                recording.payload?.forEach {
+                    when (it) {
+                        is RRWebVideoEvent -> it.segmentId = segmentId
+                    }
+                }
+            }
+        }
+    }
+}
