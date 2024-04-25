@@ -13,6 +13,8 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebBreadcrumbEvent
+import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.ICurrentDateProvider
@@ -28,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
+    private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     protected var recorderConfig: ScreenshotRecorderConfig,
     executor: ScheduledExecutorService? = null
@@ -134,41 +137,107 @@ internal abstract class BaseCaptureStrategy(
         duration: Long,
         replayType: ReplayType
     ): ReplaySegment {
+        val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + duration)
         val replay = SentryReplayEvent().apply {
             eventId = currentReplayId
             replayId = currentReplayId
             this.segmentId = segmentId
-            this.timestamp = DateUtils.getDateTime(segmentTimestamp.time + duration)
+            this.timestamp = endTimestamp
             replayStartTimestamp = segmentTimestamp
             this.replayType = replayType
             videoFile = video
         }
 
-        val recording = ReplayRecording().apply {
+        val recordingPayload = mutableListOf<RRWebEvent>()
+        recordingPayload += RRWebMetaEvent().apply {
+            this.timestamp = segmentTimestamp.time
+            this.height = height
+            this.width = width
+        }
+        recordingPayload += RRWebVideoEvent().apply {
+            this.timestamp = segmentTimestamp.time
             this.segmentId = segmentId
-            payload = listOf(
-                RRWebMetaEvent().apply {
-                    this.timestamp = segmentTimestamp.time
-                    this.height = height
-                    this.width = width
-                },
-                RRWebVideoEvent().apply {
-                    this.timestamp = segmentTimestamp.time
-                    this.segmentId = segmentId
-                    this.durationMs = duration
-                    this.frameCount = frameCount
-                    size = video.length()
-                    frameRate = recorderConfig.frameRate
-                    this.height = height
-                    this.width = width
-                    // TODO: support non-fullscreen windows later
-                    left = 0
-                    top = 0
-                }
-            )
+            this.durationMs = duration
+            this.frameCount = frameCount
+            size = video.length()
+            frameRate = recorderConfig.frameRate
+            this.height = height
+            this.width = width
+            // TODO: support non-fullscreen windows later
+            left = 0
+            top = 0
         }
 
-        return ReplaySegment.Created(videoDuration = duration, replay = replay, recording = recording)
+        hub?.configureScope { scope ->
+            scope.breadcrumbs.forEach { breadcrumb ->
+                if (breadcrumb.timestamp.after(segmentTimestamp) &&
+                    breadcrumb.timestamp.before(endTimestamp)
+                ) {
+                    // TODO: rework this later when aligned with iOS and frontend
+                    var breadcrumbMessage: String? = null
+                    val breadcrumbCategory: String?
+                    val breadcrumbData = mutableMapOf<String, Any?>()
+                    when {
+                        breadcrumb.category == "http" -> return@forEach
+
+                        breadcrumb.category == "device.orientation" -> {
+                            breadcrumbCategory = breadcrumb.category!!
+                            breadcrumbMessage = breadcrumb.data["position"] as? String ?: ""
+                        }
+
+                        breadcrumb.type == "navigation" -> {
+                            breadcrumbCategory = "navigation"
+                            breadcrumbData["to"] = when {
+                                breadcrumb.data["state"] == "resumed" -> breadcrumb.data["screen"] as? String
+                                breadcrumb.category == "app.lifecycle" -> breadcrumb.data["state"] as? String
+                                "to" in breadcrumb.data -> breadcrumb.data["to"] as? String
+                                else -> return@forEach
+                            } ?: return@forEach
+                        }
+
+                        breadcrumb.category in setOf("ui.click", "ui.scroll", "ui.swipe") -> {
+                            breadcrumbCategory = breadcrumb.category!!
+                            breadcrumbMessage = (
+                                breadcrumb.data["view.id"]
+                                    ?: breadcrumb.data["view.class"]
+                                    ?: breadcrumb.data["view.tag"]
+                                ) as? String ?: ""
+                        }
+
+                        breadcrumb.type == "system" -> {
+                            breadcrumbCategory = breadcrumb.type!!
+                            breadcrumbMessage = breadcrumb.data.entries.joinToString() as? String ?: ""
+                        }
+
+                        else -> {
+                            breadcrumbCategory = breadcrumb.category
+                            breadcrumbMessage = breadcrumb.message
+                        }
+                    }
+                    if (!breadcrumbCategory.isNullOrEmpty()) {
+                        recordingPayload += RRWebBreadcrumbEvent().apply {
+                            timestamp = breadcrumb.timestamp.time
+                            breadcrumbTimestamp = breadcrumb.timestamp.time / 1000.0
+                            breadcrumbType = "default"
+                            category = breadcrumbCategory
+                            message = breadcrumbMessage
+                            data = breadcrumbData
+                        }
+                    }
+                }
+            }
+        }
+
+        val recording = ReplayRecording().apply {
+            this.segmentId = segmentId
+            payload = recordingPayload.sortedBy { it.timestamp }
+        }
+
+        return ReplaySegment.Created(
+            videoDuration = duration,
+            replay = replay,
+            recording = recording
+        )
     }
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {

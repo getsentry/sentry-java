@@ -23,7 +23,7 @@ internal class BufferCaptureStrategy(
     private val dateProvider: ICurrentDateProvider,
     recorderConfig: ScreenshotRecorderConfig,
     private val random: SecureRandom
-) : BaseCaptureStrategy(options, dateProvider, recorderConfig) {
+) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
 
