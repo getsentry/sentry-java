@@ -3,7 +3,6 @@ package io.sentry.android.replay.capture
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
-import io.sentry.SentryEvent
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -58,16 +57,14 @@ internal class SessionCaptureStrategy(
         super.stop()
     }
 
-    override fun sendReplayForEvent(event: SentryEvent, hint: Hint, onSegmentSent: () -> Unit) {
-        // don't ask me why
-        event.setTag("replayId", currentReplayId.get().toString())
-        if (!event.isCrashed) {
-            options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event %s", event.eventId)
+    override fun sendReplayForEvent(isCrashed: Boolean, eventId: String?, hint: Hint?, onSegmentSent: () -> Unit) {
+        if (!isCrashed) {
+            options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event %s", eventId)
         } else {
-            options.logger.log(DEBUG, "Replay is already running in 'session' mode, capturing last segment for crashed event %s", event.eventId)
+            options.logger.log(DEBUG, "Replay is already running in 'session' mode, capturing last segment for crashed event %s", eventId)
             createCurrentSegment("send_replay_for_event") { segment ->
                 if (segment is ReplaySegment.Created) {
-                    segment.capture(hub, hint)
+                    segment.capture(hub, hint ?: Hint())
                 }
             }
         }

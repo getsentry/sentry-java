@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class NoOpReplayController implements ReplayController {
 
@@ -32,6 +33,10 @@ public final class NoOpReplayController implements ReplayController {
 
   @Override
   public void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint) {}
+
+  @Override
+  public void sendReplay(
+      @Nullable Boolean isCrashed, @Nullable String eventId, @Nullable Hint hint) {}
 
   @Override
   public @NotNull SentryId getReplayId() {
