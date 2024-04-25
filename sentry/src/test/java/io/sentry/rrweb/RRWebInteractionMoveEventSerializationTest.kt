@@ -2,7 +2,6 @@ package io.sentry.rrweb
 
 import io.sentry.ILogger
 import io.sentry.protocol.SerializationUtils
-import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchStart
 import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import org.junit.Test
 import org.mockito.kotlin.mock

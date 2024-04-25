@@ -15,8 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("SameNameButDifferent")
-public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEvent implements
-  JsonSerializable, JsonUnknown {
+public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEvent
+    implements JsonSerializable, JsonUnknown {
 
   public static final class Position implements JsonSerializable, JsonUnknown {
 
@@ -82,8 +82,9 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
       public static final String TIME_OFFSET = "timeOffset";
     }
 
-    @Override public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+    @Override
+    public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
+        throws IOException {
       writer.beginObject();
       writer.name(JsonKeys.ID).value(id);
       writer.name(JsonKeys.X).value(x);
@@ -99,11 +100,11 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
       writer.endObject();
     }
 
-    public static final class Deserializer implements
-      JsonDeserializer<Position> {
+    public static final class Deserializer implements JsonDeserializer<Position> {
 
       @Override
-      public @NotNull Position deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+      public @NotNull Position deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+          throws Exception {
         reader.beginObject();
         @Nullable Map<String, Object> unknown = null;
 
@@ -187,8 +188,8 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
     public static final String POSITIONS = "positions";
   }
 
-  @Override public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
-    throws IOException {
+  @Override
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     new RRWebEvent.Serializer().serialize(this, writer, logger);
     writer.name(JsonKeys.DATA);
@@ -204,7 +205,7 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
   }
 
   private void serializeData(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
     new RRWebIncrementalSnapshotEvent.Serializer().serialize(this, writer, logger);
     if (positions != null && !positions.isEmpty()) {
@@ -220,12 +221,11 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
     writer.endObject();
   }
 
-  public static final class Deserializer implements
-    JsonDeserializer<RRWebInteractionMoveEvent> {
+  public static final class Deserializer implements JsonDeserializer<RRWebInteractionMoveEvent> {
 
     @Override
-    public @NotNull RRWebInteractionMoveEvent deserialize(@NotNull ObjectReader reader,
-      @NotNull ILogger logger) throws Exception {
+    public @NotNull RRWebInteractionMoveEvent deserialize(
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       @Nullable Map<String, Object> unknown = null;
 
@@ -255,13 +255,14 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
     }
 
     private void deserializeData(
-      final @NotNull RRWebInteractionMoveEvent event,
-      final @NotNull ObjectReader reader,
-      final @NotNull ILogger logger)
-      throws Exception {
+        final @NotNull RRWebInteractionMoveEvent event,
+        final @NotNull ObjectReader reader,
+        final @NotNull ILogger logger)
+        throws Exception {
       @Nullable Map<String, Object> dataUnknown = null;
 
-      final RRWebIncrementalSnapshotEvent.Deserializer baseEventDeserializer = new RRWebIncrementalSnapshotEvent.Deserializer();
+      final RRWebIncrementalSnapshotEvent.Deserializer baseEventDeserializer =
+          new RRWebIncrementalSnapshotEvent.Deserializer();
 
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

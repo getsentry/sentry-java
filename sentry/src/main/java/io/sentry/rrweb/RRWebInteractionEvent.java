@@ -14,8 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("SameNameButDifferent")
-public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent implements
-  JsonSerializable, JsonUnknown {
+public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
+    implements JsonSerializable, JsonUnknown {
 
   public enum InteractionType implements JsonSerializable {
     MouseUp,
@@ -32,19 +32,18 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent i
 
     @Override
     public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
+        throws IOException {
       writer.value(ordinal());
     }
 
     public static final class Deserializer implements JsonDeserializer<InteractionType> {
       @Override
       public @NotNull InteractionType deserialize(
-        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
+          final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
         return InteractionType.values()[reader.nextInt()];
       }
     }
   }
-
 
   private static final int POINTER_TYPE_TOUCH = 2;
 
@@ -139,8 +138,8 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent i
     public static final String POINTER_TYPE = "pointerType";
   }
 
-  @Override public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
-    throws IOException {
+  @Override
+  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
     new RRWebEvent.Serializer().serialize(this, writer, logger);
     writer.name(JsonKeys.DATA);
@@ -156,7 +155,7 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent i
   }
 
   private void serializeData(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
     new RRWebIncrementalSnapshotEvent.Serializer().serialize(this, writer, logger);
     writer.name(JsonKeys.TYPE).value(logger, interactionType);
@@ -174,12 +173,11 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent i
     writer.endObject();
   }
 
-  public static final class Deserializer implements
-    JsonDeserializer<RRWebInteractionEvent> {
+  public static final class Deserializer implements JsonDeserializer<RRWebInteractionEvent> {
 
     @Override
-    public @NotNull RRWebInteractionEvent deserialize(@NotNull ObjectReader reader,
-      @NotNull ILogger logger) throws Exception {
+    public @NotNull RRWebInteractionEvent deserialize(
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       @Nullable Map<String, Object> unknown = null;
 
@@ -209,13 +207,14 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent i
     }
 
     private void deserializeData(
-      final @NotNull RRWebInteractionEvent event,
-      final @NotNull ObjectReader reader,
-      final @NotNull ILogger logger)
-      throws Exception {
+        final @NotNull RRWebInteractionEvent event,
+        final @NotNull ObjectReader reader,
+        final @NotNull ILogger logger)
+        throws Exception {
       @Nullable Map<String, Object> dataUnknown = null;
 
-      final RRWebIncrementalSnapshotEvent.Deserializer baseEventDeserializer = new RRWebIncrementalSnapshotEvent.Deserializer();
+      final RRWebIncrementalSnapshotEvent.Deserializer baseEventDeserializer =
+          new RRWebIncrementalSnapshotEvent.Deserializer();
 
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

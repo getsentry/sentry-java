@@ -37,7 +37,7 @@ public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
 	public final fun rotate (J)V
 }
 
-public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, java/io/Closeable {
+public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/TouchRecorderCallback, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -49,6 +49,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun onLowMemory ()V
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun onScreenshotRecorded (Ljava/io/File;J)V
+	public fun onTouchEvent (Landroid/view/MotionEvent;)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
@@ -86,6 +87,40 @@ public final class io/sentry/android/replay/ScreenshotRecorderConfig {
 
 public final class io/sentry/android/replay/ScreenshotRecorderConfig$Companion {
 	public final fun from (Landroid/content/Context;Lio/sentry/SentryReplayOptions;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+}
+
+public abstract interface class io/sentry/android/replay/TouchRecorderCallback {
+	public abstract fun onTouchEvent (Landroid/view/MotionEvent;)V
+}
+
+public class io/sentry/android/replay/util/FixedWindowCallback : android/view/Window$Callback {
+	public final field delegate Landroid/view/Window$Callback;
+	public fun <init> (Landroid/view/Window$Callback;)V
+	public fun dispatchGenericMotionEvent (Landroid/view/MotionEvent;)Z
+	public fun dispatchKeyEvent (Landroid/view/KeyEvent;)Z
+	public fun dispatchKeyShortcutEvent (Landroid/view/KeyEvent;)Z
+	public fun dispatchPopulateAccessibilityEvent (Landroid/view/accessibility/AccessibilityEvent;)Z
+	public fun dispatchTouchEvent (Landroid/view/MotionEvent;)Z
+	public fun dispatchTrackballEvent (Landroid/view/MotionEvent;)Z
+	public fun onActionModeFinished (Landroid/view/ActionMode;)V
+	public fun onActionModeStarted (Landroid/view/ActionMode;)V
+	public fun onAttachedToWindow ()V
+	public fun onContentChanged ()V
+	public fun onCreatePanelMenu (ILandroid/view/Menu;)Z
+	public fun onCreatePanelView (I)Landroid/view/View;
+	public fun onDetachedFromWindow ()V
+	public fun onMenuItemSelected (ILandroid/view/MenuItem;)Z
+	public fun onMenuOpened (ILandroid/view/Menu;)Z
+	public fun onPanelClosed (ILandroid/view/Menu;)V
+	public fun onPointerCaptureChanged (Z)V
+	public fun onPreparePanel (ILandroid/view/View;Landroid/view/Menu;)Z
+	public fun onProvideKeyboardShortcuts (Ljava/util/List;Landroid/view/Menu;I)V
+	public fun onSearchRequested ()Z
+	public fun onSearchRequested (Landroid/view/SearchEvent;)Z
+	public fun onWindowAttributesChanged (Landroid/view/WindowManager$LayoutParams;)V
+	public fun onWindowFocusChanged (Z)V
+	public fun onWindowStartingActionMode (Landroid/view/ActionMode$Callback;)Landroid/view/ActionMode;
+	public fun onWindowStartingActionMode (Landroid/view/ActionMode$Callback;I)Landroid/view/ActionMode;
 }
 
 public abstract interface class io/sentry/android/replay/video/SimpleFrameMuxer {

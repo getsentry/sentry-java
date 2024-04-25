@@ -6,7 +6,6 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ReplayRecording
-import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
@@ -361,27 +360,27 @@ internal abstract class BaseCaptureStrategy(
 
     private fun MotionEvent.toRRWebIncrementalSnapshotEvent(): RRWebIncrementalSnapshotEvent? {
         val event = this
-        return when(val action = event.actionMasked) {
-           MotionEvent.ACTION_MOVE -> {
-               // we only throttle move events as those can be overwhelming
-               val now = dateProvider.getCurrentTimeMillis()
-               if (lastExecutionTime.get() != 0L && lastExecutionTime.get() + DEBOUNCE_TIMEOUT > now) {
-                   return null
-               }
-               lastExecutionTime.set(now)
+        return when (val action = event.actionMasked) {
+            MotionEvent.ACTION_MOVE -> {
+                // we only throttle move events as those can be overwhelming
+                val now = dateProvider.getCurrentTimeMillis()
+                if (lastExecutionTime.get() != 0L && lastExecutionTime.get() + DEBOUNCE_TIMEOUT > now) {
+                    return null
+                }
+                lastExecutionTime.set(now)
 
-               RRWebInteractionMoveEvent().apply {
-                   timestamp = dateProvider.currentTimeMillis
-                   positions = listOf(
-                       Position().apply {
-                           x = event.x * recorderConfig.scaleFactorX
-                           y = event.y * recorderConfig.scaleFactorY
-                           id = event.getPointerId(event.actionIndex)
-                           timeOffset = 0 // TODO: is this needed?
-                       }
-                   ) // TODO: support multiple pointers
-               }
-           }
+                RRWebInteractionMoveEvent().apply {
+                    timestamp = dateProvider.currentTimeMillis
+                    positions = listOf(
+                        Position().apply {
+                            x = event.x * recorderConfig.scaleFactorX
+                            y = event.y * recorderConfig.scaleFactorY
+                            id = event.getPointerId(event.actionIndex)
+                            timeOffset = 0 // TODO: is this needed?
+                        }
+                    ) // TODO: support multiple pointers
+                }
+            }
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 RRWebInteractionEvent().apply {
                     timestamp = dateProvider.currentTimeMillis
