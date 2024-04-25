@@ -845,39 +845,75 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `getSpecificScope(null) returns scope defined in options CURRENT`() {
+    fun `getSpecificScope(null, true) returns CombinedScopeView CURRENT`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
-        assertSame(fixture.scope, combined.getSpecificScope(null))
+        assertSame(combined, combined.getSpecificScope(null, true))
     }
 
     @Test
-    fun `getSpecificScope(null) returns scope defined in options ISOLATION`() {
+    fun `getSpecificScope(null, true) returns CombinedScopeView ISOLATION`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.ISOLATION })
-        assertSame(fixture.isolationScope, combined.getSpecificScope(null))
+        assertSame(combined, combined.getSpecificScope(null, true))
     }
 
     @Test
-    fun `getSpecificScope(null) returns scope defined in options GLOBAL`() {
+    fun `getSpecificScope(null, true) returns CombinedScopeView GLOBAL`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.GLOBAL })
-        assertSame(fixture.globalScope, combined.getSpecificScope(null))
+        assertSame(combined, combined.getSpecificScope(null, true))
     }
 
     @Test
-    fun `getSpecificScope(CURRENT) returns current scope`() {
+    fun `getSpecificScope(CURRENT, true) returns current scope`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.ISOLATION })
-        assertSame(fixture.scope, combined.getSpecificScope(ScopeType.CURRENT))
+        assertSame(fixture.scope, combined.getSpecificScope(ScopeType.CURRENT, true))
     }
 
     @Test
-    fun `getSpecificScope(ISOLATION) returns isolation scope`() {
+    fun `getSpecificScope(ISOLATION, true) returns isolation scope`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
-        assertSame(fixture.isolationScope, combined.getSpecificScope(ScopeType.ISOLATION))
+        assertSame(fixture.isolationScope, combined.getSpecificScope(ScopeType.ISOLATION, true))
     }
 
     @Test
-    fun `getSpecificScope(GLOBAL) returns global scope`() {
+    fun `getSpecificScope(GLOBAL, true) returns global scope`() {
         val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
-        assertSame(fixture.globalScope, combined.getSpecificScope(ScopeType.GLOBAL))
+        assertSame(fixture.globalScope, combined.getSpecificScope(ScopeType.GLOBAL, true))
+    }
+
+    @Test
+    fun `getSpecificScope(null, false) returns scope defined in options CURRENT`() {
+        val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
+        assertSame(fixture.scope, combined.getSpecificScope(null, false))
+    }
+
+    @Test
+    fun `getSpecificScope(null, false) returns scope defined in options ISOLATION`() {
+        val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.ISOLATION })
+        assertSame(fixture.isolationScope, combined.getSpecificScope(null, false))
+    }
+
+    @Test
+    fun `getSpecificScope(null, false) returns scope defined in options GLOBAL`() {
+        val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.GLOBAL })
+        assertSame(fixture.globalScope, combined.getSpecificScope(null, false))
+    }
+
+    @Test
+    fun `getSpecificScope(CURRENT, false) returns current scope`() {
+        val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.ISOLATION })
+        assertSame(fixture.scope, combined.getSpecificScope(ScopeType.CURRENT, false))
+    }
+
+    @Test
+    fun `getSpecificScope(ISOLATION, false) returns isolation scope`() {
+        val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
+        assertSame(fixture.isolationScope, combined.getSpecificScope(ScopeType.ISOLATION, false))
+    }
+
+    @Test
+    fun `getSpecificScope(GLOBAL, false) returns global scope`() {
+        val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
+        assertSame(fixture.globalScope, combined.getSpecificScope(ScopeType.GLOBAL, false))
     }
 
     @Test

@@ -303,10 +303,10 @@ public final class CombinedScopeView implements IScope {
   }
 
   private @NotNull IScope getDefaultWriteScope() {
-    return getSpecificScope(null);
+    return getSpecificScope(null, false);
   }
 
-  IScope getSpecificScope(final @Nullable ScopeType scopeType) {
+  IScope getSpecificScope(final @Nullable ScopeType scopeType, final boolean usedForCallback) {
     if (scopeType != null) {
       switch (scopeType) {
         case CURRENT:
@@ -320,6 +320,10 @@ public final class CombinedScopeView implements IScope {
         default:
           break;
       }
+    }
+
+    if (usedForCallback) {
+      return this;
     }
 
     switch (getOptions().getDefaultScopeType()) {

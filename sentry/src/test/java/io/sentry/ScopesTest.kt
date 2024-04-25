@@ -262,8 +262,8 @@ class ScopesTest {
         options.setSerializer(mock())
         val sut = createScopes(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
-        sut.configureScope { breadcrumbs = it.breadcrumbs }
         sut.addBreadcrumb("message", "category")
+        sut.configureScope { breadcrumbs = it.breadcrumbs }
         assertEquals("message", breadcrumbs!!.single().message)
         assertEquals("category", breadcrumbs!!.single().category)
     }
@@ -276,8 +276,8 @@ class ScopesTest {
         options.setSerializer(mock())
         val sut = createScopes(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
-        sut.configureScope { breadcrumbs = it.breadcrumbs }
         sut.addBreadcrumb("message", "category")
+        sut.configureScope { breadcrumbs = it.breadcrumbs }
         assertEquals("message", breadcrumbs!!.single().message)
         assertEquals("category", breadcrumbs!!.single().category)
     }

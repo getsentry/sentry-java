@@ -636,7 +636,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else {
       final @NotNull IScopes forkedScopes = forkedCurrentScope("withScope");
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
-        callback.run(forkedScopes.getScope());
+        //        callback.run(forkedScopes.getScope());
+        forkedScopes.configureScope(callback);
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
@@ -657,7 +658,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else {
       final @NotNull IScopes forkedScopes = forkedScopes("withIsolationScope");
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
-        callback.run(forkedScopes.getIsolationScope());
+        //        callback.run(forkedScopes.getIsolationScope());
+        forkedScopes.configureScope(callback);
       } catch (Throwable e) {
         getOptions()
             .getLogger()
@@ -677,7 +679,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       try {
-        callback.run(combinedScope.getSpecificScope(scopeType));
+        callback.run(combinedScope.getSpecificScope(scopeType, true));
       } catch (Throwable e) {
         getOptions()
             .getLogger()
