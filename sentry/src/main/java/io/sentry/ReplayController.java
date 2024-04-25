@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,4 +17,7 @@ public interface ReplayController {
   boolean isRecording();
 
   void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint);
+
+  @NotNull
+  SentryId getReplayId();
 }

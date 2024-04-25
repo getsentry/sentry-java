@@ -30,14 +30,14 @@ public class ReplayCache internal constructor(
     private val options: SentryOptions,
     private val replayId: SentryId,
     private val recorderConfig: ScreenshotRecorderConfig,
-    private val encoderCreator: (videoFile: File, height: Int, width: Int) -> SimpleVideoEncoder
+    private val encoderProvider: (videoFile: File, height: Int, width: Int) -> SimpleVideoEncoder
 ) : Closeable {
 
     public constructor(
         options: SentryOptions,
         replayId: SentryId,
         recorderConfig: ScreenshotRecorderConfig
-    ) : this(options, replayId, recorderConfig, encoderCreator = { videoFile, height, width ->
+    ) : this(options, replayId, recorderConfig, encoderProvider = { videoFile, height, width ->
         SimpleVideoEncoder(
             options,
             MuxerConfig(
@@ -145,7 +145,7 @@ public class ReplayCache internal constructor(
         }
 
         // TODO: reuse instance of encoder and just change file path to create a different muxer
-        encoder = synchronized(encoderLock) { encoderCreator(videoFile, height, width) }
+        encoder = synchronized(encoderLock) { encoderProvider(videoFile, height, width) }
 
         val step = 1000 / recorderConfig.frameRate.toLong()
         var frameCount = 0

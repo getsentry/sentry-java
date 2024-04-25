@@ -26,6 +26,7 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
+import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -35,7 +36,7 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
     private var rootView: WeakReference<View>? = null
@@ -68,7 +69,7 @@ internal class ScreenshotRecorder(
             options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
 
             lastScreenshot?.let {
-                screenshotRecorderCallback.onScreenshotRecorded(
+                screenshotRecorderCallback?.onScreenshotRecorded(
                     it.copy(ARGB_8888, false)
                 )
             }
@@ -140,7 +141,7 @@ internal class ScreenshotRecorder(
                         }
 
                         val screenshot = scaledBitmap.copy(ARGB_8888, false)
-                        screenshotRecorderCallback.onScreenshotRecorded(screenshot)
+                        screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
                         lastScreenshot?.recycle()
                         lastScreenshot = screenshot
                         contentChanged.set(false)
@@ -294,6 +295,24 @@ public data class ScreenshotRecorderConfig(
     }
 }
 
-interface ScreenshotRecorderCallback {
+/**
+ * A callback to be invoked when a new screenshot available. Normally, only one of the
+ * [onScreenshotRecorded] method overloads should be called by a single recorder, however, it will
+ * still work of both are used at the same time.
+ */
+public interface ScreenshotRecorderCallback {
+    /**
+     * Called whenever a new frame screenshot is available.
+     *
+     * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
+     */
     fun onScreenshotRecorded(bitmap: Bitmap)
+
+    /**
+     * Called whenever a new frame screenshot is available.
+     *
+     * @param screenshot file containing the frame screenshot
+     * @param frameTimestamp the timestamp when the frame screenshot was taken
+     */
+    fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
 }

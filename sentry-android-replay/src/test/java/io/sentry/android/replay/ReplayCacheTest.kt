@@ -41,7 +41,7 @@ class ReplayCacheTest {
             options.run {
                 cacheDirPath = dir?.newFolder()?.absolutePath
             }
-            return ReplayCache(options, replayId, recorderConfig, encoderCreator = { videoFile, height, width ->
+            return ReplayCache(options, replayId, recorderConfig, encoderProvider = { videoFile, height, width ->
                 encoder = SimpleVideoEncoder(
                     options,
                     MuxerConfig(

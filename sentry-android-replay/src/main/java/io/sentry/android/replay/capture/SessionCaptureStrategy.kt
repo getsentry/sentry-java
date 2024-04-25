@@ -1,6 +1,5 @@
 package io.sentry.android.replay.capture
 
-import android.graphics.Bitmap
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -8,6 +7,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
@@ -20,8 +20,9 @@ internal class SessionCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     recorderConfig: ScreenshotRecorderConfig,
-    executor: ScheduledExecutorService? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, executor) {
+    executor: ScheduledExecutorService? = null,
+    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, executor, replayCacheProvider) {
 
     internal companion object {
         private const val TAG = "SessionCaptureStrategy"
@@ -72,14 +73,14 @@ internal class SessionCaptureStrategy(
         }
     }
 
-    override fun onScreenshotRecorded(bitmap: Bitmap) {
+    override fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit) {
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.add_frame") {
-            cache?.addFrame(bitmap, frameTimestamp)
+            cache?.store(frameTimestamp)
 
             val now = dateProvider.currentTimeMillis
             if ((now - segmentTimestamp.get().time >= options.experimental.sessionReplay.sessionSegmentDuration)) {

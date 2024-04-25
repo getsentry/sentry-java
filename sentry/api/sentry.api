@@ -1255,6 +1255,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 
 public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
 	public fun pause ()V
 	public fun resume ()V
@@ -1657,6 +1658,7 @@ public final class io/sentry/PropagationContext {
 }
 
 public abstract interface class io/sentry/ReplayController {
+	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
 	public abstract fun resume ()V

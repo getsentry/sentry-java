@@ -33,7 +33,8 @@ internal abstract class BaseCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     protected var recorderConfig: ScreenshotRecorderConfig,
-    executor: ScheduledExecutorService? = null
+    executor: ScheduledExecutorService? = null,
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -45,6 +46,7 @@ internal abstract class BaseCaptureStrategy(
     protected val replayStartTimestamp = AtomicLong()
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
+    override val replayCacheDir: File? get() = cache?.replayCacheDir
 
     protected val replayExecutor: ScheduledExecutorService by lazy {
         executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
@@ -72,7 +74,7 @@ internal abstract class BaseCaptureStrategy(
             }
         }
 
-        cache = ReplayCache(options, currentReplayId.get(), recorderConfig)
+        cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId, recorderConfig)
 
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
