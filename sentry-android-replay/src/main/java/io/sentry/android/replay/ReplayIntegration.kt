@@ -138,12 +138,20 @@ public class ReplayIntegration(
             return
         }
 
-        if (SentryId.EMPTY_ID.equals(captureStrategy?.currentReplayId?.get())) {
-            options.logger.log(DEBUG, "Replay id is not set, not capturing for event %s", event.eventId)
+        sendReplay(event.isCrashed, event.eventId.toString(), hint)
+    }
+
+    override fun sendReplay(isCrashed: Boolean?, eventId: String?, hint: Hint?) {
+        if (!isEnabled.get() || !isRecording.get()) {
             return
         }
 
-        captureStrategy?.sendReplayForEvent(event, hint, onSegmentSent = { captureStrategy?.currentSegment?.getAndIncrement() })
+        if (SentryId.EMPTY_ID.equals(captureStrategy?.currentReplayId?.get())) {
+            options.logger.log(DEBUG, "Replay id is not set, not capturing for event %s", eventId)
+            return
+        }
+
+        captureStrategy?.sendReplayForEvent(isCrashed == true, eventId, hint, onSegmentSent = { captureStrategy?.currentSegment?.getAndIncrement() })
         captureStrategy = captureStrategy?.convert()
     }
 

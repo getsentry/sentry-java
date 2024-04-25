@@ -1,7 +1,6 @@
 package io.sentry.android.replay.capture
 
 import io.sentry.Hint
-import io.sentry.SentryEvent
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.protocol.SentryId
@@ -22,7 +21,7 @@ internal interface CaptureStrategy {
 
     fun resume()
 
-    fun sendReplayForEvent(event: SentryEvent, hint: Hint, onSegmentSent: () -> Unit)
+    fun sendReplayForEvent(isCrashed: Boolean, eventId: String?, hint: Hint?, onSegmentSent: () -> Unit)
 
     fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit)
 

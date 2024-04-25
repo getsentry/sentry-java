@@ -3,7 +3,6 @@ package io.sentry.android.replay.capture
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
-import io.sentry.SentryEvent
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -41,14 +40,16 @@ internal class BufferCaptureStrategy(
         super.stop()
     }
 
-    override fun sendReplayForEvent(event: SentryEvent, hint: Hint, onSegmentSent: () -> Unit) {
+    override fun sendReplayForEvent(
+        isCrashed: Boolean,
+        eventId: String?,
+        hint: Hint?,
+        onSegmentSent: () -> Unit
+    ) {
         val sampled = random.sample(options.experimental.sessionReplay.errorSampleRate)
 
-        if (sampled) {
-            // don't ask me why
-            event.setTag("replayId", currentReplayId.get().toString())
-        } else {
-            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event %s", event.eventId)
+        if (!sampled) {
+            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event %s", eventId)
             return
         }
 
@@ -83,7 +84,7 @@ internal class BufferCaptureStrategy(
                     BUFFER
                 )
             if (segment is ReplaySegment.Created) {
-                segment.capture(hub, hint)
+                segment.capture(hub, hint ?: Hint())
 
                 // we only want to increment segment_id in the case of success, but currentSegment
                 // might be irrelevant since we changed strategies, so in the callback we increment
