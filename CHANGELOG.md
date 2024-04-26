@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+
+We released our second Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+
 ### Features
 
 - Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
