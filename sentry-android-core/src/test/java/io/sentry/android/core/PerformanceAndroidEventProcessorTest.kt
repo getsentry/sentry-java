@@ -467,6 +467,60 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     @Test
+    fun `does not set start_type field for txns without app start span`() {
+        // given some ui.load txn
+        setAppStart(fixture.options, coldStart = true)
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+
+        // when it contains no app start span and is processed
+        tr = sut.process(tr, Hint())
+
+        // start_type should not be set
+        assertNull(tr.contexts.app?.startType)
+    }
+
+    @Test
+    fun `sets start_type field for app context`() {
+        // given some cold app start
+        setAppStart(fixture.options, coldStart = true)
+
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+
+        val appStartSpan = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            APP_START_COLD,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(appStartSpan)
+
+        // when the processor attaches the app start spans
+        tr = sut.process(tr, Hint())
+
+        // start_type should be set as well
+        assertEquals(
+            "cold",
+            tr.contexts.app!!.startType
+        )
+    }
+
+    @Test
     fun `adds ttid and ttfd contributing span data`() {
         val sut = fixture.getSut()
 

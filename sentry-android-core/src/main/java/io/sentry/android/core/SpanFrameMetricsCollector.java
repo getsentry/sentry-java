@@ -7,6 +7,7 @@ import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
 import io.sentry.SentryDate;
 import io.sentry.SentryNanotimeDate;
+import io.sentry.SentryTracer;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
@@ -135,11 +136,15 @@ public class SpanFrameMetricsCollector
         return;
       }
 
-      // ignore spans with no finish date
-      final @Nullable SentryDate spanFinishDate = span.getFinishDate();
+      // Ignore spans with no finish date, but SentryTracer is not finished when executing this
+      // callback, yet, so in that case we use the current timestamp.
+      final @Nullable SentryDate spanFinishDate =
+          span instanceof SentryTracer ? new SentryNanotimeDate() : span.getFinishDate();
       if (spanFinishDate == null) {
         return;
       }
+      // Note: The comparison between two values obtained by realNanos() works only if both are the
+      // same kind of dates (both are SentryNanotimeDate or both SentryLongDate)
       final long spanEndNanos = realNanos(spanFinishDate);
 
       final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
