@@ -650,7 +650,6 @@ public abstract interface class io/sentry/IMetricsAggregator : java/io/Closeable
 	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
-	public abstract fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
@@ -1076,7 +1075,6 @@ public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, j
 	public fun run ()V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
-	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3780,7 +3778,6 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
@@ -3865,6 +3862,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getDeviceAppHash ()Ljava/lang/String;
 	public fun getInForeground ()Ljava/lang/Boolean;
 	public fun getPermissions ()Ljava/util/Map;
+	public fun getStartType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getViewNames ()Ljava/util/List;
 	public fun hashCode ()I
@@ -3878,6 +3876,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setDeviceAppHash (Ljava/lang/String;)V
 	public fun setInForeground (Ljava/lang/Boolean;)V
 	public fun setPermissions (Ljava/util/Map;)V
+	public fun setStartType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setViewNames (Ljava/util/List;)V
 }
@@ -3898,6 +3897,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEVICE_APP_HASH Ljava/lang/String;
 	public static final field IN_FOREGROUND Ljava/lang/String;
+	public static final field START_TYPE Ljava/lang/String;
 	public static final field VIEW_NAMES Ljava/lang/String;
 	public fun <init> ()V
 }

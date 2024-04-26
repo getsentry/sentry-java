@@ -87,9 +87,9 @@ public final class SentryTracer implements ITransaction {
       this.baggage = new Baggage(hub.getOptions().getLogger());
     }
 
-    // We are currently sending the performance data only in profiles, so there's no point in
-    // collecting them if a profile is not sampled
-    if (transactionPerformanceCollector != null && Boolean.TRUE.equals(isProfileSampled())) {
+    // We are currently sending the performance data only in profiles, but we are always sending
+    // performance measurements.
+    if (transactionPerformanceCollector != null) {
       transactionPerformanceCollector.start(this);
     }
 
