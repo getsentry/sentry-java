@@ -5,6 +5,7 @@
 ### Features
 
 - Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+- Add ttid/ttfd contribution flags ([#3386](https://github.com/getsentry/sentry-java/pull/3386))
 
 ### Fixes
 
