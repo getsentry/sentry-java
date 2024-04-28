@@ -26,6 +26,8 @@ import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentryTracingFilter
+import io.sentry.spring.tracing.SpringServletTransactionNameProvider
+import io.sentry.spring.tracing.TransactionNameProvider
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
@@ -168,7 +170,7 @@ class SentryAutoConfigurationTest {
             "sentry.enabled=false",
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
-            "sentry.enable-backpressure-handling=true",
+            "sentry.enable-backpressure-handling=false",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
@@ -205,7 +207,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
-            assertThat(options.isEnableBackpressureHandling).isEqualTo(true)
+            assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.cron).isNotNull
             assertThat(options.cron!!.defaultCheckinMargin).isEqualTo(10L)
             assertThat(options.cron!!.defaultMaxRuntime).isEqualTo(30L)
@@ -441,6 +443,17 @@ class SentryAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentryExceptionResolver::class.java)
+            }
+    }
+
+    @Test
+    fun `when Spring MVC is not on the classpath, fallback TransactionNameProvider is configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
+            .run {
+                assertThat(it.getBean(TransactionNameProvider::class.java)).isInstanceOf(
+                    SpringServletTransactionNameProvider::class.java
+                )
             }
     }
 

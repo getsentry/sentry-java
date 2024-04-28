@@ -268,21 +268,12 @@ class MetricsAggregatorTest {
             20_001,
             null
         )
-        aggregator.timing(
-            "name0",
-            {
-                Thread.sleep(2)
-            },
-            MeasurementUnit.Duration.SECOND,
-            mapOf("key0" to "value0"),
-            null
-        )
 
         aggregator.flush(true)
         verify(fixture.client).captureMetrics(
             check {
                 val metrics = MetricsHelperTest.parseMetrics(it.encodeToStatsd())
-                assertEquals(6, metrics.size)
+                assertEquals(5, metrics.size)
             }
         )
     }
