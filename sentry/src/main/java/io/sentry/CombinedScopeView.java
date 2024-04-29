@@ -145,16 +145,11 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull List<String> getFingerprint() {
-    // TODO [HSM] should these be merged?
-    final @Nullable List<String> current = scope.getFingerprint();
-    if (!current.isEmpty()) {
-      return current;
-    }
-    final @Nullable List<String> isolation = isolationScope.getFingerprint();
-    if (!isolation.isEmpty()) {
-      return isolation;
-    }
-    return globalScope.getFingerprint();
+    final @NotNull List<String> allFingerprints = new CopyOnWriteArrayList<>();
+    allFingerprints.addAll(globalScope.getFingerprint());
+    allFingerprints.addAll(isolationScope.getFingerprint());
+    allFingerprints.addAll(scope.getFingerprint());
+    return allFingerprints;
   }
 
   @Override
