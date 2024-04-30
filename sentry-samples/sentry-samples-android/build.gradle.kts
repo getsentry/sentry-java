@@ -126,4 +126,6 @@ dependencies {
     implementation(Config.Libs.composeMaterial)
 
     debugImplementation(Config.Libs.leakCanary)
+
+    implementation("io.sentry:sentry-native-ndk:0.7.20")
 }

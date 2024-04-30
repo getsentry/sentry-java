@@ -5,7 +5,6 @@ plugins {
     kotlin("android")
     jacoco
     id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.NativePlugins.nativeBundleExport)
     id(Config.QualityPlugins.gradleVersions)
 }
 
@@ -72,7 +71,7 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation("io.sentry:sentry-native-ndk:1.0.4")
+    implementation("io.sentry:sentry-native-ndk:0.7.20")
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
