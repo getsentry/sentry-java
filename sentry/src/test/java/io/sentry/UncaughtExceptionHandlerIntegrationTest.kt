@@ -7,6 +7,7 @@ import io.sentry.hints.EventDropReason.MULTITHREADED_DEDUPLICATION
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.argumentCaptor
@@ -19,6 +20,7 @@ import java.io.PrintStream
 import java.nio.file.Files
 import kotlin.concurrent.thread
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -290,5 +292,29 @@ class UncaughtExceptionHandlerIntegrationTest {
                     .isFlushable(eventCaptor.firstValue.eventId)
             }
         )
+    }
+
+    @Test
+    fun `multiple registrations do not cause the build-up of a tree of UncaughtExceptionHandlerIntegrations`() {
+        var currentDefaultHandler: Thread.UncaughtExceptionHandler? = null
+
+        val handler = mock<UncaughtExceptionHandler>()
+        whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+        whenever(handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())).then {
+            currentDefaultHandler = it.getArgument(0)
+            null
+        }
+
+        val integration1 = UncaughtExceptionHandlerIntegration(handler)
+        integration1.register(fixture.hub, fixture.options)
+
+        val integration2 = UncaughtExceptionHandlerIntegration(handler)
+        integration2.register(fixture.hub, fixture.options)
+
+        assertEquals(currentDefaultHandler, integration2)
+        integration2.close()
+
+        assertEquals(null, currentDefaultHandler)
     }
 }

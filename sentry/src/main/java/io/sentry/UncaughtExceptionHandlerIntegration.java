@@ -43,7 +43,7 @@ public final class UncaughtExceptionHandlerIntegration
   }
 
   @Override
-  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     if (registered) {
       options
           .getLogger()
@@ -76,13 +76,15 @@ public final class UncaughtExceptionHandlerIntegration
                     + currentHandler.getClass().getName()
                     + "'");
 
-        if(currentHandler instanceof UncaughtExceptionHandlerIntegration) {
-          final UncaughtExceptionHandlerIntegration currentHandlerIntegration = (UncaughtExceptionHandlerIntegration) currentHandler;
+        if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
+          final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
+              (UncaughtExceptionHandlerIntegration) currentHandler;
           defaultExceptionHandler = currentHandlerIntegration.defaultExceptionHandler;
         } else {
           defaultExceptionHandler = currentHandler;
         }
 
+        //        defaultExceptionHandler = currentHandler;
       }
 
       threadAdapter.setDefaultUncaughtExceptionHandler(this);
