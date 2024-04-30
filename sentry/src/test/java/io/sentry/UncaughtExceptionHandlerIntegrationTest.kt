@@ -320,7 +320,7 @@ class UncaughtExceptionHandlerIntegrationTest {
 
     @Test
     fun `multiple registrations do not cause the build-up of a tree of UncaughtExceptionHandlerIntegrations, reset to inital`() {
-        val initialUncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ ->  }
+        val initialUncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ -> }
 
         var currentDefaultHandler: Thread.UncaughtExceptionHandler? = initialUncaughtExceptionHandler
 
