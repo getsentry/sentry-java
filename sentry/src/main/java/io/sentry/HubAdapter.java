@@ -243,6 +243,16 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public @Nullable IScopes getParentScopes() {
+    return Sentry.getCurrentScopes().getParentScopes();
+  }
+
+  @Override
+  public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
+    return Sentry.getCurrentScopes().isAncestorOf(otherScopes);
+  }
+
+  @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,

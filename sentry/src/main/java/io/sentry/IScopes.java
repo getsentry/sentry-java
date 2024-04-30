@@ -457,6 +457,25 @@ public interface IScopes {
   IScope getGlobalScope();
 
   /**
+   * Returns the parent of this Scopes instance or null, if it does not have a parent. The parent is
+   * the Scopes instance this instance was forked from.
+   *
+   * @return parent Scopes or null
+   */
+  @ApiStatus.Internal
+  @Nullable
+  IScopes getParentScopes();
+
+  /**
+   * Checks whether this Scopes instance is direct or indirect parent of the other Scopes instance.
+   *
+   * @param otherScopes Scopes instance that could be a direct or indirect child.
+   * @return true if this Scopes instance is a direct or indirect parent of the other Scopes.
+   */
+  @ApiStatus.Internal
+  boolean isAncestorOf(final @Nullable IScopes otherScopes);
+
+  /**
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction

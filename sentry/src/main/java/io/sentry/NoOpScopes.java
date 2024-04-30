@@ -204,6 +204,16 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public @Nullable IScopes getParentScopes() {
+    return null;
+  }
+
+  @Override
+  public boolean isAncestorOf(@Nullable IScopes otherScopes) {
+    return false;
+  }
+
+  @Override
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,

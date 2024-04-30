@@ -17,6 +17,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
@@ -43,7 +44,9 @@ public final class Sentry {
 
   private Sentry() {}
 
-  private static volatile @NotNull IScopesStorage scopesStorage = new DefaultScopesStorage();
+  // TODO logger?
+  private static volatile @NotNull IScopesStorage scopesStorage =
+      ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();

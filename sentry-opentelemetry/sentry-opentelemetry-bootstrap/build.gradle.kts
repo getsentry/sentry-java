@@ -20,16 +20,8 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     compileOnly(projects.sentry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryCore) {
-        exclude(group = "io.opentelemetry")
-        exclude(group = "io.opentelemetry.javaagent")
-    }
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     compileOnly(Config.Libs.OpenTelemetry.otelSdk)
-    compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentExtensionApi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentTooling)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -43,6 +35,9 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.awaitility)
+
+    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
+    testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
 }
 
 configure<SourceSetContainer> {
