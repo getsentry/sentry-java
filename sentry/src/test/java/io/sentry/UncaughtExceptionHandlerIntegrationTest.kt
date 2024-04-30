@@ -317,4 +317,30 @@ class UncaughtExceptionHandlerIntegrationTest {
 
         assertEquals(null, currentDefaultHandler)
     }
+
+    @Test
+    fun `multiple registrations do not cause the build-up of a tree of UncaughtExceptionHandlerIntegrations, reset to inital`() {
+        val initialUncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ ->  }
+
+        var currentDefaultHandler: Thread.UncaughtExceptionHandler? = initialUncaughtExceptionHandler
+
+        val handler = mock<UncaughtExceptionHandler>()
+        whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+        whenever(handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())).then {
+            currentDefaultHandler = it.getArgument(0)
+            null
+        }
+
+        val integration1 = UncaughtExceptionHandlerIntegration(handler)
+        integration1.register(fixture.hub, fixture.options)
+
+        val integration2 = UncaughtExceptionHandlerIntegration(handler)
+        integration2.register(fixture.hub, fixture.options)
+
+        assertEquals(currentDefaultHandler, integration2)
+        integration2.close()
+
+        assertEquals(initialUncaughtExceptionHandler, currentDefaultHandler)
+    }
 }
