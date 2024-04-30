@@ -244,7 +244,6 @@ class SentryExceptionFactoryTest {
 
         val queue = fixture.getSut().extractExceptionQueue(outerException)
 
-
         val suppressedInQueue = queue.pop()
         val mainInQueue = queue.pop()
         val outerInQueue = queue.pop()
@@ -277,7 +276,6 @@ class SentryExceptionFactoryTest {
         val outerException = ExceptionMechanismException(mechanism, Exception("outer", exception), thread)
 
         val queue = fixture.getSut().extractExceptionQueue(outerException)
-
 
         val suppressedInQueue = queue.pop()
         val mainInQueue = queue.pop()
