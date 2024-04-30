@@ -210,7 +210,7 @@ class SentryExceptionFactoryTest {
     }
 
     @Test
-    fun `when exception has has suppressed exceptions, add them and show as group`() {
+    fun `when exception with mechanism suppressed exceptions, add them and show as group`() {
         val exception = Exception("message")
         val suppressedException = Exception("suppressed")
         exception.addSuppressed(suppressedException)
@@ -289,6 +289,106 @@ class SentryExceptionFactoryTest {
         assertEquals(1, mainInQueue.mechanism?.exceptionId)
         assertEquals(0, mainInQueue.mechanism?.parentId)
         assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("outer", outerInQueue.value)
+        assertEquals(0, outerInQueue.mechanism?.exceptionId)
+        assertNull(outerInQueue.mechanism?.parentId)
+        assertNull(outerInQueue.mechanism?.isExceptionGroup)
+    }
+
+    @Test
+    fun `nested exception with nested exception that contain suppressed exceptions are marked as group`() {
+        val innerMostException = Exception("innermost")
+        val innerMostSuppressed = Exception("innermostSuppressed")
+        innerMostException.addSuppressed(innerMostSuppressed)
+
+        val innerException = Exception("inner", innerMostException)
+        val innerSuppressed = Exception("suppressed")
+        innerException.addSuppressed(innerSuppressed)
+
+        val outerException = Exception("outer", innerException)
+
+        val queue = fixture.getSut().extractExceptionQueue(outerException)
+
+        val innerMostSuppressedInQueue = queue.pop()
+        val innerMostExceptionInQueue = queue.pop()
+        val innerSuppressedInQueue = queue.pop()
+        val innerExceptionInQueue = queue.pop()
+        val outerInQueue = queue.pop()
+
+        assertEquals("innermostSuppressed", innerMostSuppressedInQueue.value)
+        assertEquals(4, innerMostSuppressedInQueue.mechanism?.exceptionId)
+        assertEquals(3, innerMostSuppressedInQueue.mechanism?.parentId)
+        assertNull(innerMostSuppressedInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("innermost", innerMostExceptionInQueue.value)
+        assertEquals(3, innerMostExceptionInQueue.mechanism?.exceptionId)
+        assertEquals(1, innerMostExceptionInQueue.mechanism?.parentId)
+        assertEquals(true, innerMostExceptionInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("suppressed", innerSuppressedInQueue.value)
+        assertEquals(2, innerSuppressedInQueue.mechanism?.exceptionId)
+        assertEquals(1, innerSuppressedInQueue.mechanism?.parentId)
+        assertNull(innerSuppressedInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("inner", innerExceptionInQueue.value)
+        assertEquals(1, innerExceptionInQueue.mechanism?.exceptionId)
+        assertEquals(0, innerExceptionInQueue.mechanism?.parentId)
+        assertEquals(true, innerExceptionInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("outer", outerInQueue.value)
+        assertEquals(0, outerInQueue.mechanism?.exceptionId)
+        assertNull(outerInQueue.mechanism?.parentId)
+        assertNull(outerInQueue.mechanism?.isExceptionGroup)
+    }
+
+    @Test
+    fun `nested exception with nested exception that contain suppressed exceptions with a nested exception are marked as group`() {
+        val innerMostException = Exception("innermost")
+
+        val innerMostSuppressedNestedException = Exception("innermostSuppressedNested");
+        val innerMostSuppressed = Exception("innermostSuppressed", innerMostSuppressedNestedException)
+        innerMostException.addSuppressed(innerMostSuppressed)
+
+        val innerException = Exception("inner", innerMostException)
+        val innerSuppressed = Exception("suppressed")
+        innerException.addSuppressed(innerSuppressed)
+
+        val outerException = Exception("outer", innerException)
+
+        val queue = fixture.getSut().extractExceptionQueue(outerException)
+
+        val innerMostSuppressedNestedExceptionInQueue = queue.pop()
+        val innerMostSuppressedInQueue = queue.pop()
+        val innerMostExceptionInQueue = queue.pop()
+        val innerSuppressedInQueue = queue.pop()
+        val innerExceptionInQueue = queue.pop()
+        val outerInQueue = queue.pop()
+
+        assertEquals("innermostSuppressedNested", innerMostSuppressedNestedExceptionInQueue.value)
+        assertEquals(5, innerMostSuppressedNestedExceptionInQueue.mechanism?.exceptionId)
+        assertEquals(4, innerMostSuppressedNestedExceptionInQueue.mechanism?.parentId)
+        assertNull(innerMostSuppressedNestedExceptionInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("innermostSuppressed", innerMostSuppressedInQueue.value)
+        assertEquals(4, innerMostSuppressedInQueue.mechanism?.exceptionId)
+        assertEquals(3, innerMostSuppressedInQueue.mechanism?.parentId)
+        assertNull(innerMostSuppressedInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("innermost", innerMostExceptionInQueue.value)
+        assertEquals(3, innerMostExceptionInQueue.mechanism?.exceptionId)
+        assertEquals(1, innerMostExceptionInQueue.mechanism?.parentId)
+        assertEquals(true, innerMostExceptionInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("suppressed", innerSuppressedInQueue.value)
+        assertEquals(2, innerSuppressedInQueue.mechanism?.exceptionId)
+        assertEquals(1, innerSuppressedInQueue.mechanism?.parentId)
+        assertNull(innerSuppressedInQueue.mechanism?.isExceptionGroup)
+
+        assertEquals("inner", innerExceptionInQueue.value)
+        assertEquals(1, innerExceptionInQueue.mechanism?.exceptionId)
+        assertEquals(0, innerExceptionInQueue.mechanism?.parentId)
+        assertEquals(true, innerExceptionInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("outer", outerInQueue.value)
         assertEquals(0, outerInQueue.mechanism?.exceptionId)
