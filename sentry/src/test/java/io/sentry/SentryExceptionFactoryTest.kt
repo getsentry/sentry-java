@@ -346,7 +346,7 @@ class SentryExceptionFactoryTest {
     fun `nested exception with nested exception that contain suppressed exceptions with a nested exception are marked as group`() {
         val innerMostException = Exception("innermost")
 
-        val innerMostSuppressedNestedException = Exception("innermostSuppressedNested");
+        val innerMostSuppressedNestedException = Exception("innermostSuppressedNested")
         val innerMostSuppressed = Exception("innermostSuppressed", innerMostSuppressedNestedException)
         innerMostException.addSuppressed(innerMostSuppressed)
 
