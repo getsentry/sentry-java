@@ -128,6 +128,8 @@ internal abstract class BaseCaptureStrategy(
         width: Int,
         replayType: ReplayType = SESSION
     ): ReplaySegment {
+        return ReplaySegment.Failed
+
         val generatedVideo = cache?.createVideoOf(
             duration,
             currentSegmentTimestamp.time,
@@ -135,6 +137,7 @@ internal abstract class BaseCaptureStrategy(
             height,
             width
         ) ?: return ReplaySegment.Failed
+
 
         val (video, frameCount, videoDuration) = generatedVideo
         return buildReplay(

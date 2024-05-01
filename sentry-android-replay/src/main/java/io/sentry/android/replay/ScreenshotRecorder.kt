@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.ARGB_8888
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Point
@@ -15,6 +16,7 @@ import android.os.Build.VERSION_CODES
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.util.Log
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -25,12 +27,17 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
+import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
+import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
+import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 @TargetApi(26)
 internal class ScreenshotRecorder(
@@ -57,6 +64,7 @@ internal class ScreenshotRecorder(
     private val isCapturing = AtomicBoolean(true)
     private var lastScreenshot: Bitmap? = null
 
+    @OptIn(ExperimentalTime::class)
     fun capture() {
         val viewHierarchy = pendingViewHierarchy.getAndSet(null)
 
@@ -96,6 +104,14 @@ internal class ScreenshotRecorder(
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+//            val viewHierarchy: ViewHierarchyNode
+//            val time = measureTime {
+//                val rootNode = ViewHierarchyNode.fromView(root, options)
+//                root.traverse(rootNode)
+//                viewHierarchy = rootNode
+//            }
+//            Log.e("Recorder", "Time to get view hierarchy: $time")
+
             try {
                 PixelCopy.request(
                     window,
@@ -122,21 +138,61 @@ internal class ScreenshotRecorder(
                             )
                             val canvas = Canvas(scaledBitmap)
                             canvas.setMatrix(prescaledMatrix)
-                            viewHierarchy.traverse {
-                                if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
-                                    it.visibleRect ?: return@traverse
+                            viewHierarchy.traverse { node ->
+                                if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
+                                    node.visibleRect ?: return@traverse false
 
-                                    // TODO: check for view type rather than rely on absence of dominantColor here
-                                    val color = if (it.dominantColor == null) {
-                                        singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
-                                        singlePixelBitmap.getPixel(0, 0)
-                                    } else {
-                                        it.dominantColor
+                                    var isObscured = false
+                                    viewHierarchy.traverse innerTraverse@{ otherNode ->
+                                        otherNode.visibleRect ?: return@innerTraverse false
+
+                                        if (!otherNode.visibleRect.contains(node.visibleRect)) {
+                                            return@innerTraverse false
+                                        }
+
+                                        if (otherNode.elevation > node.elevation) {
+                                            isObscured = true
+                                            return@innerTraverse false
+                                        }
+                                        return@innerTraverse true
+                                    }
+
+                                    if (isObscured) {
+                                        return@traverse true
+                                    }
+                                    // TODO: iterate the rest of the tree and check if the view is
+                                    // TODO: obscured by any of those, isVisibleToUser does not
+                                    // TODO: consider elevation. Basically search for views with
+                                    // TODO: higher elevation and check if their visibleRect contains
+                                    // TODO: the one of the current view
+                                    val (visibleRects, color) = when (node) {
+                                        is ImageViewHierarchyNode -> {
+                                            singlePixelBitmapCanvas.drawBitmap(
+                                                bitmap,
+                                                node.visibleRect,
+                                                Rect(0, 0, 1, 1),
+                                                null
+                                            )
+                                            listOf(node.visibleRect) to singlePixelBitmap.getPixel(0, 0)
+                                        }
+                                        is TextViewHierarchyNode -> {
+                                            node.layout.getVisibleRects(
+                                                node.visibleRect,
+                                                node.paddingLeft,
+                                                node.paddingTop
+                                            ) to (node.dominantColor ?: Color.BLACK)
+                                        }
+                                        else -> {
+                                            listOf(node.visibleRect) to Color.BLACK
+                                        }
                                     }
 
                                     maskingPaint.setColor(color)
-                                    canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
+                                    visibleRects.forEach { rect ->
+                                        canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+                                    }
                                 }
+                                return@traverse true
                             }
                         }
 
@@ -206,11 +262,13 @@ internal class ScreenshotRecorder(
         thread.quitSafely()
     }
 
-    private fun ViewHierarchyNode.traverse(callback: (ViewHierarchyNode) -> Unit) {
-        callback(this)
-        if (this.children != null) {
-            this.children!!.forEach {
-                it.traverse(callback)
+    private fun ViewHierarchyNode.traverse(callback: (ViewHierarchyNode) -> Boolean) {
+        val traverseChildren = callback(this)
+        if (traverseChildren) {
+            if (this.children != null) {
+                this.children!!.forEach {
+                    it.traverse(callback)
+                }
             }
         }
     }

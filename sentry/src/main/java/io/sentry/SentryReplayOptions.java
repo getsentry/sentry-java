@@ -110,7 +110,7 @@ public final class SentryReplayOptions {
   }
 
   public void setRedactAllText(final boolean redactAllText) {
-    this.redactAllText = redactAllText;
+    //this.redactAllText = redactAllText;
   }
 
   public boolean getRedactAllImages() {
@@ -118,7 +118,7 @@ public final class SentryReplayOptions {
   }
 
   public void setRedactAllImages(final boolean redactAllImages) {
-    this.redactAllImages = redactAllImages;
+    //this.redactAllImages = redactAllImages;
   }
 
   @ApiStatus.Internal
