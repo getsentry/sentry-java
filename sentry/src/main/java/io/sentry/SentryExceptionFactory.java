@@ -149,7 +149,7 @@ public final class SentryExceptionFactory {
     Thread thread;
 
     Throwable currentThrowable = throwable;
-    Integer parentId = exceptionId.get();
+    int parentId = exceptionId.get();
 
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
