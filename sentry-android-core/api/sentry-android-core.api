@@ -97,6 +97,7 @@ public final class io/sentry/android/core/AnrIntegrationFactory {
 
 public final class io/sentry/android/core/AnrV2EventProcessor : io/sentry/BackfillingEventProcessor {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -236,6 +237,7 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -386,6 +388,7 @@ public final class io/sentry/android/core/UserInteractionIntegration : android/a
 
 public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 	public static fun snapshotViewHierarchy (Landroid/app/Activity;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;

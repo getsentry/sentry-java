@@ -99,4 +99,9 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
 
     return event;
   }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 6000L;
+  }
 }

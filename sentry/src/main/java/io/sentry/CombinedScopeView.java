@@ -1,9 +1,11 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.EventProcessorUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -341,13 +343,18 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
-  public @NotNull List<EventProcessor> getEventProcessors() {
-    // TODO [HSM] mechanism for ordering event processors
-    final @NotNull List<EventProcessor> allEventProcessors = new CopyOnWriteArrayList<>();
-    allEventProcessors.addAll(globalScope.getEventProcessors());
-    allEventProcessors.addAll(isolationScope.getEventProcessors());
-    allEventProcessors.addAll(scope.getEventProcessors());
+  public @NotNull List<EventProcessorAndOrder> getOrderedEventProcessors() {
+    final @NotNull List<EventProcessorAndOrder> allEventProcessors = new CopyOnWriteArrayList<>();
+    allEventProcessors.addAll(globalScope.getOrderedEventProcessors());
+    allEventProcessors.addAll(isolationScope.getOrderedEventProcessors());
+    allEventProcessors.addAll(scope.getOrderedEventProcessors());
+    Collections.sort(allEventProcessors);
     return allEventProcessors;
+  }
+
+  @Override
+  public @NotNull List<EventProcessor> getEventProcessors() {
+    return EventProcessorUtils.unwrap(getOrderedEventProcessors());
   }
 
   @Override

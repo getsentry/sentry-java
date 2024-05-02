@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
@@ -7,6 +8,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.EventProcessorUtils;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
@@ -61,7 +63,7 @@ public final class Scope implements IScope {
   private @NotNull Map<String, @NotNull Object> extra = new ConcurrentHashMap<>();
 
   /** Scope's event processor list */
-  private @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
+  private @NotNull List<EventProcessorAndOrder> eventProcessors = new CopyOnWriteArrayList<>();
 
   /** Scope's SentryOptions */
   private final @NotNull SentryOptions options;
@@ -766,6 +768,19 @@ public final class Scope implements IScope {
   @NotNull
   @Override
   public List<EventProcessor> getEventProcessors() {
+    return EventProcessorUtils.unwrap(eventProcessors);
+  }
+
+  /**
+   * Returns the Scope's event processors including their order
+   *
+   * @return the event processors list and their order
+   */
+  @ApiStatus.Internal
+  @NotNull
+  @Override
+  public List<EventProcessorAndOrder> getOrderedEventProcessors() {
+    // TODO [HSM] This isn't actually ordered but only gets ordered in CombinedScopeView
     return eventProcessors;
   }
 
@@ -776,7 +791,7 @@ public final class Scope implements IScope {
    */
   @Override
   public void addEventProcessor(final @NotNull EventProcessor eventProcessor) {
-    eventProcessors.add(eventProcessor);
+    eventProcessors.add(new EventProcessorAndOrder(eventProcessor, eventProcessor.getOrder()));
   }
 
   /**

@@ -5,6 +5,7 @@ public final class io/sentry/spring/BuildConfig {
 
 public final class io/sentry/spring/ContextTagsEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
@@ -43,6 +44,7 @@ public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/
 
 public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/spring/tracing/TransactionNameProvider;Ljavax/servlet/http/HttpServletRequest;)V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 

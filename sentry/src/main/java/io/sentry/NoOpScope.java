@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
@@ -180,6 +181,12 @@ public final class NoOpScope implements IScope {
   @ApiStatus.Internal
   @Override
   public @NotNull List<EventProcessor> getEventProcessors() {
+    return new ArrayList<>();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull List<EventProcessorAndOrder> getOrderedEventProcessors() {
     return new ArrayList<>();
   }
 
