@@ -805,6 +805,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun removeContexts (Ljava/lang/String;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
+	public abstract fun setClient (Lio/sentry/ISentryClient;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -1466,6 +1467,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
+	public fun setClient (Lio/sentry/ISentryClient;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -1909,6 +1911,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
+	public fun setClient (Lio/sentry/ISentryClient;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
