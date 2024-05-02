@@ -7,6 +7,7 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.Scope
+import io.sentry.ScopeType
 import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
@@ -138,6 +139,9 @@ class InternalSentrySdkTest {
         )
         // TODO [HSM] add breadcrumbs to all scopes and assert they are there
         Sentry.addBreadcrumb("test")
+        Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.addBreadcrumb(Breadcrumb("currentBreadcrumb")) }
+        Sentry.configureScope(ScopeType.ISOLATION) { scope -> scope.addBreadcrumb(Breadcrumb("isolationBreadcrumb")) }
+        Sentry.configureScope(ScopeType.GLOBAL) { scope -> scope.addBreadcrumb(Breadcrumb("globalBreadcrumb")) }
 
         // when the clone is modified
         val clonedScope = InternalSentrySdk.getCurrentScope()!!
@@ -145,7 +149,7 @@ class InternalSentrySdkTest {
 
         // then modifications should not be reflected
         Sentry.configureScope { scope ->
-            assertEquals(1, scope.breadcrumbs.size)
+            assertEquals(3, scope.breadcrumbs.size)
         }
     }
 

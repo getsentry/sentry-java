@@ -215,7 +215,6 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    // TODO [HSM] this wouldn't do anything since it replaced the current with the same Scopes
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 

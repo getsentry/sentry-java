@@ -646,9 +646,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
     } else {
       final @NotNull IScopes forkedScopes = forkedCurrentScope("withScope");
-      // TODO [HSM] should forkedScopes be made current inside callback?
-      // TODO [HSM] forkedScopes.makeCurrent()?
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
