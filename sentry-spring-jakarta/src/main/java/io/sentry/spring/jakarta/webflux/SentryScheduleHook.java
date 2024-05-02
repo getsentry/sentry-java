@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public final class SentryScheduleHook implements Function<Runnable, Runnable> {
   @Override
-  @SuppressWarnings("deprecation")
   public Runnable apply(final @NotNull Runnable runnable) {
     final IScopes newScopes = Sentry.getCurrentScopes().forkedCurrentScope("spring.scheduleHook");
 
