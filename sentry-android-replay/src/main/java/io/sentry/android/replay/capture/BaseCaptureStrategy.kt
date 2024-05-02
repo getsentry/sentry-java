@@ -30,6 +30,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
 import java.util.Date
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
@@ -48,7 +49,6 @@ internal abstract class BaseCaptureStrategy(
 
     internal companion object {
         private const val TAG = "CaptureStrategy"
-        private const val DEBOUNCE_TIMEOUT = 200
         private val snakecasePattern = "_[a-z]".toRegex()
         private val supportedNetworkData = setOf(
             "status_code",
@@ -58,6 +58,9 @@ internal abstract class BaseCaptureStrategy(
             "http.response_content_length",
             "http.request_content_length"
         )
+        // rrweb values
+        private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50
+        private const val CAPTURE_MOVE_EVENT_THRESHOLD = 500
     }
 
     protected var cache: ReplayCache? = null
@@ -66,8 +69,11 @@ internal abstract class BaseCaptureStrategy(
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
-    private val currentEvents = mutableListOf<RRWebEvent>()
-    private val lastExecutionTime = AtomicLong(0)
+
+    private val currentEvents = CopyOnWriteArrayList<RRWebEvent>()
+    private val currentPositions = mutableListOf<Position>()
+    private var touchMoveBaseline = 0L
+    private var lastCapturedMoveEvent = 0L
 
     protected val replayExecutor: ScheduledExecutorService by lazy {
         executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
@@ -281,6 +287,7 @@ internal abstract class BaseCaptureStrategy(
     }
 
     override fun onTouchEvent(event: MotionEvent) {
+        // TODO: rotate in buffer mode
         val rrwebEvent = event.toRRWebIncrementalSnapshotEvent()
         if (rrwebEvent != null) {
             currentEvents += rrwebEvent
@@ -363,30 +370,47 @@ internal abstract class BaseCaptureStrategy(
         return when (val action = event.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
                 // we only throttle move events as those can be overwhelming
-                val now = dateProvider.getCurrentTimeMillis()
-                if (lastExecutionTime.get() != 0L && lastExecutionTime.get() + DEBOUNCE_TIMEOUT > now) {
+                val now = dateProvider.currentTimeMillis
+                if (lastCapturedMoveEvent != 0L && lastCapturedMoveEvent + TOUCH_MOVE_DEBOUNCE_THRESHOLD > now) {
                     return null
                 }
-                lastExecutionTime.set(now)
+                lastCapturedMoveEvent = now
 
-                RRWebInteractionMoveEvent().apply {
-                    timestamp = dateProvider.currentTimeMillis
-                    positions = listOf(
-                        Position().apply {
-                            x = event.x * recorderConfig.scaleFactorX
-                            y = event.y * recorderConfig.scaleFactorY
-                            id = event.getPointerId(event.actionIndex)
-                            timeOffset = 0 // TODO: is this needed?
+                // idk why but rrweb does it like dis
+                if (touchMoveBaseline == 0L) {
+                    touchMoveBaseline = now
+                }
+
+                currentPositions += Position().apply {
+                    x = event.x * recorderConfig.scaleFactorX
+                    y = event.y * recorderConfig.scaleFactorY
+                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                    timeOffset = now - touchMoveBaseline
+                }
+
+                val totalOffset = now - touchMoveBaseline
+                return if (totalOffset > CAPTURE_MOVE_EVENT_THRESHOLD) {
+                    RRWebInteractionMoveEvent().apply {
+                        timestamp = now
+                        positions = currentPositions.map { pos ->
+                            pos.timeOffset -= totalOffset
+                            pos
                         }
-                    ) // TODO: support multiple pointers
+                    }.also {
+                        currentPositions.clear()
+                        touchMoveBaseline = 0L
+                    }
+                } else {
+                    null
                 }
             }
+
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 RRWebInteractionEvent().apply {
                     timestamp = dateProvider.currentTimeMillis
                     x = event.x * recorderConfig.scaleFactorX
                     y = event.y * recorderConfig.scaleFactorY
-                    id = event.getPointerId(event.actionIndex)
+                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
                     interactionType = when (action) {
                         MotionEvent.ACTION_UP -> InteractionType.TouchEnd
                         MotionEvent.ACTION_DOWN -> InteractionType.TouchStart
@@ -395,6 +419,7 @@ internal abstract class BaseCaptureStrategy(
                     }
                 }
             }
+
             else -> null
         }
     }
