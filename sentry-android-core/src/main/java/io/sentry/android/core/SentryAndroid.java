@@ -24,6 +24,10 @@ import org.jetbrains.annotations.NotNull;
 /** Sentry initialization class */
 public final class SentryAndroid {
 
+  static {
+    Sentry.getGlobalScope().replaceOptions(new SentryAndroidOptions());
+  }
+
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
