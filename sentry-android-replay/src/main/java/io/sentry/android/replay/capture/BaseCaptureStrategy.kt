@@ -58,6 +58,7 @@ internal abstract class BaseCaptureStrategy(
             "http.response_content_length",
             "http.request_content_length"
         )
+
         // rrweb values
         private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50
         private const val CAPTURE_MOVE_EVENT_THRESHOLD = 500
