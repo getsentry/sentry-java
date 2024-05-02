@@ -44,6 +44,7 @@ public final class InternalSentrySdk {
   @Nullable
   public static IScope getCurrentScope() {
     final @NotNull AtomicReference<IScope> scopeRef = new AtomicReference<>();
+    // TODO [HSM] should this retrieve combined scope?
     ScopesAdapter.getInstance()
         .configureScope(
             scope -> {

@@ -47,7 +47,12 @@ public final class Sentry {
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
-  // TODO [HSM] cannot pass options here
+  /**
+   * This initializes global scope with default options. Options will later be replaced on
+   * Sentry.init
+   *
+   * <p>For Android options will also be (temporarily) replaced by SentryAndroid static block.
+   */
   private static volatile @NotNull IScope globalScope = new Scope(new SentryOptions());
 
   /** Default value for globalHubMode is false */
@@ -265,14 +270,13 @@ public final class Sentry {
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
+    globalScope.replaceOptions(options);
 
     final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
     final IScope rootIsolationScope = new Scope(options);
-    // TODO [HSM] shouldn't replace global scope
-    globalScope = new Scope(options);
     globalScope.bindClient(new SentryClient(options));
-    rootScopes = new Scopes(rootScope, rootIsolationScope, options, "Sentry.init");
+    rootScopes = new Scopes(rootScope, rootIsolationScope, "Sentry.init");
 
     getScopesStorage().set(rootScopes);
 
