@@ -39,6 +39,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
   private final @NotNull MetricsApi metricsApi;
 
+  private final @NotNull CombinedScopeView combinedScope;
+
   Scopes(
       final @NotNull IScope scope,
       final @NotNull IScope isolationScope,
@@ -55,6 +57,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       final @NotNull String creator) {
     validateOptions(options);
 
+    this.combinedScope = new CombinedScopeView(getGlobalScope(), isolationScope, scope);
     this.scope = scope;
     this.isolationScope = isolationScope;
     this.parentScopes = parentScopes;
@@ -368,8 +371,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   private IScope getCombinedScopeView() {
-    // TODO [HSM] create in ctor?
-    return new CombinedScopeView(getGlobalScope(), isolationScope, scope);
+    return combinedScope;
   }
 
   @Override
@@ -430,34 +432,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
       getCombinedScopeView().addBreadcrumb(breadcrumb, hint);
-    }
-  }
-
-  private IScope getSpecificScope(final @Nullable ScopeType scopeType) {
-    // TODO [HSM] extract and reuse
-    if (scopeType != null) {
-      switch (scopeType) {
-        case CURRENT:
-          return scope;
-        case ISOLATION:
-          return isolationScope;
-        case GLOBAL:
-          return getGlobalScope();
-        default:
-          break;
-      }
-    }
-
-    switch (getOptions().getDefaultScopeType()) {
-      case CURRENT:
-        return scope;
-      case ISOLATION:
-        return isolationScope;
-      case GLOBAL:
-        return getGlobalScope();
-      default:
-        // calm the compiler
-        return scope;
     }
   }
 
@@ -679,7 +653,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       try {
-        callback.run(getSpecificScope(scopeType));
+        callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
       }
