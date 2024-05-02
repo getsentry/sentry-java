@@ -10,6 +10,9 @@ import io.sentry.protocol.Response;
 import io.sentry.protocol.SentryRuntime;
 import io.sentry.util.HintUtils;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -204,11 +207,71 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
+  public int size() {
+    return mergeContexts().size();
+  }
+
+  @Override
+  public int getSize() {
+    return size();
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return globalContexts.isEmpty() && isolationContexts.isEmpty() && currentContexts.isEmpty();
+  }
+
+  @Override
+  public boolean containsKey(final @NotNull Object key) {
+    return globalContexts.containsKey(key)
+        || isolationContexts.containsKey(key)
+        || currentContexts.containsKey(key);
+  }
+
+  @Override
+  public @Nullable Object get(final @NotNull Object key) {
+    final @Nullable Object current = currentContexts.get(key);
+    if (current != null) {
+      return current;
+    }
+    final @Nullable Object isolation = isolationContexts.get(key);
+    if (isolation != null) {
+      return isolation;
+    }
+    return globalContexts.get(key);
+  }
+
+  @Override
+  public @Nullable Object put(final @NotNull String key, final @Nullable Object value) {
+    return getDefaultContexts().put(key, value);
+  }
+
+  @Override
+  public @Nullable Object remove(final @NotNull Object key) {
+    // TODO [HSM] should this remove from all contexts?
+    return getDefaultContexts().remove(key);
+  }
+
+  @Override
+  public @NotNull Enumeration<String> keys() {
+    return mergeContexts().keys();
+  }
+
+  @Override
+  public @NotNull Set<Map.Entry<String, Object>> entrySet() {
+    return mergeContexts().entrySet();
+  }
+
+  @Override
   public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+    mergeContexts().serialize(writer, logger);
+  }
+
+  private @NotNull Contexts mergeContexts() {
     final @NotNull Contexts allContexts = new Contexts();
     allContexts.putAll(globalContexts);
     allContexts.putAll(isolationContexts);
     allContexts.putAll(currentContexts);
-    allContexts.serialize(writer, logger);
+    return allContexts;
   }
 }

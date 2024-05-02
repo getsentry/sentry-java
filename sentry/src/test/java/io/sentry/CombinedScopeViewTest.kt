@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.Device
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -640,26 +641,81 @@ class CombinedScopeViewTest {
         assertEquals("globalValue", fixture.globalScope.extras["someExtra"])
     }
 
-    // TODO [HSM] CombinedContextsView does not override all map methods, leading to unwanted behaviour
-    // we should probably no longer extend Map but instead keep an internal map
-    // and offer a toMap function or similar
-//    @Test
-//    fun `combines context from all scopes`() {
-//        val combined = fixture.getSut()
-//        fixture.scope.setContexts("scopeContext", "scopeValue")
-//        fixture.isolationScope.setContexts("isolationContext", "isolationValue")
-//        fixture.globalScope.setContexts("globalContext", "globalValue")
-//
-//        val contexts = combined.contexts
-//        assertEquals("scopeValue", contexts["scopeContext"])
-//    }
+    @Test
+    fun `combines context from all scopes`() {
+        val combined = fixture.getSut()
+        fixture.scope.setContexts("scopeContext", "scopeValue")
+        fixture.isolationScope.setContexts("isolationContext", "isolationValue")
+        fixture.globalScope.setContexts("globalContext", "globalValue")
+
+        val contexts = combined.contexts
+        assertEquals(mapOf("value" to "scopeValue"), contexts["scopeContext"])
+    }
+
+    @Test
+    fun `current scope context overrides context of other scopes`() {
+        val combined = fixture.getSut()
+        fixture.scope.setContexts("someContext", "scopeValue")
+        fixture.isolationScope.setContexts("someContext", "isolationValue")
+        fixture.globalScope.setContexts("someContext", "globalValue")
+
+        val contexts = combined.contexts
+        assertEquals(mapOf("value" to "scopeValue"), contexts["someContext"])
+    }
+
+    @Test
+    fun `isolation scope context overrides global context`() {
+        val combined = fixture.getSut()
+        fixture.isolationScope.setContexts("someContext", "isolationValue")
+        fixture.globalScope.setContexts("someContext", "globalValue")
+
+        val contexts = combined.contexts
+        assertEquals(mapOf("value" to "isolationValue"), contexts["someContext"])
+    }
+
+    @Test
+    fun `setContexts writes to default scope`() {
+        val combined = fixture.getSut()
+        combined.setContexts("aString", "stringValue")
+        combined.setContexts("aChar", 'c')
+        combined.setContexts("aNumber", 1)
+        combined.setContexts("someObject", Device().also { it.brand = "someDeviceBrand" })
+        combined.setContexts("someArray", arrayOf("a", "b"))
+        combined.setContexts("someList", listOf("c", "d", "e"))
+
+        assertNull(fixture.scope.contexts["aString"])
+        assertNull(fixture.scope.contexts["aChar"])
+        assertNull(fixture.scope.contexts["aNumber"])
+        assertNull(fixture.scope.contexts["someObject"])
+        assertNull(fixture.scope.contexts["someArray"])
+        assertNull(fixture.scope.contexts["someList"])
+
+        assertEquals(mapOf("value" to "stringValue"), fixture.isolationScope.contexts["aString"])
+        assertEquals(mapOf("value" to 'c'), fixture.isolationScope.contexts["aChar"])
+        assertEquals(mapOf("value" to 1), fixture.isolationScope.contexts["aNumber"])
+        assertEquals("someDeviceBrand", (fixture.isolationScope.contexts["someObject"] as? Device)?.brand)
+        val arrayValue = (fixture.isolationScope.contexts["someArray"] as? Map<String, Any>)?.get("value") as? Array<String>
+        assertEquals(2, arrayValue?.size)
+        assertEquals("a", arrayValue?.get(0))
+        assertEquals("b", arrayValue?.get(1))
+        val listValue = (fixture.isolationScope.contexts["someList"] as? Map<String, Any>)?.get("value") as? List<String>
+        assertEquals(3, listValue?.size)
+        assertEquals("c", listValue?.get(0))
+        assertEquals("d", listValue?.get(1))
+        assertEquals("e", listValue?.get(2))
+
+        assertNull(fixture.globalScope.contexts["aString"])
+        assertNull(fixture.globalScope.contexts["aChar"])
+        assertNull(fixture.globalScope.contexts["aNumber"])
+        assertNull(fixture.globalScope.contexts["someObject"])
+        assertNull(fixture.globalScope.contexts["someArray"])
+        assertNull(fixture.globalScope.contexts["someList"])
+    }
 
     // TODO [HSM] test all setContext methods
 
-    // TODO [HSM] fingerprint tests (discuss how it should behave first)
-
     @Test
-    fun `combines attachments ƒrom all scopes`() {
+    fun `combines attachments from all scopes`() {
         val combined = fixture.getSut()
 
         fixture.scope.addAttachment(createAttachment("scopeAttachment.png"))
