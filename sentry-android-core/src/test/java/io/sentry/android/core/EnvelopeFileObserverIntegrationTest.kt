@@ -2,14 +2,12 @@ package io.sentry.android.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
-import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.Scope
-import io.sentry.Scopes
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.createTestScopes
 import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -74,9 +72,7 @@ class EnvelopeFileObserverIntegrationTest {
         options.cacheDirPath = file.absolutePath
         options.addIntegration(integrationMock)
         options.setSerializer(mock())
-        val globalScope = Scope(options)
-        val scopes = Scopes(mock<IScope>(), mock<IScope>(), globalScope, "test")
-//        verify(integrationMock).register(expected, options)
+        val scopes = createTestScopes(options)
         scopes.close()
         verify(integrationMock).close()
     }

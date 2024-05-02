@@ -70,6 +70,7 @@ class MetricsIntegrationTest {
         Sentry.init(options)
 
         val client = mock<SentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
         val aggregator = MetricsAggregator(options, client)
         whenever(client.metricsAggregator).thenReturn(aggregator)
         Sentry.bindClient(client)

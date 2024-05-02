@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
+import io.sentry.test.createTestScopes
 import io.sentry.util.thread.IMainThreadChecker
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
@@ -36,9 +37,8 @@ class SentryTracerTest {
             options.dsn = "https://key@sentry.io/proj"
             options.environment = "environment"
             options.release = "release@3.0.0"
-            scopes = spy(Scopes(Scope(options), Scope(options), Scope(options), "test"))
+            scopes = spy(createTestScopes(options))
             transactionPerformanceCollector = spy(DefaultTransactionPerformanceCollector(options))
-            scopes.bindClient(mock())
         }
 
         fun getSut(

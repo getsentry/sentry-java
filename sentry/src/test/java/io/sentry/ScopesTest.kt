@@ -12,6 +12,8 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
+import io.sentry.test.createSentryClientMock
+import io.sentry.test.createTestScopes
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.any
@@ -68,7 +70,9 @@ class ScopesTest {
     }
 
     private fun createScopes(options: SentryOptions): Scopes {
-        return Scopes(Scope(options), Scope(options), Scope(options), "test")
+        return createTestScopes(options).also {
+            it.bindClient(SentryClient(options))
+        }
     }
 
     @Test
@@ -244,7 +248,7 @@ class ScopesTest {
         options.setSerializer(mock())
         val sut = createScopes(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
-        sut.configureScope { breadcrumbs = it.breadcrumbs }
+        sut.configureScope(ScopeType.COMBINED) { breadcrumbs = it.breadcrumbs }
         sut.close()
         sut.addBreadcrumb(Breadcrumb())
         assertTrue(breadcrumbs!!.isEmpty())
@@ -1279,7 +1283,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock(enabled = false)
         sut.bindClient(mockClient)
         sut.close()
 
@@ -1294,7 +1298,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
@@ -1309,7 +1313,7 @@ class ScopesTest {
             setSerializer(mock())
         }
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         whenever(mockClient.captureEnvelope(any(), anyOrNull())).thenReturn(SentryId())
         val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
@@ -1327,9 +1331,13 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         sut.close()
+
+        sut.configureScope(ScopeType.ISOLATION) { scope ->
+            scope.client.isEnabled
+        }
 
         sut.startSession()
         verify(mockClient, never()).captureSession(any(), any())
@@ -1343,7 +1351,7 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.startSession()
@@ -1358,7 +1366,7 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.startSession()
@@ -1377,7 +1385,7 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock(enabled = false)
         sut.bindClient(mockClient)
         sut.close()
 
@@ -1393,7 +1401,7 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.endSession()
@@ -1408,7 +1416,7 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.startSession()
@@ -1425,7 +1433,7 @@ class ScopesTest {
         options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.endSession()
@@ -1441,7 +1449,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         sut.close()
 
@@ -1459,7 +1467,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
@@ -1475,7 +1483,7 @@ class ScopesTest {
             setSerializer(mock())
         }
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
 
@@ -1491,7 +1499,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
@@ -1506,7 +1514,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
@@ -1522,7 +1530,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
@@ -1541,7 +1549,7 @@ class ScopesTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         val mockBackpressureMonitor = mock<IBackpressureMonitor>()
         options.backpressureMonitor = mockBackpressureMonitor
@@ -1562,7 +1570,7 @@ class ScopesTest {
     @Test
     fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val scopes = generateScopes {
             it.setTransactionProfiler(mockTransactionProfiler)
@@ -1584,7 +1592,7 @@ class ScopesTest {
     @Test
     fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val scopes = generateScopes {
             it.profilesSampleRate = 0.0
@@ -1785,6 +1793,7 @@ class ScopesTest {
         // we have to clone the scope, so its isEnabled returns true, but it's still built up from
         // the old scope preserving its data
         val clone = sut.forkedScopes("test")
+        clone.bindClient(createSentryClientMock(enabled = true))
         var oldScope: IScope? = null
         clone.configureScope { scope -> oldScope = scope }
         assertNull(oldScope!!.transaction)
@@ -2166,6 +2175,24 @@ class ScopesTest {
         assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
     }
 
+    @Test
+    fun `is considered enabled if client is enabled()`() {
+        val scopes = generateScopes() as Scopes
+        val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
+        scopes.bindClient(client)
+        assertTrue(scopes.isEnabled)
+    }
+
+    @Test
+    fun `is considered disabled if client is disabled()`() {
+        val scopes = generateScopes() as Scopes
+        val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(false)
+        scopes.bindClient(client)
+        assertFalse(scopes.isEnabled)
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateScopes(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IScopes {
@@ -2191,7 +2218,7 @@ class ScopesTest {
         options.setLogger(logger)
 
         val sut = createScopes(options)
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         return Triple(sut, mockClient, logger)
     }

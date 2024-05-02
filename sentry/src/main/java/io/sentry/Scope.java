@@ -780,7 +780,6 @@ public final class Scope implements IScope {
   @NotNull
   @Override
   public List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
-    // TODO [HSM] This isn't actually ordered but only gets ordered in CombinedScopeView
     return eventProcessors;
   }
 
@@ -1041,17 +1040,17 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void replaceOptions(final @NotNull SentryOptions options) {
-    // TODO [HSM] check if already enabled and noop in that case?
-    //    if (!isEnabled()) {}
-    this.options = options;
-    final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
-    breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
-    for (Breadcrumb breadcrumb : oldBreadcrumbs) {
-      /*
-      this should trigger beforeBreadcrumb
-      and notify observers for breadcrumbs added before options where customized in Sentry.init
-      */
-      addBreadcrumb(breadcrumb);
+    if (!getClient().isEnabled()) {
+      this.options = options;
+      final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
+      breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
+      for (Breadcrumb breadcrumb : oldBreadcrumbs) {
+        /*
+        this should trigger beforeBreadcrumb
+        and notify observers for breadcrumbs added before options where customized in Sentry.init
+        */
+        addBreadcrumb(breadcrumb);
+      }
     }
   }
 

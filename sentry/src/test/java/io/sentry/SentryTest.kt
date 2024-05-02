@@ -15,6 +15,7 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.createSentryClientMock
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
@@ -266,7 +267,7 @@ class SentryTest {
     fun `captureUserFeedback gets forwarded to client`() {
         Sentry.init { it.dsn = dsn }
 
-        val client = mock<ISentryClient>()
+        val client = createSentryClientMock()
         Sentry.getCurrentScopes().bindClient(client)
 
         val userFeedback = UserFeedback(SentryId.EMPTY_ID)
@@ -860,7 +861,7 @@ class SentryTest {
     fun `captureCheckIn gets forwarded to client`() {
         Sentry.init { it.dsn = dsn }
 
-        val client = mock<ISentryClient>()
+        val client = createSentryClientMock()
         Sentry.getCurrentScopes().bindClient(client)
 
         val checkIn = CheckIn("some_slug", CheckInStatus.OK)
