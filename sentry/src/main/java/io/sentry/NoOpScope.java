@@ -186,7 +186,7 @@ public final class NoOpScope implements IScope {
 
   @ApiStatus.Internal
   @Override
-  public @NotNull List<EventProcessorAndOrder> getOrderedEventProcessors() {
+  public @NotNull List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
     return new ArrayList<>();
   }
 

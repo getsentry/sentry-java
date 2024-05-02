@@ -25,7 +25,7 @@ public class Contexts implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
 
   private final @NotNull ConcurrentHashMap<String, Object> internalStorage =
-      new ConcurrentHashMap<String, Object>();
+      new ConcurrentHashMap<>();
 
   /** Response lock, Ops should be atomic */
   private final @NotNull Object responseLock = new Object();
@@ -146,10 +146,12 @@ public class Contexts implements JsonSerializable {
   }
 
   public int size() {
+    // since this used to extend map
     return internalStorage.size();
   }
 
   public int getSize() {
+    // for kotlin .size
     return size();
   }
 

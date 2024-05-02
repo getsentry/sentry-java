@@ -63,7 +63,8 @@ class SentryCheckInAdviceTest {
     fun setup() {
         reset(scopes)
         whenever(scopes.options).thenReturn(SentryOptions())
-        whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
+        whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+        whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
     }
 
     @Test
@@ -84,7 +85,8 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.OK.apiName(), doneCheckIn.status)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes, times(2)).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }
@@ -108,7 +110,8 @@ class SentryCheckInAdviceTest {
         assertEquals(CheckInStatus.ERROR.apiName(), doneCheckIn.status)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes, times(2)).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }
@@ -128,7 +131,8 @@ class SentryCheckInAdviceTest {
         assertNotNull(doneCheckIn.duration)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }
@@ -149,7 +153,8 @@ class SentryCheckInAdviceTest {
         assertNotNull(doneCheckIn.duration)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }
@@ -163,9 +168,10 @@ class SentryCheckInAdviceTest {
         assertEquals(1, result)
         assertEquals(0, checkInCaptor.allValues.size)
 
-        verify(scopes, never()).pushScope()
+        verify(scopes, never()).forkedScopes(any())
+        verify(scopes, never()).makeCurrent()
         verify(scopes, never()).captureCheckIn(any())
-        verify(scopes, never()).popScope()
+        verify(lifecycleToken, never()).close()
     }
 
     @Test
@@ -183,7 +189,8 @@ class SentryCheckInAdviceTest {
         assertNotNull(doneCheckIn.duration)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }
@@ -203,7 +210,8 @@ class SentryCheckInAdviceTest {
         assertNotNull(doneCheckIn.duration)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }
@@ -223,7 +231,8 @@ class SentryCheckInAdviceTest {
         assertNotNull(doneCheckIn.duration)
 
         val order = inOrder(scopes, lifecycleToken)
-        order.verify(scopes).pushIsolationScope()
+        order.verify(scopes).forkedScopes(any())
+        order.verify(scopes).makeCurrent()
         order.verify(scopes).captureCheckIn(any())
         order.verify(lifecycleToken).close()
     }

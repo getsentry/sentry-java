@@ -16,6 +16,10 @@ import kotlin.test.assertNull
 
 class SentryContextTest {
 
+    // TODO [HSM] In global hub mode SentryContext behaves differently
+    // because Sentry.getCurrentScopes always returns rootScopes
+    // What's the desired behaviour?
+
     @BeforeTest
     fun init() {
         Sentry.init("https://key@sentry.io/123")
@@ -183,8 +187,8 @@ class SentryContextTest {
 
             val c2 = launch(
                 SentryContext(
-                    Sentry.getCurrentScopes().clone().also {
-                        Sentry.setTag("cloned", "clonedValue")
+                    Sentry.getCurrentScopes().forkedScopes("test").also {
+                        it.setTag("cloned", "clonedValue")
                     }
                 )
             ) {
@@ -198,13 +202,13 @@ class SentryContextTest {
             c2.join()
 
             assertNotNull(getTag("c1"))
-            assertNotNull(getTag("c2"))
-            assertNotNull(getTag("cloned"))
+            assertNull(getTag("c2"))
+            assertNull(getTag("cloned"))
         }.join()
 
         assertNotNull(getTag("c1"))
-        assertNotNull(getTag("c2"))
-        assertNotNull(getTag("cloned"))
+        assertNull(getTag("c2"))
+        assertNull(getTag("cloned"))
         return@runBlocking
     }
 
@@ -223,7 +227,7 @@ class SentryContextTest {
 
             val c2 = launch(
                 SentryContext(
-                    Sentry.getCurrentScopes().clone().also {
+                    Sentry.getCurrentScopes().forkedCurrentScope("test").also {
                         it.configureScope(ScopeType.CURRENT) { scope ->
                             scope.setTag("cloned", "clonedValue")
                         }
@@ -253,7 +257,7 @@ class SentryContextTest {
     @Test
     fun `mergeForChild returns copy of initial context if Key not present`() {
         val initialContextElement = SentryContext(
-            Sentry.getCurrentScopes().clone().also {
+            Sentry.getCurrentScopes().forkedScopes("test").also {
                 it.setTag("cloned", "clonedValue")
             }
         )
@@ -266,7 +270,7 @@ class SentryContextTest {
     @Test
     fun `mergeForChild returns passed context`() {
         val initialContextElement = SentryContext(
-            Sentry.getCurrentScopes().clone().also {
+            Sentry.getCurrentScopes().forkedScopes("test").also {
                 it.setTag("cloned", "clonedValue")
             }
         )

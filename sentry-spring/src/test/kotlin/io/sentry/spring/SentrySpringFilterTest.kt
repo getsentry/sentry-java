@@ -39,6 +39,7 @@ import kotlin.test.fail
 class SentrySpringFilterTest {
     private class Fixture {
         val scopes = mock<IScopes>()
+        val scopesBeforeForking = mock<IScopes>()
         val response = MockHttpServletResponse()
         val lifecycleToken = mock<ISentryLifecycleToken>()
         val chain = mock<FilterChain>()
@@ -47,16 +48,19 @@ class SentrySpringFilterTest {
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
             scope = Scope(options)
+            whenever(scopesBeforeForking.options).thenReturn(options)
+            whenever(scopesBeforeForking.isEnabled).thenReturn(true)
             whenever(scopes.options).thenReturn(options)
             whenever(scopes.isEnabled).thenReturn(true)
-            whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
+            whenever(scopesBeforeForking.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
             this.request = request
                 ?: MockHttpServletRequest().apply {
                     this.requestURI = "http://localhost:8080/some-uri"
                     this.method = "post"
                 }
-            return SentrySpringFilter(scopes)
+            return SentrySpringFilter(scopesBeforeForking)
         }
     }
 
@@ -67,7 +71,8 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.scopes).pushIsolationScope()
+        verify(fixture.scopesBeforeForking).forkedScopes(any())
+        verify(fixture.scopes).makeCurrent()
     }
 
     @Test

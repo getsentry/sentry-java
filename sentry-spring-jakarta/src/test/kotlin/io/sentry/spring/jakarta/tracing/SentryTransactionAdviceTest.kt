@@ -58,7 +58,8 @@ class SentryTransactionAdviceTest {
                 dsn = "https://key@sentry.io/proj"
             }
         )
-        whenever(scopes.pushIsolationScope()).thenReturn(lifecycleToken)
+        whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+        whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
     }
 
     @Test
@@ -145,7 +146,8 @@ class SentryTransactionAdviceTest {
     @Test
     fun `pushes the scope when advice starts`() {
         classAnnotatedSampleService.hello()
-        verify(scopes).pushIsolationScope()
+        verify(scopes).forkedScopes(any())
+        verify(scopes).makeCurrent()
     }
 
     @Test

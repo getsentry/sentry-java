@@ -53,6 +53,8 @@ public final class Sentry {
    *
    * <p>For Android options will also be (temporarily) replaced by SentryAndroid static block.
    */
+  // TODO [HSM] use SentryOptions.empty and address
+  // https://github.com/getsentry/sentry-java/issues/2541
   private static volatile @NotNull IScope globalScope = new Scope(new SentryOptions());
 
   /** Default value for globalHubMode is false */
@@ -89,7 +91,7 @@ public final class Sentry {
     if (globalHubMode) {
       return rootScopes;
     }
-    IScopes scopes = getScopesStorage().get();
+    @Nullable IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
       scopes = rootScopes.forkedScopes("getCurrentScopes");
       getScopesStorage().set(scopes);
@@ -835,7 +837,13 @@ public final class Sentry {
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
-  /** Removes the first scope */
+  /**
+   * Removes the first scope and restores its parent.
+   *
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     Sentry#pushScope()} or {@link Sentry#pushIsolationScope()} instead.
+   */
+  @Deprecated
   public static void popScope() {
     // popScope is no-op in global hub mode
     if (!globalHubMode) {
@@ -844,12 +852,22 @@ public final class Sentry {
   }
 
   /**
-   * Runs the callback with a new scope which gets dropped at the end
+   * Runs the callback with a new current scope which gets dropped at the end
    *
    * @param callback the callback
    */
   public static void withScope(final @NotNull ScopeCallback callback) {
     getCurrentScopes().withScope(callback);
+  }
+
+  /**
+   * Runs the callback with a new isolation scope which gets dropped at the end. Current scope is
+   * also forked.
+   *
+   * @param callback the callback
+   */
+  public static void withIsolationScope(final @NotNull ScopeCallback callback) {
+    getCurrentScopes().withIsolationScope(callback);
   }
 
   /**

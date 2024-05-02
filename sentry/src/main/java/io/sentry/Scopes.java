@@ -28,7 +28,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   private final @NotNull IScope isolationScope;
   private final @NotNull IScope globalScope;
 
-  @SuppressWarnings("UnusedVariable")
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
@@ -76,18 +75,21 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getScope() {
     return scope;
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getIsolationScope() {
     return isolationScope;
   }
 
-  // TODO [HSM] add to IScopes interface?
-  public @Nullable Scopes getParent() {
-    return parentScopes;
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getGlobalScope() {
+    return globalScope;
   }
 
   // TODO [HSM] add to IScopes interface?
@@ -100,9 +102,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       return true;
     }
 
-    final @Nullable Scopes parent = otherScopes.getParent();
-    if (parent != null) {
-      return isAncestorOf(parent);
+    if (otherScopes.parentScopes != null) {
+      return isAncestorOf(otherScopes.parentScopes);
     }
 
     return false;
@@ -408,8 +409,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           }
         }
 
-        // TODO [HSM] which scopes do we call this on? isolation and current scope?
         configureScope(scope -> scope.clear());
+        configureScope(ScopeType.ISOLATION, scope -> scope.clear());
         getOptions().getTransactionProfiler().close();
         getOptions().getTransactionPerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
@@ -421,8 +422,9 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         }
 
         // TODO: should we end session before closing client?
-        // TODO [HSM] should we go through all clients (global, isolation, current) and close them?
-        getClient().close(isRestarting);
+        configureScope(ScopeType.CURRENT, scope -> scope.getClient().close(isRestarting));
+        configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
+        configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
@@ -576,11 +578,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   @Override
-  public @NotNull IScope getGlobalScope() {
-    return globalScope;
-  }
-
-  @Override
   public @NotNull SentryId getLastEventId() {
     return getCombinedScopeView().getLastEventId();
   }
@@ -618,17 +615,16 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return Sentry.setCurrentScopes(this);
   }
 
-  // TODO [HSM] needs to be deprecated because there's no more stack
   @Override
+  @Deprecated
   public void popScope() {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
     } else {
-      final @Nullable Scopes parent = getParent();
+      final @Nullable Scopes parent = parentScopes;
       if (parent != null) {
-        // TODO [HSM] this is never closed
         parent.makeCurrent();
       }
     }
@@ -650,6 +646,29 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+      }
+    }
+  }
+
+  @Override
+  public void withIsolationScope(final @NotNull ScopeCallback callback) {
+    if (!isEnabled()) {
+      try {
+        callback.run(NoOpScope.getInstance());
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+      }
+
+    } else {
+      final @NotNull IScopes forkedScopes = forkedScopes("withIsolationScope");
+      try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
+        callback.run(forkedScopes.getIsolationScope());
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
       }
     }
   }
@@ -717,8 +736,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     if (!isEnabled()) {
       getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Scopes cloned.");
     }
-    // TODO [HSM] should this fork isolation scope as well?
-    return new HubScopesWrapper(forkedCurrentScope("scopes clone"));
+    return new HubScopesWrapper(forkedScopes("scopes clone"));
   }
 
   @ApiStatus.Internal

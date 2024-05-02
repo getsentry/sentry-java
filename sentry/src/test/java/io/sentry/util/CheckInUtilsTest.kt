@@ -60,10 +60,11 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
-                scopes.pushIsolationScope()
-                lifecycleToken
+            sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then {
+                scopes.forkedScopes("test")
             }
+            whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
             val returnValue = CheckInUtils.withCheckIn("monitor-1") {
                 return@withCheckIn "test1"
@@ -71,7 +72,8 @@ class CheckInUtilsTest {
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
-                verify(scopes).pushIsolationScope()
+                verify(scopes).forkedScopes(any())
+                verify(scopes).makeCurrent()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -96,10 +98,11 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
-                scopes.pushIsolationScope()
-                lifecycleToken
+            sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then {
+                scopes.forkedScopes("test")
             }
+            whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
 
             try {
                 CheckInUtils.withCheckIn("monitor-1") {
@@ -111,7 +114,8 @@ class CheckInUtilsTest {
             }
 
             inOrder(scopes, lifecycleToken) {
-                verify(scopes).pushIsolationScope()
+                verify(scopes).forkedScopes(any())
+                verify(scopes).makeCurrent()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -136,10 +140,11 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
-                scopes.pushIsolationScope()
-                lifecycleToken
+            sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then {
+                scopes.forkedScopes("test")
             }
+            whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
             val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
@@ -148,7 +153,8 @@ class CheckInUtilsTest {
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
-                verify(scopes).pushIsolationScope()
+                verify(scopes).forkedScopes(any())
+                verify(scopes).makeCurrent()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {
@@ -174,10 +180,11 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
-                scopes.pushIsolationScope()
-                lifecycleToken
+            sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then {
+                scopes.forkedScopes("test")
             }
+            whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
                 failureIssueThreshold = 10
@@ -189,7 +196,8 @@ class CheckInUtilsTest {
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
-                verify(scopes).pushIsolationScope()
+                verify(scopes).forkedScopes(any())
+                verify(scopes).makeCurrent()
                 verify(scopes).configureScope(any())
                 verify(scopes).captureCheckIn(
                     check {

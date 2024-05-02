@@ -310,7 +310,7 @@ public interface IScope {
 
   @ApiStatus.Internal
   @NotNull
-  List<EventProcessorAndOrder> getOrderedEventProcessors();
+  List<EventProcessorAndOrder> getEventProcessorsWithOrder();
 
   /**
    * Adds an event processor to the Scope's event processors list

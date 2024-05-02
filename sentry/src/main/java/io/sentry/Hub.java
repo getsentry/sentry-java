@@ -27,6 +27,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// TODO [HSM] remove Hub class
 @Deprecated
 public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
@@ -563,6 +564,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  @Deprecated
   public void popScope() {
     if (!isEnabled()) {
       options
@@ -575,6 +577,26 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
+    if (!isEnabled()) {
+      try {
+        callback.run(NoOpScope.getInstance());
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+      }
+
+    } else {
+      pushScope();
+      try {
+        callback.run(stack.peek().getScope());
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+      }
+      popScope();
+    }
+  }
+
+  @Override
+  public void withIsolationScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
       try {
         callback.run(NoOpScope.getInstance());
@@ -679,16 +701,19 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getScope() {
     return Sentry.getCurrentScopes().getScope();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getIsolationScope() {
     return Sentry.getCurrentScopes().getIsolationScope();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getGlobalScope() {
     return Sentry.getGlobalScope();
   }

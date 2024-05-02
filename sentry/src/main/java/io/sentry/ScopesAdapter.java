@@ -160,6 +160,7 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  @Deprecated
   public void popScope() {
     Sentry.popScope();
   }
@@ -167,6 +168,11 @@ public final class ScopesAdapter implements IScopes {
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
     Sentry.withScope(callback);
+  }
+
+  @Override
+  public void withIsolationScope(@NotNull ScopeCallback callback) {
+    Sentry.withIsolationScope(callback);
   }
 
   @Override
@@ -212,21 +218,23 @@ public final class ScopesAdapter implements IScopes {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    // TODO [HSM] this wouldn't do anything since it replaced the current with the same Scopes
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getScope() {
     return Sentry.getCurrentScopes().getScope();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getIsolationScope() {
     return Sentry.getCurrentScopes().getIsolationScope();
   }
 
   @Override
+  @ApiStatus.Internal
   public @NotNull IScope getGlobalScope() {
     return Sentry.getGlobalScope();
   }

@@ -31,29 +31,30 @@ public final class CheckInUtils {
       final @Nullable MonitorConfig monitorConfig,
       final @NotNull Callable<U> callable)
       throws Exception {
-    final @NotNull ISentryLifecycleToken lifecycleToken = Sentry.pushIsolationScope();
-    final @NotNull IScopes scopes = Sentry.getCurrentScopes();
-    final long startTime = System.currentTimeMillis();
-    boolean didError = false;
+    try (final @NotNull ISentryLifecycleToken ignored =
+            Sentry.forkedScopes("CheckInUtils").makeCurrent()) {
+      final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+      final long startTime = System.currentTimeMillis();
+      boolean didError = false;
 
-    TracingUtils.startNewTrace(scopes);
+      TracingUtils.startNewTrace(scopes);
 
-    CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
-    if (monitorConfig != null) {
-      inProgressCheckIn.setMonitorConfig(monitorConfig);
-    }
-    @Nullable SentryId checkInId = scopes.captureCheckIn(inProgressCheckIn);
-    try {
-      return callable.call();
-    } catch (Throwable t) {
-      didError = true;
-      throw t;
-    } finally {
-      final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
-      CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-      checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
-      scopes.captureCheckIn(checkIn);
-      lifecycleToken.close();
+      CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
+      if (monitorConfig != null) {
+        inProgressCheckIn.setMonitorConfig(monitorConfig);
+      }
+      @Nullable SentryId checkInId = scopes.captureCheckIn(inProgressCheckIn);
+      try {
+        return callable.call();
+      } catch (Throwable t) {
+        didError = true;
+        throw t;
+      } finally {
+        final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
+        CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
+        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+        scopes.captureCheckIn(checkIn);
+      }
     }
   }
 

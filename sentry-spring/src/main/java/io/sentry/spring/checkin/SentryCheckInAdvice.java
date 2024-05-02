@@ -90,27 +90,28 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return invocation.proceed();
     }
 
-    final @NotNull ISentryLifecycleToken lifecycleToken = scopes.pushIsolationScope();
-    TracingUtils.startNewTrace(scopes);
+    try (final @NotNull ISentryLifecycleToken ignored =
+            scopes.forkedScopes("SentryCheckInAdvice").makeCurrent()) {
+      TracingUtils.startNewTrace(scopes);
 
-    @Nullable SentryId checkInId = null;
-    final long startTime = System.currentTimeMillis();
-    boolean didError = false;
+      @Nullable SentryId checkInId = null;
+      final long startTime = System.currentTimeMillis();
+      boolean didError = false;
 
-    try {
-      if (!isHeartbeatOnly) {
-        checkInId = scopes.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
+      try {
+        if (!isHeartbeatOnly) {
+          checkInId = scopes.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
+        }
+        return invocation.proceed();
+      } catch (Throwable e) {
+        didError = true;
+        throw e;
+      } finally {
+        final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
+        CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
+        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+        scopes.captureCheckIn(checkIn);
       }
-      return invocation.proceed();
-    } catch (Throwable e) {
-      didError = true;
-      throw e;
-    } finally {
-      final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
-      CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-      checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
-      scopes.captureCheckIn(checkIn);
-      lifecycleToken.close();
     }
   }
 
