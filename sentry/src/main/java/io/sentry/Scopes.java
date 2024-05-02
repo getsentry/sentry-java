@@ -421,6 +421,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         }
 
         // TODO: should we end session before closing client?
+        // TODO [HSM] should we go through all clients (global, isolation, current) and close them?
         getClient().close(isRestarting);
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
