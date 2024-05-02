@@ -44,17 +44,18 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   protected @Nullable ITransaction maybeStartTransaction(
-      final @NotNull IScopes requestHub, final @NotNull ServerHttpRequest request) {
-    if (requestHub.isEnabled()) {
+      final @NotNull IScopes requestScopes, final @NotNull ServerHttpRequest request) {
+    if (requestScopes.isEnabled()) {
       final @NotNull HttpHeaders headers = request.getHeaders();
       final @Nullable String sentryTraceHeader =
           headers.getFirst(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final @Nullable List<String> baggageHeaders = headers.get(BaggageHeader.BAGGAGE_HEADER);
       final @Nullable TransactionContext transactionContext =
-          requestHub.continueTrace(sentryTraceHeader, baggageHeaders);
+          requestScopes.continueTrace(sentryTraceHeader, baggageHeaders);
 
-      if (requestHub.getOptions().isTracingEnabled() && shouldTraceRequest(requestHub, request)) {
-        return startTransaction(requestHub, request, transactionContext);
+      if (requestScopes.getOptions().isTracingEnabled()
+          && shouldTraceRequest(requestScopes, request)) {
+        return startTransaction(requestScopes, request, transactionContext);
       }
     }
 
@@ -63,7 +64,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
 
   protected void doFinally(
       final @NotNull ServerWebExchange serverWebExchange,
-      final @NotNull IScopes requestHub,
+      final @NotNull IScopes requestScopes,
       final @Nullable ITransaction transaction) {
     if (transaction != null) {
       finishTransaction(serverWebExchange, transaction);
@@ -72,9 +73,9 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   protected void doFirst(
-      final @NotNull ServerWebExchange serverWebExchange, final @NotNull IScopes requestHub) {
-    if (requestHub.isEnabled()) {
-      serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
+      final @NotNull ServerWebExchange serverWebExchange, final @NotNull IScopes requestScopes) {
+    if (requestScopes.isEnabled()) {
+      serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
       final ServerHttpRequest request = serverWebExchange.getRequest();
       final ServerHttpResponse response = serverWebExchange.getResponse();
 
@@ -83,8 +84,8 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       hint.set(WEBFLUX_FILTER_RESPONSE, response);
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
-      requestHub.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
-      requestHub.configureScope(
+      requestScopes.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
+      requestScopes.configureScope(
           scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
     }
   }

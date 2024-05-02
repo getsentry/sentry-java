@@ -18,7 +18,6 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
-import io.sentry.HubScopesWrapper
 import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
@@ -221,7 +220,6 @@ class SentryInstrumentationTest {
     }
 
     fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(fixture.scopes))
         it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
         closure.invoke()
     }

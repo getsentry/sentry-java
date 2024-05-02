@@ -5,9 +5,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.Hub
 import io.sentry.IScope
 import io.sentry.Scope
+import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -82,7 +82,7 @@ class InternalSentrySdkTest {
 
         fun captureEnvelopeWithEvent(event: SentryEvent = SentryEvent()) {
             // create an envelope with session data
-            val options = Sentry.getCurrentHub().options
+            val options = Sentry.getCurrentScopes().options
             val eventId = SentryId()
             val header = SentryEnvelopeHeader(eventId)
             val eventItem = SentryEnvelopeItem.fromEvent(options.serializer, event)
@@ -110,20 +110,19 @@ class InternalSentrySdkTest {
     }
 
     @Test
-    fun `current scope returns null when hub is no-op`() {
-        Sentry.getCurrentHub().close()
+    fun `current scope returns null when scopes is no-op`() {
+        Sentry.getCurrentScopes().close()
         val scope = InternalSentrySdk.getCurrentScope()
         assertNull(scope)
     }
 
     @Test
-    fun `current scope returns obj when hub is active`() {
+    fun `current scope returns obj when scopes is active`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@uri/1234567"
+        }
         Sentry.setCurrentScopes(
-            Hub(
-                SentryOptions().apply {
-                    dsn = "https://key@uri/1234567"
-                }
-            )
+            Scopes(Scope(options), Scope(options), Scope(options), "test")
         )
         val scope = InternalSentrySdk.getCurrentScope()
         assertNotNull(scope)
@@ -131,13 +130,13 @@ class InternalSentrySdkTest {
 
     @Test
     fun `current scope returns a copy of the scope`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@uri/1234567"
+        }
         Sentry.setCurrentScopes(
-            Hub(
-                SentryOptions().apply {
-                    dsn = "https://key@uri/1234567"
-                }
-            )
+            Scopes(Scope(options), Scope(options), Scope(options), "test")
         )
+        // TODO [HSM] add breadcrumbs to all scopes and assert they are there
         Sentry.addBreadcrumb("test")
 
         // when the clone is modified

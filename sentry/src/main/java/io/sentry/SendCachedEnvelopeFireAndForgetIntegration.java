@@ -67,7 +67,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    this.scopes = Objects.requireNonNull(scopes, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = Objects.requireNonNull(options, "SentryOptions is required");
 
     final String cachedDir = options.getCacheDirPath();

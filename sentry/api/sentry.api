@@ -1979,6 +1979,7 @@ public final class io/sentry/ScopeType : java/lang/Enum {
 }
 
 public final class io/sentry/Scopes : io/sentry/IScopes, io/sentry/metrics/MetricsApi$IMetricsInterface {
+	public fun <init> (Lio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;Ljava/lang/String;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V

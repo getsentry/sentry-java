@@ -1,7 +1,6 @@
 package io.sentry.util
 
 import io.sentry.CheckInStatus
-import io.sentry.HubScopesWrapper
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
 import io.sentry.MonitorConfig
@@ -61,7 +60,6 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
             sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
                 scopes.pushIsolationScope()
                 lifecycleToken
@@ -98,7 +96,6 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
             sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
                 scopes.pushIsolationScope()
                 lifecycleToken
@@ -139,7 +136,6 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
             sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
                 scopes.pushIsolationScope()
                 lifecycleToken
@@ -178,7 +174,6 @@ class CheckInUtilsTest {
             val scopes = mock<IScopes>()
             val lifecycleToken = mock<ISentryLifecycleToken>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
             sentry.`when`<Any> { Sentry.pushIsolationScope() }.then {
                 scopes.pushIsolationScope()
                 lifecycleToken
@@ -219,7 +214,6 @@ class CheckInUtilsTest {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     cron = SentryOptions.Cron().apply {
@@ -247,7 +241,6 @@ class CheckInUtilsTest {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(HubScopesWrapper(scopes))
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     cron = SentryOptions.Cron().apply {

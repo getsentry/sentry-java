@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 @Deprecated
 public final class HubScopesWrapper implements IHub {
 
-  private final IScopes scopes;
+  private final @NotNull IScopes scopes;
 
   public HubScopesWrapper(final @NotNull IScopes scopes) {
     this.scopes = scopes;

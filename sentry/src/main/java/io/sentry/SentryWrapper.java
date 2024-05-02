@@ -12,16 +12,16 @@ import org.jetbrains.annotations.NotNull;
  *   <li>{@link Supplier}
  * </ul>
  *
- * that clones the Hub before execution and restores it afterwards. This prevents reused threads
- * (e.g. from thread-pools) from getting an incorrect state.
+ * that forks the current scope before execution and restores it afterwards. This prevents reused
+ * threads (e.g. from thread-pools) from getting an incorrect state.
  */
 public final class SentryWrapper {
 
   /**
    * Helper method to wrap {@link Callable}
    *
-   * <p>Clones the Hub before execution and restores it afterwards. This prevents reused threads
-   * (e.g. from thread-pools) from getting an incorrect state.
+   * <p>Forks the current scope before execution and restores it afterwards. This prevents reused
+   * threads (e.g. from thread-pools) from getting an incorrect state.
    *
    * @param callable - the {@link Callable} to be wrapped
    * @return the wrapped {@link Callable}
@@ -51,8 +51,8 @@ public final class SentryWrapper {
   /**
    * Helper method to wrap {@link Supplier}
    *
-   * <p>Clones the Hub before execution and restores it afterwards. This prevents reused threads
-   * (e.g. from thread-pools) from getting an incorrect state.
+   * <p>Forks the current scope before execution and restores it afterwards. This prevents reused
+   * threads (e.g. from thread-pools) from getting an incorrect state.
    *
    * @param supplier - the {@link Supplier} to be wrapped
    * @return the wrapped {@link Supplier}

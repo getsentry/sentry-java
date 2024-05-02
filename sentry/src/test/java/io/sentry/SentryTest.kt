@@ -422,25 +422,25 @@ class SentryTest {
         assertNotNull(scopes)
         assertFalse(Sentry.getCurrentScopes().isNoOp)
 
-        val newMainHubClone = Sentry.forkedRootScopes("test")
-        newMainHubClone.addBreadcrumb("breadcrumbMainClone")
+        val forkedRootScopes = Sentry.forkedRootScopes("test")
+        forkedRootScopes.addBreadcrumb("breadcrumbMainClone")
 
         scopes.captureMessage("messageCurrent")
-        newMainHubClone.captureMessage("messageMainClone")
+        forkedRootScopes.captureMessage("messageMainClone")
 
         assertEquals(2, capturedEvents.size)
         val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+        val currentScopesEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
 
         assertNotNull(mainCloneEvent)
         assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
         assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
         assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
 
-        assertNotNull(currentHubEvent)
-        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
-        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
-        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+        assertNotNull(currentScopesEvent)
+        assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
     }
 
     @Test
@@ -473,25 +473,25 @@ class SentryTest {
         assertNotNull(scopes)
         assertFalse(scopes.isNoOp)
 
-        val newMainHubClone = Sentry.forkedRootScopes("test")
-        newMainHubClone.addBreadcrumb("breadcrumbMainClone")
+        val forkedRootScopes = Sentry.forkedRootScopes("test")
+        forkedRootScopes.addBreadcrumb("breadcrumbMainClone")
 
         scopes.captureMessage("messageCurrent")
-        newMainHubClone.captureMessage("messageMainClone")
+        forkedRootScopes.captureMessage("messageMainClone")
 
         assertEquals(2, capturedEvents.size)
         val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+        val currentScopesEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
 
         assertNotNull(mainCloneEvent)
         assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
         assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
         assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
 
-        assertNotNull(currentHubEvent)
-        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
-        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
-        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+        assertNotNull(currentScopesEvent)
+        assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
     }
 
     @Test

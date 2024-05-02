@@ -59,7 +59,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   public SentryTracingFilter(
       final @NotNull IScopes scopes,
       final @NotNull TransactionNameProvider transactionNameProvider) {
-    this.scopes = Objects.requireNonNull(scopes, "scopes is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
   }

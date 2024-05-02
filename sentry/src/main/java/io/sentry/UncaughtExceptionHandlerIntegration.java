@@ -54,7 +54,7 @@ public final class UncaughtExceptionHandlerIntegration
     }
     registered = true;
 
-    this.scopes = Objects.requireNonNull(scopes, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = Objects.requireNonNull(options, "SentryOptions is required");
 
     this.options

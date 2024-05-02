@@ -50,23 +50,23 @@ public final class SentryWebFilter implements WebFilter {
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
-    @NotNull IScopes requestHub = Sentry.forkedRootScopes("request.webflux");
-    if (!requestHub.isEnabled()) {
+    @NotNull IScopes requestScopes = Sentry.forkedRootScopes("request.webflux");
+    if (!requestScopes.isEnabled()) {
       return webFilterChain.filter(serverWebExchange);
     }
 
-    final boolean isTracingEnabled = requestHub.getOptions().isTracingEnabled();
+    final boolean isTracingEnabled = requestScopes.getOptions().isTracingEnabled();
     final @NotNull ServerHttpRequest request = serverWebExchange.getRequest();
     final @NotNull HttpHeaders headers = request.getHeaders();
     final @Nullable String sentryTraceHeader =
         headers.getFirst(SentryTraceHeader.SENTRY_TRACE_HEADER);
     final @Nullable List<String> baggageHeaders = headers.get(BaggageHeader.BAGGAGE_HEADER);
     final @Nullable TransactionContext transactionContext =
-        requestHub.continueTrace(sentryTraceHeader, baggageHeaders);
+        requestScopes.continueTrace(sentryTraceHeader, baggageHeaders);
 
     final @Nullable ITransaction transaction =
-        isTracingEnabled && shouldTraceRequest(requestHub, request)
-            ? startTransaction(requestHub, request, transactionContext)
+        isTracingEnabled && shouldTraceRequest(requestScopes, request)
+            ? startTransaction(requestScopes, request, transactionContext)
             : null;
 
     if (transaction != null) {
@@ -91,8 +91,8 @@ public final class SentryWebFilter implements WebFilter {
             })
         .doFirst(
             () -> {
-              serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestHub);
-              Sentry.setCurrentScopes(requestHub);
+              serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
+              Sentry.setCurrentScopes(requestScopes);
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
               final Hint hint = new Hint();
@@ -100,9 +100,9 @@ public final class SentryWebFilter implements WebFilter {
               hint.set(WEBFLUX_FILTER_RESPONSE, response);
               final String methodName =
                   request.getMethod() != null ? request.getMethod().name() : "unknown";
-              requestHub.addBreadcrumb(
+              requestScopes.addBreadcrumb(
                   Breadcrumb.http(request.getURI().toString(), methodName), hint);
-              requestHub.configureScope(
+              requestScopes.configureScope(
                   scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
             });
   }
