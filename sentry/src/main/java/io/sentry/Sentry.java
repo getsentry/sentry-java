@@ -55,7 +55,7 @@ public final class Sentry {
    */
   // TODO [HSM] use SentryOptions.empty and address
   // https://github.com/getsentry/sentry-java/issues/2541
-  private static volatile @NotNull IScope globalScope = new Scope(new SentryOptions());
+  private static volatile @NotNull IScope globalScope = new Scope(SentryOptions.empty());
 
   /** Default value for globalHubMode is false */
   private static final boolean GLOBAL_HUB_DEFAULT_MODE = false;
