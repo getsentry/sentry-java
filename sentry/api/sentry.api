@@ -2740,6 +2740,8 @@ public final class io/sentry/SpanContext$JsonKeys {
 public abstract interface class io/sentry/SpanDataConvention {
 	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
 	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
+	public static final field CONTRIBUTES_TTID Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
 	public static final field FRAMES_DELAY Ljava/lang/String;
@@ -4459,6 +4461,7 @@ public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, i
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 

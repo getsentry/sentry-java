@@ -116,6 +116,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       appContext.setStartType(appStartType);
     }
 
+    setContributingFlags(transaction);
+
     final SentryId eventId = transaction.getEventId();
     final SpanContext spanContext = transaction.getContexts().getTrace();
 
@@ -133,6 +135,71 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
 
     return transaction;
+  }
+
+  private void setContributingFlags(SentryTransaction transaction) {
+
+    @Nullable SentrySpan ttidSpan = null;
+    @Nullable SentrySpan ttfdSpan = null;
+    for (final @NotNull SentrySpan span : transaction.getSpans()) {
+      if (ActivityLifecycleIntegration.TTID_OP.equals(span.getOp())) {
+        ttidSpan = span;
+      } else if (ActivityLifecycleIntegration.TTFD_OP.equals(span.getOp())) {
+        ttfdSpan = span;
+      }
+      // once both are found we can early exit
+      if (ttidSpan != null && ttfdSpan != null) {
+        break;
+      }
+    }
+
+    if (ttidSpan == null && ttfdSpan == null) {
+      return;
+    }
+
+    for (final @NotNull SentrySpan span : transaction.getSpans()) {
+      // as ttid and ttfd spans are artificially created, we don't want to set the flags on them
+      if (span == ttidSpan || span == ttfdSpan) {
+        continue;
+      }
+
+      // let's assume main thread, unless it's set differently
+      boolean spanOnMainThread = true;
+      final @Nullable Map<String, Object> spanData = span.getData();
+      if (spanData != null) {
+        final @Nullable Object threadName = spanData.get(SpanDataConvention.THREAD_NAME);
+        spanOnMainThread = threadName == null || "main".equals(threadName);
+      }
+
+      // for ttid, only main thread spans are relevant
+      final boolean withinTtid =
+          (ttidSpan != null)
+              && isTimestampWithinSpan(span.getStartTimestamp(), ttidSpan)
+              && spanOnMainThread;
+
+      final boolean withinTtfd =
+          (ttfdSpan != null) && isTimestampWithinSpan(span.getStartTimestamp(), ttfdSpan);
+
+      if (withinTtid || withinTtfd) {
+        @Nullable Map<String, Object> data = span.getData();
+        if (data == null) {
+          data = new ConcurrentHashMap<>();
+          span.setData(data);
+        }
+        if (withinTtid) {
+          data.put(SpanDataConvention.CONTRIBUTES_TTID, true);
+        }
+        if (withinTtfd) {
+          data.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
+        }
+      }
+    }
+  }
+
+  private static boolean isTimestampWithinSpan(
+      final double timestamp, final @NotNull SentrySpan target) {
+    return timestamp >= target.getStartTimestamp()
+        && (target.getTimestamp() == null || timestamp <= target.getTimestamp());
   }
 
   private boolean hasAppStartSpan(final @NotNull SentryTransaction txn) {
@@ -252,6 +319,9 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     final Map<String, Object> defaultSpanData = new HashMap<>(2);
     defaultSpanData.put(SpanDataConvention.THREAD_ID, Looper.getMainLooper().getThread().getId());
     defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
+
+    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
+    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
 
     return new SentrySpan(
         span.getStartTimestampSecs(),
