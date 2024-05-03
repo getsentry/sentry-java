@@ -1,6 +1,7 @@
 package io.sentry.rrweb
 
 import io.sentry.ILogger
+import io.sentry.SentryLevel.INFO
 import io.sentry.protocol.SerializationUtils
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -16,6 +17,7 @@ class RRWebBreadcrumbEventSerializationTest {
             breadcrumbTimestamp = 12345678.901
             category = "navigation"
             message = "message"
+            level = INFO
             data = mapOf(
                 "screen" to "MainActivity",
                 "state" to "resumed"

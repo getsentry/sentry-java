@@ -183,9 +183,11 @@ public final class io/sentry/android/core/CurrentActivityIntegration : android/a
 public final class io/sentry/android/core/DeviceInfoUtil {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun collectDeviceInformation (ZZ)Lio/sentry/protocol/Device;
+	public static fun getBatteryLevel (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Float;
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
 	public static fun resetInstance ()V
 }
 
