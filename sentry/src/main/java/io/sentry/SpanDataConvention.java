@@ -21,6 +21,6 @@ public interface SpanDataConvention {
   String FRAMES_SLOW = "frames.slow";
   String FRAMES_FROZEN = "frames.frozen";
   String FRAMES_DELAY = "frames.delay";
-  String CONTRIBUTES_TTID = "ui.contributes_ttid";
-  String CONTRIBUTES_TTFD = "ui.contributes_ttfd";
+  String CONTRIBUTES_TTID = "ui.contributes_to_ttid";
+  String CONTRIBUTES_TTFD = "ui.contributes_to_ttfd";
 }
