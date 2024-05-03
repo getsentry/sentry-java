@@ -678,6 +678,124 @@ class PerformanceAndroidEventProcessorTest {
         assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTFD))
     }
 
+    @Test
+    fun `sets ttid and ttfd contributing flags according to span threads`() {
+        val sut = fixture.getSut()
+
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        val tr = SentryTransaction(tracer)
+
+        // given a ttid from 0.0 -> 1.0
+        //   and a ttfd from 0.0 -> 1.0
+        val ttid = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            ActivityLifecycleIntegration.TTID_OP,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        val ttfd = SentrySpan(
+            0.0,
+            1.0,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            ActivityLifecycleIntegration.TTFD_OP,
+            "App Start",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+        tr.spans.add(ttid)
+        tr.spans.add(ttfd)
+
+        // one span with no thread info
+        val noThreadSpan = SentrySpan(
+            0.0,
+            0.5,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            null
+        )
+
+        // one span on the main thread
+        val mainThreadSpan = SentrySpan(
+            0.0,
+            0.5,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            mutableMapOf<String, Any>(
+                "thread.name" to "main"
+            )
+        )
+
+        // and another one off the main thread
+        val backgroundThreadSpan = SentrySpan(
+            0.0,
+            0.5,
+            tr.contexts.trace!!.traceId,
+            SpanId(),
+            null,
+            "example.op",
+            "",
+            SpanStatus.OK,
+            null,
+            emptyMap(),
+            emptyMap(),
+            null,
+            mutableMapOf<String, Any>(
+                "thread.name" to "background"
+            )
+        )
+
+        tr.spans.add(noThreadSpan)
+        tr.spans.add(mainThreadSpan)
+        tr.spans.add(backgroundThreadSpan)
+
+        // when the processor processes the txn
+        sut.process(tr, Hint())
+
+        // then the span with no thread info + main thread span should contribute to ttid and ttfd
+        assertTrue(noThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTID) == true)
+        assertTrue(noThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTFD) == true)
+
+        assertTrue(mainThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTID) == true)
+        assertTrue(mainThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTFD) == true)
+
+        // and the background thread span only contributes to ttfd
+        assertNull(backgroundThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTID))
+        assertTrue(backgroundThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTFD) == true)
+    }
+
     private fun setAppStart(options: SentryAndroidOptions, coldStart: Boolean = true) {
         AppStartMetrics.getInstance().apply {
             appStartType = when (coldStart) {

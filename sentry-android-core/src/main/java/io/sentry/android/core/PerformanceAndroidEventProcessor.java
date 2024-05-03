@@ -163,9 +163,20 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         continue;
       }
 
-      // TODO should we only consider spans running on the main thread?
+      // let's assume main thread, unless it's set differently
+      boolean spanOnMainThread = true;
+      final @Nullable Map<String, Object> spanData = span.getData();
+      if (spanData != null) {
+        final @Nullable Object threadName = spanData.get(SpanDataConvention.THREAD_NAME);
+        spanOnMainThread = threadName == null || "main".equals(threadName);
+      }
+
+      // for ttid, only main thread spans are relevant
       final boolean withinTtid =
-          (ttidSpan != null) && isTimestampWithinSpan(span.getStartTimestamp(), ttidSpan);
+          (ttidSpan != null)
+              && isTimestampWithinSpan(span.getStartTimestamp(), ttidSpan)
+              && spanOnMainThread;
+
       final boolean withinTtfd =
           (ttfdSpan != null) && isTimestampWithinSpan(span.getStartTimestamp(), ttfdSpan);
 
