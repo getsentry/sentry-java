@@ -72,7 +72,7 @@ internal abstract class BaseCaptureStrategy(
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
 
-    private val currentEvents = CopyOnWriteArrayList<RRWebEvent>()
+    protected val currentEvents = CopyOnWriteArrayList<RRWebEvent>()
     private val currentPositions = mutableListOf<Position>()
     private var touchMoveBaseline = 0L
     private var lastCapturedMoveEvent = 0L
@@ -319,7 +319,6 @@ internal abstract class BaseCaptureStrategy(
     }
 
     override fun onTouchEvent(event: MotionEvent) {
-        // TODO: rotate in buffer mode
         val rrwebEvent = event.toRRWebIncrementalSnapshotEvent()
         if (rrwebEvent != null) {
             currentEvents += rrwebEvent
