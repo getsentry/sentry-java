@@ -8,8 +8,10 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -41,7 +43,27 @@ public final class MapObjectReader implements ObjectReader {
   public <T> List<T> nextListOrNull(
       final @NotNull ILogger logger, final @NotNull JsonDeserializer<T> deserializer)
       throws IOException {
-    return nextValueOrNull();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    try {
+      beginArray();
+      List<T> list = new ArrayList<>();
+      if (hasNext()) {
+        do {
+          try {
+            list.add(deserializer.deserialize(this, logger));
+          } catch (Exception e) {
+            logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+          }
+        } while (peek() == JsonToken.BEGIN_OBJECT);
+      }
+      endArray();
+      return list;
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   @Nullable
@@ -49,13 +71,55 @@ public final class MapObjectReader implements ObjectReader {
   public <T> Map<String, T> nextMapOrNull(
       final @NotNull ILogger logger, final @NotNull JsonDeserializer<T> deserializer)
       throws IOException {
-    return nextValueOrNull();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    try {
+      beginObject();
+      Map<String, T> map = new HashMap<>();
+      if (hasNext()) {
+        do {
+          try {
+            String key = nextName();
+            map.put(key, deserializer.deserialize(this, logger));
+          } catch (Exception e) {
+            logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+          }
+        } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
+      }
+      endObject();
+      return map;
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   @Override
   public @Nullable <T> Map<String, List<T>> nextMapOfListOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
-    return nextValueOrNull();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    final @NotNull Map<String, List<T>> result = new HashMap<>();
+
+    try {
+      beginObject();
+      if (hasNext()) {
+        do {
+          final @NotNull String key = nextName();
+          final @Nullable List<T> list = nextListOrNull(logger, deserializer);
+          if (list != null) {
+            result.put(key, list);
+          }
+        } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
+      }
+      endObject();
+      return result;
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   @Nullable

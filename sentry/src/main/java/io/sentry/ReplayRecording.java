@@ -3,6 +3,9 @@ package io.sentry;
 import io.sentry.rrweb.RRWebBreadcrumbEvent;
 import io.sentry.rrweb.RRWebEvent;
 import io.sentry.rrweb.RRWebEventType;
+import io.sentry.rrweb.RRWebIncrementalSnapshotEvent;
+import io.sentry.rrweb.RRWebInteractionEvent;
+import io.sentry.rrweb.RRWebInteractionMoveEvent;
 import io.sentry.rrweb.RRWebMetaEvent;
 import io.sentry.rrweb.RRWebSpanEvent;
 import io.sentry.rrweb.RRWebVideoEvent;
@@ -141,20 +144,54 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
             for (final Map.Entry<String, Object> entry : eventMap.entrySet()) {
               final String key = entry.getKey();
               final Object value = entry.getValue();
-              if (key.equals("type")) {
+              if (key.equals(RRWebEvent.JsonKeys.TYPE)) {
                 final RRWebEventType type = RRWebEventType.values()[(int) value];
                 switch (type) {
+                  case IncrementalSnapshot:
+                    Map<String, Object> incrementalData =
+                        (Map<String, Object>) eventMap.get("data");
+                    if (incrementalData == null) {
+                      incrementalData = Collections.emptyMap();
+                    }
+                    final Integer sourceInt =
+                        (Integer)
+                            incrementalData.get(RRWebIncrementalSnapshotEvent.JsonKeys.SOURCE);
+                    if (sourceInt != null) {
+                      final RRWebIncrementalSnapshotEvent.IncrementalSource source =
+                          RRWebIncrementalSnapshotEvent.IncrementalSource.values()[sourceInt];
+                      switch (source) {
+                        case MouseInteraction:
+                          final RRWebInteractionEvent interactionEvent =
+                              new RRWebInteractionEvent.Deserializer()
+                                  .deserialize(mapReader, logger);
+                          payload.add(interactionEvent);
+                          break;
+                        case TouchMove:
+                          final RRWebInteractionMoveEvent interactionMoveEvent =
+                              new RRWebInteractionMoveEvent.Deserializer()
+                                  .deserialize(mapReader, logger);
+                          payload.add(interactionMoveEvent);
+                          break;
+                        default:
+                          logger.log(
+                              SentryLevel.DEBUG,
+                              "Unsupported rrweb incremental snapshot type %s",
+                              source);
+                          break;
+                      }
+                    }
+                    break;
                   case Meta:
                     final RRWebEvent metaEvent =
                         new RRWebMetaEvent.Deserializer().deserialize(mapReader, logger);
                     payload.add(metaEvent);
                     break;
                   case Custom:
-                    Map<String, Object> data = (Map<String, Object>) eventMap.get("data");
-                    if (data == null) {
-                      data = Collections.emptyMap();
+                    Map<String, Object> customData = (Map<String, Object>) eventMap.get("data");
+                    if (customData == null) {
+                      customData = Collections.emptyMap();
                     }
-                    final String tag = (String) data.get(RRWebEvent.JsonKeys.TAG);
+                    final String tag = (String) customData.get(RRWebEvent.JsonKeys.TAG);
                     if (tag != null) {
                       switch (tag) {
                         case RRWebVideoEvent.EVENT_TAG:
