@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.view.MotionEvent
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -170,5 +171,11 @@ internal class BufferCaptureStrategy(
         val captureStrategy = SessionCaptureStrategy(options, hub, dateProvider, recorderConfig, replayExecutor)
         captureStrategy.start(segmentId = currentSegment.get(), replayId = currentReplayId.get(), cleanupOldReplays = false)
         return captureStrategy
+    }
+
+    override fun onTouchEvent(event: MotionEvent) {
+        super.onTouchEvent(event)
+        val bufferLimit = dateProvider.currentTimeMillis - options.experimental.sessionReplay.errorReplayDuration
+        currentEvents.removeAll { it.timestamp < bufferLimit }
     }
 }
