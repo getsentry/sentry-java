@@ -1,11 +1,13 @@
 package io.sentry.android.core;
 
+import io.sentry.DateUtils;
 import io.sentry.IPerformanceContinuousCollector;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
 import io.sentry.SentryDate;
+import io.sentry.SentryLongDate;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryTracer;
 import io.sentry.SpanDataConvention;
@@ -143,8 +145,6 @@ public class SpanFrameMetricsCollector
       if (spanFinishDate == null) {
         return;
       }
-      // Note: The comparison between two values obtained by realNanos() works only if both are the
-      // same kind of dates (both are SentryNanotimeDate or both SentryLongDate)
       final long spanEndNanos = realNanos(spanFinishDate);
 
       final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
@@ -308,7 +308,16 @@ public class SpanFrameMetricsCollector
    * @return a timestamp in nano precision
    */
   private static long realNanos(final @NotNull SentryDate date) {
-    return date.diff(UNIX_START_DATE);
+    // SentryNanotimeDate nanotime is based on System.nanotime(), like UNIX_START_DATE
+    if (date instanceof SentryNanotimeDate) {
+      return date.diff(UNIX_START_DATE);
+    }
+
+    // SentryLongDate nanotime is based on current date converted to nanoseconds, which is a
+    // different order than frames based System.nanotime(). So we have to convert the nanotime of
+    // the SentryLongDate to a System.nanotime() compatible one.
+    return date.diff(new SentryLongDate(DateUtils.millisToNanos(System.currentTimeMillis())))
+        + System.nanoTime();
   }
 
   private static class Frame implements Comparable<Frame> {
