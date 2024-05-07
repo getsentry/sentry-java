@@ -58,7 +58,7 @@ public final class Sentry {
    */
   // TODO [HSM] use SentryOptions.empty and address
   // https://github.com/getsentry/sentry-java/issues/2541
-  private static volatile @NotNull IScope globalScope = new Scope(SentryOptions.empty());
+  private static final @NotNull IScope globalScope = new Scope(SentryOptions.empty());
 
   /** Default value for globalHubMode is false */
   private static final boolean GLOBAL_HUB_DEFAULT_MODE = false;
@@ -280,12 +280,12 @@ public final class Sentry {
     final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
     final IScope rootIsolationScope = new Scope(options);
-    globalScope.bindClient(new SentryClient(options));
     rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
     getScopesStorage().set(rootScopes);
 
     scopes.close(true);
+    globalScope.bindClient(new SentryClient(options));
 
     // If the executorService passed in the init is the same that was previously closed, we have to
     // set a new one

@@ -11,9 +11,15 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class MetricsIntegrationTest {
+
+    @BeforeTest
+    fun setup() {
+        Sentry.close()
+    }
 
     @Test
     fun `metrics are collected`() {
