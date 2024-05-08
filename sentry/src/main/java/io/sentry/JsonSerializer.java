@@ -180,7 +180,7 @@ public final class JsonSerializer implements ISerializer {
   // Serialize
 
   @Override
-  public <T> void serialize(@NotNull T entity, @NotNull Writer write  r) throws IOException {
+  public <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
