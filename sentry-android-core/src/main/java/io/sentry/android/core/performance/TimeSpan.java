@@ -4,7 +4,6 @@ import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.SentryDate;
 import io.sentry.SentryLongDate;
-import io.sentry.SentryNanotimeDate;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -95,8 +94,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
    */
   public @Nullable SentryDate getStartTimestamp() {
     if (hasStarted()) {
-      return new SentryNanotimeDate(
-          DateUtils.nanosToDate(DateUtils.millisToNanos(getStartTimestampMs())), startSystemNanos);
+      return new SentryLongDate(DateUtils.millisToNanos(getStartTimestampMs()));
     }
     return null;
   }
