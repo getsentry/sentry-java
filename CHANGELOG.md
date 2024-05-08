@@ -1,5 +1,9 @@
 # Changelog
 
+## 7.10.0-SNAPSHOT
+
+- No documented changes.
+
 ## 7.9.0
 
 ### Features
