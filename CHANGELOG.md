@@ -5,9 +5,11 @@
 ### Features
 
 - Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+- Add ttid/ttfd contribution flags ([#3386](https://github.com/getsentry/sentry-java/pull/3386))
 
 ### Fixes
 
+- (Internal) Metrics code cleanup ([#3403](https://github.com/getsentry/sentry-java/pull/3403))
 - Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
 - Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
 
