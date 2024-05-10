@@ -156,8 +156,12 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
 
     if (beforeEmitCallback != null) {
-      if (!beforeEmitCallback.execute(key, tags)) {
-        return;
+      try {
+        if (!beforeEmitCallback.execute(key, tags)) {
+          return;
+        }
+      } catch (Throwable e) {
+        logger.log(SentryLevel.ERROR, "The beforeEmit callback threw an exception.", e);
       }
     }
 
@@ -206,7 +210,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     // See develop docs: https://develop.sentry.dev/sdk/metrics/#sets
     if (localMetricsAggregator != null) {
       final double localValue = type == MetricType.Set ? addedWeight : value;
-      localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags, timestampMs);
+      localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags);
     }
 
     final boolean isOverWeight = isOverWeight();
@@ -324,7 +328,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     flush(false);
 
     synchronized (this) {
-      if (!isClosed) {
+      if (!isClosed && !buckets.isEmpty()) {
         executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
       }
     }

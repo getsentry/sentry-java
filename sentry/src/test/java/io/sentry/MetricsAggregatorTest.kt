@@ -300,13 +300,18 @@ class MetricsAggregatorTest {
         // then a flush is scheduled
         assertTrue(fixture.executorService.hasScheduledRunnables())
 
+        // flush is executed, but there are other metric to capture and it's scheduled again
+        fixture.executorService.runAll()
+        verify(fixture.client, never()).captureMetrics(any())
+        assertTrue(fixture.executorService.hasScheduledRunnables())
+
         // after the flush is executed, the metric is captured
         fixture.currentTimeMillis = 31_000
         fixture.executorService.runAll()
         verify(fixture.client).captureMetrics(any())
 
-        // and flushing is scheduled again
-        assertTrue(fixture.executorService.hasScheduledRunnables())
+        // there is no other metric to capture, so flush is not scheduled again
+        assertFalse(fixture.executorService.hasScheduledRunnables())
     }
 
     @Test
@@ -338,8 +343,7 @@ class MetricsAggregatorTest {
             key,
             value,
             unit,
-            tags,
-            timestamp
+            tags
         )
     }
 
@@ -373,8 +377,7 @@ class MetricsAggregatorTest {
             key,
             1.0,
             unit,
-            tags,
-            timestamp
+            tags
         )
 
         // if the same set metric is emitted again
@@ -394,8 +397,7 @@ class MetricsAggregatorTest {
             key,
             0.0,
             unit,
-            tags,
-            timestamp
+            tags
         )
     }
 
@@ -505,5 +507,13 @@ class MetricsAggregatorTest {
         aggregator.increment("key", 1.0, null, null, 20_001, null)
         aggregator.flush(true)
         verify(fixture.client, never()).captureMetrics(any())
+    }
+
+    @Test
+    fun `if before emit throws, metric is emitted`() {
+        val aggregator = fixture.getSut(beforeEmitMetricCallback = { key, tags -> throw RuntimeException() })
+        aggregator.increment("key", 1.0, null, null, 20_001, null)
+        aggregator.flush(true)
+        verify(fixture.client).captureMetrics(any())
     }
 }

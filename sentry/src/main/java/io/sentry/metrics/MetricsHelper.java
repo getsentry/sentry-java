@@ -89,28 +89,13 @@ public final class MetricsHelper {
     return output.toString();
   }
 
-  public static @NotNull String toStatsdType(final @NotNull MetricType type) {
-    switch (type) {
-      case Counter:
-        return "c";
-      case Gauge:
-        return "g";
-      case Distribution:
-        return "d";
-      case Set:
-        return "s";
-      default:
-        throw new IllegalArgumentException("Invalid Metric Type: " + type.name());
-    }
-  }
-
   @NotNull
   public static String getMetricBucketKey(
       final @NotNull MetricType type,
       final @NotNull String metricKey,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags) {
-    final @NotNull String typePrefix = toStatsdType(type);
+    final @NotNull String typePrefix = type.statsdCode;
     final @NotNull String serializedTags = getTagsKey(tags);
 
     final @NotNull String unitName = getUnitName(unit);
@@ -176,7 +161,7 @@ public final class MetricsHelper {
       final @NotNull String key,
       final @Nullable MeasurementUnit unit) {
     final @NotNull String unitName = getUnitName(unit);
-    return String.format("%s:%s@%s", toStatsdType(type), key, unitName);
+    return String.format("%s:%s@%s", type.statsdCode, key, unitName);
   }
 
   public static double convertNanosTo(
@@ -234,7 +219,7 @@ public final class MetricsHelper {
       }
 
       writer.append("|");
-      writer.append(toStatsdType(metric.getType()));
+      writer.append(metric.getType().statsdCode);
 
       final @Nullable Map<String, String> tags = metric.getTags();
       if (tags != null) {
