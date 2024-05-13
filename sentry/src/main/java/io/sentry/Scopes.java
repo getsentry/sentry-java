@@ -416,24 +416,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         }
 
         // TODO: should we end session before closing client?
-        configureScope(
-            ScopeType.CURRENT,
-            scope -> {
-              if (scope.getClient() instanceof NoOpSentryClient) {
-                scope.bindClient(DisabledSentryClient.getInstance());
-              } else {
-                scope.getClient().close(isRestarting);
-              }
-            });
-        configureScope(
-            ScopeType.ISOLATION,
-            scope -> {
-              if (scope.getClient() instanceof NoOpSentryClient) {
-                scope.bindClient(DisabledSentryClient.getInstance());
-              } else {
-                scope.getClient().close(isRestarting);
-              }
-            });
+        configureScope(ScopeType.CURRENT, scope -> scope.getClient().close(isRestarting));
+        configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
         configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
@@ -685,7 +669,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   @Override
   public void configureScope(
       final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
-    if (!isEnabled() && !combinedScope.getSpecificScope(scopeType).getClient().isEnabled()) {
+    if (!isEnabled()) {
       getOptions()
           .getLogger()
           .log(
