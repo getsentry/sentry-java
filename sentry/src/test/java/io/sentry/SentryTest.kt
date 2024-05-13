@@ -77,6 +77,38 @@ class SentryTest {
     }
 
     @Test
+    fun `global client is enabled after restart`() {
+        val scopes = mock<IScopes>()
+        whenever(scopes.close()).then { Sentry.getGlobalScope().client.close() }
+        whenever(scopes.close(anyOrNull())).then { Sentry.getGlobalScope().client.close() }
+
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentScopes(scopes)
+        Sentry.init {
+            it.dsn = dsn
+        }
+        verify(scopes).close(eq(true))
+        assertTrue(Sentry.getGlobalScope().client.isEnabled)
+    }
+
+    @Test
+    fun `global client is disabled after close`() {
+        val scopes = mock<IScopes>()
+        whenever(scopes.close()).then { Sentry.getGlobalScope().client.close() }
+        whenever(scopes.close(anyOrNull())).then { Sentry.getGlobalScope().client.close() }
+
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentScopes(scopes)
+        Sentry.close()
+        verify(scopes).close(eq(false))
+        assertFalse(Sentry.getGlobalScope().client.isEnabled)
+    }
+
+    @Test
     fun `close calls scopes close with isRestarting false`() {
         val scopes = mock<IScopes>()
         Sentry.init {
