@@ -1039,8 +1039,8 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void replaceOptions(final @NotNull SentryOptions options) {
+    this.options = options;
     if (!getClient().isEnabled()) {
-      this.options = options;
       final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
       breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
       for (Breadcrumb breadcrumb : oldBreadcrumbs) {
