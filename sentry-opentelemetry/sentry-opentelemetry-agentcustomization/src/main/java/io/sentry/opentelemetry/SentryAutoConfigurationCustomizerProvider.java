@@ -30,12 +30,16 @@ public final class SentryAutoConfigurationCustomizerProvider
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
     final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
+
+    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
+
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setInstrumenter(Instrumenter.OTEL);
             options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
+            options.setSpanFactory(new OtelSpanFactory());
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
@@ -51,8 +55,6 @@ public final class SentryAutoConfigurationCustomizerProvider
         SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
       }
     }
-
-    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
 
     autoConfiguration
         .addTracerProviderCustomizer(this::configureSdkTracerProvider)

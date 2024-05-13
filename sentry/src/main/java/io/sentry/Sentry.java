@@ -1019,7 +1019,10 @@ public final class Sentry {
     if (globalHubMode && Platform.isAndroid()) {
       return getCurrentScopes().getTransaction();
     } else {
-      return getCurrentScopes().getSpan();
+      return getCurrentScopes()
+          .getOptions()
+          .getSpanFactory()
+          .retrieveCurrentSpan(getCurrentScopes());
     }
   }
 

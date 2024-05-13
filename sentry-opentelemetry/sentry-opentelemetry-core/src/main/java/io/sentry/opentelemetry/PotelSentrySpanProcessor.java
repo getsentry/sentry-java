@@ -45,7 +45,7 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
             ? scopesFromContext.forkedCurrentScope("spanprocessor")
             : Sentry.forkedRootScopes("spanprocessor");
     final @NotNull SpanContext spanContext = otelSpan.getSpanContext();
-    spanStorage.storeScopes(spanContext, scopes);
+    spanStorage.storeSentrySpan(spanContext, new OtelSpanWrapper(otelSpan, scopes));
   }
 
   @Override

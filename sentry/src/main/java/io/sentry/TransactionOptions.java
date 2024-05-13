@@ -1,6 +1,7 @@
 package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry Transaction options */
@@ -55,6 +56,9 @@ public final class TransactionOptions extends SpanOptions {
    * transaction is captured.
    */
   private @Nullable TransactionFinishedCallback transactionFinishedCallback = null;
+
+  /** Span factory to use. Uses factory configured in {@link SentryOptions} if `null`. */
+  @ApiStatus.Internal private @Nullable ISpanFactory spanFactory = null;
 
   /**
    * Gets the customSamplingContext
@@ -195,5 +199,15 @@ public final class TransactionOptions extends SpanOptions {
   @ApiStatus.Internal
   public boolean isAppStartTransaction() {
     return isAppStartTransaction;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable ISpanFactory getSpanFactory() {
+    return this.spanFactory;
+  }
+
+  @ApiStatus.Internal
+  public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
+    this.spanFactory = spanFactory;
   }
 }

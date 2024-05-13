@@ -64,10 +64,14 @@ public final class SentryContextWrapper implements Context {
 
   private static @Nullable IScopes getCurrentSpanScopesFromGlobalStorage(
       final @NotNull Context context) {
-    @Nullable final Span span = Span.fromContext(context);
+    @Nullable final Span span = Span.fromContextOrNull(context);
 
     if (span != null) {
-      return SentryWeakSpanStorage.getInstance().getScopes(span.getSpanContext());
+      final @Nullable OtelSpanWrapper sentrySpan =
+          SentryWeakSpanStorage.getInstance().getSentrySpan(span.getSpanContext());
+      if (sentrySpan != null) {
+        return sentrySpan.getScopes();
+      }
     }
 
     return null;

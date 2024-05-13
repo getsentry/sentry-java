@@ -1,6 +1,9 @@
 package io.sentry;
 
 import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.Contexts;
+import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -263,4 +266,32 @@ public interface ISpan {
    */
   @Nullable
   LocalMetricsAggregator getLocalMetricsAggregator();
+
+  void setContext(@NotNull String key, @NotNull Object context);
+
+  @NotNull
+  Contexts getContexts();
+
+  void setName(@NotNull String name);
+
+  void setName(@NotNull String name, @NotNull TransactionNameSource nameSource);
+
+  @NotNull
+  TransactionNameSource getNameSource();
+
+  // TODO [POTEL] nullable?
+  @NotNull
+  String getName();
+
+  @Nullable
+  Boolean isSampled();
+
+  @Nullable
+  TracesSamplingDecision getSamplingDecision();
+
+  @NotNull
+  SentryId getEventId();
+
+  @NotNull
+  ISentryLifecycleToken makeCurrent();
 }

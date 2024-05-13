@@ -15,7 +15,8 @@ public final class OtelContextScopesStorage implements IScopesStorage {
 
   @Override
   public ISentryLifecycleToken set(@Nullable IScopes scopes) {
-    Scope otelScope = Context.current().with(SENTRY_SCOPES_KEY, scopes).makeCurrent();
+    final @NotNull Scope otelScope =
+        Context.current().with(SENTRY_SCOPES_KEY, scopes).makeCurrent();
     return new OtelContextScopesStorageToken(otelScope);
   }
 

@@ -822,6 +822,11 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
+  public @NotNull TransactionNameSource getNameSource() {
+    return getTransactionNameSource();
+  }
+
+  @Override
   public @NotNull String getName() {
     return this.name;
   }
@@ -837,7 +842,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable Span getLatestActiveSpan() {
+  public @Nullable ISpan getLatestActiveSpan() {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
       for (int i = spans.size() - 1; i >= 0; i--) {
@@ -852,6 +857,17 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @NotNull SentryId getEventId() {
     return eventId;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    scopes.configureScope(
+        (scope) -> {
+          scope.setTransaction(this);
+        });
+
+    // TODO [POTEL] can we return an actual token here
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
   @NotNull

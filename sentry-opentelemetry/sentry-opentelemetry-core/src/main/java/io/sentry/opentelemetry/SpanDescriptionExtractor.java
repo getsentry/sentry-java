@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SpanDescriptionExtractor {
 
+  // TODO [POTEL] remove these method overloads and pass in SpanData instead (span.toSpanData())
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanDescription(final @NotNull ReadableSpan otelSpan) {
     final @NotNull String name = otelSpan.getName();

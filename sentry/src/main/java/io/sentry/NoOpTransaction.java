@@ -28,6 +28,11 @@ public final class NoOpTransaction implements ITransaction {
   public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {}
 
   @Override
+  public @NotNull TransactionNameSource getNameSource() {
+    return TransactionNameSource.CUSTOM;
+  }
+
+  @Override
   public @NotNull String getName() {
     return "";
   }
@@ -90,13 +95,18 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @Nullable Span getLatestActiveSpan() {
+  public @Nullable ISpan getLatestActiveSpan() {
     return null;
   }
 
   @Override
   public @NotNull SentryId getEventId() {
     return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
