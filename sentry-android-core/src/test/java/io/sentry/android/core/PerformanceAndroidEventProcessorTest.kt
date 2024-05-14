@@ -473,7 +473,7 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // when it contains no app start span and is processed
@@ -490,7 +490,7 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         val appStartSpan = SentrySpan(
@@ -525,7 +525,7 @@ class PerformanceAndroidEventProcessorTest {
         val sut = fixture.getSut()
 
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
         // given a ttid from 0.0 -> 1.0
@@ -649,7 +649,7 @@ class PerformanceAndroidEventProcessorTest {
         val sut = fixture.getSut()
 
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
         val span = SentrySpan(
@@ -683,7 +683,7 @@ class PerformanceAndroidEventProcessorTest {
         val sut = fixture.getSut()
 
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
         // given a ttid from 0.0 -> 1.0

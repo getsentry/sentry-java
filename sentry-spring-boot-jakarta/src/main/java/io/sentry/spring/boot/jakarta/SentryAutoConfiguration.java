@@ -301,7 +301,7 @@ public class SentryAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         public @NotNull SentryExceptionResolver sentryExceptionResolver(
-            final @NotNull IScopes scopes
+            final @NotNull IScopes scopes,
             final @NotNull TransactionNameProvider transactionNameProvider,
             final @NotNull SentryProperties options) {
           return new SentryExceptionResolver(

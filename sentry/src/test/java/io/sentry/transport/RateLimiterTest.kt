@@ -279,12 +279,12 @@ class RateLimiterTest {
     @Test
     fun `drop metrics items as lost`() {
         val rateLimiter = fixture.getSUT()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(SentryOptions())
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(SentryOptions())
 
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
         val f = File.createTempFile("test", "trace")
-        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
+        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(f, transaction), 1000, fixture.serializer)
         val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, profileItem, statsdItem))
