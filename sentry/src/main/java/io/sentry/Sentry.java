@@ -75,6 +75,7 @@ public final class Sentry {
   /**
    * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
    *
+   * @deprecated please use {@link Sentry#getCurrentScopes()} instead
    * @return the hub
    */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -123,6 +124,9 @@ public final class Sentry {
     return getCurrentScopes().forkedCurrentScope(creator);
   }
 
+  /**
+   * @deprecated please use {@link Sentry#setCurrentScopes} instead.
+   */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
   @SuppressWarnings({"deprecation", "InlineMeSuggester"})

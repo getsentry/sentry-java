@@ -607,6 +607,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return Sentry.setCurrentScopes(this);
   }
 
+  /**
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
   @Override
   @Deprecated
   public void popScope() {
@@ -715,7 +719,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     }
   }
 
+  /**
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
+   */
   @Override
+  @Deprecated
   @SuppressWarnings("deprecation")
   public @NotNull IHub clone() {
     if (!isEnabled()) {
