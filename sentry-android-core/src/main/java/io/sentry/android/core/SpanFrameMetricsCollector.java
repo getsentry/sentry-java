@@ -1,12 +1,15 @@
 package io.sentry.android.core;
 
+import io.sentry.DateUtils;
 import io.sentry.IPerformanceContinuousCollector;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
 import io.sentry.SentryDate;
+import io.sentry.SentryLongDate;
 import io.sentry.SentryNanotimeDate;
+import io.sentry.SentryTracer;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
@@ -135,8 +138,10 @@ public class SpanFrameMetricsCollector
         return;
       }
 
-      // ignore spans with no finish date
-      final @Nullable SentryDate spanFinishDate = span.getFinishDate();
+      // Ignore spans with no finish date, but SentryTracer is not finished when executing this
+      // callback, yet, so in that case we use the current timestamp.
+      final @Nullable SentryDate spanFinishDate =
+          span instanceof SentryTracer ? new SentryNanotimeDate() : span.getFinishDate();
       if (spanFinishDate == null) {
         return;
       }
@@ -303,7 +308,16 @@ public class SpanFrameMetricsCollector
    * @return a timestamp in nano precision
    */
   private static long realNanos(final @NotNull SentryDate date) {
-    return date.diff(UNIX_START_DATE);
+    // SentryNanotimeDate nanotime is based on System.nanotime(), like UNIX_START_DATE
+    if (date instanceof SentryNanotimeDate) {
+      return date.diff(UNIX_START_DATE);
+    }
+
+    // SentryLongDate nanotime is based on current date converted to nanoseconds, which is a
+    // different order than frames based System.nanotime(). So we have to convert the nanotime of
+    // the SentryLongDate to a System.nanotime() compatible one.
+    return date.diff(new SentryLongDate(DateUtils.millisToNanos(System.currentTimeMillis())))
+        + System.nanoTime();
   }
 
   private static class Frame implements Comparable<Frame> {
