@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-alpha.1
 
 Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 
