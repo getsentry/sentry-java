@@ -87,7 +87,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return globalScope;
   }
 
-  // TODO [HSM] add to IScopes interface?
   public boolean isAncestorOf(final @Nullable Scopes otherScopes) {
     if (otherScopes == null) {
       return false;
@@ -623,7 +622,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     }
   }
 
-  // TODO [HSM] lots of testing required to see how ThreadLocal is affected
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {

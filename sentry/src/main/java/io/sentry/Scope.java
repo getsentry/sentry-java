@@ -92,8 +92,6 @@ public final class Scope implements IScope {
 
   private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
 
-  // TODO [HSM] intended only for global scope
-  // TODO [HSM] test for memory leak
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
