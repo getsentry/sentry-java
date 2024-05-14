@@ -53,8 +53,7 @@ public final class Sentry {
    *
    * <p>For Android options will also be (temporarily) replaced by SentryAndroid static block.
    */
-  // TODO [HSM] use SentryOptions.empty and address
-  // https://github.com/getsentry/sentry-java/issues/2541
+  // TODO https://github.com/getsentry/sentry-java/issues/2541
   private static final @NotNull IScope globalScope = new Scope(SentryOptions.empty());
 
   /** Default value for globalHubMode is false */

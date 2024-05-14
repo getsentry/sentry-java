@@ -2961,9 +2961,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 public final class io/sentry/SentryWrapper {
 	public fun <init> ()V
 	public static fun wrapCallable (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
-	public static fun wrapCallableIsolated (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
 	public static fun wrapSupplier (Ljava/util/function/Supplier;)Ljava/util/function/Supplier;
-	public static fun wrapSupplierIsolated (Ljava/util/function/Supplier;)Ljava/util/function/Supplier;
 }
 
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
