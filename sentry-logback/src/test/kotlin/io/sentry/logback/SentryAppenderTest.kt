@@ -100,6 +100,7 @@ class SentryAppenderTest {
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
             it.setTag("tag-from-first-init", "some-value")
+            it.isEnableBackpressureHandling = false
         }
         fixture.start()
 

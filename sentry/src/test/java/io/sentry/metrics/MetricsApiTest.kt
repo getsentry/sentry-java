@@ -1,8 +1,10 @@
 package io.sentry.metrics
 
+import io.sentry.DateUtils
 import io.sentry.IMetricsAggregator
 import io.sentry.ISpan
 import io.sentry.MeasurementUnit
+import io.sentry.SentryNanotimeDate
 import io.sentry.metrics.MetricsApi.IMetricsInterface
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -10,6 +12,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -25,7 +28,12 @@ class MetricsApiTest {
 
         fun getSut(
             defaultTags: Map<String, String> = emptyMap(),
-            spanProvider: () -> ISpan? = { mock<ISpan>() }
+            spanProvider: () -> ISpan? = {
+                val span = mock<ISpan>()
+                val date = SentryNanotimeDate()
+                whenever(span.startDate).thenReturn(date)
+                span
+            }
         ): MetricsApi {
             val localAggregator = localMetricsAggregator
 
@@ -280,12 +288,14 @@ class MetricsApiTest {
         api.timing("timing") {
             // no-op
         }
-        verify(fixture.aggregator).timing(
+        val spanLocalAggregator = fixture.lastSpan!!.localMetricsAggregator
+        verify(fixture.aggregator).distribution(
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
-            eq(fixture.localMetricsAggregator)
+            anyOrNull(),
+            eq(spanLocalAggregator)
         )
     }
 
@@ -304,16 +314,37 @@ class MetricsApiTest {
     }
 
     @Test
-    fun `timing applies metric tags as span tags`() {
+    fun `timing value equals span duration`() {
+        val startDate = SentryNanotimeDate()
+        val finishNanos = startDate.nanoTimestamp() + 10000
+        val finishDate = SentryNanotimeDate(DateUtils.nanosToDate(finishNanos), finishNanos)
+        val localAggregator = mock<LocalMetricsAggregator>()
         val span = mock<ISpan>()
-        val api = fixture.getSut(
-            spanProvider = {
-                span
-            },
-            defaultTags = mapOf(
-                "release" to "1.0"
-            )
+        whenever(span.startDate).thenReturn(startDate)
+        whenever(span.finishDate).thenReturn(finishDate)
+        whenever(span.localMetricsAggregator).thenReturn(localAggregator)
+
+        val api = fixture.getSut(spanProvider = { span })
+
+        api.timing("key") {
+            // no-op
+        }
+
+        assertEquals("metric.timing", fixture.lastOp)
+        assertEquals("key", fixture.lastDescription)
+        verify(fixture.aggregator).distribution(
+            eq("key"),
+            eq((finishDate.diff(startDate)) / 1000000000.0),
+            eq(MeasurementUnit.Duration.SECOND),
+            anyOrNull(),
+            anyOrNull(),
+            eq(localAggregator)
         )
+    }
+
+    @Test
+    fun `timing applies metric tags as span tags`() {
+        val api = fixture.getSut(defaultTags = mapOf("release" to "1.0"))
         // when timing is called
         api.timing("key", {
             // no-op
