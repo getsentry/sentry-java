@@ -262,6 +262,12 @@ public final class io/sentry/spring/tracing/SpringMvcTransactionNameProvider : i
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
+public final class io/sentry/spring/tracing/SpringServletTransactionNameProvider : io/sentry/spring/tracing/TransactionNameProvider {
+	public fun <init> ()V
+	public fun provideTransactionName (Ljavax/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
 public abstract interface class io/sentry/spring/tracing/TransactionNameProvider {
 	public abstract fun provideTransactionName (Ljavax/servlet/http/HttpServletRequest;)Ljava/lang/String;
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
