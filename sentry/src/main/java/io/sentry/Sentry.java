@@ -271,16 +271,15 @@ public final class Sentry {
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
-    globalScope.replaceOptions(options);
 
     final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
     final IScope rootIsolationScope = new Scope(options);
-    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
-
-    getScopesStorage().set(rootScopes);
 
     scopes.close(true);
+    globalScope.replaceOptions(options);
+    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+    getScopesStorage().set(rootScopes);
     globalScope.bindClient(new SentryClient(options));
 
     // If the executorService passed in the init is the same that was previously closed, we have to
@@ -516,7 +515,7 @@ public final class Sentry {
       options.addPerformanceCollector(new JavaMemoryCollector());
     }
 
-    if (options.isEnableBackpressureHandling()) {
+    if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
       options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
       options.getBackpressureMonitor().start();
     }
