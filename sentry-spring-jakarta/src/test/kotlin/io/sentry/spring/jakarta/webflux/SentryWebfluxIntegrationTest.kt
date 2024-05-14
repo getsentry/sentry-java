@@ -180,6 +180,7 @@ open class App {
             it.setDebug(true)
             it.setTransportFactory(transportFactory)
             it.enableTracing = true
+            it.isEnableBackpressureHandling = false
         }
     }
 }

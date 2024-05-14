@@ -103,21 +103,5 @@ public interface IMetricsAggregator extends Closeable {
       final long timestampMs,
       final @Nullable LocalMetricsAggregator localMetricsAggregator);
 
-  /**
-   * Emits a distribution with the time it takes to run a given code block.
-   *
-   * @param key A unique key identifying the metric
-   * @param callback The code block to measure
-   * @param unit An optional unit, see {@link MeasurementUnit.Duration}, defaults to seconds
-   * @param tags Optional Tags to associate with the metric
-   * @param localMetricsAggregator The local metrics aggregator for creating span summaries
-   */
-  void timing(
-      final @NotNull String key,
-      final @NotNull Runnable callback,
-      final @NotNull MeasurementUnit.Duration unit,
-      final @Nullable Map<String, String> tags,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator);
-
   void flush(boolean force);
 }
