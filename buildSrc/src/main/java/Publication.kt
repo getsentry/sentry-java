@@ -10,9 +10,12 @@ private object Consts {
 // configure distZip tasks for multiplatform
 fun DistributionContainer.configureForMultiplatform(project: Project) {
     val sep = File.separator
+    val version = project.properties["versionName"].toString()
 
     this.maybeCreate("android").contents {
-        from("build${sep}publications${sep}androidRelease")
+        from("build${sep}publications${sep}androidRelease") {
+            renameModule(project.name, version = version)
+        }
         from("build${sep}outputs${sep}aar") {
             include("*-release*")
             rename {
@@ -53,6 +56,26 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     project.tasks.getByName("distZip").finalizedBy(*platformDists)
 }
 
+fun DistributionContainer.configureForJvm(project: Project) {
+    val sep = File.separator
+    val version = project.properties["versionName"].toString()
+
+    this.getByName("main").contents {
+        // non android modules
+        from("build${sep}libs")
+        from("build${sep}publications${sep}maven") {
+            renameModule(project.name, version = version)
+        }
+        // android modules
+        from("build${sep}outputs${sep}aar") {
+            include("*-release*")
+        }
+        from("build${sep}publications${sep}release") {
+            renameModule(project.name, version = version)
+        }
+    }
+}
+
 private fun CopySpec.withJavadoc(renameTo: String = "compose") {
     include("*javadoc*")
     rename {
@@ -61,5 +84,15 @@ private fun CopySpec.withJavadoc(renameTo: String = "compose") {
         } else {
             it
         }
+    }
+}
+
+private fun CopySpec.renameModule(projectName: String, renameTo: String = "", version: String) {
+    var target = ""
+    if (renameTo.isNotEmpty()) {
+        target = "-$renameTo"
+    }
+    rename {
+        it.replace("module.json", "$projectName$target-$version.module")
     }
 }

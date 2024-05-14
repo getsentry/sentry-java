@@ -1,10 +1,10 @@
 minVersion: 0.29.3
 changelogPolicy: auto
 targets:
-  - name: symbol-collector
-    includeNames: /libsentry(-android)?\.so/
-    batchType: android
-    bundleIdPrefix: sentry-android-ndk-
+#  - name: symbol-collector
+#    includeNames: /libsentry(-android)?\.so/
+#    batchType: android
+#    bundleIdPrefix: sentry-android-ndk-
   - name: maven
     includeNames: /^sentry.*$/
     gradleCliPath: ./gradlew
@@ -16,43 +16,43 @@ targets:
       distDirRegex: /^(sentry-android-|.*-android).*$/
       fileReplaceeRegex: /\d+\.\d+\.\d+(-\w+(\.\d+)?)?(-SNAPSHOT)?/
       fileReplacerStr: release.aar
-  - name: github
-    excludeNames: /^libsentry.*\.so$/
-  - name: registry
-    sdks:
-      maven:io.sentry:sentry:
-      maven:io.sentry:sentry-spring:
-      maven:io.sentry:sentry-spring-jakarta:
-      maven:io.sentry:sentry-spring-boot:
-      maven:io.sentry:sentry-spring-boot-jakarta:
-      maven:io.sentry:sentry-spring-boot-starter:
-      maven:io.sentry:sentry-spring-boot-starter-jakarta:
-      maven:io.sentry:sentry-servlet:
-      maven:io.sentry:sentry-servlet-jakarta:
-      maven:io.sentry:sentry-logback:
-      maven:io.sentry:sentry-log4j2:
-      maven:io.sentry:sentry-jul:
-      maven:io.sentry:sentry-apache-http-client-5:
-      maven:io.sentry:sentry-android:
-      maven:io.sentry:sentry-android-core:
-      maven:io.sentry:sentry-android-ndk:
-      maven:io.sentry:sentry-android-timber:
-      maven:io.sentry:sentry-android-okhttp:
-      maven:io.sentry:sentry-kotlin-extensions:
-      maven:io.sentry:sentry-android-fragment:
-      maven:io.sentry:sentry-bom:
-      maven:io.sentry:sentry-openfeign:
-      maven:io.sentry:sentry-opentelemetry-agent:
-      maven:io.sentry:sentry-opentelemetry-agentcustomization:
-      maven:io.sentry:sentry-opentelemetry-core:
-      maven:io.sentry:sentry-apollo:
-      maven:io.sentry:sentry-jdbc:
-      maven:io.sentry:sentry-graphql:
-      maven:io.sentry:sentry-quartz:
-      maven:io.sentry:sentry-okhttp:
-      maven:io.sentry:sentry-android-navigation:
-      maven:io.sentry:sentry-compose:
-      maven:io.sentry:sentry-compose-android:
-      maven:io.sentry:sentry-compose-desktop:
-      maven:io.sentry:sentry-apollo-3:
-      maven:io.sentry:sentry-android-sqlite:
+#  - name: github
+#    excludeNames: /^libsentry.*\.so$/
+#  - name: registry
+#    sdks:
+#      maven:io.sentry:sentry:
+#      maven:io.sentry:sentry-spring:
+#      maven:io.sentry:sentry-spring-jakarta:
+#      maven:io.sentry:sentry-spring-boot:
+#      maven:io.sentry:sentry-spring-boot-jakarta:
+#      maven:io.sentry:sentry-spring-boot-starter:
+#      maven:io.sentry:sentry-spring-boot-starter-jakarta:
+#      maven:io.sentry:sentry-servlet:
+#      maven:io.sentry:sentry-servlet-jakarta:
+#      maven:io.sentry:sentry-logback:
+#      maven:io.sentry:sentry-log4j2:
+#      maven:io.sentry:sentry-jul:
+#      maven:io.sentry:sentry-apache-http-client-5:
+#      maven:io.sentry:sentry-android:
+#      maven:io.sentry:sentry-android-core:
+#      maven:io.sentry:sentry-android-ndk:
+#      maven:io.sentry:sentry-android-timber:
+#      maven:io.sentry:sentry-android-okhttp:
+#      maven:io.sentry:sentry-kotlin-extensions:
+#      maven:io.sentry:sentry-android-fragment:
+#      maven:io.sentry:sentry-bom:
+#      maven:io.sentry:sentry-openfeign:
+#      maven:io.sentry:sentry-opentelemetry-agent:
+#      maven:io.sentry:sentry-opentelemetry-agentcustomization:
+#      maven:io.sentry:sentry-opentelemetry-core:
+#      maven:io.sentry:sentry-apollo:
+#      maven:io.sentry:sentry-jdbc:
+#      maven:io.sentry:sentry-graphql:
+#      maven:io.sentry:sentry-quartz:
+#      maven:io.sentry:sentry-okhttp:
+#      maven:io.sentry:sentry-android-navigation:
+#      maven:io.sentry:sentry-compose:
+#      maven:io.sentry:sentry-compose-android:
+#      maven:io.sentry:sentry-compose-desktop:
+#      maven:io.sentry:sentry-apollo-3:
+#      maven:io.sentry:sentry-android-sqlite:
