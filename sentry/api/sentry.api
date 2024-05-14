@@ -321,6 +321,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Attachment Lio/sentry/DataCategory;
 	public static final field Default Lio/sentry/DataCategory;
 	public static final field Error Lio/sentry/DataCategory;
+	public static final field MetricBucket Lio/sentry/DataCategory;
 	public static final field Monitor Lio/sentry/DataCategory;
 	public static final field Profile Lio/sentry/DataCategory;
 	public static final field Security Lio/sentry/DataCategory;
@@ -690,7 +691,6 @@ public abstract interface class io/sentry/IMetricsAggregator : java/io/Closeable
 	public abstract fun increment (Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public abstract fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public abstract fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
-	public abstract fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
@@ -1192,7 +1192,6 @@ public final class io/sentry/MetricsAggregator : io/sentry/IMetricsAggregator, j
 	public fun run ()V
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
-	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2846,13 +2845,17 @@ public final class io/sentry/SentryOptions$Proxy {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/net/Proxy$Type;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/net/Proxy$Type;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getHost ()Ljava/lang/String;
 	public fun getPass ()Ljava/lang/String;
 	public fun getPort ()Ljava/lang/String;
+	public fun getType ()Ljava/net/Proxy$Type;
 	public fun getUser ()Ljava/lang/String;
 	public fun setHost (Ljava/lang/String;)V
 	public fun setPass (Ljava/lang/String;)V
 	public fun setPort (Ljava/lang/String;)V
+	public fun setType (Ljava/net/Proxy$Type;)V
 	public fun setUser (Ljava/lang/String;)V
 }
 
@@ -3138,6 +3141,8 @@ public final class io/sentry/SpanContext$JsonKeys {
 public abstract interface class io/sentry/SpanDataConvention {
 	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
 	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
+	public static final field CONTRIBUTES_TTID Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
 	public static final field FRAMES_DELAY Ljava/lang/String;
@@ -3873,7 +3878,7 @@ public abstract interface class io/sentry/metrics/IMetricsClient {
 
 public final class io/sentry/metrics/LocalMetricsAggregator {
 	public fun <init> ()V
-	public fun add (Ljava/lang/String;Lio/sentry/metrics/MetricType;Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;J)V
+	public fun add (Ljava/lang/String;Lio/sentry/metrics/MetricType;Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public fun getSummaries ()Ljava/util/Map;
 }
 
@@ -3939,16 +3944,15 @@ public final class io/sentry/metrics/MetricsHelper {
 	public static fun convertNanosTo (Lio/sentry/MeasurementUnit$Duration;J)D
 	public static fun encodeMetrics (JLjava/util/Collection;Ljava/lang/StringBuilder;)V
 	public static fun getCutoffTimestampMs (J)J
-	public static fun getDayBucketKey (Ljava/util/Calendar;)J
 	public static fun getExportKey (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;)Ljava/lang/String;
 	public static fun getMetricBucketKey (Lio/sentry/metrics/MetricType;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;)Ljava/lang/String;
 	public static fun getTimeBucketKey (J)J
 	public static fun mergeTags (Ljava/util/Map;Ljava/util/Map;)Ljava/util/Map;
-	public static fun sanitizeKey (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeName (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeTagKey (Ljava/lang/String;)Ljava/lang/String;
+	public static fun sanitizeTagValue (Ljava/lang/String;)Ljava/lang/String;
 	public static fun sanitizeUnit (Ljava/lang/String;)Ljava/lang/String;
-	public static fun sanitizeValue (Ljava/lang/String;)Ljava/lang/String;
 	public static fun setFlushShiftMs (J)V
-	public static fun toStatsdType (Lio/sentry/metrics/MetricType;)Ljava/lang/String;
 }
 
 public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsAggregator, io/sentry/metrics/MetricsApi$IMetricsInterface {
@@ -3965,7 +3969,6 @@ public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsA
 	public fun set (Ljava/lang/String;ILio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun set (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MeasurementUnit;Ljava/util/Map;JLio/sentry/metrics/LocalMetricsAggregator;)V
 	public fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun timing (Ljava/lang/String;Ljava/lang/Runnable;Lio/sentry/MeasurementUnit$Duration;Ljava/util/Map;Lio/sentry/metrics/LocalMetricsAggregator;)V
 }
 
 public final class io/sentry/metrics/SetMetric : io/sentry/metrics/Metric {
@@ -4050,6 +4053,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getDeviceAppHash ()Ljava/lang/String;
 	public fun getInForeground ()Ljava/lang/Boolean;
 	public fun getPermissions ()Ljava/util/Map;
+	public fun getStartType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getViewNames ()Ljava/util/List;
 	public fun hashCode ()I
@@ -4063,6 +4067,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setDeviceAppHash (Ljava/lang/String;)V
 	public fun setInForeground (Ljava/lang/Boolean;)V
 	public fun setPermissions (Ljava/util/Map;)V
+	public fun setStartType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setViewNames (Ljava/util/List;)V
 }
@@ -4083,6 +4088,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEVICE_APP_HASH Ljava/lang/String;
 	public static final field IN_FOREGROUND Ljava/lang/String;
+	public static final field START_TYPE Ljava/lang/String;
 	public static final field VIEW_NAMES Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -4886,6 +4892,7 @@ public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, i
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -5353,6 +5360,7 @@ public final class io/sentry/util/ClassLoaderUtils {
 }
 
 public final class io/sentry/util/CollectionUtils {
+	public static fun contains ([Ljava/lang/Object;Ljava/lang/Object;)Z
 	public static fun filterListEntries (Ljava/util/List;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/List;
 	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
 	public static fun map (Ljava/util/List;Lio/sentry/util/CollectionUtils$Mapper;)Ljava/util/List;
@@ -5530,6 +5538,7 @@ public final class io/sentry/util/SampleRateUtils {
 public final class io/sentry/util/StringUtils {
 	public static fun byteCountToString (J)Ljava/lang/String;
 	public static fun calculateStringHash (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/String;
+	public static fun camelCase (Ljava/lang/String;)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun countOf (Ljava/lang/String;C)I
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;

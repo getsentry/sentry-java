@@ -516,7 +516,7 @@ public final class Sentry {
       options.addPerformanceCollector(new JavaMemoryCollector());
     }
 
-    if (options.isEnableBackpressureHandling()) {
+    if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
       options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
       options.getBackpressureMonitor().start();
     }

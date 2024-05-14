@@ -1,13 +1,11 @@
 package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.TimeZone;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -20,14 +18,9 @@ public final class MetricsHelper {
   public static final int MAX_TOTAL_WEIGHT = 100000;
   private static final int ROLLUP_IN_SECONDS = 10;
 
-  private static final Pattern INVALID_KEY_CHARACTERS_PATTERN =
-      Pattern.compile("[^a-zA-Z0-9_/.-]+");
-  private static final Pattern INVALID_VALUE_CHARACTERS_PATTERN =
-      Pattern.compile("[^\\w\\d\\s_:/@\\.\\{\\}\\[\\]$-]+");
-  // See
-  // https://docs.sysdig.com/en/docs/sysdig-monitor/integrations/working-with-integrations/custom-integrations/integrate-statsd-metrics/#characters-allowed-for-statsd-metric-names
-  private static final Pattern INVALID_METRIC_UNIT_CHARACTERS_PATTERN =
-      Pattern.compile("[^a-zA-Z0-9_/.]+");
+  private static final Pattern UNIT_PATTERN = Pattern.compile("\\W+");
+  private static final Pattern NAME_PATTERN = Pattern.compile("[^\\w\\-.]+");
+  private static final Pattern TAG_KEY_PATTERN = Pattern.compile("[^\\w\\-./]+");
 
   private static final char TAGS_PAIR_DELIMITER = ','; // Delimiter between key-value pairs
   private static final char TAGS_KEY_VALUE_DELIMITER = '='; // Delimiter between key and value
@@ -35,15 +28,6 @@ public final class MetricsHelper {
 
   private static long FLUSH_SHIFT_MS =
       (long) (new Random().nextFloat() * (ROLLUP_IN_SECONDS * 1000f));
-
-  public static long getDayBucketKey(final @NotNull Calendar timestamp) {
-    final Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    utc.set(Calendar.YEAR, timestamp.get(Calendar.YEAR));
-    utc.set(Calendar.MONTH, timestamp.get(Calendar.MONTH));
-    utc.set(Calendar.DAY_OF_MONTH, timestamp.get(Calendar.DAY_OF_MONTH));
-
-    return utc.getTimeInMillis() / 1000;
-  }
 
   public static long getTimeBucketKey(final long timestampMs) {
     final long seconds = timestampMs / 1000;
@@ -59,27 +43,50 @@ public final class MetricsHelper {
     return nowMs - (ROLLUP_IN_SECONDS * 1000) - FLUSH_SHIFT_MS;
   }
 
-  public static @NotNull String sanitizeKey(final @NotNull String input) {
-    return INVALID_KEY_CHARACTERS_PATTERN.matcher(input).replaceAll("_");
+  @NotNull
+  public static String sanitizeUnit(final @NotNull String unit) {
+    return UNIT_PATTERN.matcher(unit).replaceAll("");
   }
 
-  public static String sanitizeValue(final @NotNull String input) {
-    return INVALID_VALUE_CHARACTERS_PATTERN.matcher(input).replaceAll("");
+  @NotNull
+  public static String sanitizeName(final @NotNull String input) {
+    return NAME_PATTERN.matcher(input).replaceAll("_");
   }
 
-  public static @NotNull String toStatsdType(final @NotNull MetricType type) {
-    switch (type) {
-      case Counter:
-        return "c";
-      case Gauge:
-        return "g";
-      case Distribution:
-        return "d";
-      case Set:
-        return "s";
-      default:
-        throw new IllegalArgumentException("Invalid Metric Type: " + type.name());
+  @NotNull
+  public static String sanitizeTagKey(final @NotNull String input) {
+    return TAG_KEY_PATTERN.matcher(input).replaceAll("");
+  }
+
+  @NotNull
+  public static String sanitizeTagValue(final @NotNull String input) {
+    // see https://develop.sentry.dev/sdk/metrics/#tag-values-replacement-map
+    // Line feed       -> \n
+    // Carriage return -> \r
+    // Tab             -> \t
+    // Backslash       -> \\
+    // Pipe            -> \\u{7c}
+    // Comma           -> \\u{2c}
+    final StringBuilder output = new StringBuilder(input.length());
+    for (int idx = 0; idx < input.length(); idx++) {
+      final char ch = input.charAt(idx);
+      if (ch == '\n') {
+        output.append("\\n");
+      } else if (ch == '\r') {
+        output.append("\\r");
+      } else if (ch == '\t') {
+        output.append("\\t");
+      } else if (ch == '\\') {
+        output.append("\\\\");
+      } else if (ch == '|') {
+        output.append("\\u{7c}");
+      } else if (ch == ',') {
+        output.append("\\u{2c}");
+      } else {
+        output.append(ch);
+      }
     }
+    return output.toString();
   }
 
   @NotNull
@@ -88,8 +95,8 @@ public final class MetricsHelper {
       final @NotNull String metricKey,
       final @Nullable MeasurementUnit unit,
       final @Nullable Map<String, String> tags) {
-    final @NotNull String typePrefix = toStatsdType(type);
-    final @NotNull String serializedTags = GetTagsKey(tags);
+    final @NotNull String typePrefix = type.statsdCode;
+    final @NotNull String serializedTags = getTagsKey(tags);
 
     final @NotNull String unitName = getUnitName(unit);
     return String.format("%s_%s_%s_%s", typePrefix, metricKey, unitName, serializedTags);
@@ -100,7 +107,8 @@ public final class MetricsHelper {
     return (unit != null) ? unit.apiName() : MeasurementUnit.NONE;
   }
 
-  private static String GetTagsKey(final @Nullable Map<String, String> tags) {
+  @NotNull
+  private static String getTagsKey(final @Nullable Map<String, String> tags) {
     if (tags == null || tags.isEmpty()) {
       return "";
     }
@@ -153,7 +161,7 @@ public final class MetricsHelper {
       final @NotNull String key,
       final @Nullable MeasurementUnit unit) {
     final @NotNull String unitName = getUnitName(unit);
-    return String.format("%s:%s@%s", toStatsdType(type), key, unitName);
+    return String.format("%s:%s@%s", type.statsdCode, key, unitName);
   }
 
   public static double convertNanosTo(
@@ -197,7 +205,7 @@ public final class MetricsHelper {
       final @NotNull Collection<Metric> metrics,
       final @NotNull StringBuilder writer) {
     for (Metric metric : metrics) {
-      writer.append(sanitizeKey(metric.getKey()));
+      writer.append(sanitizeName(metric.getKey()));
       writer.append("@");
 
       final @Nullable MeasurementUnit unit = metric.getUnit();
@@ -211,14 +219,14 @@ public final class MetricsHelper {
       }
 
       writer.append("|");
-      writer.append(toStatsdType(metric.getType()));
+      writer.append(metric.getType().statsdCode);
 
       final @Nullable Map<String, String> tags = metric.getTags();
       if (tags != null) {
         writer.append("|#");
         boolean first = true;
         for (final @NotNull Map.Entry<String, String> tag : tags.entrySet()) {
-          final @NotNull String tagKey = sanitizeKey(tag.getKey());
+          final @NotNull String tagKey = sanitizeTagKey(tag.getKey());
           if (first) {
             first = false;
           } else {
@@ -226,7 +234,7 @@ public final class MetricsHelper {
           }
           writer.append(tagKey);
           writer.append(":");
-          writer.append(sanitizeValue(tag.getValue()));
+          writer.append(sanitizeTagValue(tag.getValue()));
         }
       }
 
@@ -234,11 +242,6 @@ public final class MetricsHelper {
       writer.append(timestamp);
       writer.append("\n");
     }
-  }
-
-  @NotNull
-  public static String sanitizeUnit(@NotNull String unit) {
-    return INVALID_METRIC_UNIT_CHARACTERS_PATTERN.matcher(unit).replaceAll("_");
   }
 
   @NotNull
