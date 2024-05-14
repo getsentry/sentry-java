@@ -48,6 +48,9 @@ public final class SentryInstrumentation
           );
   public static final @NotNull String SENTRY_SCOPES_CONTEXT_KEY = "sentry.scopes";
 
+  /**
+   * @deprecated please use {@link SentryInstrumentation#SENTRY_SCOPES_CONTEXT_KEY} instead.
+   */
   @Deprecated
   public static final @NotNull String SENTRY_HUB_CONTEXT_KEY = SENTRY_SCOPES_CONTEXT_KEY;
 
