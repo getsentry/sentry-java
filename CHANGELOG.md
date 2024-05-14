@@ -19,7 +19,7 @@ Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes.
     - For Android the type defaults to `CURRENT` scope
     - For Backend and other JVM applicatons it defaults to `ISOLATION` scope
 - Event processors on `Scope` can now be ordered by overriding the `getOrder` method on implementations of `EventProcessor`. NOTE: This order only applies to event processors on `Scope` but not `SentryOptions` at the moment. Feel free to request this if you need it.
-- We are getting rid of `Hub` and replacing it with `Scopes`. We have deprecated and replaced some APIs. More details can be found in the "Migration Guide" section.
+- `Hub` is deprecated in favor of `Scopes`, alongside some `Hub` relevant APIs. More details can be found in the "Migration Guide" section.
 
 ### Breaking Changes
 
