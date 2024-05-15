@@ -1,5 +1,9 @@
 # Changelog
 
+### Features
+
+- Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
+
 ## 7.9.0
 
 ### Features
