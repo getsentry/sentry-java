@@ -1,6 +1,4 @@
 import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
-import groovy.util.Node
-import groovy.util.NodeList
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 
