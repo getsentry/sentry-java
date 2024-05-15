@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
+
 ## 7.9.0
 
 ### Features
