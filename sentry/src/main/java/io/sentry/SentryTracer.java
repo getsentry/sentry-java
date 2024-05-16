@@ -199,6 +199,13 @@ public final class SentryTracer implements ITransaction {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished()
         && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
+
+      // any un-finished childs will remain unfinished
+      // as relay takes care of setting the end-timestamp + deadline_exceeded
+      // see
+      // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
+      root.finish(finishStatus.spanStatus, finishTimestamp);
+
       List<PerformanceCollectionData> performanceCollectionData = null;
       if (transactionPerformanceCollector != null) {
         performanceCollectionData = transactionPerformanceCollector.stop(this);
@@ -214,13 +221,6 @@ public final class SentryTracer implements ITransaction {
       if (performanceCollectionData != null) {
         performanceCollectionData.clear();
       }
-
-      // any un-finished childs will remain unfinished
-      // as relay takes care of setting the end-timestamp + deadline_exceeded
-      // see
-      // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
-
-      root.finish(finishStatus.spanStatus, finishTimestamp);
 
       hub.configureScope(
           scope -> {
