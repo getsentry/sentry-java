@@ -14,7 +14,7 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
 
     this.maybeCreate("android").contents {
         from("build${sep}publications${sep}androidRelease") {
-            renameModule(project.name, version = version)
+            renameModule(project.name, "android", version = version)
         }
         from("build${sep}outputs${sep}aar") {
             include("*-release*")
@@ -28,7 +28,9 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
         }
     }
     this.getByName("main").contents {
-        from("build${sep}publications${sep}kotlinMultiplatform")
+        from("build${sep}publications${sep}kotlinMultiplatform") {
+            renameModule(project.name, version = version)
+        }
         from("build${sep}kotlinToolingMetadata")
         from("build${sep}libs") {
             include("*compose-kotlin*")
@@ -42,7 +44,9 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     }
     this.maybeCreate("desktop").contents {
         // kotlin multiplatform modules
-        from("build${sep}publications${sep}desktop")
+        from("build${sep}publications${sep}desktop") {
+            renameModule(project.name, "desktop", version = version)
+        }
         from("build${sep}libs") {
             include("*desktop*")
             withJavadoc(renameTo = "compose-desktop")
