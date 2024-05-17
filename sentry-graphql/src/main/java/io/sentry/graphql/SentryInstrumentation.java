@@ -24,6 +24,8 @@ import io.sentry.NoOpHub;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanStatus;
+import io.sentry.Hint;
+import io.sentry.TypeCheckHint;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -293,13 +295,15 @@ public final class SentryInstrumentation
     return environment -> {
       final @Nullable ExecutionStepInfo executionStepInfo = environment.getExecutionStepInfo();
       if (executionStepInfo != null) {
+        Hint hint = new Hint();
+        hint.set(TypeCheckHint.GRAPHQL_DATA_FETCHING_ENVIRONMENT, environment);
         hubFromContext(parameters.getExecutionContext().getGraphQLContext())
             .addBreadcrumb(
                 Breadcrumb.graphqlDataFetcher(
                     StringUtils.toString(executionStepInfo.getPath()),
                     GraphqlStringUtils.fieldToString(executionStepInfo.getField()),
                     GraphqlStringUtils.typeToString(executionStepInfo.getType()),
-                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())));
+                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())), hint);
       }
       final TracingState tracingState = parameters.getInstrumentationState();
       final ISpan transaction = tracingState.getTransaction();
