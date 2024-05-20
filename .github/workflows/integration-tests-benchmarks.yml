@@ -47,7 +47,7 @@ jobs:
         run: make assembleBenchmarks
 
       - name: Run All Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@7fe025ef1fdc6f211add3751a6c7d8bba27ba9b1 # pin@v3
+        uses: saucelabs/saucectl-run-action@86c2d20795c7dbbae613c0c5d3911ee0d47514ac # pin@v3
         if: github.event_name != 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -57,7 +57,7 @@ jobs:
           config-file: .sauce/sentry-uitest-android-benchmark.yml
 
       - name: Run one test in SauceLab
-        uses: saucelabs/saucectl-run-action@7fe025ef1fdc6f211add3751a6c7d8bba27ba9b1 # pin@v3
+        uses: saucelabs/saucectl-run-action@86c2d20795c7dbbae613c0c5d3911ee0d47514ac # pin@v3
         if: github.event_name == 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
