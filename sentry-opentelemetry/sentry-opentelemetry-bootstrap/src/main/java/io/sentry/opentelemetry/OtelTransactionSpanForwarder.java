@@ -28,9 +28,9 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class OtelTransactionSpanForwarder implements ITransaction {
 
-  private final @NotNull ISpan rootSpan;
+  private final @NotNull OtelSpanWrapper rootSpan;
 
-  public OtelTransactionSpanForwarder(final @NotNull ISpan rootSpan) {
+  public OtelTransactionSpanForwarder(final @NotNull OtelSpanWrapper rootSpan) {
     this.rootSpan = Objects.requireNonNull(rootSpan, "root span is required");
   }
 
@@ -61,9 +61,7 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
-    // TODO [POTEL]
-    //    return rootSpan.startChild(operation, description, timestamp, spanOptions);
-    return rootSpan.startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    return rootSpan.startChild(operation, description, timestamp, instrumenter, spanOptions);
   }
 
   @Override
@@ -213,7 +211,11 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public @NotNull TransactionNameSource getTransactionNameSource() {
-    return rootSpan.getNameSource();
+    final @Nullable TransactionNameSource nameSource = rootSpan.getTransactionNameSource();
+    if (nameSource == null) {
+      return TransactionNameSource.CUSTOM;
+    }
+    return nameSource;
   }
 
   @Override
@@ -225,7 +227,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    // TODO [POTEL]
     return rootSpan.startChild(operation, description, timestamp, Instrumenter.SENTRY);
   }
 
@@ -236,8 +237,7 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public @Nullable Boolean isProfileSampled() {
-    // TODO [POTEL]
-    return null;
+    return rootSpan.isProfileSampled();
   }
 
   @Override
@@ -284,7 +284,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public void setContext(@NotNull String key, @NotNull Object context) {
-    // TODO [POTEL] either set on root span or store in global storage or store on scopes
     // thoughts:
     // - span would have to save it on global storage too since we can't add complex data to otel
     // span
@@ -300,21 +299,20 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public void setName(@NotNull String name) {
-    rootSpan.setName(name);
+    rootSpan.setTransactionName(name);
   }
 
   @Override
   public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
-    rootSpan.setName(name, nameSource);
-  }
-
-  @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    return rootSpan.getNameSource();
+    rootSpan.setTransactionName(name, nameSource);
   }
 
   @Override
   public @NotNull String getName() {
-    return rootSpan.getName();
+    final @Nullable String name = rootSpan.getTransactionName();
+    if (name == null) {
+      return "<unlabeled transaction>";
+    }
+    return name;
   }
 }

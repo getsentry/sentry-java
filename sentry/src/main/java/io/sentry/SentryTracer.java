@@ -822,11 +822,6 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    return getTransactionNameSource();
-  }
-
-  @Override
   public @NotNull String getName() {
     return this.name;
   }

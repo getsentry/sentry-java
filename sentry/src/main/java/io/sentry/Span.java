@@ -4,7 +4,6 @@ import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -427,28 +426,6 @@ public final class Span implements ISpan {
   @Override
   public @NotNull Contexts getContexts() {
     return contexts;
-  }
-
-  @Override
-  public void setName(@NotNull String name) {
-    // TODO [POTEL]
-  }
-
-  @Override
-  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
-    // TODO [POTEL]
-  }
-
-  @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    // TODO [POTEL]
-    return TransactionNameSource.CUSTOM;
-  }
-
-  @Override
-  public @NotNull String getName() {
-    // TODO [POTEL]
-    return getOperation();
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {

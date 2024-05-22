@@ -28,6 +28,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -208,7 +209,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private void createAndFinishSpanForOtelSpan(
       final @NotNull SpanNode spanNode,
-      final @NotNull ISpan sentrySpan,
+      final @NotNull ISpan parentSentrySpan,
       final @NotNull List<SpanNode> remaining) {
     remaining.remove(spanNode);
     final @Nullable SpanData spanData = spanNode.getSpan();
@@ -216,13 +217,15 @@ public final class SentrySpanExporter implements SpanExporter {
     // If this span should be dropped, we still want to create spans for the children of this
     if (spanData == null) {
       for (SpanNode childNode : spanNode.getChildren()) {
-        createAndFinishSpanForOtelSpan(childNode, sentrySpan, remaining);
+        createAndFinishSpanForOtelSpan(childNode, parentSentrySpan, remaining);
       }
       return;
     }
 
     final @NotNull String spanId = spanData.getSpanId();
     final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(spanData);
+    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+        spanStorage.getSentrySpan(spanData.getSpanContext());
     // TODO attributes
     // TODO cleanup sentry attributes
 
@@ -236,8 +239,9 @@ public final class SentrySpanExporter implements SpanExporter {
             spanData.getTraceId(),
             spanData.getParentSpanId());
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
+    // TODO [POTEL] op and description might have been overriden
     final @NotNull ISpan sentryChildSpan =
-        sentrySpan.startChild(
+        parentSentrySpan.startChild(
             spanInfo.getOp(), spanInfo.getDescription(), startDate, Instrumenter.OTEL);
 
     sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
@@ -245,12 +249,43 @@ public final class SentrySpanExporter implements SpanExporter {
       sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
     }
 
+    transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
+
     for (SpanNode childNode : spanNode.getChildren()) {
       createAndFinishSpanForOtelSpan(childNode, sentryChildSpan, remaining);
     }
 
     sentryChildSpan.finish(
         mapOtelStatus(spanData), new SentryLongDate(spanData.getEndEpochNanos()));
+  }
+
+  private void transferSpanDetails(
+      final @Nullable OtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
+    if (sourceSpanMaybe != null) {
+      final @NotNull OtelSpanWrapper sourceSpan = sourceSpanMaybe;
+
+      final @NotNull Contexts contexts = sourceSpan.getContexts();
+      targetSpan.getContexts().putAll(contexts);
+
+      final @NotNull Map<String, Object> data = sourceSpan.getData();
+      for (Map.Entry<String, Object> entry : data.entrySet()) {
+        targetSpan.setData(entry.getKey(), entry.getValue());
+      }
+
+      // TODO [POTEL] this is not an OtelSpanWrapper since it's created with default span factory
+      //      if (sentryChildSpan instanceof OtelSpanWrapper) {
+      //        final @NotNull OtelSpanWrapper sentryChildSpanWrapper = (OtelSpanWrapper)
+      // sentryChildSpan;
+      //        final @NotNull Map<String, MeasurementValue> measurements =
+      // sentrySpan.getMeasurements();
+      //        sentryChildSpanWrapper.addAllMeasurements(measurements);
+      //      }
+
+      final @NotNull Map<String, String> tags = sourceSpan.getTags();
+      for (Map.Entry<String, String> entry : tags.entrySet()) {
+        targetSpan.setTag(entry.getKey(), entry.getValue());
+      }
+    }
   }
 
   private @Nullable ITransaction createTransactionForOtelSpan(final @NotNull SpanData span) {
@@ -287,6 +322,22 @@ public final class SentrySpanExporter implements SpanExporter {
 
     // TODO parentSpanId, parentSamplingDecision, baggage
 
+    @NotNull String transactionName = spanInfo.getDescription();
+    @NotNull TransactionNameSource transactionNameSource = spanInfo.getTransactionNameSource();
+
+    if (sentrySpanMaybe != null) {
+      final @NotNull OtelSpanWrapper sentrySpan = sentrySpanMaybe;
+      final @Nullable String transactionNameMaybe = sentrySpan.getTransactionName();
+      if (transactionNameMaybe != null) {
+        transactionName = transactionNameMaybe;
+      }
+      final @Nullable TransactionNameSource transactionNameSourceMaybe =
+          sentrySpan.getTransactionNameSource();
+      if (transactionNameSourceMaybe != null) {
+        transactionNameSource = transactionNameSourceMaybe;
+      }
+    }
+
     final @NotNull TransactionContext transactionContext =
         new TransactionContext(new SentryId(traceId), sentrySpanId, null, null, null);
     //      traceData.getSentryTraceHeader() == null
@@ -296,8 +347,8 @@ public final class SentrySpanExporter implements SpanExporter {
     //        PropagationContext.fromHeaders(
     //          traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
 
-    transactionContext.setName(spanInfo.getDescription());
-    transactionContext.setTransactionNameSource(spanInfo.getTransactionNameSource());
+    transactionContext.setName(transactionName);
+    transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
     transactionContext.setInstrumenter(Instrumenter.OTEL);
 
@@ -316,11 +367,7 @@ public final class SentrySpanExporter implements SpanExporter {
       sentryTransaction.setData(dataField.getKey(), dataField.getValue());
     }
 
-    if (sentrySpanMaybe != null) {
-      final @NotNull ISpan sentrySpan = sentrySpanMaybe;
-      final @NotNull Contexts contexts = sentrySpan.getContexts();
-      sentryTransaction.getContexts().putAll(contexts);
-    }
+    transferSpanDetails(sentrySpanMaybe, sentryTransaction);
 
     return sentryTransaction;
   }

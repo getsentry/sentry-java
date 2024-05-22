@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -174,22 +173,6 @@ public final class NoOpSpan implements ISpan {
   @Override
   public @NotNull Contexts getContexts() {
     return new Contexts();
-  }
-
-  @Override
-  public void setName(@NotNull String name) {}
-
-  @Override
-  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {}
-
-  @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    return TransactionNameSource.CUSTOM;
-  }
-
-  @Override
-  public @NotNull String getName() {
-    return "<no-op span>";
   }
 
   @Override

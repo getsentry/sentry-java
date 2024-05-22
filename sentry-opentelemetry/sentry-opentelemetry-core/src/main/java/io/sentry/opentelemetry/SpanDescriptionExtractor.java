@@ -63,6 +63,7 @@ public final class SpanDescriptionExtractor {
       return descriptionForDbSystem(otelSpan);
     }
 
+    // TODO [POTEL] use sentry span description if available
     return new OtelSpanInfo(name, name, TransactionNameSource.CUSTOM);
   }
 

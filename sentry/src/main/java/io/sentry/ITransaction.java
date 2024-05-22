@@ -10,6 +10,24 @@ import org.jetbrains.annotations.TestOnly;
 public interface ITransaction extends ISpan {
 
   /**
+   * Sets transaction name.
+   *
+   * @param name - transaction name
+   */
+  void setName(@NotNull String name);
+
+  @ApiStatus.Internal
+  void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource);
+
+  /**
+   * Returns transaction name.
+   *
+   * @return transaction name
+   */
+  @NotNull
+  String getName();
+
+  /**
    * Returns the source of the transaction name.
    *
    * @return transaction name source

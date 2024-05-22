@@ -366,7 +366,7 @@ public final class io/sentry/DefaultScopesStorage : io/sentry/IScopesStorage {
 
 public final class io/sentry/DefaultSpanFactory : io/sentry/ISpanFactory {
 	public fun <init> ()V
-	public fun createSpan (Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
+	public fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
 	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
 	public fun retrieveCurrentSpan (Lio/sentry/IScopes;)Lio/sentry/ISpan;
 }
@@ -955,8 +955,6 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getFinishDate ()Lio/sentry/SentryDate;
 	public abstract fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
-	public abstract fun getName ()Ljava/lang/String;
-	public abstract fun getNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public abstract fun getOperation ()Ljava/lang/String;
 	public abstract fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
@@ -973,8 +971,6 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun setDescription (Ljava/lang/String;)V
 	public abstract fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
 	public abstract fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
-	public abstract fun setName (Ljava/lang/String;)V
-	public abstract fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -991,7 +987,7 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ISpanFactory {
-	public abstract fun createSpan (Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
+	public abstract fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
 	public abstract fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
 	public abstract fun retrieveCurrentSpan (Lio/sentry/IScopes;)Lio/sentry/ISpan;
 }
@@ -1000,10 +996,13 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;ZLio/sentry/Hint;)V
 	public abstract fun forceFinish (Lio/sentry/SpanStatus;ZLio/sentry/Hint;)V
 	public abstract fun getLatestActiveSpan ()Lio/sentry/ISpan;
+	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public abstract fun isProfileSampled ()Ljava/lang/Boolean;
 	public abstract fun scheduleFinish ()V
+	public abstract fun setName (Ljava/lang/String;)V
+	public abstract fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
 }
 
@@ -1553,8 +1552,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
-	public fun getName ()Ljava/lang/String;
-	public fun getNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -1571,8 +1568,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
-	public fun setName (Ljava/lang/String;)V
-	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1603,7 +1598,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/ISpan;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getName ()Ljava/lang/String;
-	public fun getNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -2968,7 +2962,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/ISpan;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getName ()Ljava/lang/String;
-	public fun getNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -3101,8 +3094,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getMeasurements ()Ljava/util/Map;
-	public fun getName ()Ljava/lang/String;
-	public fun getNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -3124,8 +3115,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
-	public fun setName (Ljava/lang/String;)V
-	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -3215,6 +3204,10 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field THREAD_NAME Ljava/lang/String;
 }
 
+public abstract interface class io/sentry/SpanFinishedCallback {
+	public abstract fun execute (Lio/sentry/Span;)V
+}
+
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {
 	public static final field EMPTY_ID Lio/sentry/SpanId;
 	public fun <init> ()V
@@ -3233,10 +3226,12 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 
 public class io/sentry/SpanOptions {
 	public fun <init> ()V
+	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun isIdle ()Z
 	public fun isTrimEnd ()Z
 	public fun isTrimStart ()Z
 	public fun setIdle (Z)V
+	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTrimEnd (Z)V
 	public fun setTrimStart (Z)V
 }
@@ -3368,7 +3363,6 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun getDeadlineTimeout ()Ljava/lang/Long;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getSpanFactory ()Lio/sentry/ISpanFactory;
-	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
 	public fun isAppStartTransaction ()Z
 	public fun isBindToScope ()Z
@@ -3379,7 +3373,6 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun setDeadlineTimeout (Ljava/lang/Long;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
-	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
 	public fun setWaitForChildren (Z)V
 }
