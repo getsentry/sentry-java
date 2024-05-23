@@ -3255,6 +3255,8 @@ public final class io/sentry/SpanStatus : java/lang/Enum, io/sentry/JsonSerializ
 	public static final field UNIMPLEMENTED Lio/sentry/SpanStatus;
 	public static final field UNKNOWN Lio/sentry/SpanStatus;
 	public static final field UNKNOWN_ERROR Lio/sentry/SpanStatus;
+	public fun apiName ()Ljava/lang/String;
+	public static fun fromApiNameSafely (Ljava/lang/String;)Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (I)Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (Ljava/lang/Integer;Lio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V

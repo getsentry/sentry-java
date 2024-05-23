@@ -82,14 +82,7 @@ public final class OtelSpanWrapper implements ISpan {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
     this.startTimestamp = startTimestamp;
-    final @NotNull SentryId traceId = new SentryId(span.getSpanContext().getTraceId());
-    final @NotNull SpanId spanId = new SpanId(span.getSpanContext().getSpanId());
-    final @Nullable SpanId parentSpanId =
-        parentSpan == null ? null : new SpanId(parentSpan.getSpanContext().getSpanId());
-    @NotNull String operation = span.getName();
-
-    // TODO [POTEL] tracesSamplingDecision
-    this.context = new SpanContext(traceId, spanId, operation, parentSpanId, null);
+    this.context = new OtelSpanContext(span, parentSpan);
   }
 
   @Override
@@ -228,15 +221,12 @@ public final class OtelSpanWrapper implements ISpan {
   }
 
   @Override
-  public void setStatus(@Nullable SpanStatus status) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    // ^ could go in span attributes
-    this.context.setStatus(status);
+  public void setStatus(final @Nullable SpanStatus status) {
+    context.setStatus(status);
   }
 
   @Override
   public @Nullable SpanStatus getStatus() {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
     return context.getStatus();
   }
 

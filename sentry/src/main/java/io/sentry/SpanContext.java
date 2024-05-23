@@ -145,6 +145,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   }
 
   public @NotNull String getOperation() {
+    // TODO [POTEL] use span name here
     return op;
   }
 
@@ -223,12 +224,12 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
         && Objects.equals(parentSpanId, that.parentSpanId)
         && op.equals(that.op)
         && Objects.equals(description, that.description)
-        && status == that.status;
+        && getStatus() == that.getStatus();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(traceId, spanId, parentSpanId, op, description, status);
+    return Objects.hash(traceId, spanId, parentSpanId, op, description, getStatus());
   }
 
   // region JsonSerializable
@@ -260,8 +261,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     if (description != null) {
       writer.name(JsonKeys.DESCRIPTION).value(description);
     }
-    if (status != null) {
-      writer.name(JsonKeys.STATUS).value(logger, status);
+    if (getStatus() != null) {
+      writer.name(JsonKeys.STATUS).value(logger, getStatus());
     }
     if (origin != null) {
       writer.name(JsonKeys.ORIGIN).value(logger, origin);
