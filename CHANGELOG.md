@@ -10,6 +10,7 @@
 ### Fixes
 
 - Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+- Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
 
 ## 7.9.0
 
