@@ -1,7 +1,7 @@
 package io.sentry.spring.graphql;
 
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.graphql.ExceptionReporter;
 import io.sentry.graphql.SentrySubscriptionHandler;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +13,7 @@ public final class SentrySpringSubscriptionHandler implements SentrySubscription
   @Override
   public @NotNull Object onSubscriptionResult(
       final @NotNull Object result,
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull ExceptionReporter exceptionReporter,
       final @NotNull InstrumentationFieldFetchParameters parameters) {
     if (result instanceof Flux) {
@@ -21,7 +21,7 @@ public final class SentrySpringSubscriptionHandler implements SentrySubscription
       return flux.doOnError(
           throwable -> {
             final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
-                new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment(), true);
+                new ExceptionReporter.ExceptionDetails(scopes, parameters.getEnvironment(), true);
             if (throwable instanceof SubscriptionPublisherException
                 && throwable.getCause() != null) {
               exceptionReporter.captureThrowable(throwable.getCause(), exceptionDetails, null);

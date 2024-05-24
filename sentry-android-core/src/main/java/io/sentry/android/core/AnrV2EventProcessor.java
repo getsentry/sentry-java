@@ -429,6 +429,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
   // endregion
 
+  @Override
+  public @Nullable Long getOrder() {
+    return 12000L;
+  }
+
   // region static values
   private void setStaticValues(final @NotNull SentryEvent event) {
     mergeUser(event);

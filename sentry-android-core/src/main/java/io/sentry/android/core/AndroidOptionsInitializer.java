@@ -10,6 +10,7 @@ import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
+import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
@@ -97,6 +98,8 @@ final class AndroidOptionsInitializer {
 
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
+
+    options.setDefaultScopeType(ScopeType.CURRENT);
 
     options.setDateProvider(new SentryAndroidDateProvider());
 

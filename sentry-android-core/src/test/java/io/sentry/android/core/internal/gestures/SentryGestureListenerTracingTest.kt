@@ -9,8 +9,8 @@ import android.view.ViewGroup
 import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryTracer
@@ -46,7 +46,7 @@ class SentryGestureListenerTracingTest {
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val event = mock<MotionEvent>()
         val scope = mock<IScope>()
         lateinit var target: View
@@ -64,9 +64,9 @@ class SentryGestureListenerTracingTest {
             options.isEnableUserInteractionBreadcrumbs = true
             options.gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
 
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
 
-            this.transaction = transaction ?: SentryTracer(TransactionContext("name", "op"), hub)
+            this.transaction = transaction ?: SentryTracer(TransactionContext("name", "op"), scopes)
 
             target = mockView<T>(event = event, clickable = true, context = context)
             window.mockDecorView<ViewGroup>(event = event, context = context) {
@@ -86,13 +86,13 @@ class SentryGestureListenerTracingTest {
 
             whenever(activity.window).thenReturn(window)
 
-            whenever(hub.startTransaction(any(), any<TransactionOptions>()))
+            whenever(scopes.startTransaction(any(), any<TransactionOptions>()))
                 .thenReturn(this.transaction)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
 
             return SentryGestureListener(
                 activity,
-                hub,
+                scopes,
                 options
             )
         }
@@ -106,7 +106,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub, never()).startTransaction(
+        verify(fixture.scopes, never()).startTransaction(
             any(),
             any<TransactionOptions>()
         )
@@ -118,7 +118,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub, never()).startTransaction(
+        verify(fixture.scopes, never()).startTransaction(
             any(),
             any<TransactionOptions>()
         )
@@ -130,7 +130,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub, never()).startTransaction(
+        verify(fixture.scopes, never()).startTransaction(
             any(),
             any<TransactionOptions>()
         )
@@ -140,7 +140,7 @@ class SentryGestureListenerTracingTest {
     fun `when transaction is created, set transaction to the bound Scope`() {
         val sut = fixture.getSut<View>()
 
-        whenever(fixture.hub.configureScope(any())).thenAnswer {
+        whenever(fixture.scopes.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
 
             sut.applyScope(scope, fixture.transaction)
@@ -155,9 +155,9 @@ class SentryGestureListenerTracingTest {
     fun `when transaction is created, do not overwrite transaction already bound to the Scope`() {
         val sut = fixture.getSut<View>()
 
-        whenever(fixture.hub.configureScope(any())).thenAnswer {
+        whenever(fixture.scopes.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
-            val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+            val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
             scope.transaction = previousTransaction
 
             sut.applyScope(scope, fixture.transaction)
@@ -173,14 +173,14 @@ class SentryGestureListenerTracingTest {
         val sut = fixture.getSut<View>()
         val expectedStatus = SpanStatus.CANCELLED
 
-        whenever(fixture.hub.configureScope(any())).thenAnswer {
+        whenever(fixture.scopes.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
 
             sut.applyScope(scope, fixture.transaction)
         }
         sut.onSingleTapUp(fixture.event)
 
-        whenever(fixture.hub.configureScope(any())).thenAnswer {
+        whenever(fixture.scopes.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
 
             scope.transaction = fixture.transaction
@@ -199,7 +199,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
@@ -214,7 +214,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             any<TransactionContext>(),
             check<TransactionOptions> { transactionOptions ->
                 assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
@@ -232,7 +232,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check {
                 assertEquals("ui.action.click", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
@@ -248,7 +248,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
@@ -256,7 +256,7 @@ class SentryGestureListenerTracingTest {
             any<TransactionOptions>()
         )
 
-        clearInvocations(fixture.hub)
+        clearInvocations(fixture.scopes)
         // second view interaction with another view
         val newTarget = mockView<View>(event = fixture.event, clickable = true, context = fixture.context)
         val newContext = mock<Context>()
@@ -269,16 +269,16 @@ class SentryGestureListenerTracingTest {
             whenever(it.getChildAt(0)).thenReturn(newTarget)
         }
 
-        whenever(fixture.hub.startTransaction(any(), any<TransactionOptions>()))
+        whenever(fixture.scopes.startTransaction(any(), any<TransactionOptions>()))
             .thenAnswer {
                 // verify that the active transaction gets finished when a new one appears
                 assertEquals(true, fixture.transaction.isFinished)
-                SentryTracer(TransactionContext("name", "op"), fixture.hub)
+                SentryTracer(TransactionContext("name", "op"), fixture.scopes)
             }
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check {
                 assertEquals("Activity.test_checkbox", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
@@ -293,7 +293,7 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check {
                 assertEquals("Activity.test_scroll_view", it.name)
                 assertEquals("ui.action.click", it.operation)
@@ -302,20 +302,20 @@ class SentryGestureListenerTracingTest {
             any<TransactionOptions>()
         )
 
-        clearInvocations(fixture.hub)
+        clearInvocations(fixture.scopes)
 
         // second view interaction with a different interaction type (scroll)
-        whenever(fixture.hub.startTransaction(any(), any<TransactionOptions>()))
+        whenever(fixture.scopes.startTransaction(any(), any<TransactionOptions>()))
             .thenAnswer {
                 // verify that the active transaction gets finished when a new one appears
                 assertEquals(true, fixture.transaction.isFinished)
-                SentryTracer(TransactionContext("name", "op"), fixture.hub)
+                SentryTracer(TransactionContext("name", "op"), fixture.scopes)
             }
 
         sut.onScroll(fixture.event, mock(), 10.0f, 0f)
         sut.onUp(mock())
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             check {
                 assertEquals("Activity.test_scroll_view", it.name)
                 assertEquals("ui.action.scroll", it.operation)
@@ -340,7 +340,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         // then two transaction should be captured
-        verify(fixture.hub, times(2)).startTransaction(
+        verify(fixture.scopes, times(2)).startTransaction(
             check {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)

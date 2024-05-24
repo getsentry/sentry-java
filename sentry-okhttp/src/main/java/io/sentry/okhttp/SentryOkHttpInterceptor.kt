@@ -4,9 +4,9 @@ import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
+import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SpanDataConvention
@@ -29,7 +29,7 @@ import java.io.IOException
  * out of the active span bound to the scope for each HTTP Request.
  * If [captureFailedRequests] is enabled, the SDK will capture HTTP Client errors as well.
  *
- * @param hub The [IHub], internal and only used for testing.
+ * @param scopes The [IScopes], internal and only used for testing.
  * @param beforeSpan The [ISpan] can be customized or dropped with the [BeforeSpanCallback].
  * @param captureFailedRequests The SDK will only capture HTTP Client errors if it is enabled,
  * Defaults to false.
@@ -39,7 +39,7 @@ import java.io.IOException
  * is a match for any of the defined targets.
  */
 public open class SentryOkHttpInterceptor(
-    private val hub: IHub = HubAdapter.getInstance(),
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = true,
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
@@ -48,9 +48,9 @@ public open class SentryOkHttpInterceptor(
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor {
 
-    public constructor() : this(HubAdapter.getInstance())
-    public constructor(hub: IHub) : this(hub, null)
-    public constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+    public constructor() : this(ScopesAdapter.getInstance())
+    public constructor(scopes: IScopes) : this(scopes, null)
+    public constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion(javaClass)
@@ -76,7 +76,7 @@ public open class SentryOkHttpInterceptor(
         } else {
             // read the span from the bound scope
             okHttpEvent = null
-            val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
+            val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
 
@@ -92,7 +92,7 @@ public open class SentryOkHttpInterceptor(
             val requestBuilder = request.newBuilder()
 
             TracingUtils.traceIfAllowed(
-                hub,
+                scopes,
                 request.url.toString(),
                 request.headers(BaggageHeader.BAGGAGE_HEADER),
                 span
@@ -121,7 +121,7 @@ public open class SentryOkHttpInterceptor(
                 if (isFromEventListener && okHttpEvent != null) {
                     okHttpEvent.setClientErrorResponse(response)
                 } else {
-                    SentryOkHttpUtils.captureClientError(hub, request, response)
+                    SentryOkHttpUtils.captureClientError(scopes, request, response)
                 }
             }
 
@@ -157,7 +157,7 @@ public open class SentryOkHttpInterceptor(
             hint[OKHTTP_RESPONSE] = it
         }
 
-        hub.addBreadcrumb(breadcrumb, hint)
+        scopes.addBreadcrumb(breadcrumb, hint)
     }
 
     private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean) {

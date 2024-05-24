@@ -5,9 +5,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.Hub
 import io.sentry.IScope
 import io.sentry.Scope
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -23,6 +23,7 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.createTestScopes
 import io.sentry.transport.ITransport
 import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
@@ -82,7 +83,7 @@ class InternalSentrySdkTest {
 
         fun captureEnvelopeWithEvent(event: SentryEvent = SentryEvent()) {
             // create an envelope with session data
-            val options = Sentry.getCurrentHub().options
+            val options = Sentry.getCurrentScopes().options
             val eventId = SentryId()
             val header = SentryEnvelopeHeader(eventId)
             val eventItem = SentryEnvelopeItem.fromEvent(options.serializer, event)
@@ -105,40 +106,38 @@ class InternalSentrySdkTest {
 
     @BeforeTest
     fun `set up`() {
+        Sentry.close()
         context = ApplicationProvider.getApplicationContext()
         DeviceInfoUtil.resetInstance()
     }
 
     @Test
-    fun `current scope returns null when hub is no-op`() {
-        Sentry.getCurrentHub().close()
+    fun `current scope returns null when scopes is no-op`() {
+        Sentry.setCurrentScopes(createTestScopes(enabled = false))
         val scope = InternalSentrySdk.getCurrentScope()
         assertNull(scope)
     }
 
     @Test
-    fun `current scope returns obj when hub is active`() {
-        Sentry.setCurrentHub(
-            Hub(
-                SentryOptions().apply {
-                    dsn = "https://key@uri/1234567"
-                }
-            )
-        )
+    fun `current scope returns obj when scopes is active`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@uri/1234567"
+        }
+        Sentry.setCurrentScopes(createTestScopes(options))
         val scope = InternalSentrySdk.getCurrentScope()
         assertNotNull(scope)
     }
 
     @Test
     fun `current scope returns a copy of the scope`() {
-        Sentry.setCurrentHub(
-            Hub(
-                SentryOptions().apply {
-                    dsn = "https://key@uri/1234567"
-                }
-            )
-        )
+        val options = SentryOptions().apply {
+            dsn = "https://key@uri/1234567"
+        }
+        Sentry.setCurrentScopes(createTestScopes(options))
         Sentry.addBreadcrumb("test")
+        Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.addBreadcrumb(Breadcrumb("currentBreadcrumb")) }
+        Sentry.configureScope(ScopeType.ISOLATION) { scope -> scope.addBreadcrumb(Breadcrumb("isolationBreadcrumb")) }
+        Sentry.configureScope(ScopeType.GLOBAL) { scope -> scope.addBreadcrumb(Breadcrumb("globalBreadcrumb")) }
 
         // when the clone is modified
         val clonedScope = InternalSentrySdk.getCurrentScope()!!
@@ -146,7 +145,7 @@ class InternalSentrySdkTest {
 
         // then modifications should not be reflected
         Sentry.configureScope { scope ->
-            assertEquals(1, scope.breadcrumbs.size)
+            assertEquals(3, scope.breadcrumbs.size)
         }
     }
 

@@ -1,5 +1,6 @@
 public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
 	public fun <init> ()V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 

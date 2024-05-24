@@ -1,6 +1,61 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-alpha.1
+
+Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
+
+- New `Scope` types have been introduced, see "Behavioural Changes" for more details.
+- Lifecycle tokens have been introduced to manage `Scope` lifecycle, see "Behavioural Changes" for more details.
+- `Hub` has been replaced by `Scopes`
+
+### Behavioural Changes
+
+- We're introducing some new `Scope` types in the SDK, allowing for better control over what data is attached where. Previously there was a stack of scopes that was pushed and popped. Instead we now fork scopes for a given lifecycle and then restore the previous scopes. Since `Hub` is gone, it is also never cloned anymore. Separation of data now happens through the different scope types while making it easier to manipulate exactly what you need without having to attach data at the right time to have it apply where wanted.
+    - Global scope is attached to all events created by the SDK. It can also be modified before `Sentry.init` has been called. It can be manipulated using `Sentry.configureScope(ScopeType.GLOBAL, (scope) -> { ... })`.
+    - Isolation scope can be used e.g. to attach data to all events that come up while handling an incoming request. It can also be used for other isolation purposes. It can be manipulated using `Sentry.configureScope(ScopeType.ISOLATION, (scope) -> { ... })`. The SDK automatically forks isolation scope in certain cases like incoming requests, CRON jobs, Spring `@Async` and more.
+    - Current scope is forked often and data added to it is only added to events that are created while this scope is active. Data is also passed on to newly forked child scopes but not to parents.
+- `Sentry.popScope` has been deprecated, please call `.close()` on the token returned by `Sentry.pushScope` instead or use it in a way described in more detail in "Migration Guide".
+- We have chosen a default scope that is used for `Sentry.configureScope()` as well as API like `Sentry.setTag()`
+    - For Android the type defaults to `CURRENT` scope
+    - For Backend and other JVM applicatons it defaults to `ISOLATION` scope
+- Event processors on `Scope` can now be ordered by overriding the `getOrder` method on implementations of `EventProcessor`. NOTE: This order only applies to event processors on `Scope` but not `SentryOptions` at the moment. Feel free to request this if you need it.
+- `Hub` is deprecated in favor of `Scopes`, alongside some `Hub` relevant APIs. More details can be found in the "Migration Guide" section.
+
+### Breaking Changes
+
+- `Contexts` no longer extends `ConcurrentHashMap`, instead we offer a selected set of methods.
+
+### Migration Guide / Deprecations
+
+- `Hub` has been deprecated, we're replacing the following:
+    - `IHub` has been replaced by `IScopes`, however you should be able to simply pass `IHub` instances to code expecting `IScopes`, allowing for an easier migration.
+    - `HubAdapter.getInstance()` has been replaced by `ScopesAdapter.getInstance()`
+    - The `.clone()` method on `IHub`/`IScopes` has been deprecated, please use `.pushScope()` or `.pushIsolationScope()` instead
+    - Some internal methods like `.getCurrentHub()` and `.setCurrentHub()` have also been replaced.
+- `Sentry.popScope` has been replaced by calling `.close()` on the token returned by `Sentry.pushScope()` and `Sentry.pushIsolationScope()`. The token can also be used in a `try` block like this:
+
+```
+try (final @NotNull ISentryLifecycleToken ignored = Sentry.pushScope()) {
+  // this block has its separate current scope
+}
+```
+
+as well as:
+
+
+```
+try (final @NotNull ISentryLifecycleToken ignored = Sentry.pushIsolationScope()) {
+  // this block has its separate isolation scope
+}
+```
+
+You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass the token around for closing later.
+
+### Features
+
+- Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
+
+## 7.9.0
 
 ### Features
 
@@ -12,6 +67,8 @@
 - (Internal) Metrics code cleanup ([#3403](https://github.com/getsentry/sentry-java/pull/3403))
 - Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
 - Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
+- Do not always write startup crash marker ([#3409](https://github.com/getsentry/sentry-java/pull/3409))
+  - This may have been causing the SDK init logic to block the main thread
 
 ## 7.8.0
 

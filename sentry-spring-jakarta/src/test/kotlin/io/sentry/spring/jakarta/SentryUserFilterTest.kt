@@ -1,6 +1,6 @@
 package io.sentry.spring.jakarta
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
 import jakarta.servlet.FilterChain
@@ -16,7 +16,7 @@ import kotlin.test.assertNull
 
 class SentryUserFilterTest {
     class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
@@ -25,8 +25,8 @@ class SentryUserFilterTest {
             val options = SentryOptions().apply {
                 this.isSendDefaultPii = isSendDefaultPii
             }
-            whenever(hub.options).thenReturn(options)
-            return SentryUserFilter(hub, userProviders)
+            whenever(scopes.options).thenReturn(options)
+            return SentryUserFilter(scopes, userProviders)
         }
     }
 
@@ -52,7 +52,7 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).setUser(
+        verify(fixture.scopes).setUser(
             check {
                 assertEquals(sampleUser, it)
             }
@@ -72,7 +72,7 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).setUser(
+        verify(fixture.scopes).setUser(
             check {
                 assertEquals(sampleUser, it)
             }
@@ -92,7 +92,7 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).setUser(
+        verify(fixture.scopes).setUser(
             check {
                 assertEquals(sampleUser, it)
             }
@@ -118,7 +118,7 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).setUser(
+        verify(fixture.scopes).setUser(
             check {
                 assertEquals(mapOf("key" to "value", "new-key" to "new-value"), it.others)
             }
@@ -140,7 +140,7 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).setUser(
+        verify(fixture.scopes).setUser(
             check {
                 assertEquals("192.168.0.1", it.ipAddress)
             }
@@ -162,7 +162,7 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).setUser(
+        verify(fixture.scopes).setUser(
             check {
                 assertNull(it.ipAddress)
             }
