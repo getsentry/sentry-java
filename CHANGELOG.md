@@ -11,6 +11,12 @@
 
 - Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.4 ([#3441](https://github.com/getsentry/sentry-java/pull/3441))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#074)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.4)
+
 ## 7.9.0
 
 ### Features
