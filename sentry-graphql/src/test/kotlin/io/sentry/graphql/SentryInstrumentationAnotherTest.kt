@@ -29,7 +29,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.Scopes
+import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer

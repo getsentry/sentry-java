@@ -19,7 +19,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
