@@ -9,8 +9,8 @@ import android.content.Context;
 import io.sentry.Attachment;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -69,7 +69,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
   @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -90,7 +90,7 @@ public class AnrV2Integration implements Integration, Closeable {
       try {
         options
             .getExecutorService()
-            .submit(new AnrProcessor(context, hub, this.options, dateProvider));
+            .submit(new AnrProcessor(context, scopes, this.options, dateProvider));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start AnrProcessor.", e);
       }
@@ -109,17 +109,17 @@ public class AnrV2Integration implements Integration, Closeable {
   static class AnrProcessor implements Runnable {
 
     private final @NotNull Context context;
-    private final @NotNull IHub hub;
+    private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
     private final long threshold;
 
     AnrProcessor(
         final @NotNull Context context,
-        final @NotNull IHub hub,
+        final @NotNull IScopes scopes,
         final @NotNull SentryAndroidOptions options,
         final @NotNull ICurrentDateProvider dateProvider) {
       this.context = context;
-      this.hub = hub;
+      this.scopes = scopes;
       this.options = options;
       this.threshold = dateProvider.getCurrentTimeMillis() - NINETY_DAYS_THRESHOLD;
     }
@@ -277,7 +277,7 @@ public class AnrV2Integration implements Integration, Closeable {
         }
       }
 
-      final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
+      final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
       final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
       if (!isEventDropped) {
         // Block until the event is flushed to disk and the last_reported_anr marker is updated

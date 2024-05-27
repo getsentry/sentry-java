@@ -7,7 +7,7 @@ import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
@@ -48,9 +48,9 @@ class ClientReportTest {
     @Test
     fun `lost envelope can be recorded`() {
         givenClientReportRecorder()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(opts)
-        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
 
         val lostClientReport = ClientReport(
             DateUtils.getCurrentDateTime(),

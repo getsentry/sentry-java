@@ -2,7 +2,7 @@ package io.sentry.android.core
 
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.IHub
+import io.sentry.IScopes
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -17,7 +17,7 @@ import kotlin.test.assertNull
 class AppLifecycleIntegrationTest {
 
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         lateinit var handler: MainLooperHandler
         val options = SentryAndroidOptions()
 
@@ -33,7 +33,7 @@ class AppLifecycleIntegrationTest {
     fun `When AppLifecycleIntegration is added, lifecycle watcher should be started`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNotNull(sut.watcher)
     }
@@ -46,7 +46,7 @@ class AppLifecycleIntegrationTest {
             isEnableAutoSessionTracking = false
         }
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNull(sut.watcher)
     }
@@ -55,7 +55,7 @@ class AppLifecycleIntegrationTest {
     fun `When AppLifecycleIntegration is closed, lifecycle watcher should be closed`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNotNull(sut.watcher)
 
@@ -70,7 +70,7 @@ class AppLifecycleIntegrationTest {
         val latch = CountDownLatch(1)
 
         Thread {
-            sut.register(fixture.hub, fixture.options)
+            sut.register(fixture.scopes, fixture.options)
             latch.countDown()
         }.start()
 
@@ -84,7 +84,7 @@ class AppLifecycleIntegrationTest {
         val sut = fixture.getSut()
         val latch = CountDownLatch(1)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNotNull(sut.watcher)
 
@@ -103,7 +103,7 @@ class AppLifecycleIntegrationTest {
         val sut = fixture.getSut(mockHandler = false)
         val latch = CountDownLatch(1)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNotNull(sut.watcher)
 

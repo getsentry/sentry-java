@@ -3,7 +3,7 @@ package io.sentry.graphql
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerParameters
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -14,15 +14,15 @@ class SentryDataFetcherExceptionHandlerTest {
 
     @Test
     fun `passes exception to Sentry and invokes delegate`() {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val delegate = mock<DataFetcherExceptionHandler>()
-        val handler = SentryDataFetcherExceptionHandler(hub, delegate)
+        val handler = SentryDataFetcherExceptionHandler(scopes, delegate)
 
         val exception = RuntimeException()
         val parameters = DataFetcherExceptionHandlerParameters.newExceptionParameters().exception(exception).build()
         handler.onException(parameters)
 
-        verify(hub).captureException(eq(exception), anyOrNull<Hint>())
+        verify(scopes).captureException(eq(exception), anyOrNull<Hint>())
         verify(delegate).handleException(parameters)
     }
 }

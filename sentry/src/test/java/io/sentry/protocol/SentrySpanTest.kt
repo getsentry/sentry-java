@@ -1,6 +1,6 @@
 package io.sentry.protocol
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLongDate
 import io.sentry.SentryTracer
 import io.sentry.Span
@@ -19,7 +19,7 @@ class SentrySpanTest {
         val span = Span(
             TransactionContext("name", "op"),
             mock<SentryTracer>(),
-            mock<IHub>(),
+            mock<IScopes>(),
             SentryLongDate(1000000),
             SpanOptions()
         )

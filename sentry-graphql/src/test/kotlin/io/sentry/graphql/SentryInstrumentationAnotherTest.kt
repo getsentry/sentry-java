@@ -29,7 +29,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -54,7 +54,7 @@ import kotlin.test.assertSame
 class SentryInstrumentationAnotherTest {
 
     class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         lateinit var activeSpan: SentryTracer
         lateinit var dataFetcher: DataFetcher<Any?>
         lateinit var fieldFetchParameters: InstrumentationFieldFetchParameters
@@ -72,17 +72,17 @@ class SentryInstrumentationAnotherTest {
         val variables = mapOf("variableA" to "value a")
 
         fun getSut(isTransactionActive: Boolean = true, operation: OperationDefinition.Operation = OperationDefinition.Operation.QUERY, graphQLContextParam: Map<Any?, Any?>? = null, addTransactionToTracingState: Boolean = true, ignoredErrors: List<String> = emptyList()): SentryInstrumentation {
-            whenever(hub.options).thenReturn(SentryOptions())
-            activeSpan = SentryTracer(TransactionContext("name", "op"), hub)
+            whenever(scopes.options).thenReturn(SentryOptions())
+            activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
 
             if (isTransactionActive) {
-                whenever(hub.span).thenReturn(activeSpan)
+                whenever(scopes.span).thenReturn(activeSpan)
             } else {
-                whenever(hub.span).thenReturn(null)
+                whenever(scopes.span).thenReturn(null)
             }
 
             val defaultGraphQLContext = mapOf(
-                SentryInstrumentation.SENTRY_HUB_CONTEXT_KEY to hub
+                SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to scopes
             )
             val mergedField =
                 MergedField.newMergedField().addField(Field.newField("myFieldName").build()).build()
@@ -167,7 +167,7 @@ class SentryInstrumentationAnotherTest {
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("result modified by subscription handler", result)
-        verify(fixture.subscriptionHandler).onSubscriptionResult(eq("raw result"), same(fixture.hub), same(fixture.exceptionReporter), same(fixture.fieldFetchParameters))
+        verify(fixture.subscriptionHandler).onSubscriptionResult(eq("raw result"), same(fixture.scopes), same(fixture.exceptionReporter), same(fixture.fieldFetchParameters))
     }
 
     @Test
@@ -177,7 +177,7 @@ class SentryInstrumentationAnotherTest {
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("result modified by subscription handler", result)
-        verify(fixture.subscriptionHandler).onSubscriptionResult(eq("raw result"), same(fixture.hub), same(fixture.exceptionReporter), same(fixture.fieldFetchParameters))
+        verify(fixture.subscriptionHandler).onSubscriptionResult(eq("raw result"), same(fixture.scopes), same(fixture.exceptionReporter), same(fixture.fieldFetchParameters))
     }
 
     @Test
@@ -224,7 +224,7 @@ class SentryInstrumentationAnotherTest {
     fun `adds a breadcrumb for operation`() {
         val instrumentation = fixture.getSut()
         instrumentation.beginExecuteOperation(fixture.instrumentationExecuteOperationParameters)
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             org.mockito.kotlin.check<Breadcrumb> { breadcrumb ->
                 assertEquals("graphql", breadcrumb.type)
                 assertEquals("query", breadcrumb.category)
@@ -239,7 +239,7 @@ class SentryInstrumentationAnotherTest {
     fun `adds a breadcrumb for data fetcher`() {
         val instrumentation = fixture.getSut()
         instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters).get(fixture.environment)
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             org.mockito.kotlin.check<Breadcrumb> { breadcrumb ->
                 assertEquals("graphql", breadcrumb.type)
                 assertEquals("graphql.fetcher", breadcrumb.category)
@@ -256,11 +256,11 @@ class SentryInstrumentationAnotherTest {
     }
 
     @Test
-    fun `stores hub in context and adds transaction to state`() {
+    fun `stores scopes in context and adds transaction to state`() {
         val instrumentation = fixture.getSut(isTransactionActive = true, operation = OperationDefinition.Operation.MUTATION, graphQLContextParam = emptyMap(), addTransactionToTracingState = false)
-        withMockHub {
+        withMockScopes {
             instrumentation.beginExecution(fixture.instrumentationExecutionParameters)
-            assertSame(fixture.hub, fixture.instrumentationExecutionParameters.graphQLContext.get<IHub>(SentryInstrumentation.SENTRY_HUB_CONTEXT_KEY))
+            assertSame(fixture.scopes, fixture.instrumentationExecutionParameters.graphQLContext.get<IScopes>(SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY))
             assertNotNull(fixture.instrumentationState.transaction)
         }
     }
@@ -282,7 +282,7 @@ class SentryInstrumentationAnotherTest {
                 assertEquals("exception message", it.message)
             },
             org.mockito.kotlin.check<ExceptionDetails> {
-                assertSame(fixture.hub, it.hub)
+                assertSame(fixture.scopes, it.scopes)
                 assertSame(fixture.query, it.query)
                 assertEquals(false, it.isSubscription)
                 assertEquals(fixture.variables, it.variables)
@@ -299,7 +299,7 @@ class SentryInstrumentationAnotherTest {
         val instrumentation = fixture.getSut(
             graphQLContextParam = mapOf(
                 SENTRY_EXCEPTIONS_CONTEXT_KEY to listOf(exception),
-                SentryInstrumentation.SENTRY_HUB_CONTEXT_KEY to fixture.hub
+                SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to fixture.scopes
             )
         )
         val executionResult = ExecutionResultImpl.newExecutionResult()
@@ -311,7 +311,7 @@ class SentryInstrumentationAnotherTest {
                 assertSame(exception, it)
             },
             org.mockito.kotlin.check<ExceptionDetails> {
-                assertSame(fixture.hub, it.hub)
+                assertSame(fixture.scopes, it.scopes)
                 assertSame(fixture.query, it.query)
                 assertEquals(false, it.isSubscription)
                 assertEquals(fixture.variables, it.variables)
@@ -362,8 +362,8 @@ class SentryInstrumentationAnotherTest {
         assertSame(executionResult, result)
     }
 
-    fun withMockHub(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(fixture.hub)
+    fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
+        it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
         closure.invoke()
     }
 

@@ -12,6 +12,8 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
+import io.sentry.test.createSentryClientMock
+import io.sentry.test.createTestScopes
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.any
@@ -46,7 +48,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class HubTest {
+class ScopesTest {
 
     private lateinit var file: File
     private lateinit var profilingTraceFile: File
@@ -56,6 +58,7 @@ class HubTest {
         file = Files.createTempDirectory("sentry-disk-cache-test").toAbsolutePath().toFile()
         profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
         profilingTraceFile.writeText("sampledProfile")
+        SentryCrashLastRunState.getInstance().reset()
     }
 
     @AfterTest
@@ -63,59 +66,99 @@ class HubTest {
         file.deleteRecursively()
         profilingTraceFile.delete()
         Sentry.close()
+        SentryCrashLastRunState.getInstance().reset()
+    }
+
+    private fun createScopes(options: SentryOptions): Scopes {
+        return createTestScopes(options).also {
+            it.bindClient(SentryClient(options))
+        }
     }
 
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
-        val ex = assertFailsWith<IllegalArgumentException> { Hub(SentryOptions()) }
-        assertEquals("Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.", ex.message)
+        val ex = assertFailsWith<IllegalArgumentException> { createScopes(SentryOptions()) }
+        assertEquals("Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.", ex.message)
     }
 
     @Test
-    fun `when hub is cloned, integrations are not registered`() {
+    fun `when isolation scope is forked, integrations are not registered`() {
         val integrationMock = mock<Integration>()
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
-//        val expected = HubAdapter.getInstance()
-        val hub = Hub(options)
-//        verify(integrationMock).register(expected, options)
-        hub.clone()
+        val scopes = createScopes(options)
+        scopes.forkedScopes("test")
         verifyNoMoreInteractions(integrationMock)
     }
 
     @Test
-    fun `when hub is cloned, scope changes are isolated`() {
+    fun `when current scope is forked, integrations are not registered`() {
+        val integrationMock = mock<Integration>()
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val hub = Hub(options)
-        var firstScope: IScope? = null
-        hub.configureScope {
-            firstScope = it
-            it.setTag("hub", "a")
-        }
-        var cloneScope: IScope? = null
-        val clone = hub.clone()
-        clone.configureScope {
-            cloneScope = it
-            it.setTag("hub", "b")
-        }
-        assertEquals("a", firstScope!!.tags["hub"])
-        assertEquals("b", cloneScope!!.tags["hub"])
+        options.addIntegration(integrationMock)
+        val scopes = createScopes(options)
+        scopes.forkedCurrentScope("test")
+        verifyNoMoreInteractions(integrationMock)
     }
 
     @Test
-    fun `when hub is initialized, breadcrumbs are capped as per options`() {
+    fun `when isolation scope is forked, scope changes are isolated`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val scopes = createScopes(options)
+        var firstScope: IScope? = null
+        scopes.configureScope {
+            firstScope = it
+            it.setTag("scopes", "a")
+        }
+        var cloneScope: IScope? = null
+        val clone = scopes.forkedScopes("test")
+        clone.configureScope {
+            cloneScope = it
+            it.setTag("scopes", "b")
+        }
+        assertEquals("a", firstScope!!.tags["scopes"])
+        assertEquals("b", cloneScope!!.tags["scopes"])
+    }
+
+    @Test
+    fun `when current scope is forked, scope changes are not isolated`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val scopes = createScopes(options)
+        var firstScope: IScope? = null
+        scopes.configureScope {
+            firstScope = it
+            it.setTag("scopes", "a")
+        }
+        var cloneScope: IScope? = null
+        val clone = scopes.forkedCurrentScope("test")
+        clone.configureScope {
+            cloneScope = it
+            it.setTag("scopes", "b")
+        }
+        assertEquals("b", firstScope!!.tags["scopes"])
+        assertEquals("b", cloneScope!!.tags["scopes"])
+    }
+
+    @Test
+    fun `when scopes is initialized, breadcrumbs are capped as per options`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.maxBreadcrumbs = 5
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         (1..10).forEach { _ -> sut.addBreadcrumb(Breadcrumb(), null) }
         var actual = 0
         sut.configureScope {
@@ -131,7 +174,7 @@ class HubTest {
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> null }
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.addBreadcrumb(Breadcrumb(), null)
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
@@ -146,7 +189,7 @@ class HubTest {
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb: Breadcrumb, _: Any? -> breadcrumb.message = expected; breadcrumb; }
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         val crumb = Breadcrumb()
         crumb.message = "original"
         sut.addBreadcrumb(crumb)
@@ -162,7 +205,7 @@ class HubTest {
         options.beforeBreadcrumb = null
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         val expected = Breadcrumb()
         sut.addBreadcrumb(expected)
         var breadcrumbs: Queue<Breadcrumb>? = null
@@ -179,7 +222,7 @@ class HubTest {
         options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> throw exception }
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
 
         val actual = Breadcrumb()
         sut.addBreadcrumb(actual)
@@ -193,7 +236,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
 
@@ -203,9 +246,9 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
-        sut.configureScope { breadcrumbs = it.breadcrumbs }
+        sut.configureScope(ScopeType.COMBINED) { breadcrumbs = it.breadcrumbs }
         sut.close()
         sut.addBreadcrumb(Breadcrumb())
         assertTrue(breadcrumbs!!.isEmpty())
@@ -217,7 +260,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         sut.addBreadcrumb("message", "category")
@@ -231,7 +274,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         sut.addBreadcrumb("message", "category")
@@ -241,7 +284,7 @@ class HubTest {
 
     @Test
     fun `when flush is called on disabled client, no-op`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.flush(1000)
@@ -250,7 +293,7 @@ class HubTest {
 
     @Test
     fun `when flush is called, client flush gets called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.flush(1000)
         verify(mockClient).flush(1000)
@@ -263,14 +306,14 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.callMethod("captureEvent", SentryEvent::class.java, null)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
 
     @Test
     fun `when captureEvent is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.captureEvent(SentryEvent())
@@ -279,7 +322,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called with a valid argument, captureEvent on the client should be called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         val event = SentryEvent()
         val hints = HintUtils.createWithTypeCheckHint({})
@@ -288,8 +331,8 @@ class HubTest {
     }
 
     @Test
-    fun `when captureEvent is called on disabled hub, lastEventId does not get overwritten`() {
-        val (sut, mockClient) = getEnabledHub()
+    fun `when captureEvent is called on disabled scopes, lastEventId does not get overwritten`() {
+        val (sut, mockClient) = getEnabledScopes()
         whenever(mockClient.captureEvent(any(), any(), anyOrNull())).thenReturn(SentryId(UUID.randomUUID()))
         val event = SentryEvent()
         val hints = HintUtils.createWithTypeCheckHint({})
@@ -302,7 +345,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and session tracking is disabled, it should not capture a session`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         val event = SentryEvent()
         val hints = HintUtils.createWithTypeCheckHint({})
@@ -313,7 +356,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called but no session started, it should not capture a session`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         val event = SentryEvent()
         val hints = HintUtils.createWithTypeCheckHint({})
@@ -324,7 +367,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and event has exception which has been previously attached with span context, sets span context to the event`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val exception = RuntimeException()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
@@ -340,7 +383,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and event has exception which root cause has been previously attached with span context, sets span context to the event`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val rootCause = RuntimeException()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
@@ -356,7 +399,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and event has exception which non-root cause has been previously attached with span context, sets span context to the event`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val rootCause = RuntimeException()
         val exceptionAssignedToSpan = RuntimeException(rootCause)
         val span = mock<Span>()
@@ -373,7 +416,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and event has exception which has been previously attached with span context and trace context already set, does not set new span context to the event`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val exception = RuntimeException()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
@@ -391,7 +434,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called and event has exception which has not been previously attached with span context, does not set new span context to the event`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         val event = SentryEvent(RuntimeException())
 
@@ -403,7 +446,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called with a ScopeCallback then the modified scope is sent to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.captureEvent(SentryEvent(), null) {
             it.setTag("test", "testValue")
@@ -420,7 +463,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called with a ScopeCallback then subsequent calls to captureEvent send the unmodified Scope to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val argumentCaptor = argumentCaptor<IScope>()
 
         sut.captureEvent(SentryEvent(), null) {
@@ -441,7 +484,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called with a ScopeCallback that crashes then the event should still be captured`() {
-        val (sut, mockClient, logger) = getEnabledHub()
+        val (sut, mockClient, logger) = getEnabledScopes()
 
         val exception = Exception("scope callback exception")
         sut.captureEvent(SentryEvent(), null) {
@@ -465,14 +508,14 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.callMethod("captureMessage", String::class.java, null)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
 
     @Test
     fun `when captureMessage is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.captureMessage("test")
@@ -481,7 +524,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called with a valid message, captureMessage on the client should be called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.captureMessage("test")
         verify(mockClient).captureMessage(any(), any(), any())
@@ -489,14 +532,14 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called, level is INFO by default`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.captureMessage("test")
         verify(mockClient).captureMessage(eq("test"), eq(SentryLevel.INFO), any())
     }
 
     @Test
     fun `when captureMessage is called with a ScopeCallback then the modified scope is sent to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.captureMessage("test") {
             it.setTag("test", "testValue")
@@ -513,7 +556,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called with a ScopeCallback then subsequent calls to captureMessage send the unmodified Scope to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val argumentCaptor = argumentCaptor<IScope>()
 
         sut.captureMessage("testMessage") {
@@ -534,7 +577,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called with a ScopeCallback that crashes then the message should still be captured`() {
-        val (sut, mockClient, logger) = getEnabledHub()
+        val (sut, mockClient, logger) = getEnabledScopes()
 
         val exception = Exception("scope callback exception")
         sut.captureMessage("Hello World") {
@@ -559,14 +602,14 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.callMethod("captureException", Throwable::class.java, null)
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
 
     @Test
     fun `when captureException is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.captureException(Throwable())
@@ -575,7 +618,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a valid argument and hint, captureEvent on the client should be called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         val hints = HintUtils.createWithTypeCheckHint({})
         sut.captureException(Throwable(), hints)
@@ -584,7 +627,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a valid argument but no hint, captureEvent on the client should be called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.captureException(Throwable())
         verify(mockClient).captureEvent(any(), any(), any())
@@ -592,7 +635,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with an exception which has been previously attached with span context, span context should be set on the event before capturing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val throwable = Throwable()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
@@ -611,7 +654,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with an exception which has not been previously attached with span context, span context should not be set on the event before capturing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
         sut.setSpanContext(Throwable(), span, "tx-name")
@@ -628,7 +671,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a ScopeCallback then the modified scope is sent to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.captureException(Throwable(), null) {
             it.setTag("test", "testValue")
@@ -645,7 +688,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a ScopeCallback then subsequent calls to captureException send the unmodified Scope to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         val argumentCaptor = argumentCaptor<IScope>()
 
         sut.captureException(Throwable(), null) {
@@ -666,7 +709,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a ScopeCallback that crashes then the exception should still be captured`() {
-        val (sut, mockClient, logger) = getEnabledHub()
+        val (sut, mockClient, logger) = getEnabledScopes()
 
         val exception = Exception("scope callback exception")
         sut.captureException(Throwable()) {
@@ -688,7 +731,7 @@ class HubTest {
 
     @Test
     fun `when captureUserFeedback is called it is forwarded to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.captureUserFeedback(userFeedback)
 
         verify(mockClient).captureUserFeedback(
@@ -703,7 +746,7 @@ class HubTest {
 
     @Test
     fun `when captureUserFeedback is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.captureUserFeedback(userFeedback)
@@ -712,7 +755,7 @@ class HubTest {
 
     @Test
     fun `when captureUserFeedback is called and client throws, don't crash`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         whenever(mockClient.captureUserFeedback(any())).doThrow(IllegalArgumentException(""))
 
@@ -732,7 +775,7 @@ class HubTest {
 
     @Test
     fun `when captureCheckIn is called it is forwarded to the client`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.captureCheckIn(checkIn)
 
         verify(mockClient).captureCheckIn(
@@ -748,7 +791,7 @@ class HubTest {
 
     @Test
     fun `when captureCheckIn is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.captureCheckIn(checkIn)
@@ -757,7 +800,7 @@ class HubTest {
 
     @Test
     fun `when captureCheckIn is called and client throws, don't crash`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         whenever(mockClient.captureCheckIn(any(), any(), anyOrNull())).doThrow(IllegalArgumentException(""))
 
@@ -771,7 +814,7 @@ class HubTest {
     //region close tests
     @Test
     fun `when close is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.close()
@@ -780,7 +823,7 @@ class HubTest {
 
     @Test
     fun `when close is called and client is alive, close on the client should be called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.close()
         verify(mockClient).close(eq(false))
@@ -788,7 +831,7 @@ class HubTest {
 
     @Test
     fun `when close is called with isRestarting false and client is alive, close on the client should be called with isRestarting false`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.close(false)
         verify(mockClient).close(eq(false))
@@ -796,7 +839,7 @@ class HubTest {
 
     @Test
     fun `when close is called with isRestarting true and client is alive, close on the client should be called with isRestarting true`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         sut.close(true)
         verify(mockClient).close(eq(true))
@@ -806,7 +849,7 @@ class HubTest {
     //region withScope tests
     @Test
     fun `when withScope is called on disabled client, execute on NoOpScope`() {
-        val (sut) = getEnabledHub()
+        val (sut) = getEnabledScopes()
 
         val scopeCallback = mock<ScopeCallback>()
         sut.close()
@@ -817,7 +860,7 @@ class HubTest {
 
     @Test
     fun `when withScope is called with alive client, run should be called`() {
-        val (sut) = getEnabledHub()
+        val (sut) = getEnabledScopes()
 
         val scopeCallback = mock<ScopeCallback>()
 
@@ -827,14 +870,51 @@ class HubTest {
 
     @Test
     fun `when withScope throws an exception then it should be caught`() {
-        val (hub, _, logger) = getEnabledHub()
+        val (scopes, _, logger) = getEnabledScopes()
 
         val exception = Exception("scope callback exception")
         val scopeCallback = ScopeCallback {
             throw exception
         }
 
-        hub.withScope(scopeCallback)
+        scopes.withScope(scopeCallback)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+    //endregion
+
+    //region withIsolationScope tests
+    @Test
+    fun `when withIsolationScope is called on disabled client, execute on NoOpScope`() {
+        val (sut) = getEnabledScopes()
+
+        val scopeCallback = mock<ScopeCallback>()
+        sut.close()
+
+        sut.withIsolationScope(scopeCallback)
+        verify(scopeCallback).run(NoOpScope.getInstance())
+    }
+
+    @Test
+    fun `when withIsolationScope is called with alive client, run should be called`() {
+        val (sut) = getEnabledScopes()
+
+        val scopeCallback = mock<ScopeCallback>()
+
+        sut.withIsolationScope(scopeCallback)
+        verify(scopeCallback).run(any())
+    }
+
+    @Test
+    fun `when withIsolationScope throws an exception then it should be caught`() {
+        val (scopes, _, logger) = getEnabledScopes()
+
+        val exception = Exception("scope callback exception")
+        val scopeCallback = ScopeCallback {
+            throw exception
+        }
+
+        scopes.withIsolationScope(scopeCallback)
 
         verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
     }
@@ -843,7 +923,7 @@ class HubTest {
     //region configureScope tests
     @Test
     fun `when configureScope is called on disabled client, do nothing`() {
-        val (sut) = getEnabledHub()
+        val (sut) = getEnabledScopes()
 
         val scopeCallback = mock<ScopeCallback>()
         sut.close()
@@ -854,7 +934,7 @@ class HubTest {
 
     @Test
     fun `when configureScope is called with alive client, run should be called`() {
-        val (sut) = getEnabledHub()
+        val (sut) = getEnabledScopes()
 
         val scopeCallback = mock<ScopeCallback>()
 
@@ -864,25 +944,25 @@ class HubTest {
 
     @Test
     fun `when configureScope throws an exception then it should be caught`() {
-        val (hub, _, logger) = getEnabledHub()
+        val (scopes, _, logger) = getEnabledScopes()
 
         val exception = Exception("scope callback exception")
         val scopeCallback = ScopeCallback {
             throw exception
         }
 
-        hub.configureScope(scopeCallback)
+        scopes.configureScope(scopeCallback)
 
         verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
     }
     //endregion
 
     @Test
-    fun `when integration is registered, hub is enabled`() {
+    fun `when integration is registered, scopes is enabled`() {
         val mock = mock<Integration>()
 
         var options: SentryOptions? = null
-        // init main hub and make it enabled
+        // init main scopes and make it enabled
         Sentry.init {
             it.addIntegration(mock)
             it.dsn = "https://key@sentry.io/proj"
@@ -892,8 +972,8 @@ class HubTest {
         }
 
         doAnswer {
-            val hub = it.arguments[0] as IHub
-            assertTrue(hub.isEnabled)
+            val scopes = it.arguments[0] as IScopes
+            assertTrue(scopes.isEnabled)
         }.whenever(mock).register(any(), eq(options!!))
 
         verify(mock).register(any(), eq(options!!))
@@ -902,26 +982,26 @@ class HubTest {
     //region setLevel tests
     @Test
     fun `when setLevel is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.close()
+        scopes.close()
 
-        hub.setLevel(SentryLevel.INFO)
+        scopes.setLevel(SentryLevel.INFO)
         assertNull(scope?.level)
     }
 
     @Test
     fun `when setLevel is called, level is set`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.setLevel(SentryLevel.INFO)
+        scopes.setLevel(SentryLevel.INFO)
         assertEquals(SentryLevel.INFO, scope?.level)
     }
     //endregion
@@ -929,74 +1009,74 @@ class HubTest {
     //region setTransaction tests
     @Test
     fun `when setTransaction is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.close()
+        scopes.close()
 
-        hub.setTransaction("test")
+        scopes.setTransaction("test")
         assertNull(scope?.transactionName)
     }
 
     @Test
     fun `when setTransaction is called, and transaction is not set, transaction name is changed`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.setTransaction("test")
+        scopes.setTransaction("test")
         assertEquals("test", scope?.transactionName)
     }
 
     @Test
     fun `when setTransaction is called, and transaction is set, transaction name is changed`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        val tx = hub.startTransaction("test", "op")
-        hub.configureScope { it.setTransaction(tx) }
+        val tx = scopes.startTransaction("test", "op")
+        scopes.configureScope { it.setTransaction(tx) }
 
         assertEquals("test", scope?.transactionName)
     }
 
     @Test
     fun `when startTransaction is called with different instrumenter, no-op is returned`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
 
         val transactionContext = TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
         val transactionOptions = TransactionOptions()
-        val tx = hub.startTransaction(transactionContext, transactionOptions)
+        val tx = scopes.startTransaction(transactionContext, transactionOptions)
 
         assertTrue(tx is NoOpTransaction)
     }
 
     @Test
     fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
-        val hub = generateHub() {
+        val scopes = generateScopes() {
             it.instrumenter = Instrumenter.OTEL
         }
 
-        val tx = hub.startTransaction("test", "op")
+        val tx = scopes.startTransaction("test", "op")
 
         assertTrue(tx is NoOpTransaction)
     }
 
     @Test
     fun `when startTransaction is called with configured instrumenter, it works`() {
-        val hub = generateHub() {
+        val scopes = generateScopes() {
             it.instrumenter = Instrumenter.OTEL
         }
 
         val transactionContext = TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
         val transactionOptions = TransactionOptions()
-        val tx = hub.startTransaction(transactionContext, transactionOptions)
+        val tx = scopes.startTransaction(transactionContext, transactionOptions)
 
         assertFalse(tx is NoOpTransaction)
     }
@@ -1005,27 +1085,27 @@ class HubTest {
     //region setUser tests
     @Test
     fun `when setUser is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.close()
+        scopes.close()
 
-        hub.setUser(User())
+        scopes.setUser(User())
         assertNull(scope?.user)
     }
 
     @Test
     fun `when setUser is called, user is set`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
         val user = User()
-        hub.setUser(user)
+        scopes.setUser(user)
         assertEquals(user, scope?.user)
     }
     //endregion
@@ -1033,40 +1113,40 @@ class HubTest {
     //region setFingerprint tests
     @Test
     fun `when setFingerprint is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.close()
+        scopes.close()
 
         val fingerprint = listOf("abc")
-        hub.setFingerprint(fingerprint)
+        scopes.setFingerprint(fingerprint)
         assertEquals(0, scope?.fingerprint?.count())
     }
 
     @Test
     fun `when setFingerprint is called with null parameter, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.callMethod("setFingerprint", List::class.java, null)
+        scopes.callMethod("setFingerprint", List::class.java, null)
         assertEquals(0, scope?.fingerprint?.count())
     }
 
     @Test
     fun `when setFingerprint is called, fingerprint is set`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
         val fingerprint = listOf("abc")
-        hub.setFingerprint(fingerprint)
+        scopes.setFingerprint(fingerprint)
         assertEquals(1, scope?.fingerprint?.count())
     }
     //endregion
@@ -1074,30 +1154,30 @@ class HubTest {
     //region clearBreadcrumbs tests
     @Test
     fun `when clearBreadcrumbs is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.addBreadcrumb(Breadcrumb())
+        scopes.addBreadcrumb(Breadcrumb())
         assertEquals(1, scope?.breadcrumbs?.count())
 
-        hub.close()
+        scopes.close()
 
         assertEquals(0, scope?.breadcrumbs?.count())
     }
 
     @Test
     fun `when clearBreadcrumbs is called, clear breadcrumbs`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.addBreadcrumb(Breadcrumb())
+        scopes.addBreadcrumb(Breadcrumb())
         assertEquals(1, scope?.breadcrumbs?.count())
-        hub.clearBreadcrumbs()
+        scopes.clearBreadcrumbs()
         assertEquals(0, scope?.breadcrumbs?.count())
     }
     //endregion
@@ -1105,38 +1185,38 @@ class HubTest {
     //region setTag tests
     @Test
     fun `when setTag is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.close()
+        scopes.close()
 
-        hub.setTag("test", "test")
+        scopes.setTag("test", "test")
         assertEquals(0, scope?.tags?.count())
     }
 
     @Test
     fun `when setTag is called with null parameters, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.callMethod("setTag", parameterTypes = arrayOf(String::class.java, String::class.java), null, null)
+        scopes.callMethod("setTag", parameterTypes = arrayOf(String::class.java, String::class.java), null, null)
         assertEquals(0, scope?.tags?.count())
     }
 
     @Test
     fun `when setTag is called, tag is set`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.setTag("test", "test")
+        scopes.setTag("test", "test")
         assertEquals(1, scope?.tags?.count())
     }
     //endregion
@@ -1144,38 +1224,38 @@ class HubTest {
     //region setExtra tests
     @Test
     fun `when setExtra is called on disabled client, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
-        hub.close()
+        scopes.close()
 
-        hub.setExtra("test", "test")
+        scopes.setExtra("test", "test")
         assertEquals(0, scope?.extras?.count())
     }
 
     @Test
     fun `when setExtra is called with null parameters, do nothing`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.callMethod("setExtra", parameterTypes = arrayOf(String::class.java, String::class.java), null, null)
+        scopes.callMethod("setExtra", parameterTypes = arrayOf(String::class.java, String::class.java), null, null)
         assertEquals(0, scope?.extras?.count())
     }
 
     @Test
     fun `when setExtra is called, extra is set`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         var scope: IScope? = null
-        hub.configureScope {
+        scopes.configureScope {
             scope = it
         }
 
-        hub.setExtra("test", "test")
+        scopes.setExtra("test", "test")
         assertEquals(1, scope?.extras?.count())
     }
     //endregion
@@ -1187,7 +1267,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
+        val sut = createScopes(options)
         try {
             sut.callMethod("captureEnvelope", SentryEnvelope::class.java, null)
             fail()
@@ -1202,8 +1282,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock(enabled = false)
         sut.bindClient(mockClient)
         sut.close()
 
@@ -1217,8 +1297,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
@@ -1232,8 +1312,8 @@ class HubTest {
             dsn = "https://key@sentry.io/proj"
             setSerializer(mock())
         }
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         whenever(mockClient.captureEnvelope(any(), anyOrNull())).thenReturn(SentryId())
         val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
@@ -1250,10 +1330,14 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         sut.close()
+
+        sut.configureScope(ScopeType.ISOLATION) { scope ->
+            scope.client.isEnabled
+        }
 
         sut.startSession()
         verify(mockClient, never()).captureSession(any(), any())
@@ -1266,8 +1350,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.startSession()
@@ -1281,8 +1365,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.startSession()
@@ -1300,8 +1384,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock(enabled = false)
         sut.bindClient(mockClient)
         sut.close()
 
@@ -1316,8 +1400,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.endSession()
@@ -1331,8 +1415,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.startSession()
@@ -1348,8 +1432,8 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.release = "0.0.1"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         sut.endSession()
@@ -1364,8 +1448,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         sut.close()
 
@@ -1382,8 +1466,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
@@ -1398,8 +1482,8 @@ class HubTest {
             dsn = "https://key@sentry.io/proj"
             setSerializer(mock())
         }
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
 
@@ -1414,8 +1498,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
@@ -1429,8 +1513,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
@@ -1445,8 +1529,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
@@ -1464,8 +1548,8 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         val mockBackpressureMonitor = mock<IBackpressureMonitor>()
         options.backpressureMonitor = mockBackpressureMonitor
@@ -1486,21 +1570,21 @@ class HubTest {
     @Test
     fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
-        hub.bindClient(mockClient)
+        scopes.bindClient(mockClient)
         // Transaction is not sampled, so it should not be profiled
         val contexts = TransactionContext("name", "op", TracesSamplingDecision(false, null, true, null))
-        val transaction = hub.startTransaction(contexts)
+        val transaction = scopes.startTransaction(contexts)
         transaction.finish()
         verify(mockClient, never()).captureEnvelope(any())
 
         // Transaction is sampled, so it should be profiled
         val sampledContexts = TransactionContext("name", "op", TracesSamplingDecision(true, null, true, null))
-        val sampledTransaction = hub.startTransaction(sampledContexts)
+        val sampledTransaction = scopes.startTransaction(sampledContexts)
         sampledTransaction.finish()
         verify(mockClient).captureEnvelope(any())
     }
@@ -1508,15 +1592,15 @@ class HubTest {
     @Test
     fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        val mockClient = mock<ISentryClient>()
+        val mockClient = createSentryClientMock()
         whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.profilesSampleRate = 0.0
             it.setTransactionProfiler(mockTransactionProfiler)
         }
-        hub.bindClient(mockClient)
+        scopes.bindClient(mockClient)
         val contexts = TransactionContext("name", "op")
-        val transaction = hub.startTransaction(contexts)
+        val transaction = scopes.startTransaction(contexts)
         transaction.finish()
         verify(mockClient, never()).captureEnvelope(any())
     }
@@ -1525,12 +1609,12 @@ class HubTest {
     fun `when profiler is running and isAppStartTransaction is false, startTransaction does not interact with profiler`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         whenever(mockTransactionProfiler.isRunning).thenReturn(true)
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.profilesSampleRate = 1.0
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         val context = TransactionContext("name", "op")
-        hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
+        scopes.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
         verify(mockTransactionProfiler, never()).start()
         verify(mockTransactionProfiler, never()).bindTransaction(any())
     }
@@ -1539,12 +1623,12 @@ class HubTest {
     fun `when profiler is running and isAppStartTransaction is true, startTransaction binds current profile`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         whenever(mockTransactionProfiler.isRunning).thenReturn(true)
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.profilesSampleRate = 1.0
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         val context = TransactionContext("name", "op")
-        val transaction = hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = true })
+        val transaction = scopes.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = true })
         verify(mockTransactionProfiler, never()).start()
         verify(mockTransactionProfiler).bindTransaction(eq(transaction))
     }
@@ -1553,12 +1637,12 @@ class HubTest {
     fun `when profiler is not running, startTransaction starts and binds current profile`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         whenever(mockTransactionProfiler.isRunning).thenReturn(false)
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.profilesSampleRate = 1.0
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         val context = TransactionContext("name", "op")
-        val transaction = hub.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
+        val transaction = scopes.startTransaction(context, TransactionOptions().apply { isAppStartTransaction = false })
         verify(mockTransactionProfiler).start()
         verify(mockTransactionProfiler).bindTransaction(eq(transaction))
     }
@@ -1567,75 +1651,75 @@ class HubTest {
     //region startTransaction tests
     @Test
     fun `when startTransaction, creates transaction`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         val contexts = TransactionContext("name", "op")
 
-        val transaction = hub.startTransaction(contexts)
+        val transaction = scopes.startTransaction(contexts)
         assertTrue(transaction is SentryTracer)
         assertEquals(contexts, transaction.root.spanContext)
     }
 
     @Test
     fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
 
-        hub.startTransaction("name", "op", TransactionOptions())
+        scopes.startTransaction("name", "op", TransactionOptions())
 
-        hub.configureScope {
+        scopes.configureScope {
             assertNull(it.span)
         }
     }
 
     @Test
     fun `when startTransaction without bindToScope set, transaction is not attached to the scope`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
 
-        hub.startTransaction("name", "op")
+        scopes.startTransaction("name", "op")
 
-        hub.configureScope {
+        scopes.configureScope {
             assertNull(it.span)
         }
     }
 
     @Test
     fun `when startTransaction with bindToScope set to true, transaction is attached to the scope`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
 
-        val transaction = hub.startTransaction("name", "op", TransactionOptions().also { it.isBindToScope = true })
+        val transaction = scopes.startTransaction("name", "op", TransactionOptions().also { it.isBindToScope = true })
 
-        hub.configureScope {
+        scopes.configureScope {
             assertEquals(transaction, it.span)
         }
     }
 
     @Test
     fun `when startTransaction and no tracing sampling is configured, event is not sampled`() {
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.tracesSampleRate = 0.0
         }
 
-        val transaction = hub.startTransaction("name", "op")
+        val transaction = scopes.startTransaction("name", "op")
         assertFalse(transaction.isSampled!!)
     }
 
     @Test
     fun `when startTransaction and no profile sampling is configured, profile is not sampled`() {
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.tracesSampleRate = 1.0
             it.profilesSampleRate = 0.0
         }
 
-        val transaction = hub.startTransaction("name", "op")
+        val transaction = scopes.startTransaction("name", "op")
         assertTrue(transaction.isSampled!!)
         assertFalse(transaction.isProfileSampled!!)
     }
 
     @Test
     fun `when startTransaction with parent sampled and no traces sampler provided, transaction inherits sampling decision`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         val transactionContext = TransactionContext("name", "op")
         transactionContext.parentSampled = true
-        val transaction = hub.startTransaction(transactionContext)
+        val transaction = scopes.startTransaction(transactionContext)
         assertNotNull(transaction)
         assertNotNull(transaction.isSampled)
         assertTrue(transaction.isSampled!!)
@@ -1643,15 +1727,15 @@ class HubTest {
 
     @Test
     fun `when startTransaction with parent profile sampled and no profile sampler provided, transaction inherits profile sampling decision`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         val transactionContext = TransactionContext("name", "op")
         transactionContext.setParentSampled(true, true)
-        val transaction = hub.startTransaction(transactionContext)
+        val transaction = scopes.startTransaction(transactionContext)
         assertTrue(transaction.isProfileSampled!!)
     }
 
     @Test
-    fun `Hub should close the sentry executor processor, profiler and performance collector on close call`() {
+    fun `Scopes should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
         val performanceCollector = mock<TransactionPerformanceCollector>()
@@ -1662,7 +1746,7 @@ class HubTest {
             setTransactionProfiler(profiler)
             transactionPerformanceCollector = performanceCollector
         }
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.close()
         verify(executor).close(any())
         verify(profiler).close()
@@ -1670,13 +1754,13 @@ class HubTest {
     }
 
     @Test
-    fun `Hub with isRestarting true should close the sentry executor in the background`() {
+    fun `Scopes with isRestarting true should close the sentry executor in the background`() {
         val executor = spy(DeferredExecutorService())
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             executorService = executor
         }
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.close(true)
         verify(executor, never()).close(any())
         executor.runAll()
@@ -1684,31 +1768,32 @@ class HubTest {
     }
 
     @Test
-    fun `Hub with isRestarting false should close the sentry executor in the background`() {
+    fun `Scopes with isRestarting false should close the sentry executor in the background`() {
         val executor = mock<ISentryExecutorService>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             executorService = executor
         }
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.close(false)
         verify(executor).close(any())
     }
 
     @Test
-    fun `Hub close should clear the scope`() {
+    fun `Scopes close should clear the scope`() {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
 
-        val sut = Hub(options)
+        val sut = createScopes(options)
         sut.addBreadcrumb("Test")
         sut.startTransaction("test", "test.op", TransactionOptions().also { it.isBindToScope = true })
         sut.close()
 
         // we have to clone the scope, so its isEnabled returns true, but it's still built up from
         // the old scope preserving its data
-        val clone = sut.clone()
+        val clone = sut.forkedScopes("test")
+        clone.bindClient(createSentryClientMock(enabled = true))
         var oldScope: IScope? = null
         clone.configureScope { scope -> oldScope = scope }
         assertNull(oldScope!!.transaction)
@@ -1717,11 +1802,11 @@ class HubTest {
 
     @Test
     fun `when tracesSampleRate and tracesSampler are not set on SentryOptions, startTransaction returns NoOp`() {
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.tracesSampleRate = null
             it.tracesSampler = null
         }
-        val transaction = hub.startTransaction(TransactionContext("name", "op", TracesSamplingDecision(true)))
+        val transaction = scopes.startTransaction(TransactionContext("name", "op", TracesSamplingDecision(true)))
         assertTrue(transaction is NoOpTransaction)
     }
     //endregion
@@ -1729,81 +1814,81 @@ class HubTest {
     //region startTransaction tests
     @Test
     fun `when traceHeaders and no transaction is active, traceHeaders are generated from scope`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
 
         var spanId: SpanId? = null
-        hub.configureScope { spanId = it.propagationContext.spanId }
+        scopes.configureScope { spanId = it.propagationContext.spanId }
 
-        val traceHeader = hub.traceHeaders()
+        val traceHeader = scopes.traceHeaders()
         assertNotNull(traceHeader)
         assertEquals(spanId, traceHeader.spanId)
     }
 
     @Test
     fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
-        val hub = generateHub()
-        val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
+        val scopes = generateScopes()
+        val tx = scopes.startTransaction("aTransaction", "op")
+        scopes.configureScope { it.setTransaction(tx) }
 
-        assertNotNull(hub.traceHeaders())
+        assertNotNull(scopes.traceHeaders())
     }
     //endregion
 
     //region getSpan tests
     @Test
     fun `when there is no active transaction, getSpan returns null`() {
-        val hub = generateHub()
-        assertNull(hub.span)
+        val scopes = generateScopes()
+        assertNull(scopes.span)
     }
 
     @Test
     fun `when there is no active transaction, getTransaction returns null`() {
-        val hub = generateHub()
-        assertNull(hub.transaction)
+        val scopes = generateScopes()
+        assertNull(scopes.transaction)
     }
 
     @Test
     fun `when there is active transaction bound to the scope, getTransaction and getSpan return active transaction`() {
-        val hub = generateHub()
-        val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.transaction = tx }
+        val scopes = generateScopes()
+        val tx = scopes.startTransaction("aTransaction", "op")
+        scopes.configureScope { it.transaction = tx }
 
-        assertEquals(tx, hub.transaction)
-        assertEquals(tx, hub.span)
+        assertEquals(tx, scopes.transaction)
+        assertEquals(tx, scopes.span)
     }
 
     @Test
-    fun `when there is a transaction but the hub is closed, getTransaction returns null`() {
-        val hub = generateHub()
-        hub.startTransaction("name", "op")
-        hub.close()
+    fun `when there is a transaction but the scopes is closed, getTransaction returns null`() {
+        val scopes = generateScopes()
+        scopes.startTransaction("name", "op")
+        scopes.close()
 
-        assertNull(hub.transaction)
+        assertNull(scopes.transaction)
     }
 
     @Test
     fun `when there is active span within a transaction bound to the scope, getSpan returns active span`() {
-        val hub = generateHub()
-        val tx = hub.startTransaction("aTransaction", "op")
-        hub.configureScope { it.setTransaction(tx) }
-        hub.configureScope { it.setTransaction(tx) }
+        val scopes = generateScopes()
+        val tx = scopes.startTransaction("aTransaction", "op")
+        scopes.configureScope { it.setTransaction(tx) }
+        scopes.configureScope { it.setTransaction(tx) }
         val span = tx.startChild("op")
 
-        assertEquals(tx, hub.transaction)
-        assertEquals(span, hub.span)
+        assertEquals(tx, scopes.transaction)
+        assertEquals(span, scopes.span)
     }
     // endregion
 
     //region setSpanContext
     @Test
     fun `associates span context with throwable`() {
-        val (hub, mockClient) = getEnabledHub()
-        val transaction = hub.startTransaction("aTransaction", "op")
+        val (scopes, mockClient) = getEnabledScopes()
+        val transaction = scopes.startTransaction("aTransaction", "op")
         val span = transaction.startChild("op")
         val exception = RuntimeException()
 
-        hub.setSpanContext(exception, span, "tx-name")
-        hub.captureEvent(SentryEvent(exception))
+        scopes.setSpanContext(exception, span, "tx-name")
+        scopes.captureEvent(SentryEvent(exception))
 
         verify(mockClient).captureEvent(
             check {
@@ -1813,12 +1898,6 @@ class HubTest {
             anyOrNull()
         )
     }
-
-    @Test
-    fun `returns null when no span context associated with throwable`() {
-        val hub = generateHub() as Hub
-        assertNull(hub.getSpanContext(RuntimeException()))
-    }
     // endregion
 
     @Test
@@ -1826,9 +1905,9 @@ class HubTest {
         val nativeMarker = File(hashedFolder(), EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         nativeMarker.mkdirs()
         nativeMarker.createNewFile()
-        val hub = generateHub() as Hub
+        val scopes = generateScopes() as Scopes
 
-        assertTrue(hub.isCrashedLastRun!!)
+        assertTrue(scopes.isCrashedLastRun!!)
         assertTrue(nativeMarker.exists())
     }
 
@@ -1837,69 +1916,69 @@ class HubTest {
         val nativeMarker = File(hashedFolder(), EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         nativeMarker.mkdirs()
         nativeMarker.createNewFile()
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.isEnableAutoSessionTracking = false
         }
 
-        assertTrue(hub.isCrashedLastRun!!)
+        assertTrue(scopes.isCrashedLastRun!!)
         assertFalse(nativeMarker.exists())
     }
 
     @Test
     fun `reportFullyDisplayed is ignored if TimeToFullDisplayTracing is disabled`() {
         var called = false
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
             }
         }
-        hub.reportFullyDisplayed()
+        scopes.reportFullyDisplayed()
         assertFalse(called)
     }
 
     @Test
     fun `reportFullyDisplayed calls FullyDisplayedReporter if TimeToFullDisplayTracing is enabled`() {
         var called = false
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.isEnableTimeToFullDisplayTracing = true
             it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
             }
         }
-        hub.reportFullyDisplayed()
+        scopes.reportFullyDisplayed()
         assertTrue(called)
     }
 
     @Test
     fun `reportFullyDisplayed calls FullyDisplayedReporter only once`() {
         var called = false
-        val hub = generateHub {
+        val scopes = generateScopes {
             it.isEnableTimeToFullDisplayTracing = true
             it.fullyDisplayedReporter.registerFullyDrawnListener {
                 called = !called
             }
         }
-        hub.reportFullyDisplayed()
+        scopes.reportFullyDisplayed()
         assertTrue(called)
-        hub.reportFullyDisplayed()
+        scopes.reportFullyDisplayed()
         assertTrue(called)
     }
 
     @Test
     fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val hub = spy(generateHub())
-        hub.reportFullDisplayed()
-        verify(hub).reportFullyDisplayed()
+        val scopes = spy(generateScopes())
+        scopes.reportFullDisplayed()
+        verify(scopes).reportFullyDisplayed()
     }
 
     @Test
     fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val transactionContext = hub.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+        val transactionContext = scopes.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
 
-        hub.configureScope { scope ->
+        scopes.configureScope { scope ->
             assertEquals(traceId, scope.propagationContext.traceId)
             assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
         }
@@ -1910,16 +1989,16 @@ class HubTest {
 
     @Test
     fun `continueTrace creates new propagation context if header invalid and returns transaction context if performance enabled`() {
-        val hub = generateHub()
+        val scopes = generateScopes()
         val traceId = SentryId()
         var propagationContextHolder = AtomicReference<PropagationContext>()
 
-        hub.configureScope { propagationContextHolder.set(it.propagationContext) }
+        scopes.configureScope { propagationContextHolder.set(it.propagationContext) }
         val propagationContextAtStart = propagationContextHolder.get()!!
 
-        val transactionContext = hub.continueTrace("invalid", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+        val transactionContext = scopes.continueTrace("invalid", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
 
-        hub.configureScope { scope ->
+        scopes.configureScope { scope ->
             assertNotEquals(propagationContextAtStart.traceId, scope.propagationContext.traceId)
             assertNotEquals(propagationContextAtStart.parentSpanId, scope.propagationContext.parentSpanId)
             assertNotEquals(propagationContextAtStart.spanId, scope.propagationContext.spanId)
@@ -1932,12 +2011,12 @@ class HubTest {
 
     @Test
     fun `continueTrace creates propagation context from headers and returns null if performance disabled`() {
-        val hub = generateHub { it.enableTracing = false }
+        val scopes = generateScopes { it.enableTracing = false }
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val transactionContext = hub.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+        val transactionContext = scopes.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
 
-        hub.configureScope { scope ->
+        scopes.configureScope { scope ->
             assertEquals(traceId, scope.propagationContext.traceId)
             assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
         }
@@ -1947,16 +2026,16 @@ class HubTest {
 
     @Test
     fun `continueTrace creates new propagation context if header invalid and returns null if performance disabled`() {
-        val hub = generateHub { it.enableTracing = false }
+        val scopes = generateScopes { it.enableTracing = false }
         val traceId = SentryId()
         var propagationContextHolder = AtomicReference<PropagationContext>()
 
-        hub.configureScope { propagationContextHolder.set(it.propagationContext) }
+        scopes.configureScope { propagationContextHolder.set(it.propagationContext) }
         val propagationContextAtStart = propagationContextHolder.get()!!
 
-        val transactionContext = hub.continueTrace("invalid", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+        val transactionContext = scopes.continueTrace("invalid", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
 
-        hub.configureScope { scope ->
+        scopes.configureScope { scope ->
             assertNotEquals(propagationContextAtStart.traceId, scope.propagationContext.traceId)
             assertNotEquals(propagationContextAtStart.parentSpanId, scope.propagationContext.parentSpanId)
             assertNotEquals(propagationContextAtStart.spanId, scope.propagationContext.spanId)
@@ -1966,53 +2045,53 @@ class HubTest {
     }
 
     @Test
-    fun `hub provides no tags for metrics, if metric option is disabled`() {
-        val hub = generateHub {
+    fun `scopes provides no tags for metrics, if metric option is disabled`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = false
             it.isEnableDefaultTagsForMetrics = true
-        } as Hub
+        } as Scopes
 
         assertTrue(
-            hub.defaultTagsForMetrics.isEmpty()
+            scopes.defaultTagsForMetrics.isEmpty()
         )
     }
 
     @Test
-    fun `hub provides no tags for metrics, if default tags option is disabled`() {
-        val hub = generateHub {
+    fun `scopes provides no tags for metrics, if default tags option is disabled`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = true
             it.isEnableDefaultTagsForMetrics = false
-        } as Hub
+        } as Scopes
 
         assertTrue(
-            hub.defaultTagsForMetrics.isEmpty()
+            scopes.defaultTagsForMetrics.isEmpty()
         )
     }
 
     @Test
-    fun `hub provides minimum default tags for metrics, if nothing is set up`() {
-        val hub = generateHub {
+    fun `scopes provides minimum default tags for metrics, if nothing is set up`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = true
             it.isEnableDefaultTagsForMetrics = true
-        } as Hub
+        } as Scopes
 
         assertEquals(
             mapOf(
                 "environment" to "production"
             ),
-            hub.defaultTagsForMetrics
+            scopes.defaultTagsForMetrics
         )
     }
 
     @Test
-    fun `hub provides default tags for metrics, based on options and running transaction`() {
-        val hub = generateHub {
+    fun `scopes provides default tags for metrics, based on options and running transaction`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = true
             it.isEnableDefaultTagsForMetrics = true
             it.environment = "test"
             it.release = "1.0"
-        } as Hub
-        hub.startTransaction(
+        } as Scopes
+        scopes.startTransaction(
             "name",
             "op",
             TransactionOptions().apply { isBindToScope = true }
@@ -2024,81 +2103,99 @@ class HubTest {
                 "release" to "1.0",
                 "transaction" to "name"
             ),
-            hub.defaultTagsForMetrics
+            scopes.defaultTagsForMetrics
         )
     }
 
     @Test
-    fun `hub provides no local metric aggregator if metrics feature is disabled`() {
-        val hub = generateHub {
+    fun `scopes provides no local metric aggregator if metrics feature is disabled`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = false
             it.isEnableSpanLocalMetricAggregation = true
-        } as Hub
+        } as Scopes
 
-        hub.startTransaction(
+        scopes.startTransaction(
             "name",
             "op",
             TransactionOptions().apply { isBindToScope = true }
         )
 
-        assertNull(hub.localMetricsAggregator)
+        assertNull(scopes.localMetricsAggregator)
     }
 
     @Test
-    fun `hub provides no local metric aggregator if local aggregation feature is disabled`() {
-        val hub = generateHub {
+    fun `scopes provides no local metric aggregator if local aggregation feature is disabled`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = true
             it.isEnableSpanLocalMetricAggregation = false
-        } as Hub
+        } as Scopes
 
-        hub.startTransaction(
+        scopes.startTransaction(
             "name",
             "op",
             TransactionOptions().apply { isBindToScope = true }
         )
 
-        assertNull(hub.localMetricsAggregator)
+        assertNull(scopes.localMetricsAggregator)
     }
 
     @Test
-    fun `hub provides local metric aggregator if feature is enabled`() {
-        val hub = generateHub {
+    fun `scopes provides local metric aggregator if feature is enabled`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = true
             it.isEnableSpanLocalMetricAggregation = true
-        } as Hub
+        } as Scopes
 
-        hub.startTransaction(
+        scopes.startTransaction(
             "name",
             "op",
             TransactionOptions().apply { isBindToScope = true }
         )
-        assertNotNull(hub.localMetricsAggregator)
+        assertNotNull(scopes.localMetricsAggregator)
     }
 
     @Test
-    fun `hub startSpanForMetric starts a child span`() {
-        val hub = generateHub {
+    fun `scopes startSpanForMetric starts a child span`() {
+        val scopes = generateScopes {
             it.isEnableMetrics = true
             it.isEnableSpanLocalMetricAggregation = true
             it.sampleRate = 1.0
-        } as Hub
+        } as Scopes
 
-        val txn = hub.startTransaction(
+        val txn = scopes.startTransaction(
             "name.txn",
             "op.txn",
             TransactionOptions().apply { isBindToScope = true }
         )
 
-        val span = hub.startSpanForMetric("op", "key")!!
+        val span = scopes.startSpanForMetric("op", "key")!!
 
         assertEquals("op", span.spanContext.op)
         assertEquals("key", span.spanContext.description)
         assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
     }
 
+    @Test
+    fun `is considered enabled if client is enabled()`() {
+        val scopes = generateScopes() as Scopes
+        val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
+        scopes.bindClient(client)
+        assertTrue(scopes.isEnabled)
+    }
+
+    @Test
+    fun `is considered disabled if client is disabled()`() {
+        val scopes = generateScopes() as Scopes
+        val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(false)
+        scopes.bindClient(client)
+        assertFalse(scopes.isEnabled)
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
-    private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {
+    private fun generateScopes(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IScopes {
         val options = SentryOptions().apply {
             dsn = dsnTest
             cacheDirPath = file.absolutePath
@@ -2106,10 +2203,10 @@ class HubTest {
             tracesSampleRate = 1.0
         }
         optionsConfiguration?.configure(options)
-        return Hub(options)
+        return createScopes(options)
     }
 
-    private fun getEnabledHub(): Triple<Hub, ISentryClient, ILogger> {
+    private fun getEnabledScopes(): Triple<Scopes, ISentryClient, ILogger> {
         val logger = mock<ILogger>()
 
         val options = SentryOptions()
@@ -2120,8 +2217,8 @@ class HubTest {
         options.isDebug = true
         options.setLogger(logger)
 
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
         sut.bindClient(mockClient)
         return Triple(sut, mockClient, logger)
     }

@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
@@ -11,14 +12,20 @@ import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
+@Open
+public class Contexts implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
+
+  private final @NotNull ConcurrentHashMap<String, Object> internalStorage =
+      new ConcurrentHashMap<>();
 
   /** Response lock, Ops should be atomic */
   private final @NotNull Object responseLock = new Object();
@@ -136,6 +143,71 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
     synchronized (responseLock) {
       this.put(Response.TYPE, response);
     }
+  }
+
+  public int size() {
+    // since this used to extend map
+    return internalStorage.size();
+  }
+
+  public int getSize() {
+    // for kotlin .size
+    return size();
+  }
+
+  public boolean isEmpty() {
+    return internalStorage.isEmpty();
+  }
+
+  public boolean containsKey(final @NotNull Object key) {
+    return internalStorage.containsKey(key);
+  }
+
+  public @Nullable Object get(final @NotNull Object key) {
+    return internalStorage.get(key);
+  }
+
+  public @Nullable Object put(final @NotNull String key, final @Nullable Object value) {
+    return internalStorage.put(key, value);
+  }
+
+  public @Nullable Object set(final @NotNull String key, final @Nullable Object value) {
+    return put(key, value);
+  }
+
+  public @Nullable Object remove(final @NotNull Object key) {
+    return internalStorage.remove(key);
+  }
+
+  public @NotNull Enumeration<String> keys() {
+    return internalStorage.keys();
+  }
+
+  public @NotNull Set<Map.Entry<String, Object>> entrySet() {
+    return internalStorage.entrySet();
+  }
+
+  public void putAll(Map<? extends String, ? extends Object> m) {
+    internalStorage.putAll(m);
+  }
+
+  public void putAll(final @NotNull Contexts contexts) {
+    internalStorage.putAll(contexts.internalStorage);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj != null && obj instanceof Contexts) {
+      final @NotNull Contexts otherContexts = (Contexts) obj;
+      return internalStorage.equals(otherContexts.internalStorage);
+    }
+
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return internalStorage.hashCode();
   }
 
   // region json

@@ -21,8 +21,8 @@ public final class SendFireAndForgetEnvelopeSender
 
   @Override
   public @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget create(
-      final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+      final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     final String dirPath = sendFireAndForgetDirPath.getDirPath();
@@ -33,7 +33,7 @@ public final class SendFireAndForgetEnvelopeSender
 
     final EnvelopeSender envelopeSender =
         new EnvelopeSender(
-            hub,
+            scopes,
             options.getSerializer(),
             options.getLogger(),
             options.getFlushTimeoutMillis(),

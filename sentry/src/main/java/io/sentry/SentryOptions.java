@@ -316,7 +316,7 @@ public class SentryOptions {
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
-  /** Registers hook that flushes {@link Hub} when main thread shuts down. */
+  /** Registers hook that flushes {@link Scopes} when main thread shuts down. */
   private boolean enableShutdownHook = true;
 
   /**
@@ -410,7 +410,7 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
-  // TODO this should default to false on the next major
+  // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
@@ -478,6 +478,8 @@ public class SentryOptions {
   private int profilingTracesHz = 101;
 
   @ApiStatus.Experimental private @Nullable Cron cron = null;
+
+  private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
 
   /**
    * Adds an event processor
@@ -2385,6 +2387,14 @@ public class SentryOptions {
     this.cron = cron;
   }
 
+  public void setDefaultScopeType(final @NotNull ScopeType scopeType) {
+    this.defaultScopeType = scopeType;
+  }
+
+  public @NotNull ScopeType getDefaultScopeType() {
+    return defaultScopeType;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2486,7 +2496,7 @@ public class SentryOptions {
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
-   * <p>Used by {@link NoOpHub}.
+   * <p>Used by {@link NoOpScopes}.
    *
    * @return SentryOptions
    */

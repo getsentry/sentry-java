@@ -54,10 +54,10 @@ class TraceContextSerializationTest {
 
     private fun createTraceContext(sRate: Double): TraceContext {
         val baggage = Baggage(fixture.logger)
-        val hub: IHub = mock()
-        whenever(hub.options).thenReturn(SentryOptions())
+        val scopes: IScopes = mock()
+        whenever(scopes.options).thenReturn(SentryOptions())
         baggage.setValuesFromTransaction(
-            SentryTracer(TransactionContext("name", "op"), hub),
+            SentryTracer(TransactionContext("name", "op"), scopes),
             User().apply {
                 id = "user-id"
                 others = mapOf("segment" to "pro")

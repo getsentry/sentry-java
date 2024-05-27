@@ -11,6 +11,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated
+/**
+ * @deprecated use {@link NoOpScopes} instead.
+ */
 public final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
@@ -21,6 +25,7 @@ public final class NoOpHub implements IHub {
 
   private NoOpHub() {}
 
+  @Deprecated
   public static NoOpHub getInstance() {
     return instance;
   }
@@ -122,9 +127,21 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void pushScope() {}
+  public @NotNull ISentryLifecycleToken pushScope() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
 
   @Override
+  public @NotNull ISentryLifecycleToken pushIsolationScope() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  /**
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
+  @Override
+  @Deprecated
   public void popScope() {}
 
   @Override
@@ -133,7 +150,12 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void configureScope(@NotNull ScopeCallback callback) {}
+  public void withIsolationScope(@NotNull ScopeCallback callback) {
+    callback.run(NoOpScope.getInstance());
+  }
+
+  @Override
+  public void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback) {}
 
   @Override
   public void bindClient(@NotNull ISentryClient client) {}
@@ -146,9 +168,52 @@ public final class NoOpHub implements IHub {
   @Override
   public void flush(long timeoutMillis) {}
 
+  /**
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
+   */
+  @Deprecated
   @Override
   public @NotNull IHub clone() {
     return instance;
+  }
+
+  @Override
+  public @NotNull IScopes forkedScopes(@NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
+  public @NotNull IScopes forkedCurrentScope(@NotNull String creator) {
+    return NoOpScopes.getInstance();
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getIsolationScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getGlobalScope() {
+    return NoOpScope.getInstance();
+  }
+
+  @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return NoOpScopes.getInstance();
   }
 
   @Override
@@ -233,5 +298,10 @@ public final class NoOpHub implements IHub {
   @Override
   public @NotNull MetricsApi metrics() {
     return metricsApi;
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return true;
   }
 }

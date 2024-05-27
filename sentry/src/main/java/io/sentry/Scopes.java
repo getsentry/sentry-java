@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
@@ -10,91 +9,128 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import io.sentry.util.Pair;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Hub implements IHub, MetricsApi.IMetricsInterface {
+public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
-  private volatile @NotNull SentryId lastEventId;
-  private final @NotNull SentryOptions options;
-  private volatile boolean isEnabled;
-  private final @NotNull Stack stack;
+  private final @NotNull IScope scope;
+  private final @NotNull IScope isolationScope;
+  private final @NotNull IScope globalScope;
+
+  private final @Nullable Scopes parentScopes;
+
+  private final @NotNull String creator;
   private final @NotNull TracesSampler tracesSampler;
-  private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
-      Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
   private final @NotNull MetricsApi metricsApi;
 
-  public Hub(final @NotNull SentryOptions options) {
-    this(options, createRootStackItem(options));
-    // Integrations are no longer registered on Hub ctor, but on Sentry.init
+  private final @NotNull CombinedScopeView combinedScope;
+
+  public Scopes(
+      final @NotNull IScope scope,
+      final @NotNull IScope isolationScope,
+      final @NotNull IScope globalScope,
+      final @NotNull String creator) {
+    this(scope, isolationScope, globalScope, null, creator);
   }
 
-  private Hub(final @NotNull SentryOptions options, final @NotNull Stack stack) {
+  private Scopes(
+      final @NotNull IScope scope,
+      final @NotNull IScope isolationScope,
+      final @NotNull IScope globalScope,
+      final @Nullable Scopes parentScopes,
+      final @NotNull String creator) {
+    this.combinedScope = new CombinedScopeView(globalScope, isolationScope, scope);
+    this.scope = scope;
+    this.isolationScope = isolationScope;
+    this.globalScope = globalScope;
+    this.parentScopes = parentScopes;
+    this.creator = creator;
+
+    final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
-
-    this.options = options;
     this.tracesSampler = new TracesSampler(options);
-    this.stack = stack;
-    this.lastEventId = SentryId.EMPTY_ID;
     this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
-
-    // Integrations will use this Hub instance once registered.
-    // Make sure Hub ready to be used then.
-    this.isEnabled = true;
-
     this.metricsApi = new MetricsApi(this);
   }
 
-  private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
-    this(options, new Stack(options.getLogger(), rootStackItem));
+  public @NotNull String getCreator() {
+    return creator;
   }
 
-  private static void validateOptions(final @NotNull SentryOptions options) {
-    Objects.requireNonNull(options, "SentryOptions is required.");
-    if (options.getDsn() == null || options.getDsn().isEmpty()) {
-      throw new IllegalArgumentException(
-          "Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.");
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getScope() {
+    return scope;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getIsolationScope() {
+    return isolationScope;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull IScope getGlobalScope() {
+    return globalScope;
+  }
+
+  public boolean isAncestorOf(final @Nullable Scopes otherScopes) {
+    if (otherScopes == null) {
+      return false;
     }
+
+    if (this == otherScopes) {
+      return true;
+    }
+
+    if (otherScopes.parentScopes != null) {
+      return isAncestorOf(otherScopes.parentScopes);
+    }
+
+    return false;
   }
 
-  private static StackItem createRootStackItem(final @NotNull SentryOptions options) {
-    validateOptions(options);
-    final IScope scope = new Scope(options);
-    final ISentryClient client = new SentryClient(options);
-    return new StackItem(options, client, scope);
+  @Override
+  public @NotNull IScopes forkedScopes(final @NotNull String creator) {
+    return new Scopes(scope.clone(), isolationScope.clone(), globalScope, this, creator);
+  }
+
+  @Override
+  public @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
+    return new Scopes(scope.clone(), isolationScope, globalScope, this, creator);
+  }
+
+  @Override
+  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+    return Sentry.forkedRootScopes(creator);
   }
 
   @Override
   public boolean isEnabled() {
-    return isEnabled;
+    return getClient().isEnabled();
   }
 
   @Override
-  public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Hint hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return captureEventInternal(event, hint, null);
   }
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event,
-      final @Nullable Hint hint,
-      final @NotNull ScopeCallback callback) {
+      @NotNull SentryEvent event, @Nullable Hint hint, @NotNull ScopeCallback callback) {
     return captureEventInternal(event, hint, callback);
   }
 
@@ -104,29 +140,51 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'captureEvent' call is a no-op.");
     } else if (event == null) {
-      options.getLogger().log(SentryLevel.WARNING, "captureEvent called with null parameter.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "captureEvent called with null parameter.");
     } else {
       try {
         assignTraceContext(event);
-        final StackItem item = stack.peek();
+        final IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
 
-        final IScope scope = buildLocalScope(item.getScope(), scopeCallback);
-
-        sentryId = item.getClient().captureEvent(event, scope, hint);
-        this.lastEventId = sentryId;
+        sentryId = getClient().captureEvent(event, localScope, hint);
+        updateLastEventId(sentryId);
       } catch (Throwable e) {
-        options
+        getOptions()
             .getLogger()
             .log(
                 SentryLevel.ERROR, "Error while capturing event with id: " + event.getEventId(), e);
       }
     }
     return sentryId;
+  }
+
+  private @NotNull ISentryClient getClient() {
+    return getCombinedScopeView().getClient();
+  }
+
+  private void assignTraceContext(final @NotNull SentryEvent event) {
+    getCombinedScopeView().assignTraceContext(event);
+  }
+
+  private IScope buildLocalScope(
+      final @NotNull IScope parentScope, final @Nullable ScopeCallback callback) {
+    if (callback != null) {
+      try {
+        final IScope localScope = parentScope.clone();
+        callback.run(localScope);
+        return localScope;
+      } catch (Throwable t) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
+      }
+    }
+    return parentScope;
   }
 
   @Override
@@ -149,25 +207,27 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureMessage' call is a no-op.");
     } else if (message == null) {
-      options.getLogger().log(SentryLevel.WARNING, "captureMessage called with null parameter.");
+      getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "captureMessage called with null parameter.");
     } else {
       try {
-        final StackItem item = stack.peek();
+        final IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
 
-        final IScope scope = buildLocalScope(item.getScope(), scopeCallback);
-
-        sentryId = item.getClient().captureMessage(message, level, scope);
+        sentryId = getClient().captureMessage(message, level, localScope);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
       }
     }
-    this.lastEventId = sentryId;
+    updateLastEventId(sentryId);
     return sentryId;
   }
 
@@ -179,20 +239,19 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureEnvelope' call is a no-op.");
     } else {
       try {
-        final SentryId capturedEnvelopeId =
-            stack.peek().getClient().captureEnvelope(envelope, hint);
+        final SentryId capturedEnvelopeId = getClient().captureEnvelope(envelope, hint);
         if (capturedEnvelopeId != null) {
           sentryId = capturedEnvelopeId;
         }
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
     }
     return sentryId;
@@ -219,67 +278,47 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureException' call is a no-op.");
     } else if (throwable == null) {
-      options.getLogger().log(SentryLevel.WARNING, "captureException called with null parameter.");
+      getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "captureException called with null parameter.");
     } else {
       try {
-        final StackItem item = stack.peek();
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
 
-        final IScope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
 
-        sentryId = item.getClient().captureEvent(event, scope, hint);
+        sentryId = getClient().captureEvent(event, localScope, hint);
       } catch (Throwable e) {
-        options
+        getOptions()
             .getLogger()
             .log(
                 SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
       }
     }
-    this.lastEventId = sentryId;
+    updateLastEventId(sentryId);
     return sentryId;
-  }
-
-  private void assignTraceContext(final @NotNull SentryEvent event) {
-    if (options.isTracingEnabled() && event.getThrowable() != null) {
-      final Pair<WeakReference<ISpan>, String> pair =
-          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
-      if (pair != null) {
-        final WeakReference<ISpan> spanWeakRef = pair.getFirst();
-        if (event.getContexts().getTrace() == null && spanWeakRef != null) {
-          final ISpan span = spanWeakRef.get();
-          if (span != null) {
-            event.getContexts().setTrace(span.getSpanContext());
-          }
-        }
-        final String transactionName = pair.getSecond();
-        if (event.getTransaction() == null && transactionName != null) {
-          event.setTransaction(transactionName);
-        }
-      }
-    }
   }
 
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
     } else {
       try {
-        final StackItem item = stack.peek();
-        item.getClient().captureUserFeedback(userFeedback);
+        getClient().captureUserFeedback(userFeedback);
       } catch (Throwable e) {
-        options
+        getOptions()
             .getLogger()
             .log(
                 SentryLevel.ERROR,
@@ -292,13 +331,12 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @Override
   public void startSession() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'startSession' call is a no-op.");
     } else {
-      final StackItem item = this.stack.peek();
-      final Scope.SessionPair pair = item.getScope().startSession();
+      final Scope.SessionPair pair = getCombinedScopeView().startSession();
       if (pair != null) {
         // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
         // single envelope
@@ -306,14 +344,14 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
         if (pair.getPrevious() != null) {
           final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
 
-          item.getClient().captureSession(pair.getPrevious(), hint);
+          getClient().captureSession(pair.getPrevious(), hint);
         }
 
         final Hint hint = HintUtils.createWithTypeCheckHint(new SessionStartHint());
 
-        item.getClient().captureSession(pair.getCurrent(), hint);
+        getClient().captureSession(pair.getCurrent(), hint);
       } else {
-        options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
+        getOptions().getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
     }
   }
@@ -321,18 +359,21 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @Override
   public void endSession() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
     } else {
-      final StackItem item = this.stack.peek();
-      final Session previousSession = item.getScope().endSession();
+      final Session previousSession = getCombinedScopeView().endSession();
       if (previousSession != null) {
         final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
 
-        item.getClient().captureSession(previousSession, hint);
+        getClient().captureSession(previousSession, hint);
       }
     }
+  }
+
+  private IScope getCombinedScopeView() {
+    return combinedScope;
   }
 
   @Override
@@ -344,17 +385,17 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @SuppressWarnings("FutureReturnValueIgnored")
   public void close(final boolean isRestarting) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'close' call is a no-op.");
     } else {
       try {
-        for (Integration integration : options.getIntegrations()) {
+        for (Integration integration : getOptions().getIntegrations()) {
           if (integration instanceof Closeable) {
             try {
               ((Closeable) integration).close();
             } catch (IOException e) {
-              options
+              getOptions()
                   .getLogger()
                   .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
             }
@@ -362,38 +403,41 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
         }
 
         configureScope(scope -> scope.clear());
-        options.getTransactionProfiler().close();
-        options.getTransactionPerformanceCollector().close();
-        final @NotNull ISentryExecutorService executorService = options.getExecutorService();
+        configureScope(ScopeType.ISOLATION, scope -> scope.clear());
+        getOptions().getTransactionProfiler().close();
+        getOptions().getTransactionPerformanceCollector().close();
+        final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
-          executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+          executorService.submit(
+              () -> executorService.close(getOptions().getShutdownTimeoutMillis()));
         } else {
-          executorService.close(options.getShutdownTimeoutMillis());
+          executorService.close(getOptions().getShutdownTimeoutMillis());
         }
 
-        // Close the top-most client
-        final StackItem item = stack.peek();
         // TODO: should we end session before closing client?
-        item.getClient().close(isRestarting);
+        configureScope(ScopeType.CURRENT, scope -> scope.getClient().close(isRestarting));
+        configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
+        configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
-      isEnabled = false;
     }
   }
 
   @Override
   public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'addBreadcrumb' call is a no-op.");
     } else if (breadcrumb == null) {
-      options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
+      getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
-      stack.peek().getScope().addBreadcrumb(breadcrumb, hint);
+      getCombinedScopeView().addBreadcrumb(breadcrumb, hint);
     }
   }
 
@@ -405,164 +449,180 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @Override
   public void setLevel(final @Nullable SentryLevel level) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setLevel' call is a no-op.");
     } else {
-      stack.peek().getScope().setLevel(level);
+      getCombinedScopeView().setLevel(level);
     }
   }
 
   @Override
   public void setTransaction(final @Nullable String transaction) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'setTransaction' call is a no-op.");
     } else if (transaction != null) {
-      stack.peek().getScope().setTransaction(transaction);
+      getCombinedScopeView().setTransaction(transaction);
     } else {
-      options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
+      getOptions().getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
   }
 
   @Override
   public void setUser(final @Nullable User user) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
     } else {
-      stack.peek().getScope().setUser(user);
+      getCombinedScopeView().setUser(user);
     }
   }
 
   @Override
   public void setFingerprint(final @NotNull List<String> fingerprint) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'setFingerprint' call is a no-op.");
     } else if (fingerprint == null) {
-      options.getLogger().log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
+      getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
     } else {
-      stack.peek().getScope().setFingerprint(fingerprint);
+      getCombinedScopeView().setFingerprint(fingerprint);
     }
   }
 
   @Override
   public void clearBreadcrumbs() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
     } else {
-      stack.peek().getScope().clearBreadcrumbs();
+      getCombinedScopeView().clearBreadcrumbs();
     }
   }
 
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setTag' call is a no-op.");
     } else if (key == null || value == null) {
-      options.getLogger().log(SentryLevel.WARNING, "setTag called with null parameter.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "setTag called with null parameter.");
     } else {
-      stack.peek().getScope().setTag(key, value);
+      getCombinedScopeView().setTag(key, value);
     }
   }
 
   @Override
   public void removeTag(final @NotNull String key) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'removeTag' call is a no-op.");
     } else if (key == null) {
-      options.getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
     } else {
-      stack.peek().getScope().removeTag(key);
+      getCombinedScopeView().removeTag(key);
     }
   }
 
   @Override
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
     } else if (key == null || value == null) {
-      options.getLogger().log(SentryLevel.WARNING, "setExtra called with null parameter.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "setExtra called with null parameter.");
     } else {
-      stack.peek().getScope().setExtra(key, value);
+      getCombinedScopeView().setExtra(key, value);
     }
   }
 
   @Override
   public void removeExtra(final @NotNull String key) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'removeExtra' call is a no-op.");
     } else if (key == null) {
-      options.getLogger().log(SentryLevel.WARNING, "removeExtra called with null parameter.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "removeExtra called with null parameter.");
     } else {
-      stack.peek().getScope().removeExtra(key);
+      getCombinedScopeView().removeExtra(key);
     }
+  }
+
+  private void updateLastEventId(final @NotNull SentryId lastEventId) {
+    getCombinedScopeView().setLastEventId(lastEventId);
   }
 
   @Override
   public @NotNull SentryId getLastEventId() {
-    return lastEventId;
+    return getCombinedScopeView().getLastEventId();
   }
 
   @Override
-  public void pushScope() {
+  public ISentryLifecycleToken pushScope() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
+      return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
     } else {
-      final StackItem item = stack.peek();
-      final StackItem newItem = new StackItem(options, item.getClient(), item.getScope().clone());
-      stack.push(newItem);
+      final @NotNull IScopes scopes = this.forkedCurrentScope("pushScope");
+      return scopes.makeCurrent();
     }
   }
 
   @Override
-  public @NotNull SentryOptions getOptions() {
-    return this.stack.peek().getOptions();
-  }
-
-  @Override
-  public @Nullable Boolean isCrashedLastRun() {
-    return SentryCrashLastRunState.getInstance()
-        .isCrashedLastRun(options.getCacheDirPath(), !options.isEnableAutoSessionTracking());
-  }
-
-  @Override
-  public void reportFullyDisplayed() {
-    if (options.isEnableTimeToFullDisplayTracing()) {
-      options.getFullyDisplayedReporter().reportFullyDrawn();
+  public ISentryLifecycleToken pushIsolationScope() {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'pushIsolationScope' call is a no-op.");
+      return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    } else {
+      final @NotNull IScopes scopes = this.forkedScopes("pushIsolationScope");
+      return scopes.makeCurrent();
     }
   }
 
   @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return Sentry.setCurrentScopes(this);
+  }
+
+  /**
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
+  @Override
+  @Deprecated
   public void popScope() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
     } else {
-      stack.pop();
+      final @Nullable Scopes parent = parentScopes;
+      if (parent != null) {
+        parent.makeCurrent();
+      }
     }
   }
 
@@ -572,82 +632,105 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
 
     } else {
-      pushScope();
-      try {
-        callback.run(stack.peek().getScope());
+      final @NotNull IScopes forkedScopes = forkedCurrentScope("withScope");
+      try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
+        callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
-      popScope();
     }
   }
 
   @Override
-  public void configureScope(final @NotNull ScopeCallback callback) {
+  public void withIsolationScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
-      options
+      try {
+        callback.run(NoOpScope.getInstance());
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+      }
+
+    } else {
+      final @NotNull IScopes forkedScopes = forkedScopes("withIsolationScope");
+      try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
+        callback.run(forkedScopes.getIsolationScope());
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+      }
+    }
+  }
+
+  @Override
+  public void configureScope(
+      final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
+    if (!isEnabled()) {
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'configureScope' call is a no-op.");
     } else {
       try {
-        callback.run(stack.peek().getScope());
+        callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
       }
     }
   }
 
   @Override
   public void bindClient(final @NotNull ISentryClient client) {
-    if (!isEnabled()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'bindClient' call is a no-op.");
+    if (client != null) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
+      getCombinedScopeView().bindClient(client);
     } else {
-      final StackItem item = stack.peek();
-      if (client != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
-        item.setClient(client);
-      } else {
-        options.getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
-        item.setClient(NoOpSentryClient.getInstance());
-      }
+      getOptions().getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
+      getCombinedScopeView().bindClient(NoOpSentryClient.getInstance());
     }
   }
 
   @Override
   public boolean isHealthy() {
-    return stack.peek().getClient().isHealthy();
+    return getClient().isHealthy();
   }
 
   @Override
   public void flush(long timeoutMillis) {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'flush' call is a no-op.");
     } else {
       try {
-        stack.peek().getClient().flush(timeoutMillis);
+        getClient().flush(timeoutMillis);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
       }
     }
   }
 
+  /**
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
+   */
   @Override
+  @Deprecated
+  @SuppressWarnings("deprecation")
   public @NotNull IHub clone() {
     if (!isEnabled()) {
-      options.getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
+      getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Scopes cloned.");
     }
-    // Clone will be invoked in parallel
-    return new Hub(this.options, new Stack(this.stack));
+    return new HubScopesWrapper(forkedScopes("scopes clone"));
   }
 
   @ApiStatus.Internal
@@ -661,14 +744,14 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
     } else {
       if (!transaction.isFinished()) {
-        options
+        getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
@@ -676,31 +759,33 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
                 transaction.getEventId());
       } else {
         if (!Boolean.TRUE.equals(transaction.isSampled())) {
-          options
+          getOptions()
               .getLogger()
               .log(
                   SentryLevel.DEBUG,
                   "Transaction %s was dropped due to sampling decision.",
                   transaction.getEventId());
-          if (options.getBackpressureMonitor().getDownsampleFactor() > 0) {
-            options
+          if (getOptions().getBackpressureMonitor().getDownsampleFactor() > 0) {
+            getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.BACKPRESSURE, DataCategory.Transaction);
           } else {
-            options
+            getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
           }
         } else {
-          StackItem item = null;
           try {
-            item = stack.peek();
             sentryId =
-                item.getClient()
+                getClient()
                     .captureTransaction(
-                        transaction, traceContext, item.getScope(), hint, profilingTraceData);
+                        transaction,
+                        traceContext,
+                        getCombinedScopeView(),
+                        hint,
+                        profilingTraceData);
           } catch (Throwable e) {
-            options
+            getOptions()
                 .getLogger()
                 .log(
                     SentryLevel.ERROR,
@@ -727,23 +812,23 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
     ITransaction transaction;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
-    } else if (!options.getInstrumenter().equals(transactionContext.getInstrumenter())) {
-      options
+    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter())) {
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
               "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
               transactionContext.getInstrumenter(),
-              options.getInstrumenter());
+              getOptions().getInstrumenter());
       transaction = NoOpTransaction.getInstance();
-    } else if (!options.isTracingEnabled()) {
-      options
+    } else if (!getOptions().isTracingEnabled()) {
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
@@ -761,7 +846,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
       if (samplingDecision.getSampled() && samplingDecision.getProfileSampled()) {
-        final ITransactionProfiler transactionProfiler = options.getTransactionProfiler();
+        final ITransactionProfiler transactionProfiler = getOptions().getTransactionProfiler();
         // If the profiler is not running, we start and bind it here.
         if (!transactionProfiler.isRunning()) {
           transactionProfiler.start();
@@ -786,14 +871,23 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  @ApiStatus.Internal
+  public void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
+    getCombinedScopeView().setSpanContext(throwable, span, transactionName);
+  }
+
+  @Override
   public @Nullable ISpan getSpan() {
     ISpan span = null;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      span = stack.peek().getScope().getSpan();
+      span = getCombinedScopeView().getSpan();
     }
     return span;
   }
@@ -803,63 +897,34 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   public @Nullable ITransaction getTransaction() {
     ITransaction span = null;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'getTransaction' call is a no-op.");
     } else {
-      span = stack.peek().getScope().getTransaction();
+      span = getCombinedScopeView().getTransaction();
     }
     return span;
   }
 
   @Override
-  @ApiStatus.Internal
-  public void setSpanContext(
-      final @NotNull Throwable throwable,
-      final @NotNull ISpan span,
-      final @NotNull String transactionName) {
-    Objects.requireNonNull(throwable, "throwable is required");
-    Objects.requireNonNull(span, "span is required");
-    Objects.requireNonNull(transactionName, "transactionName is required");
-    // to match any cause, span context is always attached to the root cause of the exception
-    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-    // the most inner span should be assigned to a throwable
-    if (!throwableToSpan.containsKey(rootCause)) {
-      throwableToSpan.put(rootCause, new Pair<>(new WeakReference<>(span), transactionName));
-    }
+  public @NotNull SentryOptions getOptions() {
+    return combinedScope.getOptions();
   }
 
-  @Nullable
-  SpanContext getSpanContext(final @NotNull Throwable throwable) {
-    Objects.requireNonNull(throwable, "throwable is required");
-    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-    final Pair<WeakReference<ISpan>, String> pair = this.throwableToSpan.get(rootCause);
-    if (pair != null) {
-      final WeakReference<ISpan> spanWeakRef = pair.getFirst();
-      if (spanWeakRef != null) {
-        final ISpan span = spanWeakRef.get();
-        if (span != null) {
-          return span.getSpanContext();
-        }
-      }
-    }
-    return null;
+  @Override
+  public @Nullable Boolean isCrashedLastRun() {
+    return SentryCrashLastRunState.getInstance()
+        .isCrashedLastRun(
+            getOptions().getCacheDirPath(), !getOptions().isEnableAutoSessionTracking());
   }
 
-  private IScope buildLocalScope(
-      final @NotNull IScope scope, final @Nullable ScopeCallback callback) {
-    if (callback != null) {
-      try {
-        final IScope localScope = scope.clone();
-        callback.run(localScope);
-        return localScope;
-      } catch (Throwable t) {
-        options.getLogger().log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
-      }
+  @Override
+  public void reportFullyDisplayed() {
+    if (getOptions().isEnableTimeToFullDisplayTracing()) {
+      getOptions().getFullyDisplayedReporter().reportFullyDrawn();
     }
-    return scope;
   }
 
   @Override
@@ -872,7 +937,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
         (scope) -> {
           scope.setPropagationContext(propagationContext);
         });
-    if (options.isTracingEnabled()) {
+    if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
     } else {
       return null;
@@ -882,7 +947,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
@@ -901,7 +966,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   @Override
   public @Nullable BaggageHeader getBaggage() {
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getBaggage' call is a no-op.");
     } else {
@@ -920,28 +985,28 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      options
+      getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureCheckIn' call is a no-op.");
     } else {
       try {
-        StackItem item = stack.peek();
-        sentryId = item.getClient().captureCheckIn(checkIn, item.getScope(), null);
+        sentryId = getClient().captureCheckIn(checkIn, getCombinedScopeView(), null);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
       }
     }
-    this.lastEventId = sentryId;
+    updateLastEventId(sentryId);
     return sentryId;
   }
 
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {
-    final StackItem item = stack.peek();
-    return item.getClient().getRateLimiter();
+    return getClient().getRateLimiter();
   }
 
   @Override
@@ -951,27 +1016,27 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   @Override
   public @NotNull IMetricsAggregator getMetricsAggregator() {
-    return stack.peek().getClient().getMetricsAggregator();
+    return getClient().getMetricsAggregator();
   }
 
   @Override
   public @NotNull Map<String, String> getDefaultTagsForMetrics() {
-    if (!options.isEnableDefaultTagsForMetrics()) {
+    if (!getOptions().isEnableDefaultTagsForMetrics()) {
       return Collections.emptyMap();
     }
 
     final @NotNull Map<String, String> tags = new HashMap<>();
-    final @Nullable String release = options.getRelease();
+    final @Nullable String release = getOptions().getRelease();
     if (release != null) {
       tags.put("release", release);
     }
 
-    final @Nullable String environment = options.getEnvironment();
+    final @Nullable String environment = getOptions().getEnvironment();
     if (environment != null) {
       tags.put("environment", environment);
     }
 
-    final @Nullable String txnName = stack.peek().getScope().getTransactionName();
+    final @Nullable String txnName = getCombinedScopeView().getTransactionName();
     if (txnName != null) {
       tags.put("transaction", txnName);
     }
@@ -989,7 +1054,7 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
 
   @Override
   public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    if (!options.isEnableSpanLocalMetricAggregation()) {
+    if (!getOptions().isEnableSpanLocalMetricAggregation()) {
       return null;
     }
     final @Nullable ISpan span = getSpan();
@@ -997,5 +1062,13 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
       return span.getLocalMetricsAggregator();
     }
     return null;
+  }
+
+  private static void validateOptions(final @NotNull SentryOptions options) {
+    Objects.requireNonNull(options, "SentryOptions is required.");
+    if (options.getDsn() == null || options.getDsn().isEmpty()) {
+      throw new IllegalArgumentException(
+          "Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.");
+    }
   }
 }

@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.Stack.StackItem
+import io.sentry.test.createSentryClientMock
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,7 +11,7 @@ class StackTest {
 
     private class Fixture {
         val options = SentryOptions()
-        val client = mock<ISentryClient>()
+        val client = createSentryClientMock()
         val scope = Scope(options)
 
         lateinit var rootItem: StackItem

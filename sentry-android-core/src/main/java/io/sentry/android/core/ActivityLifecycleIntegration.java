@@ -12,8 +12,8 @@ import android.os.Looper;
 import android.view.View;
 import androidx.annotation.NonNull;
 import io.sentry.FullyDisplayedReporter;
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
@@ -60,7 +60,7 @@ public final class ActivityLifecycleIntegration
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
   private boolean performanceEnabled = false;
@@ -102,13 +102,13 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
 
     performanceEnabled = isPerformanceEnabled(this.options);
     fullyDisplayedReporter = this.options.getFullyDisplayedReporter();
@@ -150,10 +150,10 @@ public final class ActivityLifecycleIntegration
 
   private void startTracing(final @NotNull Activity activity) {
     WeakReference<Activity> weakActivity = new WeakReference<>(activity);
-    if (hub != null && !isRunningTransactionOrTrace(activity)) {
+    if (scopes != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        TracingUtils.startNewTrace(hub);
+        TracingUtils.startNewTrace(scopes);
       } else {
         // as we allow a single transaction running on the bound Scope, we finish the previous ones
         stopPreviousTransactions();
@@ -225,7 +225,7 @@ public final class ActivityLifecycleIntegration
 
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
-            hub.startTransaction(
+            scopes.startTransaction(
                 new TransactionContext(
                     activityName,
                     TransactionNameSource.COMPONENT,
@@ -278,7 +278,7 @@ public final class ActivityLifecycleIntegration
         }
 
         // lets bind to the scope so other integrations can pick it up
-        hub.configureScope(
+        scopes.configureScope(
             scope -> {
               applyScope(scope, transaction);
             });
@@ -356,10 +356,10 @@ public final class ActivityLifecycleIntegration
         status = SpanStatus.OK;
       }
       transaction.finish(status);
-      if (hub != null) {
+      if (scopes != null) {
         // make sure to remove the transaction from scope, as it may contain running children,
         // therefore `finish` method will not remove it from scope
-        hub.configureScope(
+        scopes.configureScope(
             scope -> {
               clearScope(scope, transaction);
             });
@@ -371,9 +371,9 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
-    if (hub != null) {
+    if (scopes != null) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
-      hub.configureScope(scope -> scope.setScreen(activityClassName));
+      scopes.configureScope(scope -> scope.setScreen(activityClassName));
     }
     startTracing(activity);
     final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
@@ -429,10 +429,10 @@ public final class ActivityLifecycleIntegration
       // well
       // this ensures any newly launched activity will not use the app start timestamp as txn start
       firstActivityCreated = true;
-      if (hub == null) {
+      if (scopes == null) {
         lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
       } else {
-        lastPausedTime = hub.getOptions().getDateProvider().now();
+        lastPausedTime = scopes.getOptions().getDateProvider().now();
       }
     }
   }
@@ -445,10 +445,10 @@ public final class ActivityLifecycleIntegration
       // well
       // this ensures any newly launched activity will not use the app start timestamp as txn start
       firstActivityCreated = true;
-      if (hub == null) {
+      if (scopes == null) {
         lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
       } else {
-        lastPausedTime = hub.getOptions().getDateProvider().now();
+        lastPausedTime = scopes.getOptions().getDateProvider().now();
       }
     }
   }

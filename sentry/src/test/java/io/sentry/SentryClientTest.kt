@@ -70,7 +70,7 @@ class SentryClientTest {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
         val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val sentryTracer: SentryTracer
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
@@ -88,8 +88,8 @@ class SentryClientTest {
 
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
-            whenever(hub.options).thenReturn(sentryOptions)
-            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
+            whenever(scopes.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), scopes)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
@@ -1456,9 +1456,9 @@ class SentryClientTest {
 
     @Test
     fun `when captureTransaction with scope, transaction should use user data`() {
-        val hub: IHub = mock()
-        whenever(hub.options).thenReturn(SentryOptions())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), hub))
+        val scopes: IScopes = mock()
+        whenever(scopes.options).thenReturn(SentryOptions())
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), scopes))
         val scope = createScope()
 
         val sut = fixture.getSut()
@@ -1487,7 +1487,7 @@ class SentryClientTest {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.scopes)
         scope.setTransaction(transaction)
         val span = transaction.startChild("op")
         sut.captureEvent(event, scope)
@@ -1558,7 +1558,7 @@ class SentryClientTest {
         fixture.sentryOptions.release = "optionsRelease"
         fixture.sentryOptions.environment = "optionsEnvironment"
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         transaction.release = "transactionRelease"
         transaction.environment = "transactionEnvironment"
@@ -1571,7 +1571,7 @@ class SentryClientTest {
     fun `when transaction does not have SDK version set, and the SDK version is set on options, options values are applied to transactions`() {
         fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(fixture.sentryOptions.sdkVersion, transaction.sdk)
@@ -1581,7 +1581,7 @@ class SentryClientTest {
     fun `when transaction has SDK version set, and the SDK version is set on options, options values are not applied to transactions`() {
         fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         val sdkVersion = SdkVersion("transaction.sdk.name", "version")
         transaction.sdk = sdkVersion
@@ -1593,7 +1593,7 @@ class SentryClientTest {
     fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
         fixture.sentryOptions.setTag("tag1", "value1")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(mapOf("tag1" to "value1"), transaction.tags)
@@ -1604,7 +1604,7 @@ class SentryClientTest {
         fixture.sentryOptions.setTag("tag1", "value1")
         fixture.sentryOptions.setTag("tag2", "value2")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         transaction.setTag("tag3", "value3")
         transaction.setTag("tag2", "transaction-tag")
@@ -1618,7 +1618,7 @@ class SentryClientTest {
     @Test
     fun `captured transactions without a platform, have the default platform set`() {
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals("java", transaction.platform)
@@ -1627,7 +1627,7 @@ class SentryClientTest {
     @Test
     fun `captured transactions with a platform, do not get the platform overwritten`() {
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         transaction.platform = "abc"
         sut.captureTransaction(transaction, sentryTracer.traceContext())

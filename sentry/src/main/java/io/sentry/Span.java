@@ -35,7 +35,7 @@ public final class Span implements ISpan {
   /** A throwable thrown during the execution of the span. */
   private @Nullable Throwable throwable;
 
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
@@ -55,8 +55,8 @@ public final class Span implements ISpan {
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
-      final @NotNull IHub hub) {
-    this(traceId, parentSpanId, transaction, operation, hub, null, new SpanOptions(), null);
+      final @NotNull IScopes scopes) {
+    this(traceId, parentSpanId, transaction, operation, scopes, null, new SpanOptions(), null);
   }
 
   Span(
@@ -64,7 +64,7 @@ public final class Span implements ISpan {
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @Nullable SentryDate startTimestamp,
       final @NotNull SpanOptions options,
       final @Nullable SpanFinishedCallback spanFinishedCallback) {
@@ -72,30 +72,30 @@ public final class Span implements ISpan {
         new SpanContext(
             traceId, new SpanId(), operation, parentSpanId, transaction.getSamplingDecision());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = options;
     this.spanFinishedCallback = spanFinishedCallback;
     if (startTimestamp != null) {
       this.startTimestamp = startTimestamp;
     } else {
-      this.startTimestamp = hub.getOptions().getDateProvider().now();
+      this.startTimestamp = scopes.getOptions().getDateProvider().now();
     }
   }
 
   public Span(
       final @NotNull TransactionContext context,
       final @NotNull SentryTracer sentryTracer,
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @Nullable SentryDate startTimestamp,
       final @NotNull SpanOptions options) {
     this.context = Objects.requireNonNull(context, "context is required");
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.spanFinishedCallback = null;
     if (startTimestamp != null) {
       this.startTimestamp = startTimestamp;
     } else {
-      this.startTimestamp = hub.getOptions().getDateProvider().now();
+      this.startTimestamp = scopes.getOptions().getDateProvider().now();
     }
     this.options = options;
   }
@@ -180,7 +180,7 @@ public final class Span implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    finish(status, hub.getOptions().getDateProvider().now());
+    finish(status, scopes.getOptions().getDateProvider().now());
   }
 
   /**
@@ -197,7 +197,7 @@ public final class Span implements ISpan {
     }
 
     this.context.setStatus(status);
-    this.timestamp = timestamp == null ? hub.getOptions().getDateProvider().now() : timestamp;
+    this.timestamp = timestamp == null ? scopes.getOptions().getDateProvider().now() : timestamp;
     if (options.isTrimStart() || options.isTrimEnd()) {
       @Nullable SentryDate minChildStart = null;
       @Nullable SentryDate maxChildEnd = null;
@@ -230,7 +230,7 @@ public final class Span implements ISpan {
     }
 
     if (throwable != null) {
-      hub.setSpanContext(throwable, this, this.transaction.getName());
+      scopes.setSpanContext(throwable, this, this.transaction.getName());
     }
     if (spanFinishedCallback != null) {
       spanFinishedCallback.execute(this);
@@ -343,7 +343,8 @@ public final class Span implements ISpan {
   @Override
   public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
     if (isFinished()) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -365,7 +366,8 @@ public final class Span implements ISpan {
       final @NotNull Number value,
       final @NotNull MeasurementUnit unit) {
     if (isFinished()) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,

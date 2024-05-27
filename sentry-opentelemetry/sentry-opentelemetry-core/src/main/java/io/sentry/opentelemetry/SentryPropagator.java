@@ -10,9 +10,9 @@ import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
@@ -29,14 +29,14 @@ public final class SentryPropagator implements TextMapPropagator {
   private static final @NotNull List<String> FIELDS =
       Arrays.asList(SentryTraceHeader.SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
   private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
   public SentryPropagator() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
-  SentryPropagator(final @NotNull IHub hub) {
-    this.hub = hub;
+  SentryPropagator(final @NotNull IScopes scopes) {
+    this.scopes = scopes;
   }
 
   @Override
@@ -49,7 +49,8 @@ public final class SentryPropagator implements TextMapPropagator {
     final @NotNull Span otelSpan = Span.fromContext(context);
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -58,7 +59,8 @@ public final class SentryPropagator implements TextMapPropagator {
     }
     final @Nullable ISpan sentrySpan = spanStorage.get(otelSpanContext.getSpanId());
     if (sentrySpan == null || sentrySpan.isNoOp()) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -106,13 +108,15 @@ public final class SentryPropagator implements TextMapPropagator {
       Span wrappedSpan = Span.wrap(otelSpanContext);
       modifiedContext = modifiedContext.with(wrappedSpan);
 
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.ERROR,

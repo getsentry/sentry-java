@@ -17,10 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Series of application events */
-public final class Breadcrumb implements JsonUnknown, JsonSerializable {
+public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparable<Breadcrumb> {
 
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
+
+  private final @NotNull Long nanos;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -46,10 +48,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * @param timestamp the timestamp
    */
   public Breadcrumb(final @NotNull Date timestamp) {
+    this.nanos = System.nanoTime();
     this.timestamp = timestamp;
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    this.nanos = System.nanoTime();
     this.timestamp = breadcrumb.timestamp;
     this.message = breadcrumb.message;
     this.type = breadcrumb.type;
@@ -658,6 +662,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   @Override
   public void setUnknown(@Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  @Override
+  @SuppressWarnings("JavaUtilDate")
+  public int compareTo(@NotNull Breadcrumb o) {
+    return nanos.compareTo(o.nanos);
   }
 
   public static final class JsonKeys {

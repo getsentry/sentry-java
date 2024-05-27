@@ -1,7 +1,9 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -182,6 +184,12 @@ public final class NoOpScope implements IScope {
     return new ArrayList<>();
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @NotNull List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
+    return new ArrayList<>();
+  }
+
   @Override
   public void addEventProcessor(@NotNull EventProcessor eventProcessor) {}
 
@@ -236,6 +244,9 @@ public final class NoOpScope implements IScope {
     return new PropagationContext();
   }
 
+  @Override
+  public void setLastEventId(@NotNull SentryId lastEventId) {}
+
   /**
    * Clones the Scope
    *
@@ -245,4 +256,27 @@ public final class NoOpScope implements IScope {
   public @NotNull IScope clone() {
     return NoOpScope.getInstance();
   }
+
+  @Override
+  public @NotNull SentryId getLastEventId() {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public void bindClient(@NotNull ISentryClient client) {}
+
+  @Override
+  public @NotNull ISentryClient getClient() {
+    return NoOpSentryClient.getInstance();
+  }
+
+  @Override
+  public void assignTraceContext(@NotNull SentryEvent event) {}
+
+  @Override
+  public void setSpanContext(
+      @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName) {}
+
+  @Override
+  public void replaceOptions(@NotNull SentryOptions options) {}
 }
