@@ -77,6 +77,7 @@ dependencies {
     compileOnly(projects.sentryAndroidFragment)
     compileOnly(projects.sentryAndroidTimber)
     compileOnly(projects.sentryCompose)
+    compileOnly(projects.sentryComposeHelper)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
