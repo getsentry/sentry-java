@@ -247,7 +247,8 @@ class SentryInstrumentationAnotherTest {
                 assertEquals("myFieldName", breadcrumb.data["field"])
                 assertEquals("MyResponseType", breadcrumb.data["type"])
                 assertEquals("QUERY", breadcrumb.data["object_type"])
-            }, org.mockito.kotlin.check<Hint> { hint ->
+            },
+            org.mockito.kotlin.check<Hint> { hint ->
                 val environment = hint.getAs(TypeCheckHint.GRAPHQL_DATA_FETCHING_ENVIRONMENT, DataFetchingEnvironment::class.java)
                 assertNotNull(environment)
             }

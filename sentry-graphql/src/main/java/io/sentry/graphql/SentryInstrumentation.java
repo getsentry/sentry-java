@@ -18,13 +18,13 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.NoOpHub;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanStatus;
-import io.sentry.Hint;
 import io.sentry.TypeCheckHint;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
@@ -303,7 +303,8 @@ public final class SentryInstrumentation
                     StringUtils.toString(executionStepInfo.getPath()),
                     GraphqlStringUtils.fieldToString(executionStepInfo.getField()),
                     GraphqlStringUtils.typeToString(executionStepInfo.getType()),
-                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())), hint);
+                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())),
+                hint);
       }
       final TracingState tracingState = parameters.getInstrumentationState();
       final ISpan transaction = tracingState.getTransaction();

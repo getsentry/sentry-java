@@ -2944,6 +2944,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field ANDROID_VIEW Ljava/lang/String;
 	public static final field APOLLO_REQUEST Ljava/lang/String;
 	public static final field APOLLO_RESPONSE Ljava/lang/String;
+	public static final field GRAPHQL_DATA_FETCHING_ENVIRONMENT Ljava/lang/String;
 	public static final field GRAPHQL_HANDLER_PARAMETERS Ljava/lang/String;
 	public static final field JUL_LOG_RECORD Ljava/lang/String;
 	public static final field LOG4J_LOG_EVENT Ljava/lang/String;
