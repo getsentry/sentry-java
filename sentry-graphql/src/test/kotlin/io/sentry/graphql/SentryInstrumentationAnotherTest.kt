@@ -28,11 +28,13 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.TypeCheckHint
 import io.sentry.graphql.ExceptionReporter.ExceptionDetails
 import io.sentry.graphql.SentryInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY
 import io.sentry.graphql.SentryInstrumentation.TracingState
@@ -245,6 +247,9 @@ class SentryInstrumentationAnotherTest {
                 assertEquals("myFieldName", breadcrumb.data["field"])
                 assertEquals("MyResponseType", breadcrumb.data["type"])
                 assertEquals("QUERY", breadcrumb.data["object_type"])
+            }, org.mockito.kotlin.check<Hint> { hint ->
+                val environment = hint.getAs(TypeCheckHint.GRAPHQL_DATA_FETCHING_ENVIRONMENT, DataFetchingEnvironment::class.java)
+                assertNotNull(environment)
             }
         )
     }
