@@ -2,10 +2,17 @@
 
 ## Unreleased
 
+### Behavioural Changes
+
 - (Android) The JNI layer for sentry-native has now been moved from sentry-java to sentry-native ([#3189](https://github.com/getsentry/sentry-java/pull/3189))
     - This now includes prefab support for sentry-native, allowing you to link and access the sentry-native API within your native app code
     - Checkout the `sentry-samples/sentry-samples-android` example on how to configure CMake and consume `sentry.h`
-    - The prebuilt libsentry.so and libsentry-android.so libraries are now compiled using the ANDROID_STL=c++_shared flag, making it easier to use on wider set of configurations
+
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.5 ([#3441](https://github.com/getsentry/sentry-java/pull/3189))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#075)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.5)
 
 ## 8.0.0-alpha.1
 
