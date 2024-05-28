@@ -19,8 +19,12 @@ public interface ISpanFactory {
       @Nullable String description,
       @NotNull IScopes scopes,
       @NotNull SpanOptions spanOptions,
+      @NotNull SpanContext spanContext,
       @Nullable ISpan parentSpan);
 
   @Nullable
   ISpan retrieveCurrentSpan(IScopes scopes);
+
+  @Nullable
+  ISpan retrieveCurrentSpan(IScope scope);
 }

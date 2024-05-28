@@ -7,6 +7,7 @@ import io.opentelemetry.sdk.trace.data.StatusData;
 import io.sentry.SpanContext;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import io.sentry.TracesSamplingDecision;
 import io.sentry.protocol.SentryId;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
@@ -22,15 +23,19 @@ public final class OtelSpanContext extends SpanContext {
    */
   private final @NotNull WeakReference<ReadWriteSpan> span;
 
-  public OtelSpanContext(final @NotNull ReadWriteSpan span, final @Nullable Span parentSpan) {
-    // TODO [POTEL] tracesSamplingDecision
+  public OtelSpanContext(
+      final @NotNull ReadWriteSpan span,
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final @Nullable OtelSpanWrapper parentSpan) {
     super(
         new SentryId(span.getSpanContext().getTraceId()),
         new SpanId(span.getSpanContext().getSpanId()),
-        parentSpan == null ? null : new SpanId(parentSpan.getSpanContext().getSpanId()),
+        parentSpan == null ? null : parentSpan.getSpanContext().getSpanId(),
         span.getName(),
         null,
-        null,
+        samplingDecision != null
+            ? samplingDecision
+            : (parentSpan == null ? null : parentSpan.getSamplingDecision()),
         null,
         null);
     this.span = new WeakReference<>(span);

@@ -8,26 +8,32 @@ import org.jetbrains.annotations.Nullable;
 public final class DefaultSpanFactory implements ISpanFactory {
   @Override
   public @NotNull ITransaction createTransaction(
-      @NotNull TransactionContext context,
-      @NotNull IScopes scopes,
-      @NotNull TransactionOptions transactionOptions,
-      @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
+      final @NotNull TransactionContext context,
+      final @NotNull IScopes scopes,
+      final @NotNull TransactionOptions transactionOptions,
+      final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     return new SentryTracer(context, scopes, transactionOptions, transactionPerformanceCollector);
   }
 
   @Override
   public @NotNull ISpan createSpan(
-      @NotNull String name,
-      @Nullable String description,
-      @NotNull IScopes scopes,
-      @NotNull SpanOptions spanOptions,
+      final @NotNull String name,
+      final @Nullable String description,
+      final @NotNull IScopes scopes,
+      final @NotNull SpanOptions spanOptions,
+      final @NotNull SpanContext spanContext,
       @Nullable ISpan parentSpan) {
     // TODO [POTEL] forward to SentryTracer.createChild?
     return NoOpSpan.getInstance();
   }
 
   @Override
-  public @Nullable ISpan retrieveCurrentSpan(IScopes scopes) {
+  public @Nullable ISpan retrieveCurrentSpan(final IScopes scopes) {
     return scopes.getSpan();
+  }
+
+  @Override
+  public @Nullable ISpan retrieveCurrentSpan(final IScope scope) {
+    return scope.getSpan();
   }
 }

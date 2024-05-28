@@ -78,11 +78,12 @@ public final class OtelSpanWrapper implements ISpan {
       final @NotNull ReadWriteSpan span,
       final @NotNull IScopes scopes,
       final @NotNull SentryDate startTimestamp,
-      final @Nullable Span parentSpan) {
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final @Nullable OtelSpanWrapper parentSpan) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
     this.startTimestamp = startTimestamp;
-    this.context = new OtelSpanContext(span, parentSpan);
+    this.context = new OtelSpanContext(span, samplingDecision, parentSpan);
   }
 
   @Override
@@ -100,7 +101,7 @@ public final class OtelSpanWrapper implements ISpan {
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, description, scopes, spanOptions, this);
+        .createSpan(operation, description, scopes, spanOptions, context, this);
   }
 
   @Override
@@ -131,7 +132,7 @@ public final class OtelSpanWrapper implements ISpan {
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, description, scopes, spanOptions, this);
+        .createSpan(operation, description, scopes, spanOptions, context, this);
   }
 
   @Override
@@ -143,7 +144,7 @@ public final class OtelSpanWrapper implements ISpan {
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, description, scopes, new SpanOptions(), this);
+        .createSpan(operation, description, scopes, new SpanOptions(), context, this);
   }
 
   @Override
