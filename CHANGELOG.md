@@ -5,6 +5,7 @@
 ### Features
 
 - Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
+- Add data fetching environment hint to breadcrumb for GraphQL (#3413) ([#3431](https://github.com/getsentry/sentry-java/pull/3431))
 
 ### Fixes
 
