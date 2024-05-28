@@ -8,6 +8,14 @@
     - This now includes prefab support for sentry-native, allowing you to link and access the sentry-native API within your native app code
     - Checkout the `sentry-samples/sentry-samples-android` example on how to configure CMake and consume `sentry.h`
 
+### Features
+
+- Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
+
+### Fixes
+
+- Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+
 ### Dependencies
 
 - Bump Native SDK from v0.7.0 to v0.7.5 ([#3441](https://github.com/getsentry/sentry-java/pull/3189))

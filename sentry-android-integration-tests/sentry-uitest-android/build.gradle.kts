@@ -97,6 +97,7 @@ dependencies {
     if (applySentryIntegrations) {
         implementation(projects.sentryAndroid)
         implementation(projects.sentryCompose)
+        implementation(projects.sentryComposeHelper)
     } else {
         implementation(projects.sentryAndroidCore)
     }
