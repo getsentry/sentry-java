@@ -127,5 +127,5 @@ dependencies {
 
     debugImplementation(Config.Libs.leakCanary)
 
-    implementation("io.sentry:sentry-native-ndk:0.7.4")
+    implementation("io.sentry:sentry-native-ndk:0.7.5")
 }
