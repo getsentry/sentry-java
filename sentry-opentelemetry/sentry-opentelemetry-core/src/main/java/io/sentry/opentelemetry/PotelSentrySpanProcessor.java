@@ -3,7 +3,6 @@ package io.sentry.opentelemetry;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 import static io.sentry.opentelemetry.SentryOtelKeys.SENTRY_SCOPES_KEY;
 
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
@@ -52,10 +51,10 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
             ? scopesFromContext.forkedCurrentScope("spanprocessor")
             : Sentry.forkedRootScopes("spanprocessor");
 
-    final @Nullable Span parentSpan = Span.fromContextOrNull(parentContext);
     final @Nullable OtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
     @Nullable TracesSamplingDecision samplingDecision = null;
+    otelSpan.setAttribute(IS_REMOTE_PARENT, otelSpan.getParentSpanContext().isRemote());
     if (sentryParentSpan == null) {
       final @Nullable Boolean sampled = otelSpan.getAttribute(InternalSemanticAttributes.SAMPLED);
       final @Nullable Double sampleRate =
@@ -84,6 +83,8 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
                   });
             });
 
+        // TODO [POTEL] can we use OTel Sampler to let OTel know our sampling decision
+        // Sentry not sampled vs OTel not sampled may mean different things for trace propagation
         samplingDecision =
             new TracesSamplingDecision(
                 sampled,
@@ -111,8 +112,6 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
             TransactionContext.fromPropagationContext(propagationContext);
         samplingDecision = tracesSampler.sample(new SamplingContext(transactionContext, null));
       }
-    } else {
-      otelSpan.setAttribute(IS_REMOTE_PARENT, parentSpan.getSpanContext().isRemote());
     }
     final @NotNull SpanContext spanContext = otelSpan.getSpanContext();
     final @NotNull SentryDate startTimestamp =

@@ -868,8 +868,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       }
     }
     if (transactionOptions.isBindToScope()) {
+      // TODO [POTEL] this causes problems with OTel since it messes up closing of scopes and leaks
       transaction.makeCurrent();
-      //      configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;
   }

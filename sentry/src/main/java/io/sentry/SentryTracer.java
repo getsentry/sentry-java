@@ -854,6 +854,7 @@ public final class SentryTracer implements ITransaction {
     return eventId;
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     scopes.configureScope(

@@ -255,6 +255,7 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
     return rootSpan.getEventId();
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return rootSpan.makeCurrent();
