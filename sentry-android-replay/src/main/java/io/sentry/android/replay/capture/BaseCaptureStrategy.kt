@@ -303,7 +303,7 @@ internal abstract class BaseCaptureStrategy(
 
     protected fun rotateCurrentEvents(
         until: Long,
-        callback: ((RRWebEvent) -> Unit)? = null,
+        callback: ((RRWebEvent) -> Unit)? = null
     ) {
         synchronized(currentEventsLock) {
             var event = currentEvents.peek()

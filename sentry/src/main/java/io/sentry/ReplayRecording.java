@@ -148,7 +148,8 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
                 final RRWebEventType type = RRWebEventType.values()[(int) value];
                 switch (type) {
                   case IncrementalSnapshot:
-                    @Nullable Map<String, Object> incrementalData =
+                    @Nullable
+                    Map<String, Object> incrementalData =
                         (Map<String, Object>) eventMap.get("data");
                     if (incrementalData == null) {
                       incrementalData = Collections.emptyMap();
@@ -187,7 +188,8 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
                     payload.add(metaEvent);
                     break;
                   case Custom:
-                    @Nullable Map<String, Object> customData = (Map<String, Object>) eventMap.get("data");
+                    @Nullable
+                    Map<String, Object> customData = (Map<String, Object>) eventMap.get("data");
                     if (customData == null) {
                       customData = Collections.emptyMap();
                     }
