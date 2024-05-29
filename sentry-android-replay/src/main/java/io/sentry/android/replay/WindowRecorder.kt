@@ -137,7 +137,7 @@ internal class WindowRecorder(
     ) : FixedWindowCallback(delegate) {
         override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
             if (event != null) {
-                val copy: MotionEvent = MotionEvent.obtain(event)
+                val copy: MotionEvent = MotionEvent.obtainNoHistory(event)
                 try {
                     touchRecorderCallback?.onTouchEvent(copy)
                 } catch (e: Throwable) {
