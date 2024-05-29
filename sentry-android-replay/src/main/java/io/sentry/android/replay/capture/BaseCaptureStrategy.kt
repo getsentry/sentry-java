@@ -338,7 +338,7 @@ internal abstract class BaseCaptureStrategy(
     ) {
         synchronized(currentEventsLock) {
             var event = currentEvents.peek()
-            while (event != null && event.timestamp <= until) {
+            while (event != null && event.timestamp < until) {
                 callback?.invoke(event)
                 currentEvents.remove()
                 event = currentEvents.peek()
