@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -17,6 +18,11 @@ import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.rrweb.RRWebIncrementalSnapshotEvent
+import io.sentry.rrweb.RRWebInteractionEvent
+import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
+import io.sentry.rrweb.RRWebInteractionMoveEvent
+import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.rrweb.RRWebVideoEvent
@@ -24,6 +30,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
 import java.util.Date
+import java.util.LinkedList
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
@@ -51,6 +58,10 @@ internal abstract class BaseCaptureStrategy(
             "http.response_content_length",
             "http.request_content_length"
         )
+
+        // rrweb values
+        private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50
+        private const val CAPTURE_MOVE_EVENT_THRESHOLD = 500
     }
 
     protected var cache: ReplayCache? = null
@@ -59,6 +70,12 @@ internal abstract class BaseCaptureStrategy(
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
+
+    protected val currentEvents = LinkedList<RRWebEvent>()
+    private val currentEventsLock = Any()
+    private val currentPositions = mutableListOf<Position>()
+    private var touchMoveBaseline = 0L
+    private var lastCapturedMoveEvent = 0L
 
     protected val replayExecutor: ScheduledExecutorService by lazy {
         executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
@@ -249,6 +266,12 @@ internal abstract class BaseCaptureStrategy(
             }
         }
 
+        rotateCurrentEvents(endTimestamp.time) { event ->
+            if (event.timestamp >= segmentTimestamp.time) {
+                recordingPayload += event
+            }
+        }
+
         val recording = ReplayRecording().apply {
             this.segmentId = segmentId
             payload = recordingPayload.sortedBy { it.timestamp }
@@ -265,8 +288,31 @@ internal abstract class BaseCaptureStrategy(
         this.recorderConfig = recorderConfig
     }
 
+    override fun onTouchEvent(event: MotionEvent) {
+        val rrwebEvent = event.toRRWebIncrementalSnapshotEvent()
+        if (rrwebEvent != null) {
+            synchronized(currentEventsLock) {
+                currentEvents += rrwebEvent
+            }
+        }
+    }
+
     override fun close() {
         replayExecutor.gracefullyShutdown(options)
+    }
+
+    protected fun rotateCurrentEvents(
+        until: Long,
+        callback: ((RRWebEvent) -> Unit)? = null
+    ) {
+        synchronized(currentEventsLock) {
+            var event = currentEvents.peek()
+            while (event != null && event.timestamp <= until) {
+                callback?.invoke(event)
+                currentEvents.remove()
+                event = currentEvents.peek()
+            }
+        }
     }
 
     private class ReplayExecutorServiceThreadFactory : ThreadFactory {
@@ -333,6 +379,65 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
             data = breadcrumbData
+        }
+    }
+
+    private fun MotionEvent.toRRWebIncrementalSnapshotEvent(): RRWebIncrementalSnapshotEvent? {
+        val event = this
+        return when (val action = event.actionMasked) {
+            MotionEvent.ACTION_MOVE -> {
+                // we only throttle move events as those can be overwhelming
+                val now = dateProvider.currentTimeMillis
+                if (lastCapturedMoveEvent != 0L && lastCapturedMoveEvent + TOUCH_MOVE_DEBOUNCE_THRESHOLD > now) {
+                    return null
+                }
+                lastCapturedMoveEvent = now
+
+                // idk why but rrweb does it like dis
+                if (touchMoveBaseline == 0L) {
+                    touchMoveBaseline = now
+                }
+
+                currentPositions += Position().apply {
+                    x = event.x * recorderConfig.scaleFactorX
+                    y = event.y * recorderConfig.scaleFactorY
+                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                    timeOffset = now - touchMoveBaseline
+                }
+
+                val totalOffset = now - touchMoveBaseline
+                return if (totalOffset > CAPTURE_MOVE_EVENT_THRESHOLD) {
+                    RRWebInteractionMoveEvent().apply {
+                        timestamp = now
+                        positions = currentPositions.map { pos ->
+                            pos.timeOffset -= totalOffset
+                            pos
+                        }
+                    }.also {
+                        currentPositions.clear()
+                        touchMoveBaseline = 0L
+                    }
+                } else {
+                    null
+                }
+            }
+
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                RRWebInteractionEvent().apply {
+                    timestamp = dateProvider.currentTimeMillis
+                    x = event.x * recorderConfig.scaleFactorX
+                    y = event.y * recorderConfig.scaleFactorY
+                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                    interactionType = when (action) {
+                        MotionEvent.ACTION_UP -> InteractionType.TouchEnd
+                        MotionEvent.ACTION_DOWN -> InteractionType.TouchStart
+                        MotionEvent.ACTION_CANCEL -> InteractionType.TouchCancel
+                        else -> InteractionType.TouchMove_Departed // should not happen
+                    }
+                }
+            }
+
+            else -> null
         }
     }
 }

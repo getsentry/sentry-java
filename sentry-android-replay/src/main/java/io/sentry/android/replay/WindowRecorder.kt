@@ -1,8 +1,13 @@
 package io.sentry.android.replay
 
 import android.annotation.TargetApi
+import android.view.MotionEvent
 import android.view.View
+import android.view.Window
+import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
+import io.sentry.android.replay.util.FixedWindowCallback
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import java.lang.ref.WeakReference
@@ -16,7 +21,8 @@ import kotlin.LazyThreadSafetyMode.NONE
 @TargetApi(26)
 internal class WindowRecorder(
     private val options: SentryOptions,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
+    private val touchRecorderCallback: TouchRecorderCallback? = null
 ) : Recorder {
 
     internal companion object {
@@ -39,7 +45,11 @@ internal class WindowRecorder(
         if (added) {
             rootViews.add(WeakReference(root))
             recorder?.bind(root)
+
+            root.startGestureTracking()
         } else {
+            root.stopGestureTracking()
+
             recorder?.unbind(root)
             rootViews.removeAll { it.get() == root }
 
@@ -86,6 +96,60 @@ internal class WindowRecorder(
         isRecording.set(false)
     }
 
+    override fun close() {
+        stop()
+        capturer.gracefullyShutdown(options)
+    }
+
+    private fun View.startGestureTracking() {
+        val window = phoneWindow
+        if (window == null) {
+            options.logger.log(DEBUG, "Window is invalid, not tracking gestures")
+            return
+        }
+
+        if (touchRecorderCallback == null) {
+            options.logger.log(DEBUG, "TouchRecorderCallback is null, not tracking gestures")
+            return
+        }
+
+        val delegate = window.callback
+        window.callback = SentryReplayGestureRecorder(options, touchRecorderCallback, delegate)
+    }
+
+    private fun View.stopGestureTracking() {
+        val window = phoneWindow
+        if (window == null) {
+            options.logger.log(DEBUG, "Window was null in stopGestureTracking")
+            return
+        }
+
+        if (window.callback is SentryReplayGestureRecorder) {
+            val delegate = (window.callback as SentryReplayGestureRecorder).delegate
+            window.callback = delegate
+        }
+    }
+
+    private class SentryReplayGestureRecorder(
+        private val options: SentryOptions,
+        private val touchRecorderCallback: TouchRecorderCallback?,
+        delegate: Window.Callback?
+    ) : FixedWindowCallback(delegate) {
+        override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
+            if (event != null) {
+                val copy: MotionEvent = MotionEvent.obtainNoHistory(event)
+                try {
+                    touchRecorderCallback?.onTouchEvent(copy)
+                } catch (e: Throwable) {
+                    options.logger.log(ERROR, "Error dispatching touch event", e)
+                } finally {
+                    copy.recycle()
+                }
+            }
+            return super.dispatchTouchEvent(event)
+        }
+    }
+
     private class RecorderExecutorServiceThreadFactory : ThreadFactory {
         private var cnt = 0
         override fun newThread(r: Runnable): Thread {
@@ -94,9 +158,8 @@ internal class WindowRecorder(
             return ret
         }
     }
+}
 
-    override fun close() {
-        stop()
-        capturer.gracefullyShutdown(options)
-    }
+public interface TouchRecorderCallback {
+    fun onTouchEvent(event: MotionEvent)
 }

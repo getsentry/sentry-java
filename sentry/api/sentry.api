@@ -5128,6 +5128,166 @@ public final class io/sentry/rrweb/RRWebEventType$Deserializer : io/sentry/JsonD
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
+public abstract class io/sentry/rrweb/RRWebIncrementalSnapshotEvent : io/sentry/rrweb/RRWebEvent {
+	public fun <init> (Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;)V
+	public fun getSource ()Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public fun setSource (Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;)V
+}
+
+public final class io/sentry/rrweb/RRWebIncrementalSnapshotEvent$Deserializer {
+	public fun <init> ()V
+	public fun deserializeValue (Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent;Ljava/lang/String;Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Z
+}
+
+public final class io/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field AdoptedStyleSheet Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field CanvasMutation Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field CustomElement Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Drag Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Font Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Input Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Log Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field MediaInteraction Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field MouseInteraction Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field MouseMove Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Mutation Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Scroll Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field Selection Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field StyleDeclaration Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field StyleSheetRule Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field TouchMove Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static final field ViewportResize Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public static fun values ()[Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+}
+
+public final class io/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent$IncrementalSource;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebIncrementalSnapshotEvent$JsonKeys {
+	public static final field SOURCE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/rrweb/RRWebIncrementalSnapshotEvent$Serializer {
+	public fun <init> ()V
+	public fun serialize (Lio/sentry/rrweb/RRWebIncrementalSnapshotEvent;Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/rrweb/RRWebInteractionEvent : io/sentry/rrweb/RRWebIncrementalSnapshotEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getId ()I
+	public fun getInteractionType ()Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public fun getPointerType ()I
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getX ()F
+	public fun getY ()F
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setId (I)V
+	public fun setInteractionType (Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;)V
+	public fun setPointerType (I)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setX (F)V
+	public fun setY (F)V
+}
+
+public final class io/sentry/rrweb/RRWebInteractionEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebInteractionEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebInteractionEvent$InteractionType : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field Blur Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field Click Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field ContextMenu Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field DblClick Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field Focus Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field MouseDown Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field MouseUp Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field TouchCancel Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field TouchEnd Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field TouchMove_Departed Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static final field TouchStart Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public static fun values ()[Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+}
+
+public final class io/sentry/rrweb/RRWebInteractionEvent$InteractionType$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebInteractionEvent$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field POINTER_TYPE Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field X Ljava/lang/String;
+	public static final field Y Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/rrweb/RRWebInteractionMoveEvent : io/sentry/rrweb/RRWebIncrementalSnapshotEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getPositions ()Ljava/util/List;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setPositions (Ljava/util/List;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/rrweb/RRWebInteractionMoveEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebInteractionMoveEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebInteractionMoveEvent$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field POSITIONS Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/rrweb/RRWebInteractionMoveEvent$Position : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getId ()I
+	public fun getTimeOffset ()J
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getX ()F
+	public fun getY ()F
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setId (I)V
+	public fun setTimeOffset (J)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setX (F)V
+	public fun setY (F)V
+}
+
+public final class io/sentry/rrweb/RRWebInteractionMoveEvent$Position$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebInteractionMoveEvent$Position;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebInteractionMoveEvent$Position$JsonKeys {
+	public static final field ID Ljava/lang/String;
+	public static final field TIME_OFFSET Ljava/lang/String;
+	public static final field X Ljava/lang/String;
+	public static final field Y Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/rrweb/RRWebMetaEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun equals (Ljava/lang/Object;)Z

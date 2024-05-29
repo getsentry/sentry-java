@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Build
+import android.view.MotionEvent
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.Integration
@@ -32,7 +33,7 @@ public class ReplayIntegration(
     private val recorderProvider: (() -> Recorder)? = null,
     private val recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
     private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
-) : Integration, Closeable, ScreenshotRecorderCallback, ReplayController, ComponentCallbacks {
+) : Integration, Closeable, ScreenshotRecorderCallback, TouchRecorderCallback, ReplayController, ComponentCallbacks {
 
     // needed for the Java's call site
     constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
@@ -72,7 +73,7 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this)
         isEnabled.set(true)
 
         try {
@@ -220,4 +221,8 @@ public class ReplayIntegration(
     }
 
     override fun onLowMemory() = Unit
+
+    override fun onTouchEvent(event: MotionEvent) {
+        captureStrategy?.onTouchEvent(event)
+    }
 }

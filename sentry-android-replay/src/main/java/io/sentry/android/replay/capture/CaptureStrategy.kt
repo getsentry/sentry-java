@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.view.MotionEvent
 import io.sentry.Hint
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -26,6 +27,8 @@ internal interface CaptureStrategy {
     fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit)
 
     fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig)
+
+    fun onTouchEvent(event: MotionEvent)
 
     fun convert(): CaptureStrategy
 
