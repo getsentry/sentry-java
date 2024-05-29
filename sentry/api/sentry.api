@@ -2253,6 +2253,12 @@ public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSeriali
 	public static fun values ()[Lio/sentry/SentryLevel;
 }
 
+public final class io/sentry/SentryLevel$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryLevel;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
 public final class io/sentry/SentryLockReason : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field ANY I
 	public static final field BLOCKED I
@@ -5049,6 +5055,7 @@ public final class io/sentry/rrweb/RRWebBreadcrumbEvent : io/sentry/rrweb/RRWebE
 	public fun getCategory ()Ljava/lang/String;
 	public fun getData ()Ljava/util/Map;
 	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getMessage ()Ljava/lang/String;
 	public fun getPayloadUnknown ()Ljava/util/Map;
 	public fun getTag ()Ljava/lang/String;
@@ -5059,6 +5066,7 @@ public final class io/sentry/rrweb/RRWebBreadcrumbEvent : io/sentry/rrweb/RRWebE
 	public fun setCategory (Ljava/lang/String;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setMessage (Ljava/lang/String;)V
 	public fun setPayloadUnknown (Ljava/util/Map;)V
 	public fun setTag (Ljava/lang/String;)V
@@ -5074,6 +5082,7 @@ public final class io/sentry/rrweb/RRWebBreadcrumbEvent$Deserializer : io/sentry
 public final class io/sentry/rrweb/RRWebBreadcrumbEvent$JsonKeys {
 	public static final field CATEGORY Ljava/lang/String;
 	public static final field DATA Ljava/lang/String;
+	public static final field LEVEL Ljava/lang/String;
 	public static final field MESSAGE Ljava/lang/String;
 	public static final field PAYLOAD Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;

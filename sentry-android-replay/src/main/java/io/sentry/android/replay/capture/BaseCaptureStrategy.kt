@@ -6,6 +6,7 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ReplayRecording
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
@@ -202,12 +203,12 @@ internal abstract class BaseCaptureStrategy(
 
         hub?.configureScope { scope ->
             scope.breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.after(segmentTimestamp) &&
-                    breadcrumb.timestamp.before(endTimestamp)
+                if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
+                    breadcrumb.timestamp.time < endTimestamp.time
                 ) {
-                    // TODO: rework this later when aligned with iOS and frontend
                     var breadcrumbMessage: String? = null
-                    val breadcrumbCategory: String?
+                    var breadcrumbCategory: String? = null
+                    var breadcrumbLevel: SentryLevel? = null
                     val breadcrumbData = mutableMapOf<String, Any?>()
                     when {
                         breadcrumb.category == "http" -> {
@@ -217,39 +218,68 @@ internal abstract class BaseCaptureStrategy(
                             return@forEach
                         }
 
-                        breadcrumb.category == "device.orientation" -> {
+                        breadcrumb.type == "navigation" &&
+                            breadcrumb.category == "app.lifecycle" -> {
+                            breadcrumbCategory = "app.${breadcrumb.data["state"]}"
+                        }
+
+                        breadcrumb.type == "navigation" &&
+                            breadcrumb.category == "device.orientation" -> {
                             breadcrumbCategory = breadcrumb.category!!
-                            breadcrumbMessage = breadcrumb.data["position"] as? String ?: ""
+                            val position = breadcrumb.data["position"]
+                            if (position == "landscape" || position == "portrait") {
+                                breadcrumbData["position"] = position
+                            } else {
+                                return@forEach
+                            }
                         }
 
                         breadcrumb.type == "navigation" -> {
                             breadcrumbCategory = "navigation"
                             breadcrumbData["to"] = when {
-                                breadcrumb.data["state"] == "resumed" -> breadcrumb.data["screen"] as? String
-                                breadcrumb.category == "app.lifecycle" -> breadcrumb.data["state"] as? String
+                                breadcrumb.data["state"] == "resumed" -> (breadcrumb.data["screen"] as? String)?.substringAfterLast('.')
                                 "to" in breadcrumb.data -> breadcrumb.data["to"] as? String
                                 else -> return@forEach
                             } ?: return@forEach
                         }
 
-                        breadcrumb.category in setOf("ui.click", "ui.scroll", "ui.swipe") -> {
-                            breadcrumbCategory = breadcrumb.category!!
+                        breadcrumb.category == "ui.click" -> {
+                            breadcrumbCategory = "ui.tap"
                             breadcrumbMessage = (
                                 breadcrumb.data["view.id"]
-                                    ?: breadcrumb.data["view.class"]
                                     ?: breadcrumb.data["view.tag"]
-                                ) as? String ?: ""
+                                    ?: breadcrumb.data["view.class"]
+                                ) as? String ?: return@forEach
+                            breadcrumbData.putAll(breadcrumb.data)
                         }
 
-                        breadcrumb.type == "system" -> {
-                            breadcrumbCategory = breadcrumb.type!!
-                            breadcrumbMessage =
-                                breadcrumb.data.entries.joinToString() as? String ?: ""
+                        breadcrumb.type == "system" && breadcrumb.category == "network.event" -> {
+                            breadcrumbCategory = "device.connectivity"
+                            breadcrumbData["state"] = when {
+                                breadcrumb.data["action"] == "NETWORK_LOST" -> "offline"
+                                "network_type" in breadcrumb.data -> if (!(breadcrumb.data["network_type"] as? String).isNullOrEmpty()) {
+                                    breadcrumb.data["network_type"]
+                                } else {
+                                    return@forEach
+                                }
+                                else -> return@forEach
+                            }
+                        }
+
+                        breadcrumb.data["action"] == "BATTERY_CHANGED" -> {
+                            breadcrumbCategory = "device.battery"
+                            breadcrumbData.putAll(
+                                breadcrumb.data.filterKeys {
+                                    it == "level" || it == "charging"
+                                }
+                            )
                         }
 
                         else -> {
                             breadcrumbCategory = breadcrumb.category
                             breadcrumbMessage = breadcrumb.message
+                            breadcrumbLevel = breadcrumb.level
+                            breadcrumbData.putAll(breadcrumb.data)
                         }
                     }
                     if (!breadcrumbCategory.isNullOrEmpty()) {
@@ -259,6 +289,7 @@ internal abstract class BaseCaptureStrategy(
                             breadcrumbType = "default"
                             category = breadcrumbCategory
                             message = breadcrumbMessage
+                            level = breadcrumbLevel
                             data = breadcrumbData
                         }
                     }
@@ -307,7 +338,7 @@ internal abstract class BaseCaptureStrategy(
     ) {
         synchronized(currentEventsLock) {
             var event = currentEvents.peek()
-            while (event != null && event.timestamp <= until) {
+            while (event != null && event.timestamp < until) {
                 callback?.invoke(event)
                 currentEvents.remove()
                 event = currentEvents.peek()

@@ -18,7 +18,7 @@ public enum SentryLevel implements JsonSerializable {
     writer.value(name().toLowerCase(Locale.ROOT));
   }
 
-  static final class Deserializer implements JsonDeserializer<SentryLevel> {
+  public static final class Deserializer implements JsonDeserializer<SentryLevel> {
 
     @Override
     public @NotNull SentryLevel deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
