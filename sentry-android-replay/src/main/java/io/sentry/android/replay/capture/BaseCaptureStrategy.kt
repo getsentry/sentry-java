@@ -31,7 +31,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
 import java.util.Date
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.LinkedList
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
@@ -72,7 +72,8 @@ internal abstract class BaseCaptureStrategy(
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
 
-    protected val currentEvents = CopyOnWriteArrayList<RRWebEvent>()
+    protected val currentEvents = LinkedList<RRWebEvent>()
+    private val currentEventsLock = Any()
     private val currentPositions = mutableListOf<Position>()
     private var touchMoveBaseline = 0L
     private var lastCapturedMoveEvent = 0L
@@ -295,11 +296,11 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
         }
-        currentEvents.removeAll {
-            if (it.timestamp > segmentTimestamp.time && it.timestamp < endTimestamp.time) {
-                recordingPayload += it
+
+        rotateCurrentEvents(endTimestamp.time) { event ->
+            if (event.timestamp >= segmentTimestamp.time) {
+                recordingPayload += event
             }
-            it.timestamp < endTimestamp.time
         }
 
         val recording = ReplayRecording().apply {
@@ -321,12 +322,28 @@ internal abstract class BaseCaptureStrategy(
     override fun onTouchEvent(event: MotionEvent) {
         val rrwebEvent = event.toRRWebIncrementalSnapshotEvent()
         if (rrwebEvent != null) {
-            currentEvents += rrwebEvent
+            synchronized(currentEventsLock) {
+                currentEvents += rrwebEvent
+            }
         }
     }
 
     override fun close() {
         replayExecutor.gracefullyShutdown(options)
+    }
+
+    protected fun rotateCurrentEvents(
+        until: Long,
+        callback: ((RRWebEvent) -> Unit)? = null
+    ) {
+        synchronized(currentEventsLock) {
+            var event = currentEvents.peek()
+            while (event != null && event.timestamp <= until) {
+                callback?.invoke(event)
+                currentEvents.remove()
+                event = currentEvents.peek()
+            }
+        }
     }
 
     private class ReplayExecutorServiceThreadFactory : ThreadFactory {

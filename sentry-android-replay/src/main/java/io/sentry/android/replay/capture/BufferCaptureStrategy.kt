@@ -176,6 +176,6 @@ internal class BufferCaptureStrategy(
     override fun onTouchEvent(event: MotionEvent) {
         super.onTouchEvent(event)
         val bufferLimit = dateProvider.currentTimeMillis - options.experimental.sessionReplay.errorReplayDuration
-        currentEvents.removeAll { it.timestamp < bufferLimit }
+        rotateCurrentEvents(bufferLimit)
     }
 }
