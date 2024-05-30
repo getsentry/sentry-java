@@ -10,12 +10,14 @@ import io.sentry.ILogger;
 import io.sentry.IScope;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.SentryDate;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
@@ -191,6 +193,58 @@ public final class InternalSentrySdk {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
     return null;
+  }
+
+    public static Map<String, Object> getAppStartMeasurement() {
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+    final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
+
+    final @NotNull Map<String, Object> processInitSpan = new HashMap<>();
+    processInitSpan.put("description", "Process Initialization");
+    processInitSpan.put("startTimestampMs", metrics.getAppStartTimeSpan().getStartTimestampMs());
+    processInitSpan.put("endTimestampMs", metrics.getClassLoadedUptimeMs());
+    spans.add(processInitSpan);
+
+    final @NotNull Map<String, Object> applicationOnCreateSpan = new HashMap<>();
+    applicationOnCreateSpan.put("description", "Process Initialization");
+    applicationOnCreateSpan.put(
+        "startTimestampMs", metrics.getAppStartTimeSpan().getStartTimestampMs());
+    applicationOnCreateSpan.put(
+        "endTimestampMs", metrics.getAppStartTimeSpan().getProjectedStopTimestampMs());
+    spans.add(applicationOnCreateSpan);
+
+    for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
+      final @NotNull Map<String, Object> serializedSpan = new HashMap<>();
+      serializedSpan.put("description", span.getDescription());
+      serializedSpan.put("startTimestampMs", span.getStartTimestampMs());
+      serializedSpan.put("endTimestampMs", span.getProjectedStopTimestampMs());
+      spans.add(serializedSpan);
+    }
+
+    for (final ActivityLifecycleTimeSpan span : metrics.getActivityLifecycleTimeSpans()) {
+      final @NotNull Map<String, Object> serializedOnCreateSpan = new HashMap<>();
+      serializedOnCreateSpan.put("description", span.getOnCreate().getDescription());
+      serializedOnCreateSpan.put("startTimestampMs", span.getOnCreate().getStartTimestampMs());
+      serializedOnCreateSpan.put(
+          "endTimestampMs", span.getOnCreate().getProjectedStopTimestampMs());
+      spans.add(serializedOnCreateSpan);
+
+      final @NotNull Map<String, Object> serializedOnStartSpan = new HashMap<>();
+      serializedOnStartSpan.put("description", span.getOnStart().getDescription());
+      serializedOnStartSpan.put("startTimestampMs", span.getOnStart().getStartTimestampMs());
+      serializedOnStartSpan.put("endTimestampMs", span.getOnStart().getProjectedStopTimestampMs());
+      spans.add(serializedOnStartSpan);
+    }
+
+    final @NotNull Map<String, Object> result = new HashMap<>();
+    result.put("spans", spans);
+    result.put("type", metrics.getAppStartType().toString().toLowerCase());
+    final @Nullable SentryDate appStartTime = metrics.getAppStartTimeSpan().getStartTimestamp();
+    if (appStartTime != null) {
+      result.put("app_start_timestamp_ms", DateUtils.nanosToMillis(appStartTime.nanoTimestamp()));
+    }
+
+    return result;
   }
 
   @Nullable
