@@ -1251,7 +1251,13 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/NoOpReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
+	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
+	public static fun getInstance ()Lio/sentry/NoOpReplayBreadcrumbConverter;
+}
+
 public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
+	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
@@ -1259,6 +1265,7 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun resume ()V
 	public fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
 	public fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
+	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
 	public fun stop ()V
 }
@@ -1656,13 +1663,19 @@ public final class io/sentry/PropagationContext {
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
 
+public abstract interface class io/sentry/ReplayBreadcrumbConverter {
+	public abstract fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
+}
+
 public abstract interface class io/sentry/ReplayController {
+	public abstract fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
 	public abstract fun resume ()V
 	public abstract fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
 	public abstract fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
+	public abstract fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public abstract fun start ()V
 	public abstract fun stop ()V
 }

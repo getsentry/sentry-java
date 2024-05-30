@@ -1,23 +1,19 @@
 package io.sentry.android.replay.capture
 
 import android.view.MotionEvent
-import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ReplayRecording
-import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
-import io.sentry.SpanDataConvention
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
-import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebIncrementalSnapshotEvent
 import io.sentry.rrweb.RRWebInteractionEvent
@@ -25,7 +21,6 @@ import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
 import io.sentry.rrweb.RRWebInteractionMoveEvent
 import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.rrweb.RRWebMetaEvent
-import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -50,15 +45,6 @@ internal abstract class BaseCaptureStrategy(
 
     internal companion object {
         private const val TAG = "CaptureStrategy"
-        private val snakecasePattern = "_[a-z]".toRegex()
-        private val supportedNetworkData = setOf(
-            "status_code",
-            "method",
-            "response_content_length",
-            "request_content_length",
-            "http.response_content_length",
-            "http.request_content_length"
-        )
 
         // rrweb values
         private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50
@@ -206,92 +192,13 @@ internal abstract class BaseCaptureStrategy(
                 if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
                     breadcrumb.timestamp.time < endTimestamp.time
                 ) {
-                    var breadcrumbMessage: String? = null
-                    var breadcrumbCategory: String? = null
-                    var breadcrumbLevel: SentryLevel? = null
-                    val breadcrumbData = mutableMapOf<String, Any?>()
-                    when {
-                        breadcrumb.category == "http" -> {
-                            if (breadcrumb.isValidForRRWebSpan()) {
-                                recordingPayload += breadcrumb.toRRWebSpanEvent()
-                            }
-                            return@forEach
-                        }
+                    val rrwebEvent = options
+                        .replayController
+                        .breadcrumbConverter
+                        .convert(breadcrumb)
 
-                        breadcrumb.type == "navigation" &&
-                            breadcrumb.category == "app.lifecycle" -> {
-                            breadcrumbCategory = "app.${breadcrumb.data["state"]}"
-                        }
-
-                        breadcrumb.type == "navigation" &&
-                            breadcrumb.category == "device.orientation" -> {
-                            breadcrumbCategory = breadcrumb.category!!
-                            val position = breadcrumb.data["position"]
-                            if (position == "landscape" || position == "portrait") {
-                                breadcrumbData["position"] = position
-                            } else {
-                                return@forEach
-                            }
-                        }
-
-                        breadcrumb.type == "navigation" -> {
-                            breadcrumbCategory = "navigation"
-                            breadcrumbData["to"] = when {
-                                breadcrumb.data["state"] == "resumed" -> (breadcrumb.data["screen"] as? String)?.substringAfterLast('.')
-                                "to" in breadcrumb.data -> breadcrumb.data["to"] as? String
-                                else -> return@forEach
-                            } ?: return@forEach
-                        }
-
-                        breadcrumb.category == "ui.click" -> {
-                            breadcrumbCategory = "ui.tap"
-                            breadcrumbMessage = (
-                                breadcrumb.data["view.id"]
-                                    ?: breadcrumb.data["view.tag"]
-                                    ?: breadcrumb.data["view.class"]
-                                ) as? String ?: return@forEach
-                            breadcrumbData.putAll(breadcrumb.data)
-                        }
-
-                        breadcrumb.type == "system" && breadcrumb.category == "network.event" -> {
-                            breadcrumbCategory = "device.connectivity"
-                            breadcrumbData["state"] = when {
-                                breadcrumb.data["action"] == "NETWORK_LOST" -> "offline"
-                                "network_type" in breadcrumb.data -> if (!(breadcrumb.data["network_type"] as? String).isNullOrEmpty()) {
-                                    breadcrumb.data["network_type"]
-                                } else {
-                                    return@forEach
-                                }
-                                else -> return@forEach
-                            }
-                        }
-
-                        breadcrumb.data["action"] == "BATTERY_CHANGED" -> {
-                            breadcrumbCategory = "device.battery"
-                            breadcrumbData.putAll(
-                                breadcrumb.data.filterKeys {
-                                    it == "level" || it == "charging"
-                                }
-                            )
-                        }
-
-                        else -> {
-                            breadcrumbCategory = breadcrumb.category
-                            breadcrumbMessage = breadcrumb.message
-                            breadcrumbLevel = breadcrumb.level
-                            breadcrumbData.putAll(breadcrumb.data)
-                        }
-                    }
-                    if (!breadcrumbCategory.isNullOrEmpty()) {
-                        recordingPayload += RRWebBreadcrumbEvent().apply {
-                            timestamp = breadcrumb.timestamp.time
-                            breadcrumbTimestamp = breadcrumb.timestamp.time / 1000.0
-                            breadcrumbType = "default"
-                            category = breadcrumbCategory
-                            message = breadcrumbMessage
-                            level = breadcrumbLevel
-                            data = breadcrumbData
-                        }
+                    if (rrwebEvent != null) {
+                        recordingPayload += rrwebEvent
                     }
                 }
             }
@@ -374,42 +281,6 @@ internal abstract class BaseCaptureStrategy(
                     }
                 }
             }
-        }
-    }
-
-    private fun Breadcrumb.isValidForRRWebSpan(): Boolean {
-        return !(data["url"] as? String).isNullOrEmpty() &&
-            SpanDataConvention.HTTP_START_TIMESTAMP in data &&
-            SpanDataConvention.HTTP_END_TIMESTAMP in data
-    }
-
-    private fun String.snakeToCamelCase(): String {
-        return replace(snakecasePattern) { it.value.last().uppercase() }
-    }
-
-    private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent {
-        val breadcrumb = this
-        return RRWebSpanEvent().apply {
-            timestamp = breadcrumb.timestamp.time
-            op = "resource.http"
-            description = breadcrumb.data["url"] as String
-            startTimestamp =
-                (breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP] as Long) / 1000.0
-            endTimestamp =
-                (breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP] as Long) / 1000.0
-
-            val breadcrumbData = mutableMapOf<String, Any?>()
-            for ((key, value) in breadcrumb.data) {
-                if (key in supportedNetworkData) {
-                    breadcrumbData[
-                        key
-                            .replace("content_length", "body_size")
-                            .substringAfter(".")
-                            .snakeToCamelCase()
-                    ] = value
-                }
-            }
-            data = breadcrumbData
         }
     }
 

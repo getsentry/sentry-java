@@ -9,6 +9,8 @@ import android.view.MotionEvent
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.Integration
+import io.sentry.NoOpReplayBreadcrumbConverter
+import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.ReplayController
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
@@ -54,6 +56,7 @@ public class ReplayIntegration(
     private val isRecording = AtomicBoolean(false)
     private var captureStrategy: CaptureStrategy? = null
     public val replayCacheDir: File? get() = captureStrategy?.replayCacheDir
+    private var replayBreadcrumbConverter: ReplayBreadcrumbConverter = NoOpReplayBreadcrumbConverter.getInstance()
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
 
@@ -157,6 +160,12 @@ public class ReplayIntegration(
     }
 
     override fun getReplayId(): SentryId = captureStrategy?.currentReplayId?.get() ?: SentryId.EMPTY_ID
+
+    override fun setBreadcrumbConverter(converter: ReplayBreadcrumbConverter) {
+        replayBreadcrumbConverter = converter
+    }
+
+    override fun getBreadcrumbConverter(): ReplayBreadcrumbConverter = replayBreadcrumbConverter
 
     override fun pause() {
         if (!isEnabled.get() || !isRecording.get()) {
