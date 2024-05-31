@@ -11,6 +11,12 @@
 
 - Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.7.0 ([#3279](https://github.com/getsentry/sentry-java/pull/3279))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v870)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.7.0)
+
 ## 7.9.0
 
 ### Features
