@@ -26,6 +26,10 @@ public interface ISpan {
 
   @ApiStatus.Internal
   @NotNull
+  ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
+
+  @ApiStatus.Internal
+  @NotNull
   ISpan startChild(
       @NotNull String operation,
       @Nullable String description,

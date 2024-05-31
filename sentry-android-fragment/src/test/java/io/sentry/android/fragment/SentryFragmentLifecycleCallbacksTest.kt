@@ -53,7 +53,7 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(span.spanContext).thenReturn(
                 SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
             )
-            whenever(transaction.startChild(any(), any())).thenReturn(span)
+            whenever(transaction.startChild(any<String>(), any<String>())).thenReturn(span)
             whenever(scope.transaction).thenReturn(transaction)
             whenever(scopes.configureScope(any())).thenAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
@@ -190,7 +190,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction, never()).startChild(any(), any())
+        verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
     }
 
     @Test
@@ -200,10 +200,10 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
         verify(fixture.transaction).startChild(
-            check {
+            check<String> {
                 assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
             },
-            check {
+            check<String> {
                 assertEquals("androidx.fragment.app.Fragment", it)
             }
         )
@@ -215,7 +215,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction, never()).startChild(any(), any())
+        verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
     }
 
     @Test
@@ -225,7 +225,7 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction).startChild(any(), any())
+        verify(fixture.transaction).startChild(any<String>(), any<String>())
     }
 
     @Test

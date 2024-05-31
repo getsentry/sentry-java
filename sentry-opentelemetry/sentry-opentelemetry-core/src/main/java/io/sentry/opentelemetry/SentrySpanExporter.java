@@ -23,6 +23,7 @@ import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
 import io.sentry.SpanId;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -241,11 +242,23 @@ public final class SentrySpanExporter implements SpanExporter {
             spanData.getParentSpanId());
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
     // TODO [POTEL] op and description might have been overriden
-    // TODO [POTEL] ensure not sampling again
-    // TODO [POTEL] use OTel span ID so tracing actually has value
-    final @NotNull ISpan sentryChildSpan =
-        parentSentrySpan.startChild(
-            spanInfo.getOp(), spanInfo.getDescription(), startDate, Instrumenter.OTEL);
+    final @NotNull io.sentry.SpanContext spanContext =
+        parentSentrySpan
+            .getSpanContext()
+            .copyForChild(
+                spanInfo.getOp(),
+                parentSentrySpan.getSpanContext().getSpanId(),
+                new SpanId(spanId));
+    spanContext.setDescription(spanInfo.getDescription());
+    spanContext.setInstrumenter(Instrumenter.OTEL);
+    if (sentrySpanMaybe != null) {
+      spanContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
+    }
+
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setStartTimestamp(startDate);
+
+    final @NotNull ISpan sentryChildSpan = parentSentrySpan.startChild(spanContext, spanOptions);
 
     // TODO [POTEL] Check if we want to use `instrumentationScopeInfo.name` and append it to
     // `auto.otel`
@@ -359,6 +372,9 @@ public final class SentrySpanExporter implements SpanExporter {
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
     transactionContext.setInstrumenter(Instrumenter.OTEL);
+    if (sentrySpanMaybe != null) {
+      transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
+    }
 
     TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setStartTimestamp(new SentryLongDate(span.getStartEpochNanos()));

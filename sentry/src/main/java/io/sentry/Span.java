@@ -53,31 +53,50 @@ public final class Span implements ISpan {
   private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
       new LazyEvaluator<>(() -> new LocalMetricsAggregator());
 
-  Span(
-      final @NotNull SentryId traceId,
-      final @Nullable SpanId parentSpanId,
-      final @NotNull SentryTracer transaction,
-      final @NotNull String operation,
-      final @NotNull IScopes scopes) {
-    this(traceId, parentSpanId, transaction, operation, scopes, null, new SpanOptions(), null);
-  }
+  //  Span(
+  //      final @NotNull SentryId traceId,
+  //      final @Nullable SpanId parentSpanId,
+  //      final @NotNull SentryTracer transaction,
+  //      final @NotNull String operation,
+  //      final @NotNull IScopes scopes) {
+  //    this(traceId, parentSpanId, transaction, operation, scopes, null, new SpanOptions(), null);
+  //  }
+
+  //  Span(
+  //      final @NotNull SentryId traceId,
+  //      final @Nullable SpanId parentSpanId,
+  //      final @NotNull SentryTracer transaction,
+  //      final @NotNull String operation,
+  //      final @NotNull IScopes scopes,
+  //      final @Nullable SentryDate startTimestamp,
+  //      final @NotNull SpanOptions options,
+  //      final @Nullable SpanFinishedCallback spanFinishedCallback) {
+  //    this.context =
+  //        new SpanContext(
+  //            traceId, new SpanId(), operation, parentSpanId, transaction.getSamplingDecision());
+  //    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+  //    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
+  //    this.options = options;
+  //    this.spanFinishedCallback = spanFinishedCallback;
+  //    if (startTimestamp != null) {
+  //      this.startTimestamp = startTimestamp;
+  //    } else {
+  //      this.startTimestamp = scopes.getOptions().getDateProvider().now();
+  //    }
+  //  }
 
   Span(
-      final @NotNull SentryId traceId,
-      final @Nullable SpanId parentSpanId,
       final @NotNull SentryTracer transaction,
-      final @NotNull String operation,
       final @NotNull IScopes scopes,
-      final @Nullable SentryDate startTimestamp,
+      final @NotNull SpanContext spanContext,
       final @NotNull SpanOptions options,
       final @Nullable SpanFinishedCallback spanFinishedCallback) {
-    this.context =
-        new SpanContext(
-            traceId, new SpanId(), operation, parentSpanId, transaction.getSamplingDecision());
+    this.context = spanContext;
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = options;
     this.spanFinishedCallback = spanFinishedCallback;
+    final @Nullable SentryDate startTimestamp = options.getStartTimestamp();
     if (startTimestamp != null) {
       this.startTimestamp = startTimestamp;
     } else {
@@ -150,6 +169,12 @@ public final class Span implements ISpan {
       return NoOpSpan.getInstance();
     }
     return transaction.startChild(context.getSpanId(), operation, description, spanOptions);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return transaction.startChild(spanContext, spanOptions);
   }
 
   @Override

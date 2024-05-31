@@ -30,6 +30,12 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,

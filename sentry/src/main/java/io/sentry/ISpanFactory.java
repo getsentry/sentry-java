@@ -15,8 +15,6 @@ public interface ISpanFactory {
 
   @NotNull
   ISpan createSpan(
-      @NotNull String name,
-      @Nullable String description,
       @NotNull IScopes scopes,
       @NotNull SpanOptions spanOptions,
       @NotNull SpanContext spanContext,

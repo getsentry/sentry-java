@@ -17,7 +17,6 @@ public final class TransactionContext extends SpanContext {
   private @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private @Nullable Baggage baggage;
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
   private boolean isForNextAppStart = false;
 
   /**
@@ -184,14 +183,6 @@ public final class TransactionContext extends SpanContext {
 
   public @NotNull TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
-  }
-
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
-  }
-
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
   }
 
   public void setName(final @NotNull String name) {

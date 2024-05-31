@@ -39,15 +39,10 @@ public final class OtelSpanFactory implements ISpanFactory {
       @NotNull IScopes scopes,
       @NotNull TransactionOptions transactionOptions,
       @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
+    // TODO [POTEL] name vs. op for transaction
     final @Nullable OtelSpanWrapper span =
         createSpanInternal(
-            context.getName(),
-            context.getDescription(),
-            scopes,
-            transactionOptions,
-            null,
-            context.getSamplingDecision(),
-            context);
+            scopes, transactionOptions, null, context.getSamplingDecision(), context);
     if (span == null) {
       return NoOpTransaction.getInstance();
     }
@@ -56,8 +51,6 @@ public final class OtelSpanFactory implements ISpanFactory {
 
   @Override
   public @NotNull ISpan createSpan(
-      final @NotNull String name,
-      final @Nullable String description,
       final @NotNull IScopes scopes,
       final @NotNull SpanOptions spanOptions,
       final @NotNull SpanContext spanContext,
@@ -65,8 +58,7 @@ public final class OtelSpanFactory implements ISpanFactory {
     final @Nullable TracesSamplingDecision samplingDecision =
         parentSpan == null ? null : parentSpan.getSamplingDecision();
     final @Nullable OtelSpanWrapper span =
-        createSpanInternal(
-            name, description, scopes, spanOptions, parentSpan, samplingDecision, spanContext);
+        createSpanInternal(scopes, spanOptions, parentSpan, samplingDecision, spanContext);
     if (span == null) {
       return NoOpSpan.getInstance();
     }
@@ -74,13 +66,12 @@ public final class OtelSpanFactory implements ISpanFactory {
   }
 
   private @Nullable OtelSpanWrapper createSpanInternal(
-      final @NotNull String name,
-      final @Nullable String description,
       final @NotNull IScopes scopes,
       final @NotNull SpanOptions spanOptions,
       final @Nullable ISpan parentSpan,
       final @Nullable TracesSamplingDecision samplingDecision,
       final @NotNull SpanContext spanContext) {
+    final @NotNull String name = spanContext.getOperation();
     final @NotNull SpanBuilder spanBuilder = getTracer().spanBuilder(name);
     // TODO [POTEL] If performance is disabled, can we use otel.SamplingDecision.RECORD_ONLY to
     // still allow otel to be used for tracing
@@ -136,6 +127,7 @@ public final class OtelSpanFactory implements ISpanFactory {
 
     final @Nullable OtelSpanWrapper sentrySpan = storage.getSentrySpan(otelSpan.getSpanContext());
     if (sentrySpan != null) {
+      final @Nullable String description = spanContext.getDescription();
       if (description != null) {
         sentrySpan.setDescription(description);
       }
