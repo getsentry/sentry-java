@@ -195,22 +195,29 @@ public final class InternalSentrySdk {
     return null;
   }
 
-    public static Map<String, Object> getAppStartMeasurement() {
+  public static Map<String, Object> getAppStartMeasurement() {
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
 
+    final @NotNull TimeSpan processInitNativeSpan = new TimeSpan();
+    processInitNativeSpan.setStartedAt(metrics.getAppStartTimeSpan().getStartUptimeMs());
+    processInitNativeSpan.setStartUnixTimeMs(
+        metrics.getAppStartTimeSpan().getStartTimestampMs()); // This has to go after setStartedAt
+    processInitNativeSpan.setStoppedAt(metrics.getClassLoadedUptimeMs());
+
     final @NotNull Map<String, Object> processInitSpan = new HashMap<>();
     processInitSpan.put("description", "Process Initialization");
-    processInitSpan.put("start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
-    processInitSpan.put("end_timestamp_ms", metrics.getClassLoadedUptimeMs());
+    processInitSpan.put("start_timestamp_ms", processInitNativeSpan.getStartTimestampMs());
+    processInitSpan.put("end_timestamp_ms", processInitNativeSpan.getProjectedStopTimestampMs());
     spans.add(processInitSpan);
 
     final @NotNull Map<String, Object> applicationOnCreateSpan = new HashMap<>();
-    applicationOnCreateSpan.put("description", "Process Initialization");
     applicationOnCreateSpan.put(
-        "start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
+        "description", metrics.getApplicationOnCreateTimeSpan().getDescription());
     applicationOnCreateSpan.put(
-        "end_timestamp_ms", metrics.getAppStartTimeSpan().getProjectedStopTimestampMs());
+        "start_timestamp_ms", metrics.getApplicationOnCreateTimeSpan().getStartTimestampMs());
+    applicationOnCreateSpan.put(
+        "end_timestamp_ms", metrics.getApplicationOnCreateTimeSpan().getProjectedStopTimestampMs());
     spans.add(applicationOnCreateSpan);
 
     for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
@@ -232,7 +239,8 @@ public final class InternalSentrySdk {
       final @NotNull Map<String, Object> serializedOnStartSpan = new HashMap<>();
       serializedOnStartSpan.put("description", span.getOnStart().getDescription());
       serializedOnStartSpan.put("start_timestamp_ms", span.getOnStart().getStartTimestampMs());
-      serializedOnStartSpan.put("end_timestamp_ms", span.getOnStart().getProjectedStopTimestampMs());
+      serializedOnStartSpan.put(
+          "end_timestamp_ms", span.getOnStart().getProjectedStopTimestampMs());
       spans.add(serializedOnStartSpan);
     }
 
