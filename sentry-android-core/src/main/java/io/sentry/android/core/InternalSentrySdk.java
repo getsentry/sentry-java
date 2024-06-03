@@ -201,14 +201,14 @@ public final class InternalSentrySdk {
 
     final @NotNull Map<String, Object> processInitSpan = new HashMap<>();
     processInitSpan.put("description", "Process Initialization");
-    processInitSpan.put("start_timestamp_ms", metrics.getAppStartTimeSpan().getstart_timestamp_ms());
+    processInitSpan.put("start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
     processInitSpan.put("end_timestamp_ms", metrics.getClassLoadedUptimeMs());
     spans.add(processInitSpan);
 
     final @NotNull Map<String, Object> applicationOnCreateSpan = new HashMap<>();
     applicationOnCreateSpan.put("description", "Process Initialization");
     applicationOnCreateSpan.put(
-        "start_timestamp_ms", metrics.getAppStartTimeSpan().getstart_timestamp_ms());
+        "start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
     applicationOnCreateSpan.put(
         "end_timestamp_ms", metrics.getAppStartTimeSpan().getProjectedStopTimestampMs());
     spans.add(applicationOnCreateSpan);
@@ -216,7 +216,7 @@ public final class InternalSentrySdk {
     for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
       final @NotNull Map<String, Object> serializedSpan = new HashMap<>();
       serializedSpan.put("description", span.getDescription());
-      serializedSpan.put("start_timestamp_ms", span.getstart_timestamp_ms());
+      serializedSpan.put("start_timestamp_ms", span.getStartTimestampMs());
       serializedSpan.put("end_timestamp_ms", span.getProjectedStopTimestampMs());
       spans.add(serializedSpan);
     }
@@ -224,14 +224,14 @@ public final class InternalSentrySdk {
     for (final ActivityLifecycleTimeSpan span : metrics.getActivityLifecycleTimeSpans()) {
       final @NotNull Map<String, Object> serializedOnCreateSpan = new HashMap<>();
       serializedOnCreateSpan.put("description", span.getOnCreate().getDescription());
-      serializedOnCreateSpan.put("start_timestamp_ms", span.getOnCreate().getstart_timestamp_ms());
+      serializedOnCreateSpan.put("start_timestamp_ms", span.getOnCreate().getStartTimestampMs());
       serializedOnCreateSpan.put(
           "end_timestamp_ms", span.getOnCreate().getProjectedStopTimestampMs());
       spans.add(serializedOnCreateSpan);
 
       final @NotNull Map<String, Object> serializedOnStartSpan = new HashMap<>();
       serializedOnStartSpan.put("description", span.getOnStart().getDescription());
-      serializedOnStartSpan.put("start_timestamp_ms", span.getOnStart().getstart_timestamp_ms());
+      serializedOnStartSpan.put("start_timestamp_ms", span.getOnStart().getStartTimestampMs());
       serializedOnStartSpan.put("end_timestamp_ms", span.getOnStart().getProjectedStopTimestampMs());
       spans.add(serializedOnStartSpan);
     }
