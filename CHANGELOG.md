@@ -10,6 +10,7 @@
 ### Fixes
 
 - Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+- Fix crash when installing `ShutdownHookIntegration` and the VM is shutting down ([#3456](https://github.com/getsentry/sentry-java/pull/3456))
 
 ## 7.9.0
 
