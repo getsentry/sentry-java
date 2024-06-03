@@ -195,7 +195,7 @@ public final class InternalSentrySdk {
     return null;
   }
 
-    public static Map<String, Object> getAppStartMeasurement() {
+  public static Map<String, Object> getAppStartMeasurement() {
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
 
@@ -232,7 +232,8 @@ public final class InternalSentrySdk {
       final @NotNull Map<String, Object> serializedOnStartSpan = new HashMap<>();
       serializedOnStartSpan.put("description", span.getOnStart().getDescription());
       serializedOnStartSpan.put("start_timestamp_ms", span.getOnStart().getStartTimestampMs());
-      serializedOnStartSpan.put("end_timestamp_ms", span.getOnStart().getProjectedStopTimestampMs());
+      serializedOnStartSpan.put(
+          "end_timestamp_ms", span.getOnStart().getProjectedStopTimestampMs());
       spans.add(serializedOnStartSpan);
     }
 
