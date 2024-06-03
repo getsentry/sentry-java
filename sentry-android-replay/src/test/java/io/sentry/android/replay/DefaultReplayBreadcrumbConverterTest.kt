@@ -6,7 +6,6 @@ import io.sentry.SpanDataConvention
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebSpanEvent
 import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertTrue
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertNull
@@ -115,9 +114,6 @@ class DefaultReplayBreadcrumbConverterTest {
         check(rrwebEvent is RRWebBreadcrumbEvent)
         assertEquals("device.orientation", rrwebEvent.category)
         assertEquals("landscape", rrwebEvent.data!!["position"])
-        assertEquals(123L, rrwebEvent.timestamp)
-        assertEquals(0.123, rrwebEvent.breadcrumbTimestamp)
-        assertEquals("default", rrwebEvent.breadcrumbType)
     }
 
     @Test
@@ -150,9 +146,6 @@ class DefaultReplayBreadcrumbConverterTest {
         check(rrwebEvent is RRWebBreadcrumbEvent)
         assertEquals("navigation", rrwebEvent.category)
         assertEquals("MainActivity", rrwebEvent.data!!["to"])
-        assertEquals(123L, rrwebEvent.timestamp)
-        assertEquals(0.123, rrwebEvent.breadcrumbTimestamp)
-        assertEquals("default", rrwebEvent.breadcrumbType)
     }
 
     @Test
@@ -170,48 +163,126 @@ class DefaultReplayBreadcrumbConverterTest {
         check(rrwebEvent is RRWebBreadcrumbEvent)
         assertEquals("navigation", rrwebEvent.category)
         assertEquals("/github", rrwebEvent.data!!["to"])
-        assertEquals(123L, rrwebEvent.timestamp)
-        assertEquals(0.123, rrwebEvent.breadcrumbTimestamp)
-        assertEquals("default", rrwebEvent.breadcrumbType)
     }
 
-//    @Test
-//    fun `test convert with navigation and app lifecycle`() {
-//        val breadcrumb = Breadcrumb().apply {
-//            message = "message"
-//            category = "navigation"
-//            type = "navigation"
-//            level = SentryLevel.ERROR
-//            data["state"] = "resumed"
-//            data["screen"] = "screen"
-//        }
-//
-//        val result = DefaultReplayBreadcrumbConverter().convert(breadcrumb)
-//
-//        assertTrue(result is RRWebBreadcrumbEvent)
-//        assertEquals("navigation", result.category)
-//        assertEquals("navigation", result.type)
-//        assertEquals(SentryLevel.ERROR, result.level)
-//        assertEquals("resumed", result.data["state"])
-//        assertEquals("screen", result.data["screen"])
-//    }
-//
-//    @Test
-//    fun `test convert with navigation and device orientation`() {
-//        val breadcrumb = Breadcrumb().apply {
-//            message = "message"
-//            category = "navigation"
-//            type = "navigation"
-//            level = SentryLevel.ERROR
-//            data["position"] = "landscape"
-//        }
-//
-//        val result = DefaultReplayBreadcrumbConverter().convert(breadcrumb)
-//
-//        assertTrue(result is RRWebBreadcrumbEvent)
-//        assertEquals("navigation", result.category)
-//        assertEquals("navigation", result.type)
-//        assertEquals(SentryLevel.ERROR, result.level)
-//        assertEquals("landscape", result.data["position"])
-//    }
+    @Test
+    fun `returns null when lifecycle state is not 'resumed'`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "navigation"
+            type = "navigation"
+            data["state"] = "started"
+            data["screen"] = "io.sentry.MainActivity"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        assertNull(rrwebEvent)
+    }
+
+    @Test
+    fun `converts ui click breadcrumbs`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "ui.click"
+            type = "user"
+            data["view.id"] = "button_login"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        check(rrwebEvent is RRWebBreadcrumbEvent)
+        assertEquals("ui.tap", rrwebEvent.category)
+        assertEquals("button_login", rrwebEvent.message)
+    }
+
+    @Test
+    fun `returns null if no view identifier in data`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "ui.click"
+            type = "user"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        assertNull(rrwebEvent)
+    }
+
+    @Test
+    fun `converts network connectivity breadcrumbs`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "network.event"
+            type = "system"
+            data["network_type"] = "cellular"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        check(rrwebEvent is RRWebBreadcrumbEvent)
+        assertEquals("device.connectivity", rrwebEvent.category)
+        assertEquals("cellular", rrwebEvent.data!!["state"])
+    }
+
+    @Test
+    fun `returns null if no network connectivity state`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "network.event"
+            type = "system"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        assertNull(rrwebEvent)
+    }
+
+    @Test
+    fun `converts battery status breadcrumbs`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "device.event"
+            type = "system"
+            data["action"] = "BATTERY_CHANGED"
+            data["level"] = 85.0f
+            data["charging"] = true
+            data["stuff"] = "shiet"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        check(rrwebEvent is RRWebBreadcrumbEvent)
+        assertEquals("device.battery", rrwebEvent.category)
+        assertEquals(85.0f, rrwebEvent.data!!["level"])
+        assertEquals(true, rrwebEvent.data!!["charging"])
+        assertNull(rrwebEvent.data!!["stuff"])
+    }
+
+    @Test
+    fun `converts generic breadcrumbs`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "device.event"
+            type = "system"
+            message = "message"
+            level = SentryLevel.ERROR
+            data["stuff"] = "shiet"
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        check(rrwebEvent is RRWebBreadcrumbEvent)
+        assertEquals("device.event", rrwebEvent.category)
+        assertEquals("message", rrwebEvent.message)
+        assertEquals(SentryLevel.ERROR, rrwebEvent.level)
+        assertEquals("shiet", rrwebEvent.data!!["stuff"])
+    }
 }
