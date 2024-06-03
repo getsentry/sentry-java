@@ -3,6 +3,7 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
+import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -25,6 +26,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.protocol.User;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,6 +65,7 @@ public final class OtelSpanWrapper implements ISpan {
   private final @NotNull Contexts contexts = new Contexts();
   private @Nullable String transactionName;
   private @Nullable TransactionNameSource transactionNameSource;
+  private final @Nullable Baggage baggage;
 
   // TODO [POTEL]
   //  private @Nullable SpanFinishedCallback spanFinishedCallback;
@@ -78,16 +82,28 @@ public final class OtelSpanWrapper implements ISpan {
 
   private @NotNull Deque<ISentryLifecycleToken> tokensToCleanup = new ArrayDeque<>(1);
 
+  // TODO [POTEL] reference root span? for getting root baggage
   public OtelSpanWrapper(
       final @NotNull ReadWriteSpan span,
       final @NotNull IScopes scopes,
       final @NotNull SentryDate startTimestamp,
       final @Nullable TracesSamplingDecision samplingDecision,
-      final @Nullable OtelSpanWrapper parentSpan) {
+      final @Nullable OtelSpanWrapper parentSpan,
+      final @Nullable Baggage baggage) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
     this.startTimestamp = startTimestamp;
-    this.context = new OtelSpanContext(span, samplingDecision, parentSpan);
+
+    if (parentSpan != null) {
+      this.baggage = parentSpan.getSpanContext().getBaggage();
+    } else if (baggage != null) {
+      this.baggage = baggage;
+    } else {
+      this.baggage = null;
+      //      this.baggage = new Baggage(scopes.getOptions().getLogger());
+    }
+
+    this.context = new OtelSpanContext(span, samplingDecision, parentSpan, this.baggage);
   }
 
   @Override
@@ -178,15 +194,43 @@ public final class OtelSpanWrapper implements ISpan {
 
   @Override
   public @Nullable TraceContext traceContext() {
-    //    return transaction.traceContext();
-    // TODO [POTEL]
+    if (scopes.getOptions().isTraceSampling()) {
+      if (baggage != null) {
+        updateBaggageValues();
+        return baggage.toTraceContext();
+      }
+    }
     return null;
+  }
+
+  private void updateBaggageValues() {
+    synchronized (this) {
+      if (baggage != null && baggage.isMutable()) {
+        final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+        scopes.configureScope(
+            scope -> {
+              userAtomicReference.set(scope.getUser());
+            });
+        baggage.setValuesFromTransaction(
+            getSpanContext().getTraceId(),
+            userAtomicReference.get(),
+            scopes.getOptions(),
+            this.getSamplingDecision(),
+            getTransactionName(),
+            getTransactionNameSource());
+        baggage.freeze();
+      }
+    }
   }
 
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    //    return transaction.toBaggageHeader(thirdPartyBaggageHeaders);
-    // TODO [POTEL]
+    if (scopes.getOptions().isTraceSampling()) {
+      if (baggage != null) {
+        updateBaggageValues();
+        return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+      }
+    }
     return null;
   }
 

@@ -18,6 +18,9 @@ public final class InternalSemanticAttributes {
       AttributeKey.doubleKey("sentry.profile_sample_rate");
   public static final AttributeKey<Boolean> IS_REMOTE_PARENT =
       AttributeKey.booleanKey("sentry.is_remote_parent");
+  public static final AttributeKey<String> BAGGAGE = AttributeKey.stringKey("sentry.baggage");
+  public static final AttributeKey<Boolean> BAGGAGE_MUTABLE =
+      AttributeKey.booleanKey("sentry.baggage_mutable");
   //  public static final AttributeKey<String> BREADCRUMB_TYPE =
   //      AttributeKey.stringKey("sentry.breadcrumb.type");
   //  public static final AttributeKey<SentryLevel> BREADCRUMB_TYPE =

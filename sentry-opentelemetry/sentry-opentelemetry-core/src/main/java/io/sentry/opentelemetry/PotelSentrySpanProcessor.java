@@ -8,6 +8,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.sentry.Baggage;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
 import io.sentry.SamplingContext;
@@ -16,6 +17,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
+import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.TracesSampler;
 import io.sentry.TracesSamplingDecision;
@@ -54,8 +56,20 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
     final @Nullable OtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
     @Nullable TracesSamplingDecision samplingDecision = null;
+    // TODO [POTEL] baggage from propagator should be honored
+    @Nullable Baggage baggage = null;
     otelSpan.setAttribute(IS_REMOTE_PARENT, otelSpan.getParentSpanContext().isRemote());
     if (sentryParentSpan == null) {
+      final @Nullable Boolean baggageMutable =
+          otelSpan.getAttribute(InternalSemanticAttributes.BAGGAGE_MUTABLE);
+      final @Nullable String baggageString =
+          otelSpan.getAttribute(InternalSemanticAttributes.BAGGAGE);
+      if (baggageString != null) {
+        baggage = Baggage.fromHeader(baggageString);
+        if (baggageMutable == true) {
+          baggage.freeze();
+        }
+      }
       final @Nullable Boolean sampled = otelSpan.getAttribute(InternalSemanticAttributes.SAMPLED);
       final @Nullable Double sampleRate =
           otelSpan.getAttribute(InternalSemanticAttributes.SAMPLE_RATE);
@@ -73,7 +87,11 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
 
         final @NotNull PropagationContext propagationContext =
             new PropagationContext(
-                new SentryId(traceId), new SpanId(spanId), new SpanId(parentSpanId), null, sampled);
+                new SentryId(traceId),
+                new SpanId(spanId),
+                new SpanId(parentSpanId),
+                baggage,
+                sampled);
 
         scopes.configureScope(
             scope -> {
@@ -96,9 +114,19 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
 
         final @NotNull String traceId = otelSpan.getSpanContext().getTraceId();
         final @NotNull String spanId = otelSpan.getSpanContext().getSpanId();
+        final @NotNull SpanId sentrySpanId = new SpanId(spanId);
+
+        @Nullable
+        SentryTraceHeader sentryTraceHeader = parentContext.get(SentryOtelKeys.SENTRY_TRACE_KEY);
+        @Nullable Baggage baggageFromContext = parentContext.get(SentryOtelKeys.SENTRY_BAGGAGE_KEY);
+        if (sentryTraceHeader != null) {
+          baggage = baggageFromContext;
+        }
 
         final @NotNull PropagationContext propagationContext =
-            new PropagationContext(new SentryId(traceId), new SpanId(spanId), null, null, null);
+            sentryTraceHeader == null
+                ? new PropagationContext(new SentryId(traceId), sentrySpanId, null, baggage, null)
+                : PropagationContext.fromHeaders(sentryTraceHeader, baggage, sentrySpanId);
 
         scopes.configureScope(
             scope -> {
@@ -118,7 +146,8 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
         new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
     spanStorage.storeSentrySpan(
         spanContext,
-        new OtelSpanWrapper(otelSpan, scopes, startTimestamp, samplingDecision, sentryParentSpan));
+        new OtelSpanWrapper(
+            otelSpan, scopes, startTimestamp, samplingDecision, sentryParentSpan, baggage));
   }
 
   @Override

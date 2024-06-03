@@ -7,6 +7,7 @@ import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
+import io.sentry.Baggage;
 import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
@@ -104,7 +105,12 @@ public final class OtelSpanFactory implements ISpanFactory {
       }
     }
 
-    // TODO [POTEL] send baggage in (note: won't go through propagators)
+    // note: won't go through propagators
+    final @Nullable Baggage baggage = spanContext.getBaggage();
+    if (baggage != null) {
+      spanBuilder.setAttribute(InternalSemanticAttributes.BAGGAGE_MUTABLE, baggage.isMutable());
+      spanBuilder.setAttribute(InternalSemanticAttributes.BAGGAGE, baggage.toHeaderString(null));
+    }
 
     final @Nullable SentryDate startTimestampFromOptions = spanOptions.getStartTimestamp();
     final @NotNull SentryDate startTimestamp =

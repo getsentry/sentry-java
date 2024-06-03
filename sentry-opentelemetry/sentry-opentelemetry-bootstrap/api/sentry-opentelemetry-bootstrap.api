@@ -1,4 +1,6 @@
 public final class io/sentry/opentelemetry/InternalSemanticAttributes {
+	public static final field BAGGAGE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field BAGGAGE_MUTABLE Lio/opentelemetry/api/common/AttributeKey;
 	public static final field IS_REMOTE_PARENT Lio/opentelemetry/api/common/AttributeKey;
 	public static final field PARENT_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
 	public static final field PROFILE_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
@@ -16,7 +18,7 @@ public final class io/sentry/opentelemetry/OtelContextScopesStorage : io/sentry/
 }
 
 public final class io/sentry/opentelemetry/OtelSpanContext : io/sentry/SpanContext {
-	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/OtelSpanWrapper;)V
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/OtelSpanWrapper;Lio/sentry/Baggage;)V
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 }
@@ -30,7 +32,7 @@ public final class io/sentry/opentelemetry/OtelSpanFactory : io/sentry/ISpanFact
 }
 
 public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/ISpan {
-	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/OtelSpanWrapper;)V
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/OtelSpanWrapper;Lio/sentry/Baggage;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V

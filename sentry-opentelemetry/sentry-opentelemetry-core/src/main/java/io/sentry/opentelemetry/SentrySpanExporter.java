@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.SemanticAttributes;
+import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.DefaultSpanFactory;
 import io.sentry.DsnUtil;
@@ -22,6 +23,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
+import io.sentry.SpanContext;
 import io.sentry.SpanId;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -197,8 +199,6 @@ public final class SentrySpanExporter implements SpanExporter {
         createAndFinishSpanForOtelSpan(childNode, transaction, remaining);
       }
 
-      //      spanStorage.getScope()
-      // transaction.finishWithScope
       transaction.finish(
           mapOtelStatus(span, transaction), new SentryLongDate(span.getEndEpochNanos()));
     }
@@ -312,7 +312,6 @@ public final class SentrySpanExporter implements SpanExporter {
   private @Nullable ITransaction createTransactionForOtelSpan(final @NotNull SpanData span) {
     final @NotNull String spanId = span.getSpanId();
     final @NotNull String traceId = span.getTraceId();
-    //    final @Nullable IScope scope = spanStorage.getScope(spanId);
     final @Nullable OtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(span.getSpanContext());
 
@@ -321,15 +320,6 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull IScopes scopesToUse =
         scopesMaybe == null ? ScopesAdapter.getInstance() : scopesMaybe;
     final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(span);
-
-    //    final @Nullable Boolean parentSampled =
-    // span.getAttributes().get(InternalSemanticAttributes.PARENT_SAMPLED);
-    // TODO DSC
-    // TODO op, desc, tags, data, origin, source
-    // TODO metadata
-
-    // TODO we'll have to copy some of otel span attributes over to our transaction/span, e.g.
-    // thread info is wrong because it's created here in the exporter
 
     scopesToUse
         .getOptions()
@@ -341,10 +331,10 @@ public final class SentrySpanExporter implements SpanExporter {
             traceId);
     final SpanId sentrySpanId = new SpanId(spanId);
 
-    // TODO parentSpanId, parentSamplingDecision, baggage
-
     @NotNull String transactionName = spanInfo.getDescription();
     @NotNull TransactionNameSource transactionNameSource = spanInfo.getTransactionNameSource();
+    @Nullable SpanId parentSpanId = null;
+    @Nullable Baggage baggage = null;
 
     if (sentrySpanMaybe != null) {
       final @NotNull OtelSpanWrapper sentrySpan = sentrySpanMaybe;
@@ -357,16 +347,14 @@ public final class SentrySpanExporter implements SpanExporter {
       if (transactionNameSourceMaybe != null) {
         transactionNameSource = transactionNameSourceMaybe;
       }
+      final @NotNull SpanContext spanContext = sentrySpan.getSpanContext();
+      parentSpanId = spanContext.getParentSpanId();
+      baggage = spanContext.getBaggage();
     }
 
+    // TODO [POTEL] parentSamplingDecision?
     final @NotNull TransactionContext transactionContext =
-        new TransactionContext(new SentryId(traceId), sentrySpanId, null, null, null);
-    //      traceData.getSentryTraceHeader() == null
-    //        ? new TransactionContext(
-    //        new SentryId(traceData.getTraceId()), spanId, null, null, null)
-    //        : TransactionContext.fromPropagationContext(
-    //        PropagationContext.fromHeaders(
-    //          traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
+        new TransactionContext(new SentryId(traceId), sentrySpanId, parentSpanId, null, baggage);
 
     transactionContext.setName(transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
@@ -380,7 +368,6 @@ public final class SentrySpanExporter implements SpanExporter {
     transactionOptions.setStartTimestamp(new SentryLongDate(span.getStartEpochNanos()));
     transactionOptions.setSpanFactory(new DefaultSpanFactory());
 
-    // TODO [POTEL] do not sample again
     ITransaction sentryTransaction =
         scopesToUse.startTransaction(transactionContext, transactionOptions);
     sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);

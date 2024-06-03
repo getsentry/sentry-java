@@ -638,7 +638,12 @@ public final class SentryTracer implements ITransaction {
               userAtomicReference.set(scope.getUser());
             });
         baggage.setValuesFromTransaction(
-            this, userAtomicReference.get(), scopes.getOptions(), this.getSamplingDecision());
+            getSpanContext().getTraceId(),
+            userAtomicReference.get(),
+            scopes.getOptions(),
+            this.getSamplingDecision(),
+            getName(),
+            getTransactionNameSource());
         baggage.freeze();
       }
     }
