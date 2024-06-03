@@ -75,6 +75,6 @@
 
 ##---------------Begin: proguard configuration for sentry-android-replay  ----------
 -dontwarn io.sentry.android.replay.ReplayIntegration
--dontwarn io.sentry.android.replay.ReplayIntegrationKt
+-dontwarn io.sentry.android.replay.DefaultReplayBreadcrumbConverter
 -keepnames class io.sentry.android.replay.ReplayIntegration
 ##---------------End: proguard configuration for sentry-android-replay  ----------

@@ -7,10 +7,11 @@ import io.sentry.SpanDataConvention
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebSpanEvent
+import kotlin.LazyThreadSafetyMode.NONE
 
 public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     internal companion object {
-        private val snakecasePattern = "_[a-z]".toRegex()
+        private val snakecasePattern by lazy(NONE) { "_[a-z]".toRegex() }
         private val supportedNetworkData = setOf(
             "status_code",
             "method",
