@@ -10,7 +10,6 @@ import io.sentry.ILogger;
 import io.sentry.IScope;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
-import io.sentry.SentryDate;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -204,55 +203,52 @@ public final class InternalSentrySdk {
     processInitNativeSpan.setStartUnixTimeMs(
         metrics.getAppStartTimeSpan().getStartTimestampMs()); // This has to go after setStartedAt
     processInitNativeSpan.setStoppedAt(metrics.getClassLoadedUptimeMs());
+    processInitNativeSpan.setDescription("Process Initialization");
 
-    final @NotNull Map<String, Object> processInitSpan = new HashMap<>();
-    processInitSpan.put("description", "Process Initialization");
-    processInitSpan.put("start_timestamp_ms", processInitNativeSpan.getStartTimestampMs());
-    processInitSpan.put("end_timestamp_ms", processInitNativeSpan.getProjectedStopTimestampMs());
-    spans.add(processInitSpan);
-
-    final @NotNull Map<String, Object> applicationOnCreateSpan = new HashMap<>();
-    applicationOnCreateSpan.put(
-        "description", metrics.getApplicationOnCreateTimeSpan().getDescription());
-    applicationOnCreateSpan.put(
-        "start_timestamp_ms", metrics.getApplicationOnCreateTimeSpan().getStartTimestampMs());
-    applicationOnCreateSpan.put(
-        "end_timestamp_ms", metrics.getApplicationOnCreateTimeSpan().getProjectedStopTimestampMs());
-    spans.add(applicationOnCreateSpan);
+    addTimeSpanToSerializedSpans(processInitNativeSpan, spans);
+    addTimeSpanToSerializedSpans(metrics.getApplicationOnCreateTimeSpan(), spans);
 
     for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
-      final @NotNull Map<String, Object> serializedSpan = new HashMap<>();
-      serializedSpan.put("description", span.getDescription());
-      serializedSpan.put("start_timestamp_ms", span.getStartTimestampMs());
-      serializedSpan.put("end_timestamp_ms", span.getProjectedStopTimestampMs());
-      spans.add(serializedSpan);
+      addTimeSpanToSerializedSpans(span, spans);
     }
 
     for (final ActivityLifecycleTimeSpan span : metrics.getActivityLifecycleTimeSpans()) {
-      final @NotNull Map<String, Object> serializedOnCreateSpan = new HashMap<>();
-      serializedOnCreateSpan.put("description", span.getOnCreate().getDescription());
-      serializedOnCreateSpan.put("start_timestamp_ms", span.getOnCreate().getStartTimestampMs());
-      serializedOnCreateSpan.put(
-          "end_timestamp_ms", span.getOnCreate().getProjectedStopTimestampMs());
-      spans.add(serializedOnCreateSpan);
-
-      final @NotNull Map<String, Object> serializedOnStartSpan = new HashMap<>();
-      serializedOnStartSpan.put("description", span.getOnStart().getDescription());
-      serializedOnStartSpan.put("start_timestamp_ms", span.getOnStart().getStartTimestampMs());
-      serializedOnStartSpan.put(
-          "end_timestamp_ms", span.getOnStart().getProjectedStopTimestampMs());
-      spans.add(serializedOnStartSpan);
+      addTimeSpanToSerializedSpans(span.getOnCreate(), spans);
+      addTimeSpanToSerializedSpans(span.getOnStart(), spans);
     }
 
     final @NotNull Map<String, Object> result = new HashMap<>();
     result.put("spans", spans);
     result.put("type", metrics.getAppStartType().toString().toLowerCase());
-    final @Nullable SentryDate appStartTime = metrics.getAppStartTimeSpan().getStartTimestamp();
-    if (appStartTime != null) {
-      result.put("app_start_timestamp_ms", DateUtils.nanosToMillis(appStartTime.nanoTimestamp()));
+    if (metrics.getAppStartTimeSpan().hasStarted()) {
+      result.put("app_start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
     }
 
     return result;
+  }
+
+  private static void addTimeSpanToSerializedSpans(TimeSpan span, List<Map<String, Object>> spans) {
+    if (span.hasNotStarted()) {
+      HubAdapter.getInstance()
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
+      return;
+    }
+
+    if (span.hasNotStopped()) {
+      HubAdapter.getInstance()
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
+      return;
+    }
+
+    final @NotNull Map<String, Object> spanMap = new HashMap<>();
+    spanMap.put("description", span.getDescription());
+    spanMap.put("start_timestamp_ms", span.getStartTimestampMs());
+    spanMap.put("end_timestamp_ms", span.getProjectedStopTimestampMs());
+    spans.add(spanMap);
   }
 
   @Nullable

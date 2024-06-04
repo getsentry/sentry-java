@@ -160,6 +160,26 @@ class InternalSentrySdkTest {
             metrics.applicationOnCreateTimeSpan.setStartUnixTimeMs(30) // The order matters, unix time must be set after started at in tests to avoid overwrite
             metrics.applicationOnCreateTimeSpan.setStoppedAt(40)
         }
+
+        fun mockUnfinishedAppStart() {
+            val metrics = AppStartMetrics.getInstance()
+
+            metrics.appStartType = AppStartMetrics.AppStartType.WARM
+
+            metrics.appStartTimeSpan.setStartedAt(20) // Can't be 0, as that's the default value if not set
+            metrics.appStartTimeSpan.setStartUnixTimeMs(20) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            metrics.appStartTimeSpan.setStoppedAt(200)
+            metrics.classLoadedUptimeMs = 100
+
+            AppStartMetrics.onApplicationCreate(mock<Application>())
+            metrics.applicationOnCreateTimeSpan.description = "Application created"
+            metrics.applicationOnCreateTimeSpan.setStartedAt(30) // Can't be 0, as that's the default value if not set
+
+            val activityLifecycleSpan = ActivityLifecycleTimeSpan() // Expect the created spans are not started nor stopped
+            activityLifecycleSpan.onCreate.description = "Test Activity Lifecycle onCreate"
+            activityLifecycleSpan.onStart.description = "Test Activity Lifecycle onStart"
+            metrics.addActivityLifecycleTimeSpans(activityLifecycleSpan)
+        }
     }
 
     @BeforeTest
@@ -369,9 +389,10 @@ class InternalSentrySdkTest {
         val serializedAppStart = InternalSentrySdk.getAppStartMeasurement()
 
         assertEquals("warm", serializedAppStart["type"])
-        assertEquals(20.0, serializedAppStart["app_start_timestamp_ms"])
+        assertEquals(20.toLong(), serializedAppStart["app_start_timestamp_ms"])
 
         val actualSpans = serializedAppStart["spans"] as List<*>
+        assertEquals(5, actualSpans.size)
 
         val actualProcessSpan = actualSpans[0] as Map<*, *>
         assertEquals("Process Initialization", actualProcessSpan["description"])
@@ -406,9 +427,10 @@ class InternalSentrySdkTest {
         val serializedAppStart = InternalSentrySdk.getAppStartMeasurement()
 
         assertEquals("warm", serializedAppStart["type"])
-        assertEquals(20.0, serializedAppStart["app_start_timestamp_ms"])
+        assertEquals(20.toLong(), serializedAppStart["app_start_timestamp_ms"])
 
         val actualSpans = serializedAppStart["spans"] as List<*>
+        assertEquals(2, actualSpans.size)
 
         val actualProcessSpan = actualSpans[0] as Map<*, *>
         assertEquals("Process Initialization", actualProcessSpan["description"])
@@ -419,5 +441,23 @@ class InternalSentrySdkTest {
         assertEquals("Application created", actualAppSpan["description"])
         assertEquals(30.toLong(), actualAppSpan["start_timestamp_ms"])
         assertEquals(40.toLong(), actualAppSpan["end_timestamp_ms"])
+    }
+
+    @Test
+    fun `getAppStartMeasurement returns only stopped spans in serialized data`() {
+        Fixture().mockUnfinishedAppStart()
+
+        val serializedAppStart = InternalSentrySdk.getAppStartMeasurement()
+
+        assertEquals("warm", serializedAppStart["type"])
+        assertEquals(20.toLong(), serializedAppStart["app_start_timestamp_ms"])
+
+        val actualSpans = serializedAppStart["spans"] as List<*>
+        assertEquals(1, actualSpans.size)
+
+        val actualProcessSpan = actualSpans[0] as Map<*, *>
+        assertEquals("Process Initialization", actualProcessSpan["description"])
+        assertEquals(20.toLong(), actualProcessSpan["start_timestamp_ms"])
+        assertEquals(100.toLong(), actualProcessSpan["end_timestamp_ms"])
     }
 }
