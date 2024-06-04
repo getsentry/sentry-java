@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -219,7 +220,7 @@ public final class InternalSentrySdk {
 
     final @NotNull Map<String, Object> result = new HashMap<>();
     result.put("spans", spans);
-    result.put("type", metrics.getAppStartType().toString().toLowerCase());
+    result.put("type", metrics.getAppStartType().toString().toLowerCase(Locale.ROOT));
     if (metrics.getAppStartTimeSpan().hasStarted()) {
       result.put("app_start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
     }
