@@ -43,6 +43,8 @@ dependencies {
     implementation(Config.Libs.springBoot3StarterQuartz)
     implementation(Config.Libs.springBoot3StarterWebflux)
     implementation(Config.Libs.springBoot3StarterAop)
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework:spring-context-support")
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
