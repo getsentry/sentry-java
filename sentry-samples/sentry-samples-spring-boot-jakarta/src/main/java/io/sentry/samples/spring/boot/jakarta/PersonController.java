@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/person/")
 public class PersonController {
   private final PersonService personService;
+  private final JmsService jmsService;
+  private final AmqpService amqpService;
   private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class);
 
-  public PersonController(PersonService personService) {
+  public PersonController(PersonService personService, JmsService jmsService, AmqpService amqpService) {
     this.personService = personService;
+    this.jmsService = jmsService;
+    this.amqpService = amqpService;
   }
 
   @GetMapping("{id}")
@@ -27,6 +31,8 @@ public class PersonController {
 
   @PostMapping
   Person create(@RequestBody Person person) {
+//    jmsService.sendMessage(person.getFirstName());
+    amqpService.sendMessage(person.getFirstName());
     return personService.create(person);
   }
 }

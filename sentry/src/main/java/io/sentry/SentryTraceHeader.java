@@ -43,6 +43,10 @@ public final class SentryTraceHeader {
     return SENTRY_TRACE_HEADER;
   }
 
+  public @NotNull String getPropertyName() {
+    return SENTRY_TRACE_HEADER.replace("-", "_");
+  }
+
   public @NotNull String getValue() {
     if (sampled != null) {
       return String.format("%s-%s-%s", traceId, spanId, sampled ? "1" : "0");

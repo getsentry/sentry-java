@@ -33,6 +33,10 @@ public final class BaggageHeader {
     return BAGGAGE_HEADER;
   }
 
+  public @NotNull String getPropertyName() {
+    return BAGGAGE_HEADER;
+  }
+
   public @NotNull String getValue() {
     return value;
   }
