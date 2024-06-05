@@ -200,6 +200,24 @@ public final class SentryTracer implements ITransaction {
     if (!root.isFinished()
         && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
 
+      // We set the new spanFinishedCallback here instead of creation time, calling the old one to
+      // avoid the user overwrites it by setting a custom spanFinishedCallback on the root span
+      final @Nullable SpanFinishedCallback oldCallback = this.root.getSpanFinishedCallback();
+      this.root.setSpanFinishedCallback(
+          span -> {
+            if (oldCallback != null) {
+              oldCallback.execute(span);
+            }
+
+            // Let's call the finishCallback here, when the root span has a finished date but it's
+            // not finished, yet
+            final @Nullable TransactionFinishedCallback finishedCallback =
+                transactionOptions.getTransactionFinishedCallback();
+            if (finishedCallback != null) {
+              finishedCallback.execute(this);
+            }
+          });
+
       // any un-finished childs will remain unfinished
       // as relay takes care of setting the end-timestamp + deadline_exceeded
       // see
@@ -232,11 +250,6 @@ public final class SentryTracer implements ITransaction {
                 });
           });
       final SentryTransaction transaction = new SentryTransaction(this);
-      final TransactionFinishedCallback finishedCallback =
-          transactionOptions.getTransactionFinishedCallback();
-      if (finishedCallback != null) {
-        finishedCallback.execute(this);
-      }
 
       if (timer != null) {
         synchronized (timerLock) {
@@ -605,7 +618,9 @@ public final class SentryTracer implements ITransaction {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
       for (final Span span : spans) {
-        if (!span.isFinished()) {
+        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+        // date
+        if (!span.isFinished() && span.getFinishDate() == null) {
           return false;
         }
       }
