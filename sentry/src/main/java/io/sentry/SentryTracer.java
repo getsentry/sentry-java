@@ -200,6 +200,8 @@ public final class SentryTracer implements ITransaction {
     if (!root.isFinished()
         && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
 
+      final @NotNull AtomicReference<List<PerformanceCollectionData>> performanceCollectionData =
+          new AtomicReference<>();
       // We set the new spanFinishedCallback here instead of creation time, calling the old one to
       // avoid the user overwrites it by setting a custom spanFinishedCallback on the root span
       final @Nullable SpanFinishedCallback oldCallback = this.root.getSpanFinishedCallback();
@@ -216,6 +218,10 @@ public final class SentryTracer implements ITransaction {
             if (finishedCallback != null) {
               finishedCallback.execute(this);
             }
+
+            if (transactionPerformanceCollector != null) {
+              performanceCollectionData.set(transactionPerformanceCollector.stop(this));
+            }
           });
 
       // any un-finished childs will remain unfinished
@@ -224,20 +230,15 @@ public final class SentryTracer implements ITransaction {
       // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
       root.finish(finishStatus.spanStatus, finishTimestamp);
 
-      List<PerformanceCollectionData> performanceCollectionData = null;
-      if (transactionPerformanceCollector != null) {
-        performanceCollectionData = transactionPerformanceCollector.stop(this);
-      }
-
       ProfilingTraceData profilingTraceData = null;
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
         profilingTraceData =
             hub.getOptions()
                 .getTransactionProfiler()
-                .onTransactionFinish(this, performanceCollectionData, hub.getOptions());
+                .onTransactionFinish(this, performanceCollectionData.get(), hub.getOptions());
       }
-      if (performanceCollectionData != null) {
-        performanceCollectionData.clear();
+      if (performanceCollectionData.get() != null) {
+        performanceCollectionData.get().clear();
       }
 
       hub.configureScope(
