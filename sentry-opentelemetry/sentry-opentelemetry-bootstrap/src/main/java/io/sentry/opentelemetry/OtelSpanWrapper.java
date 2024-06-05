@@ -10,7 +10,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
-import io.sentry.NoOpScopesStorage;
+import io.sentry.NoOpScopesLifecycleToken;
 import io.sentry.NoOpSpan;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -82,7 +82,6 @@ public final class OtelSpanWrapper implements ISpan {
 
   private @NotNull Deque<ISentryLifecycleToken> tokensToCleanup = new ArrayDeque<>(1);
 
-  // TODO [POTEL] reference root span? for getting root baggage
   public OtelSpanWrapper(
       final @NotNull ReadWriteSpan span,
       final @NotNull IScopes scopes,
@@ -100,7 +99,6 @@ public final class OtelSpanWrapper implements ISpan {
       this.baggage = baggage;
     } else {
       this.baggage = null;
-      //      this.baggage = new Baggage(scopes.getOptions().getLogger());
     }
 
     this.context = new OtelSpanContext(span, samplingDecision, parentSpan, this.baggage);
@@ -496,15 +494,12 @@ public final class OtelSpanWrapper implements ISpan {
     final @Nullable Span otelSpan = getSpan();
     if (otelSpan != null) {
       final @NotNull Scope otelScope = otelSpan.makeCurrent();
-      // TODO [POTEL] should we keep an ordered list of otel scopes and close them in reverse order
-      // on finish?
-      // TODO [POTEL] should we make transaction/span implement ISentryLifecycleToken instead?
       final @NotNull OtelContextSpanStorageToken token = new OtelContextSpanStorageToken(otelScope);
       // to iterate LIFO when closing
       tokensToCleanup.addFirst(token);
       return token;
     }
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   // TODO [POTEL] extract generic

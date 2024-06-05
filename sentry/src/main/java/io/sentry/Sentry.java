@@ -828,7 +828,7 @@ public final class Sentry {
     if (!globalHubMode) {
       return getCurrentScopes().pushScope();
     }
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   /** Pushes a new isolation and current scope while inheriting the current scope's data. */
@@ -837,7 +837,7 @@ public final class Sentry {
     if (!globalHubMode) {
       return getCurrentScopes().pushIsolationScope();
     }
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   /**

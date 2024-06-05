@@ -26,9 +26,7 @@ public final class OtelContextScopesStorage implements IScopesStorage {
   }
 
   @Override
-  public void close() {
-    // TODO [POTEL] can we do something here?
-  }
+  public void close() {}
 
   static final class OtelContextScopesStorageToken implements ISentryLifecycleToken {
 

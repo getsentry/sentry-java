@@ -87,7 +87,7 @@ public final class SentryAndroid {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
-            final LoadClass classLoader = new LoadClass();
+            final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
             final boolean isTimberUpstreamAvailable =
                 classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
@@ -101,7 +101,7 @@ public final class SentryAndroid {
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
-            final LoadClass loadClass = new LoadClass();
+            final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
             final ActivityFramesTracker activityFramesTracker =
                 new ActivityFramesTracker(loadClass, options);
 

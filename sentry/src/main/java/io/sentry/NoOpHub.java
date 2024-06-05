@@ -128,12 +128,12 @@ public final class NoOpHub implements IHub {
 
   @Override
   public @NotNull ISentryLifecycleToken pushScope() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
   public @NotNull ISentryLifecycleToken pushIsolationScope() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
@@ -181,7 +181,7 @@ public final class NoOpHub implements IHub {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override

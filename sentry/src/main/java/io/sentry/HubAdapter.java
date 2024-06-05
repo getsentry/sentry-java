@@ -221,7 +221,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override

@@ -916,7 +916,7 @@ public final class SentryTracer implements ITransaction {
         });
 
     // TODO [POTEL] can we return an actual token here
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @NotNull

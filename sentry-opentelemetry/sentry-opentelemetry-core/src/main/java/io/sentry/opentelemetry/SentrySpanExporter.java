@@ -46,9 +46,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentrySpanExporter implements SpanExporter {
   private volatile boolean stopped = false;
-  // TODO is a strong ref problematic here?
-  // TODO [POTEL] a weak ref could mean spans are gone before we had a chance to attach them
-  // somewhere
+  // TODO [POTEL] should we clear out old finished spans after a while?
   private final List<SpanData> finishedSpans = new CopyOnWriteArrayList<>();
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =

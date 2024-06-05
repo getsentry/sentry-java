@@ -107,7 +107,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override

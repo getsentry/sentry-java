@@ -12,8 +12,8 @@ public final class io/sentry/android/core/ActivityBreadcrumbsIntegration : andro
 }
 
 public final class io/sentry/android/core/ActivityFramesTracker {
-	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;)V
-	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/MainLooperHandler;)V
+	public fun <init> (Lio/sentry/util/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun <init> (Lio/sentry/util/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/MainLooperHandler;)V
 	public fun addActivity (Landroid/app/Activity;)V
 	public fun isFrameMetricsAggregatorAvailable ()Z
 	public fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
@@ -209,7 +209,7 @@ public final class io/sentry/android/core/InternalSentrySdk {
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
 }
 
-public final class io/sentry/android/core/LoadClass {
+public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
 	public fun <init> ()V
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
@@ -374,7 +374,7 @@ public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : and
 }
 
 public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/LoadClass;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/util/LoadClass;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V

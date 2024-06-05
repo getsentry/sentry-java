@@ -482,6 +482,6 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 }

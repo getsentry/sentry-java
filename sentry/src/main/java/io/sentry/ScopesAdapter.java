@@ -218,7 +218,7 @@ public final class ScopesAdapter implements IScopes {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
