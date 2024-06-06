@@ -137,8 +137,14 @@ public final class OtelSpanFactory implements ISpanFactory {
       if (description != null) {
         sentrySpan.setDescription(description);
       }
-      if (samplingDecision != null) {
-        sentrySpan.getSpanContext().setSamplingDecision(samplingDecision);
+      // TODO [POTEL] do we need this?
+      //      if (samplingDecision != null) {
+      //        sentrySpan.getSpanContext().setSamplingDecision(samplingDecision);
+      //      }
+      if (spanContext instanceof TransactionContext) {
+        final @NotNull TransactionContext transactionContext = (TransactionContext) spanContext;
+        sentrySpan.setTransactionName(
+            transactionContext.getName(), transactionContext.getTransactionNameSource());
       }
     }
 
