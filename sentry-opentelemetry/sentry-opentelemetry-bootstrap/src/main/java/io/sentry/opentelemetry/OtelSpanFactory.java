@@ -40,7 +40,6 @@ public final class OtelSpanFactory implements ISpanFactory {
       @NotNull IScopes scopes,
       @NotNull TransactionOptions transactionOptions,
       @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
-    // TODO [POTEL] name vs. op for transaction
     final @Nullable OtelSpanWrapper span =
         createSpanInternal(
             scopes, transactionOptions, null, context.getSamplingDecision(), context);
