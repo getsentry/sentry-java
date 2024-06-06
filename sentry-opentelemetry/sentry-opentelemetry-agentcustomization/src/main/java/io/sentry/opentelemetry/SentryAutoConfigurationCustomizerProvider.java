@@ -149,6 +149,7 @@ public final class SentryAutoConfigurationCustomizerProvider
     // TODO [POTEL] configurable or separate packages for old vs new way
     //    return tracerProvider.addSpanProcessor(new SentrySpanProcessor());
     return tracerProvider
+        .setSampler(new SentrySampler())
         .addSpanProcessor(new PotelSentrySpanProcessor())
         .addSpanProcessor(BatchSpanProcessor.builder(new SentrySpanExporter()).build());
   }

@@ -4,6 +4,12 @@ public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor 
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
+public final class io/sentry/opentelemetry/OtelSamplingUtil {
+	public fun <init> ()V
+	public static fun extractSamplingDecision (Lio/opentelemetry/api/common/Attributes;)Lio/sentry/TracesSamplingDecision;
+	public static fun extractSamplingDecisionOrDefault (Lio/opentelemetry/api/common/Attributes;)Lio/sentry/TracesSamplingDecision;
+}
+
 public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/util/Map;)V
@@ -34,6 +40,20 @@ public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/c
 	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
 	public fun fields ()Ljava/util/Collection;
 	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/SentrySampler : io/opentelemetry/sdk/trace/samplers/Sampler {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun getDescription ()Ljava/lang/String;
+	public fun shouldSample (Lio/opentelemetry/context/Context;Ljava/lang/String;Ljava/lang/String;Lio/opentelemetry/api/trace/SpanKind;Lio/opentelemetry/api/common/Attributes;Ljava/util/List;)Lio/opentelemetry/sdk/trace/samplers/SamplingResult;
+}
+
+public final class io/sentry/opentelemetry/SentrySamplingResult : io/opentelemetry/sdk/trace/samplers/SamplingResult {
+	public fun <init> (Lio/sentry/TracesSamplingDecision;)V
+	public fun getAttributes ()Lio/opentelemetry/api/common/Attributes;
+	public fun getDecision ()Lio/opentelemetry/sdk/trace/samplers/SamplingDecision;
+	public fun getSentryDecision ()Lio/sentry/TracesSamplingDecision;
 }
 
 public final class io/sentry/opentelemetry/SentrySpanExporter : io/opentelemetry/sdk/trace/export/SpanExporter {
