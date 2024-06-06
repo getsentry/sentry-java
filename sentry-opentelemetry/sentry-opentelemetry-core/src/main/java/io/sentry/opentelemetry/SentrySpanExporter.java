@@ -55,6 +55,17 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
+
+  private final @NotNull List<String> attributeKeysToRemove =
+      Arrays.asList(
+          InternalSemanticAttributes.IS_REMOTE_PARENT.getKey(),
+          InternalSemanticAttributes.BAGGAGE.getKey(),
+          InternalSemanticAttributes.BAGGAGE_MUTABLE.getKey(),
+          InternalSemanticAttributes.SAMPLED.getKey(),
+          InternalSemanticAttributes.SAMPLE_RATE.getKey(),
+          InternalSemanticAttributes.PROFILE_SAMPLED.getKey(),
+          InternalSemanticAttributes.PROFILE_SAMPLE_RATE.getKey(),
+          InternalSemanticAttributes.PARENT_SAMPLED.getKey());
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
   private static final String TRACE_ORIGN = "auto.potel";
@@ -516,12 +527,19 @@ public final class SentrySpanExporter implements SpanExporter {
       attributes.forEach(
           (key, value) -> {
             if (key != null) {
-              mapWithStringKeys.put(key.getKey(), value);
+              final @NotNull String stringKey = key.getKey();
+              if (!isSentryInternalKey(stringKey)) {
+                mapWithStringKeys.put(stringKey, value);
+              }
             }
           });
     }
 
     return mapWithStringKeys;
+  }
+
+  private boolean isSentryInternalKey(final @NotNull String key) {
+    return attributeKeysToRemove.contains(key);
   }
 
   @Override
