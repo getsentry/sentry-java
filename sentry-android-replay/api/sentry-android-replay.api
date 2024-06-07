@@ -6,6 +6,11 @@ public final class io/sentry/android/replay/BuildConfig {
 	public fun <init> ()V
 }
 
+public class io/sentry/android/replay/DefaultReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
+	public fun <init> ()V
+	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
+}
+
 public final class io/sentry/android/replay/GeneratedVideo {
 	public fun <init> (Ljava/io/File;IJ)V
 	public final fun component1 ()Ljava/io/File;
@@ -42,6 +47,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
+	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
@@ -55,6 +61,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun resume ()V
 	public fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
 	public fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
+	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
 	public fun stop ()V
 }

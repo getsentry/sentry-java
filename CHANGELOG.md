@@ -1,8 +1,19 @@
 # Changelog
 
-## 7.8.0-alpha.0
+## 7.9.0-alpha.1
 
-- No documented changes.
+- Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+
+We released our second Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+
+### Features
+
+- Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+
+### Fixes
+
+- Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
+- Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
 
 ## 7.8.0
 

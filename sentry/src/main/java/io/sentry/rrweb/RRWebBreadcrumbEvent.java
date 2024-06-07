@@ -6,6 +6,7 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.SentryLevel;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -25,6 +26,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
   private @Nullable String breadcrumbType;
   private @Nullable String category;
   private @Nullable String message;
+  private @Nullable SentryLevel level;
   private @Nullable Map<String, Object> data;
   // to support unknown json attributes with nesting, we have to have unknown map for each of the
   // nested object in json: { ..., "data": { ..., "payload": { ... } } }
@@ -82,6 +84,15 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
   }
 
   @Nullable
+  public SentryLevel getLevel() {
+    return level;
+  }
+
+  public void setLevel(final @Nullable SentryLevel level) {
+    this.level = level;
+  }
+
+  @Nullable
   public Map<String, Object> getData() {
     return data;
   }
@@ -126,6 +137,7 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
     public static final String TYPE = "type";
     public static final String CATEGORY = "category";
     public static final String MESSAGE = "message";
+    public static final String LEVEL = "level";
   }
 
   @Override
@@ -172,6 +184,9 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
     }
     if (message != null) {
       writer.name(JsonKeys.MESSAGE).value(message);
+    }
+    if (level != null) {
+      writer.name(JsonKeys.LEVEL).value(logger, level);
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
@@ -271,6 +286,13 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
             break;
           case JsonKeys.MESSAGE:
             event.message = reader.nextStringOrNull();
+            break;
+          case JsonKeys.LEVEL:
+            try {
+              event.level = new SentryLevel.Deserializer().deserialize(reader, logger);
+            } catch (Exception exception) {
+              logger.log(SentryLevel.DEBUG, exception, "Error when deserializing SentryLevel");
+            }
             break;
           case JsonKeys.DATA:
             Map<String, Object> deserializedData =

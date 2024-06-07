@@ -6,6 +6,8 @@ import io.sentry.ReplayRecording
 import io.sentry.protocol.SerializationUtils.deserializeJson
 import io.sentry.protocol.SerializationUtils.serializeToString
 import io.sentry.rrweb.RRWebBreadcrumbEventSerializationTest
+import io.sentry.rrweb.RRWebInteractionEventSerializationTest
+import io.sentry.rrweb.RRWebInteractionMoveEventSerializationTest
 import io.sentry.rrweb.RRWebMetaEventSerializationTest
 import io.sentry.rrweb.RRWebSpanEventSerializationTest
 import io.sentry.rrweb.RRWebVideoEventSerializationTest
@@ -23,7 +25,9 @@ class ReplayRecordingSerializationTest {
                 RRWebMetaEventSerializationTest.Fixture().getSut(),
                 RRWebVideoEventSerializationTest.Fixture().getSut(),
                 RRWebBreadcrumbEventSerializationTest.Fixture().getSut(),
-                RRWebSpanEventSerializationTest.Fixture().getSut()
+                RRWebSpanEventSerializationTest.Fixture().getSut(),
+                RRWebInteractionEventSerializationTest.Fixture().getSut(),
+                RRWebInteractionMoveEventSerializationTest.Fixture().getSut()
             )
         }
     }

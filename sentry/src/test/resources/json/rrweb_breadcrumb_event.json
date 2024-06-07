@@ -8,6 +8,7 @@
       "timestamp": 12345678.901,
       "category": "navigation",
       "message": "message",
+      "level": "info",
       "data": {
         "screen": "MainActivity",
         "state": "resumed"

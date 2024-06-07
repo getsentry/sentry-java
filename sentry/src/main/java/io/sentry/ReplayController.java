@@ -23,4 +23,9 @@ public interface ReplayController {
 
   @NotNull
   SentryId getReplayId();
+
+  void setBreadcrumbConverter(@NotNull ReplayBreadcrumbConverter converter);
+
+  @NotNull
+  ReplayBreadcrumbConverter getBreadcrumbConverter();
 }
