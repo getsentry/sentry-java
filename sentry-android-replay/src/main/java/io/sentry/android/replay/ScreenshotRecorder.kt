@@ -100,14 +100,6 @@ internal class ScreenshotRecorder(
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).postAtFrontOfQueue {
-//            val viewHierarchy: ViewHierarchyNode
-//            val time = measureTime {
-//                val rootNode = ViewHierarchyNode.fromView(root, options)
-//                root.traverse(rootNode)
-//                viewHierarchy = rootNode
-//            }
-//            Log.e("Recorder", "Time to get view hierarchy: $time")
-
             try {
                 PixelCopy.request(
                     window,
