@@ -1,7 +1,6 @@
 package io.sentry.android.replay.viewhierarchy
 
 import android.annotation.TargetApi
-import android.content.res.Resources.NotFoundException
 import android.graphics.Rect
 import android.text.Layout
 import android.view.View
@@ -13,15 +12,17 @@ import io.sentry.android.replay.util.isVisibleToUser
 
 @TargetApi(26)
 sealed class ViewHierarchyNode(
-    val id: String,
     val x: Float,
     val y: Float,
     val width: Int,
     val height: Int,
+    /* Elevation (in px) */
     val elevation: Float,
+    /* Distance to the parent (index) */
     val distance: Int,
     val parent: ViewHierarchyNode? = null,
     val shouldRedact: Boolean = false,
+    /* Whether the node is important for content capture (=non-empty container) */
     var isImportantForContentCapture: Boolean = false,
     val isVisible: Boolean = false,
     val visibleRect: Rect? = null
@@ -29,7 +30,6 @@ sealed class ViewHierarchyNode(
     var children: List<ViewHierarchyNode>? = null
 
     class GenericViewHierarchyNode(
-        id: String,
         x: Float,
         y: Float,
         width: Int,
@@ -41,14 +41,13 @@ sealed class ViewHierarchyNode(
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
         visibleRect: Rect? = null
-    ): ViewHierarchyNode(id, x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
+    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
 
     class TextViewHierarchyNode(
         val layout: Layout? = null,
         val dominantColor: Int? = null,
         val paddingLeft: Int = 0,
         val paddingTop: Int = 0,
-        id: String,
         x: Float,
         y: Float,
         width: Int,
@@ -60,10 +59,9 @@ sealed class ViewHierarchyNode(
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
         visibleRect: Rect? = null
-    ) : ViewHierarchyNode(id, x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
+    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
 
     class ImageViewHierarchyNode(
-        id: String,
         x: Float,
         y: Float,
         width: Int,
@@ -75,7 +73,7 @@ sealed class ViewHierarchyNode(
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
         visibleRect: Rect? = null
-    ) : ViewHierarchyNode(id, x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
+    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
 
     /**
      * Traverses the view hierarchy starting from this node. The traversal is done in a depth-first
@@ -123,7 +121,8 @@ sealed class ViewHierarchyNode(
             // or doesn't contain the node's visible rect, we can skip it
             if (!otherNode.isVisible ||
                 !otherNode.isImportantForContentCapture ||
-                !otherNode.visibleRect.contains(node.visibleRect)) {
+                !otherNode.visibleRect.contains(node.visibleRect)
+            ) {
                 return@traverse false
             }
 
@@ -219,27 +218,6 @@ sealed class ViewHierarchyNode(
 
         private fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-        private fun Int.isViewIdGenerated(): Boolean {
-            return (this and -0x1000000) == 0 && (this and 0x00FFFFFF) != 0
-        }
-
-        @Throws(NotFoundException::class)
-        fun getResourceId(view: View): String? {
-            val viewId = view.id
-            if (viewId == View.NO_ID || viewId.isViewIdGenerated()) {
-                return null
-            }
-            val resources = view.context.resources
-            if (resources != null) {
-                return try {
-                    resources.getResourceEntryName(viewId)
-                } catch (e: NotFoundException) {
-                    null
-                }
-            }
-            return null
-        }
-
         /**
          * Basically replicating this: https://developer.android.com/reference/android/view/View#isImportantForContentCapture()
          * but for lower APIs and with less overhead. If we take a look at how it's set in Android:
@@ -264,7 +242,6 @@ sealed class ViewHierarchyNode(
                         dominantColor = view.currentTextColor.toOpaque(),
                         paddingLeft = view.totalPaddingLeft,
                         paddingTop = view.totalPaddingTop,
-                        getResourceId(view) ?: view.toString(),
                         x = view.x,
                         y = view.y,
                         width = view.width,
@@ -282,7 +259,6 @@ sealed class ViewHierarchyNode(
                 view is ImageView && options.experimental.sessionReplay.redactAllImages -> {
                     parent.setImportantForCaptureToAncestors(true)
                     return ImageViewHierarchyNode(
-                        getResourceId(view) ?: view.toString(),
                         x = view.x,
                         y = view.y,
                         width = view.width,
@@ -299,7 +275,6 @@ sealed class ViewHierarchyNode(
             }
 
             return GenericViewHierarchyNode(
-                getResourceId(view) ?: view.toString(),
                 view.x,
                 view.y,
                 view.width,

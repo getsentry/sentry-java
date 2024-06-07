@@ -141,34 +141,48 @@ public final class io/sentry/android/replay/video/SimpleMp4FrameMuxer : io/sentr
 	public fun start (Landroid/media/MediaFormat;)V
 }
 
-public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+public abstract class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
 	public static final field Companion Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Companion;
-	public fun <init> (FFIIZLjava/lang/Integer;Landroid/graphics/Rect;)V
-	public synthetic fun <init> (FFIIZLjava/lang/Integer;Landroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()F
-	public final fun component2 ()F
-	public final fun component3 ()I
-	public final fun component4 ()I
-	public final fun component5 ()Z
-	public final fun component6 ()Ljava/lang/Integer;
-	public final fun component7 ()Landroid/graphics/Rect;
-	public final fun copy (FFIIZLjava/lang/Integer;Landroid/graphics/Rect;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
-	public static synthetic fun copy$default (Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;FFIIZLjava/lang/Integer;Landroid/graphics/Rect;ILjava/lang/Object;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
-	public fun equals (Ljava/lang/Object;)Z
+	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getChildren ()Ljava/util/List;
-	public final fun getDominantColor ()Ljava/lang/Integer;
+	public final fun getDistance ()I
+	public final fun getElevation ()F
 	public final fun getHeight ()I
+	public final fun getParent ()Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
 	public final fun getShouldRedact ()Z
 	public final fun getVisibleRect ()Landroid/graphics/Rect;
 	public final fun getWidth ()I
 	public final fun getX ()F
 	public final fun getY ()F
-	public fun hashCode ()I
+	public final fun isImportantForContentCapture ()Z
+	public final fun isObscured (Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;)Z
+	public final fun isVisible ()Z
 	public final fun setChildren (Ljava/util/List;)V
-	public fun toString ()Ljava/lang/String;
+	public final fun setImportantForContentCapture (Z)V
+	public final fun traverse (Lkotlin/jvm/functions/Function1;)V
 }
 
 public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Companion {
-	public final fun fromView (Landroid/view/View;Lio/sentry/SentryOptions;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
+	public final fun fromView (Landroid/view/View;Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ILio/sentry/SentryOptions;)Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
+}
+
+public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$GenericViewHierarchyNode : io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;)V
+	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$ImageViewHierarchyNode : io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;)V
+	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$TextViewHierarchyNode : io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public fun <init> (Landroid/text/Layout;Ljava/lang/Integer;IIFFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;)V
+	public synthetic fun <init> (Landroid/text/Layout;Ljava/lang/Integer;IIFFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDominantColor ()Ljava/lang/Integer;
+	public final fun getLayout ()Landroid/text/Layout;
+	public final fun getPaddingLeft ()I
+	public final fun getPaddingTop ()I
 }
 
