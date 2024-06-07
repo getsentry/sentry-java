@@ -1,5 +1,6 @@
 package io.sentry.android.replay.util
 
+import android.annotation.TargetApi
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
@@ -8,6 +9,8 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.VectorDrawable
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.text.Layout
 import android.view.View
 
@@ -25,9 +28,10 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
         var current: Any = this
         while (current is View) {
             val view = current
+            val transitionAlpha = if (VERSION.SDK_INT >= VERSION_CODES.Q) view.transitionAlpha else 1f
             // We have attach info so this view is attached and there is no
             // need to check whether we reach to ViewRootImpl on the way up.
-            if (view.alpha <= 0 || view.transitionAlpha <= 0 || view.visibility != View.VISIBLE) {
+            if (view.alpha <= 0 || transitionAlpha <= 0 || view.visibility != View.VISIBLE) {
                 return false to null
             }
             current = view.parent
@@ -41,6 +45,7 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
     return false to null
 }
 
+@TargetApi(21)
 internal fun Drawable?.isRedactable(): Boolean {
     // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from network
     // TODO: otherwise maybe check for the bitmap size and don't redact those that take a lot of height (e.g. a background of a whatsapp chat)
@@ -55,7 +60,7 @@ internal fun Layout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, padding
     if (this == null) {
         return listOf(globalRect)
     }
-    // TODO: actually not sure - maybe the old way is not that bad, because multiline rects can seem noisy
+
     val rects = mutableListOf<Rect>()
     for (i in 0 until lineCount) {
         val lineStart = getPrimaryHorizontal(getLineStart(i)).toInt()

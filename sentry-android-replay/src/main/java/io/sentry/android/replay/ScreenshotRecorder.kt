@@ -16,7 +16,6 @@ import android.os.Build.VERSION_CODES
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
-import android.util.Log
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -36,8 +35,6 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 @TargetApi(26)
 internal class ScreenshotRecorder(
@@ -64,7 +61,6 @@ internal class ScreenshotRecorder(
     private val isCapturing = AtomicBoolean(true)
     private var lastScreenshot: Bitmap? = null
 
-    @OptIn(ExperimentalTime::class)
     fun capture() {
         val viewHierarchy = pendingViewHierarchy.getAndSet(null)
 
@@ -142,29 +138,10 @@ internal class ScreenshotRecorder(
                                 if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
                                     node.visibleRect ?: return@traverse false
 
-                                    var isObscured = false
-                                    viewHierarchy.traverse innerTraverse@{ otherNode ->
-                                        otherNode.visibleRect ?: return@innerTraverse false
-
-                                        if (!otherNode.visibleRect.contains(node.visibleRect)) {
-                                            return@innerTraverse false
-                                        }
-
-                                        if (otherNode.elevation > node.elevation) {
-                                            isObscured = true
-                                            return@innerTraverse false
-                                        }
-                                        return@innerTraverse true
-                                    }
-
-                                    if (isObscured) {
+                                    if (viewHierarchy.isObscured(node)) {
                                         return@traverse true
                                     }
-                                    // TODO: iterate the rest of the tree and check if the view is
-                                    // TODO: obscured by any of those, isVisibleToUser does not
-                                    // TODO: consider elevation. Basically search for views with
-                                    // TODO: higher elevation and check if their visibleRect contains
-                                    // TODO: the one of the current view
+
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
                                             singlePixelBitmapCanvas.drawBitmap(
@@ -221,7 +198,7 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val rootNode = ViewHierarchyNode.fromView(root, options)
+        val rootNode = ViewHierarchyNode.fromView(root, null, 0, options)
         root.traverse(rootNode)
         pendingViewHierarchy.set(rootNode)
 
@@ -262,17 +239,6 @@ internal class ScreenshotRecorder(
         thread.quitSafely()
     }
 
-    private fun ViewHierarchyNode.traverse(callback: (ViewHierarchyNode) -> Boolean) {
-        val traverseChildren = callback(this)
-        if (traverseChildren) {
-            if (this.children != null) {
-                this.children!!.forEach {
-                    it.traverse(callback)
-                }
-            }
-        }
-    }
-
     private fun View.traverse(parentNode: ViewHierarchyNode) {
         if (this !is ViewGroup) {
             return
@@ -286,7 +252,7 @@ internal class ScreenshotRecorder(
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child != null) {
-                val childNode = ViewHierarchyNode.fromView(child, options)
+                val childNode = ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
                 childNodes.add(childNode)
                 child.traverse(childNode)
             }
