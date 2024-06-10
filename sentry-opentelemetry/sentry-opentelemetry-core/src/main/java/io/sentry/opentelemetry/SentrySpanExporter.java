@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 
 import io.opentelemetry.api.common.Attributes;
@@ -234,9 +235,10 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @NotNull String spanId = spanData.getSpanId();
-    final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(spanData);
     final @Nullable OtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(spanData.getSpanContext());
+    final @NotNull OtelSpanInfo spanInfo =
+        spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
     // TODO attributes
     // TODO cleanup sentry attributes
 
@@ -328,7 +330,8 @@ public final class SentrySpanExporter implements SpanExporter {
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
     final @NotNull IScopes scopesToUse =
         scopesMaybe == null ? ScopesAdapter.getInstance() : scopesMaybe;
-    final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(span);
+    final @NotNull OtelSpanInfo spanInfo =
+        spanDescriptionExtractor.extractSpanInfo(span, sentrySpanMaybe);
 
     scopesToUse
         .getOptions()
@@ -365,7 +368,8 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull TransactionContext transactionContext =
         new TransactionContext(new SentryId(traceId), sentrySpanId, parentSpanId, null, baggage);
 
-    transactionContext.setName(transactionName);
+    transactionContext.setName(
+        transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
     transactionContext.setInstrumenter(Instrumenter.OTEL);

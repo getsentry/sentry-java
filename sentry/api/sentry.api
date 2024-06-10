@@ -3350,6 +3350,7 @@ public final class io/sentry/TracesSamplingDecision {
 }
 
 public final class io/sentry/TransactionContext : io/sentry/SpanContext {
+	public static final field DEFAULT_TRANSACTION_NAME Ljava/lang/String;
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;Lio/sentry/Baggage;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V

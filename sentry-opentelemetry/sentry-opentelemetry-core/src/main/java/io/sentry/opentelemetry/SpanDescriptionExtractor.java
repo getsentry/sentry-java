@@ -15,8 +15,9 @@ import org.jetbrains.annotations.Nullable;
 public final class SpanDescriptionExtractor {
 
   @SuppressWarnings("deprecation")
-  public @NotNull OtelSpanInfo extractSpanInfo(final @NotNull SpanData otelSpan) {
-    OtelSpanInfo spanInfo = extractSpanDescription(otelSpan);
+  public @NotNull OtelSpanInfo extractSpanInfo(
+      final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
+    OtelSpanInfo spanInfo = extractSpanDescription(otelSpan, sentrySpan);
 
     final @Nullable Long threadId = otelSpan.getAttributes().get(SemanticAttributes.THREAD_ID);
     if (threadId != null) {
@@ -43,8 +44,8 @@ public final class SpanDescriptionExtractor {
   }
 
   @SuppressWarnings("deprecation")
-  private OtelSpanInfo extractSpanDescription(SpanData otelSpan) {
-    final @NotNull String name = otelSpan.getName();
+  private OtelSpanInfo extractSpanDescription(
+      final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
     final @Nullable String httpMethod = attributes.get(SemanticAttributes.HTTP_METHOD);
@@ -63,8 +64,9 @@ public final class SpanDescriptionExtractor {
       return descriptionForDbSystem(otelSpan);
     }
 
-    // TODO [POTEL] use sentry span description if available
-    return new OtelSpanInfo(name, name, TransactionNameSource.CUSTOM);
+    final @NotNull String name = otelSpan.getName();
+    final @Nullable String description = sentrySpan != null ? sentrySpan.getDescription() : name;
+    return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
   }
 
   @SuppressWarnings("deprecation")

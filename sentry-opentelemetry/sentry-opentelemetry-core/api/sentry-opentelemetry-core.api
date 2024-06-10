@@ -74,7 +74,7 @@ public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetr
 
 public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
 	public fun <init> ()V
-	public fun extractSpanInfo (Lio/opentelemetry/sdk/trace/data/SpanData;)Lio/sentry/opentelemetry/OtelSpanInfo;
+	public fun extractSpanInfo (Lio/opentelemetry/sdk/trace/data/SpanData;Lio/sentry/opentelemetry/OtelSpanWrapper;)Lio/sentry/opentelemetry/OtelSpanInfo;
 }
 
 public final class io/sentry/opentelemetry/SpanNode {
