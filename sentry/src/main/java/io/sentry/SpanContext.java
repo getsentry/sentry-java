@@ -150,7 +150,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   }
 
   public @NotNull String getOperation() {
-    // TODO [POTEL] use span name here
     return op;
   }
 
