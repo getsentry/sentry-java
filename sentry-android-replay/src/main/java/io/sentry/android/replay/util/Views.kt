@@ -1,5 +1,6 @@
 package io.sentry.android.replay.util
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Point
 import android.graphics.Rect
@@ -45,6 +46,7 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
     return false to null
 }
 
+@SuppressLint("ObsoleteSdkInt")
 @TargetApi(21)
 internal fun Drawable?.isRedactable(): Boolean {
     // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from network
