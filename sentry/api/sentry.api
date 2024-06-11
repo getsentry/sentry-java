@@ -5205,6 +5205,7 @@ public final class io/sentry/rrweb/RRWebInteractionEvent : io/sentry/rrweb/RRWeb
 	public fun getDataUnknown ()Ljava/util/Map;
 	public fun getId ()I
 	public fun getInteractionType ()Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;
+	public fun getPointerId ()I
 	public fun getPointerType ()I
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getX ()F
@@ -5213,6 +5214,7 @@ public final class io/sentry/rrweb/RRWebInteractionEvent : io/sentry/rrweb/RRWeb
 	public fun setDataUnknown (Ljava/util/Map;)V
 	public fun setId (I)V
 	public fun setInteractionType (Lio/sentry/rrweb/RRWebInteractionEvent$InteractionType;)V
+	public fun setPointerId (I)V
 	public fun setPointerType (I)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setX (F)V
@@ -5251,6 +5253,7 @@ public final class io/sentry/rrweb/RRWebInteractionEvent$InteractionType$Deseria
 public final class io/sentry/rrweb/RRWebInteractionEvent$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
+	public static final field POINTER_ID Ljava/lang/String;
 	public static final field POINTER_TYPE Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public static final field X Ljava/lang/String;
@@ -5261,10 +5264,12 @@ public final class io/sentry/rrweb/RRWebInteractionEvent$JsonKeys {
 public final class io/sentry/rrweb/RRWebInteractionMoveEvent : io/sentry/rrweb/RRWebIncrementalSnapshotEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getPointerId ()I
 	public fun getPositions ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setPointerId (I)V
 	public fun setPositions (Ljava/util/List;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -5277,6 +5282,7 @@ public final class io/sentry/rrweb/RRWebInteractionMoveEvent$Deserializer : io/s
 
 public final class io/sentry/rrweb/RRWebInteractionMoveEvent$JsonKeys {
 	public static final field DATA Ljava/lang/String;
+	public static final field POINTER_ID Ljava/lang/String;
 	public static final field POSITIONS Ljava/lang/String;
 	public fun <init> ()V
 }
