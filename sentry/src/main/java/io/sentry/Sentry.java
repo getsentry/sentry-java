@@ -368,7 +368,7 @@ public final class Sentry {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
     SamplingContext appStartSamplingContext = new SamplingContext(appStartTransactionContext, null);
-    return new TracesSampler(options).sample(appStartSamplingContext);
+    return options.getInternalTracesSampler().sample(appStartSamplingContext);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

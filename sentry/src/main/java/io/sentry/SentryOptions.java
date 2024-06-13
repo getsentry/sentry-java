@@ -202,6 +202,8 @@ public class SentryOptions {
    */
   private @Nullable TracesSamplerCallback tracesSampler;
 
+  private volatile @Nullable TracesSampler internalTracesSampler;
+
   /**
    * A list of string prefixes of module names that do not belong to the app, but rather third-party
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
@@ -959,6 +961,18 @@ public class SentryOptions {
    */
   public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
     this.tracesSampler = tracesSampler;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull TracesSampler getInternalTracesSampler() {
+    if (internalTracesSampler == null) {
+      synchronized (this) {
+        if (internalTracesSampler == null) {
+          internalTracesSampler = new TracesSampler(this);
+        }
+      }
+    }
+    return internalTracesSampler;
   }
 
   /**

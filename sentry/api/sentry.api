@@ -2684,6 +2684,7 @@ public class io/sentry/SentryOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getIntegrations ()Ljava/util/List;
+	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
 	public fun getMainThreadChecker ()Lio/sentry/util/thread/IMainThreadChecker;
 	public fun getMaxAttachmentSize ()J
