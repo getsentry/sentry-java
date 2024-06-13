@@ -12,6 +12,7 @@ import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -54,8 +55,9 @@ public final class SentryFeignClient implements Client {
         return delegate.execute(modifiedRequest, options);
       }
 
-      ISpan span = activeSpan.startChild("http.client");
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
+      final @NotNull SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGIN);
+      ISpan span = activeSpan.startChild("http.client", null, spanOptions);
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
       final @NotNull String method = request.httpMethod().name();
       span.setDescription(method + " " + urlDetails.getUrlOrFallback());

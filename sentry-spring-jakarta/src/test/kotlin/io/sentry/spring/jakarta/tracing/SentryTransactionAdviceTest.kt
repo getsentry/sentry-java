@@ -52,7 +52,15 @@ class SentryTransactionAdviceTest {
     @BeforeTest
     fun setup() {
         reset(scopes)
-        whenever(scopes.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
+        whenever(
+            scopes.startTransaction(
+                any(),
+                check<TransactionOptions> {
+                    assertTrue(it.isBindToScope)
+                    assertThat(it.origin).isEqualTo("auto.function.spring_jakarta.advice")
+                }
+            )
+        ).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
         whenever(scopes.options).thenReturn(
             SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
@@ -70,7 +78,6 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("customName")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
                 assertThat(it.status).isEqualTo(SpanStatus.OK)
-                assertThat(it.contexts.trace!!.origin).isEqualTo("auto.function.spring_jakarta.advice")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

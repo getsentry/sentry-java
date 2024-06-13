@@ -41,11 +41,8 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
                   doFirst(serverWebExchange, Sentry.getCurrentScopes());
                   final ITransaction transaction =
                       maybeStartTransaction(
-                          Sentry.getCurrentScopes(), serverWebExchange.getRequest());
+                          Sentry.getCurrentScopes(), serverWebExchange.getRequest(), TRACE_ORIGIN);
                   transactionContainer.transaction = transaction;
-                  if (transaction != null) {
-                    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
-                  }
                 }));
   }
 

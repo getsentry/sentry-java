@@ -74,11 +74,11 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         final TransactionOptions transactionOptions = new TransactionOptions();
         transactionOptions.setBindToScope(true);
+        transactionOptions.setOrigin(TRACE_ORIGIN);
         final ITransaction transaction =
             forkedScopes.startTransaction(
                 new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
                 transactionOptions);
-        transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
         try {
           final Object result = invocation.proceed();
           transaction.setStatus(SpanStatus.OK);

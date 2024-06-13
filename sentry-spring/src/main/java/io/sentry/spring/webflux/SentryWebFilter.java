@@ -69,10 +69,6 @@ public final class SentryWebFilter implements WebFilter {
             ? startTransaction(requestScopes, request, transactionContext)
             : null;
 
-    if (transaction != null) {
-      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
-    }
-
     return webFilterChain
         .filter(serverWebExchange)
         .doFinally(
@@ -124,6 +120,7 @@ public final class SentryWebFilter implements WebFilter {
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setCustomSamplingContext(customSamplingContext);
     transactionOptions.setBindToScope(true);
+    transactionOptions.setOrigin(TRACE_ORIGIN);
 
     if (transactionContext != null) {
       transactionContext.setName(name);

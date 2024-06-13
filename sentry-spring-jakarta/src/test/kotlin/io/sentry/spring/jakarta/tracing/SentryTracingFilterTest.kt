@@ -92,6 +92,7 @@ class SentryTracingFilterTest {
                 assertNotNull(it.customSamplingContext?.get("request"))
                 assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
                 assertTrue(it.isBindToScope)
+                assertThat(it.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
             }
         )
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
@@ -100,7 +101,6 @@ class SentryTracingFilterTest {
                 assertThat(it.transaction).isEqualTo("POST /product/{id}")
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                 assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-                assertThat(it.contexts.trace!!.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

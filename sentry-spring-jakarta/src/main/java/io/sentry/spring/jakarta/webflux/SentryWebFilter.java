@@ -30,10 +30,8 @@ public class SentryWebFilter extends AbstractSentryWebFilter {
       final @NotNull WebFilterChain webFilterChain) {
     @NotNull IScopes requestScopes = Sentry.forkedRootScopes("request.webflux");
     final ServerHttpRequest request = serverWebExchange.getRequest();
-    final @Nullable ITransaction transaction = maybeStartTransaction(requestScopes, request);
-    if (transaction != null) {
-      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
-    }
+    final @Nullable ITransaction transaction =
+        maybeStartTransaction(requestScopes, request, TRACE_ORIGIN);
     return webFilterChain
         .filter(serverWebExchange)
         .doFinally(__ -> doFinally(serverWebExchange, requestScopes, transaction))

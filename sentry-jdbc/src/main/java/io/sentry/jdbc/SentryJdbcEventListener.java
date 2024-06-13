@@ -11,6 +11,7 @@ import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.Span;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.sql.SQLException;
@@ -40,9 +41,10 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   public void onBeforeAnyExecute(final @NotNull StatementInformation statementInformation) {
     final ISpan parent = scopes.getSpan();
     if (parent != null && !parent.isNoOp()) {
-      final ISpan span = parent.startChild("db.query", statementInformation.getSql());
+      final @NotNull SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGIN);
+      final ISpan span = parent.startChild("db.query", statementInformation.getSql(), spanOptions);
       CURRENT_SPAN.set(span);
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
     }
   }
 

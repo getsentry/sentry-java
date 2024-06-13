@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
@@ -51,8 +52,9 @@ public class SentrySpanAdvice implements MethodInterceptor {
                 mostSpecificMethod.getDeclaringClass(), SentrySpan.class);
       }
       final String operation = resolveSpanOperation(targetClass, mostSpecificMethod, sentrySpan);
-      final ISpan span = activeSpan.startChild(operation);
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
+      SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGIN);
+      final ISpan span = activeSpan.startChild(operation, null, spanOptions);
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.description())) {
         span.setDescription(sentrySpan.description());
       }

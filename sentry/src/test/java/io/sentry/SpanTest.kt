@@ -138,6 +138,38 @@ class SpanTest {
     }
 
     @Test
+    fun `transfers span origin from options to span context`() {
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val spanContext = SpanContext(
+            traceId,
+            SpanId(),
+            parentSpanId,
+            "op",
+            null,
+            TracesSamplingDecision(true),
+            null,
+            "old-origin"
+        )
+
+        val spanOptions = SpanOptions()
+        spanOptions.origin = "new-origin"
+
+        val span = Span(
+            SentryTracer(
+                TransactionContext("name", "op", TracesSamplingDecision(true)),
+                fixture.scopes
+            ),
+            fixture.scopes,
+            spanContext,
+            spanOptions,
+            null
+        )
+
+        assertEquals("new-origin", span.spanContext.origin)
+    }
+
+    @Test
     fun `starting a child with details adds span to transaction`() {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")

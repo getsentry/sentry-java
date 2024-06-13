@@ -53,38 +53,6 @@ public final class Span implements ISpan {
   private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
       new LazyEvaluator<>(() -> new LocalMetricsAggregator());
 
-  //  Span(
-  //      final @NotNull SentryId traceId,
-  //      final @Nullable SpanId parentSpanId,
-  //      final @NotNull SentryTracer transaction,
-  //      final @NotNull String operation,
-  //      final @NotNull IScopes scopes) {
-  //    this(traceId, parentSpanId, transaction, operation, scopes, null, new SpanOptions(), null);
-  //  }
-
-  //  Span(
-  //      final @NotNull SentryId traceId,
-  //      final @Nullable SpanId parentSpanId,
-  //      final @NotNull SentryTracer transaction,
-  //      final @NotNull String operation,
-  //      final @NotNull IScopes scopes,
-  //      final @Nullable SentryDate startTimestamp,
-  //      final @NotNull SpanOptions options,
-  //      final @Nullable SpanFinishedCallback spanFinishedCallback) {
-  //    this.context =
-  //        new SpanContext(
-  //            traceId, new SpanId(), operation, parentSpanId, transaction.getSamplingDecision());
-  //    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
-  //    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
-  //    this.options = options;
-  //    this.spanFinishedCallback = spanFinishedCallback;
-  //    if (startTimestamp != null) {
-  //      this.startTimestamp = startTimestamp;
-  //    } else {
-  //      this.startTimestamp = scopes.getOptions().getDateProvider().now();
-  //    }
-  //  }
-
   Span(
       final @NotNull SentryTracer transaction,
       final @NotNull IScopes scopes,
@@ -92,6 +60,7 @@ public final class Span implements ISpan {
       final @NotNull SpanOptions options,
       final @Nullable SpanFinishedCallback spanFinishedCallback) {
     this.context = spanContext;
+    this.context.setOrigin(options.getOrigin());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = options;
@@ -111,6 +80,7 @@ public final class Span implements ISpan {
       final @Nullable SentryDate startTimestamp,
       final @NotNull SpanOptions options) {
     this.context = Objects.requireNonNull(context, "context is required");
+    this.context.setOrigin(options.getOrigin());
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.spanFinishedCallback = null;

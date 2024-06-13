@@ -108,6 +108,7 @@ class SentryWebFluxTracingFilterTest {
                     assertNotNull(it.customSamplingContext?.get("request"))
                     assertTrue(it.customSamplingContext?.get("request") is ServerHttpRequest)
                     assertTrue(it.isBindToScope)
+                    assertThat(it.origin).isEqualTo("auto.spring.webflux")
                 }
             )
             verify(fixture.chain).filter(fixture.exchange)
@@ -116,7 +117,6 @@ class SentryWebFluxTracingFilterTest {
                     assertThat(it.transaction).isEqualTo("POST /product/{id}")
                     assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                     assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-                    assertThat(it.contexts.trace!!.origin).isEqualTo("auto.spring.webflux")
                     assertThat(it.contexts.response!!.statusCode).isEqualTo(200)
                 },
                 anyOrNull<TraceContext>(),

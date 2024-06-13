@@ -24,6 +24,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.TransactionPerformanceCollector;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.SpanUtils;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +56,10 @@ public final class OtelSpanFactory implements ISpanFactory {
       final @NotNull SpanOptions spanOptions,
       final @NotNull SpanContext spanContext,
       final @Nullable ISpan parentSpan) {
+    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
+      return NoOpSpan.getInstance();
+    }
+
     final @Nullable TracesSamplingDecision samplingDecision =
         parentSpan == null ? null : parentSpan.getSamplingDecision();
     final @Nullable OtelSpanWrapper span =
@@ -141,6 +146,7 @@ public final class OtelSpanFactory implements ISpanFactory {
         sentrySpan.setTransactionName(
             transactionContext.getName(), transactionContext.getTransactionNameSource());
       }
+      sentrySpan.getSpanContext().setOrigin(spanOptions.getOrigin());
     }
 
     return sentrySpan;

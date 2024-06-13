@@ -251,12 +251,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
+    transactionOptions.setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
 
     final ITransaction transaction =
         scopes.startTransaction(
             new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
-
-    transaction.getSpanContext().setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
 
     scopes.configureScope(
         scope -> {

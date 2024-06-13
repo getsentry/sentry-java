@@ -11,6 +11,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
@@ -811,6 +812,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
     // TODO [POTEL] what if span is already running and someone calls startTransaction?
 
+    transactionContext.setOrigin(transactionOptions.getOrigin());
+
     ITransaction transaction;
     if (!isEnabled()) {
       getOptions()
@@ -819,6 +822,17 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
+    } else if (SpanUtils.isIgnored(
+        getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
+      // TODO [POTEL] may not have been set yet?
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Returning no-op for span origin %s as the SDK has been configured to use ignore it",
+              transactionContext.getOrigin());
+      transaction = NoOpTransaction.getInstance();
+
       //    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter()))
       // {
       //      getOptions()

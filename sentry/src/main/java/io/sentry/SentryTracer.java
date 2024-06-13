@@ -440,6 +440,13 @@ public final class SentryTracer implements ITransaction {
     final @NotNull String operation = spanContext.getOperation();
     final @Nullable String description = spanContext.getDescription();
 
+    // TODO [POTEL] how should this work? return a noop? shouldn't block nested code from actually
+    // creating spans
+    //    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(),
+    // spanOptions.getOrigin())) {
+    //      return this;
+    //    }
+
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       Objects.requireNonNull(parentSpanId, "parentSpanId is required");
       //      Objects.requireNonNull(operation, "operation is required");
