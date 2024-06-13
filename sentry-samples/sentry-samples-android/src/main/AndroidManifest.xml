@@ -60,6 +60,10 @@
             android:exported="false" />
 
       <activity
+            android:name=".TestActivity"
+            android:exported="false" />
+
+      <activity
             android:name=".compose.ComposeActivity"
             android:exported="false" />
 

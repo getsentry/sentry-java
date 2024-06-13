@@ -258,6 +258,8 @@ public class MainActivity extends AppCompatActivity {
         view -> startActivity(new Intent(this, MetricsActivity.class)));
 
     setContentView(binding.getRoot());
+
+    startActivity(new Intent(this, TestActivity.class));
   }
 
   private void stackOverflow() {
