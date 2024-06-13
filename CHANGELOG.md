@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
 
 ## 7.10.0
 
