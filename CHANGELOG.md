@@ -6,6 +6,10 @@
 
 - Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
 
+### Dependencies
+
+- Bump Spring Boot from 2.7.5 to 2.7.18
+
 ## 7.10.0
 
 ### Features
