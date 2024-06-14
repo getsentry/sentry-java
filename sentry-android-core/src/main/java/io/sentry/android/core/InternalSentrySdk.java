@@ -10,6 +10,7 @@ import io.sentry.ILogger;
 import io.sentry.IScope;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.Sentry;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -164,7 +165,8 @@ public final class InternalSentrySdk {
 
       // determine session state based on events inside envelope
       @Nullable Session.State status = null;
-      boolean crashedOrErrored = false;
+      boolean crashed = false;
+      boolean errored = false;
       for (SentryEnvelopeItem item : envelope.getItems()) {
         envelopeItems.add(item);
 
@@ -173,17 +175,24 @@ public final class InternalSentrySdk {
           if (event.isCrashed()) {
             status = Session.State.Crashed;
           }
-          if (event.isCrashed() || event.isErrored()) {
-            crashedOrErrored = true;
+          if (event.isCrashed()) {
+            crashed = true;
+          }
+          if (event.isErrored()) {
+            errored = true;
           }
         }
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
+      final @Nullable Session session = updateSession(hub, options, status, crashed || errored);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
+        if (crashed) {
+          session.end();
+          Sentry.startSession();
+        }
       }
 
       final SentryEnvelope repackagedEnvelope =
