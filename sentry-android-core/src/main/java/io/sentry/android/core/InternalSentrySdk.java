@@ -150,8 +150,7 @@ public final class InternalSentrySdk {
    */
   @Nullable
   public static SentryId captureEnvelope(
-    final @NotNull byte[] envelopeData,
-    final boolean maybeStartNewSession) {
+      final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
     final @NotNull IHub hub = HubAdapter.getInstance();
     final @NotNull SentryOptions options = hub.getOptions();
 
