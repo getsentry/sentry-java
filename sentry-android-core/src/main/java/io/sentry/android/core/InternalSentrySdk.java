@@ -149,7 +149,9 @@ public final class InternalSentrySdk {
    *     captured
    */
   @Nullable
-  public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) {
+  public static SentryId captureEnvelope(
+    final @NotNull byte[] envelopeData,
+    final boolean maybeStartNewSession) {
     final @NotNull IHub hub = HubAdapter.getInstance();
     final @NotNull SentryOptions options = hub.getOptions();
 
@@ -165,8 +167,7 @@ public final class InternalSentrySdk {
 
       // determine session state based on events inside envelope
       @Nullable Session.State status = null;
-      boolean crashed = false;
-      boolean errored = false;
+      boolean crashedOrErrored = false;
       for (SentryEnvelopeItem item : envelope.getItems()) {
         envelopeItems.add(item);
 
@@ -175,22 +176,18 @@ public final class InternalSentrySdk {
           if (event.isCrashed()) {
             status = Session.State.Crashed;
           }
-          if (event.isCrashed()) {
-            crashed = true;
-          }
-          if (event.isErrored()) {
-            errored = true;
+          if (event.isCrashed() || event.isErrored()) {
+            crashedOrErrored = true;
           }
         }
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session = updateSession(hub, options, status, crashed || errored);
+      final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
-        if (crashed) {
-          session.end();
+        if (maybeStartNewSession) {
           Sentry.startSession();
         }
       }
@@ -277,6 +274,9 @@ public final class InternalSentrySdk {
             if (updated) {
               if (session.getStatus() == Session.State.Crashed) {
                 session.end();
+                // Session needs to be removed from the scope, otherwise it will be send twice
+                // standalone and with the crash event
+                scope.clearSession();
               }
               sessionRef.set(session);
             }
