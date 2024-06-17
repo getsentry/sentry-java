@@ -14,7 +14,6 @@ import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -401,7 +400,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           if (integration instanceof Closeable) {
             try {
               ((Closeable) integration).close();
-            } catch (IOException e) {
+            } catch (Throwable e) {
               getOptions()
                   .getLogger()
                   .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
