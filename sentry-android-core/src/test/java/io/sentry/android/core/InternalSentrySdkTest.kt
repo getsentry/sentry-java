@@ -120,20 +120,16 @@ class InternalSentrySdkTest {
 
     @Test
     fun `current scope returns obj when scopes is active`() {
-        val options = SentryOptions().apply {
-            dsn = "https://key@uri/1234567"
-        }
-        Sentry.setCurrentScopes(createTestScopes(options))
+        val fixture = Fixture()
+        fixture.init(context)
         val scope = InternalSentrySdk.getCurrentScope()
         assertNotNull(scope)
     }
 
     @Test
     fun `current scope returns a copy of the scope`() {
-        val options = SentryOptions().apply {
-            dsn = "https://key@uri/1234567"
-        }
-        Sentry.setCurrentScopes(createTestScopes(options))
+        val fixture = Fixture()
+        fixture.init(context)
         Sentry.addBreadcrumb("test")
         Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.addBreadcrumb(Breadcrumb("currentBreadcrumb")) }
         Sentry.configureScope(ScopeType.ISOLATION) { scope -> scope.addBreadcrumb(Breadcrumb("isolationBreadcrumb")) }
