@@ -257,7 +257,8 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public @NotNull SentryId getEventId() {
-    return rootSpan.getEventId();
+    // TODO [POTEL]
+    return new SentryId();
   }
 
   @ApiStatus.Internal

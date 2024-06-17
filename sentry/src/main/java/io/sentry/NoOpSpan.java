@@ -192,11 +192,6 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull SentryId getEventId() {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesLifecycleToken.getInstance();
   }

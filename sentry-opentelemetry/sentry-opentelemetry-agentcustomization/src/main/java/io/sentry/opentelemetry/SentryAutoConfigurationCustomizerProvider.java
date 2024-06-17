@@ -146,8 +146,6 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   private SdkTracerProviderBuilder configureSdkTracerProvider(
       SdkTracerProviderBuilder tracerProvider, ConfigProperties config) {
-    // TODO [POTEL] configurable or separate packages for old vs new way
-    //    return tracerProvider.addSpanProcessor(new SentrySpanProcessor());
     return tracerProvider
         .setSampler(new SentrySampler())
         .addSpanProcessor(new PotelSentrySpanProcessor())

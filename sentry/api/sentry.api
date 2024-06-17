@@ -953,7 +953,6 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
-	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getFinishDate ()Lio/sentry/SentryDate;
 	public abstract fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public abstract fun getOperation ()Ljava/lang/String;
@@ -998,6 +997,7 @@ public abstract interface class io/sentry/ISpanFactory {
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;ZLio/sentry/Hint;)V
 	public abstract fun forceFinish (Lio/sentry/SpanStatus;ZLio/sentry/Hint;)V
+	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/ISpan;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getSpans ()Ljava/util/List;
@@ -1551,7 +1551,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
@@ -3107,7 +3106,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getMeasurements ()Ljava/util/Map;
