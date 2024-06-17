@@ -11,7 +11,6 @@ import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
-import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
 import io.sentry.spring.ContextTagsEventProcessor;
@@ -154,14 +153,16 @@ public class SentryAutoConfiguration {
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
-    @ConditionalOnClass(OpenTelemetryLinkErrorEventProcessor.class)
+    @ConditionalOnClass(io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor.class)
+    @SuppressWarnings("deprecation")
     @Open
     static class OpenTelemetryLinkErrorEventProcessorConfiguration {
 
       @Bean
       @ConditionalOnMissingBean
-      public @NotNull OpenTelemetryLinkErrorEventProcessor openTelemetryLinkErrorEventProcessor() {
-        return new OpenTelemetryLinkErrorEventProcessor();
+      public @NotNull io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
+          openTelemetryLinkErrorEventProcessor() {
+        return new io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor();
       }
     }
 

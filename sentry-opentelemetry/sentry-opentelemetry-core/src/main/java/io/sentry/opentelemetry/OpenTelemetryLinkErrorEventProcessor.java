@@ -11,17 +11,23 @@ import io.sentry.Instrumenter;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.SentrySpanStorage;
 import io.sentry.SpanContext;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+/**
+ * @deprecated this is no longer needed for the latest version of our OpenTelemetry integration.
+ */
+@Deprecated
 public final class OpenTelemetryLinkErrorEventProcessor implements EventProcessor {
 
   private final @NotNull IScopes scopes;
-  private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
+
+  @SuppressWarnings("deprecation")
+  private final @NotNull io.sentry.SentrySpanStorage spanStorage =
+      io.sentry.SentrySpanStorage.getInstance();
 
   public OpenTelemetryLinkErrorEventProcessor() {
     this(ScopesAdapter.getInstance());

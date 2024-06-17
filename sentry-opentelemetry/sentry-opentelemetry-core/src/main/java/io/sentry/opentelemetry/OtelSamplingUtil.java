@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class OtelSamplingUtil {
 
-  public static @Nullable TracesSamplingDecision extractSamplingDecisionOrDefault(
+  public static @NotNull TracesSamplingDecision extractSamplingDecisionOrDefault(
       final @NotNull Attributes attributes) {
     final @Nullable TracesSamplingDecision decision = extractSamplingDecision(attributes);
     if (decision != null) {

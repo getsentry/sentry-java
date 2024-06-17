@@ -80,9 +80,10 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
         }
       }
 
-      // TODO [POTEL] what do we use as fallback here? could happen if misconfigured (i.e. sampler
-      // not in place)
-      final boolean sampled = samplingDecision != null ? samplingDecision.getSampled() : true;
+      final boolean sampled =
+          samplingDecision != null
+              ? samplingDecision.getSampled()
+              : otelSpan.getSpanContext().isSampled();
 
       final @NotNull PropagationContext propagationContext =
           sentryTraceHeader == null
@@ -128,7 +129,6 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
           new SentryLongDate(spanBeingEnded.toSpanData().getEndEpochNanos());
       sentrySpan.updateEndDate(finishDate);
     }
-    System.out.println("span ended: " + spanBeingEnded.getSpanContext().getSpanId());
   }
 
   @Override

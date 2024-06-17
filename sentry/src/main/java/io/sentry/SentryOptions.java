@@ -1953,7 +1953,11 @@ public class SentryOptions {
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
    * @param instrumenter - the instrumenter to use
+   * @deprecated this should no longer be needed with our current OpenTelmetry integration. Use
+   *     {@link SentryOptions#setIgnoredSpanOrigins(List)} instead if you need fine grained control
+   *     over what integrations can create spans.
    */
+  @Deprecated
   public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
     this.instrumenter = instrumenter;
   }
@@ -2227,7 +2231,7 @@ public class SentryOptions {
     } else {
       @NotNull final List<String> filtered = new ArrayList<>();
       for (String origin : ignoredSpanOrigins) {
-        if (!origin.isEmpty()) {
+        if (origin != null && !origin.isEmpty()) {
           filtered.add(origin);
         }
       }

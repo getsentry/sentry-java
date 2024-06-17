@@ -6,7 +6,6 @@ import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvide
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.sentry.Instrumenter;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
@@ -38,10 +37,6 @@ public final class SentryAutoConfigurationCustomizerProvider
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
-            // TODO [POTEL] deprecate
-            options.setInstrumenter(Instrumenter.OTEL);
-            // TODO [POTEL] do we still need this?
-            options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
             options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
             options.setSpanFactory(new OtelSpanFactory());
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);

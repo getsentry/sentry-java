@@ -24,7 +24,6 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
-import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.SpanOptions;
@@ -40,6 +39,10 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated please use {@link PotelSentrySpanProcessor} instead.
+ */
+@Deprecated
 public final class SentrySpanProcessor implements SpanProcessor {
 
   private static final String TRACE_ORIGN = "auto.otel";
@@ -48,7 +51,11 @@ public final class SentrySpanProcessor implements SpanProcessor {
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
-  private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
+
+  @SuppressWarnings("deprecation")
+  private final @NotNull io.sentry.SentrySpanStorage spanStorage =
+      io.sentry.SentrySpanStorage.getInstance();
+
   private final @NotNull IScopes scopes;
 
   public SentrySpanProcessor() {

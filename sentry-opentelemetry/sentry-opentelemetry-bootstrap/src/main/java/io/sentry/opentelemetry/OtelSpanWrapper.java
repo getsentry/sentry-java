@@ -34,6 +34,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -479,7 +480,8 @@ public final class OtelSpanWrapper implements ISpan {
   @Override
   public @NotNull SentryId getEventId() {
     // TODO [POTEL]
-    return new SentryId(getOtelSpanId().toString());
+    //    return new SentryId(getOtelSpanId().toString());
+    return new SentryId(UUID.fromString(getOtelSpanId().toString()));
   }
 
   @ApiStatus.Internal

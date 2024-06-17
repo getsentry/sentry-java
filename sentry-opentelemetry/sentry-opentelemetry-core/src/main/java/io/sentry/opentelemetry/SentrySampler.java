@@ -6,15 +6,16 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
+import io.opentelemetry.sdk.trace.samplers.SamplingDecision;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import io.sentry.Baggage;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
 import io.sentry.SamplingContext;
 import io.sentry.ScopesAdapter;
+import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
-import io.sentry.TracesSampler;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
 import io.sentry.protocol.SentryId;
@@ -25,10 +26,10 @@ import org.jetbrains.annotations.Nullable;
 public final class SentrySampler implements Sampler {
 
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
-  private final @NotNull TracesSampler tracesSampler;
+  private final @NotNull SentryOptions options;
 
   public SentrySampler(final @NotNull IScopes scopes) {
-    this.tracesSampler = scopes.getOptions().getInternalTracesSampler();
+    this.options = scopes.getOptions();
   }
 
   public SentrySampler() {
@@ -61,8 +62,11 @@ public final class SentrySampler implements Sampler {
     }
   }
 
-  private @NotNull SentrySamplingResult handleRootOtelSpan(
+  private @NotNull SamplingResult handleRootOtelSpan(
       final @NotNull String traceId, final @NotNull Context parentContext) {
+    if (!options.isTraceSampling()) {
+      return SamplingResult.create(SamplingDecision.DROP);
+    }
     @Nullable Baggage baggage = null;
     @Nullable
     SentryTraceHeader sentryTraceHeader = parentContext.get(SentryOtelKeys.SENTRY_TRACE_KEY);
@@ -81,7 +85,7 @@ public final class SentrySampler implements Sampler {
     final @NotNull TransactionContext transactionContext =
         TransactionContext.fromPropagationContext(propagationContext);
     final @NotNull TracesSamplingDecision sentryDecision =
-        tracesSampler.sample(new SamplingContext(transactionContext, null));
+        options.getInternalTracesSampler().sample(new SamplingContext(transactionContext, null));
     return new SentrySamplingResult(sentryDecision);
   }
 

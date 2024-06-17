@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public final class OtelContextScopesStorage implements IScopesStorage {
 
   @Override
-  public ISentryLifecycleToken set(@Nullable IScopes scopes) {
+  public @NotNull ISentryLifecycleToken set(@Nullable IScopes scopes) {
     final @NotNull Scope otelScope =
         Context.current().with(SENTRY_SCOPES_KEY, scopes).makeCurrent();
     return new OtelStorageToken(otelScope);
