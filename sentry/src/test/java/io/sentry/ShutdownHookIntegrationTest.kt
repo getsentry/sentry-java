@@ -93,6 +93,16 @@ class ShutdownHookIntegrationTest {
     }
 
     @Test
+    fun `shutdown in progress is handled gracefully for registration`() {
+        val integration = fixture.getSut()
+        whenever(fixture.runtime.addShutdownHook(any())).thenThrow(java.lang.IllegalStateException("VM already shutting down"))
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.runtime).addShutdownHook(any())
+    }
+
+    @Test
     fun `non shutdown in progress during removeShutdownHook is rethrown`() {
         val integration = fixture.getSut()
         whenever(fixture.runtime.removeShutdownHook(any())).thenThrow(java.lang.IllegalStateException())
