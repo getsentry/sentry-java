@@ -295,24 +295,25 @@ internal abstract class BaseCaptureStrategy(
                 }
                 lastCapturedMoveEvent = now
 
-                val pId = event.getPointerId(event.actionIndex)
-                val pIndex = event.findPointerIndex(pId)
+                currentPositions.keys.forEach { pId ->
+                    val pIndex = event.findPointerIndex(pId)
 
-                if (pIndex == -1 || !currentPositions.containsKey(pId)) {
-                    // no data for this pointer
-                    return null
-                }
+                    if (pIndex == -1) {
+                        // no data for this pointer
+                        return@forEach
+                    }
 
-                // idk why but rrweb does it like dis
-                if (touchMoveBaseline == 0L) {
-                    touchMoveBaseline = now
-                }
+                    // idk why but rrweb does it like dis
+                    if (touchMoveBaseline == 0L) {
+                        touchMoveBaseline = now
+                    }
 
-                currentPositions[pId]!! += Position().apply {
-                    x = event.getX(pIndex) * recorderConfig.scaleFactorX
-                    y = event.getY(pIndex) * recorderConfig.scaleFactorY
-                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
-                    timeOffset = now - touchMoveBaseline
+                    currentPositions[pId]!! += Position().apply {
+                        x = event.getX(pIndex) * recorderConfig.scaleFactorX
+                        y = event.getY(pIndex) * recorderConfig.scaleFactorY
+                        id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                        timeOffset = now - touchMoveBaseline
+                    }
                 }
 
                 val totalOffset = now - touchMoveBaseline
