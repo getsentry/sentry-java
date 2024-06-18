@@ -31,6 +31,7 @@
 
 ### Fixes
 
+- `TracesSampler` is now only created once in `SentryOptions` instead of creating a new one for every `Hub` (which is now `Scopes`). This means we're now creating fewwer `SecureRandom` instances.
 - Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
 
 ### Dependencies
