@@ -312,6 +312,19 @@ class MetricsAggregatorTest {
 
         // there is no other metric to capture, so flush is not scheduled again
         assertFalse(fixture.executorService.hasScheduledRunnables())
+
+        // once another metric is emitted
+        aggregator.increment(
+            "name1",
+            1.0,
+            MeasurementUnit.Custom("unit0"),
+            mapOf("key0" to "value0"),
+            20_001,
+            null
+        )
+
+        // then flush should be scheduled again
+        assertTrue(fixture.executorService.hasScheduledRunnables())
     }
 
     @Test
