@@ -12,6 +12,7 @@ import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
@@ -168,6 +169,10 @@ public final class RateLimiter {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
+        // The envelope item type used for metrics is statsd, whereas the client report category is
+        // metric_bucket
+      case "statsd":
+        return DataCategory.MetricBucket;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":
@@ -189,21 +194,25 @@ public final class RateLimiter {
       final @Nullable String sentryRateLimitHeader,
       final @Nullable String retryAfterHeader,
       final int errorCode) {
+    // example: 2700:metric_bucket:organization:quota_exceeded:custom,...
     if (sentryRateLimitHeader != null) {
       for (String limit : sentryRateLimitHeader.split(",", -1)) {
 
         // Java 11 or so has strip() :(
         limit = limit.replace(" ", "");
 
-        final String[] retryAfterAndCategories =
-            limit.split(":", -1); // we only need for 1st and 2nd item though.
+        final String[] rateLimit = limit.split(":", -1);
+        // These can be ignored by the SDK.
+        // final String scope = rateLimit.length > 2 ? rateLimit[2] : null;
+        // final String reasonCode = rateLimit.length > 3 ? rateLimit[3] : null;
+        final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
 
-        if (retryAfterAndCategories.length > 0) {
-          final String retryAfter = retryAfterAndCategories[0];
+        if (rateLimit.length > 0) {
+          final String retryAfter = rateLimit[0];
           long retryAfterMillis = parseRetryAfterOrDefault(retryAfter);
 
-          if (retryAfterAndCategories.length > 1) {
-            final String allCategories = retryAfterAndCategories[1];
+          if (rateLimit.length > 1) {
+            final String allCategories = rateLimit[1];
 
             // we dont care if Date is UTC as we just add the relative seconds
             final Date date =
@@ -215,7 +224,7 @@ public final class RateLimiter {
               for (final String catItem : categories) {
                 DataCategory dataCategory = DataCategory.Unknown;
                 try {
-                  final String catItemCapitalized = StringUtils.capitalize(catItem);
+                  final String catItemCapitalized = StringUtils.camelCase(catItem);
                   if (catItemCapitalized != null) {
                     dataCategory = DataCategory.valueOf(catItemCapitalized);
                   } else {
@@ -228,6 +237,18 @@ public final class RateLimiter {
                 if (DataCategory.Unknown.equals(dataCategory)) {
                   continue;
                 }
+                // SDK doesn't support namespaces, yet. Namespaces can be returned by relay in case
+                // of metric_bucket items. If the namespaces are empty or contain "custom" we apply
+                // the rate limit to all metrics, otherwise to none.
+                if (DataCategory.MetricBucket.equals(dataCategory)
+                    && limitNamespaces != null
+                    && !limitNamespaces.equals("")) {
+                  final String[] namespaces = limitNamespaces.split(";", -1);
+                  if (namespaces.length > 0 && !CollectionUtils.contains(namespaces, "custom")) {
+                    continue;
+                  }
+                }
+
                 applyRetryAfterOnlyIfLonger(dataCategory, date);
               }
             } else {
