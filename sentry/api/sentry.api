@@ -3015,9 +3015,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 public final class io/sentry/SentryWrapper {
 	public fun <init> ()V
 	public static fun wrapCallable (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
-	public static fun wrapCallableIsolated (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
 	public static fun wrapSupplier (Ljava/util/function/Supplier;)Ljava/util/function/Supplier;
-	public static fun wrapSupplierIsolated (Ljava/util/function/Supplier;)Ljava/util/function/Supplier;
 }
 
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3409,6 +3407,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field ANDROID_VIEW Ljava/lang/String;
 	public static final field APOLLO_REQUEST Ljava/lang/String;
 	public static final field APOLLO_RESPONSE Ljava/lang/String;
+	public static final field GRAPHQL_DATA_FETCHING_ENVIRONMENT Ljava/lang/String;
 	public static final field GRAPHQL_HANDLER_PARAMETERS Ljava/lang/String;
 	public static final field JUL_LOG_RECORD Ljava/lang/String;
 	public static final field LOG4J_LOG_EVENT Ljava/lang/String;

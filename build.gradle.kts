@@ -32,10 +32,6 @@ buildscript {
         classpath(Config.QualityPlugins.errorpronePlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
-        // add classpath of androidNativeBundle
-        // com.ydq.android.gradle.build.tool:nativeBundle:{version}}
-        classpath(Config.NativePlugins.nativeBundlePlugin)
-
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
@@ -78,6 +74,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()
@@ -160,16 +157,7 @@ subprojects {
             if (this@subprojects.name.contains("-compose")) {
                 this.configureForMultiplatform(this@subprojects)
             } else {
-                this.getByName("main").contents {
-                    // non android modules
-                    from("build${sep}libs")
-                    from("build${sep}publications${sep}maven")
-                    // android modules
-                    from("build${sep}outputs${sep}aar") {
-                        include("*-release*")
-                    }
-                    from("build${sep}publications${sep}release")
-                }
+                this.configureForJvm(this@subprojects)
             }
             // craft only uses zip archives
             this.forEach { dist ->

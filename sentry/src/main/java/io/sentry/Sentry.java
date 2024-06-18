@@ -56,8 +56,7 @@ public final class Sentry {
    *
    * <p>For Android options will also be (temporarily) replaced by SentryAndroid static block.
    */
-  // TODO [HSM] use SentryOptions.empty and address
-  // https://github.com/getsentry/sentry-java/issues/2541
+  // TODO https://github.com/getsentry/sentry-java/issues/2541
   private static final @NotNull IScope globalScope = new Scope(SentryOptions.empty());
 
   /** Default value for globalHubMode is false */
@@ -79,6 +78,7 @@ public final class Sentry {
   /**
    * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
    *
+   * @deprecated please use {@link Sentry#getCurrentScopes()} instead
    * @return the hub
    */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -127,6 +127,9 @@ public final class Sentry {
     return getCurrentScopes().forkedCurrentScope(creator);
   }
 
+  /**
+   * @deprecated please use {@link Sentry#setCurrentScopes} instead.
+   */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
   @SuppressWarnings({"deprecation", "InlineMeSuggester"})
