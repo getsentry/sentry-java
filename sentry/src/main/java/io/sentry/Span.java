@@ -1,8 +1,10 @@
 package io.sentry;
 
 import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -45,6 +47,8 @@ public final class Span implements ISpan {
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
+
+  private final @NotNull Contexts contexts = new Contexts();
 
   @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
   private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
@@ -291,6 +295,7 @@ public final class Span implements ISpan {
     return data;
   }
 
+  @Override
   public @Nullable Boolean isSampled() {
     return context.getSampled();
   }
@@ -299,8 +304,15 @@ public final class Span implements ISpan {
     return context.getProfileSampled();
   }
 
+  @Override
   public @Nullable TracesSamplingDecision getSamplingDecision() {
     return context.getSamplingDecision();
+  }
+
+  @Override
+  public @NotNull SentryId getEventId() {
+    // TODO [POTEL]
+    return new SentryId();
   }
 
   @Override
@@ -407,6 +419,38 @@ public final class Span implements ISpan {
     return metricsAggregator.getValue();
   }
 
+  @Override
+  public void setContext(@NotNull String key, @NotNull Object context) {
+    this.contexts.put(key, context);
+  }
+
+  @Override
+  public @NotNull Contexts getContexts() {
+    return contexts;
+  }
+
+  @Override
+  public void setName(@NotNull String name) {
+    // TODO [POTEL]
+  }
+
+  @Override
+  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
+    // TODO [POTEL]
+  }
+
+  @Override
+  public @NotNull TransactionNameSource getNameSource() {
+    // TODO [POTEL]
+    return TransactionNameSource.CUSTOM;
+  }
+
+  @Override
+  public @NotNull String getName() {
+    // TODO [POTEL]
+    return getOperation();
+  }
+
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
     this.spanFinishedCallback = callback;
   }
@@ -432,5 +476,10 @@ public final class Span implements ISpan {
       }
     }
     return children;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 }

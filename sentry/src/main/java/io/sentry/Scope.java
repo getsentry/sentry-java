@@ -234,7 +234,7 @@ public final class Scope implements IScope {
   public ISpan getSpan() {
     final ITransaction tx = transaction;
     if (tx != null) {
-      final Span span = tx.getLatestActiveSpan();
+      final ISpan span = tx.getLatestActiveSpan();
 
       if (span != null) {
         return span;

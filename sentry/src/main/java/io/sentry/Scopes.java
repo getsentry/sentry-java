@@ -826,15 +826,17 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
-    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter())) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
-              transactionContext.getInstrumenter(),
-              getOptions().getInstrumenter());
-      transaction = NoOpTransaction.getInstance();
+      //    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter()))
+      // {
+      //      getOptions()
+      //          .getLogger()
+      //          .log(
+      //              SentryLevel.DEBUG,
+      //              "Returning no-op for instrumenter %s as the SDK has been configured to use
+      // instrumenter %s",
+      //              transactionContext.getInstrumenter(),
+      //              getOptions().getInstrumenter());
+      //      transaction = NoOpTransaction.getInstance();
     } else if (!getOptions().isTracingEnabled()) {
       getOptions()
           .getLogger()
@@ -847,9 +849,16 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
 
+      final @Nullable ISpanFactory maybeSpanFactory = transactionOptions.getSpanFactory();
+      final @NotNull ISpanFactory spanFactory =
+          maybeSpanFactory == null ? getOptions().getSpanFactory() : maybeSpanFactory;
+
       transaction =
-          new SentryTracer(
+          spanFactory.createTransaction(
               transactionContext, this, transactionOptions, transactionPerformanceCollector);
+      //          new SentryTracer(
+      //              transactionContext, this, transactionOptions,
+      // transactionPerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
@@ -866,7 +875,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       }
     }
     if (transactionOptions.isBindToScope()) {
-      configureScope(scope -> scope.setTransaction(transaction));
+      transaction.makeCurrent();
+      //      configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;
   }

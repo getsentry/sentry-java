@@ -11,6 +11,7 @@ import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.DateUtils;
+import io.sentry.DefaultSpanFactory;
 import io.sentry.DsnUtil;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
@@ -25,11 +26,13 @@ import io.sentry.SpanId;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
@@ -40,6 +43,8 @@ import org.jetbrains.annotations.Nullable;
 public final class SentrySpanExporter implements SpanExporter {
   private volatile boolean stopped = false;
   // TODO is a strong ref problematic here?
+  // TODO [POTEL] a weak ref could mean spans are gone before we had a chance to attach them
+  // somewhere
   private final List<SpanData> finishedSpans = new CopyOnWriteArrayList<>();
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
@@ -131,7 +136,41 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @Nullable String fullUrl = spanData.getAttributes().get(SemanticAttributes.URL_FULL);
-    return DsnUtil.urlContainsDsnHost(scopes.getOptions(), fullUrl);
+    if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), fullUrl)) {
+      return true;
+    }
+
+    // TODO [POTEL] should check if enabled but multi init with different options makes testing hard
+    // atm
+    //    if (scopes.getOptions().isEnableSpotlight()) {
+    final @Nullable String spotlightUrl = scopes.getOptions().getSpotlightConnectionUrl();
+    if (spotlightUrl != null) {
+      if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
+        return true;
+      }
+      if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
+        return true;
+      }
+    } else {
+      if (containsSpotlightUrl(fullUrl, "http://localhost:8969/stream")) {
+        return true;
+      }
+      if (containsSpotlightUrl(httpUrl, "http://localhost:8969/stream")) {
+        return true;
+      }
+    }
+    //    }
+
+    return false;
+  }
+
+  private boolean containsSpotlightUrl(
+      final @Nullable String requestUrl, final @NotNull String spotlightUrl) {
+    if (requestUrl == null) {
+      return false;
+    }
+
+    return requestUrl.toLowerCase(Locale.ROOT).contains(spotlightUrl.toLowerCase(Locale.ROOT));
   }
 
   private List<SpanData> maybeSend(final @NotNull List<SpanData> spans) {
@@ -218,7 +257,11 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull String spanId = span.getSpanId();
     final @NotNull String traceId = span.getTraceId();
     //    final @Nullable IScope scope = spanStorage.getScope(spanId);
-    final @Nullable IScopes scopesMaybe = spanStorage.getScopes(span.getSpanContext());
+    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+        spanStorage.getSentrySpan(span.getSpanContext());
+
+    final @Nullable IScopes scopesMaybe =
+        sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
     final @NotNull IScopes scopesToUse =
         scopesMaybe == null ? ScopesAdapter.getInstance() : scopesMaybe;
     final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(span);
@@ -260,6 +303,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
     TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setStartTimestamp(new SentryLongDate(span.getStartEpochNanos()));
+    transactionOptions.setSpanFactory(new DefaultSpanFactory());
 
     ITransaction sentryTransaction =
         scopesToUse.startTransaction(transactionContext, transactionOptions);
@@ -270,6 +314,12 @@ public final class SentrySpanExporter implements SpanExporter {
 
     for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
       sentryTransaction.setData(dataField.getKey(), dataField.getValue());
+    }
+
+    if (sentrySpanMaybe != null) {
+      final @NotNull ISpan sentrySpan = sentrySpanMaybe;
+      final @NotNull Contexts contexts = sentrySpan.getContexts();
+      sentryTransaction.getContexts().putAll(contexts);
     }
 
     return sentryTransaction;

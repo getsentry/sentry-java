@@ -24,7 +24,8 @@ public final class NoOpScopesStorage implements IScopesStorage {
   @Override
   public void close() {}
 
-  static final class NoOpScopesLifecycleToken implements ISentryLifecycleToken {
+  // TODO [POTEL] extract into its own class
+  public static final class NoOpScopesLifecycleToken implements ISentryLifecycleToken {
 
     private static final NoOpScopesLifecycleToken instance = new NoOpScopesLifecycleToken();
 

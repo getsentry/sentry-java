@@ -1,7 +1,9 @@
 package io.sentry;
 
 import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -164,5 +166,49 @@ public final class NoOpSpan implements ISpan {
   @Override
   public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
     return null;
+  }
+
+  @Override
+  public void setContext(@NotNull String key, @NotNull Object context) {}
+
+  @Override
+  public @NotNull Contexts getContexts() {
+    return new Contexts();
+  }
+
+  @Override
+  public void setName(@NotNull String name) {}
+
+  @Override
+  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {}
+
+  @Override
+  public @NotNull TransactionNameSource getNameSource() {
+    return TransactionNameSource.CUSTOM;
+  }
+
+  @Override
+  public @NotNull String getName() {
+    return "<no-op span>";
+  }
+
+  @Override
+  public @Nullable Boolean isSampled() {
+    return null;
+  }
+
+  @Override
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
+    return null;
+  }
+
+  @Override
+  public @NotNull SentryId getEventId() {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
 }

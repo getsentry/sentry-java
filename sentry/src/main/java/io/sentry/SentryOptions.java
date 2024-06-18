@@ -470,6 +470,8 @@ public class SentryOptions {
 
   private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
 
+  private @NotNull ISpanFactory spanFactory = new DefaultSpanFactory();
+
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
@@ -2679,6 +2681,15 @@ public class SentryOptions {
   private void addPackageInfo() {
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
+  }
+
+  public @NotNull ISpanFactory getSpanFactory() {
+    // TODO [POTEL] use a util for checking if OTel is active or similar
+    return spanFactory;
+  }
+
+  public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
+    this.spanFactory = spanFactory;
   }
 
   public static final class Proxy {
