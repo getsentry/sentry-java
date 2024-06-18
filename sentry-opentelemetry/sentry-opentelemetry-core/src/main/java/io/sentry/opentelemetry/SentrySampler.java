@@ -28,7 +28,7 @@ public final class SentrySampler implements Sampler {
   private final @NotNull TracesSampler tracesSampler;
 
   public SentrySampler(final @NotNull IScopes scopes) {
-    this.tracesSampler = new TracesSampler(scopes.getOptions());
+    this.tracesSampler = scopes.getOptions().getInternalTracesSampler();
   }
 
   public SentrySampler() {

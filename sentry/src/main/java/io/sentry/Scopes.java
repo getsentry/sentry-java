@@ -32,7 +32,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
-  private final @NotNull TracesSampler tracesSampler;
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
   private final @NotNull MetricsApi metricsApi;
 
@@ -61,7 +60,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
-    this.tracesSampler = new TracesSampler(options);
     this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
     this.metricsApi = new MetricsApi(this);
   }
@@ -861,6 +859,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContext, transactionOptions.getCustomSamplingContext());
+      final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
 
