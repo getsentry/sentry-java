@@ -1,5 +1,7 @@
 package io.sentry.opentelemetry;
 
+import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
+
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.SpanKind;
@@ -282,10 +284,12 @@ public final class SentrySpanProcessor implements SpanProcessor {
   private void updateTransactionWithOtelData(
       final @NotNull ITransaction sentryTransaction, final @NotNull ReadableSpan otelSpan) {
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData());
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
     sentryTransaction.setOperation(otelSpanInfo.getOp());
+    String transactionName = otelSpanInfo.getDescription();
     sentryTransaction.setName(
-        otelSpanInfo.getDescription(), otelSpanInfo.getTransactionNameSource());
+        transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName,
+        otelSpanInfo.getTransactionNameSource());
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(otelSpan);
     sentryTransaction.setContext("otel", otelContext);
@@ -317,7 +321,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
             });
 
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData());
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
     sentrySpan.setOperation(otelSpanInfo.getOp());
     sentrySpan.setDescription(otelSpanInfo.getDescription());
   }

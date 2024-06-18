@@ -336,8 +336,7 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull SentryId getEventId() {
-    // TODO [POTEL]
-    return new SentryId();
+    return new SentryId(getSpanId().toString());
   }
 
   @Override

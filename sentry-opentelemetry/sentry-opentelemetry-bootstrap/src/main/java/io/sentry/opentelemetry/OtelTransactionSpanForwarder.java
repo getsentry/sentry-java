@@ -1,5 +1,7 @@
 package io.sentry.opentelemetry;
 
+import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
+
 import io.sentry.BaggageHeader;
 import io.sentry.Hint;
 import io.sentry.ISentryLifecycleToken;
@@ -315,7 +317,7 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   public @NotNull String getName() {
     final @Nullable String name = rootSpan.getTransactionName();
     if (name == null) {
-      return "<unlabeled transaction>";
+      return DEFAULT_TRANSACTION_NAME;
     }
     return name;
   }

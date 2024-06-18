@@ -494,26 +494,11 @@ public final class OtelSpanWrapper implements ISpan {
     final @Nullable Span otelSpan = getSpan();
     if (otelSpan != null) {
       final @NotNull Scope otelScope = otelSpan.makeCurrent();
-      final @NotNull OtelContextSpanStorageToken token = new OtelContextSpanStorageToken(otelScope);
+      final @NotNull OtelStorageToken token = new OtelStorageToken(otelScope);
       // to iterate LIFO when closing
       tokensToCleanup.addFirst(token);
       return token;
     }
     return NoOpScopesLifecycleToken.getInstance();
-  }
-
-  // TODO [POTEL] extract generic
-  static final class OtelContextSpanStorageToken implements ISentryLifecycleToken {
-
-    private final @NotNull Scope otelScope;
-
-    OtelContextSpanStorageToken(final @NotNull Scope otelScope) {
-      this.otelScope = otelScope;
-    }
-
-    @Override
-    public void close() {
-      otelScope.close();
-    }
   }
 }

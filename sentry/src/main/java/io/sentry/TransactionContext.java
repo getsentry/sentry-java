@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class TransactionContext extends SpanContext {
-  private static final @NotNull String DEFAULT_NAME = "<unlabeled transaction>";
+  public static final @NotNull String DEFAULT_TRANSACTION_NAME = "<unlabeled transaction>";
   private static final @NotNull TransactionNameSource DEFAULT_NAME_SOURCE =
       TransactionNameSource.CUSTOM;
   private static final @NotNull String DEFAULT_OPERATION = "default";
@@ -134,7 +134,7 @@ public final class TransactionContext extends SpanContext {
       final @Nullable TracesSamplingDecision parentSamplingDecision,
       final @Nullable Baggage baggage) {
     super(traceId, spanId, DEFAULT_OPERATION, parentSpanId, null);
-    this.name = DEFAULT_NAME;
+    this.name = DEFAULT_TRANSACTION_NAME;
     this.parentSamplingDecision = parentSamplingDecision;
     this.transactionNameSource = DEFAULT_NAME_SOURCE;
     this.baggage = baggage;
