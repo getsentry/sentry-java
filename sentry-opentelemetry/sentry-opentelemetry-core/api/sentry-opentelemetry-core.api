@@ -6,6 +6,9 @@ public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor 
 
 public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/util/Map;)V
+	public fun addDataField (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun getDataFields ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
@@ -52,6 +55,19 @@ public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetr
 public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
 	public fun <init> ()V
 	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/OtelSpanInfo;
+	public fun extractSpanInfo (Lio/opentelemetry/sdk/trace/data/SpanData;)Lio/sentry/opentelemetry/OtelSpanInfo;
+}
+
+public final class io/sentry/opentelemetry/SpanNode {
+	public fun <init> (Ljava/lang/String;)V
+	public fun addChild (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun addChildren (Ljava/util/List;)V
+	public fun getChildren ()Ljava/util/List;
+	public fun getId ()Ljava/lang/String;
+	public fun getParentNode ()Lio/sentry/opentelemetry/SpanNode;
+	public fun getSpan ()Lio/opentelemetry/sdk/trace/data/SpanData;
+	public fun setParentNode (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun setSpan (Lio/opentelemetry/sdk/trace/data/SpanData;)V
 }
 
 public final class io/sentry/opentelemetry/SpanNode {

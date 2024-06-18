@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.common.CompletableResultCode;
@@ -25,7 +26,6 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.TransactionNameSource;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,6 +42,8 @@ public final class SentrySpanExporter implements SpanExporter {
   // TODO is a strong ref problematic here?
   private final List<SpanData> finishedSpans = new CopyOnWriteArrayList<>();
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
+  private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
+      new SpanDescriptionExtractor();
   private final @NotNull IScopes scopes;
 
   private final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
@@ -156,8 +158,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
       //      spanStorage.getScope()
       // transaction.finishWithScope
-      // TODO status
-      transaction.finish(SpanStatus.OK, new SentryLongDate(span.getEndEpochNanos()));
+      transaction.finish(mapOtelStatus(span), new SentryLongDate(span.getEndEpochNanos()));
     }
 
     return remaining.stream()
@@ -182,6 +183,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @NotNull String spanId = spanData.getSpanId();
+    final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(spanData);
     // TODO attributes
     // TODO cleanup sentry attributes
 
@@ -196,8 +198,13 @@ public final class SentrySpanExporter implements SpanExporter {
             spanData.getParentSpanId());
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
     final @NotNull ISpan sentryChildSpan =
-        sentrySpan.startChild(spanData.getName(), spanData.getName(), startDate, Instrumenter.OTEL);
+        sentrySpan.startChild(
+            spanInfo.getOp(), spanInfo.getDescription(), startDate, Instrumenter.OTEL);
+
     sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
+    for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
+      sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
+    }
 
     for (SpanNode childNode : spanNode.getChildren()) {
       createAndFinishSpanForOtelSpan(childNode, sentryChildSpan, remaining);
@@ -214,6 +221,7 @@ public final class SentrySpanExporter implements SpanExporter {
     final @Nullable IScopes scopesMaybe = spanStorage.getScopes(span.getSpanContext());
     final @NotNull IScopes scopesToUse =
         scopesMaybe == null ? ScopesAdapter.getInstance() : scopesMaybe;
+    final @NotNull OtelSpanInfo spanInfo = spanDescriptionExtractor.extractSpanInfo(span);
 
     //    final @Nullable Boolean parentSampled =
     // span.getAttributes().get(InternalSemanticAttributes.PARENT_SAMPLED);
@@ -232,10 +240,9 @@ public final class SentrySpanExporter implements SpanExporter {
             "Creating Sentry transaction for OpenTelemetry span %s (trace %s).",
             spanId,
             traceId);
-    final @NotNull String transactionName = span.getName();
-    final @NotNull TransactionNameSource transactionNameSource = TransactionNameSource.CUSTOM;
-    final @Nullable String op = span.getName();
     final SpanId sentrySpanId = new SpanId(spanId);
+
+    // TODO parentSpanId, parentSamplingDecision, baggage
 
     final @NotNull TransactionContext transactionContext =
         new TransactionContext(new SentryId(traceId), sentrySpanId, null, null, null);
@@ -246,9 +253,9 @@ public final class SentrySpanExporter implements SpanExporter {
     //        PropagationContext.fromHeaders(
     //          traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
 
-    transactionContext.setName(transactionName);
-    transactionContext.setTransactionNameSource(transactionNameSource);
-    transactionContext.setOperation(op);
+    transactionContext.setName(spanInfo.getDescription());
+    transactionContext.setTransactionNameSource(spanInfo.getTransactionNameSource());
+    transactionContext.setOperation(spanInfo.getOp());
     transactionContext.setInstrumenter(Instrumenter.OTEL);
 
     TransactionOptions transactionOptions = new TransactionOptions();
@@ -257,6 +264,13 @@ public final class SentrySpanExporter implements SpanExporter {
     ITransaction sentryTransaction =
         scopesToUse.startTransaction(transactionContext, transactionOptions);
     sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);
+
+    final @NotNull Map<String, Object> otelContext = toOtelContext(span);
+    sentryTransaction.setContext("otel", otelContext);
+
+    for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
+      sentryTransaction.setData(dataField.getKey(), dataField.getValue());
+    }
 
     return sentryTransaction;
   }
@@ -370,6 +384,30 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     return SpanStatus.UNKNOWN_ERROR;
+  }
+
+  private @NotNull Map<String, Object> toOtelContext(final @NotNull SpanData spanData) {
+    final @NotNull Map<String, Object> context = new HashMap<>();
+
+    context.put("attributes", toMapWithStringKeys(spanData.getAttributes()));
+    context.put("resource", toMapWithStringKeys(spanData.getResource().getAttributes()));
+
+    return context;
+  }
+
+  private @NotNull Map<String, Object> toMapWithStringKeys(final @Nullable Attributes attributes) {
+    final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
+
+    if (attributes != null) {
+      attributes.forEach(
+          (key, value) -> {
+            if (key != null) {
+              mapWithStringKeys.put(key.getKey(), value);
+            }
+          });
+    }
+
+    return mapWithStringKeys;
   }
 
   @Override
