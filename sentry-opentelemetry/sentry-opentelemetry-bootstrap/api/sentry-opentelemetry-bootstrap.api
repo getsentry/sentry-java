@@ -16,6 +16,12 @@ public final class io/sentry/opentelemetry/OtelContextScopesStorage : io/sentry/
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
+public final class io/sentry/opentelemetry/OtelSpanContext : io/sentry/SpanContext {
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/opentelemetry/api/trace/Span;)V
+	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun setStatus (Lio/sentry/SpanStatus;)V
+}
+
 public final class io/sentry/opentelemetry/OtelSpanFactory : io/sentry/ISpanFactory {
 	public fun <init> ()V
 	public fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;

@@ -198,7 +198,8 @@ public final class SentrySpanExporter implements SpanExporter {
 
       //      spanStorage.getScope()
       // transaction.finishWithScope
-      transaction.finish(mapOtelStatus(span), new SentryLongDate(span.getEndEpochNanos()));
+      transaction.finish(
+          mapOtelStatus(span, transaction), new SentryLongDate(span.getEndEpochNanos()));
     }
 
     return remaining.stream()
@@ -244,6 +245,9 @@ public final class SentrySpanExporter implements SpanExporter {
         parentSentrySpan.startChild(
             spanInfo.getOp(), spanInfo.getDescription(), startDate, Instrumenter.OTEL);
 
+    // TODO [POTEL] Check if we want to use `instrumentationScopeInfo.name` and append it to
+    // `auto.otel`
+    // TODO [POTEL] For spans manually created via Sentry API we should set manual, not auto.otel
     sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
     for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
       sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
@@ -256,7 +260,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     sentryChildSpan.finish(
-        mapOtelStatus(spanData), new SentryLongDate(spanData.getEndEpochNanos()));
+        mapOtelStatus(spanData, sentryChildSpan), new SentryLongDate(spanData.getEndEpochNanos()));
   }
 
   private void transferSpanDetails(
@@ -285,6 +289,8 @@ public final class SentrySpanExporter implements SpanExporter {
       for (Map.Entry<String, String> entry : tags.entrySet()) {
         targetSpan.setTag(entry.getKey(), entry.getValue());
       }
+
+      targetSpan.setStatus(sourceSpan.getStatus());
     }
   }
 
@@ -463,7 +469,14 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   @SuppressWarnings("deprecation")
-  private SpanStatus mapOtelStatus(final @NotNull SpanData otelSpanData) {
+  private SpanStatus mapOtelStatus(
+      final @NotNull SpanData otelSpanData, final @NotNull ISpan sentrySpan) {
+    final @Nullable SpanStatus existingStatus = sentrySpan.getStatus();
+    // TODO [POTEL] do we want the unknown error check here?
+    if (existingStatus != null && existingStatus != SpanStatus.UNKNOWN_ERROR) {
+      return existingStatus;
+    }
+
     final @NotNull StatusData otelStatus = otelSpanData.getStatus();
     final @NotNull StatusCode otelStatusCode = otelStatus.getStatusCode();
 
