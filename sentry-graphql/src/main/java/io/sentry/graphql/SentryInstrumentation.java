@@ -18,6 +18,7 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.NoOpScopes;
@@ -25,6 +26,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.TypeCheckHint;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +51,9 @@ public final class SentryInstrumentation
           );
   public static final @NotNull String SENTRY_SCOPES_CONTEXT_KEY = "sentry.scopes";
 
+  /**
+   * @deprecated please use {@link SentryInstrumentation#SENTRY_SCOPES_CONTEXT_KEY} instead.
+   */
   @Deprecated
   public static final @NotNull String SENTRY_HUB_CONTEXT_KEY = SENTRY_SCOPES_CONTEXT_KEY;
 
@@ -298,13 +303,16 @@ public final class SentryInstrumentation
     return environment -> {
       final @Nullable ExecutionStepInfo executionStepInfo = environment.getExecutionStepInfo();
       if (executionStepInfo != null) {
+        Hint hint = new Hint();
+        hint.set(TypeCheckHint.GRAPHQL_DATA_FETCHING_ENVIRONMENT, environment);
         scopesFromContext(parameters.getExecutionContext().getGraphQLContext())
             .addBreadcrumb(
                 Breadcrumb.graphqlDataFetcher(
                     StringUtils.toString(executionStepInfo.getPath()),
                     GraphqlStringUtils.fieldToString(executionStepInfo.getField()),
                     GraphqlStringUtils.typeToString(executionStepInfo.getType()),
-                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())));
+                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())),
+                hint);
       }
       final TracingState tracingState = parameters.getInstrumentationState();
       final ISpan transaction = tracingState.getTransaction();

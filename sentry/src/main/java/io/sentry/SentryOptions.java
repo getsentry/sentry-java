@@ -25,6 +25,7 @@ import io.sentry.util.StringUtils;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
+import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -460,7 +461,7 @@ public class SentryOptions {
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
-  @ApiStatus.Experimental private boolean enableBackpressureHandling = false;
+  private boolean enableBackpressureHandling = true;
 
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
@@ -2721,24 +2722,39 @@ public class SentryOptions {
     private @Nullable String port;
     private @Nullable String user;
     private @Nullable String pass;
+    private @Nullable java.net.Proxy.Type type;
+
+    public Proxy() {
+      this(null, null, null, null, null);
+    }
+
+    public Proxy(@Nullable String host, @Nullable String port) {
+      this(host, port, null, null, null);
+    }
+
+    public Proxy(@Nullable String host, @Nullable String port, @Nullable java.net.Proxy.Type type) {
+      this(host, port, type, null, null);
+    }
 
     public Proxy(
         final @Nullable String host,
         final @Nullable String port,
         final @Nullable String user,
         final @Nullable String pass) {
+      this(host, port, null, user, pass);
+    }
+
+    public Proxy(
+        final @Nullable String host,
+        final @Nullable String port,
+        final @Nullable java.net.Proxy.Type type,
+        final @Nullable String user,
+        final @Nullable String pass) {
       this.host = host;
       this.port = port;
+      this.type = type;
       this.user = user;
       this.pass = pass;
-    }
-
-    public Proxy() {
-      this(null, null, null, null);
-    }
-
-    public Proxy(@Nullable String host, @Nullable String port) {
-      this(host, port, null, null);
     }
 
     public @Nullable String getHost() {
@@ -2771,6 +2787,14 @@ public class SentryOptions {
 
     public void setPass(final @Nullable String pass) {
       this.pass = pass;
+    }
+
+    public @Nullable java.net.Proxy.Type getType() {
+      return type;
+    }
+
+    public void setType(final @Nullable java.net.Proxy.Type type) {
+      this.type = type;
     }
   }
 
