@@ -16,29 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * scope(s) are forked, depends on the method used here. This prevents reused threads (e.g. from
  * thread-pools) from getting an incorrect state.
  */
-// TODO [HSM] only deliver isolated variant as default for now
 public final class SentryWrapper {
-
-  /**
-   * Helper method to wrap {@link Callable}
-   *
-   * <p>Forks current scope before execution and restores previous state afterwards. This prevents
-   * reused threads (e.g. from thread-pools) from getting an incorrect state.
-   *
-   * @param callable - the {@link Callable} to be wrapped
-   * @return the wrapped {@link Callable}
-   * @param <U> - the result type of the {@link Callable}
-   */
-  public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
-    final IScopes newScopes =
-        Sentry.getCurrentScopes().forkedCurrentScope("SentryWrapper.wrapCallable");
-
-    return () -> {
-      try (ISentryLifecycleToken ignored = newScopes.makeCurrent()) {
-        return callable.call();
-      }
-    };
-  }
 
   /**
    * Helper method to wrap {@link Callable}
@@ -50,7 +28,7 @@ public final class SentryWrapper {
    * @return the wrapped {@link Callable}
    * @param <U> - the result type of the {@link Callable}
    */
-  public static <U> Callable<U> wrapCallableIsolated(final @NotNull Callable<U> callable) {
+  public static <U> Callable<U> wrapCallable(final @NotNull Callable<U> callable) {
     final IScopes newScopes = Sentry.getCurrentScopes().forkedScopes("SentryWrapper.wrapCallable");
 
     return () -> {
@@ -63,26 +41,6 @@ public final class SentryWrapper {
   /**
    * Helper method to wrap {@link Supplier}
    *
-   * <p>Forks current scope before execution and restores previous state afterwards. This prevents
-   * reused threads (e.g. from thread-pools) from getting an incorrect state.
-   *
-   * @param supplier - the {@link Supplier} to be wrapped
-   * @return the wrapped {@link Supplier}
-   * @param <U> - the result type of the {@link Supplier}
-   */
-  public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
-    final IScopes newScopes = Sentry.forkedCurrentScope("SentryWrapper.wrapSupplier");
-
-    return () -> {
-      try (ISentryLifecycleToken ignore = newScopes.makeCurrent()) {
-        return supplier.get();
-      }
-    };
-  }
-
-  /**
-   * Helper method to wrap {@link Supplier}
-   *
    * <p>Forks current and isolation scope before execution and restores previous state afterwards.
    * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
    *
@@ -90,7 +48,7 @@ public final class SentryWrapper {
    * @return the wrapped {@link Supplier}
    * @param <U> - the result type of the {@link Supplier}
    */
-  public static <U> Supplier<U> wrapSupplierIsolated(final @NotNull Supplier<U> supplier) {
+  public static <U> Supplier<U> wrapSupplier(final @NotNull Supplier<U> supplier) {
     final IScopes newScopes = Sentry.forkedScopes("SentryWrapper.wrapSupplier");
 
     return () -> {
