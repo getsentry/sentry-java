@@ -239,6 +239,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
       force = true;
     }
 
+    flushScheduled = false;
+
     final @NotNull Set<Long> flushableBuckets = getFlushableBuckets(force);
     if (flushableBuckets.isEmpty()) {
       logger.log(SentryLevel.DEBUG, "Metrics: nothing to flush");
