@@ -67,12 +67,3 @@ include(
     "sentry-android-integration-tests:test-app-sentry",
     "sentry-samples:sentry-samples-openfeign"
 )
-
-gradle.beforeProject {
-    if (project.name == "sentry-android-ndk" || project.name == "sentry-samples-android") {
-        exec {
-            logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
-            commandLine("git", "submodule", "update", "--init", "--recursive")
-        }
-    }
-}
