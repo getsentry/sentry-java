@@ -35,7 +35,11 @@ import reactor.core.publisher.Mono;
 @ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
+  /**
+   * @deprecated please use {@link SentryWebFilter#SENTRY_SCOPES_KEY} instead.
+   */
   @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
+
   private static final String TRANSACTION_OP = "http.server";
   private static final String TRACE_ORIGIN = "auto.spring.webflux";
 
