@@ -69,7 +69,7 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.PARENT_SAMPLED.getKey());
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
-  private static final String TRACE_ORIGN = "auto.potel";
+  public static final String TRACE_ORIGIN = "auto.potel";
 
   public SentrySpanExporter() {
     this(ScopesAdapter.getInstance());
@@ -252,6 +252,7 @@ public final class SentrySpanExporter implements SpanExporter {
             spanData.getTraceId(),
             spanData.getParentSpanId());
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
     // TODO [POTEL] op and description might have been overriden
     final @NotNull io.sentry.SpanContext spanContext =
         parentSentrySpan
@@ -264,17 +265,17 @@ public final class SentrySpanExporter implements SpanExporter {
     spanContext.setInstrumenter(Instrumenter.OTEL);
     if (sentrySpanMaybe != null) {
       spanContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
+      spanOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
+    } else {
+      // TODO [POTEL] Check if we want to use `instrumentationScopeInfo.name` and append it to
+      // `auto.otel`
+      spanOptions.setOrigin(TRACE_ORIGIN);
     }
 
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
     spanOptions.setStartTimestamp(startDate);
 
     final @NotNull ISpan sentryChildSpan = parentSentrySpan.startChild(spanContext, spanOptions);
 
-    // TODO [POTEL] Check if we want to use `instrumentationScopeInfo.name` and append it to
-    // `auto.otel`
-    // TODO [POTEL] For spans manually created via Sentry API we should set manual, not auto.otel
-    sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
     for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
       sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
     }
@@ -368,6 +369,8 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull TransactionContext transactionContext =
         new TransactionContext(new SentryId(traceId), sentrySpanId, parentSpanId, null, baggage);
 
+    TransactionOptions transactionOptions = new TransactionOptions();
+
     transactionContext.setName(
         transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
@@ -375,15 +378,14 @@ public final class SentrySpanExporter implements SpanExporter {
     transactionContext.setInstrumenter(Instrumenter.OTEL);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
+      transactionOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
     }
 
-    TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setStartTimestamp(new SentryLongDate(span.getStartEpochNanos()));
     transactionOptions.setSpanFactory(new DefaultSpanFactory());
 
     ITransaction sentryTransaction =
         scopesToUse.startTransaction(transactionContext, transactionOptions);
-    sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(span);
     sentryTransaction.setContext("otel", otelContext);

@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SpanContext.DEFAULT_ORIGIN;
+
 import com.jakewharton.nopen.annotation.Open;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,8 @@ public class SpanOptions {
    */
   private boolean isIdle = false;
 
+  protected @Nullable String origin = DEFAULT_ORIGIN;
+
   public boolean isTrimStart() {
     return trimStart;
   }
@@ -72,5 +76,13 @@ public class SpanOptions {
 
   public void setIdle(boolean idle) {
     isIdle = idle;
+  }
+
+  public @Nullable String getOrigin() {
+    return origin;
+  }
+
+  public void setOrigin(final @Nullable String origin) {
+    this.origin = origin;
   }
 }

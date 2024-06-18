@@ -68,6 +68,22 @@ class SentryTracerTest {
     private val fixture = Fixture()
 
     @Test
+    fun `transfer origin from transaction options to transaction context`() {
+        fixture.getSut()
+        val transactionOptions = TransactionOptions().also {
+            it.origin = "new-origin"
+        }
+        val transactionContext = TransactionContext("name", "op", null).also {
+            it.origin = "old-origin"
+        }
+
+        val transaction = SentryTracer(transactionContext, fixture.scopes, transactionOptions, null)
+        assertEquals("new-origin", transaction.spanContext.origin)
+    }
+
+    // TODO [POTEL] test child creation is ignored because of span origin
+
+    @Test
     fun `does not add more spans than configured in options`() {
         val tracer = fixture.getSut({
             it.maxSpans = 2

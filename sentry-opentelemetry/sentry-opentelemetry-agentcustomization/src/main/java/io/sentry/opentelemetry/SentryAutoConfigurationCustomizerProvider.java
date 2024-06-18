@@ -12,6 +12,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
+import io.sentry.util.SpanUtils;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,10 +38,14 @@ public final class SentryAutoConfigurationCustomizerProvider
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
+            // TODO [POTEL] deprecate
             options.setInstrumenter(Instrumenter.OTEL);
+            // TODO [POTEL] do we still need this?
             options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
+            options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
             options.setSpanFactory(new OtelSpanFactory());
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
+            // TODO [POTEL] is detecting a version mismatch between application and agent possible?
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
             }

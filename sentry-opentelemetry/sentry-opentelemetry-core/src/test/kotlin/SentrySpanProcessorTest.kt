@@ -29,6 +29,7 @@ import io.sentry.SentryDate
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
+import io.sentry.SpanOptions
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
@@ -91,7 +92,7 @@ class SentrySpanProcessorTest {
             whenever(span.toBaggageHeader(any())).thenReturn(baggageHeader)
             whenever(transaction.toBaggageHeader(any())).thenReturn(baggageHeader)
 
-            whenever(transaction.startChild(any<String>(), anyOrNull<String>(), anyOrNull<SentryDate>(), eq(Instrumenter.OTEL))).thenReturn(span)
+            whenever(transaction.startChild(any<String>(), anyOrNull<String>(), anyOrNull<SentryDate>(), eq(Instrumenter.OTEL), any<SpanOptions>())).thenReturn(span)
 
             val sdkTracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(SentrySpanProcessor(scopes))
@@ -462,7 +463,8 @@ class SentrySpanProcessorTest {
             eq("childspan"),
             eq("childspan"),
             any<SentryDate>(),
-            eq(Instrumenter.OTEL)
+            eq(Instrumenter.OTEL),
+            any<SpanOptions>()
         )
     }
 

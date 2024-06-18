@@ -455,6 +455,10 @@ public class SentryOptions {
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
+  /** Contains a list of span origins for which spans / transactions should not be created. */
+  @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
+
+  @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
   private boolean enableBackpressureHandling = true;
@@ -2195,6 +2199,27 @@ public class SentryOptions {
       }
 
       this.ignoredCheckIns = filteredIgnoredCheckIns;
+    }
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable List<String> getIgnoredSpanOrigins() {
+    return ignoredSpanOrigins;
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
+    if (ignoredSpanOrigins == null) {
+      this.ignoredSpanOrigins = null;
+    } else {
+      @NotNull final List<String> filtered = new ArrayList<>();
+      for (String origin : ignoredSpanOrigins) {
+        if (!origin.isEmpty()) {
+          filtered.add(origin);
+        }
+      }
+
+      this.ignoredSpanOrigins = filtered;
     }
   }
 

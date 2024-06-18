@@ -10,6 +10,7 @@ import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -40,9 +41,9 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
       addBreadcrumb(modifiedRequest, null);
       return next.exchange(modifiedRequest);
     }
-
-    final ISpan span = activeSpan.startChild("http.client");
-    span.getSpanContext().setOrigin(TRACE_ORIGIN);
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setOrigin(TRACE_ORIGIN);
+    final ISpan span = activeSpan.startChild("http.client", null, spanOptions);
     final @NotNull String method = request.method().name();
     span.setDescription(method + " " + request.url());
     span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));

@@ -24,6 +24,7 @@ import io.sentry.ISpan;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TypeCheckHint;
 import io.sentry.util.StringUtils;
@@ -402,13 +403,13 @@ public final class SentryInstrumentation
     } else {
       parent = (GraphQLObjectType) type;
     }
-
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setOrigin(TRACE_ORIGIN);
     final @NotNull ISpan span =
         transaction.startChild(
             "graphql",
-            parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
-
-    span.getSpanContext().setOrigin(TRACE_ORIGIN);
+            parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName(),
+            spanOptions);
 
     return span;
   }

@@ -290,6 +290,7 @@ public final class ActivityLifecycleIntegration
 
   private void setSpanOrigin(ISpan span) {
     if (span != null) {
+      // TODO [POTEL] replace with transactionOptions.setOrigin
       span.getSpanContext().setOrigin(TRACE_ORIGIN);
     }
   }

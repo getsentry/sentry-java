@@ -16,6 +16,7 @@ import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
+import junit.framework.TestCase.assertSame
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argWhere
@@ -2196,6 +2197,40 @@ class ScopesTest {
         whenever(client.isEnabled).thenReturn(false)
         scopes.bindClient(client)
         assertFalse(scopes.isEnabled)
+    }
+
+    @Test
+    fun `creating a transaction with an ignored origin noops`() {
+        val scopes = generateScopes {
+            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+        }
+
+        val transactionContext = TransactionContext("transaction-name", "transaction-op")
+        val transactionOptions = TransactionOptions().also {
+            it.origin = "ignored.span.origin"
+            it.isBindToScope = true
+        }
+
+        val transaction = scopes.startTransaction(transactionContext, transactionOptions)
+        assertTrue(transaction.isNoOp)
+        scopes.configureScope { assertNull(it.transaction) }
+    }
+
+    @Test
+    fun `creating a transaction with a non ignored origin creates the transaction`() {
+        val scopes = generateScopes {
+            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+        }
+
+        val transactionContext = TransactionContext("transaction-name", "transaction-op")
+        val transactionOptions = TransactionOptions().also {
+            it.origin = "other.span.origin"
+            it.isBindToScope = true
+        }
+
+        val transaction = scopes.startTransaction(transactionContext, transactionOptions)
+        assertFalse(transaction.isNoOp)
+        scopes.configureScope { assertSame(transaction, it.transaction) }
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

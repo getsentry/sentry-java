@@ -96,10 +96,11 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
     final @NotNull SpanContext spanContext = otelSpan.getSpanContext();
     final @NotNull SentryDate startTimestamp =
         new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
-    spanStorage.storeSentrySpan(
-        spanContext,
+    final @NotNull OtelSpanWrapper sentrySpan =
         new OtelSpanWrapper(
-            otelSpan, scopes, startTimestamp, samplingDecision, sentryParentSpan, baggage));
+            otelSpan, scopes, startTimestamp, samplingDecision, sentryParentSpan, baggage);
+    sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
+    spanStorage.storeSentrySpan(spanContext, sentrySpan);
   }
 
   private static void updatePropagationContext(

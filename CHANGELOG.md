@@ -10,6 +10,22 @@
 
 ### Features
 
+- Our `sentry-opentelemetry-agent` has been completely reworked and now plays nicely with the rest of the Java SDK
+  - NOTE: Not all features have been implemented yet for the OpenTelemetry agent.  
+  - You can add `sentry-opentelemetry-agent` to your setup by downloading the latest release and using it when starting up your application
+    - `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
+    - Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
+    - You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be vaild.
+  - What's new about the Agent
+    - When the OpenTelemetry Agent is used, Sentry API creates OpenTelemetry spans under the hood, handing back a wrapper object which bridges the gap between traditional Sentry API and OpenTelemetry. We might be replacing some of the Sentry performance API in the future.
+      - This is achieved by configuring the SDK to use `OtelSpanFactory` instead of `DefaultSpanFactory` which is done automatically by the auto init of the Java Agent. 
+    - OpenTelemetry spans are now only turned into Sentry spans when they are finished so they can be sent to the Sentry server.
+    - Now registers an OpenTelemetry `Sampler` which uses Sentry sampling configuration
+    - Other Performance integrations automatically stop creating spans to avoid duplicate spans
+    - The Sentry SDK now makes use of OpenTelemetry `Context` for storing Sentry `Scopes` (which is similar to what used to be called `Hub`) and thus relies on OpenTelemetry for `Context` propagation.
+    - Classes used for the previous version of our OpenTelemetry support have been deprecated but can still be used manually. We're not planning to keep the old agent around in favor of less complexity in the SDK.
+- Add `ignoredSpanOrigins` option for ignoring spans coming from certain integrations
+  - We pre-configure this to ignore Performance instrumentation for Spring and other integrations when using our OpenTelemetry Agent to avoid duplicate spans
 - Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
 - Add data fetching environment hint to breadcrumb for GraphQL (#3413) ([#3431](https://github.com/getsentry/sentry-java/pull/3431))
 

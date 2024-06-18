@@ -102,7 +102,6 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       throws IOException, ServletException {
     // at this stage we are not able to get real transaction name
     final ITransaction transaction = startTransaction(httpRequest, transactionContext);
-    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
 
     try {
       filterChain.doFilter(httpRequest, httpResponse);
@@ -144,21 +143,18 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
 
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setCustomSamplingContext(customSamplingContext);
+    transactionOptions.setBindToScope(true);
+    transactionOptions.setOrigin(TRACE_ORIGIN);
+
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation("http.server");
 
-      final TransactionOptions transactionOptions = new TransactionOptions();
-      transactionOptions.setCustomSamplingContext(customSamplingContext);
-      transactionOptions.setBindToScope(true);
-
       return scopes.startTransaction(transactionContext, transactionOptions);
     }
-
-    final TransactionOptions transactionOptions = new TransactionOptions();
-    transactionOptions.setCustomSamplingContext(customSamplingContext);
-    transactionOptions.setBindToScope(true);
 
     return scopes.startTransaction(
         new TransactionContext(name, TransactionNameSource.URL, "http.server"), transactionOptions);

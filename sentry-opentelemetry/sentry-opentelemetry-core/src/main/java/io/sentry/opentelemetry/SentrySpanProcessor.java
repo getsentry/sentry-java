@@ -27,6 +27,7 @@ import io.sentry.SentryLongDate;
 import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -92,10 +93,11 @@ public final class SentrySpanProcessor implements SpanProcessor {
               traceData.getParentSpanId());
       final @NotNull SentryDate startDate =
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
+      final @NotNull SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGN);
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
-              otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
-      sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
+              otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL, spanOptions);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
       scopes
@@ -127,9 +129,9 @@ public final class SentrySpanProcessor implements SpanProcessor {
       TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setStartTimestamp(
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
+      transactionOptions.setOrigin(TRACE_ORIGN);
 
       ISpan sentryTransaction = scopes.startTransaction(transactionContext, transactionOptions);
-      sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }

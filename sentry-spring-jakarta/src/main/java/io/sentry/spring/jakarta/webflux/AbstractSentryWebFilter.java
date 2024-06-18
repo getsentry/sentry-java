@@ -49,7 +49,9 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   protected @Nullable ITransaction maybeStartTransaction(
-      final @NotNull IScopes requestScopes, final @NotNull ServerHttpRequest request) {
+      final @NotNull IScopes requestScopes,
+      final @NotNull ServerHttpRequest request,
+      final @NotNull String origin) {
     if (requestScopes.isEnabled()) {
       final @NotNull HttpHeaders headers = request.getHeaders();
       final @Nullable String sentryTraceHeader =
@@ -60,7 +62,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
 
       if (requestScopes.getOptions().isTracingEnabled()
           && shouldTraceRequest(requestScopes, request)) {
-        return startTransaction(requestScopes, request, transactionContext);
+        return startTransaction(requestScopes, request, transactionContext, origin);
       }
     }
 
@@ -135,7 +137,8 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   protected @NotNull ITransaction startTransaction(
       final @NotNull IScopes scopes,
       final @NotNull ServerHttpRequest request,
-      final @Nullable TransactionContext transactionContext) {
+      final @Nullable TransactionContext transactionContext,
+      final @NotNull String origin) {
     final @NotNull String name = request.getMethod() + " " + request.getURI().getPath();
     final @NotNull CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
@@ -143,6 +146,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setCustomSamplingContext(customSamplingContext);
     transactionOptions.setBindToScope(true);
+    transactionOptions.setOrigin(origin);
 
     if (transactionContext != null) {
       transactionContext.setName(name);
