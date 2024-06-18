@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -7,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** An Adapter for making Class.forName testable */
-// TODO [POTEL] deduplicate
-public final class LoadClass {
+@Open
+public class LoadClass {
 
   /**
    * Try to load a class via reflection

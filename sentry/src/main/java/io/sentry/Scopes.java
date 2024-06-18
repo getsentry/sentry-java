@@ -588,7 +588,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
-      return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+      return NoOpScopesLifecycleToken.getInstance();
     } else {
       final @NotNull IScopes scopes = this.forkedCurrentScope("pushScope");
       return scopes.makeCurrent();
@@ -603,7 +603,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'pushIsolationScope' call is a no-op.");
-      return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+      return NoOpScopesLifecycleToken.getInstance();
     } else {
       final @NotNull IScopes scopes = this.forkedScopes("pushIsolationScope");
       return scopes.makeCurrent();
@@ -876,7 +876,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       }
     }
     if (transactionOptions.isBindToScope()) {
-      // TODO [POTEL] this causes problems with OTel since it messes up closing of scopes and leaks
       transaction.makeCurrent();
     }
     return transaction;

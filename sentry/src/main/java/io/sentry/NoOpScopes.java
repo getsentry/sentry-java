@@ -123,12 +123,12 @@ public final class NoOpScopes implements IScopes {
 
   @Override
   public @NotNull ISentryLifecycleToken pushScope() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
   public @NotNull ISentryLifecycleToken pushIsolationScope() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   /**
@@ -190,7 +190,7 @@ public final class NoOpScopes implements IScopes {
 
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override

@@ -29,7 +29,7 @@ public final class UserInteractionIntegration
   private final boolean isAndroidXAvailable;
 
   public UserInteractionIntegration(
-      final @NotNull Application application, final @NotNull LoadClass classLoader) {
+      final @NotNull Application application, final @NotNull io.sentry.util.LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
     isAndroidXAvailable =
         classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);

@@ -1535,6 +1535,11 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
 
+public final class io/sentry/NoOpScopesLifecycleToken : io/sentry/ISentryLifecycleToken {
+	public fun close ()V
+	public static fun getInstance ()Lio/sentry/NoOpScopesLifecycleToken;
+}
+
 public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
 	public fun close ()V
 	public fun get ()Lio/sentry/IScopes;
@@ -5554,7 +5559,7 @@ public final class io/sentry/util/LifecycleHelper {
 	public static fun close (Ljava/lang/Object;)V
 }
 
-public final class io/sentry/util/LoadClass {
+public class io/sentry/util/LoadClass {
 	public fun <init> ()V
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z

@@ -56,7 +56,6 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
     final @Nullable OtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
     @Nullable TracesSamplingDecision samplingDecision = null;
-    // TODO [POTEL] baggage from propagator should be honored
     @Nullable Baggage baggage = null;
     otelSpan.setAttribute(IS_REMOTE_PARENT, otelSpan.getParentSpanContext().isRemote());
     if (sentryParentSpan == null) {

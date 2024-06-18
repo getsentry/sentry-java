@@ -119,7 +119,7 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     initializeIntegrationsAndProcessors(
         options,
@@ -133,7 +133,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     if (options.getCacheDirPath() != null
@@ -237,7 +237,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
