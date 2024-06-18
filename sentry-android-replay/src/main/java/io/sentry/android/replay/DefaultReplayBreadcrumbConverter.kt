@@ -23,8 +23,6 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     }
 
     override fun convert(breadcrumb: Breadcrumb): RRWebEvent? {
-        var rrwebBreadcrumb: RRWebBreadcrumbEvent? = null
-
         var breadcrumbMessage: String? = null
         var breadcrumbCategory: String? = null
         var breadcrumbLevel: SentryLevel? = null
@@ -97,8 +95,8 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
                 breadcrumbData.putAll(breadcrumb.data)
             }
         }
-        if (!breadcrumbCategory.isNullOrEmpty()) {
-            rrwebBreadcrumb = RRWebBreadcrumbEvent().apply {
+        return if (!breadcrumbCategory.isNullOrEmpty()) {
+            RRWebBreadcrumbEvent().apply {
                 timestamp = breadcrumb.timestamp.time
                 breadcrumbTimestamp = breadcrumb.timestamp.time / 1000.0
                 breadcrumbType = "default"
@@ -107,8 +105,9 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
                 level = breadcrumbLevel
                 data = breadcrumbData
             }
+        } else {
+            null
         }
-        return rrwebBreadcrumb
     }
 
     private fun Breadcrumb.isValidForRRWebSpan(): Boolean {
