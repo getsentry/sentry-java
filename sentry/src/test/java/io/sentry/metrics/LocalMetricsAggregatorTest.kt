@@ -15,7 +15,6 @@ class LocalMetricsAggregatorTest {
         val tags0 = mapOf(
             "tag" to "value0"
         )
-        val timestamp = 0L
 
         // when a metric is emitted
         aggregator.add(
@@ -24,8 +23,7 @@ class LocalMetricsAggregatorTest {
             key,
             1.0,
             unit,
-            tags0,
-            timestamp
+            tags0
         )
 
         // and the same metric is emitted with different tags
@@ -38,8 +36,7 @@ class LocalMetricsAggregatorTest {
             key,
             1.0,
             unit,
-            tags1,
-            timestamp
+            tags1
         )
 
         // then the summary contain a single top level group for the metric
@@ -70,8 +67,7 @@ class LocalMetricsAggregatorTest {
             key,
             1.0,
             unit,
-            tags,
-            timestamp
+            tags
         )
 
         aggregator.add(
@@ -80,8 +76,7 @@ class LocalMetricsAggregatorTest {
             key,
             2.0,
             unit,
-            tags,
-            timestamp
+            tags
         )
 
         val metric = aggregator.summaries.values.first()[0]

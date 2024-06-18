@@ -16,6 +16,7 @@ import io.sentry.SpanStatus;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.protocol.App;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
@@ -79,28 +80,43 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
     // the app start measurement is only sent once and only if the transaction has
     // the app.start span, which is automatically created by the SDK.
-    if (!sentStartMeasurement && hasAppStartSpan(transaction)) {
-      final @NotNull TimeSpan appStartTimeSpan =
-          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
-      final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
+    if (hasAppStartSpan(transaction)) {
+      if (!sentStartMeasurement) {
+        final @NotNull TimeSpan appStartTimeSpan =
+            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+        final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
-      // if appStartUpDurationMs is 0, metrics are not ready to be sent
-      if (appStartUpDurationMs != 0) {
-        final MeasurementValue value =
-            new MeasurementValue(
-                (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
+        // if appStartUpDurationMs is 0, metrics are not ready to be sent
+        if (appStartUpDurationMs != 0) {
+          final MeasurementValue value =
+              new MeasurementValue(
+                  (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
-        final String appStartKey =
-            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
-                ? MeasurementValue.KEY_APP_START_COLD
-                : MeasurementValue.KEY_APP_START_WARM;
+          final String appStartKey =
+              AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+                  ? MeasurementValue.KEY_APP_START_COLD
+                  : MeasurementValue.KEY_APP_START_WARM;
 
-        transaction.getMeasurements().put(appStartKey, value);
+          transaction.getMeasurements().put(appStartKey, value);
 
-        attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
-        sentStartMeasurement = true;
+          attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
+          sentStartMeasurement = true;
+        }
       }
+
+      @Nullable App appContext = transaction.getContexts().getApp();
+      if (appContext == null) {
+        appContext = new App();
+        transaction.getContexts().setApp(appContext);
+      }
+      final String appStartType =
+          AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+              ? "cold"
+              : "warm";
+      appContext.setStartType(appStartType);
     }
+
+    setContributingFlags(transaction);
 
     final SentryId eventId = transaction.getEventId();
     final SpanContext spanContext = transaction.getContexts().getTrace();
@@ -119,6 +135,71 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
 
     return transaction;
+  }
+
+  private void setContributingFlags(SentryTransaction transaction) {
+
+    @Nullable SentrySpan ttidSpan = null;
+    @Nullable SentrySpan ttfdSpan = null;
+    for (final @NotNull SentrySpan span : transaction.getSpans()) {
+      if (ActivityLifecycleIntegration.TTID_OP.equals(span.getOp())) {
+        ttidSpan = span;
+      } else if (ActivityLifecycleIntegration.TTFD_OP.equals(span.getOp())) {
+        ttfdSpan = span;
+      }
+      // once both are found we can early exit
+      if (ttidSpan != null && ttfdSpan != null) {
+        break;
+      }
+    }
+
+    if (ttidSpan == null && ttfdSpan == null) {
+      return;
+    }
+
+    for (final @NotNull SentrySpan span : transaction.getSpans()) {
+      // as ttid and ttfd spans are artificially created, we don't want to set the flags on them
+      if (span == ttidSpan || span == ttfdSpan) {
+        continue;
+      }
+
+      // let's assume main thread, unless it's set differently
+      boolean spanOnMainThread = true;
+      final @Nullable Map<String, Object> spanData = span.getData();
+      if (spanData != null) {
+        final @Nullable Object threadName = spanData.get(SpanDataConvention.THREAD_NAME);
+        spanOnMainThread = threadName == null || "main".equals(threadName);
+      }
+
+      // for ttid, only main thread spans are relevant
+      final boolean withinTtid =
+          (ttidSpan != null)
+              && isTimestampWithinSpan(span.getStartTimestamp(), ttidSpan)
+              && spanOnMainThread;
+
+      final boolean withinTtfd =
+          (ttfdSpan != null) && isTimestampWithinSpan(span.getStartTimestamp(), ttfdSpan);
+
+      if (withinTtid || withinTtfd) {
+        @Nullable Map<String, Object> data = span.getData();
+        if (data == null) {
+          data = new ConcurrentHashMap<>();
+          span.setData(data);
+        }
+        if (withinTtid) {
+          data.put(SpanDataConvention.CONTRIBUTES_TTID, true);
+        }
+        if (withinTtfd) {
+          data.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
+        }
+      }
+    }
+  }
+
+  private static boolean isTimestampWithinSpan(
+      final double timestamp, final @NotNull SentrySpan target) {
+    return timestamp >= target.getStartTimestamp()
+        && (target.getTimestamp() == null || timestamp <= target.getTimestamp());
   }
 
   private boolean hasAppStartSpan(final @NotNull SentryTransaction txn) {
@@ -238,6 +319,9 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     final Map<String, Object> defaultSpanData = new HashMap<>(2);
     defaultSpanData.put(SpanDataConvention.THREAD_ID, Looper.getMainLooper().getThread().getId());
     defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
+
+    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
+    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
 
     return new SentrySpan(
         span.getStartTimestampSecs(),
