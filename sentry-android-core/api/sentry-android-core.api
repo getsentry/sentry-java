@@ -81,7 +81,8 @@ public class io/sentry/android/core/AndroidProfiler$ProfileEndData {
 public class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public final field startCpuMillis J
 	public final field startNanos J
-	public fun <init> (JJ)V
+	public final field startTimestamp Ljava/util/Date;
+	public fun <init> (JJLjava/util/Date;)V
 }
 
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
