@@ -75,6 +75,23 @@ public final class OtelSpanContext extends SpanContext {
     }
   }
 
+  @Override
+  public @NotNull String getOperation() {
+    final @Nullable ReadWriteSpan otelSpan = span.get();
+    if (otelSpan != null) {
+      return otelSpan.getName();
+    }
+    return "<unlabeled span>";
+  }
+
+  @Override
+  public void setOperation(@NotNull String operation) {
+    final @Nullable ReadWriteSpan otelSpan = span.get();
+    if (otelSpan != null) {
+      otelSpan.updateName(operation);
+    }
+  }
+
   private @Nullable SpanStatus otelStatusCodeFallback(final @NotNull StatusData otelStatus) {
     if (otelStatus.getStatusCode() == StatusCode.ERROR) {
       return SpanStatus.UNKNOWN_ERROR;
