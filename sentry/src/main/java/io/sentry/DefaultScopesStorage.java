@@ -21,8 +21,6 @@ public final class DefaultScopesStorage implements IScopesStorage {
 
   @Override
   public void close() {
-    // TODO [HSM] prevent further storing? would this cause problems if singleton, closed and
-    // re-initialized?
     currentScopes.remove();
   }
 

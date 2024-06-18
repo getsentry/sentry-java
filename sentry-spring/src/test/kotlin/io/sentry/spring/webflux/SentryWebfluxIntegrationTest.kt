@@ -95,7 +95,7 @@ class SentryWebfluxIntegrationTest {
             checkEvent { event ->
                 assertEquals("GET /throws", event.transaction)
                 assertNotNull(event.exceptions) {
-                    val ex = it.first()
+                    val ex = it.last()
                     assertEquals("something went wrong", ex.value)
                     assertNotNull(ex.mechanism) {
                         assertThat(it.isHandled).isFalse()

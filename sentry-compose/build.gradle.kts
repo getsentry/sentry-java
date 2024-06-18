@@ -1,6 +1,4 @@
 import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
-import groovy.util.Node
-import groovy.util.NodeList
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 
@@ -44,7 +42,7 @@ kotlin {
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
 
-                api(projects.sentryComposeHelper)
+                compileOnly(projects.sentryComposeHelper)
             }
         }
         val androidMain by getting {
@@ -148,33 +146,4 @@ dependencies {
 
 tasks.withType<LibraryAarJarsTask> {
     mainScopeClassFiles.setFrom(embedComposeHelperConfig)
-}
-
-// we embed the sentry-compose-helper classes to the same .jar above
-// so we need to exclude the dependency from the .pom publication and .module metadata
-configure<PublishingExtension> {
-    publications.withType(MavenPublication::class.java).all {
-        this.pom {
-            this.withXml {
-                (asNode().get("dependencies") as NodeList)
-                    .flatMap {
-                        if (it is Node) it.children() else NodeList()
-                    }
-                    .filterIsInstance<Node>()
-                    .filter { dependency ->
-                        val artifactIdNodes = dependency.get("artifactId") as NodeList
-                        artifactIdNodes.any {
-                            (it is Node && it.value().toString().contains("sentry-compose-helper"))
-                        }
-                    }
-                    .forEach { dependency ->
-                        dependency.parent().remove(dependency)
-                    }
-            }
-        }
-    }
-}
-
-tasks.withType<GenerateModuleMetadata> {
-    enabled = false
 }
