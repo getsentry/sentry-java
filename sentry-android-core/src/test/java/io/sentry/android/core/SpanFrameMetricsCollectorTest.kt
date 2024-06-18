@@ -4,7 +4,6 @@ import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
-import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import io.sentry.SpanContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
@@ -40,9 +39,7 @@ class SpanFrameMetricsCollectorTest {
             options.frameMetricsCollector = frameMetricsCollector
             options.isEnableFramesTracking = enabled
             options.isEnablePerformanceV2 = enabled
-            options.setDateProvider {
-                SentryLongDate(timeNanos)
-            }
+            options.dateProvider = SentryAndroidDateProvider()
 
             return SpanFrameMetricsCollector(options, frameMetricsCollector)
         }
@@ -55,10 +52,16 @@ class SpanFrameMetricsCollectorTest {
         val span = mock<ISpan>()
         val spanContext = SpanContext("op.fake")
         whenever(span.spanContext).thenReturn(spanContext)
-        whenever(span.startDate).thenReturn(SentryLongDate(startTimeStampNanos))
+        whenever(span.startDate).thenReturn(
+            SentryNanotimeDate(
+                Date(),
+                startTimeStampNanos
+            )
+        )
         whenever(span.finishDate).thenReturn(
             if (endTimeStampNanos != null) {
-                SentryLongDate(
+                SentryNanotimeDate(
+                    Date(),
                     endTimeStampNanos
                 )
             } else {
@@ -75,10 +78,16 @@ class SpanFrameMetricsCollectorTest {
         val span = mock<ITransaction>()
         val spanContext = SpanContext("op.fake")
         whenever(span.spanContext).thenReturn(spanContext)
-        whenever(span.startDate).thenReturn(SentryLongDate(startTimeStampNanos))
+        whenever(span.startDate).thenReturn(
+            SentryNanotimeDate(
+                Date(),
+                startTimeStampNanos
+            )
+        )
         whenever(span.finishDate).thenReturn(
             if (endTimeStampNanos != null) {
-                SentryLongDate(
+                SentryNanotimeDate(
+                    Date(),
                     endTimeStampNanos
                 )
             } else {
