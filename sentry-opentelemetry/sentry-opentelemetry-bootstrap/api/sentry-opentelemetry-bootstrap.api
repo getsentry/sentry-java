@@ -1,0 +1,44 @@
+public final class io/sentry/opentelemetry/InternalSemanticAttributes {
+	public static final field BREADCRUMB_TYPE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field IS_REMOTE_PARENT Lio/opentelemetry/api/common/AttributeKey;
+	public static final field OP Lio/opentelemetry/api/common/AttributeKey;
+	public static final field ORIGIN Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PARENT_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SOURCE Lio/opentelemetry/api/common/AttributeKey;
+	public fun <init> ()V
+}
+
+public final class io/sentry/opentelemetry/OtelContextScopesStorage : io/sentry/IScopesStorage {
+	public fun <init> ()V
+	public fun close ()V
+	public fun get ()Lio/sentry/IScopes;
+	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
+}
+
+public final class io/sentry/opentelemetry/SentryContextStorage : io/opentelemetry/context/ContextStorage {
+	public fun <init> (Lio/opentelemetry/context/ContextStorage;)V
+	public fun attach (Lio/opentelemetry/context/Context;)Lio/opentelemetry/context/Scope;
+	public fun current ()Lio/opentelemetry/context/Context;
+}
+
+public final class io/sentry/opentelemetry/SentryContextWrapper : io/opentelemetry/context/Context {
+	public fun get (Lio/opentelemetry/context/ContextKey;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+	public fun with (Lio/opentelemetry/context/ContextKey;Ljava/lang/Object;)Lio/opentelemetry/context/Context;
+	public static fun wrap (Lio/opentelemetry/context/Context;)Lio/sentry/opentelemetry/SentryContextWrapper;
+}
+
+public final class io/sentry/opentelemetry/SentryOtelKeys {
+	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
+	public static final field SENTRY_SCOPES_KEY Lio/opentelemetry/context/ContextKey;
+	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
+	public fun <init> ()V
+}
+
+public final class io/sentry/opentelemetry/SentryWeakSpanStorage {
+	public static fun getInstance ()Lio/sentry/opentelemetry/SentryWeakSpanStorage;
+	public fun getScopes (Lio/opentelemetry/api/trace/SpanContext;)Lio/sentry/IScopes;
+	public fun storeScopes (Lio/opentelemetry/api/trace/SpanContext;Lio/sentry/IScopes;)V
+}
+

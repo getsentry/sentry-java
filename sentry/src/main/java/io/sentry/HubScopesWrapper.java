@@ -246,6 +246,16 @@ public final class HubScopesWrapper implements IHub {
     return Sentry.getGlobalScope();
   }
 
+  @Override
+  public @Nullable IScopes getParentScopes() {
+    return scopes.getParentScopes();
+  }
+
+  @Override
+  public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
+    return scopes.isAncestorOf(otherScopes);
+  }
+
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(

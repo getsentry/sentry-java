@@ -87,7 +87,15 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return globalScope;
   }
 
-  public boolean isAncestorOf(final @Nullable Scopes otherScopes) {
+  @Override
+  @ApiStatus.Internal
+  public @Nullable IScopes getParentScopes() {
+    return parentScopes;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
     if (otherScopes == null) {
       return false;
     }
@@ -96,8 +104,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       return true;
     }
 
-    if (otherScopes.parentScopes != null) {
-      return isAncestorOf(otherScopes.parentScopes);
+    if (otherScopes.getParentScopes() != null) {
+      return isAncestorOf(otherScopes.getParentScopes());
     }
 
     return false;

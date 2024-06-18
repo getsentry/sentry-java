@@ -56,6 +56,7 @@ public final class SpanDescriptionExtractor {
     return new OtelSpanInfo(op, description, transactionNameSource);
   }
 
+  @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForDbSystem(final @NotNull ReadableSpan otelSpan) {
     @Nullable String dbStatement = otelSpan.getAttribute(SemanticAttributes.DB_STATEMENT);
     @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();

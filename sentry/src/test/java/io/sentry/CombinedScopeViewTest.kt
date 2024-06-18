@@ -1071,13 +1071,30 @@ class CombinedScopeViewTest {
     }
 
     @Test
-    fun `combines fingerprints from current all scopes`() {
+    fun `prefers fingerprint from current scope`() {
         val combined = fixture.getSut()
         fixture.scope.fingerprint = listOf("scopeFingerprint")
         fixture.isolationScope.fingerprint = listOf("isolationFingerprint")
         fixture.globalScope.fingerprint = listOf("globalFingerprint")
 
-        assertEquals(listOf("globalFingerprint", "isolationFingerprint", "scopeFingerprint"), combined.fingerprint)
+        assertEquals(listOf("scopeFingerprint"), combined.fingerprint)
+    }
+
+    @Test
+    fun `uses isolation scope fingerprint if current scope does not have one`() {
+        val combined = fixture.getSut()
+        fixture.isolationScope.fingerprint = listOf("isolationFingerprint")
+        fixture.globalScope.fingerprint = listOf("globalFingerprint")
+
+        assertEquals(listOf("isolationFingerprint"), combined.fingerprint)
+    }
+
+    @Test
+    fun `uses global scope fingerprint if current and isolation scope do not have one`() {
+        val combined = fixture.getSut()
+        fixture.globalScope.fingerprint = listOf("globalFingerprint")
+
+        assertEquals(listOf("globalFingerprint"), combined.fingerprint)
     }
 
     // TODO [HSM] test clone

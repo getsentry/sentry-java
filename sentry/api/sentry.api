@@ -550,11 +550,13 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
+	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -612,11 +614,13 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
+	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -839,11 +843,13 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun getIsolationScope ()Lio/sentry/IScope;
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
+	public abstract fun getParentScopes ()Lio/sentry/IScopes;
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun getScope ()Lio/sentry/IScope;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
 	public abstract fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public abstract fun getTransaction ()Lio/sentry/ITransaction;
+	public abstract fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
 	public abstract fun isHealthy ()Z
@@ -1338,11 +1344,13 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
+	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -1473,11 +1481,13 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
+	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -1962,12 +1972,13 @@ public final class io/sentry/Scopes : io/sentry/IScopes, io/sentry/metrics/Metri
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getMetricsAggregator ()Lio/sentry/IMetricsAggregator;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
-	public fun isAncestorOf (Lio/sentry/Scopes;)Z
+	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -2026,11 +2037,13 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun getIsolationScope ()Lio/sentry/IScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
+	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -2054,6 +2067,11 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
+}
+
+public final class io/sentry/ScopesStorageFactory {
+	public fun <init> ()V
+	public static fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/IScopesStorage;
 }
 
 public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, java/io/Closeable {
@@ -5464,6 +5482,13 @@ public abstract interface class io/sentry/util/LazyEvaluator$Evaluator {
 public final class io/sentry/util/LifecycleHelper {
 	public fun <init> ()V
 	public static fun close (Ljava/lang/Object;)V
+}
+
+public final class io/sentry/util/LoadClass {
+	public fun <init> ()V
+	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
+	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
+	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 
 public final class io/sentry/util/LogUtils {

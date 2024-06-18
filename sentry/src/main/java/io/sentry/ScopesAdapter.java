@@ -248,6 +248,16 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.getGlobalScope();
   }
 
+  @Override
+  public @Nullable IScopes getParentScopes() {
+    return Sentry.getCurrentScopes().getParentScopes();
+  }
+
+  @Override
+  public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
+    return Sentry.getCurrentScopes().isAncestorOf(otherScopes);
+  }
+
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
