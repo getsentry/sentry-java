@@ -84,7 +84,6 @@ public class AndroidProfiler {
   private @Nullable Future<?> scheduledFinish = null;
   private @Nullable File traceFile = null;
   private @Nullable String frameMetricsCollectorId;
-  private volatile @Nullable ProfileEndData timedOutProfilingData = null;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
       new ArrayDeque<>();
@@ -187,8 +186,7 @@ public class AndroidProfiler {
     // We stop profiling after a timeout to avoid huge profiles to be sent
     try {
       scheduledFinish =
-          executorService.schedule(
-              () -> timedOutProfilingData = endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+          executorService.schedule(() -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
           SentryLevel.ERROR,
@@ -222,10 +220,6 @@ public class AndroidProfiler {
   public synchronized @Nullable ProfileEndData endAndCollect(
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
-    // check if profiling timed out
-    if (timedOutProfilingData != null) {
-      return timedOutProfilingData;
-    }
 
     if (!isRunning) {
       logger.log(SentryLevel.WARNING, "Profiler not running");

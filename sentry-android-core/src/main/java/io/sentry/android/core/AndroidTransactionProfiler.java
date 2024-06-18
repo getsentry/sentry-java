@@ -137,8 +137,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public synchronized void start() {
-    // Debug.startMethodTracingSampling() is only available since Lollipop
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
+    // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
+    // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
 
     // Let's initialize trace folder and profiling interval
     init();
@@ -209,9 +210,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    // onTransactionStart() is only available since Lollipop
+    // onTransactionStart() is only available since Lollipop_MR1
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return null;
 
     // Transaction finished, but it's not in the current profile
     if (currentProfilingTransactionData == null
