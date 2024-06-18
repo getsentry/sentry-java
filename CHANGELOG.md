@@ -2,9 +2,121 @@
 
 ## Unreleased
 
+### Behavioural Changes
+
+- (Android) The JNI layer for sentry-native has now been moved from sentry-java to sentry-native ([#3189](https://github.com/getsentry/sentry-java/pull/3189))
+    - This now includes prefab support for sentry-native, allowing you to link and access the sentry-native API within your native app code
+    - Checkout the `sentry-samples/sentry-samples-android` example on how to configure CMake and consume `sentry.h`
+
+### Features
+
+- Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
+- Add data fetching environment hint to breadcrumb for GraphQL (#3413) ([#3431](https://github.com/getsentry/sentry-java/pull/3431))
+
+### Fixes
+
+- Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.5 ([#3441](https://github.com/getsentry/sentry-java/pull/3189))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#075)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.5)
+
+## 8.0.0-alpha.1
+
+Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
+
+- New `Scope` types have been introduced, see "Behavioural Changes" for more details.
+- Lifecycle tokens have been introduced to manage `Scope` lifecycle, see "Behavioural Changes" for more details.
+- `Hub` has been replaced by `Scopes`
+
+### Behavioural Changes
+
+- We're introducing some new `Scope` types in the SDK, allowing for better control over what data is attached where. Previously there was a stack of scopes that was pushed and popped. Instead we now fork scopes for a given lifecycle and then restore the previous scopes. Since `Hub` is gone, it is also never cloned anymore. Separation of data now happens through the different scope types while making it easier to manipulate exactly what you need without having to attach data at the right time to have it apply where wanted.
+    - Global scope is attached to all events created by the SDK. It can also be modified before `Sentry.init` has been called. It can be manipulated using `Sentry.configureScope(ScopeType.GLOBAL, (scope) -> { ... })`.
+    - Isolation scope can be used e.g. to attach data to all events that come up while handling an incoming request. It can also be used for other isolation purposes. It can be manipulated using `Sentry.configureScope(ScopeType.ISOLATION, (scope) -> { ... })`. The SDK automatically forks isolation scope in certain cases like incoming requests, CRON jobs, Spring `@Async` and more.
+    - Current scope is forked often and data added to it is only added to events that are created while this scope is active. Data is also passed on to newly forked child scopes but not to parents.
+- `Sentry.popScope` has been deprecated, please call `.close()` on the token returned by `Sentry.pushScope` instead or use it in a way described in more detail in "Migration Guide".
+- We have chosen a default scope that is used for `Sentry.configureScope()` as well as API like `Sentry.setTag()`
+    - For Android the type defaults to `CURRENT` scope
+    - For Backend and other JVM applicatons it defaults to `ISOLATION` scope
+- Event processors on `Scope` can now be ordered by overriding the `getOrder` method on implementations of `EventProcessor`. NOTE: This order only applies to event processors on `Scope` but not `SentryOptions` at the moment. Feel free to request this if you need it.
+- `Hub` is deprecated in favor of `Scopes`, alongside some `Hub` relevant APIs. More details can be found in the "Migration Guide" section.
+
+### Breaking Changes
+
+- `Contexts` no longer extends `ConcurrentHashMap`, instead we offer a selected set of methods.
+
+### Migration Guide / Deprecations
+
+- `Hub` has been deprecated, we're replacing the following:
+    - `IHub` has been replaced by `IScopes`, however you should be able to simply pass `IHub` instances to code expecting `IScopes`, allowing for an easier migration.
+    - `HubAdapter.getInstance()` has been replaced by `ScopesAdapter.getInstance()`
+    - The `.clone()` method on `IHub`/`IScopes` has been deprecated, please use `.pushScope()` or `.pushIsolationScope()` instead
+    - Some internal methods like `.getCurrentHub()` and `.setCurrentHub()` have also been replaced.
+- `Sentry.popScope` has been replaced by calling `.close()` on the token returned by `Sentry.pushScope()` and `Sentry.pushIsolationScope()`. The token can also be used in a `try` block like this:
+
+```
+try (final @NotNull ISentryLifecycleToken ignored = Sentry.pushScope()) {
+  // this block has its separate current scope
+}
+```
+
+as well as:
+
+
+```
+try (final @NotNull ISentryLifecycleToken ignored = Sentry.pushIsolationScope()) {
+  // this block has its separate isolation scope
+}
+```
+
+You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass the token around for closing later.
+
+### Features
+
+- Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
+
+## 7.9.0
+
+### Features
+
+- Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+- Add ttid/ttfd contribution flags ([#3386](https://github.com/getsentry/sentry-java/pull/3386))
+
+### Fixes
+
+- (Internal) Metrics code cleanup ([#3403](https://github.com/getsentry/sentry-java/pull/3403))
+- Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
+- Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
+- Do not always write startup crash marker ([#3409](https://github.com/getsentry/sentry-java/pull/3409))
+  - This may have been causing the SDK init logic to block the main thread
+
+## 7.8.0
+
+### Features
+
+- Add description to OkHttp spans ([#3320](https://github.com/getsentry/sentry-java/pull/3320))
+- Enable backpressure management by default ([#3284](https://github.com/getsentry/sentry-java/pull/3284))
+
+### Fixes
+
+- Add rate limit to Metrics ([#3334](https://github.com/getsentry/sentry-java/pull/3334))
+- Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerMapping in Spring Boot Servlet mode without WebMVC ([#3336](https://github.com/getsentry/sentry-java/pull/3336))
+- Fix normalization of metrics keys, tags and values ([#3332](https://github.com/getsentry/sentry-java/pull/3332))
+
+## 7.7.0
+
 ### Features
 
 - Add support for Spring Rest Client ([#3199](https://github.com/getsentry/sentry-java/pull/3199))
+- Extend Proxy options with proxy type ([#3326](https://github.com/getsentry/sentry-java/pull/3326))
+
+### Fixes
+
+- Fixed default deadline timeout to 30s instead of 300s ([#3322](https://github.com/getsentry/sentry-java/pull/3322))
+- Fixed `Fix java.lang.ClassNotFoundException: org.springframework.web.servlet.HandlerExceptionResolver` in Spring Boot Servlet mode without WebMVC ([#3333](https://github.com/getsentry/sentry-java/pull/3333))
 
 ## 7.6.0
 

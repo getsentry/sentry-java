@@ -158,6 +158,10 @@ public final class HubScopesWrapper implements IHub {
     return scopes.pushIsolationScope();
   }
 
+  /**
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
   @Override
   @Deprecated
   public void popScope() {
@@ -194,7 +198,12 @@ public final class HubScopesWrapper implements IHub {
     scopes.flush(timeoutMillis);
   }
 
+  /**
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
+   */
   @Override
+  @Deprecated
   public @NotNull IHub clone() {
     return scopes.clone();
   }

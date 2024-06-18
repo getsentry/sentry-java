@@ -28,6 +28,11 @@ public final class NoOpTransaction implements ITransaction {
   public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {}
 
   @Override
+  public @NotNull TransactionNameSource getNameSource() {
+    return TransactionNameSource.CUSTOM;
+  }
+
+  @Override
   public @NotNull String getName() {
     return "";
   }
