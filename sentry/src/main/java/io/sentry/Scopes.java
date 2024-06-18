@@ -614,6 +614,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return Sentry.setCurrentScopes(this);
   }
 
+  /**
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
   @Override
   @Deprecated
   public void popScope() {
@@ -629,7 +633,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     }
   }
 
-  // TODO [HSM] lots of testing required to see how ThreadLocal is affected
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
@@ -723,7 +726,12 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     }
   }
 
+  /**
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
+   */
   @Override
+  @Deprecated
   @SuppressWarnings("deprecation")
   public @NotNull IHub clone() {
     if (!isEnabled()) {
@@ -862,6 +870,9 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       transaction =
           spanFactory.createTransaction(
               transactionContext, this, transactionOptions, transactionPerformanceCollector);
+      //          new SentryTracer(
+      //              transactionContext, this, transactionOptions,
+      // transactionPerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it

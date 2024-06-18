@@ -141,24 +141,6 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     add(MetricType.Set, key, intValue, unit, tags, timestampMs, localMetricsAggregator);
   }
 
-  @Override
-  public void timing(
-      final @NotNull String key,
-      final @NotNull Runnable callback,
-      final @NotNull MeasurementUnit.Duration unit,
-      final @Nullable Map<String, String> tags,
-      final @Nullable LocalMetricsAggregator localMetricsAggregator) {
-    final long startMs = nowMillis();
-    final long startNanos = System.nanoTime();
-    try {
-      callback.run();
-    } finally {
-      final long durationNanos = (System.nanoTime() - startNanos);
-      final double value = MetricsHelper.convertNanosTo(unit, durationNanos);
-      add(MetricType.Distribution, key, value, unit, tags, startMs, localMetricsAggregator);
-    }
-  }
-
   @SuppressWarnings({"FutureReturnValueIgnored", "UnusedVariable"})
   private void add(
       final @NotNull MetricType type,
@@ -174,8 +156,12 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     }
 
     if (beforeEmitCallback != null) {
-      if (!beforeEmitCallback.execute(key, tags)) {
-        return;
+      try {
+        if (!beforeEmitCallback.execute(key, tags)) {
+          return;
+        }
+      } catch (Throwable e) {
+        logger.log(SentryLevel.ERROR, "The beforeEmit callback threw an exception.", e);
       }
     }
 
@@ -224,7 +210,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     // See develop docs: https://develop.sentry.dev/sdk/metrics/#sets
     if (localMetricsAggregator != null) {
       final double localValue = type == MetricType.Set ? addedWeight : value;
-      localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags, timestampMs);
+      localMetricsAggregator.add(metricKey, type, key, localValue, unit, tags);
     }
 
     final boolean isOverWeight = isOverWeight();
@@ -342,7 +328,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     flush(false);
 
     synchronized (this) {
-      if (!isClosed) {
+      if (!isClosed && !buckets.isEmpty()) {
         executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
       }
     }

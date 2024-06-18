@@ -256,9 +256,4 @@ object Config {
         val errorprone = "com.google.errorprone:error_prone_core:2.11.0"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.5"
     }
-
-    object NativePlugins {
-        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.1.1"
-        val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
-    }
 }

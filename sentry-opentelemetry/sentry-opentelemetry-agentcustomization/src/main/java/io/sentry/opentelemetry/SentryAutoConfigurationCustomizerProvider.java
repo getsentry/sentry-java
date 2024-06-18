@@ -61,6 +61,8 @@ public final class SentryAutoConfigurationCustomizerProvider
       }
     }
 
+    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
+
     autoConfiguration
         .addTracerProviderCustomizer(this::configureSdkTracerProvider)
         .addPropertiesSupplier(this::getDefaultProperties);
