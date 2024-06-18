@@ -111,6 +111,7 @@ dependencies {
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
+    implementation(projects.sentryComposeHelper)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
 

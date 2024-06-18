@@ -225,7 +225,7 @@ public final class SentryTransaction extends SentryBaseEvent
       writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
     }
     if (metricSummaries != null && !metricSummaries.isEmpty()) {
-      writer.name(SentrySpan.JsonKeys.METRICS_SUMMARY).value(logger, metricSummaries);
+      writer.name(JsonKeys.METRICS_SUMMARY).value(logger, metricSummaries);
     }
     writer.name(JsonKeys.TRANSACTION_INFO).value(logger, transactionInfo);
     new SentryBaseEvent.Serializer().serialize(this, writer, logger);
