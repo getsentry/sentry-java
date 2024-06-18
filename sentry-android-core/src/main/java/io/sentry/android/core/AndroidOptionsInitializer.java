@@ -22,6 +22,7 @@ import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.replay.DefaultReplayBreadcrumbConverter;
 import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
@@ -308,6 +309,7 @@ final class AndroidOptionsInitializer {
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
+      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
     }

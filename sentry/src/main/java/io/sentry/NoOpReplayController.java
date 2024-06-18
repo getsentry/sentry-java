@@ -42,4 +42,12 @@ public final class NoOpReplayController implements ReplayController {
   public @NotNull SentryId getReplayId() {
     return SentryId.EMPTY_ID;
   }
+
+  @Override
+  public void setBreadcrumbConverter(@NotNull ReplayBreadcrumbConverter converter) {}
+
+  @Override
+  public @NotNull ReplayBreadcrumbConverter getBreadcrumbConverter() {
+    return NoOpReplayBreadcrumbConverter.getInstance();
+  }
 }
