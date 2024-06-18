@@ -33,6 +33,7 @@ import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
 import io.sentry.spring.jakarta.tracing.SentryTransactionPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
+import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
@@ -49,6 +50,7 @@ import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration;
@@ -268,12 +270,6 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      @ConditionalOnMissingBean(TransactionNameProvider.class)
-      public @NotNull TransactionNameProvider transactionNameProvider() {
-        return new SpringMvcTransactionNameProvider();
-      }
-
-      @Bean
       @ConditionalOnMissingBean(name = "sentrySpringFilter")
       public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
           final @NotNull IScopes scopes,
@@ -297,15 +293,38 @@ public class SentryAutoConfiguration {
         return filter;
       }
 
-      @Bean
-      @ConditionalOnMissingBean
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(HandlerExceptionResolver.class)
-      public @NotNull SentryExceptionResolver sentryExceptionResolver(
-          final @NotNull IScopes scopes,
-          final @NotNull TransactionNameProvider transactionNameProvider,
-          final @NotNull SentryProperties options) {
-        return new SentryExceptionResolver(
-            scopes, transactionNameProvider, options.getExceptionResolverOrder());
+      @Open
+      static class SentryMvcModeConfig {
+
+        @Bean
+        @ConditionalOnMissingBean
+        public @NotNull SentryExceptionResolver sentryExceptionResolver(
+            final @NotNull IScopes scopes,
+            final @NotNull TransactionNameProvider transactionNameProvider,
+            final @NotNull SentryProperties options) {
+          return new SentryExceptionResolver(
+              scopes, transactionNameProvider, options.getExceptionResolverOrder());
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(TransactionNameProvider.class)
+        public @NotNull TransactionNameProvider transactionNameProvider() {
+          return new SpringMvcTransactionNameProvider();
+        }
+      }
+
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnMissingClass("org.springframework.web.servlet.HandlerExceptionResolver")
+      @Open
+      static class SentryServletModeConfig {
+
+        @Bean
+        @ConditionalOnMissingBean(TransactionNameProvider.class)
+        public @NotNull TransactionNameProvider transactionNameProvider() {
+          return new SpringServletTransactionNameProvider();
+        }
       }
     }
 

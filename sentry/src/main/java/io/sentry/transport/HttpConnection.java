@@ -78,8 +78,14 @@ final class HttpConnection {
       final String host = optionsProxy.getHost();
       if (port != null && host != null) {
         try {
+          final @NotNull Proxy.Type type;
+          if (optionsProxy.getType() != null) {
+            type = optionsProxy.getType();
+          } else {
+            type = Proxy.Type.HTTP;
+          }
           InetSocketAddress proxyAddr = new InetSocketAddress(host, Integer.parseInt(port));
-          proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
+          proxy = new Proxy(type, proxyAddr);
         } catch (NumberFormatException e) {
           options
               .getLogger()

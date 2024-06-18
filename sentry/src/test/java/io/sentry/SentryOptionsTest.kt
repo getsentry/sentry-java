@@ -1,9 +1,9 @@
 package io.sentry
 
-import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.mock
 import java.io.File
+import java.net.Proxy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -350,7 +350,7 @@ class SentryOptionsTest {
         externalOptions.environment = "environment"
         externalOptions.release = "release"
         externalOptions.serverName = "serverName"
-        externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
+        externalOptions.proxy = SentryOptions.Proxy("example.com", "8090", Proxy.Type.SOCKS)
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
@@ -370,7 +370,7 @@ class SentryOptionsTest {
         externalOptions.isEnablePrettySerializationOutput = false
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
-        externalOptions.isEnableBackpressureHandling = true
+        externalOptions.isEnableBackpressureHandling = false
         externalOptions.cron = SentryOptions.Cron().apply {
             defaultCheckinMargin = 10L
             defaultMaxRuntime = 30L
@@ -391,6 +391,7 @@ class SentryOptionsTest {
         assertNotNull(options.proxy)
         assertEquals("example.com", options.proxy!!.host)
         assertEquals("8090", options.proxy!!.port)
+        assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
         assertEquals(true, options.enableTracing)
@@ -407,7 +408,7 @@ class SentryOptionsTest {
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
         assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
-        assertTrue(options.isEnableBackpressureHandling)
+        assertFalse(options.isEnableBackpressureHandling)
         assertNotNull(options.cron)
         assertEquals(10L, options.cron?.defaultCheckinMargin)
         assertEquals(30L, options.cron?.defaultMaxRuntime)
@@ -563,9 +564,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, enableBackpressureHandling is set to false by default`() {
-        assertFalse(SentryOptions().isEnableBackpressureHandling)
-        assertTrue(SentryOptions().backpressureMonitor is NoOpBackpressureMonitor)
+    fun `when options are initialized, enableBackpressureHandling is set to true by default`() {
+        assertTrue(SentryOptions().isEnableBackpressureHandling)
     }
 
     @Test
