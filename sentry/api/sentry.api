@@ -367,8 +367,9 @@ public final class io/sentry/DefaultScopesStorage : io/sentry/IScopesStorage {
 
 public final class io/sentry/DefaultSpanFactory : io/sentry/ISpanFactory {
 	public fun <init> ()V
-	public fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
+	public fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
 	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
+	public fun retrieveCurrentSpan (Lio/sentry/IScope;)Lio/sentry/ISpan;
 	public fun retrieveCurrentSpan (Lio/sentry/IScopes;)Lio/sentry/ISpan;
 }
 
@@ -991,8 +992,9 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ISpanFactory {
-	public abstract fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
+	public abstract fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
 	public abstract fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
+	public abstract fun retrieveCurrentSpan (Lio/sentry/IScope;)Lio/sentry/ISpan;
 	public abstract fun retrieveCurrentSpan (Lio/sentry/IScopes;)Lio/sentry/ISpan;
 }
 
@@ -3336,6 +3338,11 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field USER_ID Ljava/lang/String;
 	public static final field USER_SEGMENT Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/TracesSampler {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun sample (Lio/sentry/SamplingContext;)Lio/sentry/TracesSamplingDecision;
 }
 
 public final class io/sentry/TracesSamplingDecision {

@@ -241,6 +241,8 @@ public final class SentrySpanExporter implements SpanExporter {
             spanData.getParentSpanId());
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
     // TODO [POTEL] op and description might have been overriden
+    // TODO [POTEL] ensure not sampling again
+    // TODO [POTEL] use OTel span ID so tracing actually has value
     final @NotNull ISpan sentryChildSpan =
         parentSentrySpan.startChild(
             spanInfo.getOp(), spanInfo.getDescription(), startDate, Instrumenter.OTEL);
@@ -362,6 +364,7 @@ public final class SentrySpanExporter implements SpanExporter {
     transactionOptions.setStartTimestamp(new SentryLongDate(span.getStartEpochNanos()));
     transactionOptions.setSpanFactory(new DefaultSpanFactory());
 
+    // TODO [POTEL] do not sample again
     ITransaction sentryTransaction =
         scopesToUse.startTransaction(transactionContext, transactionOptions);
     sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);

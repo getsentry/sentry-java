@@ -280,6 +280,7 @@ public interface ISpan {
   @NotNull
   SentryId getEventId();
 
+  @ApiStatus.Internal
   @NotNull
   ISentryLifecycleToken makeCurrent();
 }

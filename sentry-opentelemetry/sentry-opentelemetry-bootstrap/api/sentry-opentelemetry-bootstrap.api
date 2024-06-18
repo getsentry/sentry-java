@@ -1,11 +1,10 @@
 public final class io/sentry/opentelemetry/InternalSemanticAttributes {
-	public static final field BREADCRUMB_TYPE Lio/opentelemetry/api/common/AttributeKey;
 	public static final field IS_REMOTE_PARENT Lio/opentelemetry/api/common/AttributeKey;
-	public static final field OP Lio/opentelemetry/api/common/AttributeKey;
-	public static final field ORIGIN Lio/opentelemetry/api/common/AttributeKey;
 	public static final field PARENT_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PROFILE_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PROFILE_SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SAMPLED Lio/opentelemetry/api/common/AttributeKey;
 	public static final field SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
-	public static final field SOURCE Lio/opentelemetry/api/common/AttributeKey;
 	public fun <init> ()V
 }
 
@@ -17,20 +16,21 @@ public final class io/sentry/opentelemetry/OtelContextScopesStorage : io/sentry/
 }
 
 public final class io/sentry/opentelemetry/OtelSpanContext : io/sentry/SpanContext {
-	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/opentelemetry/api/trace/Span;)V
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/OtelSpanWrapper;)V
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 }
 
 public final class io/sentry/opentelemetry/OtelSpanFactory : io/sentry/ISpanFactory {
 	public fun <init> ()V
-	public fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/ISpan;)Lio/sentry/ISpan;
+	public fun createSpan (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
 	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
+	public fun retrieveCurrentSpan (Lio/sentry/IScope;)Lio/sentry/ISpan;
 	public fun retrieveCurrentSpan (Lio/sentry/IScopes;)Lio/sentry/ISpan;
 }
 
 public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/ISpan {
-	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/opentelemetry/api/trace/Span;)V
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/OtelSpanWrapper;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V

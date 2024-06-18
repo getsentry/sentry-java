@@ -20,6 +20,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,8 +29,7 @@ public final class PotelSentryPropagator implements TextMapPropagator {
 
   private static final @NotNull List<String> FIELDS =
       Arrays.asList(SentryTraceHeader.SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
-  //  private final @NotNull SentryWeakSpanStorage spanStorage =
-  // SentryWeakSpanStorage.getInstance();
+  private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull IScopes scopes;
 
   public PotelSentryPropagator() {
@@ -59,40 +59,26 @@ public final class PotelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    /**
-     * TODO
-     *
-     * <p>maybe it could work like this:
-     *
-     * <p>getIsolationScope() check if there's a PropagationContext on there and use that for
-     * generating headers and freezing
-     *
-     * <p>if that's not there check Context for data and attach headers
-     */
+    final @Nullable OtelSpanWrapper sentrySpan = spanStorage.getSentrySpan(otelSpanContext);
+    if (sentrySpan == null || sentrySpan.isNoOp()) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not injecting Sentry tracing information for span %s as no Sentry span has been found or it is a NoOp (trace %s). This might simply mean this is a request to Sentry.",
+              otelSpanContext.getSpanId(),
+              otelSpanContext.getTraceId());
+      return;
+    }
 
-    // TODO: inject from OTEL SpanContext and TraceState
-    System.out.println("TODO");
-    // TODO how to inject?
-    //    final @Nullable ISpan sentrySpan = spanStorage.get(otelSpanContext.getSpanId());
-    //    if (sentrySpan == null || sentrySpan.isNoOp()) {
-    //      hub.getOptions()
-    //          .getLogger()
-    //          .log(
-    //              SentryLevel.DEBUG,
-    //              "Not injecting Sentry tracing information for span %s as no Sentry span has been
-    // found or it is a NoOp (trace %s). This might simply mean this is a request to Sentry.",
-    //              otelSpanContext.getSpanId(),
-    //              otelSpanContext.getTraceId());
-    //      return;
-    //    }
-    //
-    //    final @NotNull SentryTraceHeader sentryTraceHeader = sentrySpan.toSentryTrace();
-    //    setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-    //    final @Nullable BaggageHeader baggageHeader =
-    //        sentrySpan.toBaggageHeader(Collections.emptyList());
-    //    if (baggageHeader != null) {
-    //      setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
-    //    }
+    final @NotNull SentryTraceHeader sentryTraceHeader = sentrySpan.toSentryTrace();
+    setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+    final @Nullable BaggageHeader baggageHeader =
+        sentrySpan.toBaggageHeader(Collections.emptyList());
+    if (baggageHeader != null) {
+      setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
+    }
   }
 
   @Override
@@ -107,25 +93,13 @@ public final class PotelSentryPropagator implements TextMapPropagator {
     final @Nullable String sentryTraceString =
         getter.get(carrier, SentryTraceHeader.SENTRY_TRACE_HEADER);
     if (sentryTraceString == null) {
-
-      final @NotNull Context modifiedContext = context.with(SENTRY_SCOPES_KEY, scopesToUse);
-      //      return context.with(SENTRY_SCOPES_KEY, scopesToUse);
-      return modifiedContext;
+      return context.with(SENTRY_SCOPES_KEY, scopesToUse);
     }
-    //    else {
-    //      // TODO clean up code here
-    //      // TODO should we rely on OTEL trace/span ids here?
-    //      scopesToUse.getIsolationScope().setPropagationContext(new PropagationContext());
-    //    }
 
     try {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
-      //      Baggage baggage = Baggage.fromHeader(baggageString);
-
-      //      final @NotNull TraceState traceState = TraceState.builder().put("todo.dsc",
-      // baggage.).build();
       final @NotNull TraceState traceState = TraceState.getDefault();
 
       SpanContext otelSpanContext =

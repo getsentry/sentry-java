@@ -817,6 +817,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
+    // TODO [POTEL] what if span is already running and someone calls startTransaction?
 
     ITransaction transaction;
     if (!isEnabled()) {
@@ -875,8 +876,8 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       }
     }
     if (transactionOptions.isBindToScope()) {
+      // TODO [POTEL] this causes problems with OTel since it messes up closing of scopes and leaks
       transaction.makeCurrent();
-      //      configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;
   }
@@ -899,15 +900,14 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   @Override
   public @Nullable ISpan getSpan() {
-    ISpan span = null;
     if (!isEnabled()) {
       getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      span = getCombinedScopeView().getSpan();
+      return getOptions().getSpanFactory().retrieveCurrentSpan(getCombinedScopeView());
     }
-    return span;
+    return null;
   }
 
   @Override

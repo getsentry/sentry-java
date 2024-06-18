@@ -28,6 +28,8 @@ import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,15 +76,18 @@ public final class OtelSpanWrapper implements ISpan {
   /** A throwable thrown during the execution of the span. */
   private @Nullable Throwable throwable;
 
+  private @NotNull Deque<ISentryLifecycleToken> tokensToCleanup = new ArrayDeque<>(1);
+
   public OtelSpanWrapper(
       final @NotNull ReadWriteSpan span,
       final @NotNull IScopes scopes,
       final @NotNull SentryDate startTimestamp,
-      final @Nullable Span parentSpan) {
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final @Nullable OtelSpanWrapper parentSpan) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
     this.startTimestamp = startTimestamp;
-    this.context = new OtelSpanContext(span, parentSpan);
+    this.context = new OtelSpanContext(span, samplingDecision, parentSpan);
   }
 
   @Override
@@ -100,7 +105,7 @@ public final class OtelSpanWrapper implements ISpan {
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, description, scopes, spanOptions, this);
+        .createSpan(operation, description, scopes, spanOptions, context, this);
   }
 
   @Override
@@ -131,7 +136,7 @@ public final class OtelSpanWrapper implements ISpan {
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, description, scopes, spanOptions, this);
+        .createSpan(operation, description, scopes, spanOptions, context, this);
   }
 
   @Override
@@ -143,7 +148,7 @@ public final class OtelSpanWrapper implements ISpan {
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, description, scopes, new SpanOptions(), this);
+        .createSpan(operation, description, scopes, new SpanOptions(), context, this);
   }
 
   @Override
@@ -184,6 +189,10 @@ public final class OtelSpanWrapper implements ISpan {
     final @Nullable Span otelSpan = getSpan();
     if (otelSpan != null) {
       otelSpan.end();
+    }
+
+    for (ISentryLifecycleToken token : tokensToCleanup) {
+      token.close();
     }
   }
 
@@ -425,12 +434,19 @@ public final class OtelSpanWrapper implements ISpan {
   }
 
   @SuppressWarnings("MustBeClosedChecker")
+  @ApiStatus.Internal
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     final @Nullable Span otelSpan = getSpan();
     if (otelSpan != null) {
       final @NotNull Scope otelScope = otelSpan.makeCurrent();
-      return new OtelContextSpanStorageToken(otelScope);
+      // TODO [POTEL] should we keep an ordered list of otel scopes and close them in reverse order
+      // on finish?
+      // TODO [POTEL] should we make transaction/span implement ISentryLifecycleToken instead?
+      final @NotNull OtelContextSpanStorageToken token = new OtelContextSpanStorageToken(otelScope);
+      // to iterate LIFO when closing
+      tokensToCleanup.addFirst(token);
+      return token;
     }
     return NoOpScopesStorage.NoOpScopesLifecycleToken.getInstance();
   }
