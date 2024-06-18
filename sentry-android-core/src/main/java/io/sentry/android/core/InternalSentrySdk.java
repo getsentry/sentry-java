@@ -273,8 +273,8 @@ public final class InternalSentrySdk {
 
     if (!options.isEnableAutoSessionTracking()) {
       options
-        .getLogger()
-        .log(DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
+          .getLogger()
+          .log(DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
       return;
     }
 
