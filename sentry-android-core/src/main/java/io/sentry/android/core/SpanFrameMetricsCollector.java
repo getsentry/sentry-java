@@ -131,26 +131,12 @@ public class SpanFrameMetricsCollector
   private void captureFrameMetrics(@NotNull final ISpan span) {
     // TODO lock still required?
     synchronized (lock) {
-      String x = "";
-      for (ISpan runningSpan : runningSpans) {
-        x += runningSpan.getOperation() + " - " + runningSpan.getDescription() + ", ";
-      }
-      System.out.println(
-          "SpanFrameMetricsCollector.onSpanFinished - "
-              + span.getOperation()
-              + " - "
-              + span.getDescription()
-              + " ---> \ncurrent spans: "
-              + x);
-
       boolean removed = runningSpans.remove(span);
-      System.out.println(removed);
       if (!removed) {
         return;
       }
 
       final @Nullable SentryDate spanFinishDate = span.getFinishDate();
-      System.out.println("spanFinishDate == null: " + (spanFinishDate == null));
       if (spanFinishDate == null) {
         return;
       }
@@ -158,7 +144,6 @@ public class SpanFrameMetricsCollector
       final long spanStartNanos = toNanoTime(span.getStartDate());
       final long spanEndNanos = toNanoTime(spanFinishDate);
       final long spanDurationNanos = spanEndNanos - spanStartNanos;
-      System.out.println("spanDurationNanos: " + spanDurationNanos);
       if (spanDurationNanos <= 0) {
         return;
       }
@@ -208,7 +193,6 @@ public class SpanFrameMetricsCollector
       }
 
       int totalFrameCount = frameMetrics.getTotalFrameCount();
-      System.out.println("totalFrameCount: " + totalFrameCount);
 
       final long nextScheduledFrameNanos = frameMetricsCollector.getLastKnownFrameStartTimeNanos();
       // nextScheduledFrameNanos might be -1 if no frames have been scheduled for drawing yet
@@ -224,14 +208,12 @@ public class SpanFrameMetricsCollector
           frameMetrics.getSlowFrameDelayNanos() + frameMetrics.getFrozenFrameDelayNanos();
       final double frameDelayInSeconds = frameDelayNanos / 1e9d;
 
-      System.out.println("totalFrameCount: " + totalFrameCount);
       span.setData(SpanDataConvention.FRAMES_TOTAL, totalFrameCount);
       span.setData(SpanDataConvention.FRAMES_SLOW, frameMetrics.getSlowFrameCount());
       span.setData(SpanDataConvention.FRAMES_FROZEN, frameMetrics.getFrozenFrameCount());
       span.setData(SpanDataConvention.FRAMES_DELAY, frameDelayInSeconds);
 
       if (span instanceof ITransaction) {
-        System.out.println("TTTT - totalFrameCount: " + totalFrameCount);
         span.setMeasurement(MeasurementValue.KEY_FRAMES_TOTAL, totalFrameCount);
         span.setMeasurement(MeasurementValue.KEY_FRAMES_SLOW, frameMetrics.getSlowFrameCount());
         span.setMeasurement(MeasurementValue.KEY_FRAMES_FROZEN, frameMetrics.getFrozenFrameCount());
