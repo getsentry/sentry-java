@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.ARGB_8888
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Point
@@ -25,7 +26,10 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
+import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
+import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
+import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
@@ -122,21 +126,42 @@ internal class ScreenshotRecorder(
                             )
                             val canvas = Canvas(scaledBitmap)
                             canvas.setMatrix(prescaledMatrix)
-                            viewHierarchy.traverse {
-                                if (it.shouldRedact && (it.width > 0 && it.height > 0)) {
-                                    it.visibleRect ?: return@traverse
+                            viewHierarchy.traverse { node ->
+                                if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
+                                    node.visibleRect ?: return@traverse false
 
-                                    // TODO: check for view type rather than rely on absence of dominantColor here
-                                    val color = if (it.dominantColor == null) {
-                                        singlePixelBitmapCanvas.drawBitmap(bitmap, it.visibleRect, Rect(0, 0, 1, 1), null)
-                                        singlePixelBitmap.getPixel(0, 0)
-                                    } else {
-                                        it.dominantColor
+                                    if (viewHierarchy.isObscured(node)) {
+                                        return@traverse true
+                                    }
+
+                                    val (visibleRects, color) = when (node) {
+                                        is ImageViewHierarchyNode -> {
+                                            singlePixelBitmapCanvas.drawBitmap(
+                                                bitmap,
+                                                node.visibleRect,
+                                                Rect(0, 0, 1, 1),
+                                                null
+                                            )
+                                            listOf(node.visibleRect) to singlePixelBitmap.getPixel(0, 0)
+                                        }
+                                        is TextViewHierarchyNode -> {
+                                            node.layout.getVisibleRects(
+                                                node.visibleRect,
+                                                node.paddingLeft,
+                                                node.paddingTop
+                                            ) to (node.dominantColor ?: Color.BLACK)
+                                        }
+                                        else -> {
+                                            listOf(node.visibleRect) to Color.BLACK
+                                        }
                                     }
 
                                     maskingPaint.setColor(color)
-                                    canvas.drawRoundRect(RectF(it.visibleRect), 10f, 10f, maskingPaint)
+                                    visibleRects.forEach { rect ->
+                                        canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+                                    }
                                 }
+                                return@traverse true
                             }
                         }
 
@@ -165,7 +190,7 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val rootNode = ViewHierarchyNode.fromView(root, options)
+        val rootNode = ViewHierarchyNode.fromView(root, null, 0, options)
         root.traverse(rootNode)
         pendingViewHierarchy.set(rootNode)
 
@@ -206,15 +231,6 @@ internal class ScreenshotRecorder(
         thread.quitSafely()
     }
 
-    private fun ViewHierarchyNode.traverse(callback: (ViewHierarchyNode) -> Unit) {
-        callback(this)
-        if (this.children != null) {
-            this.children!!.forEach {
-                it.traverse(callback)
-            }
-        }
-    }
-
     private fun View.traverse(parentNode: ViewHierarchyNode) {
         if (this !is ViewGroup) {
             return
@@ -228,7 +244,7 @@ internal class ScreenshotRecorder(
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child != null) {
-                val childNode = ViewHierarchyNode.fromView(child, options)
+                val childNode = ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
                 childNodes.add(childNode)
                 child.traverse(childNode)
             }
