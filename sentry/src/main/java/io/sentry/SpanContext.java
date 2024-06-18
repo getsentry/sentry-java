@@ -16,6 +16,7 @@ import org.jetbrains.annotations.TestOnly;
 @Open
 public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "trace";
+  public static final String DEFAULT_ORIGIN = "manual";
 
   /** Determines which trace the Span belongs to. */
   private final @NotNull SentryId traceId;
@@ -24,7 +25,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   private final @NotNull SpanId spanId;
 
   /** Id of a parent span. */
-  private final @Nullable SpanId parentSpanId;
+  private @Nullable SpanId parentSpanId;
 
   private transient @Nullable TracesSamplingDecision samplingDecision;
 
@@ -44,9 +45,11 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
   /** Describes the status of the Transaction. */
-  protected @Nullable String origin = "manual";
+  protected @Nullable String origin = DEFAULT_ORIGIN;
 
   private @Nullable Map<String, Object> unknown;
+
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
   public SpanContext(
       final @NotNull String operation, final @Nullable TracesSamplingDecision samplingDecision) {
@@ -68,7 +71,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision samplingDecision) {
-    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, "manual");
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, DEFAULT_ORIGIN);
   }
 
   @ApiStatus.Internal
@@ -212,6 +215,30 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
+  }
+
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  @ApiStatus.Internal
+  public SpanContext copyForChild(
+      final @NotNull String operation,
+      final @Nullable SpanId parentSpanId,
+      final @Nullable SpanId spanId) {
+    return new SpanContext(
+        traceId,
+        spanId == null ? new SpanId() : spanId,
+        parentSpanId,
+        operation,
+        null,
+        samplingDecision,
+        null,
+        DEFAULT_ORIGIN);
   }
 
   @Override

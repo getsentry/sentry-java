@@ -101,11 +101,21 @@ public final class OtelSpanWrapper implements ISpan {
     if (isFinished()) {
       return NoOpSpan.getInstance();
     }
+    final @NotNull SpanContext spanContext =
+        context.copyForChild(operation, getSpanContext().getSpanId(), null);
+    spanContext.setDescription(description);
 
-    return scopes
-        .getOptions()
-        .getSpanFactory()
-        .createSpan(operation, description, scopes, spanOptions, context, this);
+    return startChild(spanContext, spanOptions);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    if (isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
+    return scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
   }
 
   @Override
@@ -114,7 +124,15 @@ public final class OtelSpanWrapper implements ISpan {
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter) {
-    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
+    final @NotNull SpanContext spanContext =
+        context.copyForChild(operation, getSpanContext().getSpanId(), null);
+    spanContext.setDescription(description);
+    spanContext.setInstrumenter(instrumenter);
+
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setStartTimestamp(timestamp);
+
+    return startChild(spanContext, spanOptions);
   }
 
   @Override
@@ -124,31 +142,25 @@ public final class OtelSpanWrapper implements ISpan {
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
-    if (isFinished()) {
-      return NoOpSpan.getInstance();
-    }
-
     if (timestamp != null) {
       spanOptions.setStartTimestamp(timestamp);
     }
 
-    // TODO [POTEL] use instrumenter
-    return scopes
-        .getOptions()
-        .getSpanFactory()
-        .createSpan(operation, description, scopes, spanOptions, context, this);
+    final @NotNull SpanContext spanContext =
+        context.copyForChild(operation, getSpanContext().getSpanId(), null);
+    spanContext.setDescription(description);
+    spanContext.setInstrumenter(instrumenter);
+
+    return startChild(spanContext, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(@NotNull String operation, @Nullable String description) {
-    if (isFinished()) {
-      return NoOpSpan.getInstance();
-    }
+    final @NotNull SpanContext spanContext =
+        context.copyForChild(operation, getSpanContext().getSpanId(), null);
+    spanContext.setDescription(description);
 
-    return scopes
-        .getOptions()
-        .getSpanFactory()
-        .createSpan(operation, description, scopes, new SpanOptions(), context, this);
+    return startChild(spanContext, new SpanOptions());
   }
 
   @Override

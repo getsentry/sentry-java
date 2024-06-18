@@ -33,13 +33,20 @@ class SpanTest {
         }
 
         fun getSut(options: SpanOptions = SpanOptions()): Span {
-            return Span(
+            val context = SpanContext(
                 SentryId(),
                 SpanId(),
-                SentryTracer(TransactionContext("name", "op"), scopes),
+                SpanId(),
                 "op",
-                scopes,
                 null,
+                null,
+                null,
+                null
+            )
+            return Span(
+                SentryTracer(TransactionContext("name", "op"), scopes),
+                scopes,
+                context,
                 options,
                 null
             )
@@ -101,15 +108,25 @@ class SpanTest {
     fun `converts to Sentry trace header`() {
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val span = Span(
+        val spanContext = SpanContext(
             traceId,
+            SpanId(),
             parentSpanId,
+            "op",
+            null,
+            TracesSamplingDecision(true),
+            null,
+            null
+        )
+        val span = Span(
             SentryTracer(
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
                 fixture.scopes
             ),
-            "op",
-            fixture.scopes
+            fixture.scopes,
+            spanContext,
+            SpanOptions(),
+            null
         )
         val sentryTrace = span.toSentryTrace()
 
