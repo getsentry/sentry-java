@@ -136,6 +136,10 @@ public final class NoOpHub implements IHub {
     return NoOpScopesLifecycleToken.getInstance();
   }
 
+  /**
+   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
+   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
+   */
   @Override
   @Deprecated
   public void popScope() {}
@@ -164,6 +168,11 @@ public final class NoOpHub implements IHub {
   @Override
   public void flush(long timeoutMillis) {}
 
+  /**
+   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
+   *     IScopes#forkedCurrentScope(String)} instead.
+   */
+  @Deprecated
   @Override
   public @NotNull IHub clone() {
     return instance;
