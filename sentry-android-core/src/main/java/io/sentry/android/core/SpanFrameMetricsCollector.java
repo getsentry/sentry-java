@@ -7,9 +7,7 @@ import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
 import io.sentry.SentryDate;
-import io.sentry.SentryLongDate;
 import io.sentry.SentryNanotimeDate;
-import io.sentry.SentryTracer;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
@@ -33,7 +31,7 @@ public class SpanFrameMetricsCollector
   // grow indefinitely in case of a long running span
   private static final int MAX_FRAMES_COUNT = 3600;
   private static final long ONE_SECOND_NANOS = TimeUnit.SECONDS.toNanos(1);
-  private static final SentryNanotimeDate UNIX_START_DATE = new SentryNanotimeDate(new Date(0), 0);
+  private static final SentryNanotimeDate EMPTY_NANO_TIME = new SentryNanotimeDate(new Date(0), 0);
 
   private final boolean enabled;
   private final @NotNull Object lock = new Object();
@@ -125,7 +123,7 @@ public class SpanFrameMetricsCollector
       } else {
         // otherwise only remove old/irrelevant frames
         final @NotNull ISpan oldestSpan = runningSpans.first();
-        frames.headSet(new Frame(realNanos(oldestSpan.getStartDate()))).clear();
+        frames.headSet(new Frame(toNanoTime(oldestSpan.getStartDate()))).clear();
       }
     }
   }
@@ -138,22 +136,20 @@ public class SpanFrameMetricsCollector
         return;
       }
 
-      // Ignore spans with no finish date, but SentryTracer is not finished when executing this
-      // callback, yet, so in that case we use the current timestamp.
-      final @Nullable SentryDate spanFinishDate =
-          span instanceof SentryTracer ? new SentryNanotimeDate() : span.getFinishDate();
+      final @Nullable SentryDate spanFinishDate = span.getFinishDate();
       if (spanFinishDate == null) {
         return;
       }
-      final long spanEndNanos = realNanos(spanFinishDate);
 
-      final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
-      final long spanStartNanos = realNanos(span.getStartDate());
-      if (spanStartNanos >= spanEndNanos) {
+      final long spanStartNanos = toNanoTime(span.getStartDate());
+      final long spanEndNanos = toNanoTime(spanFinishDate);
+      final long spanDurationNanos = spanEndNanos - spanStartNanos;
+      if (spanDurationNanos <= 0) {
         return;
       }
 
-      final long spanDurationNanos = spanEndNanos - spanStartNanos;
+      final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
+
       long frameDurationNanos = lastKnownFrameDurationNanos;
 
       if (!frames.isEmpty()) {
@@ -199,11 +195,15 @@ public class SpanFrameMetricsCollector
       int totalFrameCount = frameMetrics.getTotalFrameCount();
 
       final long nextScheduledFrameNanos = frameMetricsCollector.getLastKnownFrameStartTimeNanos();
-      totalFrameCount +=
-          addPendingFrameDelay(
-              frameMetrics, frameDurationNanos, spanEndNanos, nextScheduledFrameNanos);
-      totalFrameCount += interpolateFrameCount(frameMetrics, frameDurationNanos, spanDurationNanos);
-
+      // nextScheduledFrameNanos might be -1 if no frames have been scheduled for drawing yet
+      // e.g. can happen during early app start
+      if (nextScheduledFrameNanos != -1) {
+        totalFrameCount +=
+            addPendingFrameDelay(
+                frameMetrics, frameDurationNanos, spanEndNanos, nextScheduledFrameNanos);
+        totalFrameCount +=
+            interpolateFrameCount(frameMetrics, frameDurationNanos, spanDurationNanos);
+      }
       final long frameDelayNanos =
           frameMetrics.getSlowFrameDelayNanos() + frameMetrics.getFrozenFrameDelayNanos();
       final double frameDelayInSeconds = frameDelayNanos / 1e9d;
@@ -305,19 +305,20 @@ public class SpanFrameMetricsCollector
    * diff does ¯\_(ツ)_/¯
    *
    * @param date the input date
-   * @return a timestamp in nano precision
+   * @return a non-unix timestamp in nano precision, similar to {@link System#nanoTime()}.
    */
-  private static long realNanos(final @NotNull SentryDate date) {
-    // SentryNanotimeDate nanotime is based on System.nanotime(), like UNIX_START_DATE
+  private static long toNanoTime(final @NotNull SentryDate date) {
+    // SentryNanotimeDate nanotime is based on System.nanotime(), like EMPTY_NANO_TIME,
+    // thus diff will simply return the System.nanotime() value of date
     if (date instanceof SentryNanotimeDate) {
-      return date.diff(UNIX_START_DATE);
+      return date.diff(EMPTY_NANO_TIME);
     }
 
-    // SentryLongDate nanotime is based on current date converted to nanoseconds, which is a
-    // different order than frames based System.nanotime(). So we have to convert the nanotime of
-    // the SentryLongDate to a System.nanotime() compatible one.
-    return date.diff(new SentryLongDate(DateUtils.millisToNanos(System.currentTimeMillis())))
-        + System.nanoTime();
+    // e.g. SentryLongDate is unix time based - upscaled to nanos,
+    // we need to project it back to System.nanotime() format
+    long nowUnixInNanos = DateUtils.millisToNanos(System.currentTimeMillis());
+    long shiftInNanos = nowUnixInNanos - date.nanoTimestamp();
+    return System.nanoTime() - shiftInNanos;
   }
 
   private static class Frame implements Comparable<Frame> {
