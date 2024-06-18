@@ -70,6 +70,18 @@ public final class io/sentry/opentelemetry/SpanNode {
 	public fun setSpan (Lio/opentelemetry/sdk/trace/data/SpanData;)V
 }
 
+public final class io/sentry/opentelemetry/SpanNode {
+	public fun <init> (Ljava/lang/String;)V
+	public fun addChild (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun addChildren (Ljava/util/List;)V
+	public fun getChildren ()Ljava/util/List;
+	public fun getId ()Ljava/lang/String;
+	public fun getParentNode ()Lio/sentry/opentelemetry/SpanNode;
+	public fun getSpan ()Lio/opentelemetry/sdk/trace/data/SpanData;
+	public fun setParentNode (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun setSpan (Lio/opentelemetry/sdk/trace/data/SpanData;)V
+}
+
 public final class io/sentry/opentelemetry/TraceData {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;)V
 	public fun getBaggage ()Lio/sentry/Baggage;
