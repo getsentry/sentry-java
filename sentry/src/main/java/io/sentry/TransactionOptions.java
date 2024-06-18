@@ -18,9 +18,6 @@ public final class TransactionOptions extends SpanOptions {
   /** Defines if transaction should be bound to scope */
   private boolean bindToScope = false;
 
-  /** The start timestamp of the transaction */
-  private @Nullable SentryDate startTimestamp = null;
-
   /** Defines if transaction refers to the app start process */
   private boolean isAppStartTransaction = false;
 
@@ -94,24 +91,6 @@ public final class TransactionOptions extends SpanOptions {
    */
   public void setBindToScope(boolean bindToScope) {
     this.bindToScope = bindToScope;
-  }
-
-  /**
-   * Gets the startTimestamp
-   *
-   * @return startTimestamp - the startTimestamp
-   */
-  public @Nullable SentryDate getStartTimestamp() {
-    return startTimestamp;
-  }
-
-  /**
-   * Sets the startTimestamp
-   *
-   * @param startTimestamp - the startTimestamp
-   */
-  public void setStartTimestamp(@Nullable SentryDate startTimestamp) {
-    this.startTimestamp = startTimestamp;
   }
 
   /**

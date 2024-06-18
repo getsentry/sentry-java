@@ -177,22 +177,6 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setName(@NotNull String name) {}
-
-  @Override
-  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {}
-
-  @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    return TransactionNameSource.CUSTOM;
-  }
-
-  @Override
-  public @NotNull String getName() {
-    return "<no-op span>";
-  }
-
-  @Override
   public @Nullable Boolean isSampled() {
     return null;
   }

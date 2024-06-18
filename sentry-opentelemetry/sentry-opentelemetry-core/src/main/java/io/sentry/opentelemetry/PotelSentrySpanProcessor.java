@@ -12,7 +12,9 @@ import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.sentry.IScopes;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLongDate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,7 +47,10 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
             ? scopesFromContext.forkedCurrentScope("spanprocessor")
             : Sentry.forkedRootScopes("spanprocessor");
     final @NotNull SpanContext spanContext = otelSpan.getSpanContext();
-    spanStorage.storeSentrySpan(spanContext, new OtelSpanWrapper(otelSpan, scopes));
+    final @NotNull SentryDate startTimestamp =
+        new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
+    spanStorage.storeSentrySpan(
+        spanContext, new OtelSpanWrapper(otelSpan, scopes, startTimestamp, parentSpan));
   }
 
   @Override
@@ -55,6 +60,13 @@ public final class PotelSentrySpanProcessor implements SpanProcessor {
 
   @Override
   public void onEnd(final @NotNull ReadableSpan spanBeingEnded) {
+    final @Nullable OtelSpanWrapper sentrySpan =
+        spanStorage.getSentrySpan(spanBeingEnded.getSpanContext());
+    if (sentrySpan != null) {
+      final @NotNull SentryDate finishDate =
+          new SentryLongDate(spanBeingEnded.toSpanData().getEndEpochNanos());
+      sentrySpan.updateEndDate(finishDate);
+    }
     System.out.println("span ended: " + spanBeingEnded.getSpanContext().getSpanId());
   }
 

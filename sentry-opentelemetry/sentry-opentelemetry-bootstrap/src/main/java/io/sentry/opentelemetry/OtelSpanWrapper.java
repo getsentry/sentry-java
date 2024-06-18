@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -9,7 +10,9 @@ import io.sentry.ISpan;
 import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.NoOpScopesStorage;
+import io.sentry.NoOpSpan;
 import io.sentry.SentryDate;
+import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanContext;
 import io.sentry.SpanId;
@@ -22,16 +25,18 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/** NOTE: This wrapper is not used when using OpenTelemetry API, only when using Sentry API. */
 @ApiStatus.Internal
 public final class OtelSpanWrapper implements ISpan {
 
@@ -39,8 +44,8 @@ public final class OtelSpanWrapper implements ISpan {
 
   /** The moment in time when span was started. */
   private @NotNull SentryDate startTimestamp;
-  // TODO [POTEL] Set end timestamp in SpanProcessor, read it in exporter
-  //  private @Nullable SentryDate endTimestamp = null;
+
+  private @Nullable SentryDate finishedTimestamp = null;
 
   /**
    * OpenTelemetry span which this wrapper wraps. Needs to be referenced weakly as otherwise we'd
@@ -48,68 +53,44 @@ public final class OtelSpanWrapper implements ISpan {
    * OtelSpanWrapper} and indirectly back to {@link io.opentelemetry.sdk.trace.data.SpanData} via
    * {@link Span}. Also see {@link SentryWeakSpanStorage}.
    */
-  private final @NotNull WeakReference<Span> span;
-  //  private final @NotNull SpanContext context;
+  private final @NotNull WeakReference<ReadWriteSpan> span;
+
+  private final @NotNull SpanContext context;
   //  private final @NotNull SpanOptions options;
   private final @NotNull Contexts contexts = new Contexts();
-  // TODO [POTEL] should be on SpanContext and retrieved from there in ctor here
-  private @NotNull TransactionNameSource nameSource = TransactionNameSource.CUSTOM;
-  private @NotNull String name = "<unlabeled span>";
+  private @Nullable String transactionName;
+  private @Nullable TransactionNameSource transactionNameSource;
 
-  //  public OtelSpanWrapper(
-  //      final @NotNull SpanBuilder spanBuilder,
-  //      final @NotNull TransactionContext context,
-  //      final @NotNull IScopes scopes,
-  //      final @Nullable SentryDate startTimestamp,
-  //      final @NotNull SpanOptions options) {
-  ////    this.context = Objects.requireNonNull(context, "context is required");
-  ////    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
-  //    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
-  //    //    this.spanFinishedCallback = null;
-  //    if (startTimestamp != null) {
-  //      this.startTimestamp = startTimestamp;
-  //    } else {
-  //      this.startTimestamp = scopes.getOptions().getDateProvider().now();
-  //    }
-  //    spanBuilder.setStartTimestamp(this.startTimestamp.nanoTimestamp(), TimeUnit.NANOSECONDS);
-  //    spanBuilder.setNoParent();
-  //    //    this.options = options;
-  //    this.span = new WeakReference<>(spanBuilder.startSpan());
-  //  }
+  // TODO [POTEL]
+  //  private @Nullable SpanFinishedCallback spanFinishedCallback;
 
-  public OtelSpanWrapper(final @NotNull Span span, final @NotNull IScopes scopes) {
+  private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
+
+  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
+  private final @NotNull LazyEvaluator<LocalMetricsAggregator> metricsAggregator =
+      new LazyEvaluator<>(() -> new LocalMetricsAggregator());
+
+  /** A throwable thrown during the execution of the span. */
+  private @Nullable Throwable throwable;
+
+  public OtelSpanWrapper(
+      final @NotNull ReadWriteSpan span,
+      final @NotNull IScopes scopes,
+      final @NotNull SentryDate startTimestamp,
+      final @Nullable Span parentSpan) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
-    // TODO [POTEL] how could we make this work?
-    this.startTimestamp = scopes.getOptions().getDateProvider().now();
-  }
+    this.startTimestamp = startTimestamp;
+    final @NotNull SentryId traceId = new SentryId(span.getSpanContext().getTraceId());
+    final @NotNull SpanId spanId = new SpanId(span.getSpanContext().getSpanId());
+    final @Nullable SpanId parentSpanId =
+        parentSpan == null ? null : new SpanId(parentSpan.getSpanContext().getSpanId());
+    @NotNull String operation = span.getName();
 
-  //  OtelSpanWrapper(
-  //      final @NotNull SpanBuilder spanBuilder,
-  //      final @NotNull SentryId traceId,
-  //      final @Nullable SpanId parentSpanId,
-  //      final @NotNull String operation,
-  //      final @NotNull IScopes scopes,
-  //      final @Nullable SentryDate startTimestamp,
-  //      final @NotNull SpanOptions options
-  //      /*final @Nullable SpanFinishedCallback spanFinishedCallback*/ ) {
-  //    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
-  ////    this.context =
-  ////        new SpanContext(
-  ////            traceId, new SpanId(), operation, parentSpanId,
-  // transaction.getSamplingDecision());
-  ////    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
-  //    Objects.requireNonNull(scopes, "Scopes are required");
-  //    //    this.options = options;
-  //    //    this.spanFinishedCallback = spanFinishedCallback;
-  //    if (startTimestamp != null) {
-  //      this.startTimestamp = startTimestamp;
-  //    } else {
-  //      this.startTimestamp = scopes.getOptions().getDateProvider().now();
-  //    }
-  //    spanBuilder.setStartTimestamp(this.startTimestamp.nanoTimestamp(), TimeUnit.NANOSECONDS);
-  //    this.span = new WeakReference<>(spanBuilder.startSpan());
-  //  }
+    // TODO [POTEL] tracesSamplingDecision
+    this.context = new SpanContext(traceId, spanId, operation, parentSpanId, null);
+  }
 
   @Override
   public @NotNull ISpan startChild(@NotNull String operation) {
@@ -119,10 +100,14 @@ public final class OtelSpanWrapper implements ISpan {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
-    // TODO [POTEL] check finished
-    //    return transaction.startChild(context.getSpanId(), operation, description, spanOptions);
-    // TODO [POTEL] use description
-    return scopes.getOptions().getSpanFactory().createSpan(operation, scopes, spanOptions, this);
+    if (isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
+    return scopes
+        .getOptions()
+        .getSpanFactory()
+        .createSpan(operation, description, scopes, spanOptions, this);
   }
 
   @Override
@@ -141,21 +126,31 @@ public final class OtelSpanWrapper implements ISpan {
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
-    // TODO [POTEL] check finished
-    //    return transaction.startChild(
-    //        context.getSpanId(), operation, description, timestamp, instrumenter, spanOptions);
-    // TODO [POTEL] use description, timestamp, instrumenter
-    return scopes.getOptions().getSpanFactory().createSpan(operation, scopes, spanOptions, this);
+    if (isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
+    if (timestamp != null) {
+      spanOptions.setStartTimestamp(timestamp);
+    }
+
+    // TODO [POTEL] use instrumenter
+    return scopes
+        .getOptions()
+        .getSpanFactory()
+        .createSpan(operation, description, scopes, spanOptions, this);
   }
 
   @Override
   public @NotNull ISpan startChild(@NotNull String operation, @Nullable String description) {
-    // TODO [POTEL] check finished
-    //    return transaction.startChild(context.getSpanId(), operation, description);
+    if (isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
     return scopes
         .getOptions()
         .getSpanFactory()
-        .createSpan(operation, scopes, new SpanOptions(), this);
+        .createSpan(operation, description, scopes, new SpanOptions(), this);
   }
 
   @Override
@@ -164,15 +159,10 @@ public final class OtelSpanWrapper implements ISpan {
   }
 
   private @NotNull SpanId getOtelSpanId() {
-    final @Nullable Span otelSpan = getSpan();
-    if (otelSpan != null) {
-      return new SpanId(otelSpan.getSpanContext().getSpanId());
-    } else {
-      return SpanId.EMPTY_ID;
-    }
+    return context.getSpanId();
   }
 
-  private @Nullable Span getSpan() {
+  private @Nullable ReadWriteSpan getSpan() {
     return span.get();
   }
 
@@ -192,9 +182,7 @@ public final class OtelSpanWrapper implements ISpan {
 
   @Override
   public void finish() {
-    //    finish(this.context.getStatus());
-    // TODO [POTEL]
-    finish(SpanStatus.OK);
+    finish(getStatus());
   }
 
   @Override
@@ -220,102 +208,140 @@ public final class OtelSpanWrapper implements ISpan {
   }
 
   @Override
-  public void setOperation(@NotNull String operation) {}
+  public void setOperation(@NotNull String operation) {
+    this.context.setOperation(operation);
+  }
 
   @Override
   public @NotNull String getOperation() {
-    // TODO [POTEL]
-    return "";
+    return context.getOperation();
   }
 
   @Override
   public void setDescription(@Nullable String description) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    // ^ could go in span attributes
+    this.context.setDescription(description);
   }
 
   @Override
   public @Nullable String getDescription() {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    return null;
+    return this.context.getDescription();
   }
 
   @Override
   public void setStatus(@Nullable SpanStatus status) {
     // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
     // ^ could go in span attributes
-    //    this.context.setStatus(status);
+    this.context.setStatus(status);
   }
 
   @Override
   public @Nullable SpanStatus getStatus() {
     // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    //    return context.getStatus();
-    return null;
+    return context.getStatus();
   }
 
   @Override
   public void setThrowable(@Nullable Throwable throwable) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
+    this.throwable = throwable;
   }
 
   @Override
   public @Nullable Throwable getThrowable() {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    return null;
+    return throwable;
   }
 
   @Override
   public @NotNull SpanContext getSpanContext() {
-    // TODO [POTEL] usage outside: setSampled, setOrigin, getTraceId, contexts.setTrace(), status,
-    // getOrigin
-    // TODO [POTEL] op, util for spanid, parentSpanId
-    return new SpanContext(getTraceId(), getOtelSpanId(), "TODO op", null, getSamplingDecision());
+    return context;
   }
 
   @Override
   public void setTag(@NotNull String key, @NotNull String value) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    //    context.setTag(key, value);
+    context.setTag(key, value);
   }
 
   @Override
   public @Nullable String getTag(@NotNull String key) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    //    return context.getTags().get(key);
-    return null;
+    return context.getTags().get(key);
+  }
+
+  @ApiStatus.Internal
+  public @NotNull Map<String, String> getTags() {
+    return context.getTags();
   }
 
   @Override
   public boolean isFinished() {
-    // TODO [POTEL] find a way to check
-    return false;
+    final @Nullable ReadWriteSpan otelSpan = getSpan();
+    if (otelSpan != null) {
+      return otelSpan.hasEnded();
+    }
+
+    // if span is no longer available we consider it ended/finished
+    return true;
   }
 
   @Override
   public void setData(@NotNull String key, @NotNull Object value) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
+    data.put(key, value);
   }
 
   @Override
   public @Nullable Object getData(@NotNull String key) {
-    // TODO [POTEL] need to find a way to transfer data from this wrapper to SpanExporter
-    return null;
+    return data.get(key);
   }
 
   @Override
   public void setMeasurement(@NotNull String name, @NotNull Number value) {
-    // TODO [POTEL]
+    if (isFinished()) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The span is already finished. Measurement %s cannot be set",
+              name);
+      return;
+    }
+    this.measurements.put(name, new MeasurementValue(value, null));
+
+    // TODO [POTEL] can't set on transaction
+    // We set the measurement in the transaction, too, but we have to check if this is the root span
+    // of the transaction, to avoid an infinite recursion
+    //    if (transaction.getRoot() != this) {
+    //      transaction.setMeasurementFromChild(name, value);
+    //    }
   }
 
   @Override
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
-    // TODO [POTEL]
+    if (isFinished()) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "The span is already finished. Measurement %s cannot be set",
+              name);
+      return;
+    }
+    this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
+
+    // TODO [POTEL] can't set on transaction
+    // We set the measurement in the transaction, too, but we have to check if this is the root span
+    // of the transaction, to avoid an infinite recursion
+    //    if (transaction.getRoot() != this) {
+    //      transaction.setMeasurementFromChild(name, value, unit);
+    //    }
   }
 
   @Override
   public boolean updateEndDate(@NotNull SentryDate date) {
+    if (this.finishedTimestamp != null) {
+      this.finishedTimestamp = date;
+      return true;
+    }
     return false;
   }
 
@@ -326,8 +352,7 @@ public final class OtelSpanWrapper implements ISpan {
 
   @Override
   public @Nullable SentryDate getFinishDate() {
-    // TODO [POTEL] cannot access spandata.getEndEpochNanos
-    return null;
+    return finishedTimestamp;
   }
 
   @Override
@@ -337,7 +362,7 @@ public final class OtelSpanWrapper implements ISpan {
 
   @Override
   public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return null;
+    return metricsAggregator.getValue();
   }
 
   @Override
@@ -351,74 +376,51 @@ public final class OtelSpanWrapper implements ISpan {
     return contexts;
   }
 
-  @Override
-  public void setName(@NotNull String name) {
-    setName(name, TransactionNameSource.CUSTOM);
+  public void setTransactionName(@NotNull String name) {
+    setTransactionName(name, TransactionNameSource.CUSTOM);
   }
 
-  @Override
-  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
-    this.name = name;
-    this.nameSource = nameSource;
+  public void setTransactionName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
+    this.transactionName = name;
+    this.transactionNameSource = nameSource;
   }
 
-  @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    return nameSource;
+  @ApiStatus.Internal
+  public @Nullable TransactionNameSource getTransactionNameSource() {
+    return transactionNameSource;
   }
 
-  @Override
-  public @NotNull String getName() {
-    return this.name;
+  @ApiStatus.Internal
+  public @Nullable String getTransactionName() {
+    return this.transactionName;
   }
 
   @NotNull
   public SentryId getTraceId() {
-    final @Nullable Span otelSpan = getSpan();
-    if (otelSpan != null) {
-      return new SentryId(otelSpan.getSpanContext().getTraceId());
-    } else {
-      return SentryId.EMPTY_ID;
-    }
+    return context.getTraceId();
   }
 
   public @NotNull Map<String, Object> getData() {
-    //    return data;
-    // TODO [POTEL]
-    return new HashMap<>();
+    return data;
   }
 
   @NotNull
   public Map<String, MeasurementValue> getMeasurements() {
-    //    return measurements;
-    // TODO [POTEL]
-    return new HashMap<>();
+    return measurements;
   }
 
   @Override
   public @Nullable Boolean isSampled() {
-    final @Nullable Span otelSpan = getSpan();
-    if (otelSpan != null) {
-      return otelSpan.getSpanContext().isSampled();
-    }
-    return null;
+    return context.getSampled();
   }
 
   public @Nullable Boolean isProfileSampled() {
-    // we do not support profiling for OpenTelemetry yet
-    return false;
+    return context.getProfileSampled();
   }
 
   @Override
   public @Nullable TracesSamplingDecision getSamplingDecision() {
-    // TODO [POTEL]
-
-    final @Nullable Span otelSpan = getSpan();
-    if (otelSpan != null) {
-      return new TracesSamplingDecision(otelSpan.getSpanContext().isSampled());
-    }
-
-    return null;
+    return context.getSamplingDecision();
   }
 
   @Override

@@ -945,9 +945,11 @@ class SentryTest {
     @Test
     fun `getSpan calls scopes getSpan`() {
         val scopes = mock<IScopes>()
-        Sentry.init({
-            it.dsn = dsn
-        }, false)
+        val options = SentryOptions().also { it.dsn = dsn }
+        whenever(scopes.options).thenReturn(options)
+
+        Sentry.init(options)
+
         Sentry.setCurrentScopes(scopes)
         Sentry.getSpan()
         verify(scopes).span

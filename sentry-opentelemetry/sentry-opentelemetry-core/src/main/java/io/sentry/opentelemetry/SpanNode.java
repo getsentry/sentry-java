@@ -8,8 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SpanNode {
   private final @NotNull String id;
-
-  // TODO [POTEL] should this be ReadableSpan? if so weak or strong ref?
   private @Nullable SpanData span;
   private @Nullable SpanNode parentNode;
   private @NotNull List<SpanNode> children = new CopyOnWriteArrayList<>();

@@ -429,28 +429,6 @@ public final class Span implements ISpan {
     return contexts;
   }
 
-  @Override
-  public void setName(@NotNull String name) {
-    // TODO [POTEL]
-  }
-
-  @Override
-  public void setName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
-    // TODO [POTEL]
-  }
-
-  @Override
-  public @NotNull TransactionNameSource getNameSource() {
-    // TODO [POTEL]
-    return TransactionNameSource.CUSTOM;
-  }
-
-  @Override
-  public @NotNull String getName() {
-    // TODO [POTEL]
-    return getOperation();
-  }
-
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
     this.spanFinishedCallback = callback;
   }

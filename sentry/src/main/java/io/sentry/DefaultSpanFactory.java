@@ -18,6 +18,7 @@ public final class DefaultSpanFactory implements ISpanFactory {
   @Override
   public @NotNull ISpan createSpan(
       @NotNull String name,
+      @Nullable String description,
       @NotNull IScopes scopes,
       @NotNull SpanOptions spanOptions,
       @Nullable ISpan parentSpan) {
