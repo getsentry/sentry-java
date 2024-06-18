@@ -4,7 +4,6 @@ import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
