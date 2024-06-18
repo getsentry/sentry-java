@@ -13,7 +13,7 @@ jobs:
   native:
     uses: getsentry/github-workflows/.github/workflows/updater.yml@v2
     with:
-      path: sentry-android-ndk/sentry-native
+      path: scripts/update-sentry-native-ndk.sh
       name: Native SDK
     secrets:
       # If a custom token is used instead, a CI would be triggered on a created PR.

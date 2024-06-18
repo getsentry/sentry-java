@@ -56,8 +56,7 @@ public final class Sentry {
    *
    * <p>For Android options will also be (temporarily) replaced by SentryAndroid static block.
    */
-  // TODO [HSM] use SentryOptions.empty and address
-  // https://github.com/getsentry/sentry-java/issues/2541
+  // TODO https://github.com/getsentry/sentry-java/issues/2541
   private static final @NotNull IScope globalScope = new Scope(SentryOptions.empty());
 
   /** Default value for globalHubMode is false */
@@ -79,6 +78,7 @@ public final class Sentry {
   /**
    * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
    *
+   * @deprecated please use {@link Sentry#getCurrentScopes()} instead
    * @return the hub
    */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -127,6 +127,9 @@ public final class Sentry {
     return getCurrentScopes().forkedCurrentScope(creator);
   }
 
+  /**
+   * @deprecated please use {@link Sentry#setCurrentScopes} instead.
+   */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @Deprecated
   @SuppressWarnings({"deprecation", "InlineMeSuggester"})
@@ -275,16 +278,15 @@ public final class Sentry {
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
-    globalScope.replaceOptions(options);
 
     final IScopes scopes = getCurrentScopes();
     final IScope rootScope = new Scope(options);
     final IScope rootIsolationScope = new Scope(options);
-    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
-
-    getScopesStorage().set(rootScopes);
 
     scopes.close(true);
+    globalScope.replaceOptions(options);
+    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+    getScopesStorage().set(rootScopes);
     globalScope.bindClient(new SentryClient(options));
 
     // If the executorService passed in the init is the same that was previously closed, we have to
@@ -520,7 +522,7 @@ public final class Sentry {
       options.addPerformanceCollector(new JavaMemoryCollector());
     }
 
-    if (options.isEnableBackpressureHandling()) {
+    if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
       options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
       options.getBackpressureMonitor().start();
     }
