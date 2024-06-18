@@ -51,6 +51,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
+  protected @Nullable Baggage baggage;
+
   public SpanContext(
       final @NotNull String operation, final @Nullable TracesSamplingDecision samplingDecision) {
     this(new SentryId(), new SpanId(), operation, null, samplingDecision);
@@ -223,6 +225,10 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
     this.instrumenter = instrumenter;
+  }
+
+  public @Nullable Baggage getBaggage() {
+    return baggage;
   }
 
   @ApiStatus.Internal

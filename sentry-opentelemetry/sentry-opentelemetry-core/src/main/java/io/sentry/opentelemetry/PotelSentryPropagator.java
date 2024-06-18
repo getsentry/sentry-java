@@ -10,6 +10,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
@@ -100,6 +101,7 @@ public final class PotelSentryPropagator implements TextMapPropagator {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
+      final Baggage baggage = Baggage.fromHeader(baggageString);
       final @NotNull TraceState traceState = TraceState.getDefault();
 
       SpanContext otelSpanContext =
@@ -112,7 +114,11 @@ public final class PotelSentryPropagator implements TextMapPropagator {
       Span wrappedSpan = Span.wrap(otelSpanContext);
 
       final @NotNull Context modifiedContext =
-          context.with(wrappedSpan).with(SENTRY_SCOPES_KEY, scopesToUse);
+          context
+              .with(wrappedSpan)
+              .with(SENTRY_SCOPES_KEY, scopesToUse)
+              .with(SentryOtelKeys.SENTRY_TRACE_KEY, sentryTraceHeader)
+              .with(SentryOtelKeys.SENTRY_BAGGAGE_KEY, baggage);
 
       scopes
           .getOptions()

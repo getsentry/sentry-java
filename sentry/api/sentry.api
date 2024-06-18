@@ -66,7 +66,7 @@ public final class io/sentry/Baggage {
 	public fun setUserId (Ljava/lang/String;)V
 	public fun setUserSegment (Ljava/lang/String;)V
 	public fun setValuesFromScope (Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
-	public fun setValuesFromTransaction (Lio/sentry/ITransaction;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;)V
+	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
 	public fun toTraceContext ()Lio/sentry/TraceContext;
 }
@@ -3155,6 +3155,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field DEFAULT_ORIGIN Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
+	protected field baggage Lio/sentry/Baggage;
 	protected field description Ljava/lang/String;
 	protected field op Ljava/lang/String;
 	protected field origin Ljava/lang/String;
@@ -3167,6 +3168,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun copyForChild (Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/SpanId;)Lio/sentry/SpanContext;
 	public fun equals (Ljava/lang/Object;)Z
+	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getOperation ()Ljava/lang/String;
@@ -3372,7 +3374,6 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public static fun fromPropagationContext (Lio/sentry/PropagationContext;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
-	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;

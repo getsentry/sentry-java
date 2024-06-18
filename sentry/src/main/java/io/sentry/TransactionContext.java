@@ -16,7 +16,6 @@ public final class TransactionContext extends SpanContext {
   private @NotNull String name;
   private @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
-  private @Nullable Baggage baggage;
   private boolean isForNextAppStart = false;
 
   /**
@@ -155,10 +154,6 @@ public final class TransactionContext extends SpanContext {
 
   public @Nullable TracesSamplingDecision getParentSamplingDecision() {
     return parentSamplingDecision;
-  }
-
-  public @Nullable Baggage getBaggage() {
-    return baggage;
   }
 
   public void setParentSampled(final @Nullable Boolean parentSampled) {

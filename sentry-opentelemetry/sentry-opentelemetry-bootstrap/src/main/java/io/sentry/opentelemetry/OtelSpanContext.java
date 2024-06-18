@@ -4,6 +4,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.data.StatusData;
+import io.sentry.Baggage;
 import io.sentry.SpanContext;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
@@ -26,7 +27,8 @@ public final class OtelSpanContext extends SpanContext {
   public OtelSpanContext(
       final @NotNull ReadWriteSpan span,
       final @Nullable TracesSamplingDecision samplingDecision,
-      final @Nullable OtelSpanWrapper parentSpan) {
+      final @Nullable OtelSpanWrapper parentSpan,
+      final @Nullable Baggage baggage) {
     super(
         new SentryId(span.getSpanContext().getTraceId()),
         new SpanId(span.getSpanContext().getSpanId()),
@@ -39,6 +41,7 @@ public final class OtelSpanContext extends SpanContext {
         null,
         null);
     this.span = new WeakReference<>(span);
+    this.baggage = baggage;
   }
 
   @Override

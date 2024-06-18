@@ -77,19 +77,16 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
-    // TODO [POTEL] root span?
     return rootSpan.toSentryTrace();
   }
 
   @Override
   public @Nullable TraceContext traceContext() {
-    // TODO [POTEL] root span?
     return rootSpan.traceContext();
   }
 
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    // TODO [POTEL] root span?
     return rootSpan.toBaggageHeader(thirdPartyBaggageHeaders);
   }
 
