@@ -229,11 +229,11 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     @Test
-    fun `When fragment is resumed, it should stop tracing if enabled`() {
+    fun `When fragment is started, it should stop tracing if enabled`() {
         val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
-        sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+        sut.onFragmentStarted(fixture.fragmentManager, fixture.fragment)
 
         verify(fixture.span).finish(
             check {
@@ -243,12 +243,12 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     @Test
-    fun `When fragment is resumed, it should stop tracing if enabled but keep status`() {
+    fun `When fragment is started, it should stop tracing if enabled but keep status`() {
         val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
         whenever(fixture.span.status).thenReturn(SpanStatus.ABORTED)
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
-        sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+        sut.onFragmentStarted(fixture.fragmentManager, fixture.fragment)
 
         verify(fixture.span).finish(
             check {

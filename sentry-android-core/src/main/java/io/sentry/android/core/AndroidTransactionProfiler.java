@@ -9,6 +9,7 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
+import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ILogger;
@@ -24,6 +25,7 @@ import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +46,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable AndroidProfiler profiler = null;
   private long profileStartNanos;
   private long profileStartCpuMillis;
+  private @NotNull Date profileStartTimestamp;
 
   /**
    * @deprecated please use a constructor that doesn't takes a {@link IHub} instead, as it would be
@@ -95,6 +98,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     this.profilingTracesHz = profilingTracesHz;
     this.executorService =
         Objects.requireNonNull(executorService, "The ISentryExecutorService is required.");
+    this.profileStartTimestamp = DateUtils.getCurrentDateTime();
   }
 
   private void init() {
@@ -165,6 +169,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
     profileStartNanos = startData.startNanos;
     profileStartCpuMillis = startData.startCpuMillis;
+    profileStartTimestamp = startData.startTimestamp;
     return true;
   }
 
@@ -275,6 +280,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // done in the background when the trace file is read
     return new ProfilingTraceData(
         endData.traceFile,
+        profileStartTimestamp,
         transactionList,
         transactionName,
         transactionId,

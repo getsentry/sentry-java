@@ -178,6 +178,7 @@ class AndroidProfilerTest {
         val endData = profiler.endAndCollect(false, null)
         assertNotNull(startData?.startNanos)
         assertNotNull(startData?.startCpuMillis)
+        assertNotNull(startData?.startTimestamp)
         assertNotNull(endData?.endNanos)
         assertNotNull(endData?.endCpuMillis)
     }
