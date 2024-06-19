@@ -17,6 +17,7 @@ class RRWebInteractionEventSerializationTest {
             x = 1.0f
             y = 2.0f
             interactionType = TouchStart
+            pointerId = 1
         }
     }
 

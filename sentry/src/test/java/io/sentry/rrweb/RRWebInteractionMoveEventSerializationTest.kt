@@ -21,6 +21,7 @@ class RRWebInteractionMoveEventSerializationTest {
                     timeOffset = 100
                 }
             )
+            pointerId = 1
         }
     }
 
