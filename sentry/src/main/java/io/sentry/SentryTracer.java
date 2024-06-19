@@ -71,8 +71,7 @@ public final class SentryTracer implements ITransaction {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(scopes, "scopes are required");
 
-    this.root =
-        new Span(context, this, scopes, transactionOptions.getStartTimestamp(), transactionOptions);
+    this.root = new Span(context, this, scopes, transactionOptions);
 
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();

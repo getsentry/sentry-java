@@ -3098,7 +3098,7 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, ja
 }
 
 public final class io/sentry/Span : io/sentry/ISpan {
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IScopes;Lio/sentry/SpanOptions;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V

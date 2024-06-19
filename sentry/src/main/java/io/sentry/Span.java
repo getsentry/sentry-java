@@ -77,13 +77,13 @@ public final class Span implements ISpan {
       final @NotNull TransactionContext context,
       final @NotNull SentryTracer sentryTracer,
       final @NotNull IScopes scopes,
-      final @Nullable SentryDate startTimestamp,
       final @NotNull SpanOptions options) {
     this.context = Objects.requireNonNull(context, "context is required");
     this.context.setOrigin(options.getOrigin());
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.spanFinishedCallback = null;
+    final @Nullable SentryDate startTimestamp = options.getStartTimestamp();
     if (startTimestamp != null) {
       this.startTimestamp = startTimestamp;
     } else {

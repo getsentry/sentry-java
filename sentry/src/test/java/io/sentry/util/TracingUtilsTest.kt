@@ -41,7 +41,6 @@ class TracingUtilsTest {
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
                 SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
                 scopes,
-                null,
                 SpanOptions()
             )
         }
