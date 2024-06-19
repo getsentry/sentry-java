@@ -26,13 +26,17 @@
     - Classes used for the previous version of our OpenTelemetry support have been deprecated but can still be used manually. We're not planning to keep the old agent around in favor of less complexity in the SDK.
 - Add `ignoredSpanOrigins` option for ignoring spans coming from certain integrations
   - We pre-configure this to ignore Performance instrumentation for Spring and other integrations when using our OpenTelemetry Agent to avoid duplicate spans
-- Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
 - Add data fetching environment hint to breadcrumb for GraphQL (#3413) ([#3431](https://github.com/getsentry/sentry-java/pull/3431))
 
 ### Fixes
 
 - `TracesSampler` is now only created once in `SentryOptions` instead of creating a new one for every `Hub` (which is now `Scopes`). This means we're now creating fewwer `SecureRandom` instances.
-- Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+- Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
+- Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
+- Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
+- Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
+- Properly reset metric flush flag on metric emission ([#3493](https://github.com/getsentry/sentry-java/pull/3493))
+
 
 ### Dependencies
 
@@ -94,6 +98,17 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 ### Features
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
+
+## 7.10.0
+
+### Features
+
+- Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
+
+### Fixes
+
+- Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+- Fix crash when installing `ShutdownHookIntegration` and the VM is shutting down ([#3456](https://github.com/getsentry/sentry-java/pull/3456))
 
 ## 7.9.0
 

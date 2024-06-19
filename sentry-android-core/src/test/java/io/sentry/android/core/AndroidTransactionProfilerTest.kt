@@ -53,7 +53,7 @@ class AndroidTransactionProfilerTest {
     private class Fixture {
         private val mockDsn = "http://key@localhost/proj"
         val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
+            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
         }
         val mockLogger = mock<ILogger>()
         var lastScheduledRunnable: Runnable? = null
@@ -224,9 +224,9 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler works only on api 21+`() {
+    fun `profiler works only on api 22+`() {
         val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
+            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val profiler = fixture.getSut(context, buildInfo)
         profiler.start()
@@ -379,7 +379,7 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `timedOutData has timeout truncation reason`() {
+    fun `timedOutData is not recorded`() {
         val profiler = fixture.getSut(context)
 
         // Start and finish first transaction profiling
@@ -391,8 +391,7 @@ class AndroidTransactionProfilerTest {
 
         // First transaction finishes: timed out data is returned
         val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
-        assertEquals(profilingTraceData!!.transactionId, fixture.transaction1.eventId.toString())
-        assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
+        assertNull(profilingTraceData)
     }
 
     @Test
