@@ -96,12 +96,13 @@ class SentryFragmentLifecycleCallbacks(
 
     override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, FragmentLifecycleState.STARTED)
+
+        // ViewPager2 locks background fragments to STARTED state
+        stopTracing(fragment)
     }
 
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, FragmentLifecycleState.RESUMED)
-
-        stopTracing(fragment)
     }
 
     override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {

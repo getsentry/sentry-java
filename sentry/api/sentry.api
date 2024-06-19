@@ -1515,7 +1515,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public static final field TRUNCATION_REASON_NORMAL Ljava/lang/String;
 	public static final field TRUNCATION_REASON_TIMEOUT Ljava/lang/String;
 	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;)V
-	public fun <init> (Ljava/io/File;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public fun <init> (Ljava/io/File;Ljava/util/Date;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
 	public fun getAndroidApiLevel ()I
 	public fun getBuildId ()Ljava/lang/String;
 	public fun getCpuArchitecture ()Ljava/lang/String;
@@ -1534,6 +1534,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun getProfileId ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampledProfile ()Ljava/lang/String;
+	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTraceFile ()Ljava/io/File;
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransactionId ()Ljava/lang/String;
@@ -1560,6 +1561,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun setProfileId (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setSampledProfile (Ljava/lang/String;)V
+	public fun setTimestamp (Ljava/util/Date;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransactionId (Ljava/lang/String;)V
 	public fun setTransactionName (Ljava/lang/String;)V
@@ -1594,6 +1596,7 @@ public final class io/sentry/ProfilingTraceData$JsonKeys {
 	public static final field PROFILE_ID Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION_ID Ljava/lang/String;
 	public static final field TRANSACTION_LIST Ljava/lang/String;
@@ -2974,6 +2977,8 @@ public final class io/sentry/SpanContext$JsonKeys {
 public abstract interface class io/sentry/SpanDataConvention {
 	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
 	public static final field CALL_STACK_KEY Ljava/lang/String;
+	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
+	public static final field CONTRIBUTES_TTID Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
 	public static final field FRAMES_DELAY Ljava/lang/String;
@@ -3705,7 +3710,7 @@ public abstract interface class io/sentry/metrics/IMetricsClient {
 
 public final class io/sentry/metrics/LocalMetricsAggregator {
 	public fun <init> ()V
-	public fun add (Ljava/lang/String;Lio/sentry/metrics/MetricType;Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;J)V
+	public fun add (Ljava/lang/String;Lio/sentry/metrics/MetricType;Ljava/lang/String;DLio/sentry/MeasurementUnit;Ljava/util/Map;)V
 	public fun getSummaries ()Ljava/util/Map;
 }
 
@@ -3780,7 +3785,6 @@ public final class io/sentry/metrics/MetricsHelper {
 	public static fun sanitizeTagValue (Ljava/lang/String;)Ljava/lang/String;
 	public static fun sanitizeUnit (Ljava/lang/String;)Ljava/lang/String;
 	public static fun setFlushShiftMs (J)V
-	public static fun toStatsdType (Lio/sentry/metrics/MetricType;)Ljava/lang/String;
 }
 
 public final class io/sentry/metrics/NoopMetricsAggregator : io/sentry/IMetricsAggregator, io/sentry/metrics/MetricsApi$IMetricsInterface {
@@ -4697,6 +4701,7 @@ public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, i
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 

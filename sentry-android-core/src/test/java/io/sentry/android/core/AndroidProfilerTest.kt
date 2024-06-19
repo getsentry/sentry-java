@@ -179,6 +179,7 @@ class AndroidProfilerTest {
         val endData = profiler.endAndCollect(false, null)
         assertNotNull(startData?.startNanos)
         assertNotNull(startData?.startCpuMillis)
+        assertNotNull(startData?.startTimestamp)
         assertNotNull(endData?.endNanos)
         assertNotNull(endData?.endCpuMillis)
     }
@@ -219,7 +220,7 @@ class AndroidProfilerTest {
     }
 
     @Test
-    fun `timedOutData has timeout flag`() {
+    fun `timedOutData is not recorded`() {
         val profiler = fixture.getSut()
 
         // Start and finish first transaction profiling
@@ -230,7 +231,7 @@ class AndroidProfilerTest {
 
         // First transaction finishes: timed out data is returned
         val endData = profiler.endAndCollect(false, null)
-        assert(endData!!.didTimeout)
+        assertNull(endData)
     }
 
     @Test

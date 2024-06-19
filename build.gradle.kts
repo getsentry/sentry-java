@@ -161,16 +161,7 @@ subprojects {
             if (this@subprojects.name.contains("-compose")) {
                 this.configureForMultiplatform(this@subprojects)
             } else {
-                this.getByName("main").contents {
-                    // non android modules
-                    from("build${sep}libs")
-                    from("build${sep}publications${sep}maven")
-                    // android modules
-                    from("build${sep}outputs${sep}aar") {
-                        include("*-release*")
-                    }
-                    from("build${sep}publications${sep}release")
-                }
+                this.configureForJvm(this@subprojects)
             }
             // craft only uses zip archives
             this.forEach { dist ->

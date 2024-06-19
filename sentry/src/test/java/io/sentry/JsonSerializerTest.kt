@@ -492,6 +492,7 @@ class JsonSerializerTest {
     @Test
     fun `serializes profilingTraceData`() {
         val profilingTraceData = ProfilingTraceData(fixture.traceFile, NoOpTransaction.getInstance())
+        val now = Date()
         profilingTraceData.androidApiLevel = 21
         profilingTraceData.deviceLocale = "deviceLocale"
         profilingTraceData.deviceManufacturer = "deviceManufacturer"
@@ -503,6 +504,7 @@ class JsonSerializerTest {
         profilingTraceData.deviceCpuFrequencies = listOf(1, 2, 3, 4)
         profilingTraceData.devicePhysicalMemoryBytes = "2000000"
         profilingTraceData.buildId = "buildId"
+        profilingTraceData.timestamp = now
         profilingTraceData.transactions = listOf(
             ProfilingTransactionData(NoOpTransaction.getInstance(), 1, 2),
             ProfilingTransactionData(NoOpTransaction.getInstance(), 2, 3)
@@ -559,6 +561,7 @@ class JsonSerializerTest {
         assertEquals("2000000", element["device_physical_memory_bytes"] as String)
         assertEquals("android", element["platform"] as String)
         assertEquals("buildId", element["build_id"] as String)
+        assertEquals(DateUtils.getTimestamp(now), element["timestamp"] as String)
         assertEquals(
             listOf(
                 mapOf(
@@ -655,6 +658,7 @@ class JsonSerializerTest {
                             "device_physical_memory_bytes":"2000000",
                             "platform":"android",
                             "build_id":"buildId",
+                            "timestamp":"2024-05-24T12:52:03.561Z",
                             "transactions":[
                                 {
                                     "id":"id",
@@ -729,6 +733,7 @@ class JsonSerializerTest {
         assertEquals("2000000", profilingTraceData.devicePhysicalMemoryBytes)
         assertEquals("android", profilingTraceData.platform)
         assertEquals("buildId", profilingTraceData.buildId)
+        assertEquals(DateUtils.getDateTime("2024-05-24T12:52:03.561Z"), profilingTraceData.timestamp)
         val expectedTransactions = listOf(
             ProfilingTransactionData().apply {
                 id = "id"

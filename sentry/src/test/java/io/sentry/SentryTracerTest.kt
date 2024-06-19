@@ -1385,4 +1385,15 @@ class SentryTracerTest {
 
         assertEquals(5, tracer.children.size)
     }
+
+    @Test
+    fun `tracer is not finished when finishCallback is called`() {
+        val transaction = fixture.getSut(transactionFinishedCallback = {
+            assertFalse(it.isFinished)
+            assertNotNull(it.finishDate)
+        })
+        assertFalse(transaction.isFinished)
+        assertNull(transaction.finishDate)
+        transaction.finish()
+    }
 }
