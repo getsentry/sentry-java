@@ -14,6 +14,7 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebIncrementalSnapshotEvent
 import io.sentry.rrweb.RRWebInteractionEvent
@@ -187,6 +188,7 @@ internal abstract class BaseCaptureStrategy(
             top = 0
         }
 
+        val urls = ArrayList<String>(options.maxBreadcrumbs)
         hub?.configureScope { scope ->
             scope.breadcrumbs.forEach { breadcrumb ->
                 if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
@@ -199,6 +201,11 @@ internal abstract class BaseCaptureStrategy(
 
                     if (rrwebEvent != null) {
                         recordingPayload += rrwebEvent
+
+                        // fill in the urls array from navigation breadcrumbs
+                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.breadcrumbType == "navigation") {
+                            urls.add(rrwebEvent.data!!["to"] as String)
+                        }
                     }
                 }
             }
@@ -215,6 +222,7 @@ internal abstract class BaseCaptureStrategy(
             payload = recordingPayload.sortedBy { it.timestamp }
         }
 
+        replay.urls = urls
         return ReplaySegment.Created(
             videoDuration = duration,
             replay = replay,
