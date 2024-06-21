@@ -14,7 +14,6 @@ import io.sentry.ILogger;
 import io.sentry.IScope;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
-import io.sentry.Sentry;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -194,7 +193,7 @@ public final class InternalSentrySdk {
         envelopeItems.add(sessionItem);
         deleteCurrentSessionFile(options);
         if (maybeStartNewSession) {
-          Sentry.startSession();
+          hub.startSession();
         }
       }
 

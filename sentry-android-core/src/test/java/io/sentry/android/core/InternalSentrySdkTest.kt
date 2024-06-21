@@ -359,6 +359,13 @@ class InternalSentrySdkTest {
         val fixture = Fixture()
         fixture.init(context)
 
+        // keep reference for current session for later assertions
+        // we need to get the reference now as it will be removed from the scope
+        val sessionRef = AtomicReference<Session>()
+        Sentry.configureScope { scope ->
+            sessionRef.set(scope.session)
+        }
+
         // when capture envelope is called with an crashed event
         fixture.captureEnvelopeWithEvent(fixture.createSentryEventWithUnhandledException())
 
@@ -377,13 +384,8 @@ class InternalSentrySdkTest {
         )!!
         assertEquals(Session.State.Crashed, capturedSession.status)
 
-        // and the local session should be marked as crashed too
-        val scopeRef = AtomicReference<IScope>()
-        Sentry.configureScope { scope ->
-            scopeRef.set(scope)
-        }
-        assertEquals(Session.State.Crashed, scopeRef.get().session!!.status)
-        assertEquals(capturedSession.sessionId, scopeRef.get().session!!.sessionId)
+        assertEquals(Session.State.Crashed, sessionRef.get().status)
+        assertEquals(capturedSession.sessionId, sessionRef.get().sessionId)
     }
 
     @Test
