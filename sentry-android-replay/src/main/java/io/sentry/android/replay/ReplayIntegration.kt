@@ -12,6 +12,7 @@ import io.sentry.Integration
 import io.sentry.NoOpReplayBreadcrumbConverter
 import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.ReplayController
+import io.sentry.ScopeObserverAdapter
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
@@ -21,6 +22,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.util.sample
+import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -76,6 +78,11 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
+        this.options.addScopeObserver(object : ScopeObserverAdapter() {
+            override fun setContexts(contexts: Contexts) {
+                captureStrategy?.onScreenChanged(contexts.app?.viewNames?.lastOrNull())
+            }
+        })
         recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this)
         isEnabled.set(true)
 

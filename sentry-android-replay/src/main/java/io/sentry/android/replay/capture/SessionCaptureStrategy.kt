@@ -31,7 +31,10 @@ internal class SessionCaptureStrategy(
         super.start(segmentId, replayId, cleanupOldReplays)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
-        hub?.configureScope { it.replayId = currentReplayId.get() }
+        hub?.configureScope {
+            it.replayId = currentReplayId.get()
+            screenAtStart.set(it.screen)
+        }
     }
 
     override fun pause() {

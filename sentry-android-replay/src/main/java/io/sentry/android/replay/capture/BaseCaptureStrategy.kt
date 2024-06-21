@@ -55,6 +55,7 @@ internal abstract class BaseCaptureStrategy(
     protected var cache: ReplayCache? = null
     protected val segmentTimestamp = AtomicReference<Date>()
     protected val replayStartTimestamp = AtomicLong()
+    protected val screenAtStart = AtomicReference<String>()
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
@@ -188,7 +189,7 @@ internal abstract class BaseCaptureStrategy(
             top = 0
         }
 
-        val urls = ArrayList<String>(options.maxBreadcrumbs)
+        val urls = LinkedList<String>()
         hub?.configureScope { scope ->
             scope.breadcrumbs.forEach { breadcrumb ->
                 if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
@@ -209,6 +210,10 @@ internal abstract class BaseCaptureStrategy(
                     }
                 }
             }
+        }
+
+        if (screenAtStart.get() != null && urls.first != screenAtStart.get()) {
+            urls.addFirst(screenAtStart.get())
         }
 
         rotateCurrentEvents(endTimestamp.time) { event ->
