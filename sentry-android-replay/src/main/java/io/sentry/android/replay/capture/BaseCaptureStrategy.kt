@@ -204,7 +204,7 @@ internal abstract class BaseCaptureStrategy(
                         recordingPayload += rrwebEvent
 
                         // fill in the urls array from navigation breadcrumbs
-                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.breadcrumbType == "navigation") {
+                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
                             urls.add(rrwebEvent.data!!["to"] as String)
                         }
                     }

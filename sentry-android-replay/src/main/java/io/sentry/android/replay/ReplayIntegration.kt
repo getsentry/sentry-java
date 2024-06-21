@@ -80,7 +80,8 @@ public class ReplayIntegration(
         this.hub = hub
         this.options.addScopeObserver(object : ScopeObserverAdapter() {
             override fun setContexts(contexts: Contexts) {
-                captureStrategy?.onScreenChanged(contexts.app?.viewNames?.lastOrNull())
+                // scope screen has fully-qualified name
+                captureStrategy?.onScreenChanged(contexts.app?.viewNames?.lastOrNull()?.substringAfterLast('.'))
             }
         })
         recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this)
