@@ -9,6 +9,7 @@
 - Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
 - Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
 - Properly reset metric flush flag on metric emission ([#3493](https://github.com/getsentry/sentry-java/pull/3493))
+- Use SecureRandom in favor of Random for Metrics ([#3495](https://github.com/getsentry/sentry-java/pull/3495))
 - When capturing unhandled hybrid exception session should be ended and new start if need ([#3480](https://github.com/getsentry/sentry-java/pull/3480))
 
 ## 7.10.0
