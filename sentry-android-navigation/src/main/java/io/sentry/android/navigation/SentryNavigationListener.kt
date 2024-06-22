@@ -177,6 +177,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             }.associateWith { args[it] }
         } ?: emptyMap()
 
+    @Suppress("SwallowedException") // we swallow it on purpose
     private fun NavDestination.extractName(context: Context): String? {
         val name = route ?: try {
             context.resources.getResourceEntryName(id)
