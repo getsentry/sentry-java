@@ -129,7 +129,7 @@ internal class SessionCaptureStrategy(
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = segmentTimestamp.get()
         val segmentId = currentSegment.get()
-        val duration = now - currentSegmentTimestamp.time
+        val duration = now - (currentSegmentTimestamp?.time ?: 0)
         val replayId = currentReplayId.get()
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth

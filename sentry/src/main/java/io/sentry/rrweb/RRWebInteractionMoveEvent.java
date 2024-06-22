@@ -142,6 +142,7 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
     // endregion json
   }
 
+  private int pointerId;
   private @Nullable List<Position> positions;
   // to support unknown json attributes with nesting, we have to have unknown map for each of the
   // nested object in json: { ..., "data": { ... } }
@@ -180,12 +181,21 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
     this.positions = positions;
   }
 
+  public int getPointerId() {
+    return pointerId;
+  }
+
+  public void setPointerId(final int pointerId) {
+    this.pointerId = pointerId;
+  }
+
   // region json
 
   // rrweb uses camelCase hence the json keys are in camelCase here
   public static final class JsonKeys {
     public static final String DATA = "data";
     public static final String POSITIONS = "positions";
+    public static final String POINTER_ID = "pointerId";
   }
 
   @Override
@@ -211,6 +221,7 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
     if (positions != null && !positions.isEmpty()) {
       writer.name(JsonKeys.POSITIONS).value(logger, positions);
     }
+    writer.name(JsonKeys.POINTER_ID).value(pointerId);
     if (dataUnknown != null) {
       for (String key : dataUnknown.keySet()) {
         Object value = dataUnknown.get(key);
@@ -270,6 +281,9 @@ public final class RRWebInteractionMoveEvent extends RRWebIncrementalSnapshotEve
         switch (nextName) {
           case JsonKeys.POSITIONS:
             event.positions = reader.nextListOrNull(logger, new Position.Deserializer());
+            break;
+          case JsonKeys.POINTER_ID:
+            event.pointerId = reader.nextInt();
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {

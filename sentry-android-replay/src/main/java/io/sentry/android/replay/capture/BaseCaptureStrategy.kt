@@ -60,7 +60,7 @@ internal abstract class BaseCaptureStrategy(
 
     protected val currentEvents = LinkedList<RRWebEvent>()
     private val currentEventsLock = Any()
-    private val currentPositions = mutableListOf<Position>()
+    private val currentPositions = LinkedHashMap<Int, ArrayList<Position>>(10)
     private var touchMoveBaseline = 0L
     private var lastCapturedMoveEvent = 0L
 
@@ -227,10 +227,10 @@ internal abstract class BaseCaptureStrategy(
     }
 
     override fun onTouchEvent(event: MotionEvent) {
-        val rrwebEvent = event.toRRWebIncrementalSnapshotEvent()
-        if (rrwebEvent != null) {
+        val rrwebEvents = event.toRRWebIncrementalSnapshotEvent()
+        if (rrwebEvents != null) {
             synchronized(currentEventsLock) {
-                currentEvents += rrwebEvent
+                currentEvents += rrwebEvents
             }
         }
     }
@@ -284,9 +284,9 @@ internal abstract class BaseCaptureStrategy(
         }
     }
 
-    private fun MotionEvent.toRRWebIncrementalSnapshotEvent(): RRWebIncrementalSnapshotEvent? {
+    private fun MotionEvent.toRRWebIncrementalSnapshotEvent(): List<RRWebIncrementalSnapshotEvent>? {
         val event = this
-        return when (val action = event.actionMasked) {
+        return when (event.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
                 // we only throttle move events as those can be overwhelming
                 val now = dateProvider.currentTimeMillis
@@ -295,48 +295,109 @@ internal abstract class BaseCaptureStrategy(
                 }
                 lastCapturedMoveEvent = now
 
-                // idk why but rrweb does it like dis
-                if (touchMoveBaseline == 0L) {
-                    touchMoveBaseline = now
-                }
+                currentPositions.keys.forEach { pId ->
+                    val pIndex = event.findPointerIndex(pId)
 
-                currentPositions += Position().apply {
-                    x = event.x * recorderConfig.scaleFactorX
-                    y = event.y * recorderConfig.scaleFactorY
-                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
-                    timeOffset = now - touchMoveBaseline
+                    if (pIndex == -1) {
+                        // no data for this pointer
+                        return@forEach
+                    }
+
+                    // idk why but rrweb does it like dis
+                    if (touchMoveBaseline == 0L) {
+                        touchMoveBaseline = now
+                    }
+
+                    currentPositions[pId]!! += Position().apply {
+                        x = event.getX(pIndex) * recorderConfig.scaleFactorX
+                        y = event.getY(pIndex) * recorderConfig.scaleFactorY
+                        id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                        timeOffset = now - touchMoveBaseline
+                    }
                 }
 
                 val totalOffset = now - touchMoveBaseline
                 return if (totalOffset > CAPTURE_MOVE_EVENT_THRESHOLD) {
-                    RRWebInteractionMoveEvent().apply {
-                        timestamp = now
-                        positions = currentPositions.map { pos ->
-                            pos.timeOffset -= totalOffset
-                            pos
+                    val moveEvents = mutableListOf<RRWebInteractionMoveEvent>()
+                    for ((pointerId, positions) in currentPositions) {
+                        if (positions.isNotEmpty()) {
+                            moveEvents += RRWebInteractionMoveEvent().apply {
+                                this.timestamp = now
+                                this.positions = positions.map { pos ->
+                                    pos.timeOffset -= totalOffset
+                                    pos
+                                }
+                                this.pointerId = pointerId
+                            }
+                            currentPositions[pointerId]!!.clear()
                         }
-                    }.also {
-                        currentPositions.clear()
-                        touchMoveBaseline = 0L
                     }
+                    touchMoveBaseline = 0L
+                    moveEvents
                 } else {
                     null
                 }
             }
 
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                RRWebInteractionEvent().apply {
-                    timestamp = dateProvider.currentTimeMillis
-                    x = event.x * recorderConfig.scaleFactorX
-                    y = event.y * recorderConfig.scaleFactorY
-                    id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
-                    interactionType = when (action) {
-                        MotionEvent.ACTION_UP -> InteractionType.TouchEnd
-                        MotionEvent.ACTION_DOWN -> InteractionType.TouchStart
-                        MotionEvent.ACTION_CANCEL -> InteractionType.TouchCancel
-                        else -> InteractionType.TouchMove_Departed // should not happen
-                    }
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                val pId = event.getPointerId(event.actionIndex)
+                val pIndex = event.findPointerIndex(pId)
+
+                if (pIndex == -1) {
+                    // no data for this pointer
+                    return null
                 }
+
+                // new finger down - add a new pointer for tracking movement
+                currentPositions[pId] = ArrayList()
+                listOf(
+                    RRWebInteractionEvent().apply {
+                        timestamp = dateProvider.currentTimeMillis
+                        x = event.getX(pIndex) * recorderConfig.scaleFactorX
+                        y = event.getY(pIndex) * recorderConfig.scaleFactorY
+                        id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                        pointerId = pId
+                        interactionType = InteractionType.TouchStart
+                    }
+                )
+            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_POINTER_UP -> {
+                val pId = event.getPointerId(event.actionIndex)
+                val pIndex = event.findPointerIndex(pId)
+
+                if (pIndex == -1) {
+                    // no data for this pointer
+                    return null
+                }
+
+                // finger lift up - remove the pointer from tracking
+                currentPositions.remove(pId)
+                listOf(
+                    RRWebInteractionEvent().apply {
+                        timestamp = dateProvider.currentTimeMillis
+                        x = event.getX(pIndex) * recorderConfig.scaleFactorX
+                        y = event.getY(pIndex) * recorderConfig.scaleFactorY
+                        id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                        pointerId = pId
+                        interactionType = InteractionType.TouchEnd
+                    }
+                )
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                // gesture cancelled - remove all pointers from tracking
+                currentPositions.clear()
+                listOf(
+                    RRWebInteractionEvent().apply {
+                        timestamp = dateProvider.currentTimeMillis
+                        x = event.x * recorderConfig.scaleFactorX
+                        y = event.y * recorderConfig.scaleFactorY
+                        id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                        pointerId = 0 // the pointerId is not used for TouchCancel, so just set it to 0
+                        interactionType = InteractionType.TouchCancel
+                    }
+                )
             }
 
             else -> null

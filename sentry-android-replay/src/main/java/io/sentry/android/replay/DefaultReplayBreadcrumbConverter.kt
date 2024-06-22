@@ -22,6 +22,8 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
         )
     }
 
+    private var lastConnectivityState: String? = null
+
     override fun convert(breadcrumb: Breadcrumb): RRWebEvent? {
         var breadcrumbMessage: String? = null
         var breadcrumbCategory: String? = null
@@ -79,6 +81,13 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
 
                     else -> return null
                 }
+
+                if (lastConnectivityState == breadcrumbData["state"]) {
+                    // debounce same state
+                    return null
+                }
+
+                lastConnectivityState = breadcrumbData["state"] as? String
             }
 
             breadcrumb.data["action"] == "BATTERY_CHANGED" -> {

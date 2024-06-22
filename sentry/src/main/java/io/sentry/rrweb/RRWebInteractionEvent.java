@@ -57,6 +57,8 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
 
   private int pointerType = POINTER_TYPE_TOUCH;
 
+  private int pointerId;
+
   // to support unknown json attributes with nesting, we have to have unknown map for each of the
   // nested object in json: { ..., "data": { ... } }
   private @Nullable Map<String, Object> unknown;
@@ -107,6 +109,14 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
     this.pointerType = pointerType;
   }
 
+  public int getPointerId() {
+    return pointerId;
+  }
+
+  public void setPointerId(final int pointerId) {
+    this.pointerId = pointerId;
+  }
+
   @Nullable
   public Map<String, Object> getDataUnknown() {
     return dataUnknown;
@@ -136,6 +146,7 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
     public static final String X = "x";
     public static final String Y = "y";
     public static final String POINTER_TYPE = "pointerType";
+    public static final String POINTER_ID = "pointerId";
   }
 
   @Override
@@ -163,6 +174,7 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
     writer.name(JsonKeys.X).value(x);
     writer.name(JsonKeys.Y).value(y);
     writer.name(JsonKeys.POINTER_TYPE).value(pointerType);
+    writer.name(JsonKeys.POINTER_ID).value(pointerId);
     if (dataUnknown != null) {
       for (String key : dataUnknown.keySet()) {
         Object value = dataUnknown.get(key);
@@ -234,6 +246,9 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
             break;
           case JsonKeys.POINTER_TYPE:
             event.pointerType = reader.nextInt();
+            break;
+          case JsonKeys.POINTER_ID:
+            event.pointerId = reader.nextInt();
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {
