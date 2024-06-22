@@ -373,7 +373,6 @@ internal abstract class BaseCaptureStrategy(
                 }
 
                 // finger lift up - remove the pointer from tracking
-                currentPositions[pId]?.clear()
                 currentPositions.remove(pId)
                 listOf(
                     RRWebInteractionEvent().apply {
