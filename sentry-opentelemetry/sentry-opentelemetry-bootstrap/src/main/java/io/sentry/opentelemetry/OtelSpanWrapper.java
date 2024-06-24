@@ -476,12 +476,6 @@ public final class OtelSpanWrapper implements ISpan {
     return context.getSamplingDecision();
   }
 
-  @Override
-  public @NotNull SentryId getEventId() {
-    // TODO [POTEL]
-    return new SentryId(getOtelSpanId().toString());
-  }
-
   @ApiStatus.Internal
   public @NotNull IScopes getScopes() {
     return scopes;

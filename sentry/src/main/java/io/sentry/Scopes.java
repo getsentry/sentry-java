@@ -834,7 +834,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Returning no-op for span origin %s as the SDK has been configured to use ignore it",
+              "Returning no-op for span origin %s as the SDK has been configured to ignore it",
               transactionContext.getOrigin());
       transaction = NoOpTransaction.getInstance();
 

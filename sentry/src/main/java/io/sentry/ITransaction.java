@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -89,4 +90,7 @@ public interface ITransaction extends ISpan {
       @Nullable SentryDate timestamp,
       boolean dropIfNoChildren,
       @Nullable Hint hint);
+
+  @NotNull
+  SentryId getEventId();
 }

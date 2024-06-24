@@ -7,14 +7,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This class may have to be moved to a new gradle module to include it in the bootstrap
- * classloader.
- *
- * <p>This uses multiple maps instead of a single one with a wrapper object as porting this to
- * Android would mean there's no access to methods like compute etc. before API level 24. There's
- * also no easy way to pre-initialize the map for all keys as spans are used as keys. For span IDs
- * it would also not work as they are random. For client report storage we know beforehand what keys
- * can exist.
+ * Weakly references wrappers for OpenTelemetry spans meaning they'll be cleaned up when the
+ * OpenTelemetry span is garbage collected.
  */
 @ApiStatus.Internal
 public final class SentryWeakSpanStorage {

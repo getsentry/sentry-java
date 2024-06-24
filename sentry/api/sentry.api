@@ -998,6 +998,7 @@ public abstract interface class io/sentry/ISpanFactory {
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;ZLio/sentry/Hint;)V
 	public abstract fun forceFinish (Lio/sentry/SpanStatus;ZLio/sentry/Hint;)V
+	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/ISpan;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getSpans ()Ljava/util/List;

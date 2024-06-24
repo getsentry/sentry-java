@@ -157,21 +157,15 @@ public final class SentrySpanExporter implements SpanExporter {
     // TODO [POTEL] should check if enabled but multi init with different options makes testing hard
     // atm
     //    if (scopes.getOptions().isEnableSpotlight()) {
-    final @Nullable String spotlightUrl = scopes.getOptions().getSpotlightConnectionUrl();
-    if (spotlightUrl != null) {
-      if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
-        return true;
-      }
-      if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
-        return true;
-      }
-    } else {
-      if (containsSpotlightUrl(fullUrl, "http://localhost:8969/stream")) {
-        return true;
-      }
-      if (containsSpotlightUrl(httpUrl, "http://localhost:8969/stream")) {
-        return true;
-      }
+    final @Nullable String optionsSpotlightUrl = scopes.getOptions().getSpotlightConnectionUrl();
+    final @NotNull String spotlightUrl =
+        optionsSpotlightUrl != null ? optionsSpotlightUrl : "http://localhost:8969/stream";
+
+    if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
+      return true;
+    }
+    if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
+      return true;
     }
     //    }
 
@@ -344,7 +338,7 @@ public final class SentrySpanExporter implements SpanExporter {
             traceId);
     final SpanId sentrySpanId = new SpanId(spanId);
 
-    @NotNull String transactionName = spanInfo.getDescription();
+    @Nullable String transactionName = spanInfo.getDescription();
     @NotNull TransactionNameSource transactionNameSource = spanInfo.getTransactionNameSource();
     @Nullable SpanId parentSpanId = null;
     @Nullable Baggage baggage = null;

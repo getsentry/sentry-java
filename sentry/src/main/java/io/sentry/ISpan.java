@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
-import io.sentry.protocol.SentryId;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -281,8 +280,8 @@ public interface ISpan {
   @Nullable
   TracesSamplingDecision getSamplingDecision();
 
-  @NotNull
-  SentryId getEventId();
+  //  @NotNull
+  //  SentryId getEventId();
 
   @ApiStatus.Internal
   @NotNull

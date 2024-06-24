@@ -14,7 +14,6 @@ import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
-import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import java.util.Arrays;
@@ -24,11 +23,19 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated please use {@link PotelSentryPropagator} instead
+ */
+@Deprecated
 public final class SentryPropagator implements TextMapPropagator {
 
   private static final @NotNull List<String> FIELDS =
       Arrays.asList(SentryTraceHeader.SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
-  private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
+
+  @SuppressWarnings("deprecation")
+  private final @NotNull io.sentry.SentrySpanStorage spanStorage =
+      io.sentry.SentrySpanStorage.getInstance();
+
   private final @NotNull IScopes scopes;
 
   public SentryPropagator() {
