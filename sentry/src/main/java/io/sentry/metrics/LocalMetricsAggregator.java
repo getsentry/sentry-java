@@ -28,8 +28,7 @@ public final class LocalMetricsAggregator {
       final @NotNull String key,
       final double value,
       final @Nullable MeasurementUnit unit,
-      final @Nullable Map<String, String> tags,
-      final long timestampMs) {
+      final @Nullable Map<String, String> tags) {
 
     final @NotNull String exportKey = MetricsHelper.getExportKey(type, key, unit);
 
