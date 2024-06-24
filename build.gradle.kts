@@ -107,7 +107,6 @@ subprojects {
         "sentry-android-fragment",
         "sentry-android-navigation",
         "sentry-android-ndk",
-        "sentry-android-okhttp",
         "sentry-android-sqlite",
         "sentry-android-timber"
     )
@@ -291,7 +290,6 @@ private val androidLibs = setOf(
     "sentry-android-ndk",
     "sentry-android-fragment",
     "sentry-android-navigation",
-    "sentry-android-okhttp",
     "sentry-android-timber",
     "sentry-compose-android"
 )

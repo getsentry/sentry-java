@@ -17,7 +17,6 @@ include(
     "sentry-android-ndk",
     "sentry-android",
     "sentry-android-timber",
-    "sentry-android-okhttp",
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-android-sqlite",
