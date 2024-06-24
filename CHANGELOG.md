@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- `sentry-android-okhttp` has been removed in favor of `sentry-okhttp`, removing android dependency from the module ([#3510](https://github.com/getsentry/sentry-java/pull/3510))
+
 ### Behavioural Changes
 
 - (Android) The JNI layer for sentry-native has now been moved from sentry-java to sentry-native ([#3189](https://github.com/getsentry/sentry-java/pull/3189))
