@@ -38,7 +38,9 @@ public final class Span implements ISpan {
 
   private final @NotNull IScopes scopes;
 
-  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
+  private boolean finished = false;
+
+  private final @NotNull AtomicBoolean isFinishing = new AtomicBoolean(false);
 
   private final @NotNull SpanOptions options;
 
@@ -114,7 +116,7 @@ public final class Span implements ISpan {
       final @Nullable SentryDate timestamp,
       final @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
-    if (finished.get()) {
+    if (finished) {
       return NoOpSpan.getInstance();
     }
 
@@ -125,7 +127,7 @@ public final class Span implements ISpan {
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    if (finished.get()) {
+    if (finished) {
       return NoOpSpan.getInstance();
     }
 
@@ -135,7 +137,7 @@ public final class Span implements ISpan {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
-    if (finished.get()) {
+    if (finished) {
       return NoOpSpan.getInstance();
     }
     return transaction.startChild(context.getSpanId(), operation, description, spanOptions);
@@ -190,7 +192,7 @@ public final class Span implements ISpan {
   @Override
   public void finish(final @Nullable SpanStatus status, final @Nullable SentryDate timestamp) {
     // the span can be finished only once
-    if (!finished.compareAndSet(false, true)) {
+    if (finished || !isFinishing.compareAndSet(false, true)) {
       return;
     }
 
@@ -233,6 +235,7 @@ public final class Span implements ISpan {
     if (spanFinishedCallback != null) {
       spanFinishedCallback.execute(this);
     }
+    finished = true;
   }
 
   @Override
@@ -282,7 +285,7 @@ public final class Span implements ISpan {
 
   @Override
   public boolean isFinished() {
-    return finished.get();
+    return finished;
   }
 
   public @NotNull Map<String, Object> getData() {
@@ -424,6 +427,11 @@ public final class Span implements ISpan {
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
     this.spanFinishedCallback = callback;
+  }
+
+  @Nullable
+  SpanFinishedCallback getSpanFinishedCallback() {
+    return spanFinishedCallback;
   }
 
   private void updateStartDate(@NotNull SentryDate date) {

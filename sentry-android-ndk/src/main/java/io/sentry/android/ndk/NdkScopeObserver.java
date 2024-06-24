@@ -5,6 +5,8 @@ import io.sentry.DateUtils;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.ndk.INativeScope;
+import io.sentry.ndk.NativeScope;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Locale;
