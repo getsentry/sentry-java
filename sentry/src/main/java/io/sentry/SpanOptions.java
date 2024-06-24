@@ -13,7 +13,6 @@ public class SpanOptions {
   /** The start timestamp of the transaction */
   private @Nullable SentryDate startTimestamp = null;
 
-  // TODO [POTEL] this should also work for non OTel spans
   /**
    * Gets the startTimestamp
    *

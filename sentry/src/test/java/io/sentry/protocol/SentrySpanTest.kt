@@ -20,8 +20,7 @@ class SentrySpanTest {
             TransactionContext("name", "op"),
             mock<SentryTracer>(),
             mock<IScopes>(),
-            SentryLongDate(1000000),
-            SpanOptions()
+            SpanOptions().also { it.startTimestamp = SentryLongDate(1000000) }
         )
 
         val sentrySpan = SentrySpan(span)

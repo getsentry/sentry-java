@@ -44,6 +44,7 @@ public final class SentrySampler implements Sampler {
       final @NotNull SpanKind spanKind,
       final @NotNull Attributes attributes,
       final @NotNull List<LinkData> parentLinks) {
+    // TODO [POTEL] use SamplingDecision.DROP sentry internal spans
     // note: parentLinks seems to usually be empty
     final @Nullable Span parentOtelSpan = Span.fromContextOrNull(parentContext);
     final @Nullable OtelSpanWrapper parentSentrySpan =
@@ -65,6 +66,7 @@ public final class SentrySampler implements Sampler {
   private @NotNull SamplingResult handleRootOtelSpan(
       final @NotNull String traceId, final @NotNull Context parentContext) {
     if (!options.isTraceSampling()) {
+      // TODO [POTEL] should this return RECORD_ONLY to allow tracing without performance
       return SamplingResult.create(SamplingDecision.DROP);
     }
     @Nullable Baggage baggage = null;
