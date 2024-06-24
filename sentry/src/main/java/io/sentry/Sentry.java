@@ -284,10 +284,7 @@ public final class Sentry {
     final IScope rootIsolationScope = new Scope(options);
 
     scopes.close(true);
-    globalScope.replaceOptions(options);
-    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
-    getScopesStorage().set(rootScopes);
-    globalScope.bindClient(new SentryClient(options));
+    globalScope.bindClient(new SentryClient(rootScopes.getOptions()));
 
     // If the executorService passed in the init is the same that was previously closed, we have to
     // set a new one
