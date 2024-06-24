@@ -2,9 +2,21 @@ package io.sentry;
 
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions {
+
+  public enum SentryReplayQuality {
+    /** Video Scale: 80% Bit Rate: 50.000 */
+    LOW,
+
+    /** Video Scale: 100% Bit Rate: 75.000 */
+    MEDIUM,
+
+    /** Video Scale: 100% Bit Rate: 100.000 */
+    HIGH
+  }
 
   /**
    * Indicates the percentage in which the replay for the session will be created. Specifying 0
@@ -39,10 +51,10 @@ public final class SentryReplayOptions {
   private boolean redactAllImages = true;
 
   /**
-   * Defines the quality of the session replay. Higher bit rates have better replay quality, but
-   * also affect the final payload size to transfer, defaults to 100kbps.
+   * Defines the quality of the session replay. The higher the quality, the more accurate the replay
+   * will be, but also more data to transfer and more CPU load, defaults to MEDIUM.
    */
-  private int bitRate = 100_000;
+  private SentryReplayQuality quality = SentryReplayQuality.MEDIUM;
 
   /**
    * Number of frames per second of the replay. The bigger the number, the more accurate the replay
@@ -121,9 +133,27 @@ public final class SentryReplayOptions {
     this.redactAllImages = redactAllImages;
   }
 
+  public @NotNull SentryReplayQuality getQuality() {
+    return quality;
+  }
+
+  public void setQuality(final @NotNull SentryReplayQuality quality) {
+    this.quality = quality;
+  }
+
+  /**
+   * Defines the quality of the session replay. Higher bit rates have better replay quality, but
+   * also affect the final payload size to transfer, defaults to 40kbps.
+   */
   @ApiStatus.Internal
   public int getBitRate() {
-    return bitRate;
+    return quality.ordinal() * 25_000 + 50_000;
+  }
+
+  /** The scale related to the window size (in dp) at which the replay will be created. */
+  @ApiStatus.Internal
+  public float getSizeScale() {
+    return quality == SentryReplayQuality.LOW ? 0.8f : 1.0f;
   }
 
   @ApiStatus.Internal

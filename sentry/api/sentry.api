@@ -2699,17 +2699,28 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getErrorReplayDuration ()J
 	public fun getErrorSampleRate ()Ljava/lang/Double;
 	public fun getFrameRate ()I
+	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getRedactAllImages ()Z
 	public fun getRedactAllText ()Z
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
+	public fun getSizeScale ()F
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun setErrorSampleRate (Ljava/lang/Double;)V
+	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setRedactAllImages (Z)V
 	public fun setRedactAllText (Z)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+}
+
+public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
+	public static final field HIGH Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public static final field LOW Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public static final field MEDIUM Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
 
 public final class io/sentry/SentrySpanStorage {
