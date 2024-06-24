@@ -2,9 +2,9 @@ package io.sentry.opentelemetry;
 
 import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
+import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequest;
 
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -14,7 +14,6 @@ import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.DefaultSpanFactory;
-import io.sentry.DsnUtil;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
@@ -37,7 +36,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
@@ -53,9 +51,6 @@ public final class SentrySpanExporter implements SpanExporter {
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
   private final @NotNull IScopes scopes;
-
-  private final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
-      Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
 
   private final @NotNull List<String> attributeKeysToRemove =
       Arrays.asList(
@@ -134,51 +129,9 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   private @NotNull List<SpanData> filterOutSentrySpans(final @NotNull Collection<SpanData> spans) {
-    return spans.stream().filter((span) -> !isSentryRequest(span)).collect(Collectors.toList());
-  }
-
-  @SuppressWarnings("deprecation")
-  private boolean isSentryRequest(final @NotNull SpanData spanData) {
-    final @NotNull SpanKind kind = spanData.getKind();
-    if (!spanKindsConsideredForSentryRequests.contains(kind)) {
-      return false;
-    }
-
-    final @Nullable String httpUrl = spanData.getAttributes().get(SemanticAttributes.HTTP_URL);
-    if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), httpUrl)) {
-      return true;
-    }
-
-    final @Nullable String fullUrl = spanData.getAttributes().get(SemanticAttributes.URL_FULL);
-    if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), fullUrl)) {
-      return true;
-    }
-
-    // TODO [POTEL] should check if enabled but multi init with different options makes testing hard
-    // atm
-    //    if (scopes.getOptions().isEnableSpotlight()) {
-    final @Nullable String optionsSpotlightUrl = scopes.getOptions().getSpotlightConnectionUrl();
-    final @NotNull String spotlightUrl =
-        optionsSpotlightUrl != null ? optionsSpotlightUrl : "http://localhost:8969/stream";
-
-    if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
-      return true;
-    }
-    if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
-      return true;
-    }
-    //    }
-
-    return false;
-  }
-
-  private boolean containsSpotlightUrl(
-      final @Nullable String requestUrl, final @NotNull String spotlightUrl) {
-    if (requestUrl == null) {
-      return false;
-    }
-
-    return requestUrl.toLowerCase(Locale.ROOT).contains(spotlightUrl.toLowerCase(Locale.ROOT));
+    return spans.stream()
+        .filter((span) -> !isSentryRequest(scopes, span.getKind(), span.getAttributes()))
+        .collect(Collectors.toList());
   }
 
   private List<SpanData> maybeSend(final @NotNull List<SpanData> spans) {

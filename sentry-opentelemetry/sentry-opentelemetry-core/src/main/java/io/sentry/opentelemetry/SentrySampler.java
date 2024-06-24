@@ -1,5 +1,7 @@
 package io.sentry.opentelemetry;
 
+import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequest;
+
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -13,7 +15,6 @@ import io.sentry.IScopes;
 import io.sentry.PropagationContext;
 import io.sentry.SamplingContext;
 import io.sentry.ScopesAdapter;
-import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.TracesSamplingDecision;
@@ -26,10 +27,10 @@ import org.jetbrains.annotations.Nullable;
 public final class SentrySampler implements Sampler {
 
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
-  private final @NotNull SentryOptions options;
+  private final @NotNull IScopes scopes;
 
   public SentrySampler(final @NotNull IScopes scopes) {
-    this.options = scopes.getOptions();
+    this.scopes = scopes;
   }
 
   public SentrySampler() {
@@ -44,7 +45,9 @@ public final class SentrySampler implements Sampler {
       final @NotNull SpanKind spanKind,
       final @NotNull Attributes attributes,
       final @NotNull List<LinkData> parentLinks) {
-    // TODO [POTEL] use SamplingDecision.DROP sentry internal spans
+    if (isSentryRequest(scopes, spanKind, attributes)) {
+      return SamplingResult.drop();
+    }
     // note: parentLinks seems to usually be empty
     final @Nullable Span parentOtelSpan = Span.fromContextOrNull(parentContext);
     final @Nullable OtelSpanWrapper parentSentrySpan =
@@ -65,7 +68,7 @@ public final class SentrySampler implements Sampler {
 
   private @NotNull SamplingResult handleRootOtelSpan(
       final @NotNull String traceId, final @NotNull Context parentContext) {
-    if (!options.isTraceSampling()) {
+    if (!scopes.getOptions().isTraceSampling()) {
       // TODO [POTEL] should this return RECORD_ONLY to allow tracing without performance
       return SamplingResult.create(SamplingDecision.DROP);
     }
@@ -87,7 +90,10 @@ public final class SentrySampler implements Sampler {
     final @NotNull TransactionContext transactionContext =
         TransactionContext.fromPropagationContext(propagationContext);
     final @NotNull TracesSamplingDecision sentryDecision =
-        options.getInternalTracesSampler().sample(new SamplingContext(transactionContext, null));
+        scopes
+            .getOptions()
+            .getInternalTracesSampler()
+            .sample(new SamplingContext(transactionContext, null));
     return new SentrySamplingResult(sentryDecision);
   }
 
