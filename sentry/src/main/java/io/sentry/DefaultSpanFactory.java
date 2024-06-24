@@ -21,8 +21,11 @@ public final class DefaultSpanFactory implements ISpanFactory {
       final @NotNull SpanOptions spanOptions,
       final @NotNull SpanContext spanContext,
       @Nullable ISpan parentSpan) {
-    // TODO [POTEL] forward to SentryTracer.createChild?
-    return NoOpSpan.getInstance();
+    if (parentSpan == null) {
+      // TODO [POTEL] We could create a transaction here
+      return NoOpSpan.getInstance();
+    }
+    return parentSpan.startChild(spanContext, spanOptions);
   }
 
   @Override

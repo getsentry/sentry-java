@@ -476,7 +476,7 @@ public class SentryOptions {
 
   private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
 
-  private @NotNull ISpanFactory spanFactory = new DefaultSpanFactory();
+  private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
 
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
@@ -2558,6 +2558,7 @@ public class SentryOptions {
    */
   private SentryOptions(final boolean empty) {
     if (!empty) {
+      setSpanFactory(new DefaultSpanFactory());
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService();
