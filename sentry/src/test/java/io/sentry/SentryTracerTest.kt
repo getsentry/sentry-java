@@ -1021,9 +1021,9 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction is created, but not profiled, transactionPerformanceCollector is not started`() {
+    fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
         val transaction = fixture.getSut()
-        verify(fixture.transactionPerformanceCollector, never()).start(anyOrNull())
+        verify(fixture.transactionPerformanceCollector).start(anyOrNull())
     }
 
     @Test
@@ -1393,5 +1393,16 @@ class SentryTracerTest {
         tracer.finish()
 
         assertEquals(5, tracer.children.size)
+    }
+
+    @Test
+    fun `tracer is not finished when finishCallback is called`() {
+        val transaction = fixture.getSut(transactionFinishedCallback = {
+            assertFalse(it.isFinished)
+            assertNotNull(it.finishDate)
+        })
+        assertFalse(transaction.isFinished)
+        assertNull(transaction.finishDate)
+        transaction.finish()
     }
 }
