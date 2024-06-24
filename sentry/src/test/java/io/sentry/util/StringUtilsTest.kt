@@ -58,6 +58,31 @@ class StringUtilsTest {
     }
 
     @Test
+    fun `camelCase string`() {
+        assertEquals("TestCase", StringUtils.camelCase("test_case"))
+    }
+
+    @Test
+    fun `camelCase string even if its uppercase`() {
+        assertEquals("TestCase", StringUtils.camelCase("TEST CASE"))
+    }
+
+    @Test
+    fun `camelCase do not throw if only 1 char`() {
+        assertEquals("T", StringUtils.camelCase("t"))
+    }
+
+    @Test
+    fun `camelCase returns itself if null`() {
+        assertNull(StringUtils.camelCase(null))
+    }
+
+    @Test
+    fun `camelCase returns itself if empty`() {
+        assertEquals("", StringUtils.camelCase(""))
+    }
+
+    @Test
     fun `removeSurrounding returns null if argument is null`() {
         assertNull(StringUtils.removeSurrounding(null, "\""))
     }

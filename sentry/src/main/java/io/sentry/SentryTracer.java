@@ -87,9 +87,9 @@ public final class SentryTracer implements ITransaction {
       this.baggage = new Baggage(scopes.getOptions().getLogger());
     }
 
-    // We are currently sending the performance data only in profiles, so there's no point in
-    // collecting them if a profile is not sampled
-    if (transactionPerformanceCollector != null && Boolean.TRUE.equals(isProfileSampled())) {
+    // We are currently sending the performance data only in profiles, but we are always sending
+    // performance measurements.
+    if (transactionPerformanceCollector != null) {
       transactionPerformanceCollector.start(this);
     }
 
@@ -200,10 +200,36 @@ public final class SentryTracer implements ITransaction {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished()
         && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
-      List<PerformanceCollectionData> performanceCollectionData = null;
-      if (transactionPerformanceCollector != null) {
-        performanceCollectionData = transactionPerformanceCollector.stop(this);
-      }
+
+      final @NotNull AtomicReference<List<PerformanceCollectionData>> performanceCollectionData =
+          new AtomicReference<>();
+      // We set the new spanFinishedCallback here instead of creation time, calling the old one to
+      // avoid the user overwrites it by setting a custom spanFinishedCallback on the root span
+      final @Nullable SpanFinishedCallback oldCallback = this.root.getSpanFinishedCallback();
+      this.root.setSpanFinishedCallback(
+          span -> {
+            if (oldCallback != null) {
+              oldCallback.execute(span);
+            }
+
+            // Let's call the finishCallback here, when the root span has a finished date but it's
+            // not finished, yet
+            final @Nullable TransactionFinishedCallback finishedCallback =
+                transactionOptions.getTransactionFinishedCallback();
+            if (finishedCallback != null) {
+              finishedCallback.execute(this);
+            }
+
+            if (transactionPerformanceCollector != null) {
+              performanceCollectionData.set(transactionPerformanceCollector.stop(this));
+            }
+          });
+
+      // any un-finished childs will remain unfinished
+      // as relay takes care of setting the end-timestamp + deadline_exceeded
+      // see
+      // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
+      root.finish(finishStatus.spanStatus, finishTimestamp);
 
       ProfilingTraceData profilingTraceData = null;
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
@@ -211,18 +237,11 @@ public final class SentryTracer implements ITransaction {
             scopes
                 .getOptions()
                 .getTransactionProfiler()
-                .onTransactionFinish(this, performanceCollectionData, scopes.getOptions());
+                .onTransactionFinish(this, performanceCollectionData.get(), scopes.getOptions());
       }
-      if (performanceCollectionData != null) {
-        performanceCollectionData.clear();
+      if (performanceCollectionData.get() != null) {
+        performanceCollectionData.get().clear();
       }
-
-      // any un-finished childs will remain unfinished
-      // as relay takes care of setting the end-timestamp + deadline_exceeded
-      // see
-      // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
-
-      root.finish(finishStatus.spanStatus, finishTimestamp);
 
       scopes.configureScope(
           scope -> {
@@ -234,11 +253,6 @@ public final class SentryTracer implements ITransaction {
                 });
           });
       final SentryTransaction transaction = new SentryTransaction(this);
-      final TransactionFinishedCallback finishedCallback =
-          transactionOptions.getTransactionFinishedCallback();
-      if (finishedCallback != null) {
-        finishedCallback.execute(this);
-      }
 
       if (timer != null) {
         synchronized (timerLock) {
@@ -671,7 +685,9 @@ public final class SentryTracer implements ITransaction {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
       for (final Span span : spans) {
-        if (!span.isFinished()) {
+        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+        // date
+        if (!span.isFinished() && span.getFinishDate() == null) {
           return false;
         }
       }

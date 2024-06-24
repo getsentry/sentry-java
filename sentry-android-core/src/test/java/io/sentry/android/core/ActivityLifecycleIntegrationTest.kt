@@ -303,7 +303,7 @@ class ActivityLifecycleIntegrationTest {
         sut.ttidSpanMap.values.first().finish()
         sut.ttfdSpanMap.values.first().finish()
 
-        // then transaction should not be immediatelly finished
+        // then transaction should not be immediately finished
         verify(fixture.scopes, never())
             .captureTransaction(
                 anyOrNull(),

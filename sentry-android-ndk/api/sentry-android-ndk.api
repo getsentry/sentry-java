@@ -7,7 +7,7 @@ public final class io/sentry/android/ndk/BuildConfig {
 }
 
 public final class io/sentry/android/ndk/DebugImagesLoader : io/sentry/android/core/IDebugImagesLoader {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/ndk/NativeModuleListLoader;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/ndk/NativeModuleListLoader;)V
 	public fun clearDebugImages ()V
 	public fun loadDebugImages ()Ljava/util/List;
 }

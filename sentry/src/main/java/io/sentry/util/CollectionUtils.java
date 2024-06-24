@@ -146,6 +146,22 @@ public final class CollectionUtils {
   }
 
   /**
+   * Returns true if the element is present in the array, false otherwise.
+   *
+   * @param array - the array
+   * @param element - the element
+   * @return true if the element is present in the array, false otherwise.
+   */
+  public static <T> boolean contains(final @NotNull T[] array, final @NotNull T element) {
+    for (final T t : array) {
+      if (element.equals(t)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * A simplified copy of Java 8 Predicate.
    *
    * @param <T> the type
