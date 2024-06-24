@@ -3,6 +3,8 @@ package io.sentry.metrics;
 import io.sentry.IMetricsAggregator;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
+import io.sentry.SentryDate;
+import io.sentry.SentryNanotimeDate;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -425,23 +427,38 @@ public final class MetricsApi {
         unit != null ? unit : MeasurementUnit.Duration.SECOND;
     final @NotNull Map<String, String> enrichedTags =
         MetricsHelper.mergeTags(tags, aggregator.getDefaultTagsForMetrics());
-    final @Nullable LocalMetricsAggregator localMetricsAggregator =
-        aggregator.getLocalMetricsAggregator();
+    final @Nullable LocalMetricsAggregator localMetricsAggregator;
 
     final @Nullable ISpan span = aggregator.startSpanForMetric("metric.timing", key);
+    // If the span was started, we take its local aggregator, otherwise we request another one.
+    localMetricsAggregator =
+        span != null ? span.getLocalMetricsAggregator() : aggregator.getLocalMetricsAggregator();
+
     if (span != null && tags != null) {
       for (final @NotNull Map.Entry<String, String> entry : tags.entrySet()) {
         span.setTag(entry.getKey(), entry.getValue());
       }
     }
+    final long timestamp = System.currentTimeMillis();
+    final long startNanos = System.nanoTime();
     try {
-      aggregator
-          .getMetricsAggregator()
-          .timing(key, callback, durationUnit, enrichedTags, localMetricsAggregator);
+      callback.run();
     } finally {
+      // If we have a span, the duration we emit is the same of the span, otherwise calculate it.
+      final long durationNanos;
       if (span != null) {
         span.finish();
+        // We finish the span, so we should have a finish date, but it's still nullable.
+        final @NotNull SentryDate spanFinishDate =
+            span.getFinishDate() != null ? span.getFinishDate() : new SentryNanotimeDate();
+        durationNanos = spanFinishDate.diff(span.getStartDate());
+      } else {
+        durationNanos = System.nanoTime() - startNanos;
       }
+      final double value = MetricsHelper.convertNanosTo(durationUnit, durationNanos);
+      aggregator
+          .getMetricsAggregator()
+          .distribution(key, value, durationUnit, enrichedTags, timestamp, localMetricsAggregator);
     }
   }
 }
