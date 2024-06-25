@@ -306,11 +306,6 @@ public final class Span implements ISpan {
     return context.getSamplingDecision();
   }
 
-  //  @Override
-  //  public @NotNull SentryId getEventId() {
-  //    return new SentryId(UUID.nameUUIDFromBytes(getSpanId().toString().getBytes()));
-  //  }
-
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
     this.throwable = throwable;
