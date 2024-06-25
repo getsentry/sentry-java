@@ -485,6 +485,7 @@ public final class Baggage {
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
+      @SuppressWarnings("deprecation")
       final @NotNull TraceContext traceContext =
           new TraceContext(
               new SentryId(traceIdString),

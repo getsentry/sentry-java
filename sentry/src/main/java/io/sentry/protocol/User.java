@@ -35,7 +35,8 @@ public final class User implements JsonUnknown, JsonSerializable {
   private @Nullable String username;
 
   /**
-   * @deprecated has no effect and will be removed in the next major update.
+   * @deprecated has no effect and will be removed in the next major update. Use a custom tag or
+   *     context instead.
    */
   @Deprecated private @Nullable String segment;
 
