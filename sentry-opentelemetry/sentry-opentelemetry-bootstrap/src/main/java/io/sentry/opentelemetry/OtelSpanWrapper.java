@@ -58,7 +58,7 @@ public final class OtelSpanWrapper implements ISpan {
    * OtelSpanWrapper} and indirectly back to {@link io.opentelemetry.sdk.trace.data.SpanData} via
    * {@link Span}. Also see {@link SentryWeakSpanStorage}.
    */
-  private final @NotNull WeakReference<ReadWriteSpan> span;
+  private final @NotNull WeakReference<ReadWriteSpan> span; // TODO [POTEL] bootstrap proxy
 
   private final @NotNull SpanContext context;
   //  private final @NotNull SpanOptions options;
