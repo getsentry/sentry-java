@@ -80,6 +80,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return userId;
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
   public @Nullable String getUserSegment() {
     return userSegment;
   }
@@ -116,6 +120,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       return id;
     }
 
+    /**
+     * @deprecated has no effect and will be removed in the next major update.
+     */
+    @Deprecated
     public @Nullable String getSegment() {
       return segment;
     }
