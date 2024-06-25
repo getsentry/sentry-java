@@ -83,8 +83,6 @@ public final class UncaughtExceptionHandlerIntegration
         } else {
           defaultExceptionHandler = currentHandler;
         }
-
-        //        defaultExceptionHandler = currentHandler;
       }
 
       threadAdapter.setDefaultUncaughtExceptionHandler(this);
