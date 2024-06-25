@@ -81,10 +81,6 @@ public final class SentrySpanExporter implements SpanExporter {
       return CompletableResultCode.ofFailure();
     }
 
-    for (SpanData span : spans) {
-      System.out.println("exporting: " + span.getSpanId() + " - " + span.getName());
-    }
-
     final int openSpanCount = finishedSpans.size();
     final int newSpanCount = spans.size();
 
@@ -155,8 +151,6 @@ public final class SentrySpanExporter implements SpanExporter {
         // TODO log
         continue;
       }
-
-      System.out.println("exporting transaction: " + span.getSpanId() + " - " + span.getName());
 
       for (final @NotNull SpanNode childNode : rootNode.getChildren()) {
         createAndFinishSpanForOtelSpan(childNode, transaction, remaining);
