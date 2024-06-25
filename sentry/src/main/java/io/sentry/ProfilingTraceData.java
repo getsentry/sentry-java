@@ -463,7 +463,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull ProfilingTraceData deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfilingTraceData data = new ProfilingTraceData();
       Map<String, Object> unknown = null;

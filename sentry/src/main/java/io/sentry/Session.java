@@ -426,7 +426,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull Session deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull Session deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
 

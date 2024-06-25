@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -326,7 +326,7 @@ public final class Request implements JsonUnknown, JsonSerializable {
   @SuppressWarnings("unchecked")
   public static final class Deserializer implements JsonDeserializer<Request> {
     @Override
-    public @NotNull Request deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull Request deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       Request request = new Request();

@@ -395,7 +395,7 @@ public abstract class SentryBaseEvent {
     public boolean deserializeValue(
         @NotNull SentryBaseEvent baseEvent,
         @NotNull String nextName,
-        @NotNull JsonObjectReader reader,
+        @NotNull ObjectReader reader,
         @NotNull ILogger logger)
         throws Exception {
       switch (nextName) {

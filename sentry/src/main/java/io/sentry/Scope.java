@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
@@ -80,6 +81,9 @@ public final class Scope implements IScope {
 
   private @NotNull PropagationContext propagationContext;
 
+  /** Scope's session replay id */
+  private @NotNull SentryId replayId = SentryId.EMPTY_ID;
+
   /**
    * Scope's ctor
    *
@@ -101,6 +105,7 @@ public final class Scope implements IScope {
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
     this.screen = scope.screen;
+    this.replayId = scope.replayId;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -310,6 +315,18 @@ public final class Scope implements IScope {
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setContexts(contexts);
     }
+  }
+
+  @Override
+  public @NotNull SentryId getReplayId() {
+    return replayId;
+  }
+
+  @Override
+  public void setReplayId(final @NotNull SentryId replayId) {
+    this.replayId = replayId;
+
+    // TODO: set to contexts and notify observers to persist this as well
   }
 
   /**

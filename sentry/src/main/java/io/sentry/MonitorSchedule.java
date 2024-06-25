@@ -123,7 +123,7 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<MonitorSchedule> {
     @Override
     public @NotNull MonitorSchedule deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       String type = null;
       String value = null;
       String unit = null;

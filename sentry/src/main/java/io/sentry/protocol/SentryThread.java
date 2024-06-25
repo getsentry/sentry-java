@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLockReason;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -303,8 +303,8 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<SentryThread> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull SentryThread deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SentryThread deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       SentryThread sentryThread = new SentryThread();
       Map<String, Object> unknown = null;
       reader.beginObject();

@@ -112,6 +112,7 @@ subprojects {
         "sentry-android-ndk",
         "sentry-android-okhttp",
         "sentry-android-sqlite",
+        "sentry-android-replay",
         "sentry-android-timber"
     )
     if (jacocoAndroidModules.contains(name)) {
@@ -296,7 +297,9 @@ private val androidLibs = setOf(
     "sentry-android-navigation",
     "sentry-android-okhttp",
     "sentry-android-timber",
-    "sentry-compose-android"
+    "sentry-compose-android",
+    "sentry-android-sqlite",
+    "sentry-android-replay"
 )
 
 private val androidXLibs = listOf(

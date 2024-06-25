@@ -86,8 +86,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
       switch (entry.getKey()) {
         case JsonKeys.TIMESTAMP:
           if (value instanceof String) {
-            Date deserializedDate =
-                JsonObjectReader.dateOrNull((String) value, options.getLogger());
+            Date deserializedDate = ObjectReader.dateOrNull((String) value, options.getLogger());
             if (deserializedDate != null) {
               timestamp = deserializedDate;
             }
@@ -700,8 +699,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<Breadcrumb> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull Breadcrumb deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull Breadcrumb deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       @NotNull Date timestamp = DateUtils.getCurrentDateTime();
       String message = null;

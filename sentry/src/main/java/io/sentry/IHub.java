@@ -580,6 +580,9 @@ public interface IHub {
   @NotNull
   SentryId captureCheckIn(final @NotNull CheckIn checkIn);
 
+  @NotNull
+  SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
+
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();

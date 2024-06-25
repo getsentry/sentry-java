@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -110,8 +110,8 @@ public final class SentryRuntime implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<SentryRuntime> {
     @Override
-    public @NotNull SentryRuntime deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SentryRuntime deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       SentryRuntime runtime = new SentryRuntime();
       Map<String, Object> unknown = null;

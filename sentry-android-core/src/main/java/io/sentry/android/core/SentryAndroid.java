@@ -33,6 +33,9 @@ public final class SentryAndroid {
   static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
       "io.sentry.android.timber.SentryTimberIntegration";
 
+  static final String SENTRY_REPLAY_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.replay.ReplayIntegration";
+
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
@@ -99,6 +102,8 @@ public final class SentryAndroid {
             final boolean isTimberAvailable =
                 (isTimberUpstreamAvailable
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
+            final boolean isReplayAvailable =
+                classLoader.isClassAvailable(SENTRY_REPLAY_INTEGRATION_CLASS_NAME, options);
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final LoadClass loadClass = new LoadClass();
@@ -118,7 +123,8 @@ public final class SentryAndroid {
                 loadClass,
                 activityFramesTracker,
                 isFragmentAvailable,
-                isTimberAvailable);
+                isTimberAvailable,
+                isReplayAvailable);
 
             configuration.configure(options);
 
@@ -145,9 +151,12 @@ public final class SentryAndroid {
           true);
 
       final @NotNull IHub hub = Sentry.getCurrentHub();
-      if (hub.getOptions().isEnableAutoSessionTracking() && ContextUtils.isForegroundImportance()) {
-        hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-        hub.startSession();
+      if (ContextUtils.isForegroundImportance()) {
+        if (hub.getOptions().isEnableAutoSessionTracking()) {
+          hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+          hub.startSession();
+        }
+        hub.getOptions().getReplayController().start();
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);

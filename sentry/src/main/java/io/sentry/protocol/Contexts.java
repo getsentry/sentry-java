@@ -2,8 +2,8 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SpanContext;
 import io.sentry.util.HintUtils;
@@ -160,7 +160,7 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
 
     @Override
     public @NotNull Contexts deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       final Contexts contexts = new Contexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

@@ -104,6 +104,14 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_METRICS = "io.sentry.enable-metrics";
 
+  static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
+
+  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.error-sample-rate";
+
+  static final String REPLAYS_REDACT_ALL_TEXT = "io.sentry.session-replay.redact-all-text";
+
+  static final String REPLAYS_REDACT_ALL_IMAGES = "io.sentry.session-replay.redact-all-images";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -382,6 +390,41 @@ final class ManifestMetadataReader {
 
         options.setEnableMetrics(
             readBool(metadata, logger, ENABLE_METRICS, options.isEnableMetrics()));
+
+        if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
+          final Double sessionSampleRate =
+              readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
+          if (sessionSampleRate != -1) {
+            options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
+          }
+        }
+
+        if (options.getExperimental().getSessionReplay().getErrorSampleRate() == null) {
+          final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+          if (errorSampleRate != -1) {
+            options.getExperimental().getSessionReplay().setErrorSampleRate(errorSampleRate);
+          }
+        }
+
+        options
+            .getExperimental()
+            .getSessionReplay()
+            .setRedactAllText(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_REDACT_ALL_TEXT,
+                    options.getExperimental().getSessionReplay().getRedactAllText()));
+
+        options
+            .getExperimental()
+            .getSessionReplay()
+            .setRedactAllImages(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_REDACT_ALL_IMAGES,
+                    options.getExperimental().getSessionReplay().getRedactAllImages()));
       }
 
       options

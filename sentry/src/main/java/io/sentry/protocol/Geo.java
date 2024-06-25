@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -161,7 +161,8 @@ public final class Geo implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<Geo> {
 
     @Override
-    public Geo deserialize(JsonObjectReader reader, ILogger logger) throws Exception {
+    public @NotNull Geo deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       final Geo geo = new Geo();
       Map<String, Object> unknown = null;

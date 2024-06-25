@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -544,7 +544,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final class Deserializer implements JsonDeserializer<DeviceOrientation> {
       @Override
       public @NotNull DeviceOrientation deserialize(
-          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+          @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
         return DeviceOrientation.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
       }
     }
@@ -726,7 +726,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<Device> {
 
     @Override
-    public @NotNull Device deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull Device deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       Device device = new Device();

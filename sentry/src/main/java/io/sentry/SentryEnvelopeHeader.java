@@ -117,7 +117,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
   public static final class Deserializer implements JsonDeserializer<SentryEnvelopeHeader> {
     @Override
     public @NotNull SentryEnvelopeHeader deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
 
       SentryId eventId = null;

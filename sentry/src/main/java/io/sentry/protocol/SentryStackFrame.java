@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLockReason;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -398,7 +398,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<SentryStackFrame> {
     @Override
     public @NotNull SentryStackFrame deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       SentryStackFrame sentryStackFrame = new SentryStackFrame();
       Map<String, Object> unknown = null;
       reader.beginObject();

@@ -18,11 +18,11 @@ public enum SentryLevel implements JsonSerializable {
     writer.value(name().toLowerCase(Locale.ROOT));
   }
 
-  static final class Deserializer implements JsonDeserializer<SentryLevel> {
+  public static final class Deserializer implements JsonDeserializer<SentryLevel> {
 
     @Override
-    public @NotNull SentryLevel deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SentryLevel deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       return SentryLevel.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
     }
   }

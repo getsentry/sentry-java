@@ -3,9 +3,9 @@ package io.sentry.protocol;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.Span;
@@ -257,8 +257,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull SentrySpan deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SentrySpan deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
 
       Double startTimestamp = null;

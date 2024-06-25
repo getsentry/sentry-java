@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -67,6 +68,14 @@ public final class NoOpScope implements IScope {
   @ApiStatus.Internal
   @Override
   public void setScreen(@Nullable String screen) {}
+
+  @Override
+  public @NotNull SentryId getReplayId() {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public void setReplayId(@Nullable SentryId replayId) {}
 
   @Override
   public @Nullable Request getRequest() {

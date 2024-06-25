@@ -151,7 +151,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
 
     @Override
     public @NotNull SentryAppStartProfilingOptions deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       SentryAppStartProfilingOptions options = new SentryAppStartProfilingOptions();
       Map<String, Object> unknown = null;
