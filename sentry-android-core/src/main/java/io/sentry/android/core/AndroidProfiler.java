@@ -6,6 +6,7 @@ import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.CpuCollectionData;
+import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.MemoryCollectionData;
@@ -17,6 +18,7 @@ import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.ArrayDeque;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +35,13 @@ public class AndroidProfiler {
   public static class ProfileStartData {
     public final long startNanos;
     public final long startCpuMillis;
+    public final @NotNull Date startTimestamp;
 
-    public ProfileStartData(final long startNanos, final long startCpuMillis) {
+    public ProfileStartData(
+        final long startNanos, final long startCpuMillis, final @NotNull Date startTimestamp) {
       this.startNanos = startNanos;
       this.startCpuMillis = startCpuMillis;
+      this.startTimestamp = startTimestamp;
     }
   }
 
@@ -79,7 +84,6 @@ public class AndroidProfiler {
   private @Nullable Future<?> scheduledFinish = null;
   private @Nullable File traceFile = null;
   private @Nullable String frameMetricsCollectorId;
-  private volatile @Nullable ProfileEndData timedOutProfilingData = null;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
       new ArrayDeque<>();
@@ -182,8 +186,7 @@ public class AndroidProfiler {
     // We stop profiling after a timeout to avoid huge profiles to be sent
     try {
       scheduledFinish =
-          executorService.schedule(
-              () -> timedOutProfilingData = endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+          executorService.schedule(() -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
           SentryLevel.ERROR,
@@ -192,6 +195,7 @@ public class AndroidProfiler {
     }
 
     profileStartNanos = SystemClock.elapsedRealtimeNanos();
+    final @NotNull Date profileStartTimestamp = DateUtils.getCurrentDateTime();
     long profileStartCpuMillis = Process.getElapsedCpuTime();
 
     // We don't make any check on the file existence or writeable state, because we don't want to
@@ -203,7 +207,7 @@ public class AndroidProfiler {
       // tests)
       Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
       isRunning = true;
-      return new ProfileStartData(profileStartNanos, profileStartCpuMillis);
+      return new ProfileStartData(profileStartNanos, profileStartCpuMillis, profileStartTimestamp);
     } catch (Throwable e) {
       endAndCollect(false, null);
       logger.log(SentryLevel.ERROR, "Unable to start a profile: ", e);
@@ -216,10 +220,6 @@ public class AndroidProfiler {
   public synchronized @Nullable ProfileEndData endAndCollect(
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
-    // check if profiling timed out
-    if (timedOutProfilingData != null) {
-      return timedOutProfilingData;
-    }
 
     if (!isRunning) {
       logger.log(SentryLevel.WARNING, "Profiler not running");
