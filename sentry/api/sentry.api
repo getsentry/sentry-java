@@ -2983,7 +2983,7 @@ public final class io/sentry/TypeCheckHint {
 public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Integration, java/io/Closeable, java/lang/Thread$UncaughtExceptionHandler {
 	public fun <init> ()V
 	public fun close ()V
-	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 	public fun uncaughtException (Ljava/lang/Thread;Ljava/lang/Throwable;)V
 }
 
