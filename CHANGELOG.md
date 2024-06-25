@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fix duplicate session start for React Native ([#3504](https://github.com/getsentry/sentry-java/pull/3504))
 - Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
 - Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
 - Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
