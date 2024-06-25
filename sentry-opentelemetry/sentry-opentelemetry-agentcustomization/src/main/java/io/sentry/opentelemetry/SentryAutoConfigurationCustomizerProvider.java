@@ -9,6 +9,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
+import io.sentry.SentrySpanFactoryHolder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
 import io.sentry.util.SpanUtils;
@@ -32,13 +33,15 @@ public final class SentryAutoConfigurationCustomizerProvider
     final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
 
     ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
+    final @NotNull OtelSpanFactory spanFactory = new OtelSpanFactory();
+    SentrySpanFactoryHolder.setSpanFactory(spanFactory);
 
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
-            options.setSpanFactory(new OtelSpanFactory());
+            options.setSpanFactory(spanFactory);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             // TODO [POTEL] is detecting a version mismatch between application and agent possible?
             if (sdkVersion != null) {
