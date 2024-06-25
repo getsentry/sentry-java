@@ -2,15 +2,47 @@
 
 ## Unreleased
 
+### Fixes
+
+- Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
+- Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
+- Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
+- Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
+- Properly reset metric flush flag on metric emission ([#3493](https://github.com/getsentry/sentry-java/pull/3493))
+- Use SecureRandom in favor of Random for Metrics ([#3495](https://github.com/getsentry/sentry-java/pull/3495))
+- Fix UncaughtExceptionHandlerIntegration Memory Leak ([#3398](https://github.com/getsentry/sentry-java/pull/3398))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.2 ([#3314](https://github.com/getsentry/sentry-java/pull/3314))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#072)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.2)
+
+## 7.10.0
+
 ### Features
 
-- Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+- Publish Gradle module metadata ([#3422](https://github.com/getsentry/sentry-java/pull/3422))
 
 ### Fixes
 
+- Fix faulty `span.frame_delay` calculation for early app start spans ([#3427](https://github.com/getsentry/sentry-java/pull/3427))
+- Fix crash when installing `ShutdownHookIntegration` and the VM is shutting down ([#3456](https://github.com/getsentry/sentry-java/pull/3456))
+
+## 7.9.0
+
+### Features
+
+- Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
+- Add ttid/ttfd contribution flags ([#3386](https://github.com/getsentry/sentry-java/pull/3386))
+
+### Fixes
+
+- (Internal) Metrics code cleanup ([#3403](https://github.com/getsentry/sentry-java/pull/3403))
 - Fix Frame measurements in app start transactions ([#3382](https://github.com/getsentry/sentry-java/pull/3382))
 - Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
-- Fix UncaughtExceptionHandlerIntegration Memory Leak ([#3398](https://github.com/getsentry/sentry-java/pull/3398))
+- Do not always write startup crash marker ([#3409](https://github.com/getsentry/sentry-java/pull/3409))
+  - This may have been causing the SDK init logic to block the main thread
 
 ## 7.8.0
 
