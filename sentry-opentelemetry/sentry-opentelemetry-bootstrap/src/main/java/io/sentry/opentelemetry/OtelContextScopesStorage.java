@@ -7,9 +7,11 @@ import io.opentelemetry.context.Scope;
 import io.sentry.IScopes;
 import io.sentry.IScopesStorage;
 import io.sentry.ISentryLifecycleToken;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 @SuppressWarnings("MustBeClosedChecker")
 public final class OtelContextScopesStorage implements IScopesStorage {
 

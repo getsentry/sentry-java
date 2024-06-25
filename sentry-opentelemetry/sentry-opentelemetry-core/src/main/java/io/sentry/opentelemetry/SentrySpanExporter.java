@@ -64,7 +64,7 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.PARENT_SAMPLED.getKey());
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
-  public static final String TRACE_ORIGIN = "auto.potel";
+  public static final String TRACE_ORIGIN = "auto.otel";
 
   public SentrySpanExporter() {
     this(ScopesAdapter.getInstance());
@@ -79,6 +79,10 @@ public final class SentrySpanExporter implements SpanExporter {
     if (stopped) {
       // TODO unsure if there's a way to attach a message
       return CompletableResultCode.ofFailure();
+    }
+
+    for (SpanData span : spans) {
+      System.out.println("exporting: " + span.getSpanId() + " - " + span.getName());
     }
 
     final int openSpanCount = finishedSpans.size();
@@ -151,6 +155,8 @@ public final class SentrySpanExporter implements SpanExporter {
         // TODO log
         continue;
       }
+
+      System.out.println("exporting transaction: " + span.getSpanId() + " - " + span.getName());
 
       for (final @NotNull SpanNode childNode : rootNode.getChildren()) {
         createAndFinishSpanForOtelSpan(childNode, transaction, remaining);

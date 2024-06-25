@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * into the bootstrap classloader, then this hack should no longer be necessary.
  */
 @ApiStatus.Experimental
+@ApiStatus.Internal
 public final class SentrySpanFactoryHolder {
 
   private static ISpanFactory spanFactory = new DefaultSpanFactory();
