@@ -135,8 +135,6 @@ public final class Baggage {
     baggage.setPublicKey(new Dsn(options.getDsn()).getPublicKey());
     baggage.setRelease(event.getRelease());
     baggage.setEnvironment(event.getEnvironment());
-    final User user = event.getUser();
-    baggage.setUserSegment(user != null ? getSegment(user) : null);
     baggage.setTransaction(event.getTransaction());
     // we don't persist sample rate
     baggage.setSampleRate(null);
@@ -306,16 +304,6 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public @Nullable String getUserSegment() {
-    return get(DSCKeys.USER_SEGMENT);
-  }
-
-  @ApiStatus.Internal
-  public void setUserSegment(final @Nullable String userSegment) {
-    set(DSCKeys.USER_SEGMENT, userSegment);
-  }
-
-  @ApiStatus.Internal
   public @Nullable String getTransaction() {
     return get(DSCKeys.TRANSACTION);
   }
@@ -372,7 +360,6 @@ public final class Baggage {
   @ApiStatus.Internal
   public void setValuesFromTransaction(
       final @NotNull SentryId traceId,
-      final @Nullable User user,
       final @NotNull SentryOptions sentryOptions,
       final @Nullable TracesSamplingDecision samplingDecision,
       final @Nullable String transactionName,
@@ -381,7 +368,6 @@ public final class Baggage {
     setPublicKey(new Dsn(sentryOptions.getDsn()).getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
-    setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
@@ -391,28 +377,13 @@ public final class Baggage {
   public void setValuesFromScope(
       final @NotNull IScope scope, final @NotNull SentryOptions options) {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
-    final @Nullable User user = scope.getUser();
     setTraceId(propagationContext.getTraceId().toString());
     setPublicKey(new Dsn(options.getDsn()).getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
-    setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(null);
     setSampleRate(null);
     setSampled(null);
-  }
-
-  private static @Nullable String getSegment(final @NotNull User user) {
-    if (user.getSegment() != null) {
-      return user.getSegment();
-    }
-
-    final Map<String, String> userData = user.getData();
-    if (userData != null) {
-      return userData.get("segment");
-    } else {
-      return null;
-    }
   }
 
   private static @Nullable Double sampleRate(@Nullable TracesSamplingDecision samplingDecision) {
@@ -477,7 +448,6 @@ public final class Baggage {
               getRelease(),
               getEnvironment(),
               getUserId(),
-              getUserSegment(),
               getTransaction(),
               getSampleRate(),
               getSampled());
@@ -495,7 +465,6 @@ public final class Baggage {
     public static final String RELEASE = "sentry-release";
     public static final String USER_ID = "sentry-user_id";
     public static final String ENVIRONMENT = "sentry-environment";
-    public static final String USER_SEGMENT = "sentry-user_segment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
     public static final String SAMPLED = "sentry-sampled";
@@ -507,7 +476,6 @@ public final class Baggage {
             RELEASE,
             USER_ID,
             ENVIRONMENT,
-            USER_SEGMENT,
             TRANSACTION,
             SAMPLE_RATE,
             SAMPLED);

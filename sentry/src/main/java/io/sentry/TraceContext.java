@@ -17,7 +17,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   private final @Nullable String release;
   private final @Nullable String environment;
   private final @Nullable String userId;
-  private final @Nullable String userSegment;
   private final @Nullable String transaction;
   private final @Nullable String sampleRate;
   private final @Nullable String sampled;
@@ -26,7 +25,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, @NotNull Object> unknown;
 
   TraceContext(@NotNull SentryId traceId, @NotNull String publicKey) {
-    this(traceId, publicKey, null, null, null, null, null, null, null);
+    this(traceId, publicKey, null, null, null, null, null, null);
   }
 
   TraceContext(
@@ -35,7 +34,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       @Nullable String release,
       @Nullable String environment,
       @Nullable String userId,
-      @Nullable String userSegment,
       @Nullable String transaction,
       @Nullable String sampleRate,
       @Nullable String sampled) {
@@ -44,7 +42,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this.release = release;
     this.environment = environment;
     this.userId = userId;
-    this.userSegment = userSegment;
     this.transaction = transaction;
     this.sampleRate = sampleRate;
     this.sampled = sampled;
@@ -78,10 +75,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
   public @Nullable String getUserId() {
     return userId;
-  }
-
-  public @Nullable String getUserSegment() {
-    return userSegment;
   }
 
   public @Nullable String getTransaction() {
@@ -194,7 +187,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     public static final String ENVIRONMENT = "environment";
     public static final String USER = "user";
     public static final String USER_ID = "user_id";
-    public static final String USER_SEGMENT = "user_segment";
     public static final String TRANSACTION = "transaction";
     public static final String SAMPLE_RATE = "sample_rate";
     public static final String SAMPLED = "sampled";
@@ -214,9 +206,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     }
     if (userId != null) {
       writer.name(TraceContext.JsonKeys.USER_ID).value(userId);
-    }
-    if (userSegment != null) {
-      writer.name(TraceContext.JsonKeys.USER_SEGMENT).value(userSegment);
     }
     if (transaction != null) {
       writer.name(TraceContext.JsonKeys.TRANSACTION).value(transaction);
@@ -249,7 +238,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       String environment = null;
       TraceContextUser user = null;
       String userId = null;
-      String userSegment = null;
       String transaction = null;
       String sampleRate = null;
       String sampled = null;
@@ -275,9 +263,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
             break;
           case TraceContext.JsonKeys.USER_ID:
             userId = reader.nextStringOrNull();
-            break;
-          case TraceContext.JsonKeys.USER_SEGMENT:
-            userSegment = reader.nextStringOrNull();
             break;
           case TraceContext.JsonKeys.TRANSACTION:
             transaction = reader.nextStringOrNull();
@@ -306,9 +291,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
         if (userId == null) {
           userId = user.getId();
         }
-        if (userSegment == null) {
-          userSegment = user.getSegment();
-        }
       }
       TraceContext traceContext =
           new TraceContext(
@@ -317,7 +299,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
               release,
               environment,
               userId,
-              userSegment,
               transaction,
               sampleRate,
               sampled);
