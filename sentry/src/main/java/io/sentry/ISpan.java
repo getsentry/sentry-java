@@ -280,9 +280,6 @@ public interface ISpan {
   @Nullable
   TracesSamplingDecision getSamplingDecision();
 
-  //  @NotNull
-  //  SentryId getEventId();
-
   @ApiStatus.Internal
   @NotNull
   ISentryLifecycleToken makeCurrent();
