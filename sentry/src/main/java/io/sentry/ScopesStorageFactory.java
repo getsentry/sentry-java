@@ -2,9 +2,11 @@ package io.sentry;
 
 import io.sentry.util.LoadClass;
 import java.lang.reflect.InvocationTargetException;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class ScopesStorageFactory {
 
   private static final String OTEL_SCOPES_STORAGE =

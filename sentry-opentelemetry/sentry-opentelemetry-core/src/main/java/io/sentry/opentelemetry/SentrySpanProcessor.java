@@ -40,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @deprecated please use {@link PotelSentrySpanProcessor} instead.
+ * @deprecated please use {@link OtelSentrySpanProcessor} instead.
  */
 @Deprecated
 public final class SentrySpanProcessor implements SpanProcessor {

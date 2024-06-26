@@ -161,7 +161,7 @@ public final class SentryAutoConfigurationCustomizerProvider
       SdkTracerProviderBuilder tracerProvider, ConfigProperties config) {
     return tracerProvider
         .setSampler(new SentrySampler())
-        .addSpanProcessor(new PotelSentrySpanProcessor())
+        .addSpanProcessor(new OtelSentrySpanProcessor())
         .addSpanProcessor(BatchSpanProcessor.builder(new SentrySpanExporter()).build());
   }
 

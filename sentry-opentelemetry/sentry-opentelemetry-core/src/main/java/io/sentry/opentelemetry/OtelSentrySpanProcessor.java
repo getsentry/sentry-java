@@ -23,15 +23,15 @@ import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class PotelSentrySpanProcessor implements SpanProcessor {
+public final class OtelSentrySpanProcessor implements SpanProcessor {
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull IScopes scopes;
 
-  public PotelSentrySpanProcessor() {
+  public OtelSentrySpanProcessor() {
     this(ScopesAdapter.getInstance());
   }
 
-  PotelSentrySpanProcessor(final @NotNull IScopes scopes) {
+  OtelSentrySpanProcessor(final @NotNull IScopes scopes) {
     this.scopes = scopes;
   }
 

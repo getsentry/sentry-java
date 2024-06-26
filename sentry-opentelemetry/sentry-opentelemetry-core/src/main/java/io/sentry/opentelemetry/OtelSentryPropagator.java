@@ -26,18 +26,18 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class PotelSentryPropagator implements TextMapPropagator {
+public final class OtelSentryPropagator implements TextMapPropagator {
 
   private static final @NotNull List<String> FIELDS =
       Arrays.asList(SentryTraceHeader.SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull IScopes scopes;
 
-  public PotelSentryPropagator() {
+  public OtelSentryPropagator() {
     this(ScopesAdapter.getInstance());
   }
 
-  PotelSentryPropagator(final @NotNull IScopes scopes) {
+  OtelSentryPropagator(final @NotNull IScopes scopes) {
     this.scopes = scopes;
   }
 

@@ -11,9 +11,11 @@ import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.protocol.SentryId;
 import java.lang.ref.WeakReference;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class OtelSpanContext extends SpanContext {
 
   /**
