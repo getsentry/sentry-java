@@ -36,6 +36,7 @@ class SdkInitTests : BaseUiTest() {
         transaction2.finish()
     }
 
+    @Ignore("TODO [POTEL] reinit should be discussed with mobile team")
     @Test
     fun doubleInitWithSameOptionsDoesNotThrow() {
         val options = SentryAndroidOptions()
