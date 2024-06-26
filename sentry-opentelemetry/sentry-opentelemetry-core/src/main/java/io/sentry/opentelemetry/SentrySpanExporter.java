@@ -64,7 +64,7 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.PARENT_SAMPLED.getKey());
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
-  public static final String TRACE_ORIGIN = "auto.otel";
+  public static final String TRACE_ORIGIN = "auto.opentelemetry";
 
   public SentrySpanExporter() {
     this(ScopesAdapter.getInstance());
