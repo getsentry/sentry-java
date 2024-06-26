@@ -49,10 +49,10 @@
 
 ### Installing `sentry-opentelemetry-agent` 
 
-### Upgrading from a previous agent
+#### Upgrading from a previous agent
 If you've been using the previous version of `sentry-opentelemetry-agent`, simply replace the agent JAR with the [latest release](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agent?smo=true) and start your application. That should be it.
 
-### New to the agent
+#### New to the agent
 If you've not been using OpenTelemetry before, you can add `sentry-opentelemetry-agent` to your setup by downloading the latest release and using it when starting up your application
     - `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
     - Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
