@@ -191,7 +191,10 @@ public final class InternalSentrySdk {
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
-        deleteCurrentSessionFile(options);
+        deleteCurrentSessionFile(
+          options,
+          // should be sync if going to crash or already not a main thread
+          !maybeStartNewSession || !hub.getOptions().getMainThreadChecker().isMainThread());
         if (maybeStartNewSession) {
           hub.startSession();
         }
@@ -261,6 +264,20 @@ public final class InternalSentrySdk {
     spanMap.put("start_timestamp_ms", span.getStartTimestampMs());
     spanMap.put("end_timestamp_ms", span.getProjectedStopTimestampMs());
     spans.add(spanMap);
+  }
+
+  private static void deleteCurrentSessionFile(final @NotNull SentryOptions options, boolean isSync) {
+    if (!isSync) {
+      try {
+        options.getExecutorService().submit(() -> {
+          deleteCurrentSessionFile(options);
+        });
+      } catch (Throwable e) {
+        options.getLogger().log(WARNING, "Submission of deletion of the current session file rejected.", e);
+      }
+    } else {
+      deleteCurrentSessionFile(options);
+    }
   }
 
   private static void deleteCurrentSessionFile(final @NotNull SentryOptions options) {
