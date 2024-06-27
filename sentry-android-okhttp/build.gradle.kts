@@ -24,7 +24,9 @@ android {
 
     buildTypes {
         getByName("debug")
-        getByName("release")
+        getByName("release") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
     }
 
     kotlinOptions {
