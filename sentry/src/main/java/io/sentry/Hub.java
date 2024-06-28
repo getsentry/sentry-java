@@ -686,10 +686,22 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
             options
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.BACKPRESSURE, DataCategory.Transaction);
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(
+                    DiscardReason.BACKPRESSURE,
+                    DataCategory.Span,
+                    transaction.getSpans().size() + 1);
           } else {
             options
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(
+                    DiscardReason.SAMPLE_RATE,
+                    DataCategory.Span,
+                    transaction.getSpans().size() + 1);
           }
         } else {
           StackItem item = null;
