@@ -221,6 +221,10 @@ public final class NoOpScope implements IScope {
 
   @ApiStatus.Internal
   @Override
+  public void clearSession() {}
+
+  @ApiStatus.Internal
+  @Override
   public void setPropagationContext(@NotNull PropagationContext propagationContext) {}
 
   @ApiStatus.Internal

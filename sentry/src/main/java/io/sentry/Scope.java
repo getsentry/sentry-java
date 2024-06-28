@@ -915,6 +915,12 @@ public final class Scope implements IScope {
 
   @ApiStatus.Internal
   @Override
+  public void clearSession() {
+    session = null;
+  }
+
+  @ApiStatus.Internal
+  @Override
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
     this.propagationContext = propagationContext;
   }
