@@ -95,9 +95,9 @@ class ClientReportTest {
     @Test
     fun `lost transaction records dropped spans`() {
         givenClientReportRecorder()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(opts)
-        val transaction = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), hub)
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes)
         transaction.startChild("lost span", "span1").finish()
         transaction.startChild("lost span", "span2").finish()
         transaction.startChild("lost span", "span3").finish()

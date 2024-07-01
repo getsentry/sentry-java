@@ -63,7 +63,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         callRootSpan?.setData("url", url)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
-        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
     }
 
     /**

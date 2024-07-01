@@ -308,10 +308,10 @@ class UncaughtExceptionHandlerIntegrationTest {
         }
 
         val integration1 = UncaughtExceptionHandlerIntegration(handler)
-        integration1.register(fixture.hub, fixture.options)
+        integration1.register(fixture.scopes, fixture.options)
 
         val integration2 = UncaughtExceptionHandlerIntegration(handler)
-        integration2.register(fixture.hub, fixture.options)
+        integration2.register(fixture.scopes, fixture.options)
 
         assertEquals(currentDefaultHandler, integration2)
         integration2.close()
@@ -334,10 +334,10 @@ class UncaughtExceptionHandlerIntegrationTest {
         }
 
         val integration1 = UncaughtExceptionHandlerIntegration(handler)
-        integration1.register(fixture.hub, fixture.options)
+        integration1.register(fixture.scopes, fixture.options)
 
         val integration2 = UncaughtExceptionHandlerIntegration(handler)
-        integration2.register(fixture.hub, fixture.options)
+        integration2.register(fixture.scopes, fixture.options)
 
         assertEquals(currentDefaultHandler, integration2)
         integration2.close()
