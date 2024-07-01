@@ -326,6 +326,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Profile Lio/sentry/DataCategory;
 	public static final field Security Lio/sentry/DataCategory;
 	public static final field Session Lio/sentry/DataCategory;
+	public static final field Span Lio/sentry/DataCategory;
 	public static final field Transaction Lio/sentry/DataCategory;
 	public static final field Unknown Lio/sentry/DataCategory;
 	public static final field UserReport Lio/sentry/DataCategory;
@@ -3632,6 +3633,7 @@ public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clien
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
 	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;J)V
 }
 
 public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
@@ -3677,6 +3679,7 @@ public abstract interface class io/sentry/clientreport/IClientReportRecorder {
 	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
 	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;J)V
 }
 
 public abstract interface class io/sentry/clientreport/IClientReportStorage {
@@ -3690,6 +3693,7 @@ public final class io/sentry/clientreport/NoOpClientReportRecorder : io/sentry/c
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
 	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;J)V
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Report dropped spans ([#3528](https://github.com/getsentry/sentry-java/pull/3528))
+
 ### Breaking Changes
 
 - `sentry-android-okhttp` has been removed in favor of `sentry-okhttp`, removing android dependency from the module ([#3510](https://github.com/getsentry/sentry-java/pull/3510))
