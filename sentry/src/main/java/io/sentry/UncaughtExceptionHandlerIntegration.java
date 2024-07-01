@@ -75,7 +75,14 @@ public final class UncaughtExceptionHandlerIntegration
                 "default UncaughtExceptionHandler class='"
                     + currentHandler.getClass().getName()
                     + "'");
-        defaultExceptionHandler = currentHandler;
+
+        if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
+          final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
+              (UncaughtExceptionHandlerIntegration) currentHandler;
+          defaultExceptionHandler = currentHandlerIntegration.defaultExceptionHandler;
+        } else {
+          defaultExceptionHandler = currentHandler;
+        }
       }
 
       threadAdapter.setDefaultUncaughtExceptionHandler(this);

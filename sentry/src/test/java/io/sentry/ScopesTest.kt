@@ -1540,11 +1540,16 @@ class ScopesTest {
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
+        // Unsampled spans are not added to the transaction, so they are not recorded
+        sentryTracer.startChild("dropped span", "span 1").finish()
         sentryTracer.finish()
 
         assertClientReport(
             options.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Span.category, 1)
+            )
         )
     }
 
@@ -1562,11 +1567,16 @@ class ScopesTest {
         whenever(mockBackpressureMonitor.downsampleFactor).thenReturn(1)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
+        // Unsampled spans are not added to the transaction, so they are not recorded
+        sentryTracer.startChild("dropped span", "span 1").finish()
         sentryTracer.finish()
 
         assertClientReport(
             options.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Span.category, 1)
+            )
         )
     }
     //endregion

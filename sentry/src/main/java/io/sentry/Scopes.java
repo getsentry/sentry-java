@@ -775,10 +775,22 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
             getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.BACKPRESSURE, DataCategory.Transaction);
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(
+                    DiscardReason.BACKPRESSURE,
+                    DataCategory.Span,
+                    transaction.getSpans().size() + 1);
           } else {
             getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(
+                    DiscardReason.SAMPLE_RATE,
+                    DataCategory.Span,
+                    transaction.getSpans().size() + 1);
           }
         } else {
           try {

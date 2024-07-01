@@ -11,6 +11,7 @@ import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.Session;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -19,7 +20,9 @@ import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry initialization class */
 public final class SentryAndroid {
@@ -87,7 +90,7 @@ public final class SentryAndroid {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
-            final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
+            final LoadClass classLoader = new LoadClass();
             final boolean isTimberUpstreamAvailable =
                 classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
@@ -101,7 +104,7 @@ public final class SentryAndroid {
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
-            final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
+            final LoadClass loadClass = new LoadClass();
             final ActivityFramesTracker activityFramesTracker =
                 new ActivityFramesTracker(loadClass, options);
 
@@ -147,8 +150,21 @@ public final class SentryAndroid {
       final @NotNull IScopes scopes = Sentry.getCurrentScopes();
       if (scopes.getOptions().isEnableAutoSessionTracking()
           && ContextUtils.isForegroundImportance()) {
-        scopes.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-        scopes.startSession();
+        // The LifecycleWatcher of AppLifecycleIntegration may already started a session
+        // so only start a session if it's not already started
+        // This e.g. happens on React Native, or e.g. on deferred SDK init
+        final AtomicBoolean sessionStarted = new AtomicBoolean(false);
+        hub.configureScope(
+          scope -> {
+            final @Nullable Session currentSession = scope.getSession();
+            if (currentSession != null && currentSession.getStarted() != null) {
+              sessionStarted.set(true);
+            }
+          });
+        if (!sessionStarted.get()) {
+          scopes.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+          scopes.startSession();
+        }
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
