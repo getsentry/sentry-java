@@ -155,12 +155,12 @@ public final class SentryAndroid {
         // This e.g. happens on React Native, or e.g. on deferred SDK init
         final AtomicBoolean sessionStarted = new AtomicBoolean(false);
         hub.configureScope(
-          scope -> {
-            final @Nullable Session currentSession = scope.getSession();
-            if (currentSession != null && currentSession.getStarted() != null) {
-              sessionStarted.set(true);
-            }
-          });
+            scope -> {
+              final @Nullable Session currentSession = scope.getSession();
+              if (currentSession != null && currentSession.getStarted() != null) {
+                sessionStarted.set(true);
+              }
+            });
         if (!sessionStarted.get()) {
           scopes.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
           scopes.startSession();

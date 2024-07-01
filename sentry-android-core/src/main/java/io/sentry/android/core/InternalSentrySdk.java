@@ -157,7 +157,7 @@ public final class InternalSentrySdk {
    */
   @Nullable
   public static SentryId captureEnvelope(
-    final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
+      final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
