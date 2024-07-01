@@ -24,6 +24,7 @@ dependencies {
         exclude(group = "io.opentelemetry")
         exclude(group = "io.opentelemetry.javaagent")
     }
+//    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     compileOnly(Config.Libs.OpenTelemetry.otelSdk)

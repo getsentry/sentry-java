@@ -2727,11 +2727,13 @@ public class SentryOptions {
         .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
   }
 
+  @ApiStatus.Internal
   public @NotNull ISpanFactory getSpanFactory() {
     // TODO [POTEL] use a util for checking if OTel is active or similar
     return spanFactory;
   }
 
+  @ApiStatus.Internal
   public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
     this.spanFactory = spanFactory;
   }

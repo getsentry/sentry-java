@@ -953,7 +953,6 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
-	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getFinishDate ()Lio/sentry/SentryDate;
 	public abstract fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public abstract fun getOperation ()Ljava/lang/String;
@@ -1551,7 +1550,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
@@ -2938,6 +2936,12 @@ public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
 }
 
+public final class io/sentry/SentrySpanFactoryHolder {
+	public fun <init> ()V
+	public static fun getSpanFactory ()Lio/sentry/ISpanFactory;
+	public static fun setSpanFactory (Lio/sentry/ISpanFactory;)V
+}
+
 public final class io/sentry/SentrySpanStorage {
 	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
 	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
@@ -3112,7 +3116,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getMeasurements ()Ljava/util/Map;

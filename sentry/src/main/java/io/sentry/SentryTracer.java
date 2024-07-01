@@ -486,6 +486,7 @@ public final class SentryTracer implements ITransaction {
                   finish(finishStatus.spanStatus);
                 }
               });
+      // TODO [POTEL] missing features
       //      final Span span =
       //          new Span(
       //              root.getTraceId(),

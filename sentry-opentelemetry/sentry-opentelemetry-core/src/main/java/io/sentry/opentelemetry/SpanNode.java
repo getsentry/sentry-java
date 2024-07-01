@@ -3,9 +3,11 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class SpanNode {
   private final @NotNull String id;
   private @Nullable SpanData span;

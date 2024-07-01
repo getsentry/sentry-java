@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @deprecated please use {@link PotelSentryPropagator} instead
+ * @deprecated please use {@link OtelSentryPropagator} instead
  */
 @Deprecated
 public final class SentryPropagator implements TextMapPropagator {

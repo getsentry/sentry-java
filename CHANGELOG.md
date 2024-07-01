@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-alpha.2
 
 ### Breaking Changes
 
@@ -15,11 +15,15 @@
 ### Features
 
 - Our `sentry-opentelemetry-agent` has been completely reworked and now plays nicely with the rest of the Java SDK
-  - NOTE: Not all features have been implemented yet for the OpenTelemetry agent.  
-  - You can add `sentry-opentelemetry-agent` to your setup by downloading the latest release and using it when starting up your application
-    - `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
-    - Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
-    - You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be vaild.
+  - You may also want to give this new agent a try even if you haven't used OpenTelemetry (with Sentry) before. It offers support for [many more libraries and frameworks](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md), improving on our trace propagation, `Scopes` (used to be `Hub`) propagation as well as performance instrumentation (i.e. more spans).
+  - If you are using a framework we did not support before and currently resort to manual instrumentation, please give the agent a try. See [here for a list of supported libraries, frameworks and application servers](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md). 
+  - NOTE: Not all features have been implemented yet for the OpenTelemetry agent. Features of note that are not working yet:
+    - Metrics
+    - Measurements
+    - `forceFinish` on transaction
+    - `scheduleFinish` on transaction
+    - see [#3436](https://github.com/getsentry/sentry-java/issues/3436) for a more up-to-date list of features we have (not) implemented
+  - Please see "Installing `sentry-opentelemetry-agent`" for more details on how to set up the agent.
   - What's new about the Agent
     - When the OpenTelemetry Agent is used, Sentry API creates OpenTelemetry spans under the hood, handing back a wrapper object which bridges the gap between traditional Sentry API and OpenTelemetry. We might be replacing some of the Sentry performance API in the future.
       - This is achieved by configuring the SDK to use `OtelSpanFactory` instead of `DefaultSpanFactory` which is done automatically by the auto init of the Java Agent. 
@@ -34,13 +38,49 @@
 
 ### Fixes
 
-- `TracesSampler` is now only created once in `SentryOptions` instead of creating a new one for every `Hub` (which is now `Scopes`). This means we're now creating fewwer `SecureRandom` instances.
+- `TracesSampler` is now only created once in `SentryOptions` instead of creating a new one for every `Hub` (which is now `Scopes`). This means we're now creating fewer `SecureRandom` instances.
 - Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
 - Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
 - Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
 - Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
 - Properly reset metric flush flag on metric emission ([#3493](https://github.com/getsentry/sentry-java/pull/3493))
 
+### Migration Guide / Deprecations
+
+- Classes used for the previous version of the Sentry OpenTelemetry Java Agent have been deprecated (`SentrySpanProcessor`, `SentryPropagator`, `OpenTelemetryLinkErrorEventProcessor`)
+- Sentry OpenTelemetry Java Agent has been reworked and now allows you to manually create spans using Sentry API as well.
+- Please see "Installing `sentry-opentelemetry-agent`" for more details on how to set up the agent. 
+
+### Installing `sentry-opentelemetry-agent` 
+
+#### Upgrading from a previous agent
+If you've been using the previous version of `sentry-opentelemetry-agent`, simply replace the agent JAR with the [latest release](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agent?smo=true) and start your application. That should be it.
+
+#### New to the agent
+If you've not been using OpenTelemetry before, you can add `sentry-opentelemetry-agent` to your setup by downloading the latest release and using it when starting up your application
+    - `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
+    - Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
+    - You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be valid.
+
+If you want to skip auto initialization of the SDK performed by the agent, please follow the steps above and set the environment variable `SENTRY_AUTO_INIT` to `false` then add the following to your `Sentry.init`:
+
+```
+Sentry.init(options -> {
+  options.setDsn("https://3d2ac63d6e1a4c6e9214443678f119a3@o87286.ingest.us.sentry.io/1801383");
+  OpenTelemetryUtil.applyOpenTelemetryOptions(options);
+  ...
+});
+```
+
+If you're using our Spring (Boot) integration with auto init, use the following:
+```
+@Bean
+Sentry.OptionsConfiguration<SentryOptions> optionsConfiguration() {
+  return (options) -> {
+    OpenTelemetryUtil.applyOpenTelemetryOptions(options);
+  };
+}
+```
 
 ### Dependencies
 
