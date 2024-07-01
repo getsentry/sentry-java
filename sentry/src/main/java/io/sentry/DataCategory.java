@@ -14,6 +14,7 @@ public enum DataCategory {
   Profile("profile"),
   MetricBucket("metric_bucket"),
   Transaction("transaction"),
+  Span("span"),
   Security("security"),
   UserReport("user_report"),
   Unknown("unknown");
