@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Report dropped spans ([#3528](https://github.com/getsentry/sentry-java/pull/3528))
+
 ### Fixes
 
 - Fix duplicate session start for React Native ([#3504](https://github.com/getsentry/sentry-java/pull/3504))
