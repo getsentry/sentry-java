@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fix duplicate session start for React Native ([#3504](https://github.com/getsentry/sentry-java/pull/3504))
 - Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
 - Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
 - Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
@@ -12,6 +13,8 @@
 - Use SecureRandom in favor of Random for Metrics ([#3495](https://github.com/getsentry/sentry-java/pull/3495))
 - Fix UncaughtExceptionHandlerIntegration Memory Leak ([#3398](https://github.com/getsentry/sentry-java/pull/3398))
 - Deprecated `User.segment`. Use a custom tag or context instead. ([#3511](https://github.com/getsentry/sentry-java/pull/3511))
+- Fix duplicated http spans ([#3526](https://github.com/getsentry/sentry-java/pull/3526))
+- When capturing unhandled hybrid exception session should be ended and new start if need ([#3480](https://github.com/getsentry/sentry-java/pull/3480))
 
 ### Dependencies
 
