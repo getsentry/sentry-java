@@ -412,7 +412,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       final @NotNull Hint hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
-      int spanCountBeforeProcessor = transaction.getSpans().size();
+      final int spanCountBeforeProcessor = transaction.getSpans().size();
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
@@ -424,7 +424,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
                 "An exception occurred while processing transaction by processor: %s",
                 processor.getClass().getName());
       }
-      int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
+      final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
       if (transaction == null) {
         options
@@ -444,7 +444,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         break;
       } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
         // If the callback removed some spans, we report it
-        int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
+        final int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
         options
             .getLogger()
             .log(
@@ -455,7 +455,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, droppedSpanCount);
-        break;
       }
     }
     return transaction;
@@ -687,9 +686,9 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       return SentryId.EMPTY_ID;
     }
 
-    int spanCountBeforeCallback = transaction.getSpans().size();
+    final int spanCountBeforeCallback = transaction.getSpans().size();
     transaction = executeBeforeSendTransaction(transaction, hint);
-    int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
+    final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
 
     if (transaction == null) {
       options
@@ -706,7 +705,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       return SentryId.EMPTY_ID;
     } else if (spanCountAfterCallback < spanCountBeforeCallback) {
       // If the callback removed some spans, we report it
-      int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
+      final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
       options
           .getLogger()
           .log(
