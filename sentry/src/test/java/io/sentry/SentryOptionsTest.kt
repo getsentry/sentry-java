@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.SentryOptions.RequestSize
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.mock
 import java.io.File
@@ -371,6 +372,8 @@ class SentryOptionsTest {
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
         externalOptions.isEnableBackpressureHandling = false
+        externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
+        externalOptions.isSendDefaultPii = true
         externalOptions.cron = SentryOptions.Cron().apply {
             defaultCheckinMargin = 10L
             defaultMaxRuntime = 30L
@@ -415,6 +418,8 @@ class SentryOptionsTest {
         assertEquals(40L, options.cron?.defaultFailureIssueThreshold)
         assertEquals(50L, options.cron?.defaultRecoveryThreshold)
         assertEquals("America/New_York", options.cron?.defaultTimezone)
+        assertTrue(options.isSendDefaultPii)
+        assertEquals(RequestSize.MEDIUM, options.maxRequestBodySize)
     }
 
     @Test
