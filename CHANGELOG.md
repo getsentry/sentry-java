@@ -4,7 +4,7 @@
 
 ### Features
 
-- Report dropped spans ([#3528](https://github.com/getsentry/sentry-java/pull/3528))
+- Report dropped spans ([#3536](https://github.com/getsentry/sentry-java/pull/3536))
 
 ### Breaking Changes
 
