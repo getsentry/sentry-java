@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.11.0
 
 ### Features
 
