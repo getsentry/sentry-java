@@ -588,8 +588,6 @@ class SentryTracerTest {
             assertEquals("environment", it.environment)
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
-            // assertEquals("user-id", it.userId)
-            assertEquals("pro", it.userSegment)
         }
     }
 
