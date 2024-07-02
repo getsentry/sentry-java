@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Spring Boot to 3.3.1 ([#3541](https://github.com/getsentry/sentry-java/pull/3541))
+
 ## 7.11.0
 
 ### Features
