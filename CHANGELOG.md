@@ -6,6 +6,10 @@
 
 - `sentry-android-okhttp` has been removed in favor of `sentry-okhttp`, removing android dependency from the module ([#3510](https://github.com/getsentry/sentry-java/pull/3510))
 
+### Fixes
+
+- Removed user segment ([#3512](https://github.com/getsentry/sentry-java/pull/3512))
+
 ## 8.0.0-alpha.2
 
 ### Behavioural Changes

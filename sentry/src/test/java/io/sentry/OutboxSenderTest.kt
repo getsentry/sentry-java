@@ -180,7 +180,6 @@ class OutboxSenderTest {
                 assertEquals("1.0-beta.1", it.release)
                 assertEquals("prod", it.environment)
                 assertEquals("usr1", it.userId)
-                assertEquals("pro", it.userSegment)
                 assertEquals("tx1", it.transaction)
             },
             any()
