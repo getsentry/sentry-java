@@ -14,7 +14,6 @@ import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.Looper
 import android.view.PixelCopy
 import android.view.View
@@ -27,11 +26,14 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.getVisibleRects
+import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
 import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
@@ -43,9 +45,11 @@ internal class ScreenshotRecorder(
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
+    private val recorder by lazy {
+        Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
+    }
     private var rootView: WeakReference<View>? = null
-    private val thread = HandlerThread("SentryReplayRecorder").also { it.start() }
-    private val handler = Handler(thread.looper)
+    private val handler = Handler(Looper.getMainLooper())
     private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint = Paint()
     private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
@@ -62,14 +66,12 @@ internal class ScreenshotRecorder(
     private var lastScreenshot: Bitmap? = null
 
     fun capture() {
-        val viewHierarchy = pendingViewHierarchy.getAndSet(null)
-
         if (!isCapturing.get()) {
             options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
             return
         }
 
-        if (!contentChanged.get() && lastScreenshot != null) {
+        if (!contentChanged.get() && lastScreenshot != null && !lastScreenshot!!.isRecycled) {
             options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
 
             lastScreenshot?.let {
@@ -93,14 +95,15 @@ internal class ScreenshotRecorder(
         }
 
         val bitmap = Bitmap.createBitmap(
-            root.width,
-            root.height,
+            config.recordingWidth,
+            config.recordingHeight,
             Bitmap.Config.ARGB_8888
         )
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
-        Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+        Handler(Looper.getMainLooper()).post {
             try {
+                contentChanged.set(false)
                 PixelCopy.request(
                     window,
                     bitmap,
@@ -111,20 +114,17 @@ internal class ScreenshotRecorder(
                             return@request
                         }
 
-                        val scaledBitmap: Bitmap
-
-                        if (viewHierarchy == null) {
+                        if (contentChanged.get()) {
                             options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
                             bitmap.recycle()
                             return@request
-                        } else {
-                            scaledBitmap = Bitmap.createScaledBitmap(
-                                bitmap,
-                                config.recordingWidth,
-                                config.recordingHeight,
-                                true
-                            )
-                            val canvas = Canvas(scaledBitmap)
+                        }
+
+                        val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
+                        root.traverse(viewHierarchy)
+
+                        recorder.submit {
+                            val canvas = Canvas(bitmap)
                             canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->
                                 if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
@@ -136,14 +136,10 @@ internal class ScreenshotRecorder(
 
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
-                                            singlePixelBitmapCanvas.drawBitmap(
-                                                bitmap,
-                                                node.visibleRect,
-                                                Rect(0, 0, 1, 1),
-                                                null
-                                            )
-                                            listOf(node.visibleRect) to singlePixelBitmap.getPixel(0, 0)
+                                            listOf(node.visibleRect) to
+                                                bitmap.dominantColorForRect(node.visibleRect)
                                         }
+
                                         is TextViewHierarchyNode -> {
                                             node.layout.getVisibleRects(
                                                 node.visibleRect,
@@ -151,6 +147,7 @@ internal class ScreenshotRecorder(
                                                 node.paddingTop
                                             ) to (node.dominantColor ?: Color.BLACK)
                                         }
+
                                         else -> {
                                             listOf(node.visibleRect) to Color.BLACK
                                         }
@@ -163,16 +160,15 @@ internal class ScreenshotRecorder(
                                 }
                                 return@traverse true
                             }
+
+                            val screenshot = bitmap.copy(ARGB_8888, false)
+                            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+                            lastScreenshot?.recycle()
+                            lastScreenshot = screenshot
+                            contentChanged.set(false)
+
+                            bitmap.recycle()
                         }
-
-                        val screenshot = scaledBitmap.copy(ARGB_8888, false)
-                        screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-                        lastScreenshot?.recycle()
-                        lastScreenshot = screenshot
-                        contentChanged.set(false)
-
-                        scaledBitmap.recycle()
-                        bitmap.recycle()
                     },
                     handler
                 )
@@ -189,10 +185,6 @@ internal class ScreenshotRecorder(
             options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
             return
         }
-
-        val rootNode = ViewHierarchyNode.fromView(root, null, 0, options)
-        root.traverse(rootNode)
-        pendingViewHierarchy.set(rootNode)
 
         contentChanged.set(true)
     }
@@ -228,7 +220,30 @@ internal class ScreenshotRecorder(
         lastScreenshot?.recycle()
         pendingViewHierarchy.set(null)
         isCapturing.set(false)
-        thread.quitSafely()
+        recorder.gracefullyShutdown(options)
+    }
+
+    private fun Bitmap.dominantColorForRect(rect: Rect): Int {
+        // TODO: maybe this ceremony can be just simplified to
+        // TODO: multiplying the visibleRect by the prescaledMatrix
+        val visibleRect = Rect(rect)
+        val visibleRectF = RectF(visibleRect)
+
+        // since we take screenshot with lower scale, we also
+        // have to apply the same scale to the visibleRect to get the
+        // correct screenshot part to determine the dominant color
+        prescaledMatrix.mapRect(visibleRectF)
+        // round it back to integer values, because drawBitmap below accepts Rect only
+        visibleRectF.round(visibleRect)
+        // draw part of the screenshot (visibleRect) to a single pixel bitmap
+        singlePixelBitmapCanvas.drawBitmap(
+            this,
+            visibleRect,
+            Rect(0, 0, 1, 1),
+            null
+        )
+        // get the pixel color (= dominant color)
+        return singlePixelBitmap.getPixel(0, 0)
     }
 
     private fun View.traverse(parentNode: ViewHierarchyNode) {
@@ -244,12 +259,22 @@ internal class ScreenshotRecorder(
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child != null) {
-                val childNode = ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
+                val childNode =
+                    ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
                 childNodes.add(childNode)
                 child.traverse(childNode)
             }
         }
         parentNode.children = childNodes
+    }
+
+    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
+        private var cnt = 0
+        override fun newThread(r: Runnable): Thread {
+            val ret = Thread(r, "SentryReplayRecorder-" + cnt++)
+            ret.setDaemon(true)
+            return ret
+        }
     }
 }
 
