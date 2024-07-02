@@ -6,6 +6,11 @@
 
 - `sentry-android-okhttp` has been removed in favor of `sentry-okhttp`, removing android dependency from the module ([#3510](https://github.com/getsentry/sentry-java/pull/3510))
 
+### Fixes
+
+- Support spans that are split into multiple batches ([#3539](https://github.com/getsentry/sentry-java/pull/3539))
+  - When spans belonging to a single transaction were split into multiple batches for SpanExporter, we did not add all spans because the isSpanTooOld check wasn't inverted.
+
 ## 8.0.0-alpha.2
 
 ### Behavioural Changes
