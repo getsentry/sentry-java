@@ -74,7 +74,7 @@ internal class ScreenshotRecorder(
             return
         }
 
-        if (!contentChanged.get() && lastScreenshot != null) {
+        if (!contentChanged.get() && lastScreenshot != null && !lastScreenshot!!.isRecycled) {
             options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
 
             lastScreenshot?.let {
@@ -112,21 +112,13 @@ internal class ScreenshotRecorder(
                         bitmap,
                         { copyResult: Int ->
                             if (copyResult != PixelCopy.SUCCESS) {
-                                options.logger.log(
-                                    INFO,
-                                    "Failed to capture replay recording: %d",
-                                    copyResult
-                                )
+                                options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
                                 bitmap.recycle()
                                 return@request
                             }
 
-                            // should never happen, since this callback is called on the main thread
                             if (contentChanged.get()) {
-                                options.logger.log(
-                                    INFO,
-                                    "Failed to determine view hierarchy, not capturing"
-                                )
+                                options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
                                 bitmap.recycle()
                                 return@request
                             }
@@ -147,22 +139,8 @@ internal class ScreenshotRecorder(
 
                                         val (visibleRects, color) = when (node) {
                                             is ImageViewHierarchyNode -> {
-                                                // TODO: maybe this ceremony can be just simplified to
-                                                // TODO: multiplying the visibleRect by the prescaledMatrix
-                                                val visibleRect = Rect(node.visibleRect)
-                                                val visibleRectF = RectF(visibleRect)
-                                                prescaledMatrix.mapRect(visibleRectF)
-                                                visibleRectF.round(visibleRect)
-                                                singlePixelBitmapCanvas.drawBitmap(
-                                                    bitmap,
-                                                    visibleRect,
-                                                    Rect(0, 0, 1, 1),
-                                                    null
-                                                )
-                                                listOf(node.visibleRect) to singlePixelBitmap.getPixel(
-                                                    0,
-                                                    0
-                                                )
+                                                listOf(node.visibleRect) to
+                                                    bitmap.dominantColorForRect(node.visibleRect)
                                             }
 
                                             is TextViewHierarchyNode -> {
@@ -180,12 +158,7 @@ internal class ScreenshotRecorder(
 
                                         maskingPaint.setColor(color)
                                         visibleRects.forEach { rect ->
-                                            canvas.drawRoundRect(
-                                                RectF(rect),
-                                                10f,
-                                                10f,
-                                                maskingPaint
-                                            )
+                                            canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
                                         }
                                     }
                                     return@traverse true
@@ -251,6 +224,29 @@ internal class ScreenshotRecorder(
         pendingViewHierarchy.set(null)
         isCapturing.set(false)
         recorder.gracefullyShutdown(options)
+    }
+
+    private fun Bitmap.dominantColorForRect(rect: Rect): Int {
+        // TODO: maybe this ceremony can be just simplified to
+        // TODO: multiplying the visibleRect by the prescaledMatrix
+        val visibleRect = Rect(rect)
+        val visibleRectF = RectF(visibleRect)
+
+        // since we take screenshot with lower scale, we also
+        // have to apply the same scale to the visibleRect to get the
+        // correct screenshot part to determine the dominant color
+        prescaledMatrix.mapRect(visibleRectF)
+        // round it back to integer values, because drawBitmap below accepts Rect only
+        visibleRectF.round(visibleRect)
+        // draw part of the screenshot (visibleRect) to a single pixel bitmap
+        singlePixelBitmapCanvas.drawBitmap(
+            this,
+            visibleRect,
+            Rect(0, 0, 1, 1),
+            null
+        )
+        // get the pixel color (= dominant color)
+        return singlePixelBitmap.getPixel(0, 0)
     }
 
     private fun View.traverse(parentNode: ViewHierarchyNode) {
