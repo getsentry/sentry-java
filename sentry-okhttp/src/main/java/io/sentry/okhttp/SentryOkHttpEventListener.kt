@@ -406,6 +406,9 @@ public open class SentryOkHttpEventListener(
 
     private fun canCreateEventSpan(): Boolean {
         // If the wrapped EventListener is ours, we shouldn't create spans, as the originalEventListener already did it
-        return originalEventListener !is SentryOkHttpEventListener
+        // In case SentryOkHttpEventListener from sentry-android-okhttp is used, the is check won't work so we check
+        // for the class name as well.
+        return originalEventListener !is SentryOkHttpEventListener &&
+            "io.sentry.android.okhttp.SentryOkHttpEventListener" != originalEventListener?.javaClass?.name
     }
 }
