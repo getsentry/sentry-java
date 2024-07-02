@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Support spans that are split into multiple batches ([#3539](https://github.com/getsentry/sentry-java/pull/3539))
+  - When spans belonging to a single transaction were split into multiple batches for SpanExporter, we did not add all spans because the isSpanTooOld check wasn't inverted.
 - Parse and use `send-default-pii` and `max-request-body-size` from `sentry.properties` ([#3534](https://github.com/getsentry/sentry-java/pull/3534))
 
 ## 8.0.0-alpha.2

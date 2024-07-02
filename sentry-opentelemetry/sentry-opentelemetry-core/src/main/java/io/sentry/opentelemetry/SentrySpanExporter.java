@@ -105,7 +105,8 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull SentryInstantDate now = new SentryInstantDate();
 
     final @NotNull List<SpanData> nonExpired =
-        remaining.stream().filter((span) -> isSpanTooOld(span, now)).collect(Collectors.toList());
+        remaining.stream().filter((span) -> !isSpanTooOld(span, now)).collect(Collectors.toList());
+
     this.finishedSpans.addAll(nonExpired);
 
     // TODO
