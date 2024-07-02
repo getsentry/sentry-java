@@ -28,7 +28,7 @@ jobs:
         run: |
           ./gradlew aggregateJavadocs
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # pin@4.5.0
+        uses: JamesIves/github-pages-deploy-action@5c6e9e9f3672ce8fd37b9856193d2a537941e66c # pin@4.6.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
