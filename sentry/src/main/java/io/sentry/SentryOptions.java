@@ -487,6 +487,7 @@ public class SentryOptions {
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
    */
+  @ApiStatus.Experimental
   private boolean enableScreenTracking = true;
 
   /**
@@ -2409,10 +2410,12 @@ public class SentryOptions {
         replayController != null ? replayController : NoOpReplayController.getInstance();
   }
 
+  @ApiStatus.Experimental
   public boolean isEnableScreenTracking() {
     return enableScreenTracking;
   }
 
+  @ApiStatus.Experimental
   public void setEnableScreenTracking(final boolean enableScreenTracking) {
     this.enableScreenTracking = enableScreenTracking;
   }
