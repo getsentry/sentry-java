@@ -319,6 +319,7 @@ class SentryAndroidTest {
     @Test
     fun `init does not start a session if one is already running`() {
         val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
 
         initSentryWithForegroundImportance(true, { options ->
             options.addIntegration { hub, _ ->
@@ -349,7 +350,7 @@ class SentryAndroidTest {
             }
 
             var session: Session? = null
-            Sentry.getCurrentHub().configureScope { scope ->
+            Sentry.getCurrentScopes().configureScope { scope ->
                 session = scope.session
             }
             callback(session)
@@ -361,7 +362,7 @@ class SentryAndroidTest {
         fixture.initSut { options ->
             options.isEnableAutoSessionTracking = false
         }
-        Sentry.getCurrentHub().withScope { scope ->
+        Sentry.getCurrentScopes().withScope { scope ->
             assertNull(scope.session)
         }
     }
@@ -397,7 +398,7 @@ class SentryAndroidTest {
             it.release = "io.sentry.sample@1.1.0+220"
             it.environment = "debug"
             // this is necessary to delay the AnrV2Integration processing to execute the configure
-            // scope block below (otherwise it won't be possible as hub is no-op before .init)
+            // scope block below (otherwise it won't be possible as scopes is no-op before .init)
             it.executorService.submit {
                 Sentry.configureScope { scope ->
                     // make sure the scope values changed to test that we're still using previously

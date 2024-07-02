@@ -2,11 +2,13 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.security.SecureRandom;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class TracesSampler {
+@ApiStatus.Internal
+public final class TracesSampler {
   private static final @NotNull Double DEFAULT_TRACES_SAMPLE_RATE = 1.0;
 
   private final @NotNull SentryOptions options;
@@ -23,7 +25,7 @@ final class TracesSampler {
   }
 
   @NotNull
-  TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
+  public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {

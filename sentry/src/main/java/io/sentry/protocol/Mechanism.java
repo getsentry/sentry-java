@@ -67,6 +67,18 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
    * for grouping or display purposes.
    */
   private @Nullable Boolean synthetic;
+  /**
+   * Exception ID. Used. e.g. for exception groups to build a hierarchy. This is referenced as
+   * parent by child exceptions which for Java SDK means Throwable.getSuppressed().
+   */
+  private @Nullable Integer exceptionId;
+  /** Parent exception ID. Used e.g. for exception groups to build a hierarchy. */
+  private @Nullable Integer parentId;
+  /**
+   * Whether this is a group of exceptions. For Java SDK this means there were suppressed
+   * exceptions.
+   */
+  private @Nullable Boolean exceptionGroup;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -140,6 +152,30 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
     this.synthetic = synthetic;
   }
 
+  public @Nullable Integer getExceptionId() {
+    return exceptionId;
+  }
+
+  public void setExceptionId(final @Nullable Integer exceptionId) {
+    this.exceptionId = exceptionId;
+  }
+
+  public @Nullable Integer getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(final @Nullable Integer parentId) {
+    this.parentId = parentId;
+  }
+
+  public @Nullable Boolean isExceptionGroup() {
+    return exceptionGroup;
+  }
+
+  public void setExceptionGroup(final @Nullable Boolean exceptionGroup) {
+    this.exceptionGroup = exceptionGroup;
+  }
+
   // JsonKeys
 
   public static final class JsonKeys {
@@ -150,6 +186,9 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
     public static final String META = "meta";
     public static final String DATA = "data";
     public static final String SYNTHETIC = "synthetic";
+    public static final String EXCEPTION_ID = "exception_id";
+    public static final String PARENT_ID = "parent_id";
+    public static final String IS_EXCEPTION_GROUP = "is_exception_group";
   }
 
   // JsonUnknown
@@ -190,6 +229,15 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
     }
     if (synthetic != null) {
       writer.name(JsonKeys.SYNTHETIC).value(synthetic);
+    }
+    if (exceptionId != null) {
+      writer.name(JsonKeys.EXCEPTION_ID).value(logger, exceptionId);
+    }
+    if (parentId != null) {
+      writer.name(JsonKeys.PARENT_ID).value(logger, parentId);
+    }
+    if (exceptionGroup != null) {
+      writer.name(JsonKeys.IS_EXCEPTION_GROUP).value(exceptionGroup);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -237,6 +285,15 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.SYNTHETIC:
             mechanism.synthetic = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.EXCEPTION_ID:
+            mechanism.exceptionId = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.PARENT_ID:
+            mechanism.parentId = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.IS_EXCEPTION_GROUP:
+            mechanism.exceptionGroup = reader.nextBooleanOrNull();
             break;
           default:
             if (unknown == null) {

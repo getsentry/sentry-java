@@ -21,7 +21,7 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
 
   public MonitorConfig(final @NotNull MonitorSchedule schedule) {
     this.schedule = schedule;
-    final SentryOptions.Cron defaultCron = HubAdapter.getInstance().getOptions().getCron();
+    final SentryOptions.Cron defaultCron = ScopesAdapter.getInstance().getOptions().getCron();
     if (defaultCron != null) {
       this.checkinMargin = defaultCron.getDefaultCheckinMargin();
       this.maxRuntime = defaultCron.getDefaultMaxRuntime();

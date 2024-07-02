@@ -2,8 +2,8 @@ package io.sentry.spring.boot
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -39,10 +39,10 @@ class SentrySpanWebClientCustomizerTest {
     class Fixture {
         lateinit var sentryOptions: SentryOptions
         lateinit var scope: IScope
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         var mockServer = MockWebServer()
         lateinit var transaction: SentryTracer
-        private val customizer = SentrySpanWebClientCustomizer(hub)
+        private val customizer = SentrySpanWebClientCustomizer(scopes)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
             sentryOptions = SentryOptions().apply {
@@ -54,11 +54,11 @@ class SentrySpanWebClientCustomizerTest {
                 dsn = "http://key@localhost/proj"
             }
             scope = Scope(sentryOptions)
-            whenever(hub.options).thenReturn(sentryOptions)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(
+            whenever(scopes.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(
                 any()
             )
-            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
             val webClientBuilder = WebClient.builder()
             customizer.customize(webClientBuilder)
             val webClient = webClientBuilder.build()
@@ -66,7 +66,7 @@ class SentrySpanWebClientCustomizerTest {
             if (isTransactionActive) {
                 val scope = Scope(sentryOptions)
                 scope.transaction = transaction
-                whenever(hub.span).thenReturn(transaction)
+                whenever(scopes.span).thenReturn(transaction)
             }
 
             val dispatcher: Dispatcher = object : Dispatcher() {
@@ -238,7 +238,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
@@ -261,7 +261,7 @@ class SentrySpanWebClientCustomizerTest {
                 .block()
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
@@ -281,7 +281,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
@@ -304,7 +304,7 @@ class SentrySpanWebClientCustomizerTest {
                 .block()
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])

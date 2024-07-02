@@ -21,7 +21,7 @@ class PreviousSessionFinalizerTest {
 
     class Fixture {
         val options = SentryOptions()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val logger = mock<ILogger>()
         lateinit var sessionFile: File
 
@@ -61,7 +61,7 @@ class PreviousSessionFinalizerTest {
                     nativeCrashMarker.writeText(nativeCrashTimestamp.toString())
                 }
             }
-            return PreviousSessionFinalizer(options, hub)
+            return PreviousSessionFinalizer(options, scopes)
         }
 
         fun sessionFromEnvelope(envelope: SentryEnvelope): Session {
@@ -80,7 +80,7 @@ class PreviousSessionFinalizerTest {
         val finalizer = fixture.getSut(null)
         finalizer.run()
 
-        verify(fixture.hub, never()).captureEnvelope(any())
+        verify(fixture.scopes, never()).captureEnvelope(any())
     }
 
     @Test
@@ -88,7 +88,7 @@ class PreviousSessionFinalizerTest {
         val finalizer = fixture.getSut(tmpDir, sessionFileExists = false)
         finalizer.run()
 
-        verify(fixture.hub, never()).captureEnvelope(any())
+        verify(fixture.scopes, never()).captureEnvelope(any())
     }
 
     @Test
@@ -96,7 +96,7 @@ class PreviousSessionFinalizerTest {
         val finalizer = fixture.getSut(tmpDir, sessionFileExists = true, session = null)
         finalizer.run()
 
-        verify(fixture.hub, never()).captureEnvelope(any())
+        verify(fixture.scopes, never()).captureEnvelope(any())
     }
 
     @Test
@@ -107,7 +107,7 @@ class PreviousSessionFinalizerTest {
         )
         finalizer.run()
 
-        verify(fixture.hub).captureEnvelope(
+        verify(fixture.scopes).captureEnvelope(
             argThat {
                 val session = fixture.sessionFromEnvelope(this)
                 session.release == "io.sentry.sample@1.0" &&
@@ -133,7 +133,7 @@ class PreviousSessionFinalizerTest {
         )
         finalizer.run()
 
-        verify(fixture.hub).captureEnvelope(
+        verify(fixture.scopes).captureEnvelope(
             argThat {
                 val session = fixture.sessionFromEnvelope(this)
                 session.release == "io.sentry.sample@1.0" &&
@@ -156,7 +156,7 @@ class PreviousSessionFinalizerTest {
         )
         finalizer.run()
 
-        verify(fixture.hub).captureEnvelope(
+        verify(fixture.scopes).captureEnvelope(
             argThat {
                 val session = fixture.sessionFromEnvelope(this)
                 session.release == "io.sentry.sample@1.0" &&
@@ -170,7 +170,7 @@ class PreviousSessionFinalizerTest {
         val finalizer = fixture.getSut(tmpDir, sessionFileExists = true)
         finalizer.run()
 
-        verify(fixture.hub, never()).captureEnvelope(any())
+        verify(fixture.scopes, never()).captureEnvelope(any())
         assertFalse(fixture.sessionFile.exists())
     }
 
@@ -189,7 +189,7 @@ class PreviousSessionFinalizerTest {
             argThat { startsWith("Timed out waiting to flush previous session to its own file in session finalizer.") },
             any<Any>()
         )
-        verify(fixture.hub, never()).captureEnvelope(any())
+        verify(fixture.scopes, never()).captureEnvelope(any())
     }
 
     @Test
@@ -202,6 +202,6 @@ class PreviousSessionFinalizerTest {
             argThat { startsWith("Timed out waiting to flush previous session to its own file in session finalizer.") },
             any<Any>()
         )
-        verify(fixture.hub, never()).captureEnvelope(any())
+        verify(fixture.scopes, never()).captureEnvelope(any())
     }
 }

@@ -1,6 +1,6 @@
 package io.sentry.spring.jakarta.webflux;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Sentry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -12,103 +12,97 @@ import reactor.util.context.Context;
 public final class ReactorUtils {
 
   /**
-   * Writes the current Sentry {@link IHub} to the {@link Context} and uses {@link
+   * Writes the current Sentry {@link IScopes} to the {@link Context} and uses {@link
    * io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
    * enabled - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+) -
    * having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
-  @ApiStatus.Experimental
   public static <T> Mono<T> withSentry(final @NotNull Mono<T> mono) {
-    final @NotNull IHub oldHub = Sentry.getCurrentHub();
-    final @NotNull IHub clonedHub = oldHub.clone();
-    return withSentryHub(mono, clonedHub);
+    final @NotNull IScopes oldScopes = Sentry.getCurrentScopes();
+    final @NotNull IScopes forkedScopes = oldScopes.forkedCurrentScope("reactor.withSentry");
+    return withSentryScopes(mono, forkedScopes);
   }
 
   /**
-   * Writes a new Sentry {@link IHub} cloned from the main hub to the {@link Context} and uses
+   * Writes a new Sentry {@link IScopes} forked from the main scopes to the {@link Context} and uses
    * {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
    * enabled - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+) -
    * having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
-  @ApiStatus.Experimental
-  public static <T> Mono<T> withSentryNewMainHubClone(final @NotNull Mono<T> mono) {
-    final @NotNull IHub hub = Sentry.cloneMainHub();
-    return withSentryHub(mono, hub);
+  public static <T> Mono<T> withSentryForkedRoots(final @NotNull Mono<T> mono) {
+    final @NotNull IScopes scopes = Sentry.forkedRootScopes("reactor");
+    return withSentryScopes(mono, scopes);
   }
 
   /**
-   * Writes the given Sentry {@link IHub} to the {@link Context} and uses {@link
+   * Writes the given Sentry {@link IScopes} to the {@link Context} and uses {@link
    * io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
    * enabled - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+) -
    * having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
-  @ApiStatus.Experimental
-  public static <T> Mono<T> withSentryHub(final @NotNull Mono<T> mono, final @NotNull IHub hub) {
+  public static <T> Mono<T> withSentryScopes(
+      final @NotNull Mono<T> mono, final @NotNull IScopes scopes) {
     /**
-     * WARNING: Cannot set the hub as current. It would be used by others to clone again causing
-     * shared hubs and scopes and thus leading to issues like unrelated breadcrumbs showing up in
-     * events.
+     * WARNING: Cannot set the scopes as current. It would be used by others to clone again causing
+     * shared scopes and thus leading to issues like unrelated breadcrumbs showing up in events.
      */
-    // Sentry.setCurrentHub(clonedHub);
+    // Sentry.setCurrentScopes(forkedScopes);
 
     return Mono.deferContextual(ctx -> mono)
-        .contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, hub));
+        .contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, scopes));
   }
 
   /**
-   * Writes the current Sentry {@link IHub} to the {@link Context} and uses {@link
+   * Writes the current Sentry {@link IScopes} to the {@link Context} and uses {@link
    * io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
    * enabled - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+) -
    * having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
-  @ApiStatus.Experimental
   public static <T> Flux<T> withSentry(final @NotNull Flux<T> flux) {
-    final @NotNull IHub oldHub = Sentry.getCurrentHub();
-    final @NotNull IHub clonedHub = oldHub.clone();
+    final @NotNull IScopes oldScopes = Sentry.getCurrentScopes();
+    final @NotNull IScopes forkedScopes = oldScopes.forkedCurrentScope("reactor.withSentry");
 
-    return withSentryHub(flux, clonedHub);
+    return withSentryScopes(flux, forkedScopes);
   }
 
   /**
-   * Writes a new Sentry {@link IHub} cloned from the main hub to the {@link Context} and uses
+   * Writes a new Sentry {@link IScopes} forked from the main scopes to the {@link Context} and uses
    * {@link io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
    * enabled - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+) -
    * having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
-  @ApiStatus.Experimental
-  public static <T> Flux<T> withSentryNewMainHubClone(final @NotNull Flux<T> flux) {
-    final @NotNull IHub hub = Sentry.cloneMainHub();
-    return withSentryHub(flux, hub);
+  public static <T> Flux<T> withSentryForkedRoots(final @NotNull Flux<T> flux) {
+    final @NotNull IScopes scopes = Sentry.forkedRootScopes("reactor");
+    return withSentryScopes(flux, scopes);
   }
 
   /**
-   * Writes the given Sentry {@link IHub} to the {@link Context} and uses {@link
+   * Writes the given Sentry {@link IScopes} to the {@link Context} and uses {@link
    * io.micrometer.context.ThreadLocalAccessor} to propagate it.
    *
    * <p>This requires - reactor.core.publisher.Hooks#enableAutomaticContextPropagation() to be
    * enabled - having `io.micrometer:context-propagation:1.0.2+` (provided by Spring Boot 3.0.3+) -
    * having `io.projectreactor:reactor-core:3.5.3+` (provided by Spring Boot 3.0.3+)
    */
-  @ApiStatus.Experimental
-  public static <T> Flux<T> withSentryHub(final @NotNull Flux<T> flux, final @NotNull IHub hub) {
+  public static <T> Flux<T> withSentryScopes(
+      final @NotNull Flux<T> flux, final @NotNull IScopes scopes) {
     /**
-     * WARNING: Cannot set the hub as current. It would be used by others to clone again causing
-     * shared hubs and scopes and thus leading to issues like unrelated breadcrumbs showing up in
-     * events.
+     * WARNING: Cannot set the scopes as current. It would be used by others to fork again causing
+     * shared scopes and thus leading to issues like unrelated breadcrumbs showing up in events.
      */
-    // Sentry.setCurrentHub(clonedHub);
+    // Sentry.setCurrentScopes(forkedScopes);
 
     return Flux.deferContextual(ctx -> flux)
-        .contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, hub));
+        .contextWrite(Context.of(SentryReactorThreadLocalAccessor.KEY, scopes));
   }
 }

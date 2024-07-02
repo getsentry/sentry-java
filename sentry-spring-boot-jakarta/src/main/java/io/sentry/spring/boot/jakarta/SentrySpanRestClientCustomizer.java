@@ -1,7 +1,7 @@
 package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.spring.jakarta.tracing.SentrySpanClientHttpRequestInterceptor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.web.client.RestClientCustomizer;
@@ -11,8 +11,8 @@ import org.springframework.web.client.RestClient;
 class SentrySpanRestClientCustomizer implements RestClientCustomizer {
   private final @NotNull SentrySpanClientHttpRequestInterceptor interceptor;
 
-  public SentrySpanRestClientCustomizer(final @NotNull IHub hub) {
-    this.interceptor = new SentrySpanClientHttpRequestInterceptor(hub, false);
+  public SentrySpanRestClientCustomizer(final @NotNull IScopes scopes) {
+    this.interceptor = new SentrySpanClientHttpRequestInterceptor(scopes, false);
   }
 
   @Override

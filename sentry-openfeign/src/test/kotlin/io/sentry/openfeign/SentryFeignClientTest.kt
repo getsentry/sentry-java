@@ -7,7 +7,7 @@ import feign.HeaderMap
 import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -37,7 +37,7 @@ import kotlin.test.fail
 class SentryFeignClientTest {
 
     class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val server = MockWebServer()
         val sentryTracer: SentryTracer
         val sentryOptions = SentryOptions().apply {
@@ -46,9 +46,9 @@ class SentryFeignClientTest {
         val scope = Scope(sentryOptions)
 
         init {
-            whenever(hub.options).thenReturn(sentryOptions)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+            whenever(scopes.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
         }
 
         fun getSut(
@@ -59,7 +59,7 @@ class SentryFeignClientTest {
             beforeSpan: SentryFeignClient.BeforeSpanCallback? = null
         ): MockApi {
             if (isSpanActive) {
-                whenever(hub.span).thenReturn(sentryTracer)
+                whenever(scopes.span).thenReturn(sentryTracer)
             }
             server.enqueue(
                 MockResponse()
@@ -70,12 +70,12 @@ class SentryFeignClientTest {
 
             return if (!networkError) {
                 Feign.builder()
-                    .addCapability(SentryCapability(hub, beforeSpan))
+                    .addCapability(SentryCapability(scopes, beforeSpan))
             } else {
                 val mockClient = mock<Client>()
                 whenever(mockClient.execute(any(), any())).thenThrow(RuntimeException::class.java)
                 Feign.builder()
-                    .client(SentryFeignClient(mockClient, hub, beforeSpan))
+                    .client(SentryFeignClient(mockClient, scopes, beforeSpan))
             }.target(MockApi::class.java, server.url("/").toUrl().toString())
         }
     }
@@ -201,7 +201,7 @@ class SentryFeignClientTest {
     fun `adds breadcrumb when http calls succeeds`() {
         val sut = fixture.getSut(responseBody = "response body")
         sut.postWithBody("request-body")
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(13, it.data["response_body_size"])
@@ -215,7 +215,7 @@ class SentryFeignClientTest {
     fun `adds breadcrumb when http calls succeeds even though response body is null`() {
         val sut = fixture.getSut(responseBody = "")
         sut.postWithBody("request-body")
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(0, it.data["response_body_size"])
@@ -236,7 +236,7 @@ class SentryFeignClientTest {
         } catch (e: Exception) {
             // ignore me
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
             },

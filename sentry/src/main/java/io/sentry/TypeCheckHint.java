@@ -55,6 +55,9 @@ public final class TypeCheckHint {
   /** Used for GraphQl handler exceptions. */
   public static final String GRAPHQL_HANDLER_PARAMETERS = "graphql:handlerParameters";
 
+  /** Used for GraphQl data fetcher breadcrumbs. */
+  public static final String GRAPHQL_DATA_FETCHING_ENVIRONMENT = "graphql:dataFetchingEnvironment";
+
   /** Used for JUL breadcrumbs. */
   public static final String JUL_LOG_RECORD = "jul:logRecord";
 

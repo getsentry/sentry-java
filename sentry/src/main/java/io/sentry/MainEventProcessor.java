@@ -307,4 +307,9 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   HostnameCache getHostnameCache() {
     return hostnameCache;
   }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 0L;
+  }
 }

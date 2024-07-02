@@ -27,7 +27,7 @@ class SentryWrapperTest {
     }
 
     @Test
-    fun `hub is reset to its state within the thread after supply is done`() {
+    fun `scopes is reset to state within the thread after isolated supply is done`() {
         Sentry.init {
             it.dsn = dsn
             it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
@@ -35,20 +35,20 @@ class SentryWrapperTest {
             }
         }
 
-        val mainHub = Sentry.getCurrentHub()
-        val threadedHub = Sentry.getCurrentHub().clone()
+        val mainScopes = Sentry.getCurrentScopes()
+        val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
         executor.submit {
-            Sentry.setCurrentHub(threadedHub)
+            Sentry.setCurrentScopes(threadedScopes)
         }.get()
 
-        assertEquals(mainHub, Sentry.getCurrentHub())
+        assertEquals(mainScopes, Sentry.getCurrentScopes())
 
         val callableFuture =
             CompletableFuture.supplyAsync(
                 SentryWrapper.wrapSupplier {
-                    assertNotEquals(mainHub, Sentry.getCurrentHub())
-                    assertNotEquals(threadedHub, Sentry.getCurrentHub())
+                    assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                    assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
                     "Result 1"
                 },
                 executor
@@ -57,13 +57,13 @@ class SentryWrapperTest {
         callableFuture.join()
 
         executor.submit {
-            assertNotEquals(mainHub, Sentry.getCurrentHub())
-            assertEquals(threadedHub, Sentry.getCurrentHub())
+            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+            assertEquals(threadedScopes, Sentry.getCurrentScopes())
         }.get()
     }
 
     @Test
-    fun `wrapped supply async isolates Hubs`() {
+    fun `wrapped supply async isolates Scopes`() {
         val capturedEvents = mutableListOf<SentryEvent>()
 
         Sentry.init {
@@ -115,7 +115,7 @@ class SentryWrapperTest {
     }
 
     @Test
-    fun `wrapped callable isolates Hubs`() {
+    fun `wrapped callable isolates Scopes`() {
         val capturedEvents = mutableListOf<SentryEvent>()
 
         Sentry.init {
@@ -164,25 +164,25 @@ class SentryWrapperTest {
     }
 
     @Test
-    fun `hub is reset to its state within the thread after callable is done`() {
+    fun `scopes is reset to state within the thread after isolated callable is done`() {
         Sentry.init {
             it.dsn = dsn
         }
 
-        val mainHub = Sentry.getCurrentHub()
-        val threadedHub = Sentry.getCurrentHub().clone()
+        val mainScopes = Sentry.getCurrentScopes()
+        val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
         executor.submit {
-            Sentry.setCurrentHub(threadedHub)
+            Sentry.setCurrentScopes(threadedScopes)
         }.get()
 
-        assertEquals(mainHub, Sentry.getCurrentHub())
+        assertEquals(mainScopes, Sentry.getCurrentScopes())
 
         val callableFuture =
             executor.submit(
                 SentryWrapper.wrapCallable {
-                    assertNotEquals(mainHub, Sentry.getCurrentHub())
-                    assertNotEquals(threadedHub, Sentry.getCurrentHub())
+                    assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                    assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
                     "Result 1"
                 }
             )
@@ -190,8 +190,8 @@ class SentryWrapperTest {
         callableFuture.get()
 
         executor.submit {
-            assertNotEquals(mainHub, Sentry.getCurrentHub())
-            assertEquals(threadedHub, Sentry.getCurrentHub())
+            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+            assertEquals(threadedScopes, Sentry.getCurrentScopes())
         }.get()
     }
 }

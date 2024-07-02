@@ -5,7 +5,7 @@ import com.apollographql.apollo3.api.http.HttpRequest
 import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloException
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
@@ -35,7 +35,7 @@ import kotlin.test.assertTrue
 class SentryApollo3InterceptorClientErrors {
     class Fixture {
         val server = MockWebServer()
-        lateinit var hub: IHub
+        lateinit var scopes: IScopes
 
         private val responseBodyOk =
             """{
@@ -75,7 +75,7 @@ class SentryApollo3InterceptorClientErrors {
         ): ApolloClient {
             SentryIntegrationPackageStorage.getInstance().clearStorage()
 
-            hub = mock<IHub>().apply {
+            scopes = mock<IScopes>().apply {
                 whenever(options).thenReturn(
                     SentryOptions().apply {
                         dsn = "https://key@sentry.io/proj"
@@ -84,7 +84,7 @@ class SentryApollo3InterceptorClientErrors {
                     }
                 )
             }
-            whenever(hub.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
+            whenever(scopes.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
 
             val response = MockResponse()
                 .setBody(responseBody)
@@ -102,7 +102,7 @@ class SentryApollo3InterceptorClientErrors {
             val builder = ApolloClient.Builder()
                 .serverUrl(server.url("?myQuery=query#myFragment").toString())
                 .sentryTracing(
-                    hub = hub,
+                    scopes = scopes,
                     captureFailedRequests = captureFailedRequests,
                     failedRequestTargets = failedRequestTargets
                 )
@@ -123,7 +123,7 @@ class SentryApollo3InterceptorClientErrors {
         val sut = fixture.getSut(captureFailedRequests = false, responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -132,7 +132,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes).captureEvent(any(), any<Hint>())
     }
 
     // endregion
@@ -165,7 +165,7 @@ class SentryApollo3InterceptorClientErrors {
         )
         executeQuery(sut)
 
-        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -174,7 +174,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes).captureEvent(any(), any<Hint>())
     }
 
     // endregion
@@ -187,7 +187,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val throwable = (it.throwableMechanism as ExceptionMechanismException)
                 assertEquals("SentryApollo3Interceptor", throwable.exceptionMechanism.type)
@@ -202,7 +202,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val throwable = (it.throwableMechanism as ExceptionMechanismException)
                 assertEquals("GraphQL Request failed, name: LaunchDetails, type: query", throwable.throwable.message)
@@ -217,7 +217,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val throwable = (it.throwableMechanism as ExceptionMechanismException)
                 assertTrue(throwable.isSnapshot)
@@ -238,7 +238,7 @@ class SentryApollo3InterceptorClientErrors {
 {"operationName":"LaunchDetails","variables":{"id":"83"},"query":"query LaunchDetails($escapeDolar: ID!) { launch(id: $escapeDolar) { id site mission { name missionPatch(size: LARGE) } rocket { name type } } }"}
             """.trimIndent()
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val request = it.request!!
 
@@ -262,7 +262,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val request = it.request!!
 
@@ -280,7 +280,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val response = it.contexts.response!!
 
@@ -300,7 +300,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val response = it.contexts.response!!
 
@@ -318,7 +318,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(listOf("LaunchDetails", "query", "200"), it.fingerprints)
             },
@@ -337,7 +337,7 @@ class SentryApollo3InterceptorClientErrors {
         executeQuery(sut)
 
         // HttpInterceptor does not throw for >= 400
-        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -345,7 +345,7 @@ class SentryApollo3InterceptorClientErrors {
         val sut =
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
 
-        whenever(fixture.hub.captureEvent(any(), any<Hint>())).thenThrow(RuntimeException())
+        whenever(fixture.scopes.captureEvent(any(), any<Hint>())).thenThrow(RuntimeException())
 
         executeQuery(sut)
     }
@@ -360,7 +360,7 @@ class SentryApollo3InterceptorClientErrors {
             fixture.getSut(responseBody = fixture.responseBodyNotOk)
         executeQuery(sut)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             any(),
             check<Hint> {
                 val request = it.get(TypeCheckHint.APOLLO_REQUEST)

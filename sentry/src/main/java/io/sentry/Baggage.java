@@ -39,13 +39,13 @@ public final class Baggage {
   @NotNull
   public static Baggage fromHeader(final @Nullable String headerValue) {
     return Baggage.fromHeader(
-        headerValue, false, HubAdapter.getInstance().getOptions().getLogger());
+        headerValue, false, ScopesAdapter.getInstance().getOptions().getLogger());
   }
 
   @NotNull
   public static Baggage fromHeader(final @Nullable List<String> headerValues) {
     return Baggage.fromHeader(
-        headerValues, false, HubAdapter.getInstance().getOptions().getLogger());
+        headerValues, false, ScopesAdapter.getInstance().getOptions().getLogger());
   }
 
   @ApiStatus.Internal
@@ -381,19 +381,18 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public void setValuesFromTransaction(
-      final @NotNull ITransaction transaction,
+      final @NotNull SentryId traceId,
       final @Nullable User user,
       final @NotNull SentryOptions sentryOptions,
-      final @Nullable TracesSamplingDecision samplingDecision) {
-    setTraceId(transaction.getSpanContext().getTraceId().toString());
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final @Nullable String transactionName,
+      final @Nullable TransactionNameSource transactionNameSource) {
+    setTraceId(traceId.toString());
     setPublicKey(new Dsn(sentryOptions.getDsn()).getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
     setUserSegment(user != null ? getSegment(user) : null);
-    setTransaction(
-        isHighQualityTransactionName(transaction.getTransactionNameSource())
-            ? transaction.getName()
-            : null);
+    setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
   }

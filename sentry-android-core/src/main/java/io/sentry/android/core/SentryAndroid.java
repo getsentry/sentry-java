@@ -4,8 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
@@ -90,7 +90,7 @@ public final class SentryAndroid {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
-            final LoadClass classLoader = new LoadClass();
+            final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
             final boolean isTimberUpstreamAvailable =
                 classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
@@ -104,7 +104,7 @@ public final class SentryAndroid {
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
-            final LoadClass loadClass = new LoadClass();
+            final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
             final ActivityFramesTracker activityFramesTracker =
                 new ActivityFramesTracker(loadClass, options);
 
@@ -147,13 +147,14 @@ public final class SentryAndroid {
           },
           true);
 
-      final @NotNull IHub hub = Sentry.getCurrentHub();
-      if (hub.getOptions().isEnableAutoSessionTracking() && ContextUtils.isForegroundImportance()) {
+      final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+      if (scopes.getOptions().isEnableAutoSessionTracking()
+          && ContextUtils.isForegroundImportance()) {
         // The LifecycleWatcher of AppLifecycleIntegration may already started a session
         // so only start a session if it's not already started
         // This e.g. happens on React Native, or e.g. on deferred SDK init
         final AtomicBoolean sessionStarted = new AtomicBoolean(false);
-        hub.configureScope(
+        scopes.configureScope(
             scope -> {
               final @Nullable Session currentSession = scope.getSession();
               if (currentSession != null && currentSession.getStarted() != null) {
@@ -161,8 +162,8 @@ public final class SentryAndroid {
               }
             });
         if (!sessionStarted.get()) {
-          hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-          hub.startSession();
+          scopes.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+          scopes.startSession();
         }
       }
     } catch (IllegalAccessException e) {

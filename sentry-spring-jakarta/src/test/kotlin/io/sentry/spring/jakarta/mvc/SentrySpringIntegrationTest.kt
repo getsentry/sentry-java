@@ -1,6 +1,6 @@
 package io.sentry.spring.jakarta.mvc
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryOptions
@@ -104,7 +104,7 @@ class SentrySpringIntegrationTest {
     lateinit var anotherService: AnotherService
 
     @Autowired
-    lateinit var hub: IHub
+    lateinit var scopes: IScopes
 
     @LocalServerPort
     var port: Int? = null
@@ -260,7 +260,7 @@ class SentrySpringIntegrationTest {
         try {
             someService.aMethodThrowing()
         } catch (e: Exception) {
-            hub.captureException(e)
+            scopes.captureException(e)
         }
         verify(transport).send(
             checkEvent {
@@ -276,7 +276,7 @@ class SentrySpringIntegrationTest {
         try {
             someService.aMethodWithInnerSpanThrowing()
         } catch (e: Exception) {
-            hub.captureException(e)
+            scopes.captureException(e)
         }
         verify(transport).send(
             checkEvent {
@@ -370,20 +370,20 @@ open class App {
     open fun springSecuritySentryUserProvider(sentryOptions: SentryOptions) = SpringSecuritySentryUserProvider(sentryOptions)
 
     @Bean
-    open fun sentryUserFilter(hub: IHub, @Lazy sentryUserProviders: List<SentryUserProvider>) = FilterRegistrationBean<SentryUserFilter>().apply {
-        this.filter = SentryUserFilter(hub, sentryUserProviders)
+    open fun sentryUserFilter(scopes: IScopes, @Lazy sentryUserProviders: List<SentryUserProvider>) = FilterRegistrationBean<SentryUserFilter>().apply {
+        this.filter = SentryUserFilter(scopes, sentryUserProviders)
         this.order = Ordered.LOWEST_PRECEDENCE
     }
 
     @Bean
-    open fun sentrySpringFilter(hub: IHub) = FilterRegistrationBean<SentrySpringFilter>().apply {
-        this.filter = SentrySpringFilter(hub)
+    open fun sentrySpringFilter(scopes: IScopes) = FilterRegistrationBean<SentrySpringFilter>().apply {
+        this.filter = SentrySpringFilter(scopes)
         this.order = Ordered.HIGHEST_PRECEDENCE
     }
 
     @Bean
-    open fun sentryTracingFilter(hub: IHub) = FilterRegistrationBean<SentryTracingFilter>().apply {
-        this.filter = SentryTracingFilter(hub)
+    open fun sentryTracingFilter(scopes: IScopes) = FilterRegistrationBean<SentryTracingFilter>().apply {
+        this.filter = SentryTracingFilter(scopes)
         this.order = Ordered.HIGHEST_PRECEDENCE + 1 // must run after SentrySpringFilter
     }
 
@@ -391,13 +391,13 @@ open class App {
     open fun sentryTaskDecorator() = SentryTaskDecorator()
 
     @Bean
-    open fun webClient(hub: IHub): WebClient {
+    open fun webClient(scopes: IScopes): WebClient {
         return WebClient.builder()
             .filter(
                 ExchangeFilterFunctions
                     .basicAuthentication("user", "password")
             )
-            .filter(SentrySpanClientWebRequestFilter(hub)).build()
+            .filter(SentrySpanClientWebRequestFilter(scopes)).build()
     }
 }
 

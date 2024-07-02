@@ -6,12 +6,12 @@ public final class io/sentry/okhttp/BuildConfig {
 public class io/sentry/okhttp/SentryOkHttpEventListener : okhttp3/EventListener {
 	public static final field Companion Lio/sentry/okhttp/SentryOkHttpEventListener$Companion;
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener$Factory;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener$Factory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lokhttp3/EventListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IScopes;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IScopes;Lokhttp3/EventListener$Factory;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;Lokhttp3/EventListener$Factory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IScopes;Lokhttp3/EventListener;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;Lokhttp3/EventListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lokhttp3/EventListener$Factory;)V
 	public fun <init> (Lokhttp3/EventListener;)V
 	public fun cacheConditionalHit (Lokhttp3/Call;Lokhttp3/Response;)V
@@ -50,9 +50,9 @@ public final class io/sentry/okhttp/SentryOkHttpEventListener$Companion {
 
 public class io/sentry/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;ZLjava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/sentry/okhttp/SentryOkHttpInterceptor$BeforeSpanCallback;)V
 	public fun intercept (Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 }

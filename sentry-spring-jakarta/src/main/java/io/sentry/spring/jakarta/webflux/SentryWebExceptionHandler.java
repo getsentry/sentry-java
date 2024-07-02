@@ -5,7 +5,7 @@ import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_REQUEST;
 import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_RESPONSE;
 
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
@@ -27,20 +27,20 @@ import reactor.core.publisher.Mono;
 @ApiStatus.Experimental
 public final class SentryWebExceptionHandler implements WebExceptionHandler {
   public static final String MECHANISM_TYPE = "Spring6WebFluxExceptionResolver";
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
-  public SentryWebExceptionHandler(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryWebExceptionHandler(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @Override
   public @NotNull Mono<Void> handle(
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull Throwable ex) {
-    final @Nullable IHub requestHub =
-        serverWebExchange.getAttributeOrDefault(SentryWebFilter.SENTRY_HUB_KEY, null);
-    final @NotNull IHub hubToUse = requestHub != null ? requestHub : hub;
+    final @Nullable IScopes requestScopes =
+        serverWebExchange.getAttributeOrDefault(SentryWebFilter.SENTRY_SCOPES_KEY, null);
+    final @NotNull IScopes scopesToUse = requestScopes != null ? requestScopes : scopes;
 
-    return ReactorUtils.withSentryHub(
+    return ReactorUtils.withSentryScopes(
             Mono.just(ex)
                 .map(
                     it -> {
@@ -61,12 +61,12 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
                             WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
                         hint.set(WEBFLUX_EXCEPTION_HANDLER_EXCHANGE, serverWebExchange);
 
-                        hub.captureEvent(event, hint);
+                        scopes.captureEvent(event, hint);
                       }
 
                       return it;
                     }),
-            hubToUse)
+            scopesToUse)
         .flatMap(it -> Mono.error(ex));
   }
 }

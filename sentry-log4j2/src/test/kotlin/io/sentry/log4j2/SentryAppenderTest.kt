@@ -1,7 +1,7 @@
 package io.sentry.log4j2
 
-import io.sentry.HubAdapter
 import io.sentry.ITransportFactory
+import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.checkEvent
@@ -49,7 +49,7 @@ class SentryAppenderTest {
             }
             loggerContext.start()
             val config: Configuration = loggerContext.configuration
-            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, HubAdapter.getInstance(), contextTags?.toTypedArray())
+            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, ScopesAdapter.getInstance(), contextTags?.toTypedArray())
             config.addAppender(appender)
 
             val ref = AppenderRef.createAppenderRef("sentry", null, null)
@@ -78,6 +78,7 @@ class SentryAppenderTest {
     @BeforeTest
     fun `clear MDC`() {
         ThreadContext.clearAll()
+        Sentry.close()
     }
 
     @Test
@@ -446,6 +447,6 @@ class SentryAppenderTest {
     @Test
     fun `sets the debug mode`() {
         fixture.getSut(debug = true)
-        assertTrue(HubAdapter.getInstance().options.isDebug)
+        assertTrue(ScopesAdapter.getInstance().options.isDebug)
     }
 }

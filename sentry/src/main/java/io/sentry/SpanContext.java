@@ -16,6 +16,7 @@ import org.jetbrains.annotations.TestOnly;
 @Open
 public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "trace";
+  public static final String DEFAULT_ORIGIN = "manual";
 
   /** Determines which trace the Span belongs to. */
   private final @NotNull SentryId traceId;
@@ -24,7 +25,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   private final @NotNull SpanId spanId;
 
   /** Id of a parent span. */
-  private final @Nullable SpanId parentSpanId;
+  private @Nullable SpanId parentSpanId;
 
   private transient @Nullable TracesSamplingDecision samplingDecision;
 
@@ -44,9 +45,13 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
   /** Describes the status of the Transaction. */
-  protected @Nullable String origin = "manual";
+  protected @Nullable String origin = DEFAULT_ORIGIN;
 
   private @Nullable Map<String, Object> unknown;
+
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  protected @Nullable Baggage baggage;
 
   public SpanContext(
       final @NotNull String operation, final @Nullable TracesSamplingDecision samplingDecision) {
@@ -68,7 +73,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision samplingDecision) {
-    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, "manual");
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, DEFAULT_ORIGIN);
   }
 
   @ApiStatus.Internal
@@ -145,6 +150,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   }
 
   public @NotNull String getOperation() {
+    // TODO [POTEL] use span name here
     return op;
   }
 
@@ -213,6 +219,34 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.origin = origin;
   }
 
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  public @Nullable Baggage getBaggage() {
+    return baggage;
+  }
+
+  @ApiStatus.Internal
+  public SpanContext copyForChild(
+      final @NotNull String operation,
+      final @Nullable SpanId parentSpanId,
+      final @Nullable SpanId spanId) {
+    return new SpanContext(
+        traceId,
+        spanId == null ? new SpanId() : spanId,
+        parentSpanId,
+        operation,
+        null,
+        samplingDecision,
+        null,
+        DEFAULT_ORIGIN);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -223,12 +257,12 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
         && Objects.equals(parentSpanId, that.parentSpanId)
         && op.equals(that.op)
         && Objects.equals(description, that.description)
-        && status == that.status;
+        && getStatus() == that.getStatus();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(traceId, spanId, parentSpanId, op, description, status);
+    return Objects.hash(traceId, spanId, parentSpanId, op, description, getStatus());
   }
 
   // region JsonSerializable
@@ -260,8 +294,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     if (description != null) {
       writer.name(JsonKeys.DESCRIPTION).value(description);
     }
-    if (status != null) {
-      writer.name(JsonKeys.STATUS).value(logger, status);
+    if (getStatus() != null) {
+      writer.name(JsonKeys.STATUS).value(logger, getStatus());
     }
     if (origin != null) {
       writer.name(JsonKeys.ORIGIN).value(logger, origin);

@@ -5,9 +5,9 @@ public final class io/sentry/apollo/BuildConfig {
 
 public final class io/sentry/apollo/SentryApolloInterceptor : com/apollographql/apollo/interceptor/ApolloInterceptor {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/apollo/SentryApolloInterceptor$BeforeSpanCallback;)V
-	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/apollo/SentryApolloInterceptor$BeforeSpanCallback;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo/SentryApolloInterceptor$BeforeSpanCallback;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo/SentryApolloInterceptor$BeforeSpanCallback;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/sentry/apollo/SentryApolloInterceptor$BeforeSpanCallback;)V
 	public fun dispose ()V
 	public fun interceptAsync (Lcom/apollographql/apollo/interceptor/ApolloInterceptor$InterceptorRequest;Lcom/apollographql/apollo/interceptor/ApolloInterceptorChain;Ljava/util/concurrent/Executor;Lcom/apollographql/apollo/interceptor/ApolloInterceptor$CallBack;)V

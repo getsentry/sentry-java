@@ -26,7 +26,7 @@ public final class SpotlightIntegration
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options = options;
     this.logger = options.getLogger();
 
