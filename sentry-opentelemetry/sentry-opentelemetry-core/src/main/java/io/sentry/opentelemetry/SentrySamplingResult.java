@@ -4,8 +4,10 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.samplers.SamplingDecision;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import io.sentry.TracesSamplingDecision;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class SentrySamplingResult implements SamplingResult {
   private final TracesSamplingDecision sentryDecision;
 

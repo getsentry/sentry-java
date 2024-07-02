@@ -109,10 +109,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       return id;
     }
 
-    public @Nullable String getSegment() {
-      return segment;
-    }
-
     // region json
 
     @Nullable

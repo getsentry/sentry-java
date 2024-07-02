@@ -9,6 +9,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
+import io.sentry.SentrySpanFactoryHolder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
 import io.sentry.util.SpanUtils;
@@ -31,14 +32,26 @@ public final class SentryAutoConfigurationCustomizerProvider
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
     final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
 
-    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
+    final @NotNull OtelSpanFactory spanFactory = new OtelSpanFactory();
+    SentrySpanFactoryHolder.setSpanFactory(spanFactory);
+    /**
+     * We're currently overriding the storage mechanism to allow for cleanup of non closed OTel
+     * scopes. These happen when using e.g. Sentry static API due to getCurrentScopes() invoking
+     * Context.makeCurrent and then ignoring the returned lifecycle token (OTel Scope). After fixing
+     * the classloader problem (sentry bootstrap dependency is currently in agent classloader) we
+     * can revisit and try again to set the storage instead of overriding it in the wrapper. We
+     * should try to use OTels StorageProvider mechanism instead.
+     */
+    //    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
+    ContextStorage.addWrapper(
+        (storage) -> new SentryContextStorage(new SentryOtelThreadLocalStorage()));
 
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
-            options.setSpanFactory(new OtelSpanFactory());
+            options.setSpanFactory(spanFactory);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             // TODO [POTEL] is detecting a version mismatch between application and agent possible?
             if (sdkVersion != null) {
@@ -55,8 +68,6 @@ public final class SentryAutoConfigurationCustomizerProvider
         SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
       }
     }
-
-    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
 
     autoConfiguration
         .addTracerProviderCustomizer(this::configureSdkTracerProvider)
@@ -150,7 +161,7 @@ public final class SentryAutoConfigurationCustomizerProvider
       SdkTracerProviderBuilder tracerProvider, ConfigProperties config) {
     return tracerProvider
         .setSampler(new SentrySampler())
-        .addSpanProcessor(new PotelSentrySpanProcessor())
+        .addSpanProcessor(new OtelSentrySpanProcessor())
         .addSpanProcessor(BatchSpanProcessor.builder(new SentrySpanExporter()).build());
   }
 

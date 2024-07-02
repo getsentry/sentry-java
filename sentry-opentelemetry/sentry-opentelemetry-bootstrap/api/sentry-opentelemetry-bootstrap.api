@@ -10,6 +10,11 @@ public final class io/sentry/opentelemetry/InternalSemanticAttributes {
 	public fun <init> ()V
 }
 
+public final class io/sentry/opentelemetry/OpenTelemetryUtil {
+	public fun <init> ()V
+	public static fun applyOpenTelemetryOptions (Lio/sentry/SentryOptions;)V
+}
+
 public final class io/sentry/opentelemetry/OtelContextScopesStorage : io/sentry/IScopesStorage {
 	public fun <init> ()V
 	public fun close ()V
@@ -157,6 +162,12 @@ public final class io/sentry/opentelemetry/SentryOtelKeys {
 	public static final field SENTRY_SCOPES_KEY Lio/opentelemetry/context/ContextKey;
 	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
 	public fun <init> ()V
+}
+
+public final class io/sentry/opentelemetry/SentryOtelThreadLocalStorage : io/opentelemetry/context/ContextStorage {
+	public fun <init> ()V
+	public fun attach (Lio/opentelemetry/context/Context;)Lio/opentelemetry/context/Scope;
+	public fun current ()Lio/opentelemetry/context/Context;
 }
 
 public final class io/sentry/opentelemetry/SentryWeakSpanStorage {

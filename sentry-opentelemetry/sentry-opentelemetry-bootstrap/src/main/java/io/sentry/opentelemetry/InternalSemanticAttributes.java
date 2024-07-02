@@ -1,7 +1,9 @@
 package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.common.AttributeKey;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class InternalSemanticAttributes {
   public static final AttributeKey<Boolean> SAMPLED = AttributeKey.booleanKey("sentry.sampled");
   public static final AttributeKey<Double> SAMPLE_RATE =

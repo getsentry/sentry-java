@@ -7,9 +7,11 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextKey;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class SentryContextWrapper implements Context {
 
   private final @NotNull Context delegate;

@@ -1,5 +1,9 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.INFO;
+import static io.sentry.SentryLevel.WARNING;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -20,12 +24,14 @@ import io.sentry.Session;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.cache.EnvelopeCache;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -150,7 +156,8 @@ public final class InternalSentrySdk {
    *     captured
    */
   @Nullable
-  public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) {
+  public static SentryId captureEnvelope(
+      final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
@@ -186,6 +193,13 @@ public final class InternalSentrySdk {
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
+        deleteCurrentSessionFile(
+            options,
+            // should be sync if going to crash or already not a main thread
+            !maybeStartNewSession || !scopes.getOptions().getMainThreadChecker().isMainThread());
+        if (maybeStartNewSession) {
+          scopes.startSession();
+        }
       }
 
       final SentryEnvelope repackagedEnvelope =
@@ -235,7 +249,7 @@ public final class InternalSentrySdk {
       ScopesAdapter.getInstance()
           .getOptions()
           .getLogger()
-          .log(SentryLevel.WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
+          .log(WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
       return;
     }
 
@@ -243,7 +257,7 @@ public final class InternalSentrySdk {
       ScopesAdapter.getInstance()
           .getOptions()
           .getLogger()
-          .log(SentryLevel.WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
+          .log(WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
       return;
     }
 
@@ -252,6 +266,46 @@ public final class InternalSentrySdk {
     spanMap.put("start_timestamp_ms", span.getStartTimestampMs());
     spanMap.put("end_timestamp_ms", span.getProjectedStopTimestampMs());
     spans.add(spanMap);
+  }
+
+  private static void deleteCurrentSessionFile(
+      final @NotNull SentryOptions options, boolean isSync) {
+    if (!isSync) {
+      try {
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  deleteCurrentSessionFile(options);
+                });
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(WARNING, "Submission of deletion of the current session file rejected.", e);
+      }
+    } else {
+      deleteCurrentSessionFile(options);
+    }
+  }
+
+  private static void deleteCurrentSessionFile(final @NotNull SentryOptions options) {
+    final String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath == null) {
+      options.getLogger().log(INFO, "Cache dir is not set, not deleting the current session.");
+      return;
+    }
+
+    if (!options.isEnableAutoSessionTracking()) {
+      options
+          .getLogger()
+          .log(DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
+      return;
+    }
+
+    final File sessionFile = EnvelopeCache.getCurrentSessionFile(cacheDirPath);
+    if (!sessionFile.delete()) {
+      options.getLogger().log(WARNING, "Failed to delete the current session file.");
+    }
   }
 
   @Nullable
@@ -270,11 +324,14 @@ public final class InternalSentrySdk {
             if (updated) {
               if (session.getStatus() == Session.State.Crashed) {
                 session.end();
+                // Session needs to be removed from the scope, otherwise it will be send twice
+                // standalone and with the crash event
+                scope.clearSession();
               }
               sessionRef.set(session);
             }
           } else {
-            options.getLogger().log(SentryLevel.INFO, "Session is null on updateSession");
+            options.getLogger().log(INFO, "Session is null on updateSession");
           }
         });
     return sessionRef.get();

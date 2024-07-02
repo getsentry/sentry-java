@@ -250,6 +250,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
+	public fun clearSession ()V
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/IScope;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -326,6 +327,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Profile Lio/sentry/DataCategory;
 	public static final field Security Lio/sentry/DataCategory;
 	public static final field Session Lio/sentry/DataCategory;
+	public static final field Span Lio/sentry/DataCategory;
 	public static final field Transaction Lio/sentry/DataCategory;
 	public static final field Unknown Lio/sentry/DataCategory;
 	public static final field UserReport Lio/sentry/DataCategory;
@@ -738,6 +740,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun clear ()V
 	public abstract fun clearAttachments ()V
 	public abstract fun clearBreadcrumbs ()V
+	public abstract fun clearSession ()V
 	public abstract fun clearTransaction ()V
 	public abstract fun clone ()Lio/sentry/IScope;
 	public abstract fun endSession ()Lio/sentry/Session;
@@ -953,7 +956,6 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
-	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getFinishDate ()Lio/sentry/SentryDate;
 	public abstract fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public abstract fun getOperation ()Ljava/lang/String;
@@ -1413,6 +1415,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
+	public fun clearSession ()V
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/IScope;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -1551,7 +1554,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
@@ -1886,6 +1888,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
+	public fun clearSession ()V
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/IScope;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -2938,6 +2941,12 @@ public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
 }
 
+public final class io/sentry/SentrySpanFactoryHolder {
+	public fun <init> ()V
+	public static fun getSpanFactory ()Lio/sentry/ISpanFactory;
+	public static fun setSpanFactory (Lio/sentry/ISpanFactory;)V
+}
+
 public final class io/sentry/SentrySpanStorage {
 	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
 	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
@@ -3112,7 +3121,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getMeasurements ()Ljava/util/Map;
@@ -3629,6 +3637,7 @@ public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clien
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
 	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;J)V
 }
 
 public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
@@ -3674,6 +3683,7 @@ public abstract interface class io/sentry/clientreport/IClientReportRecorder {
 	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
 	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;J)V
 }
 
 public abstract interface class io/sentry/clientreport/IClientReportStorage {
@@ -3687,6 +3697,7 @@ public final class io/sentry/clientreport/NoOpClientReportRecorder : io/sentry/c
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
 	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;J)V
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {

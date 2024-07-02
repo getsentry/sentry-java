@@ -15,6 +15,21 @@ public final class io/sentry/opentelemetry/OtelSamplingUtil {
 	public static fun extractSamplingDecisionOrDefault (Lio/opentelemetry/api/common/Attributes;)Lio/sentry/TracesSamplingDecision;
 }
 
+public final class io/sentry/opentelemetry/OtelSentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
+	public fun <init> ()V
+	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
+	public fun fields ()Ljava/util/Collection;
+	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/OtelSentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
+	public fun <init> ()V
+	public fun isEndRequired ()Z
+	public fun isStartRequired ()Z
+	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
+	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
+}
+
 public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/util/Map;)V
@@ -23,21 +38,6 @@ public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
-}
-
-public final class io/sentry/opentelemetry/PotelSentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
-	public fun <init> ()V
-	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
-	public fun fields ()Ljava/util/Collection;
-	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
-}
-
-public final class io/sentry/opentelemetry/PotelSentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
-	public fun <init> ()V
-	public fun isEndRequired ()Z
-	public fun isStartRequired ()Z
-	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
-	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
 }
 
 public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
