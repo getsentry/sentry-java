@@ -106,7 +106,6 @@ internal class ScreenshotRecorder(
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).post {
             try {
-                val nanos = System.nanoTime()
                     contentChanged.set(false)
                     PixelCopy.request(
                         window,
@@ -134,9 +133,6 @@ internal class ScreenshotRecorder(
 
                             val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
                             root.traverse(viewHierarchy)
-
-                            val nanos2 = System.nanoTime()
-                            Log.e("TIME", String.format("%.6f milliseconds", ((nanos2 - nanos) / 1_000_000.0)))
 
                             recorder.submit {
                                 val canvas = Canvas(bitmap)
