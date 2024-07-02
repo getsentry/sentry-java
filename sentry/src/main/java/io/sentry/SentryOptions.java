@@ -487,8 +487,7 @@ public class SentryOptions {
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
    */
-  @ApiStatus.Experimental
-  private boolean enableScreenTracking = true;
+  @ApiStatus.Experimental private boolean enableScreenTracking = true;
 
   /**
    * Adds an event processor
