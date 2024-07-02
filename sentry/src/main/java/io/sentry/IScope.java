@@ -401,5 +401,5 @@ public interface IScope {
       final @NotNull String transactionName);
 
   @ApiStatus.Internal
-  void replaceOptions(final @NotNull SentryOptions options);
+  boolean replaceOptions(final @NotNull SentryOptions options);
 }
