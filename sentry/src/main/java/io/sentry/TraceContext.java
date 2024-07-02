@@ -94,15 +94,13 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
    */
   @Deprecated
   private static final class TraceContextUser implements JsonUnknown {
-    private @Nullable String id;
-    private @Nullable String segment;
+    private final @Nullable String id;
 
     @SuppressWarnings("unused")
     private @Nullable Map<String, @NotNull Object> unknown;
 
-    private TraceContextUser(final @Nullable String id, final @Nullable String segment) {
+    private TraceContextUser(final @Nullable String id) {
       this.id = id;
-      this.segment = segment;
     }
 
     public @Nullable String getId() {
@@ -124,7 +122,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
     public static final class JsonKeys {
       public static final String ID = "id";
-      public static final String SEGMENT = "segment";
     }
 
     public static final class Deserializer implements JsonDeserializer<TraceContextUser> {
@@ -134,26 +131,19 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
         reader.beginObject();
 
         String id = null;
-        String segment = null;
         Map<String, Object> unknown = null;
         while (reader.peek() == JsonToken.NAME) {
           final String nextName = reader.nextName();
-          switch (nextName) {
-            case TraceContextUser.JsonKeys.ID:
-              id = reader.nextStringOrNull();
-              break;
-            case TraceContextUser.JsonKeys.SEGMENT:
-              segment = reader.nextStringOrNull();
-              break;
-            default:
-              if (unknown == null) {
-                unknown = new ConcurrentHashMap<>();
-              }
-              reader.nextUnknown(logger, unknown, nextName);
-              break;
+          if (nextName.equals(JsonKeys.ID)) {
+            id = reader.nextStringOrNull();
+          } else {
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
           }
         }
-        TraceContextUser traceStateUser = new TraceContextUser(id, segment);
+        TraceContextUser traceStateUser = new TraceContextUser(id);
         traceStateUser.setUnknown(unknown);
         reader.endObject();
         return traceStateUser;
@@ -290,14 +280,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       }
       TraceContext traceContext =
           new TraceContext(
-              traceId,
-              publicKey,
-              release,
-              environment,
-              userId,
-              transaction,
-              sampleRate,
-              sampled);
+              traceId, publicKey, release, environment, userId, transaction, sampleRate, sampled);
       traceContext.setUnknown(unknown);
       reader.endObject();
       return traceContext;

@@ -2,7 +2,6 @@ package io.sentry
 
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
-import io.sentry.protocol.User
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever

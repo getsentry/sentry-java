@@ -2289,8 +2289,7 @@ class ScopesTest {
                 expectedContext.release == actual.release &&
                 expectedContext.publicKey == actual.publicKey &&
                 expectedContext.sampleRate == actual.sampleRate &&
-                expectedContext.userId == actual.userId &&
-                expectedContext.userSegment == actual.userSegment
+                expectedContext.userId == actual.userId
         }
     }
 }

@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
-import io.sentry.protocol.User;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
@@ -471,13 +470,6 @@ public final class Baggage {
 
     public static final List<String> ALL =
         Arrays.asList(
-            TRACE_ID,
-            PUBLIC_KEY,
-            RELEASE,
-            USER_ID,
-            ENVIRONMENT,
-            TRANSACTION,
-            SAMPLE_RATE,
-            SAMPLED);
+            TRACE_ID, PUBLIC_KEY, RELEASE, USER_ID, ENVIRONMENT, TRANSACTION, SAMPLE_RATE, SAMPLED);
   }
 }
