@@ -9,13 +9,27 @@ public final class SentryReplayOptions {
 
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 */
-    LOW,
+    LOW(0.8f, 50_000),
 
     /** Video Scale: 100% Bit Rate: 75.000 */
-    MEDIUM,
+    MEDIUM(1.0f, 75_000),
 
     /** Video Scale: 100% Bit Rate: 100.000 */
-    HIGH
+    HIGH(1.0f, 100_000);
+
+    /** The scale related to the window size (in dp) at which the replay will be created. */
+    public final float sizeScale;
+
+    /**
+     * Defines the quality of the session replay. Higher bit rates have better replay quality, but
+     * also affect the final payload size to transfer, defaults to 40kbps.
+     */
+    public final int bitRate;
+
+    SentryReplayQuality(final float sizeScale, final int bitRate) {
+      this.sizeScale = sizeScale;
+      this.bitRate = bitRate;
+    }
   }
 
   /**
@@ -133,27 +147,13 @@ public final class SentryReplayOptions {
     this.redactAllImages = redactAllImages;
   }
 
+  @ApiStatus.Internal
   public @NotNull SentryReplayQuality getQuality() {
     return quality;
   }
 
   public void setQuality(final @NotNull SentryReplayQuality quality) {
     this.quality = quality;
-  }
-
-  /**
-   * Defines the quality of the session replay. Higher bit rates have better replay quality, but
-   * also affect the final payload size to transfer, defaults to 40kbps.
-   */
-  @ApiStatus.Internal
-  public int getBitRate() {
-    return quality.ordinal() * 25_000 + 50_000;
-  }
-
-  /** The scale related to the window size (in dp) at which the replay will be created. */
-  @ApiStatus.Internal
-  public float getSizeScale() {
-    return quality == SentryReplayQuality.LOW ? 0.8f : 1.0f;
   }
 
   @ApiStatus.Internal

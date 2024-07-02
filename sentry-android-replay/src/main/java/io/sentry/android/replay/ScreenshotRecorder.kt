@@ -292,10 +292,10 @@ public data class ScreenshotRecorderConfig(
 
             // use the baseline density of 1x (mdpi)
             val (height, width) =
-                ((screenBounds.height() / context.resources.displayMetrics.density) * sessionReplay.sizeScale)
+                ((screenBounds.height() / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
                     .roundToInt()
                     .adjustToBlockSize() to
-                    ((screenBounds.width() / context.resources.displayMetrics.density) * sessionReplay.sizeScale)
+                    ((screenBounds.width() / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
                         .roundToInt()
                         .adjustToBlockSize()
 
@@ -305,7 +305,7 @@ public data class ScreenshotRecorderConfig(
                 scaleFactorX = width.toFloat() / screenBounds.width(),
                 scaleFactorY = height.toFloat() / screenBounds.height(),
                 frameRate = sessionReplay.frameRate,
-                bitRate = sessionReplay.bitRate
+                bitRate = sessionReplay.quality.bitRate
             )
         }
     }

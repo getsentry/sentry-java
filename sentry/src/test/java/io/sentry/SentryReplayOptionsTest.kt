@@ -10,23 +10,23 @@ class SentryReplayOptionsTest {
         val replayOptions = SentryReplayOptions()
 
         assertEquals(SentryReplayOptions.SentryReplayQuality.MEDIUM, replayOptions.quality)
-        assertEquals(40_000, replayOptions.bitRate)
-        assertEquals(1.0f, replayOptions.sizeScale)
+        assertEquals(75_000, replayOptions.quality.bitRate)
+        assertEquals(1.0f, replayOptions.quality.sizeScale)
     }
 
     @Test
     fun `low quality`() {
         val replayOptions = SentryReplayOptions().apply { quality = SentryReplayOptions.SentryReplayQuality.LOW }
 
-        assertEquals(20_000, replayOptions.bitRate)
-        assertEquals(0.8f, replayOptions.sizeScale)
+        assertEquals(50_000, replayOptions.quality.bitRate)
+        assertEquals(0.8f, replayOptions.quality.sizeScale)
     }
 
     @Test
     fun `high quality`() {
         val replayOptions = SentryReplayOptions().apply { quality = SentryReplayOptions.SentryReplayQuality.HIGH }
 
-        assertEquals(60_000, replayOptions.bitRate)
-        assertEquals(1.0f, replayOptions.sizeScale)
+        assertEquals(100_000, replayOptions.quality.bitRate)
+        assertEquals(1.0f, replayOptions.quality.sizeScale)
     }
 }
