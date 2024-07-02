@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Uses {@link Date} in cominbation with System.nanoTime().
+ * Uses {@link Date} in combination with System.nanoTime().
  *
  * <p>A single date only offers millisecond precision but diff can be calculated with up to
  * nanosecond precision. This increased precision can also be used to calculate a new end date for a

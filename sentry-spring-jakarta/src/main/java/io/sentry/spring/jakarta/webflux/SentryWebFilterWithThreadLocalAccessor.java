@@ -1,7 +1,7 @@
 package io.sentry.spring.jakarta.webflux;
 
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import org.jetbrains.annotations.ApiStatus;
@@ -17,8 +17,8 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
 
   public static final String TRACE_ORIGIN = "auto.spring_jakarta.webflux";
 
-  public SentryWebFilterWithThreadLocalAccessor(final @NotNull IHub hub) {
-    super(hub);
+  public SentryWebFilterWithThreadLocalAccessor(final @NotNull IScopes scopes) {
+    super(scopes);
   }
 
   @Override
@@ -26,25 +26,23 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
     final @NotNull TransactionContainer transactionContainer = new TransactionContainer();
-    return ReactorUtils.withSentryNewMainHubClone(
+    return ReactorUtils.withSentryForkedRoots(
         webFilterChain
             .filter(serverWebExchange)
             .doFinally(
                 __ ->
                     doFinally(
                         serverWebExchange,
-                        Sentry.getCurrentHub(),
+                        Sentry.getCurrentScopes(),
                         transactionContainer.transaction))
             .doOnError(e -> doOnError(transactionContainer.transaction, e))
             .doFirst(
                 () -> {
-                  doFirst(serverWebExchange, Sentry.getCurrentHub());
+                  doFirst(serverWebExchange, Sentry.getCurrentScopes());
                   final ITransaction transaction =
-                      maybeStartTransaction(Sentry.getCurrentHub(), serverWebExchange.getRequest());
+                      maybeStartTransaction(
+                          Sentry.getCurrentScopes(), serverWebExchange.getRequest(), TRACE_ORIGIN);
                   transactionContainer.transaction = transaction;
-                  if (transaction != null) {
-                    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
-                  }
                 }));
   }
 

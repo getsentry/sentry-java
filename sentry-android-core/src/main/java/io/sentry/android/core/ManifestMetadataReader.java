@@ -37,7 +37,7 @@ final class ManifestMetadataReader {
   static final String SDK_NAME = "io.sentry.sdk.name";
   static final String SDK_VERSION = "io.sentry.sdk.version";
 
-  // TODO: remove on 6.x in favor of SESSION_AUTO_TRACKING_ENABLE
+  // TODO [MAJOR]: remove on 6.x in favor of SESSION_AUTO_TRACKING_ENABLE
   static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
 
   static final String AUTO_SESSION_TRACKING_ENABLE = "io.sentry.auto-session-tracking.enable";
@@ -70,7 +70,7 @@ final class ManifestMetadataReader {
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 
-  // TODO: remove in favor of TRACE_PROPAGATION_TARGETS
+  // TODO [MAJOR]: remove in favor of TRACE_PROPAGATION_TARGETS
   @Deprecated static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
 
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
@@ -323,7 +323,7 @@ final class ManifestMetadataReader {
         List<String> tracePropagationTargets =
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
-        // TODO remove once TRACING_ORIGINS have been removed
+        // TODO [MAJOR] remove once TRACING_ORIGINS have been removed
         if (!metadata.containsKey(TRACE_PROPAGATION_TARGETS)
             && (tracePropagationTargets == null || tracePropagationTargets.isEmpty())) {
           tracePropagationTargets = readList(metadata, logger, TRACING_ORIGINS);

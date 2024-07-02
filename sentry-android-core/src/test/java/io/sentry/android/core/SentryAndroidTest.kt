@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.ILogger
+import io.sentry.ISentryClient
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
@@ -50,6 +51,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -314,8 +316,25 @@ class SentryAndroidTest {
         }
     }
 
+    @Test
+    fun `init does not start a session if one is already running`() {
+        val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
+
+        initSentryWithForegroundImportance(true, { options ->
+            options.addIntegration { hub, _ ->
+                hub.bindClient(client)
+                // usually done by LifecycleWatcher
+                hub.startSession()
+            }
+        }) {}
+
+        verify(client, times(1)).captureSession(any(), any())
+    }
+
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
+        optionsConfig: (SentryAndroidOptions) -> Unit = {},
         callback: (session: Session?) -> Unit
     ) {
         val context = ContextUtilsTestHelper.createMockContext()
@@ -327,10 +346,11 @@ class SentryAndroidTest {
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
+                optionsConfig(options)
             }
 
             var session: Session? = null
-            Sentry.getCurrentHub().configureScope { scope ->
+            Sentry.getCurrentScopes().configureScope { scope ->
                 session = scope.session
             }
             callback(session)
@@ -342,7 +362,7 @@ class SentryAndroidTest {
         fixture.initSut { options ->
             options.isEnableAutoSessionTracking = false
         }
-        Sentry.getCurrentHub().withScope { scope ->
+        Sentry.getCurrentScopes().withScope { scope ->
             assertNull(scope.session)
         }
     }
@@ -378,7 +398,7 @@ class SentryAndroidTest {
             it.release = "io.sentry.sample@1.1.0+220"
             it.environment = "debug"
             // this is necessary to delay the AnrV2Integration processing to execute the configure
-            // scope block below (otherwise it won't be possible as hub is no-op before .init)
+            // scope block below (otherwise it won't be possible as scopes is no-op before .init)
             it.executorService.submit {
                 Sentry.configureScope { scope ->
                     // make sure the scope values changed to test that we're still using previously

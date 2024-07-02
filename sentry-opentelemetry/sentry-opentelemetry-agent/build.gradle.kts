@@ -53,6 +53,7 @@ val upstreamAgent = configurations.create("upstreamAgent") {
 
 dependencies {
     bootstrapLibs(projects.sentry)
+    bootstrapLibs(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     upstreamAgent(Config.Libs.OpenTelemetry.otelJavaAgent)
 }

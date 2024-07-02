@@ -6,7 +6,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.view.Window;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -23,13 +23,13 @@ public final class UserInteractionIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
   private final boolean isAndroidXAvailable;
 
   public UserInteractionIntegration(
-      final @NotNull Application application, final @NotNull LoadClass classLoader) {
+      final @NotNull Application application, final @NotNull io.sentry.util.LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
     isAndroidXAvailable =
         classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
@@ -44,14 +44,14 @@ public final class UserInteractionIntegration
       return;
     }
 
-    if (hub != null && options != null) {
+    if (scopes != null && options != null) {
       Window.Callback delegate = window.getCallback();
       if (delegate == null) {
         delegate = new NoOpWindowCallback();
       }
 
       final SentryGestureListener gestureListener =
-          new SentryGestureListener(activity, hub, options);
+          new SentryGestureListener(activity, scopes, options);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }
@@ -102,13 +102,13 @@ public final class UserInteractionIntegration
   public void onActivityDestroyed(@NotNull Activity activity) {}
 
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
 
     final boolean integrationEnabled =
         this.options.isEnableUserInteractionBreadcrumbs()

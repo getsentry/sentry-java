@@ -49,6 +49,7 @@ public final class ExternalOptions {
   private @Nullable List<String> ignoredCheckIns;
 
   private @Nullable Boolean sendModules;
+  private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
 
   private @Nullable SentryOptions.Cron cron;
@@ -131,6 +132,7 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
 
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
+    options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
 
     options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
 
@@ -419,6 +421,14 @@ public final class ExternalOptions {
 
   public void setSendModules(final @Nullable Boolean sendModules) {
     this.sendModules = sendModules;
+  }
+
+  public @Nullable Boolean isSendDefaultPii() {
+    return sendDefaultPii;
+  }
+
+  public void setSendDefaultPii(final @Nullable Boolean sendDefaultPii) {
+    this.sendDefaultPii = sendDefaultPii;
   }
 
   @ApiStatus.Experimental

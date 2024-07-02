@@ -7,7 +7,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint
@@ -47,8 +47,8 @@ class TempSensorBreadcrumbsIntegrationTest {
     @Test
     fun `When system events breadcrumb is enabled, it registers callback`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         verify(fixture.manager).registerListener(any(), any<Sensor>(), eq(SensorManager.SENSOR_DELAY_NORMAL))
         assertNotNull(sut.sensorManager)
     }
@@ -56,8 +56,8 @@ class TempSensorBreadcrumbsIntegrationTest {
     @Test
     fun `temp sensor listener is registered in the executorService`() {
         val sut = fixture.getSut(executorService = mock())
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
 
         assertNull(sut.sensorManager)
     }
@@ -65,9 +65,9 @@ class TempSensorBreadcrumbsIntegrationTest {
     @Test
     fun `When system events breadcrumb is disabled, it should not register a callback`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         sut.register(
-            hub,
+            scopes,
             fixture.options.apply {
                 isEnableSystemEventBreadcrumbs = false
             }
@@ -79,15 +79,15 @@ class TempSensorBreadcrumbsIntegrationTest {
     @Test
     fun `When TempSensorBreadcrumbsIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         sut.close()
         verify(fixture.manager).unregisterListener(any<SensorEventListener>())
         assertNull(sut.sensorManager)
     }
 
     @Test
-    fun `when hub is closed right after start, integration is not registered`() {
+    fun `when scopes is closed right after start, integration is not registered`() {
         val deferredExecutorService = DeferredExecutorService()
         val sut = fixture.getSut(executorService = deferredExecutorService)
         sut.register(mock(), fixture.options)
@@ -100,14 +100,14 @@ class TempSensorBreadcrumbsIntegrationTest {
     @Test
     fun `When onSensorChanged received, add a breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         val sensorCtor = "android.hardware.SensorEvent".getDeclaredCtor(emptyArray())
         val sensorEvent: SensorEvent = sensorCtor.newInstance() as SensorEvent
         sensorEvent.injectForField("values", FloatArray(2) { 1F })
         sut.onSensorChanged(sensorEvent)
 
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -122,12 +122,12 @@ class TempSensorBreadcrumbsIntegrationTest {
     @Test
     fun `When onSensorChanged received and null values, do not add a breadcrumb`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         val event = mock<SensorEvent>()
         assertNull(event.values)
         sut.onSensorChanged(event)
 
-        verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 }

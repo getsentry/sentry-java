@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -54,10 +55,10 @@ class TraceContextSerializationTest {
 
     private fun createTraceContext(sRate: Double): TraceContext {
         val baggage = Baggage(fixture.logger)
-        val hub: IHub = mock()
-        whenever(hub.options).thenReturn(SentryOptions())
+        val scopes: IScopes = mock()
+        whenever(scopes.options).thenReturn(SentryOptions())
         baggage.setValuesFromTransaction(
-            SentryTracer(TransactionContext("name", "op"), hub),
+            SentryId(),
             User().apply {
                 id = "user-id"
                 others = mapOf("segment" to "pro")
@@ -68,7 +69,9 @@ class TraceContextSerializationTest {
                 release = "1.0.17"
                 tracesSampleRate = sRate
             },
-            TracesSamplingDecision(sRate > 0.5, sRate)
+            TracesSamplingDecision(sRate > 0.5, sRate),
+            "name",
+            TransactionNameSource.ROUTE
         )
         return baggage.toTraceContext()!!
     }

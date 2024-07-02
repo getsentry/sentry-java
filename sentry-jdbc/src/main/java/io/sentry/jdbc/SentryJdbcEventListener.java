@@ -6,11 +6,12 @@ import static io.sentry.SpanDataConvention.DB_SYSTEM_KEY;
 import com.jakewharton.nopen.annotation.Open;
 import com.p6spy.engine.common.StatementInformation;
 import com.p6spy.engine.event.SimpleJdbcEventListener;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.Span;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.sql.SQLException;
@@ -21,28 +22,29 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private static final String TRACE_ORIGIN = "auto.db.jdbc";
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private static final @NotNull ThreadLocal<ISpan> CURRENT_SPAN = new ThreadLocal<>();
 
   private volatile @Nullable DatabaseUtils.DatabaseDetails cachedDatabaseDetails = null;
   private final @NotNull Object databaseDetailsLock = new Object();
 
-  public SentryJdbcEventListener(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryJdbcEventListener(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     addPackageAndIntegrationInfo();
   }
 
   public SentryJdbcEventListener() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
   @Override
   public void onBeforeAnyExecute(final @NotNull StatementInformation statementInformation) {
-    final ISpan parent = hub.getSpan();
+    final ISpan parent = scopes.getSpan();
     if (parent != null && !parent.isNoOp()) {
-      final ISpan span = parent.startChild("db.query", statementInformation.getSql());
+      final @NotNull SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGIN);
+      final ISpan span = parent.startChild("db.query", statementInformation.getSql(), spanOptions);
       CURRENT_SPAN.set(span);
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
     }
   }
 

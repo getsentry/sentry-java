@@ -10,8 +10,8 @@ public interface Integration {
   /**
    * Registers an integration
    *
-   * @param hub the Hub
+   * @param scopes the Scopes
    * @param options the options
    */
-  void register(@NotNull IHub hub, @NotNull SentryOptions options);
+  void register(@NotNull IScopes scopes, @NotNull SentryOptions options);
 }

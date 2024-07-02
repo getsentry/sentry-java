@@ -9,15 +9,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class TransactionContext extends SpanContext {
-  private static final @NotNull String DEFAULT_NAME = "<unlabeled transaction>";
+  public static final @NotNull String DEFAULT_TRANSACTION_NAME = "<unlabeled transaction>";
   private static final @NotNull TransactionNameSource DEFAULT_NAME_SOURCE =
       TransactionNameSource.CUSTOM;
   private static final @NotNull String DEFAULT_OPERATION = "default";
   private @NotNull String name;
   private @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
-  private @Nullable Baggage baggage;
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
   private boolean isForNextAppStart = false;
 
   /**
@@ -136,7 +134,7 @@ public final class TransactionContext extends SpanContext {
       final @Nullable TracesSamplingDecision parentSamplingDecision,
       final @Nullable Baggage baggage) {
     super(traceId, spanId, DEFAULT_OPERATION, parentSpanId, null);
-    this.name = DEFAULT_NAME;
+    this.name = DEFAULT_TRANSACTION_NAME;
     this.parentSamplingDecision = parentSamplingDecision;
     this.transactionNameSource = DEFAULT_NAME_SOURCE;
     this.baggage = baggage;
@@ -156,10 +154,6 @@ public final class TransactionContext extends SpanContext {
 
   public @Nullable TracesSamplingDecision getParentSamplingDecision() {
     return parentSamplingDecision;
-  }
-
-  public @Nullable Baggage getBaggage() {
-    return baggage;
   }
 
   public void setParentSampled(final @Nullable Boolean parentSampled) {
@@ -184,14 +178,6 @@ public final class TransactionContext extends SpanContext {
 
   public @NotNull TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
-  }
-
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
-  }
-
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
   }
 
   public void setName(final @NotNull String name) {

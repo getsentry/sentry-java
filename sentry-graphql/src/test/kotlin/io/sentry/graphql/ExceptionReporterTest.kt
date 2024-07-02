@@ -12,8 +12,8 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Hint
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -39,7 +39,7 @@ class ExceptionReporterTest {
             it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS
         }
         val exception = IllegalStateException("some exception")
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         lateinit var instrumentationExecutionParameters: InstrumentationExecutionParameters
         lateinit var executionResult: ExecutionResult
         lateinit var scope: IScope
@@ -47,7 +47,7 @@ class ExceptionReporterTest {
         val variables = mapOf("variableA" to "value a")
 
         fun getSut(options: SentryOptions = defaultOptions, captureRequestBodyForNonSubscriptions: Boolean = true): ExceptionReporter {
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
             scope = Scope(options)
             val exceptionReporter = ExceptionReporter(captureRequestBodyForNonSubscriptions)
             executionResult = ExecutionResultImpl.newExecutionResult()
@@ -77,7 +77,7 @@ class ExceptionReporterTest {
             ).build()
             val instrumentationState = SentryInstrumentation.TracingState()
             instrumentationExecutionParameters = InstrumentationExecutionParameters(executionInput, schema, instrumentationState)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
 
             return exceptionReporter
         }
@@ -88,9 +88,9 @@ class ExceptionReporterTest {
     @Test
     fun `captures throwable`() {
         val exceptionReporter = fixture.getSut()
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertFalse(ex.exceptionMechanism.isHandled!!)
@@ -112,9 +112,9 @@ class ExceptionReporterTest {
         val exceptionReporter = fixture.getSut()
         val headers = mapOf("some-header" to "some-header-value")
         fixture.scope.request = Request().also { it.headers = headers }
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertFalse(ex.exceptionMechanism.isHandled!!)
@@ -136,9 +136,9 @@ class ExceptionReporterTest {
     @Test
     fun `does not attach query or variables if spring`() {
         val exceptionReporter = fixture.getSut(captureRequestBodyForNonSubscriptions = false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertFalse(ex.exceptionMechanism.isHandled!!)
@@ -156,9 +156,9 @@ class ExceptionReporterTest {
     @Test
     fun `does not attach query or variables if no max body size is set`() {
         val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertFalse(ex.exceptionMechanism.isHandled!!)
@@ -176,9 +176,9 @@ class ExceptionReporterTest {
     @Test
     fun `does not attach query or variables if sendDefaultPii is false`() {
         val exceptionReporter = fixture.getSut(SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }, false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertFalse(ex.exceptionMechanism.isHandled!!)
@@ -196,9 +196,9 @@ class ExceptionReporterTest {
     @Test
     fun `attaches query and variables if spring and subscription`() {
         val exceptionReporter = fixture.getSut(captureRequestBodyForNonSubscriptions = false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.hub, fixture.instrumentationExecutionParameters, true), fixture.executionResult)
+        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, true), fixture.executionResult)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertFalse(ex.exceptionMechanism.isHandled!!)

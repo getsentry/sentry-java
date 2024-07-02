@@ -10,6 +10,7 @@ import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
+import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
@@ -98,6 +99,8 @@ final class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
+    options.setDefaultScopeType(ScopeType.CURRENT);
+
     options.setDateProvider(new SentryAndroidDateProvider());
 
     // set a lower flush timeout on Android to avoid ANRs
@@ -116,7 +119,7 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     initializeIntegrationsAndProcessors(
         options,
@@ -130,7 +133,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     if (options.getCacheDirPath() != null
@@ -234,7 +237,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {

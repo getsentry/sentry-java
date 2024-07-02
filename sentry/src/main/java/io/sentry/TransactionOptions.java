@@ -1,6 +1,7 @@
 package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry Transaction options */
@@ -16,9 +17,6 @@ public final class TransactionOptions extends SpanOptions {
 
   /** Defines if transaction should be bound to scope */
   private boolean bindToScope = false;
-
-  /** The start timestamp of the transaction */
-  private @Nullable SentryDate startTimestamp = null;
 
   /** Defines if transaction refers to the app start process */
   private boolean isAppStartTransaction = false;
@@ -56,6 +54,9 @@ public final class TransactionOptions extends SpanOptions {
    */
   private @Nullable TransactionFinishedCallback transactionFinishedCallback = null;
 
+  /** Span factory to use. Uses factory configured in {@link SentryOptions} if `null`. */
+  @ApiStatus.Internal private @Nullable ISpanFactory spanFactory = null;
+
   /**
    * Gets the customSamplingContext
    *
@@ -90,24 +91,6 @@ public final class TransactionOptions extends SpanOptions {
    */
   public void setBindToScope(boolean bindToScope) {
     this.bindToScope = bindToScope;
-  }
-
-  /**
-   * Gets the startTimestamp
-   *
-   * @return startTimestamp - the startTimestamp
-   */
-  public @Nullable SentryDate getStartTimestamp() {
-    return startTimestamp;
-  }
-
-  /**
-   * Sets the startTimestamp
-   *
-   * @param startTimestamp - the startTimestamp
-   */
-  public void setStartTimestamp(@Nullable SentryDate startTimestamp) {
-    this.startTimestamp = startTimestamp;
   }
 
   /**
@@ -195,5 +178,15 @@ public final class TransactionOptions extends SpanOptions {
   @ApiStatus.Internal
   public boolean isAppStartTransaction() {
     return isAppStartTransaction;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable ISpanFactory getSpanFactory() {
+    return this.spanFactory;
+  }
+
+  @ApiStatus.Internal
+  public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
+    this.spanFactory = spanFactory;
   }
 }

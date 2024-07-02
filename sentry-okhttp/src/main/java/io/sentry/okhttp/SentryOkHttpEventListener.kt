@@ -1,7 +1,7 @@
 package io.sentry.okhttp
 
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import okhttp3.Call
@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Suppress("TooManyFunctions")
 public open class SentryOkHttpEventListener(
-    private val hub: IHub = HubAdapter.getInstance(),
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val originalEventListenerCreator: ((call: Call) -> EventListener)? = null
 ) : EventListener() {
 
@@ -62,27 +62,27 @@ public open class SentryOkHttpEventListener(
     }
 
     public constructor() : this(
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         originalEventListenerCreator = null
     )
 
     public constructor(originalEventListener: EventListener) : this(
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         originalEventListenerCreator = { originalEventListener }
     )
 
     public constructor(originalEventListenerFactory: Factory) : this(
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         originalEventListenerCreator = { originalEventListenerFactory.create(it) }
     )
 
-    public constructor(hub: IHub = HubAdapter.getInstance(), originalEventListener: EventListener) : this(
-        hub,
+    public constructor(scopes: IScopes = ScopesAdapter.getInstance(), originalEventListener: EventListener) : this(
+        scopes,
         originalEventListenerCreator = { originalEventListener }
     )
 
-    public constructor(hub: IHub = HubAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
-        hub,
+    public constructor(scopes: IScopes = ScopesAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
+        scopes,
         originalEventListenerCreator = { originalEventListenerFactory.create(it) }
     )
 
@@ -92,7 +92,7 @@ public open class SentryOkHttpEventListener(
         // If the wrapped EventListener is ours, we can just delegate the calls,
         // without creating other events that would create duplicates
         if (canCreateEventSpan()) {
-            eventMap[call] = SentryOkHttpEvent(hub, call.request())
+            eventMap[call] = SentryOkHttpEvent(scopes, call.request())
         }
     }
 
@@ -318,7 +318,7 @@ public open class SentryOkHttpEventListener(
                 it.status = SpanStatus.fromHttpStatusCode(response.code)
             }
         }
-        okHttpEvent.scheduleFinish(responseHeadersSpan?.finishDate ?: hub.options.dateProvider.now())
+        okHttpEvent.scheduleFinish(responseHeadersSpan?.finishDate ?: scopes.options.dateProvider.now())
     }
 
     override fun responseBodyStart(call: Call) {
@@ -406,6 +406,9 @@ public open class SentryOkHttpEventListener(
 
     private fun canCreateEventSpan(): Boolean {
         // If the wrapped EventListener is ours, we shouldn't create spans, as the originalEventListener already did it
-        return originalEventListener !is SentryOkHttpEventListener
+        // In case SentryOkHttpEventListener from sentry-android-okhttp is used, the is check won't work so we check
+        // for the class name as well.
+        return originalEventListener !is SentryOkHttpEventListener &&
+            "io.sentry.android.okhttp.SentryOkHttpEventListener" != originalEventListener?.javaClass?.name
     }
 }
