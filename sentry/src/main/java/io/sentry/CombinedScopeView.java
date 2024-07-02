@@ -414,9 +414,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public void clearSession() {
-    scope.clearSession();
-    isolationScope.clearSession();
-    globalScope.clearSession();
+    getDefaultWriteScope().clearSession();
   }
 
   @Override
