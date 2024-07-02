@@ -2444,6 +2444,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableMetrics ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableScopePersistence ()Z
+	public fun isEnableScreenTracking ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableSpanLocalMetricAggregation ()Z
 	public fun isEnableSpotlight ()Z
@@ -2490,6 +2491,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableMetrics (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableScopePersistence (Z)V
+	public fun setEnableScreenTracking (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableSpanLocalMetricAggregation (Z)V
 	public fun setEnableSpotlight (Z)V

@@ -30,6 +30,8 @@ internal interface CaptureStrategy {
 
     fun onTouchEvent(event: MotionEvent)
 
+    fun onScreenChanged(screen: String?) = Unit
+
     fun convert(): CaptureStrategy
 
     fun close()

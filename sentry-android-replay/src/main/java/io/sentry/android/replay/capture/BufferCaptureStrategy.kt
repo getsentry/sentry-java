@@ -28,9 +28,33 @@ internal class BufferCaptureStrategy(
 ) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
+    private val bufferedScreensLock = Any()
+    private val bufferedScreens = mutableListOf<Pair<String, Long>>()
 
     internal companion object {
         private const val TAG = "BufferCaptureStrategy"
+    }
+
+    override fun start(segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
+        super.start(segmentId, replayId, cleanupOldReplays)
+
+        hub?.configureScope {
+            val screen = it.screen
+            if (screen != null) {
+                synchronized(bufferedScreensLock) {
+                    bufferedScreens.add(screen to dateProvider.currentTimeMillis)
+                }
+            }
+        }
+    }
+
+    override fun onScreenChanged(screen: String?) {
+        synchronized(bufferedScreensLock) {
+            val lastKnownScreen = bufferedScreens.lastOrNull()?.first
+            if (screen != null && lastKnownScreen != screen) {
+                bufferedScreens.add(screen to dateProvider.currentTimeMillis)
+            }
+        }
     }
 
     override fun stop() {
@@ -66,6 +90,9 @@ internal class BufferCaptureStrategy(
         val replayId = currentReplayId.get()
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth
+
+        findAndSetStartScreen(currentSegmentTimestamp.time)
+
         replayExecutor.submitSafely(options, "$TAG.send_replay_for_event") {
             var bufferedSegment = bufferedSegments.removeFirstOrNull()
             while (bufferedSegment != null) {
@@ -177,5 +204,20 @@ internal class BufferCaptureStrategy(
         super.onTouchEvent(event)
         val bufferLimit = dateProvider.currentTimeMillis - options.experimental.sessionReplay.errorReplayDuration
         rotateCurrentEvents(bufferLimit)
+    }
+
+    private fun findAndSetStartScreen(segmentStart: Long) {
+        synchronized(bufferedScreensLock) {
+            val startScreen = bufferedScreens.lastOrNull { (_, timestamp) ->
+                timestamp <= segmentStart
+            }?.first
+            // if no screen is found before the segment start, this likely means the buffer is from the
+            // app start, and the start screen will be taken from the navigation crumbs
+            if (startScreen != null) {
+                screenAtStart.set(startScreen)
+            }
+            // can clear as we switch to session mode and don't care anymore about buffering
+            bufferedSegments.clear()
+        }
     }
 }

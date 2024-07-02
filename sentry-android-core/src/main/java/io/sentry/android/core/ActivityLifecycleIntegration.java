@@ -371,7 +371,7 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
-    if (hub != null) {
+    if (hub != null && options != null && options.isEnableScreenTracking()) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
       hub.configureScope(scope -> scope.setScreen(activityClassName));
     }

@@ -14,6 +14,7 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebIncrementalSnapshotEvent
 import io.sentry.rrweb.RRWebInteractionEvent
@@ -54,6 +55,7 @@ internal abstract class BaseCaptureStrategy(
     protected var cache: ReplayCache? = null
     protected val segmentTimestamp = AtomicReference<Date>()
     protected val replayStartTimestamp = AtomicLong()
+    protected val screenAtStart = AtomicReference<String>()
     override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
     override val currentSegment = AtomicInteger(0)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
@@ -187,6 +189,7 @@ internal abstract class BaseCaptureStrategy(
             top = 0
         }
 
+        val urls = LinkedList<String>()
         hub?.configureScope { scope ->
             scope.breadcrumbs.forEach { breadcrumb ->
                 if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
@@ -199,9 +202,18 @@ internal abstract class BaseCaptureStrategy(
 
                     if (rrwebEvent != null) {
                         recordingPayload += rrwebEvent
+
+                        // fill in the urls array from navigation breadcrumbs
+                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
+                            urls.add(rrwebEvent.data!!["to"] as String)
+                        }
                     }
                 }
             }
+        }
+
+        if (screenAtStart.get() != null && urls.first != screenAtStart.get()) {
+            urls.addFirst(screenAtStart.get())
         }
 
         rotateCurrentEvents(endTimestamp.time) { event ->
@@ -215,6 +227,7 @@ internal abstract class BaseCaptureStrategy(
             payload = recordingPayload.sortedBy { it.timestamp }
         }
 
+        replay.urls = urls
         return ReplaySegment.Created(
             videoDuration = duration,
             replay = replay,
