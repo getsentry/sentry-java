@@ -53,8 +53,8 @@ public class io/sentry/spring/boot/SentryProperties$Logging {
 public class io/sentry/spring/boot/SentryWebfluxAutoConfiguration {
 	public fun <init> ()V
 	public fun sentryScheduleHookApplicationRunner ()Lorg/springframework/boot/ApplicationRunner;
-	public fun sentryWebExceptionHandler (Lio/sentry/IScopes;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
-	public fun sentryWebFilter (Lio/sentry/IScopes;)Lio/sentry/spring/webflux/SentryWebFilter;
+	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
+	public fun sentryWebFilter (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebFilter;
 }
 
 public class io/sentry/spring/boot/graphql/SentryGraphqlAutoConfiguration {

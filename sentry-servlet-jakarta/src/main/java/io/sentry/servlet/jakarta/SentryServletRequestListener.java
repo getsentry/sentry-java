@@ -5,10 +5,8 @@ import static io.sentry.TypeCheckHint.SERVLET_REQUEST;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IScopes;
-import io.sentry.ISentryLifecycleToken;
-import io.sentry.ScopesAdapter;
-import io.sentry.util.LifecycleHelper;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.util.Objects;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;
@@ -23,41 +21,36 @@ import org.jetbrains.annotations.NotNull;
 @Open
 public class SentryServletRequestListener implements ServletRequestListener {
 
-  public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
+  private final IHub hub;
 
-  private final IScopes scopes;
-
-  public SentryServletRequestListener(@NotNull IScopes scopes) {
-    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+  public SentryServletRequestListener(@NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   public SentryServletRequestListener() {
-    this(ScopesAdapter.getInstance());
+    this(HubAdapter.getInstance());
   }
 
   @Override
   public void requestDestroyed(@NotNull ServletRequestEvent servletRequestEvent) {
-    final ServletRequest servletRequest = servletRequestEvent.getServletRequest();
-    LifecycleHelper.close(servletRequest.getAttribute(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY));
+    hub.popScope();
   }
 
   @Override
   public void requestInitialized(@NotNull ServletRequestEvent servletRequestEvent) {
-    final @NotNull ISentryLifecycleToken lifecycleToken =
-        scopes.forkedScopes("SentryServletRequestListener").makeCurrent();
+    hub.pushScope();
 
     final ServletRequest servletRequest = servletRequestEvent.getServletRequest();
-    servletRequest.setAttribute(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken);
     if (servletRequest instanceof HttpServletRequest) {
       final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
 
       final Hint hint = new Hint();
       hint.set(SERVLET_REQUEST, httpRequest);
 
-      scopes.addBreadcrumb(
+      hub.addBreadcrumb(
           Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hint);
 
-      scopes.configureScope(
+      hub.configureScope(
           scope -> {
             scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(httpRequest));
           });

@@ -3,7 +3,7 @@ package io.sentry.apollo3
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
 import io.sentry.Breadcrumb
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -32,7 +32,7 @@ class SentryApollo3InterceptorWithVariablesTest {
 
     class Fixture {
         val server = MockWebServer()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -54,7 +54,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
-            whenever(scopes.options).thenReturn(
+            whenever(hub.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "http://key@localhost/proj"
                 }
@@ -68,7 +68,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             )
 
             return ApolloClient.Builder().serverUrl(server.url("/").toString())
-                .sentryTracing(scopes = scopes, beforeSpan = beforeSpan, captureFailedRequests = false)
+                .sentryTracing(hub = hub, beforeSpan = beforeSpan, captureFailedRequests = false)
                 .build()
         }
     }
@@ -79,7 +79,7 @@ class SentryApollo3InterceptorWithVariablesTest {
     fun `creates a span around the successful request`() {
         executeQuery()
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
@@ -94,7 +94,7 @@ class SentryApollo3InterceptorWithVariablesTest {
     fun `creates a span around the failed request`() {
         executeQuery(fixture.getSut(httpStatusCode = 403))
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
@@ -109,7 +109,7 @@ class SentryApollo3InterceptorWithVariablesTest {
     fun `creates a span around the request failing with network error`() {
         executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
@@ -124,7 +124,7 @@ class SentryApollo3InterceptorWithVariablesTest {
     fun `handles non-ascii header values correctly`() {
         executeQuery(id = "á")
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
@@ -138,7 +138,7 @@ class SentryApollo3InterceptorWithVariablesTest {
     @Test
     fun `adds breadcrumb when http calls succeeds`() {
         executeQuery(fixture.getSut())
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 // response_body_size is added but mock webserver returns 0 always
@@ -173,8 +173,8 @@ class SentryApollo3InterceptorWithVariablesTest {
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
-            tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
-            whenever(fixture.scopes.span).thenReturn(tx)
+            tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.hub)
+            whenever(fixture.hub.span).thenReturn(tx)
         }
 
         val coroutine = launch {

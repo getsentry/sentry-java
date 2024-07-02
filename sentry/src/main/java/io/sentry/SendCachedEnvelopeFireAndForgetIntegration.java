@@ -18,7 +18,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
   private final @NotNull SendFireAndForgetFactory factory;
   private @Nullable IConnectionStatusProvider connectionStatusProvider;
-  private @Nullable IScopes scopes;
+  private @Nullable IHub hub;
   private @Nullable SentryOptions options;
   private @Nullable SendFireAndForget sender;
   private final AtomicBoolean isInitialized = new AtomicBoolean(false);
@@ -35,7 +35,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
   public interface SendFireAndForgetFactory {
     @Nullable
-    SendFireAndForget create(@NotNull IScopes scopes, @NotNull SentryOptions options);
+    SendFireAndForget create(@NotNull IHub hub, @NotNull SentryOptions options);
 
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
       if (dirPath == null || dirPath.isEmpty()) {
@@ -66,8 +66,8 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   }
 
   @Override
-  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
+  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    this.hub = Objects.requireNonNull(hub, "Hub is required");
     this.options = Objects.requireNonNull(options, "SentryOptions is required");
 
     final String cachedDir = options.getCacheDirPath();
@@ -81,7 +81,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
         .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
     addIntegrationToSdkVersion(getClass());
 
-    sendCachedEnvelopes(scopes, options);
+    sendCachedEnvelopes(hub, options);
   }
 
   @Override
@@ -95,14 +95,14 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   @Override
   public void onConnectionStatusChanged(
       final @NotNull IConnectionStatusProvider.ConnectionStatus status) {
-    if (scopes != null && options != null) {
-      sendCachedEnvelopes(scopes, options);
+    if (hub != null && options != null) {
+      sendCachedEnvelopes(hub, options);
     }
   }
 
   @SuppressWarnings({"FutureReturnValueIgnored", "NullAway"})
   private synchronized void sendCachedEnvelopes(
-      final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+      final @NotNull IHub hub, final @NotNull SentryOptions options) {
     try {
       options
           .getExecutorService()
@@ -122,7 +122,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
                     connectionStatusProvider = options.getConnectionStatusProvider();
                     connectionStatusProvider.addConnectionStatusObserver(this);
 
-                    sender = factory.create(scopes, options);
+                    sender = factory.create(hub, options);
                   }
 
                   // skip run only if we're certainly disconnected
@@ -138,7 +138,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
                   }
 
                   // in case there's rate limiting active, skip processing
-                  final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+                  final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
                   if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
                     options
                         .getLogger()

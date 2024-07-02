@@ -1,7 +1,7 @@
 package io.sentry.spring.jakarta
 
 import io.sentry.Hint
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider
@@ -19,10 +19,10 @@ import kotlin.test.assertNotNull
 class SentryRequestHttpServletRequestProcessorTest {
 
     private class Fixture {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
 
         fun getSut(request: HttpServletRequest, options: SentryOptions = SentryOptions()): SentryRequestHttpServletRequestProcessor {
-            whenever(scopes.options).thenReturn(options)
+            whenever(hub.options).thenReturn(options)
             return SentryRequestHttpServletRequestProcessor(SpringMvcTransactionNameProvider(), request)
         }
     }

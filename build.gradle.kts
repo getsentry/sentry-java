@@ -32,6 +32,10 @@ buildscript {
         classpath(Config.QualityPlugins.errorpronePlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
+        // add classpath of androidNativeBundle
+        // com.ydq.android.gradle.build.tool:nativeBundle:{version}}
+        classpath(Config.NativePlugins.nativeBundlePlugin)
+
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
@@ -74,7 +78,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()
@@ -96,7 +99,7 @@ allprojects {
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
         }
     }
 }
@@ -107,6 +110,7 @@ subprojects {
         "sentry-android-fragment",
         "sentry-android-navigation",
         "sentry-android-ndk",
+        "sentry-android-okhttp",
         "sentry-android-sqlite",
         "sentry-android-timber"
     )
@@ -290,6 +294,7 @@ private val androidLibs = setOf(
     "sentry-android-ndk",
     "sentry-android-fragment",
     "sentry-android-navigation",
+    "sentry-android-okhttp",
     "sentry-android-timber",
     "sentry-compose-android"
 )

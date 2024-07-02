@@ -34,11 +34,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Username of the user. */
   private @Nullable String username;
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update. Use a custom tag or
-   *     context instead.
-   */
-  @Deprecated private @Nullable String segment;
+  private @Nullable String segment;
 
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
@@ -228,9 +224,7 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Gets the segment of the user.
    *
    * @return the user segment.
-   * @deprecated has no effect and will be removed in the next major update.
    */
-  @Deprecated
   public @Nullable String getSegment() {
     return segment;
   }
@@ -239,9 +233,7 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Sets the segment of the user.
    *
    * @param segment the segment.
-   * @deprecated has no effect and will be removed in the next major update.
    */
-  @Deprecated
   public void setSegment(final @Nullable String segment) {
     this.segment = segment;
   }

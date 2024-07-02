@@ -1,6 +1,6 @@
 package io.sentry.spring.jakarta
 
-import io.sentry.IScopes
+import io.sentry.IHub
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
@@ -13,18 +13,18 @@ class SentryInitBeanPostProcessorTest {
     @Test
     fun closesSentryOnApplicationContextDestroy() {
         val ctx = AnnotationConfigApplicationContext(TestConfig::class.java)
-        val scopes = ctx.getBean(IScopes::class.java)
+        val hub = ctx.getBean(IHub::class.java)
         ctx.close()
-        verify(scopes).close()
+        verify(hub).close()
     }
 
     @Configuration
     open class TestConfig {
 
         @Bean(destroyMethod = "")
-        open fun scopes() = mock<IScopes>()
+        open fun hub() = mock<IHub>()
 
         @Bean
-        open fun sentryInitBeanPostProcessor() = SentryInitBeanPostProcessor(scopes())
+        open fun sentryInitBeanPostProcessor() = SentryInitBeanPostProcessor(hub())
     }
 }

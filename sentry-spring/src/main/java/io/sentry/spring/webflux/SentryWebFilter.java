@@ -7,10 +7,10 @@ import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.CustomSamplingContext;
 import io.sentry.Hint;
+import io.sentry.IHub;
 import io.sentry.IScope;
-import io.sentry.IScopes;
 import io.sentry.ITransaction;
-import io.sentry.NoOpScopes;
+import io.sentry.NoOpHub;
 import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -34,44 +34,43 @@ import reactor.core.publisher.Mono;
 /** Manages {@link IScope} in Webflux request processing. */
 @ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
-  public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
-  /**
-   * @deprecated please use {@link SentryWebFilter#SENTRY_SCOPES_KEY} instead.
-   */
-  @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
-
+  public static final String SENTRY_HUB_KEY = "sentry-hub";
   private static final String TRANSACTION_OP = "http.server";
   private static final String TRACE_ORIGIN = "auto.spring.webflux";
 
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
-  public SentryWebFilter(final @NotNull IScopes scopes) {
-    Objects.requireNonNull(scopes, "scopes are required");
-    this.sentryRequestResolver = new SentryRequestResolver(scopes);
+  public SentryWebFilter(final @NotNull IHub hub) {
+    Objects.requireNonNull(hub, "hub is required");
+    this.sentryRequestResolver = new SentryRequestResolver(hub);
   }
 
   @Override
   public Mono<Void> filter(
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
-    @NotNull IScopes requestScopes = Sentry.forkedRootScopes("request.webflux");
-    if (!requestScopes.isEnabled()) {
+    @NotNull IHub requestHub = Sentry.cloneMainHub();
+    if (!requestHub.isEnabled()) {
       return webFilterChain.filter(serverWebExchange);
     }
 
-    final boolean isTracingEnabled = requestScopes.getOptions().isTracingEnabled();
+    final boolean isTracingEnabled = requestHub.getOptions().isTracingEnabled();
     final @NotNull ServerHttpRequest request = serverWebExchange.getRequest();
     final @NotNull HttpHeaders headers = request.getHeaders();
     final @Nullable String sentryTraceHeader =
         headers.getFirst(SentryTraceHeader.SENTRY_TRACE_HEADER);
     final @Nullable List<String> baggageHeaders = headers.get(BaggageHeader.BAGGAGE_HEADER);
     final @Nullable TransactionContext transactionContext =
-        requestScopes.continueTrace(sentryTraceHeader, baggageHeaders);
+        requestHub.continueTrace(sentryTraceHeader, baggageHeaders);
 
     final @Nullable ITransaction transaction =
-        isTracingEnabled && shouldTraceRequest(requestScopes, request)
-            ? startTransaction(requestScopes, request, transactionContext)
+        isTracingEnabled && shouldTraceRequest(requestHub, request)
+            ? startTransaction(requestHub, request, transactionContext)
             : null;
+
+    if (transaction != null) {
+      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+    }
 
     return webFilterChain
         .filter(serverWebExchange)
@@ -80,7 +79,8 @@ public final class SentryWebFilter implements WebFilter {
               if (transaction != null) {
                 finishTransaction(serverWebExchange, transaction);
               }
-              Sentry.setCurrentScopes(NoOpScopes.getInstance());
+              requestHub.popScope();
+              Sentry.setCurrentHub(NoOpHub.getInstance());
             })
         .doOnError(
             e -> {
@@ -91,8 +91,9 @@ public final class SentryWebFilter implements WebFilter {
             })
         .doFirst(
             () -> {
-              serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
-              Sentry.setCurrentScopes(requestScopes);
+              serverWebExchange.getAttributes().put(SENTRY_HUB_KEY, requestHub);
+              Sentry.setCurrentHub(requestHub);
+              requestHub.pushScope();
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
               final Hint hint = new Hint();
@@ -100,21 +101,21 @@ public final class SentryWebFilter implements WebFilter {
               hint.set(WEBFLUX_FILTER_RESPONSE, response);
               final String methodName =
                   request.getMethod() != null ? request.getMethod().name() : "unknown";
-              requestScopes.addBreadcrumb(
+              requestHub.addBreadcrumb(
                   Breadcrumb.http(request.getURI().toString(), methodName), hint);
-              requestScopes.configureScope(
+              requestHub.configureScope(
                   scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
             });
   }
 
   private boolean shouldTraceRequest(
-      final @NotNull IScopes scopes, final @NotNull ServerHttpRequest request) {
-    return scopes.getOptions().isTraceOptionsRequests()
+      final @NotNull IHub hub, final @NotNull ServerHttpRequest request) {
+    return hub.getOptions().isTraceOptionsRequests()
         || !HttpMethod.OPTIONS.equals(request.getMethod());
   }
 
   private @NotNull ITransaction startTransaction(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull ServerHttpRequest request,
       final @Nullable TransactionContext transactionContext) {
     final @NotNull String name = request.getMethod() + " " + request.getURI().getPath();
@@ -124,17 +125,16 @@ public final class SentryWebFilter implements WebFilter {
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setCustomSamplingContext(customSamplingContext);
     transactionOptions.setBindToScope(true);
-    transactionOptions.setOrigin(TRACE_ORIGIN);
 
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation(TRANSACTION_OP);
 
-      return scopes.startTransaction(transactionContext, transactionOptions);
+      return hub.startTransaction(transactionContext, transactionOptions);
     }
 
-    return scopes.startTransaction(
+    return hub.startTransaction(
         new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
         transactionOptions);
   }

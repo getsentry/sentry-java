@@ -6,8 +6,8 @@ import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
+import io.sentry.IHub
 import io.sentry.IScope
-import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -47,7 +47,7 @@ import kotlin.test.fail
 class SentryOkHttpInterceptorTest {
 
     class Fixture {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val server = MockWebServer()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
@@ -82,13 +82,13 @@ class SentryOkHttpInterceptorTest {
                 isSendDefaultPii = sendDefaultPii
             }
             scope = Scope(options)
-            whenever(scopes.options).thenReturn(options)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
+            whenever(hub.options).thenReturn(options)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
 
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
             if (isSpanActive) {
-                whenever(scopes.span).thenReturn(sentryTracer)
+                whenever(hub.span).thenReturn(sentryTracer)
             }
             server.enqueue(
                 MockResponse()
@@ -100,14 +100,14 @@ class SentryOkHttpInterceptorTest {
 
             val interceptor = when (captureFailedRequests) {
                 null -> SentryOkHttpInterceptor(
-                    scopes,
+                    hub,
                     beforeSpan,
                     failedRequestTargets = failedRequestTargets,
                     failedRequestStatusCodes = failedRequestStatusCodes
                 )
 
                 else -> SentryOkHttpInterceptor(
-                    scopes,
+                    hub,
                     beforeSpan,
                     captureFailedRequests = captureFailedRequests,
                     failedRequestTargets = failedRequestTargets,
@@ -281,7 +281,7 @@ class SentryOkHttpInterceptorTest {
     fun `adds breadcrumb when http calls succeeds`() {
         val sut = fixture.getSut(responseBody = "response body")
         sut.newCall(postRequest()).execute()
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(13L, it.data[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
@@ -296,7 +296,7 @@ class SentryOkHttpInterceptorTest {
     fun `adds breadcrumb when http calls results in exception`() {
         // to setup mocks
         fixture.getSut()
-        val interceptor = SentryOkHttpInterceptor(fixture.scopes)
+        val interceptor = SentryOkHttpInterceptor(fixture.hub)
         val chain = mock<Interceptor.Chain>()
         whenever(chain.call()).thenReturn(mock())
         whenever(chain.proceed(any())).thenThrow(IOException())
@@ -308,7 +308,7 @@ class SentryOkHttpInterceptorTest {
         } catch (e: IOException) {
             // ignore me
         }
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
             },
@@ -385,7 +385,7 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes).captureEvent(any(), any<Hint>())
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -396,7 +396,7 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes).captureEvent(any(), any<Hint>())
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -406,7 +406,7 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -417,7 +417,7 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -429,7 +429,7 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -440,7 +440,7 @@ class SentryOkHttpInterceptorTest {
         )
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes).captureEvent(
+        verify(fixture.hub).captureEvent(
             any(),
             check<Hint> {
                 assertNotNull(it.get(TypeCheckHint.OKHTTP_REQUEST))
@@ -462,7 +462,7 @@ class SentryOkHttpInterceptorTest {
         val request = getRequest(url = "/hello?myQuery=myValue#myFragment")
         val response = sut.newCall(request).execute()
 
-        verify(fixture.scopes).captureEvent(
+        verify(fixture.hub).captureEvent(
             check {
                 val sentryRequest = it.request!!
                 assertEquals("http://localhost:${fixture.server.port}/hello", sentryRequest.url)
@@ -503,7 +503,7 @@ class SentryOkHttpInterceptorTest {
 
         sut.newCall(postRequest(body = body)).execute()
 
-        verify(fixture.scopes).captureEvent(
+        verify(fixture.hub).captureEvent(
             check {
                 val sentryRequest = it.request!!
                 assertEquals(body.contentLength(), sentryRequest.bodySize)
@@ -522,7 +522,7 @@ class SentryOkHttpInterceptorTest {
 
         sut.newCall(getRequest()).execute()
 
-        verify(fixture.scopes).captureEvent(
+        verify(fixture.hub).captureEvent(
             check {
                 val sentryRequest = it.request!!
                 assertEquals("myValue", sentryRequest.headers!!["myHeader"])
@@ -540,7 +540,7 @@ class SentryOkHttpInterceptorTest {
         // to setup mocks
         fixture.getSut()
         val interceptor = SentryOkHttpInterceptor(
-            fixture.scopes,
+            fixture.hub,
             captureFailedRequests = true
         )
         val chain = mock<Interceptor.Chain>()
@@ -554,7 +554,7 @@ class SentryOkHttpInterceptorTest {
         } catch (e: IOException) {
             // ignore me
         }
-        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -565,7 +565,7 @@ class SentryOkHttpInterceptorTest {
         call.execute()
         val httpClientSpan = fixture.sentryTracer.children.firstOrNull()
         assertNull(httpClientSpan)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -573,7 +573,7 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 500)
         val call = sut.newCall(getRequest())
         call.execute()
-        verify(fixture.scopes).captureEvent(any(), any<Hint>())
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -582,6 +582,6 @@ class SentryOkHttpInterceptorTest {
         val call = sut.newCall(getRequest())
         SentryOkHttpEventListener.eventMap[call] = mock()
         call.execute()
-        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
     }
 }

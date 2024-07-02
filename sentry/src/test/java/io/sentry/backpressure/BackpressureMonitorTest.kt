@@ -1,6 +1,6 @@
 package io.sentry.backpressure
 
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryOptions
 import io.sentry.backpressure.BackpressureMonitor.MAX_DOWNSAMPLE_FACTOR
@@ -17,13 +17,13 @@ class BackpressureMonitorTest {
     class Fixture {
 
         val options = SentryOptions()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val executor = mock<ISentryExecutorService>()
         fun getSut(): BackpressureMonitor {
             options.executorService = executor
             whenever(executor.isClosed).thenReturn(false)
             whenever(executor.schedule(any(), any())).thenReturn(mock<Future<Any>>())
-            return BackpressureMonitor(options, scopes)
+            return BackpressureMonitor(options, hub)
         }
     }
 
@@ -38,7 +38,7 @@ class BackpressureMonitorTest {
     @Test
     fun `downsampleFactor increases with negative health checks up to max`() {
         val sut = fixture.getSut()
-        whenever(fixture.scopes.isHealthy).thenReturn(false)
+        whenever(fixture.hub.isHealthy).thenReturn(false)
         assertEquals(0, sut.downsampleFactor)
 
         (1..MAX_DOWNSAMPLE_FACTOR).forEach { i ->
@@ -54,13 +54,13 @@ class BackpressureMonitorTest {
     @Test
     fun `downsampleFactor goes back to 0 after positive health check`() {
         val sut = fixture.getSut()
-        whenever(fixture.scopes.isHealthy).thenReturn(false)
+        whenever(fixture.hub.isHealthy).thenReturn(false)
         assertEquals(0, sut.downsampleFactor)
 
         sut.checkHealth()
         assertEquals(1, sut.downsampleFactor)
 
-        whenever(fixture.scopes.isHealthy).thenReturn(true)
+        whenever(fixture.hub.isHealthy).thenReturn(true)
         sut.checkHealth()
         assertEquals(0, sut.downsampleFactor)
     }

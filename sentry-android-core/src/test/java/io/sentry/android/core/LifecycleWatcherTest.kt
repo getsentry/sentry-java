@@ -3,8 +3,8 @@ package io.sentry.android.core
 import androidx.lifecycle.LifecycleOwner
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
+import io.sentry.IHub
 import io.sentry.IScope
-import io.sentry.IScopes
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.Session
@@ -32,7 +32,7 @@ class LifecycleWatcherTest {
 
     private class Fixture {
         val ownerMock = mock<LifecycleOwner>()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val dateProvider = mock<ICurrentDateProvider>()
 
         fun getSUT(
@@ -44,12 +44,12 @@ class LifecycleWatcherTest {
             val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
             val scope = mock<IScope>()
             whenever(scope.session).thenReturn(session)
-            whenever(scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+            whenever(hub.configureScope(argumentCaptor.capture())).thenAnswer {
                 argumentCaptor.value.run(scope)
             }
 
             return LifecycleWatcher(
-                scopes,
+                hub,
                 sessionIntervalMillis,
                 enableAutoSessionTracking,
                 enableAppLifecycleBreadcrumbs,
@@ -69,7 +69,7 @@ class LifecycleWatcherTest {
     fun `if last started session is 0, start new session`() {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes).startSession()
+        verify(fixture.hub).startSession()
     }
 
     @Test
@@ -78,7 +78,7 @@ class LifecycleWatcherTest {
         whenever(fixture.dateProvider.currentTimeMillis).thenReturn(1L, 2L)
         watcher.onStart(fixture.ownerMock)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes, times(2)).startSession()
+        verify(fixture.hub, times(2)).startSession()
     }
 
     @Test
@@ -87,7 +87,7 @@ class LifecycleWatcherTest {
         whenever(fixture.dateProvider.currentTimeMillis).thenReturn(2L, 1L)
         watcher.onStart(fixture.ownerMock)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes).startSession()
+        verify(fixture.hub).startSession()
     }
 
     @Test
@@ -95,7 +95,7 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         watcher.onStop(fixture.ownerMock)
-        verify(fixture.scopes, timeout(10000)).endSession()
+        verify(fixture.hub, timeout(10000)).endSession()
     }
 
     @Test
@@ -109,14 +109,14 @@ class LifecycleWatcherTest {
         watcher.onStart(fixture.ownerMock)
         assertNull(watcher.timerTask)
 
-        verify(fixture.scopes, never()).endSession()
+        verify(fixture.hub, never()).endSession()
     }
 
     @Test
     fun `When session tracking is disabled, do not start session`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes, never()).startSession()
+        verify(fixture.hub, never()).startSession()
     }
 
     @Test
@@ -124,14 +124,14 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
         assertNull(watcher.timerTask)
-        verify(fixture.scopes, never()).endSession()
+        verify(fixture.hub, never()).endSession()
     }
 
     @Test
     fun `When session tracking is enabled, add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("app.lifecycle", it.category)
                 assertEquals("session", it.type)
@@ -145,8 +145,8 @@ class LifecycleWatcherTest {
     fun `When session tracking is enabled, add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
-        verify(fixture.scopes, timeout(10000)).endSession()
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub, timeout(10000)).endSession()
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("app.lifecycle", it.category)
                 assertEquals("session", it.type)
@@ -160,7 +160,7 @@ class LifecycleWatcherTest {
     fun `When session tracking is disabled, do not add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
@@ -168,14 +168,14 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
         assertNull(watcher.timerTask)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("app.lifecycle", it.category)
                 assertEquals("navigation", it.type)
@@ -189,14 +189,14 @@ class LifecycleWatcherTest {
     fun `When app lifecycle breadcrumbs is disabled, do not add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStop(fixture.ownerMock)
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("app.lifecycle", it.category)
                 assertEquals("navigation", it.type)
@@ -210,7 +210,7 @@ class LifecycleWatcherTest {
     fun `When app lifecycle breadcrumbs is disabled, do not add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
@@ -226,7 +226,7 @@ class LifecycleWatcherTest {
     }
 
     @Test
-    fun `if the scopes has already a fresh session running, don't start new one`() {
+    fun `if the hub has already a fresh session running, don't start new one`() {
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
             session = Session(
@@ -248,11 +248,11 @@ class LifecycleWatcherTest {
         )
 
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes, never()).startSession()
+        verify(fixture.hub, never()).startSession()
     }
 
     @Test
-    fun `if the scopes has a long running session, start new one`() {
+    fun `if the hub has a long running session, start new one`() {
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
             session = Session(
@@ -274,7 +274,7 @@ class LifecycleWatcherTest {
         )
 
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes).startSession()
+        verify(fixture.hub).startSession()
     }
 
     @Test

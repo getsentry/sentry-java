@@ -26,35 +26,35 @@ class SentryScheduleHookTest {
     }
 
     @Test
-    fun `scopes is reset to its state within the thread after hook is done`() {
+    fun `hub is reset to its state within the thread after hook is done`() {
         Sentry.init {
             it.dsn = dsn
         }
 
         val sut = SentryScheduleHook()
 
-        val mainScopes = Sentry.getCurrentScopes()
-        val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
+        val mainHub = Sentry.getCurrentHub()
+        val threadedHub = Sentry.getCurrentHub().clone()
 
         executor.submit {
-            Sentry.setCurrentScopes(threadedScopes)
+            Sentry.setCurrentHub(threadedHub)
         }.get()
 
-        assertEquals(mainScopes, Sentry.getCurrentScopes())
+        assertEquals(mainHub, Sentry.getCurrentHub())
 
         val callableFuture =
             executor.submit(
                 sut.apply {
-                    assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-                    assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
+                    assertNotEquals(mainHub, Sentry.getCurrentHub())
+                    assertNotEquals(threadedHub, Sentry.getCurrentHub())
                 }
             )
 
         callableFuture.get()
 
         executor.submit {
-            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-            assertEquals(threadedScopes, Sentry.getCurrentScopes())
+            assertNotEquals(mainHub, Sentry.getCurrentHub())
+            assertEquals(threadedHub, Sentry.getCurrentHub())
         }.get()
     }
 }

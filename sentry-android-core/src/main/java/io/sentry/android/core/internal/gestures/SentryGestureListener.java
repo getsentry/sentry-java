@@ -10,8 +10,8 @@ import android.view.View;
 import android.view.Window;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
+import io.sentry.IHub;
 import io.sentry.IScope;
-import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
@@ -43,7 +43,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private static final String TRACE_ORIGIN = "auto.ui.gesture_listener";
 
   private final @NotNull WeakReference<Activity> activityRef;
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
 
   private @Nullable UiElement activeUiElement = null;
@@ -54,10 +54,10 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   public SentryGestureListener(
       final @NotNull Activity currentActivity,
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull SentryAndroidOptions options) {
     this.activityRef = new WeakReference<>(currentActivity);
-    this.scopes = scopes;
+    this.hub = hub;
     this.options = options;
   }
 
@@ -185,7 +185,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     hint.set(ANDROID_MOTION_EVENT, motionEvent);
     hint.set(ANDROID_VIEW, target.getView());
 
-    scopes.addBreadcrumb(
+    hub.addBreadcrumb(
         Breadcrumb.userInteraction(
             type, target.getResourceName(), target.getClassName(), target.getTag(), additionalData),
         hint);
@@ -202,7 +202,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
       if (isNewInteraction) {
-        TracingUtils.startNewTrace(scopes);
+        TracingUtils.startNewTrace(hub);
         activeUiElement = target;
         activeEventType = eventType;
       }
@@ -251,13 +251,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
-    transactionOptions.setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
 
     final ITransaction transaction =
-        scopes.startTransaction(
+        hub.startTransaction(
             new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
 
-    scopes.configureScope(
+    transaction.getSpanContext().setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
+
+    hub.configureScope(
         scope -> {
           applyScope(scope, transaction);
         });
@@ -277,7 +278,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         activeTransaction.finish();
       }
     }
-    scopes.configureScope(
+    hub.configureScope(
         scope -> {
           // avoid method refs on Android due to some issues with older AGP setups
           // noinspection Convert2MethodRef

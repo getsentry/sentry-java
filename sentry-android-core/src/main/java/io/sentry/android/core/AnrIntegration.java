@@ -5,7 +5,7 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import io.sentry.Hint;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -48,13 +48,12 @@ public final class AnrIntegration implements Integration, Closeable {
   private static final @NotNull Object watchDogLock = new Object();
 
   @Override
-  public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required");
-    register(scopes, (SentryAndroidOptions) options);
+    register(hub, (SentryAndroidOptions) options);
   }
 
-  private void register(
-      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
+  private void register(final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
@@ -68,7 +67,7 @@ public final class AnrIntegration implements Integration, Closeable {
                 () -> {
                   synchronized (startLock) {
                     if (!isClosed) {
-                      startAnrWatchdog(scopes, options);
+                      startAnrWatchdog(hub, options);
                     }
                   }
                 });
@@ -81,7 +80,7 @@ public final class AnrIntegration implements Integration, Closeable {
   }
 
   private void startAnrWatchdog(
-      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
+      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
     synchronized (watchDogLock) {
       if (anrWatchDog == null) {
         options
@@ -95,7 +94,7 @@ public final class AnrIntegration implements Integration, Closeable {
             new ANRWatchDog(
                 options.getAnrTimeoutIntervalMillis(),
                 options.isAnrReportInDebug(),
-                error -> reportANR(scopes, options, error),
+                error -> reportANR(hub, options, error),
                 options.getLogger(),
                 context);
         anrWatchDog.start();
@@ -107,7 +106,7 @@ public final class AnrIntegration implements Integration, Closeable {
 
   @TestOnly
   void reportANR(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull SentryAndroidOptions options,
       final @NotNull ApplicationNotResponding error) {
     options.getLogger().log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
@@ -123,7 +122,7 @@ public final class AnrIntegration implements Integration, Closeable {
 
     final AnrHint anrHint = new AnrHint(isAppInBackground);
     final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
-    scopes.captureEvent(event, hint);
+    hub.captureEvent(event, hint);
   }
 
   private @NotNull Throwable buildAnrThrowable(

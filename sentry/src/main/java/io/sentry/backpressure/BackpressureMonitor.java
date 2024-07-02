@@ -1,6 +1,6 @@
 package io.sentry.backpressure;
 
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -12,13 +12,12 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   private static final int CHECK_INTERVAL_IN_MS = 10 * 1000;
 
   private final @NotNull SentryOptions sentryOptions;
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
   private int downsampleFactor = 0;
 
-  public BackpressureMonitor(
-      final @NotNull SentryOptions sentryOptions, final @NotNull IScopes scopes) {
+  public BackpressureMonitor(final @NotNull SentryOptions sentryOptions, final @NotNull IHub hub) {
     this.sentryOptions = sentryOptions;
-    this.scopes = scopes;
+    this.hub = hub;
   }
 
   @Override
@@ -67,6 +66,6 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   }
 
   private boolean isHealthy() {
-    return scopes.isHealthy();
+    return hub.isHealthy();
   }
 }

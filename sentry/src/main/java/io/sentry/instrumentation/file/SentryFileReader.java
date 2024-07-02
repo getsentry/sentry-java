@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -20,8 +20,7 @@ public final class SentryFileReader extends InputStreamReader {
     super(new SentryFileInputStream(fd));
   }
 
-  SentryFileReader(final @NotNull File file, final @NotNull IScopes scopes)
-      throws FileNotFoundException {
-    super(new SentryFileInputStream(file, scopes));
+  SentryFileReader(final @NotNull File file, final @NotNull IHub hub) throws FileNotFoundException {
+    super(new SentryFileInputStream(file, hub));
   }
 }

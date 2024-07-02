@@ -3,7 +3,7 @@ package io.sentry.android.core
 import android.app.Activity
 import android.app.Application
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.IScopes
+import io.sentry.IHub
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -19,7 +19,7 @@ class CurrentActivityIntegrationTest {
     private class Fixture {
         val application = mock<Application>()
         val activity = mock<Activity>()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
 
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -27,7 +27,7 @@ class CurrentActivityIntegrationTest {
 
         fun getSut(): CurrentActivityIntegration {
             val integration = CurrentActivityIntegration(application)
-            integration.register(scopes, options)
+            integration.register(hub, options)
             return integration
         }
     }

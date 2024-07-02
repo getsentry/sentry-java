@@ -3,7 +3,7 @@ package io.sentry.graphql;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +17,7 @@ public final class SentryGenericDataFetcherExceptionHandler implements DataFetch
   private final @NotNull SentryGraphqlExceptionHandler handler;
 
   public SentryGenericDataFetcherExceptionHandler(
-      final @Nullable IScopes scopes, final @NotNull DataFetcherExceptionHandler delegate) {
+      final @Nullable IHub hub, final @NotNull DataFetcherExceptionHandler delegate) {
     this.handler = new SentryGraphqlExceptionHandler(delegate);
   }
 

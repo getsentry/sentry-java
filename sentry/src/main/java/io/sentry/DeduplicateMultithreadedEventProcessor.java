@@ -62,9 +62,4 @@ public final class DeduplicateMultithreadedEventProcessor implements EventProces
     processedEvents.put(type, currentEventTid);
     return event;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 7000L;
-  }
 }

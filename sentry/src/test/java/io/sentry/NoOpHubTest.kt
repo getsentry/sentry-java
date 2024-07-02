@@ -71,9 +71,7 @@ class NoOpHubTest {
     }
 
     @Test
-    fun `pushScope is no op`() {
-        sut.pushScope()
-    }
+    fun `pushScope is no op`() = sut.pushScope()
 
     @Test
     fun `popScope is no op`() = sut.popScope()

@@ -15,9 +15,9 @@ import com.apollographql.apollo.request.RequestHeaders
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.IScopes
+import io.sentry.HubAdapter
+import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
@@ -32,12 +32,12 @@ import java.util.concurrent.Executor
 private const val TRACE_ORIGIN = "auto.graphql.apollo"
 
 class SentryApolloInterceptor(
-    private val scopes: IScopes = ScopesAdapter.getInstance(),
+    private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
 ) : ApolloInterceptor {
 
-    constructor(scopes: IScopes) : this(scopes, null)
-    constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
+    constructor(hub: IHub) : this(hub, null)
+    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion(javaClass)
@@ -45,7 +45,7 @@ class SentryApolloInterceptor(
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
-        val activeSpan = if (io.sentry.util.Platform.isAndroid()) scopes.transaction else scopes.span
+        val activeSpan = if (io.sentry.util.Platform.isAndroid()) hub.transaction else hub.span
         if (activeSpan == null) {
             val headers = addTracingHeaders(request, null)
             val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
@@ -115,10 +115,10 @@ class SentryApolloInterceptor(
     private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
         val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-        if (scopes.options.isTraceSampling) {
+        if (hub.options.isTraceSampling) {
             // we have no access to URI, no way to verify tracing origins
             TracingUtils.trace(
-                scopes,
+                hub,
                 listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
                 span
             )?.let { tracingHeaders ->
@@ -154,7 +154,7 @@ class SentryApolloInterceptor(
             try {
                 newSpan = beforeSpan.execute(span, request, response)
             } catch (e: Exception) {
-                scopes.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
+                hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
             }
         }
         if (newSpan == null) {
@@ -182,7 +182,7 @@ class SentryApolloInterceptor(
                     set(APOLLO_REQUEST, httpRequest)
                     set(APOLLO_RESPONSE, httpResponse)
                 }
-                scopes.addBreadcrumb(breadcrumb, hint)
+                hub.addBreadcrumb(breadcrumb, hint)
             }
         }
     }

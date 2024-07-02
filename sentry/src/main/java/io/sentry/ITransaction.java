@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
@@ -53,6 +54,14 @@ public interface ITransaction extends ISpan {
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp);
 
   /**
+   * Returns if transaction is sampled.
+   *
+   * @return is sampled
+   */
+  @Nullable
+  Boolean isSampled();
+
+  /**
    * Returns if the profile of a transaction is sampled.
    *
    * @return profile is sampled
@@ -60,13 +69,24 @@ public interface ITransaction extends ISpan {
   @Nullable
   Boolean isProfileSampled();
 
+  @Nullable
+  TracesSamplingDecision getSamplingDecision();
+
   /**
    * Returns the latest span that is not finished.
    *
    * @return span or null if not found.
    */
   @Nullable
-  ISpan getLatestActiveSpan();
+  Span getLatestActiveSpan();
+
+  /**
+   * Returns transaction's event id.
+   *
+   * @return the event id
+   */
+  @NotNull
+  SentryId getEventId();
 
   /** Schedules when transaction should be automatically finished. */
   void scheduleFinish();
@@ -91,6 +111,10 @@ public interface ITransaction extends ISpan {
       boolean dropIfNoChildren,
       @Nullable Hint hint);
 
+  @ApiStatus.Internal
+  void setContext(@NotNull String key, @NotNull Object context);
+
+  @ApiStatus.Internal
   @NotNull
-  SentryId getEventId();
+  Contexts getContexts();
 }

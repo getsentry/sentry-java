@@ -139,7 +139,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       }
     }
 
-    // TODO [HSM] EventProcessors from options are always executed after those from scopes
     event = processEvent(event, hint, options.getEventProcessors());
 
     if (event != null) {
@@ -413,7 +412,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       final @NotNull Hint hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
-      final int spanCountBeforeProcessor = transaction.getSpans().size();
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
@@ -425,7 +423,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
                 "An exception occurred while processing transaction by processor: %s",
                 processor.getClass().getName());
       }
-      final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
       if (transaction == null) {
         options
@@ -437,25 +434,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
-        // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
         break;
-      } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
-        // If the callback removed some spans, we report it
-        final int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "%d spans were dropped by a processor: %s",
-                droppedSpanCount,
-                processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, droppedSpanCount);
       }
     }
     return transaction;
@@ -687,9 +666,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       return SentryId.EMPTY_ID;
     }
 
-    final int spanCountBeforeCallback = transaction.getSpans().size();
     transaction = executeBeforeSendTransaction(transaction, hint);
-    final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
 
     if (transaction == null) {
       options
@@ -698,24 +675,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
-      // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(
-              DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
       return SentryId.EMPTY_ID;
-    } else if (spanCountAfterCallback < spanCountBeforeCallback) {
-      // If the callback removed some spans, we report it
-      final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "%d spans were dropped by beforeSendTransaction.",
-              droppedSpanCount);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
     }
 
     try {

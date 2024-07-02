@@ -4,7 +4,7 @@ import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.Hint
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
@@ -81,10 +81,10 @@ class RateLimiterTest {
     fun `parse X-Sentry-Rate-Limit and set its values and retry after should be true`() {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-        val scopes: IScopes = mock()
-        whenever(scopes.options).thenReturn(SentryOptions())
+        val hub: IHub = mock()
+        whenever(hub.options).thenReturn(SentryOptions())
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), scopes))
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), hub))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 
@@ -98,10 +98,10 @@ class RateLimiterTest {
     fun `parse X-Sentry-Rate-Limit and set its values and retry after should be false`() {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
-        val scopes: IScopes = mock()
-        whenever(scopes.options).thenReturn(SentryOptions())
+        val hub: IHub = mock()
+        whenever(hub.options).thenReturn(SentryOptions())
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), scopes))
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), hub))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
         val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem, statsdItem))
@@ -193,9 +193,9 @@ class RateLimiterTest {
                 it.setName("John Me")
             }
         )
-        val scopes = mock<IScopes>()
-        whenever(scopes.options).thenReturn(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(SentryOptions())
+        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
 
         val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
@@ -223,8 +223,8 @@ class RateLimiterTest {
     @Test
     fun `records only dropped items as lost`() {
         val rateLimiter = fixture.getSUT()
-        val scopes = mock<IScopes>()
-        whenever(scopes.options).thenReturn(SentryOptions())
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(SentryOptions())
 
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
         val userFeedbackItem = SentryEnvelopeItem.fromUserFeedback(
@@ -237,7 +237,7 @@ class RateLimiterTest {
                 it.setName("John Me")
             }
         )
-        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
+        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, fixture.serializer)
         val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
@@ -257,12 +257,12 @@ class RateLimiterTest {
     @Test
     fun `drop profile items as lost`() {
         val rateLimiter = fixture.getSUT()
-        val scopes = mock<IScopes>()
-        whenever(scopes.options).thenReturn(SentryOptions())
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(SentryOptions())
 
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
         val f = File.createTempFile("test", "trace")
-        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
+        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(f, transaction), 1000, fixture.serializer)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, profileItem))
 
@@ -279,12 +279,12 @@ class RateLimiterTest {
     @Test
     fun `drop metrics items as lost`() {
         val rateLimiter = fixture.getSUT()
-        val scopes = mock<IScopes>()
-        whenever(scopes.options).thenReturn(SentryOptions())
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(SentryOptions())
 
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
         val f = File.createTempFile("test", "trace")
-        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
+        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(f, transaction), 1000, fixture.serializer)
         val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, profileItem, statsdItem))

@@ -21,10 +21,10 @@ import kotlin.test.assertTrue
 class SpanTest {
 
     private class Fixture {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
 
         init {
-            whenever(scopes.options).thenReturn(
+            whenever(hub.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
                     isTraceSampling = true
@@ -33,27 +33,20 @@ class SpanTest {
         }
 
         fun getSut(options: SpanOptions = SpanOptions()): Span {
-            val context = SpanContext(
+            return Span(
                 SentryId(),
                 SpanId(),
-                SpanId(),
+                SentryTracer(TransactionContext("name", "op"), hub),
                 "op",
+                hub,
                 null,
-                null,
-                null,
-                null
-            )
-            return Span(
-                SentryTracer(TransactionContext("name", "op"), scopes),
-                scopes,
-                context,
                 options,
                 null
             )
         }
 
         fun getRootSut(options: TransactionOptions = TransactionOptions()): Span {
-            return SentryTracer(TransactionContext("name", "op"), scopes, options).root
+            return SentryTracer(TransactionContext("name", "op"), hub, options).root
         }
     }
 
@@ -108,25 +101,15 @@ class SpanTest {
     fun `converts to Sentry trace header`() {
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val spanContext = SpanContext(
-            traceId,
-            SpanId(),
-            parentSpanId,
-            "op",
-            null,
-            TracesSamplingDecision(true),
-            null,
-            null
-        )
         val span = Span(
+            traceId,
+            parentSpanId,
             SentryTracer(
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
-                fixture.scopes
+                fixture.hub
             ),
-            fixture.scopes,
-            spanContext,
-            SpanOptions(),
-            null
+            "op",
+            fixture.hub
         )
         val sentryTrace = span.toSentryTrace()
 
@@ -135,38 +118,6 @@ class SpanTest {
         assertNotNull(sentryTrace.isSampled) {
             assertTrue(it)
         }
-    }
-
-    @Test
-    fun `transfers span origin from options to span context`() {
-        val traceId = SentryId()
-        val parentSpanId = SpanId()
-        val spanContext = SpanContext(
-            traceId,
-            SpanId(),
-            parentSpanId,
-            "op",
-            null,
-            TracesSamplingDecision(true),
-            null,
-            "old-origin"
-        )
-
-        val spanOptions = SpanOptions()
-        spanOptions.origin = "new-origin"
-
-        val span = Span(
-            SentryTracer(
-                TransactionContext("name", "op", TracesSamplingDecision(true)),
-                fixture.scopes
-            ),
-            fixture.scopes,
-            spanContext,
-            spanOptions,
-            null
-        )
-
-        assertEquals("new-origin", span.spanContext.origin)
     }
 
     @Test
@@ -212,17 +163,17 @@ class SpanTest {
     }
 
     @Test
-    fun `when span has throwable set set, it assigns itself to throwable on the Scopes`() {
+    fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
         val transaction = SentryTracer(
             TransactionContext("name", "op"),
-            fixture.scopes
+            fixture.hub
         )
         val span = transaction.startChild("op")
         val ex = RuntimeException()
         span.throwable = ex
         span.finish()
 
-        verify(fixture.scopes).setSpanContext(ex, span, "name")
+        verify(fixture.hub).setSpanContext(ex, span, "name")
     }
 
     @Test
@@ -237,7 +188,7 @@ class SpanTest {
         span.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.scopes).setSpanContext(any(), any(), any())
+        verify(fixture.hub).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
         assertEquals(timestamp, span.finishDate)
     }
@@ -558,7 +509,7 @@ class SpanTest {
     }
 
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
-        return SentryTracer(transactionContext, fixture.scopes)
+        return SentryTracer(transactionContext, fixture.hub)
     }
 
     private fun startChildFromSpan(): Span {

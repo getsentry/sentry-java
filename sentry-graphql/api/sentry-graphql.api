@@ -9,11 +9,10 @@ public final class io/sentry/graphql/ExceptionReporter {
 }
 
 public final class io/sentry/graphql/ExceptionReporter$ExceptionDetails {
-	public fun <init> (Lio/sentry/IScopes;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Z)V
-	public fun <init> (Lio/sentry/IScopes;Lgraphql/schema/DataFetchingEnvironment;Z)V
-	public fun getHub ()Lio/sentry/IScopes;
+	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Z)V
+	public fun <init> (Lio/sentry/IHub;Lgraphql/schema/DataFetchingEnvironment;Z)V
+	public fun getHub ()Lio/sentry/IHub;
 	public fun getQuery ()Ljava/lang/String;
-	public fun getScopes ()Lio/sentry/IScopes;
 	public fun getVariables ()Ljava/util/Map;
 	public fun isSubscription ()Z
 }
@@ -27,19 +26,19 @@ public final class io/sentry/graphql/GraphqlStringUtils {
 
 public final class io/sentry/graphql/NoOpSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {
 	public static fun getInstance ()Lio/sentry/graphql/NoOpSubscriptionHandler;
-	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
 public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
-	public fun <init> (Lio/sentry/IScopes;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun handleException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;
 	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
 }
 
 public final class io/sentry/graphql/SentryGenericDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
-	public fun <init> (Lio/sentry/IScopes;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun handleException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;
 	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
 }
@@ -52,10 +51,9 @@ public final class io/sentry/graphql/SentryGraphqlExceptionHandler {
 public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {
 	public static final field SENTRY_EXCEPTIONS_CONTEXT_KEY Ljava/lang/String;
 	public static final field SENTRY_HUB_CONTEXT_KEY Ljava/lang/String;
-	public static final field SENTRY_SCOPES_CONTEXT_KEY Ljava/lang/String;
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IScopes;)V
-	public fun <init> (Lio/sentry/IScopes;Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
 	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
 	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;)V
 	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
@@ -73,6 +71,6 @@ public abstract interface class io/sentry/graphql/SentryInstrumentation$BeforeSp
 }
 
 public abstract interface class io/sentry/graphql/SentrySubscriptionHandler {
-	public abstract fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+	public abstract fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IHub;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 

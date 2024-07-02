@@ -40,8 +40,8 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
+import io.sentry.IHub;
 import io.sentry.ILogger;
-import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -80,8 +80,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   @Override
-  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(scopes, "Scopes are required");
+  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(hub, "Hub is required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -103,7 +103,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                 () -> {
                   synchronized (startLock) {
                     if (!isClosed) {
-                      startSystemEventsReceiver(scopes, (SentryAndroidOptions) options);
+                      startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
                     }
                   }
                 });
@@ -119,8 +119,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   private void startSystemEventsReceiver(
-      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-    receiver = new SystemEventsBroadcastReceiver(scopes, options.getLogger());
+      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
+    receiver = new SystemEventsBroadcastReceiver(hub, options.getLogger());
     final IntentFilter filter = new IntentFilter();
     for (String item : actions) {
       filter.addAction(item);
@@ -204,11 +204,11 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   static final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
 
-    private final @NotNull IScopes scopes;
+    private final @NotNull IHub hub;
     private final @NotNull ILogger logger;
 
-    SystemEventsBroadcastReceiver(final @NotNull IScopes scopes, final @NotNull ILogger logger) {
-      this.scopes = scopes;
+    SystemEventsBroadcastReceiver(final @NotNull IHub hub, final @NotNull ILogger logger) {
+      this.hub = hub;
       this.logger = logger;
     }
 
@@ -249,7 +249,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       final Hint hint = new Hint();
       hint.set(ANDROID_INTENT, intent);
 
-      scopes.addBreadcrumb(breadcrumb, hint);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 }

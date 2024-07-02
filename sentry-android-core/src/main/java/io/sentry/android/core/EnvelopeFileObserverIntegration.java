@@ -1,7 +1,7 @@
 package io.sentry.android.core;
 
+import io.sentry.IHub;
 import io.sentry.ILogger;
-import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.OutboxSender;
 import io.sentry.SentryLevel;
@@ -24,8 +24,8 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   }
 
   @Override
-  public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(scopes, "Scopes are required");
+  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(hub, "Hub is required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     logger = options.getLogger();
@@ -46,7 +46,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
                 () -> {
                   synchronized (startLock) {
                     if (!isClosed) {
-                      startOutboxSender(scopes, options, path);
+                      startOutboxSender(hub, options, path);
                     }
                   }
                 });
@@ -60,12 +60,10 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   }
 
   private void startOutboxSender(
-      final @NotNull IScopes scopes,
-      final @NotNull SentryOptions options,
-      final @NotNull String path) {
+      final @NotNull IHub hub, final @NotNull SentryOptions options, final @NotNull String path) {
     final OutboxSender outboxSender =
         new OutboxSender(
-            scopes,
+            hub,
             options.getEnvelopeReader(),
             options.getSerializer(),
             options.getLogger(),

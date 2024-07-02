@@ -1,7 +1,7 @@
 package io.sentry.android.sqlite
 
 import android.database.SQLException
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 class SQLiteSpanManagerTest {
 
     private class Fixture {
-        private val scopes = mock<IScopes>()
+        private val hub = mock<IHub>()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
 
@@ -30,13 +30,13 @@ class SQLiteSpanManagerTest {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
             }
-            whenever(scopes.options).thenReturn(options)
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            whenever(hub.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
             if (isSpanActive) {
-                whenever(scopes.span).thenReturn(sentryTracer)
+                whenever(hub.span).thenReturn(sentryTracer)
             }
-            return SQLiteSpanManager(scopes, databaseName)
+            return SQLiteSpanManager(hub, databaseName)
         }
     }
 

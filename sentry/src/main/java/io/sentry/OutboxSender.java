@@ -36,20 +36,20 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
   private final @NotNull IEnvelopeReader envelopeReader;
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
 
   public OutboxSender(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull IEnvelopeReader envelopeReader,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final long flushTimeoutMillis,
       final int maxQueueSize) {
-    super(scopes, logger, flushTimeoutMillis, maxQueueSize);
-    this.scopes = Objects.requireNonNull(scopes, "Scopes are required.");
+    super(hub, logger, flushTimeoutMillis, maxQueueSize);
+    this.hub = Objects.requireNonNull(hub, "Hub is required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
@@ -144,7 +144,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               logUnexpectedEventId(envelope, event.getEventId(), currentItem);
               continue;
             }
-            scopes.captureEvent(event, hint);
+            hub.captureEvent(event, hint);
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
@@ -181,7 +181,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
                   .getTrace()
                   .setSamplingDecision(extractSamplingDecision(traceContext));
             }
-            scopes.captureTransaction(transaction, traceContext, hint);
+            hub.captureTransaction(transaction, traceContext, hint);
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
@@ -197,7 +197,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         final SentryEnvelope newEnvelope =
             new SentryEnvelope(
                 envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
-        scopes.captureEnvelope(newEnvelope, hint);
+        hub.captureEnvelope(newEnvelope, hint);
         logger.log(
             SentryLevel.DEBUG,
             "%s item %d is being captured.",

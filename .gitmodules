@@ -1,0 +1,3 @@
+[submodule "sentry-android-ndk/sentry-native"]
+	path = sentry-android-ndk/sentry-native
+	url = https://github.com/getsentry/sentry-native

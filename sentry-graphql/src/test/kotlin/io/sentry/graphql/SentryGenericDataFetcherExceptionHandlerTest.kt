@@ -4,7 +4,7 @@ import graphql.GraphQLContext
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerParameters
 import graphql.schema.DataFetchingEnvironmentImpl
-import io.sentry.IScopes
+import io.sentry.IHub
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import kotlin.test.Test
@@ -15,10 +15,10 @@ class SentryGenericDataFetcherExceptionHandlerTest {
 
     @Test
     fun `collects exception into GraphQLContext and invokes delegate`() {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val delegate = mock<DataFetcherExceptionHandler>()
         val handler = SentryGenericDataFetcherExceptionHandler(
-            scopes,
+            hub,
             delegate
         )
 

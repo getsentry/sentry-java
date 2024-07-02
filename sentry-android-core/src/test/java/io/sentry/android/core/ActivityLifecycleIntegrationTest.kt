@@ -14,10 +14,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
+import io.sentry.Hub
 import io.sentry.IScope
 import io.sentry.Scope
 import io.sentry.ScopeCallback
-import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryDateProvider
@@ -71,7 +71,7 @@ class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
-        val scopes = mock<Scopes>()
+        val hub = mock<Hub>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
@@ -92,13 +92,13 @@ class ActivityLifecycleIntegrationTest {
         ): ActivityLifecycleIntegration {
             initializer?.configure(options)
 
-            whenever(scopes.options).thenReturn(options)
+            whenever(hub.options).thenReturn(options)
 
             // We let the ActivityLifecycleIntegration create the proper transaction here
             val optionCaptor = argumentCaptor<TransactionOptions>()
             val contextCaptor = argumentCaptor<TransactionContext>()
-            whenever(scopes.startTransaction(contextCaptor.capture(), optionCaptor.capture())).thenAnswer {
-                val t = SentryTracer(contextCaptor.lastValue, scopes, optionCaptor.lastValue)
+            whenever(hub.startTransaction(contextCaptor.capture(), optionCaptor.capture())).thenAnswer {
+                val t = SentryTracer(contextCaptor.lastValue, hub, optionCaptor.lastValue)
                 transaction = t
                 return@thenAnswer t
             }
@@ -145,7 +145,7 @@ class ActivityLifecycleIntegrationTest {
     @Test
     fun `When ActivityLifecycleIntegration is registered, it registers activity callback`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
@@ -153,7 +153,7 @@ class ActivityLifecycleIntegrationTest {
     @Test
     fun `When ActivityLifecycleIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         sut.close()
 
@@ -163,7 +163,7 @@ class ActivityLifecycleIntegrationTest {
     @Test
     fun `When ActivityLifecycleIntegration is closed, it should close the ActivityFramesTracker`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         sut.close()
 
@@ -173,39 +173,39 @@ class ActivityLifecycleIntegrationTest {
     @Test
     fun `When tracing is disabled, do not start tracing`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+        verify(fixture.hub, never()).startTransaction(any(), any<TransactionOptions>())
     }
 
     @Test
     fun `When tracing is enabled but activity is running, do not start tracing again`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes).startTransaction(any(), any<TransactionOptions>())
+        verify(fixture.hub).startTransaction(any(), any<TransactionOptions>())
     }
 
     @Test
     fun `Transaction op is ui_load and idle+deadline timeouts are set`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes).startTransaction(
+        verify(fixture.hub).startTransaction(
             check<TransactionContext> {
                 assertEquals("ui.load", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
@@ -221,7 +221,7 @@ class ActivityLifecycleIntegrationTest {
     fun `Activity gets added to ActivityFramesTracker during transaction creation`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityStarted(activity)
@@ -233,14 +233,14 @@ class ActivityLifecycleIntegrationTest {
     fun `Transaction name is the Activity's name`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes).startTransaction(
+        verify(fixture.hub).startTransaction(
             check {
                 assertEquals("Activity", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
@@ -254,9 +254,9 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
-        whenever(fixture.scopes.configureScope(any())).thenAnswer {
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
 
             sut.applyScope(scope, fixture.transaction)
@@ -273,11 +273,11 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
-        whenever(fixture.scopes.configureScope(any())).thenAnswer {
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
-            val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+            val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.hub)
             scope.transaction = previousTransaction
 
             sut.applyScope(scope, fixture.transaction)
@@ -297,14 +297,14 @@ class ActivityLifecycleIntegrationTest {
             it.isEnableTimeToFullDisplayTracing = true
             it.idleTimeout = 200
         })
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
         sut.ttidSpanMap.values.first().finish()
         sut.ttfdSpanMap.values.first().finish()
 
         // then transaction should not be immediately finished
-        verify(fixture.scopes, never())
+        verify(fixture.hub, never())
             .captureTransaction(
                 anyOrNull(),
                 anyOrNull(),
@@ -316,7 +316,7 @@ class ActivityLifecycleIntegrationTest {
         Thread.sleep(400)
 
         // then the transaction should be finished
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(SpanStatus.OK, it.status)
             },
@@ -330,13 +330,13 @@ class ActivityLifecycleIntegrationTest {
     fun `When tracing auto finish is enabled, it doesn't stop the transaction on onActivityPostResumed`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.scopes, never()).captureTransaction(
+        verify(fixture.hub, never()).captureTransaction(
             check {
                 assertEquals(SpanStatus.OK, it.status)
             },
@@ -350,7 +350,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When tracing has status, do not overwrite it`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -360,7 +360,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPostResumed(activity)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
             },
@@ -376,43 +376,43 @@ class ActivityLifecycleIntegrationTest {
             it.tracesSampleRate = 1.0
             it.isEnableActivityLifecycleTracingAutoFinish = false
         })
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.scopes, never()).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 
     @Test
     fun `When tracing is disabled, do not finish transaction`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.scopes, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
     fun `When Activity is destroyed but transaction is running, finish it`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.scopes).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
     fun `When transaction is started, adds to WeakWef`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -424,7 +424,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When Activity is destroyed removes WeakRef`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -437,7 +437,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When Activity is destroyed, sets appStartSpan status to cancelled and finish it`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
@@ -454,7 +454,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When Activity is destroyed, sets appStartSpan to null`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
@@ -469,7 +469,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When Activity is destroyed, sets ttidSpan status to deadline_exceeded and finish it`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
@@ -486,7 +486,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When Activity is destroyed, sets ttidSpan to null`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
@@ -503,7 +503,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
@@ -521,7 +521,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
@@ -537,25 +537,25 @@ class ActivityLifecycleIntegrationTest {
     fun `When new Activity and transaction is created, finish previous ones`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.scopes).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
     fun `do not stop transaction on resumed if API 29`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.scopes, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -563,7 +563,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut(Build.VERSION_CODES.P)
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
@@ -571,21 +571,21 @@ class ActivityLifecycleIntegrationTest {
         sut.ttfdSpanMap.values.first().finish()
         sut.onActivityResumed(activity)
 
-        verify(fixture.scopes, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any(), anyOrNull(), anyOrNull())
     }
 
     @Test
     fun `start transaction on created if API less than 29`() {
         val sut = fixture.getSut(Build.VERSION_CODES.P)
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         setAppStartTime()
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.scopes).startTransaction(any(), any<TransactionOptions>())
+        verify(fixture.hub).startTransaction(any(), any<TransactionOptions>())
     }
 
     @Test
@@ -593,7 +593,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
@@ -611,7 +611,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
@@ -626,7 +626,7 @@ class ActivityLifecycleIntegrationTest {
     fun `App start is Cold when savedInstanceState is null`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, null)
@@ -638,7 +638,7 @@ class ActivityLifecycleIntegrationTest {
     fun `App start is Warm when savedInstanceState is not null`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         val bundle = Bundle()
@@ -651,7 +651,7 @@ class ActivityLifecycleIntegrationTest {
     fun `Do not overwrite App start type after set`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         val bundle = Bundle()
@@ -665,7 +665,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true, start transaction with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -674,7 +674,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
-        verify(fixture.scopes).startTransaction(
+        verify(fixture.hub).startTransaction(
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
@@ -686,7 +686,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true and app start sampling decision is set, start transaction with isAppStart true`() {
         AppStartMetrics.getInstance().appStartSamplingDecision = mock()
         val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -694,7 +694,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes).startTransaction(
+        verify(fixture.hub).startTransaction(
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
@@ -706,7 +706,7 @@ class ActivityLifecycleIntegrationTest {
     @Test
     fun `When firstActivityCreated is true and app start sampling decision is not set, start transaction with isAppStart false`() {
         val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -714,7 +714,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes).startTransaction(
+        verify(fixture.hub).startTransaction(
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
@@ -727,19 +727,19 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is false and app start sampling decision is set, start transaction with isAppStart false`() {
         AppStartMetrics.getInstance().appStartSamplingDecision = mock()
         val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.scopes).startTransaction(any(), check<TransactionOptions> { assertFalse(it.isAppStartTransaction) })
+        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertFalse(it.isAppStartTransaction) })
     }
 
     @Test
     fun `When firstActivityCreated is true, do not create app start span if not foregroundImportance`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_BACKGROUND)
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         // usually set by SentryPerformanceProvider
         val date = SentryNanotimeDate(Date(1), 0)
@@ -750,7 +750,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
-        verify(fixture.scopes).startTransaction(
+        verify(fixture.hub).startTransaction(
             any(),
             check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) }
         )
@@ -760,7 +760,7 @@ class ActivityLifecycleIntegrationTest {
     fun `Create and finish app start span immediately in case SDK init is deferred`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         // usually set by SentryPerformanceProvider
         val startDate = SentryNanotimeDate(Date(1), 0)
@@ -786,7 +786,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When SentryPerformanceProvider is disabled, app start time span is still created`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         // usually done by SentryPerformanceProvider, if disabled it's done by
         // SentryAndroid.init
@@ -814,7 +814,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When app-start end time is already set, it should not be overwritten`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         // usually done by SentryPerformanceProvider
         val startDate = SentryNanotimeDate(Date(1), 0)
@@ -838,7 +838,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity lifecycle happens multiple times, app-start end time should not be overwritten`() {
         val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         // usually done by SentryPerformanceProvider
         val startDate = SentryNanotimeDate(Date(1), 0)
@@ -876,7 +876,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true, start app start warm span with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -893,7 +893,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true, start app start cold span with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -910,7 +910,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true, start app start span with Warm description`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -927,7 +927,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true, start app start span with Cold description`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
@@ -944,7 +944,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is false, start transaction but not with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime()
@@ -965,12 +965,12 @@ class ActivityLifecycleIntegrationTest {
     fun `When transaction is finished, it gets removed from scope`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        whenever(fixture.scopes.configureScope(any())).thenAnswer {
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
 
             scope.transaction = fixture.transaction
@@ -988,7 +988,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = false
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -1001,7 +1001,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -1016,7 +1016,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
         fixture.options.executorService = deferredExecutorService
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         val ttfdSpan = sut.ttfdSpanMap[activity]
@@ -1032,7 +1032,7 @@ class ActivityLifecycleIntegrationTest {
         assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
 
         sut.onActivityDestroyed(activity)
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 // ttfd timed out, so its measurement should not be set
                 val ttfdMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]
@@ -1049,7 +1049,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         val ttfdSpan = sut.ttfdSpanMap[activity]
@@ -1072,7 +1072,7 @@ class ActivityLifecycleIntegrationTest {
         assertNull(autoCloseFuture)
 
         sut.onActivityDestroyed(activity)
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 // ttfd was finished successfully, so its measurement should be set
                 val ttfdMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]
@@ -1090,7 +1090,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val activity = mock<Activity>()
         val activity2 = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -1128,7 +1128,7 @@ class ActivityLifecycleIntegrationTest {
         whenever(activity.findViewById<View>(any())).thenReturn(view)
 
         // Make the integration create the spans and register to the FirstDrawDoneListener
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityResumed(activity)
 
@@ -1143,7 +1143,7 @@ class ActivityLifecycleIntegrationTest {
         assertTrue(ttidSpan.isFinished)
 
         sut.onActivityDestroyed(activity)
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 // ttid measurement should be set
                 val ttidMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]
@@ -1166,7 +1166,7 @@ class ActivityLifecycleIntegrationTest {
         whenever(activity.findViewById<View>(any())).thenReturn(view)
 
         // Make the integration create the spans and register to the FirstDrawDoneListener
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityResumed(activity)
 
@@ -1189,7 +1189,7 @@ class ActivityLifecycleIntegrationTest {
         assertEquals(newEndDate, ttidSpan.finishDate)
 
         sut.onActivityDestroyed(activity)
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 // ttid and ttfd measurements should be the same
                 val ttidMeasurement = it.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]
@@ -1211,7 +1211,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
         // The ttid span should be running
@@ -1233,7 +1233,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
         fixture.options.executorService = deferredExecutorService
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityResumed(activity)
 
@@ -1268,7 +1268,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         fixture.options.isEnableTimeToFullDisplayTracing = true
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
         val ttfdSpan = sut.ttfdSpanMap[activity]
         assertNotNull(ttfdSpan)
@@ -1294,15 +1294,15 @@ class ActivityLifecycleIntegrationTest {
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
-        whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
         }
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
         // once for the screen, and once for the tracing propagation context
-        verify(fixture.scopes, times(2)).configureScope(any())
+        verify(fixture.hub, times(2)).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
     }
 
@@ -1314,15 +1314,15 @@ class ActivityLifecycleIntegrationTest {
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = mock<IScope>()
-        whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
         }
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
         // once for the screen, and once for the tracing propagation context
-        verify(fixture.scopes, times(2)).configureScope(any())
+        verify(fixture.hub, times(2)).configureScope(any())
         verify(scope).setScreen(any())
     }
 
@@ -1335,32 +1335,32 @@ class ActivityLifecycleIntegrationTest {
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
         val propagationContextAtStart = scope.propagationContext
-        whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+        whenever(fixture.hub.configureScope(argumentCaptor.capture())).thenAnswer {
             argumentCaptor.value.run(scope)
         }
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
 
         // once for the screen, and once for the tracing propagation context
-        verify(fixture.scopes, times(2)).configureScope(any())
+        verify(fixture.hub, times(2)).configureScope(any())
 
         val propagationContextAfterNewTrace = scope.propagationContext
         assertNotSame(propagationContextAtStart, propagationContextAfterNewTrace)
 
-        clearInvocations(fixture.scopes)
+        clearInvocations(fixture.hub)
         sut.onActivityCreated(activity, fixture.bundle)
 
         // once for the screen, but not for the tracing propagation context
-        verify(fixture.scopes).configureScope(any())
+        verify(fixture.hub).configureScope(any())
         assertSame(propagationContextAfterNewTrace, scope.propagationContext)
 
         sut.onActivityDestroyed(activity)
 
-        clearInvocations(fixture.scopes)
+        clearInvocations(fixture.hub)
         sut.onActivityCreated(activity, fixture.bundle)
         // once for the screen, and once for the tracing propagation context
-        verify(fixture.scopes, times(2)).configureScope(any())
+        verify(fixture.hub, times(2)).configureScope(any())
         assertNotSame(propagationContextAfterNewTrace, scope.propagationContext)
     }
 
@@ -1368,7 +1368,7 @@ class ActivityLifecycleIntegrationTest {
     fun `when transaction is finished, sets frame metrics`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
@@ -1384,7 +1384,7 @@ class ActivityLifecycleIntegrationTest {
 
         fixture.options.tracesSampleRate = 1.0
         fixture.options.dateProvider = SentryDateProvider { now }
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         // usually done by SentryPerformanceProvider
         val startDate = SentryNanotimeDate(Date(5678), 910)

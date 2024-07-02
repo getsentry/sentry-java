@@ -1,15 +1,15 @@
 package io.sentry.spring.jakarta.webflux;
 
 import io.micrometer.context.ThreadLocalAccessor;
-import io.sentry.IScopes;
-import io.sentry.NoOpScopes;
+import io.sentry.IHub;
+import io.sentry.NoOpHub;
 import io.sentry.Sentry;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
-public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccessor<IScopes> {
+public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccessor<IHub> {
 
-  public static final String KEY = "sentry-scopes";
+  public static final String KEY = "sentry-hub";
 
   @Override
   public Object key() {
@@ -17,18 +17,18 @@ public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccess
   }
 
   @Override
-  public IScopes getValue() {
-    return Sentry.getCurrentScopes();
+  public IHub getValue() {
+    return Sentry.getCurrentHub();
   }
 
   @Override
-  public void setValue(IScopes value) {
-    Sentry.setCurrentScopes(value);
+  public void setValue(IHub value) {
+    Sentry.setCurrentHub(value);
   }
 
   @Override
   @SuppressWarnings("deprecation")
   public void reset() {
-    Sentry.setCurrentScopes(NoOpScopes.getInstance());
+    Sentry.setCurrentHub(NoOpHub.getInstance());
   }
 }

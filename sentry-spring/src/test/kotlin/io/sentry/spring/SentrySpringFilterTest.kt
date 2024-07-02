@@ -1,9 +1,8 @@
 package io.sentry.spring
 
 import io.sentry.Breadcrumb
+import io.sentry.IHub
 import io.sentry.IScope
-import io.sentry.IScopes
-import io.sentry.ISentryLifecycleToken
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -38,29 +37,23 @@ import kotlin.test.fail
 
 class SentrySpringFilterTest {
     private class Fixture {
-        val scopes = mock<IScopes>()
-        val scopesBeforeForking = mock<IScopes>()
+        val hub = mock<IHub>()
         val response = MockHttpServletResponse()
-        val lifecycleToken = mock<ISentryLifecycleToken>()
         val chain = mock<FilterChain>()
         lateinit var scope: IScope
         lateinit var request: HttpServletRequest
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
             scope = Scope(options)
-            whenever(scopesBeforeForking.options).thenReturn(options)
-            whenever(scopesBeforeForking.isEnabled).thenReturn(true)
-            whenever(scopes.options).thenReturn(options)
-            whenever(scopes.isEnabled).thenReturn(true)
-            whenever(scopesBeforeForking.forkedScopes(any())).thenReturn(scopes)
-            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
+            whenever(hub.options).thenReturn(options)
+            whenever(hub.isEnabled).thenReturn(true)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             this.request = request
                 ?: MockHttpServletRequest().apply {
                     this.requestURI = "http://localhost:8080/some-uri"
                     this.method = "post"
                 }
-            return SentrySpringFilter(scopesBeforeForking)
+            return SentrySpringFilter(hub)
         }
     }
 
@@ -71,8 +64,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.scopesBeforeForking).forkedScopes(any())
-        verify(fixture.scopes).makeCurrent()
+        verify(fixture.hub).pushScope()
     }
 
     @Test
@@ -80,7 +72,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check { it: Breadcrumb ->
                 Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
                 Assertions.assertThat(it.getData("method")).isEqualTo("POST")
@@ -95,7 +87,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.lifecycleToken).close()
+        verify(fixture.hub).popScope()
     }
 
     @Test
@@ -107,7 +99,7 @@ class SentrySpringFilterTest {
             listener.doFilter(fixture.request, fixture.response, fixture.chain)
             fail()
         } catch (e: Exception) {
-            verify(fixture.lifecycleToken).close()
+            verify(fixture.hub).popScope()
         }
     }
 

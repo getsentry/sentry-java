@@ -7,9 +7,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
+import io.sentry.Hub
 import io.sentry.IScope
 import io.sentry.Scope
-import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -27,7 +27,6 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
-import io.sentry.test.createTestScopes
 import io.sentry.transport.ITransport
 import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
@@ -40,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -86,9 +84,9 @@ class InternalSentrySdkTest {
             capturedEnvelopes.clear()
         }
 
-        fun captureEnvelopeWithEvent(event: SentryEvent = SentryEvent(), maybeStartNewSession: Boolean = false) {
+        fun captureEnvelopeWithEvent(event: SentryEvent = SentryEvent()) {
             // create an envelope with session data
-            val options = Sentry.getCurrentScopes().options
+            val options = Sentry.getCurrentHub().options
             val eventId = SentryId()
             val header = SentryEnvelopeHeader(eventId)
             val eventItem = SentryEnvelopeItem.fromEvent(options.serializer, event)
@@ -105,24 +103,7 @@ class InternalSentrySdkTest {
             options.serializer.serialize(envelope, outputStream)
             val data = outputStream.toByteArray()
 
-            InternalSentrySdk.captureEnvelope(data, maybeStartNewSession)
-        }
-
-        fun createSentryEventWithUnhandledException(): SentryEvent {
-            return SentryEvent(RuntimeException()).apply {
-                val mechanism = Mechanism()
-                mechanism.isHandled = false
-
-                val factory = SentryExceptionFactory(mock())
-                val sentryExceptions = factory.getSentryExceptions(
-                    ExceptionMechanismException(
-                        mechanism,
-                        Throwable(),
-                        Thread()
-                    )
-                )
-                exceptions = sentryExceptions
-            }
+            InternalSentrySdk.captureEnvelope(data)
         }
 
         fun mockFinishedAppStart() {
@@ -203,34 +184,40 @@ class InternalSentrySdkTest {
 
     @BeforeTest
     fun `set up`() {
-        Sentry.close()
         context = ApplicationProvider.getApplicationContext()
         DeviceInfoUtil.resetInstance()
     }
 
     @Test
-    fun `current scope returns null when scopes is no-op`() {
-        Sentry.setCurrentScopes(createTestScopes(enabled = false))
+    fun `current scope returns null when hub is no-op`() {
+        Sentry.getCurrentHub().close()
         val scope = InternalSentrySdk.getCurrentScope()
         assertNull(scope)
     }
 
     @Test
-    fun `current scope returns obj when scopes is active`() {
-        val fixture = Fixture()
-        fixture.init(context)
+    fun `current scope returns obj when hub is active`() {
+        Sentry.setCurrentHub(
+            Hub(
+                SentryOptions().apply {
+                    dsn = "https://key@uri/1234567"
+                }
+            )
+        )
         val scope = InternalSentrySdk.getCurrentScope()
         assertNotNull(scope)
     }
 
     @Test
     fun `current scope returns a copy of the scope`() {
-        val fixture = Fixture()
-        fixture.init(context)
+        Sentry.setCurrentHub(
+            Hub(
+                SentryOptions().apply {
+                    dsn = "https://key@uri/1234567"
+                }
+            )
+        )
         Sentry.addBreadcrumb("test")
-        Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.addBreadcrumb(Breadcrumb("currentBreadcrumb")) }
-        Sentry.configureScope(ScopeType.ISOLATION) { scope -> scope.addBreadcrumb(Breadcrumb("isolationBreadcrumb")) }
-        Sentry.configureScope(ScopeType.GLOBAL) { scope -> scope.addBreadcrumb(Breadcrumb("globalBreadcrumb")) }
 
         // when the clone is modified
         val clonedScope = InternalSentrySdk.getCurrentScope()!!
@@ -238,7 +225,7 @@ class InternalSentrySdkTest {
 
         // then modifications should not be reflected
         Sentry.configureScope { scope ->
-            assertEquals(3, scope.breadcrumbs.size)
+            assertEquals(1, scope.breadcrumbs.size)
         }
     }
 
@@ -326,7 +313,7 @@ class InternalSentrySdkTest {
 
     @Test
     fun `captureEnvelope fails if payload is invalid`() {
-        assertNull(InternalSentrySdk.captureEnvelope(ByteArray(8), false))
+        assertNull(InternalSentrySdk.captureEnvelope(ByteArray(8)))
     }
 
     @Test
@@ -350,19 +337,27 @@ class InternalSentrySdkTest {
     }
 
     @Test
-    fun `captureEnvelope correctly enriches the envelope with session data and does not start new session`() {
+    fun `captureEnvelope correctly enriches the envelope with session data`() {
         val fixture = Fixture()
         fixture.init(context)
 
-        // keep reference for current session for later assertions
-        // we need to get the reference now as it will be removed from the scope
-        val sessionRef = AtomicReference<Session>()
-        Sentry.configureScope { scope ->
-            sessionRef.set(scope.session)
-        }
-
         // when capture envelope is called with an crashed event
-        fixture.captureEnvelopeWithEvent(fixture.createSentryEventWithUnhandledException())
+        fixture.captureEnvelopeWithEvent(
+            SentryEvent(RuntimeException()).apply {
+                val mechanism = Mechanism()
+                mechanism.isHandled = false
+
+                val factory = SentryExceptionFactory(mock())
+                val sentryExceptions = factory.getSentryExceptions(
+                    ExceptionMechanismException(
+                        mechanism,
+                        Throwable(),
+                        Thread()
+                    )
+                )
+                exceptions = sentryExceptions
+            }
+        )
 
         val capturedEnvelope = fixture.capturedEnvelopes.first()
         val capturedEnvelopeItems = capturedEnvelope.items.toList()
@@ -379,52 +374,12 @@ class InternalSentrySdkTest {
         )!!
         assertEquals(Session.State.Crashed, capturedSession.status)
 
-        assertEquals(Session.State.Crashed, sessionRef.get().status)
-        assertEquals(capturedSession.sessionId, sessionRef.get().sessionId)
-    }
-
-    @Test
-    fun `captureEnvelope starts new session when enabled`() {
-        val fixture = Fixture()
-        fixture.init(context)
-
-        // when capture envelope is called with an crashed event
-        fixture.captureEnvelopeWithEvent(fixture.createSentryEventWithUnhandledException(), true)
-
+        // and the local session should be marked as crashed too
         val scopeRef = AtomicReference<IScope>()
         Sentry.configureScope { scope ->
             scopeRef.set(scope)
         }
-
-        // first envelope is the new session start
-        val capturedStartSessionEnvelope = fixture.capturedEnvelopes.first()
-        val capturedNewSessionStart = fixture.options.serializer.deserialize(
-            InputStreamReader(ByteArrayInputStream(capturedStartSessionEnvelope.items.toList()[0].data)),
-            Session::class.java
-        )!!
-        assertEquals(capturedNewSessionStart.sessionId, scopeRef.get().session!!.sessionId)
-        assertEquals(Session.State.Ok, capturedNewSessionStart.status)
-
-        val capturedEnvelope = fixture.capturedEnvelopes.last()
-        val capturedEnvelopeItems = capturedEnvelope.items.toList()
-
-        // there should be two envelopes session start and captured crash
-        assertEquals(2, fixture.capturedEnvelopes.size)
-
-        // then it should contain the original event + session
-        assertEquals(2, capturedEnvelopeItems.size)
-        assertEquals(SentryItemType.Event, capturedEnvelopeItems[0].header.type)
-        assertEquals(SentryItemType.Session, capturedEnvelopeItems[1].header.type)
-
-        // and then the sent session should be marked as crashed
-        val capturedSession = fixture.options.serializer.deserialize(
-            InputStreamReader(ByteArrayInputStream(capturedEnvelopeItems[1].data)),
-            Session::class.java
-        )!!
-        assertEquals(Session.State.Crashed, capturedSession.status)
-
-        // and the local session should be a new session
-        assertNotEquals(capturedSession.sessionId, scopeRef.get().session!!.sessionId)
+        assertEquals(Session.State.Crashed, scopeRef.get().session!!.status)
     }
 
     @Test

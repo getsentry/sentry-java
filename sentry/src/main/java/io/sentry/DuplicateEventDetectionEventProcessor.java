@@ -62,9 +62,4 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
     }
     return causes;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 1000L;
-  }
 }

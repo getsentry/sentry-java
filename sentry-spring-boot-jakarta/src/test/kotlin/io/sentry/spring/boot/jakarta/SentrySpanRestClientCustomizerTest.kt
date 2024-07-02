@@ -2,7 +2,7 @@ package io.sentry.spring.boot.jakarta
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -36,18 +36,18 @@ import kotlin.test.assertTrue
 class SentrySpanRestClientCustomizerTest {
     class Fixture {
         val sentryOptions = SentryOptions()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val restClientBuilder = RestClient.builder()
         var mockServer = MockWebServer()
         val transaction: SentryTracer
-        internal val customizer = SentrySpanRestClientCustomizer(scopes)
+        internal val customizer = SentrySpanRestClientCustomizer(hub)
         val url = mockServer.url("/test/123").toString()
         val scope = Scope(sentryOptions)
 
         init {
-            whenever(scopes.options).thenReturn(sentryOptions)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
-            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
+            whenever(hub.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
         }
 
         fun getSut(
@@ -75,7 +75,7 @@ class SentrySpanRestClientCustomizerTest {
             )
 
             if (isTransactionActive) {
-                whenever(scopes.span).thenReturn(transaction)
+                whenever(hub.span).thenReturn(transaction)
             }
 
             return restClientBuilder.apply {
@@ -247,7 +247,7 @@ class SentrySpanRestClientCustomizerTest {
             .body("content")
             .retrieve()
             .toEntity(String::class.java)
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -269,7 +269,7 @@ class SentrySpanRestClientCustomizerTest {
                 .toEntity(String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -287,7 +287,7 @@ class SentrySpanRestClientCustomizerTest {
             .body("content")
             .retrieve()
             .toEntity(String::class.java)
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -309,7 +309,7 @@ class SentrySpanRestClientCustomizerTest {
                 .toEntity(String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])

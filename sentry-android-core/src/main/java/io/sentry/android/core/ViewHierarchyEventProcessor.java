@@ -284,9 +284,4 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
     return node;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 11000L;
-  }
 }

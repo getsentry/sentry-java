@@ -338,9 +338,4 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         null,
         defaultSpanData);
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 9000L;
-  }
 }

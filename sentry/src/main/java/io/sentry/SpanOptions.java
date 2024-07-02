@@ -1,35 +1,11 @@
 package io.sentry;
 
-import static io.sentry.SpanContext.DEFAULT_ORIGIN;
-
 import com.jakewharton.nopen.annotation.Open;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 @Open
 public class SpanOptions {
-
-  /** The start timestamp of the transaction */
-  private @Nullable SentryDate startTimestamp = null;
-
-  /**
-   * Gets the startTimestamp
-   *
-   * @return startTimestamp - the startTimestamp
-   */
-  public @Nullable SentryDate getStartTimestamp() {
-    return startTimestamp;
-  }
-
-  /**
-   * Sets the startTimestamp
-   *
-   * @param startTimestamp - the startTimestamp
-   */
-  public void setStartTimestamp(@Nullable SentryDate startTimestamp) {
-    this.startTimestamp = startTimestamp;
-  }
 
   /**
    * If `trimStart` is true, sets the start timestamp of the transaction to the lowest start
@@ -50,8 +26,6 @@ public class SpanOptions {
    * finished.
    */
   private boolean isIdle = false;
-
-  protected @Nullable String origin = DEFAULT_ORIGIN;
 
   public boolean isTrimStart() {
     return trimStart;
@@ -75,13 +49,5 @@ public class SpanOptions {
 
   public void setIdle(boolean idle) {
     isIdle = idle;
-  }
-
-  public @Nullable String getOrigin() {
-    return origin;
-  }
-
-  public void setOrigin(final @Nullable String origin) {
-    this.origin = origin;
   }
 }

@@ -17,6 +17,7 @@ include(
     "sentry-android-ndk",
     "sentry-android",
     "sentry-android-timber",
+    "sentry-android-okhttp",
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-android-sqlite",
@@ -41,7 +42,6 @@ include(
     "sentry-openfeign",
     "sentry-graphql",
     "sentry-jdbc",
-    "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
@@ -66,3 +66,12 @@ include(
     "sentry-android-integration-tests:test-app-sentry",
     "sentry-samples:sentry-samples-openfeign"
 )
+
+gradle.beforeProject {
+    if (project.name == "sentry-android-ndk" || project.name == "sentry-samples-android") {
+        exec {
+            logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
+            commandLine("git", "submodule", "update", "--init", "--recursive")
+        }
+    }
+}

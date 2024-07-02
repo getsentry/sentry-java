@@ -18,15 +18,12 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import io.sentry.Breadcrumb;
-import io.sentry.Hint;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.NoOpScopes;
+import io.sentry.NoOpHub;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
-import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
-import io.sentry.TypeCheckHint;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,14 +46,7 @@ public final class SentryInstrumentation
           "INTERNAL", // Netflix DGS
           "DataFetchingException" // raw graphql-java
           );
-  public static final @NotNull String SENTRY_SCOPES_CONTEXT_KEY = "sentry.scopes";
-
-  /**
-   * @deprecated please use {@link SentryInstrumentation#SENTRY_SCOPES_CONTEXT_KEY} instead.
-   */
-  @Deprecated
-  public static final @NotNull String SENTRY_HUB_CONTEXT_KEY = SENTRY_SCOPES_CONTEXT_KEY;
-
+  public static final @NotNull String SENTRY_HUB_CONTEXT_KEY = "sentry.hub";
   public static final @NotNull String SENTRY_EXCEPTIONS_CONTEXT_KEY = "sentry.exceptions";
   private static final String TRACE_ORIGIN = "auto.graphql.graphql";
   private final @Nullable BeforeSpanCallback beforeSpan;
@@ -80,7 +70,7 @@ public final class SentryInstrumentation
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
-  public SentryInstrumentation(final @Nullable IScopes scopes) {
+  public SentryInstrumentation(final @Nullable IHub hub) {
     this(null, NoOpSubscriptionHandler.getInstance(), true);
   }
 
@@ -99,7 +89,7 @@ public final class SentryInstrumentation
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public SentryInstrumentation(
-      final @Nullable IScopes scopes, final @Nullable BeforeSpanCallback beforeSpan) {
+      final @Nullable IHub hub, final @Nullable BeforeSpanCallback beforeSpan) {
     this(beforeSpan, NoOpSubscriptionHandler.getInstance(), true);
   }
 
@@ -182,9 +172,9 @@ public final class SentryInstrumentation
   public @NotNull InstrumentationContext<ExecutionResult> beginExecution(
       final @NotNull InstrumentationExecutionParameters parameters) {
     final TracingState tracingState = parameters.getInstrumentationState();
-    final @NotNull IScopes currentScopes = Sentry.getCurrentScopes();
-    tracingState.setTransaction(currentScopes.getSpan());
-    parameters.getGraphQLContext().put(SENTRY_SCOPES_CONTEXT_KEY, currentScopes);
+    final @NotNull IHub currentHub = Sentry.getCurrentHub();
+    tracingState.setTransaction(currentHub.getSpan());
+    parameters.getGraphQLContext().put(SENTRY_HUB_CONTEXT_KEY, currentHub);
     return super.beginExecution(parameters);
   }
 
@@ -205,7 +195,7 @@ public final class SentryInstrumentation
                     exceptionReporter.captureThrowable(
                         throwable,
                         new ExceptionReporter.ExceptionDetails(
-                            scopesFromContext(graphQLContext), parameters, false),
+                            hubFromContext(graphQLContext), parameters, false),
                         result);
                   }
                 }
@@ -217,7 +207,7 @@ public final class SentryInstrumentation
                       exceptionReporter.captureThrowable(
                           new RuntimeException(error.getMessage()),
                           new ExceptionReporter.ExceptionDetails(
-                              scopesFromContext(graphQLContext), parameters, false),
+                              hubFromContext(graphQLContext), parameters, false),
                           result);
                     }
                   }
@@ -227,7 +217,7 @@ public final class SentryInstrumentation
                 exceptionReporter.captureThrowable(
                     exception,
                     new ExceptionReporter.ExceptionDetails(
-                        scopesFromContext(parameters.getGraphQLContext()), parameters, false),
+                        hubFromContext(parameters.getGraphQLContext()), parameters, false),
                     null);
               }
             });
@@ -272,7 +262,7 @@ public final class SentryInstrumentation
             operationDefinition.getOperation();
         final @Nullable String operationType =
             operation == null ? null : operation.name().toLowerCase(Locale.ROOT);
-        scopesFromContext(parameters.getExecutionContext().getGraphQLContext())
+        hubFromContext(parameters.getExecutionContext().getGraphQLContext())
             .addBreadcrumb(
                 Breadcrumb.graphqlOperation(
                     operationDefinition.getName(),
@@ -283,11 +273,11 @@ public final class SentryInstrumentation
     return super.beginExecuteOperation(parameters);
   }
 
-  private @NotNull IScopes scopesFromContext(final @Nullable GraphQLContext context) {
+  private @NotNull IHub hubFromContext(final @Nullable GraphQLContext context) {
     if (context == null) {
-      return NoOpScopes.getInstance();
+      return NoOpHub.getInstance();
     }
-    return context.getOrDefault(SENTRY_SCOPES_CONTEXT_KEY, NoOpScopes.getInstance());
+    return context.getOrDefault(SENTRY_HUB_CONTEXT_KEY, NoOpHub.getInstance());
   }
 
   @Override
@@ -303,16 +293,13 @@ public final class SentryInstrumentation
     return environment -> {
       final @Nullable ExecutionStepInfo executionStepInfo = environment.getExecutionStepInfo();
       if (executionStepInfo != null) {
-        Hint hint = new Hint();
-        hint.set(TypeCheckHint.GRAPHQL_DATA_FETCHING_ENVIRONMENT, environment);
-        scopesFromContext(parameters.getExecutionContext().getGraphQLContext())
+        hubFromContext(parameters.getExecutionContext().getGraphQLContext())
             .addBreadcrumb(
                 Breadcrumb.graphqlDataFetcher(
                     StringUtils.toString(executionStepInfo.getPath()),
                     GraphqlStringUtils.fieldToString(executionStepInfo.getField()),
                     GraphqlStringUtils.typeToString(executionStepInfo.getType()),
-                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())),
-                hint);
+                    GraphqlStringUtils.objectTypeToString(executionStepInfo.getObjectType())));
       }
       final TracingState tracingState = parameters.getInstrumentationState();
       final ISpan transaction = tracingState.getTransaction();
@@ -364,7 +351,7 @@ public final class SentryInstrumentation
         environment.getOperationDefinition().getOperation())) {
       return subscriptionHandler.onSubscriptionResult(
           tmpResult,
-          scopesFromContext(environment.getGraphQlContext()),
+          hubFromContext(environment.getGraphQlContext()),
           exceptionReporter,
           parameters);
     }
@@ -403,13 +390,13 @@ public final class SentryInstrumentation
     } else {
       parent = (GraphQLObjectType) type;
     }
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setOrigin(TRACE_ORIGIN);
+
     final @NotNull ISpan span =
         transaction.startChild(
             "graphql",
-            parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName(),
-            spanOptions);
+            parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName());
+
+    span.getSpanContext().setOrigin(TRACE_ORIGIN);
 
     return span;
   }

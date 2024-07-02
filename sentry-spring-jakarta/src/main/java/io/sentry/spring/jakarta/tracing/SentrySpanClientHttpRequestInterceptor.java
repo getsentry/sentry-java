@@ -8,10 +8,9 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
-import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -29,16 +28,16 @@ import org.springframework.http.client.ClientHttpResponse;
 public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
   private static final String TRACE_ORIGIN_REST_TEMPLATE = "auto.http.spring_jakarta.resttemplate";
   private static final String TRACE_ORIGIN_REST_CLIENT = "auto.http.spring_jakarta.restclient";
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
   private final @NotNull String traceOrigin;
 
-  public SentrySpanClientHttpRequestInterceptor(final @NotNull IScopes scopes) {
-    this(scopes, true);
+  public SentrySpanClientHttpRequestInterceptor(final @NotNull IHub hub) {
+    this(hub, true);
   }
 
   public SentrySpanClientHttpRequestInterceptor(
-      final @NotNull IScopes scopes, final @NotNull boolean isRestTemplate) {
-    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
+      final @NotNull IHub hub, final @NotNull boolean isRestTemplate) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
     this.traceOrigin = isRestTemplate ? TRACE_ORIGIN_REST_TEMPLATE : TRACE_ORIGIN_REST_CLIENT;
   }
 
@@ -51,14 +50,14 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     Integer responseStatusCode = null;
     ClientHttpResponse response = null;
     try {
-      final ISpan activeSpan = scopes.getSpan();
+      final ISpan activeSpan = hub.getSpan();
       if (activeSpan == null) {
         maybeAddTracingHeaders(request, null);
         return execution.execute(request, body);
       }
-      final @NotNull SpanOptions spanOptions = new SpanOptions();
-      spanOptions.setOrigin(traceOrigin);
-      final ISpan span = activeSpan.startChild("http.client", null, spanOptions);
+
+      final ISpan span = activeSpan.startChild("http.client");
+      span.getSpanContext().setOrigin(traceOrigin);
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
       final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());
@@ -92,7 +91,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @NotNull HttpRequest request, final @Nullable ISpan span) {
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
         TracingUtils.traceIfAllowed(
-            scopes,
+            hub,
             request.getURI().toString(),
             request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER),
             span);
@@ -129,6 +128,6 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       hint.set(SPRING_REQUEST_INTERCEPTOR_RESPONSE, response);
     }
 
-    scopes.addBreadcrumb(breadcrumb, hint);
+    hub.addBreadcrumb(breadcrumb, hint);
   }
 }

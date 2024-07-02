@@ -5,7 +5,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.language.AstPrinter;
 import graphql.schema.DataFetchingEnvironment;
 import io.sentry.Hint;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -33,7 +33,7 @@ public final class ExceptionReporter {
       final @NotNull Throwable throwable,
       final @NotNull ExceptionDetails exceptionDetails,
       final @Nullable ExecutionResult result) {
-    final @NotNull IScopes scopes = exceptionDetails.getScopes();
+    final @NotNull IHub hub = exceptionDetails.getHub();
     final @NotNull Mechanism mechanism = new Mechanism();
     mechanism.setType(MECHANISM_TYPE);
     mechanism.setHandled(false);
@@ -43,44 +43,44 @@ public final class ExceptionReporter {
     event.setLevel(SentryLevel.FATAL);
 
     final @NotNull Hint hint = new Hint();
-    setRequestDetailsOnEvent(scopes, exceptionDetails, event);
+    setRequestDetailsOnEvent(hub, exceptionDetails, event);
 
-    if (result != null && isAllowedToAttachBody(scopes)) {
+    if (result != null && isAllowedToAttachBody(hub)) {
       final @NotNull Response response = new Response();
       final @NotNull Map<String, Object> responseBody = result.toSpecification();
       response.setData(responseBody);
       event.getContexts().setResponse(response);
     }
 
-    scopes.captureEvent(event, hint);
+    hub.captureEvent(event, hint);
   }
 
-  private boolean isAllowedToAttachBody(final @NotNull IScopes scopes) {
-    final @NotNull SentryOptions options = scopes.getOptions();
+  private boolean isAllowedToAttachBody(final @NotNull IHub hub) {
+    final @NotNull SentryOptions options = hub.getOptions();
     return options.isSendDefaultPii()
         && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());
   }
 
   private void setRequestDetailsOnEvent(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull ExceptionDetails exceptionDetails,
       final @NotNull SentryEvent event) {
-    scopes.configureScope(
+    hub.configureScope(
         (scope) -> {
           final @Nullable Request scopeRequest = scope.getRequest();
           final @NotNull Request request = scopeRequest == null ? new Request() : scopeRequest;
-          setDetailsOnRequest(scopes, exceptionDetails, request);
+          setDetailsOnRequest(hub, exceptionDetails, request);
           event.setRequest(request);
         });
   }
 
   private void setDetailsOnRequest(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull ExceptionDetails exceptionDetails,
       final @NotNull Request request) {
     request.setApiTarget("graphql");
 
-    if (isAllowedToAttachBody(scopes)
+    if (isAllowedToAttachBody(hub)
         && (exceptionDetails.isSubscription() || captureRequestBodyForNonSubscriptions)) {
       final @NotNull Map<String, Object> data = new HashMap<>();
 
@@ -99,27 +99,27 @@ public final class ExceptionReporter {
 
   public static final class ExceptionDetails {
 
-    private final @NotNull IScopes scopes;
+    private final @NotNull IHub hub;
     private final @Nullable InstrumentationExecutionParameters instrumentationExecutionParameters;
     private final @Nullable DataFetchingEnvironment dataFetchingEnvironment;
 
     private final boolean isSubscription;
 
     public ExceptionDetails(
-        final @NotNull IScopes scopes,
+        final @NotNull IHub hub,
         final @Nullable InstrumentationExecutionParameters instrumentationExecutionParameters,
         final boolean isSubscription) {
-      this.scopes = scopes;
+      this.hub = hub;
       this.instrumentationExecutionParameters = instrumentationExecutionParameters;
       dataFetchingEnvironment = null;
       this.isSubscription = isSubscription;
     }
 
     public ExceptionDetails(
-        final @NotNull IScopes scopes,
+        final @NotNull IHub hub,
         final @Nullable DataFetchingEnvironment dataFetchingEnvironment,
         final boolean isSubscription) {
-      this.scopes = scopes;
+      this.hub = hub;
       this.dataFetchingEnvironment = dataFetchingEnvironment;
       instrumentationExecutionParameters = null;
       this.isSubscription = isSubscription;
@@ -149,16 +149,8 @@ public final class ExceptionReporter {
       return isSubscription;
     }
 
-    /**
-     * @deprecated please use {@link ExceptionDetails#getScopes()} instead.
-     */
-    @Deprecated
-    public @NotNull IScopes getHub() {
-      return scopes;
-    }
-
-    public @NotNull IScopes getScopes() {
-      return scopes;
+    public @NotNull IHub getHub() {
+      return hub;
     }
   }
 }

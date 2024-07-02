@@ -10,7 +10,6 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,7 +35,6 @@ class SdkInitTests : BaseUiTest() {
         transaction2.finish()
     }
 
-    @Ignore("TODO [POTEL] reinit should be discussed with mobile team")
     @Test
     fun doubleInitWithSameOptionsDoesNotThrow() {
         val options = SentryAndroidOptions()
@@ -58,7 +56,6 @@ class SdkInitTests : BaseUiTest() {
             it.isDebug = true
         }
         relayIdlingResource.increment()
-        relayIdlingResource.increment()
         transaction.finish()
         sampleScenario.moveToState(Lifecycle.State.DESTROYED)
         val transaction2 = Sentry.startTransaction("e2etests2", "testInit")
@@ -66,23 +63,7 @@ class SdkInitTests : BaseUiTest() {
 
         relay.assert {
             findEnvelope {
-                assertEnvelopeTransaction(
-                    it.items.toList(),
-                    AndroidLogger()
-                ).transaction == "e2etests"
-            }.assert {
-                val transactionItem: SentryTransaction = it.assertTransaction()
-                it.assertNoOtherItems()
-                assertEquals("e2etests", transactionItem.transaction)
-            }
-        }
-
-        relay.assert {
-            findEnvelope {
-                assertEnvelopeTransaction(
-                    it.items.toList(),
-                    AndroidLogger()
-                ).transaction == "e2etests2"
+                assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
                 // Profiling uses executorService, so if the executorService is shutdown it would fail
@@ -95,7 +76,6 @@ class SdkInitTests : BaseUiTest() {
         }
     }
 
-    @Ignore("TODO [POTEL] reinit should be discussed with mobile team")
     @Test
     fun doubleInitDoesNotWait() {
         relayIdlingResource.increment()
@@ -125,8 +105,7 @@ class SdkInitTests : BaseUiTest() {
 
         Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
         // We assert for less than 1 second just to account for slow devices in saucelabs or headless emulator
-        // TODO: Revert back to 1000ms after making scope.close() faster again
-        assertTrue(restartMs < 2500, "Expected less than 2500 ms for SDK restart. Got $restartMs ms")
+        assertTrue(restartMs < 1000, "Expected less than 1000 ms for SDK restart. Got $restartMs ms")
 
         relay.assert {
             findEnvelope {

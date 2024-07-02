@@ -5,14 +5,23 @@ plugins {
     kotlin("android")
     jacoco
     id(Config.QualityPlugins.jacocoAndroid)
+    id(Config.NativePlugins.nativeBundleExport)
     id(Config.QualityPlugins.gradleVersions)
 }
 
+var sentryNativeSrc: String = "sentry-native"
 val sentryAndroidSdkName: String by project
 
 android {
     compileSdk = Config.Android.compileSdkVersion
     namespace = "io.sentry.android.ndk"
+
+    sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
+        "sentry-native-local"
+    } else {
+        "sentry-native"
+    }
+    println("sentry-android-ndk: $sentryNativeSrc")
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
@@ -20,12 +29,29 @@ android {
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
+        externalNativeBuild {
+            cmake {
+                arguments.add(0, "-DANDROID_STL=c++_static")
+                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
+                arguments.add(0, "-DSENTRY_SDK_NAME=$sentryAndroidSdkName")
+            }
+        }
+
         ndk {
             abiFilters.addAll(Config.Android.abiFilters)
         }
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    }
+
+    // we use the default NDK and CMake versions based on the AGP's version
+    // https://developer.android.com/studio/projects/install-ndk#apply-specific-version
+
+    externalNativeBuild {
+        cmake {
+            path("CMakeLists.txt")
+        }
     }
 
     buildTypes {
@@ -55,6 +81,10 @@ android {
         checkReleaseBuilds = false
     }
 
+    nativeBundleExport {
+        headerDir = "${project.projectDir}/$sentryNativeSrc/include"
+    }
+
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
@@ -70,8 +100,6 @@ android {
 dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
-
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 

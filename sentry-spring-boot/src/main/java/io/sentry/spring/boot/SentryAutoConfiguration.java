@@ -3,14 +3,15 @@ package io.sentry.spring.boot;
 import com.jakewharton.nopen.annotation.Open;
 import graphql.GraphQLError;
 import io.sentry.EventProcessor;
-import io.sentry.IScopes;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ITransportFactory;
 import io.sentry.Integration;
-import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
+import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
 import io.sentry.spring.ContextTagsEventProcessor;
@@ -115,7 +116,7 @@ public class SentryAutoConfiguration {
     }
 
     @Bean
-    public @NotNull IScopes sentryHub(
+    public @NotNull IHub sentryHub(
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
@@ -138,7 +139,7 @@ public class SentryAutoConfiguration {
       // here we make sure that only classes that extend throwable are set on this field
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
       Sentry.init(options);
-      return ScopesAdapter.getInstance();
+      return HubAdapter.getInstance();
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -155,16 +156,14 @@ public class SentryAutoConfiguration {
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
-    @ConditionalOnClass(io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor.class)
-    @SuppressWarnings("deprecation")
+    @ConditionalOnClass(OpenTelemetryLinkErrorEventProcessor.class)
     @Open
     static class OpenTelemetryLinkErrorEventProcessorConfiguration {
 
       @Bean
       @ConditionalOnMissingBean
-      public @NotNull io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
-          openTelemetryLinkErrorEventProcessor() {
-        return new io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor();
+      public @NotNull OpenTelemetryLinkErrorEventProcessor openTelemetryLinkErrorEventProcessor() {
+        return new OpenTelemetryLinkErrorEventProcessor();
       }
     }
 
@@ -240,7 +239,7 @@ public class SentryAutoConfiguration {
        * HttpServletRequest#getUserPrincipal()}. If Spring Security is auto-configured, its order is
        * set to run after Spring Security.
        *
-       * @param scopes the Sentry scopes
+       * @param hub the Sentry hub
        * @param sentryProperties the Sentry properties
        * @param sentryUserProvider the user provider
        * @return {@link SentryUserFilter} registration bean
@@ -248,11 +247,11 @@ public class SentryAutoConfiguration {
       @Bean
       @ConditionalOnBean(SentryUserProvider.class)
       public @NotNull FilterRegistrationBean<SentryUserFilter> sentryUserFilter(
-          final @NotNull IScopes scopes,
+          final @NotNull IHub hub,
           final @NotNull SentryProperties sentryProperties,
           final @NotNull List<SentryUserProvider> sentryUserProvider) {
         final FilterRegistrationBean<SentryUserFilter> filter = new FilterRegistrationBean<>();
-        filter.setFilter(new SentryUserFilter(scopes, sentryUserProvider));
+        filter.setFilter(new SentryUserFilter(hub, sentryUserProvider));
         filter.setOrder(resolveUserFilterOrder(sentryProperties));
         return filter;
       }
@@ -264,19 +263,19 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IScopes scopes) {
-        return new SentryRequestResolver(scopes);
+      public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IHub hub) {
+        return new SentryRequestResolver(hub);
       }
 
       @Bean
       @ConditionalOnMissingBean(name = "sentrySpringFilter")
       public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
-          final @NotNull IScopes scopes,
+          final @NotNull IHub hub,
           final @NotNull SentryRequestResolver requestResolver,
           final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentrySpringFilter> filter =
             new FilterRegistrationBean<>(
-                new SentrySpringFilter(scopes, requestResolver, transactionNameProvider));
+                new SentrySpringFilter(hub, requestResolver, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE);
         return filter;
       }
@@ -284,10 +283,9 @@ public class SentryAutoConfiguration {
       @Bean
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IScopes scopes,
-          final @NotNull TransactionNameProvider transactionNameProvider) {
+          final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(scopes, transactionNameProvider));
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }
@@ -300,11 +298,11 @@ public class SentryAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         public @NotNull SentryExceptionResolver sentryExceptionResolver(
-            final @NotNull IScopes scopes,
+            final @NotNull IHub sentryHub,
             final @NotNull TransactionNameProvider transactionNameProvider,
             final @NotNull SentryProperties options) {
           return new SentryExceptionResolver(
-              scopes, transactionNameProvider, options.getExceptionResolverOrder());
+              sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
         }
 
         @Bean
@@ -369,8 +367,8 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryPerformanceRestTemplateConfiguration {
       @Bean
-      public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IScopes scopes) {
-        return new SentrySpanRestTemplateCustomizer(scopes);
+      public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
+        return new SentrySpanRestTemplateCustomizer(hub);
       }
     }
 
@@ -380,8 +378,8 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryPerformanceWebClientConfiguration {
       @Bean
-      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IScopes scopes) {
-        return new SentrySpanWebClientCustomizer(scopes);
+      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IHub hub) {
+        return new SentrySpanWebClientCustomizer(hub);
       }
     }
 

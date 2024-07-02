@@ -8,7 +8,7 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryDateProvider
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
@@ -39,7 +39,7 @@ class NetworkBreadcrumbsIntegrationTest {
     private class Fixture {
         val context = mock<Context>()
         var options = SentryAndroidOptions()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val mockBuildInfoProvider = mock<BuildInfoProvider>()
         val connectivityManager = mock<ConnectivityManager>()
         var nowMs: Long = 0
@@ -68,7 +68,7 @@ class NetworkBreadcrumbsIntegrationTest {
     fun `When network events breadcrumb is enabled, it registers callback`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         verify(fixture.connectivityManager).registerDefaultNetworkCallback(any())
         assertNotNull(sut.networkCallback)
@@ -78,7 +78,7 @@ class NetworkBreadcrumbsIntegrationTest {
     fun `When system events breadcrumb is disabled, it doesn't register callback`() {
         val sut = fixture.getSut(enableNetworkEventBreadcrumbs = false)
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         verify(fixture.connectivityManager, never()).registerDefaultNetworkCallback(any())
         assertNull(sut.networkCallback)
@@ -90,7 +90,7 @@ class NetworkBreadcrumbsIntegrationTest {
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
         val sut = fixture.getSut(buildInfo = buildInfo)
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         verify(fixture.connectivityManager, never()).registerDefaultNetworkCallback(any())
         assertNull(sut.networkCallback)
@@ -100,7 +100,7 @@ class NetworkBreadcrumbsIntegrationTest {
     fun `When NetworkBreadcrumbsIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.close()
 
         verify(fixture.connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
@@ -114,7 +114,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val sut = fixture.getSut(buildInfo = buildInfo)
         assertNull(sut.networkCallback)
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.close()
 
         verify(fixture.connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
@@ -124,12 +124,12 @@ class NetworkBreadcrumbsIntegrationTest {
     @Test
     fun `When connected to a new network, a breadcrumb is captured`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(mock())
 
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
@@ -142,27 +142,27 @@ class NetworkBreadcrumbsIntegrationTest {
     @Test
     fun `When connected to the same network without disconnecting from the previous one, only one breadcrumb is captured`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
         callback.onAvailable(fixture.network)
 
-        verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, times(1)).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When disconnected from a network, a breadcrumb is captured`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
 
         callback.onAvailable(fixture.network)
-        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
 
         callback.onLost(fixture.network)
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
@@ -175,12 +175,12 @@ class NetworkBreadcrumbsIntegrationTest {
     @Test
     fun `When disconnected from a network, a breadcrumb is captured only if previously connected to that network`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         // callback.onAvailable(network) was not called, so no breadcrumb should be captured
         callback.onLost(mock())
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
@@ -188,7 +188,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
         val sut = fixture.getSut(buildInfo = buildInfo)
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -204,7 +204,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 isCellular = false
             )
         )
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("system", it.type)
                 assertEquals("network.event", it.category)
@@ -223,18 +223,18 @@ class NetworkBreadcrumbsIntegrationTest {
     @Test
     fun `When a network connection detail changes, a breadcrumb is captured only if previously connected to that network`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         // callback.onAvailable(network) was not called, so no breadcrumb should be captured
         onCapabilitiesChanged(callback, mock())
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When a network connection detail changes, a new breadcrumb is captured if vpn flag changes`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -245,17 +245,17 @@ class NetworkBreadcrumbsIntegrationTest {
         onCapabilitiesChanged(callback, details1)
         onCapabilitiesChanged(callback, details2)
         onCapabilitiesChanged(callback, details3)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertFalse(it.isVpn) }
             verifyBreadcrumbInOrder { assertTrue(it.isVpn) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
     @Test
     fun `When a network connection detail changes, a new breadcrumb is captured if type changes`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -266,10 +266,10 @@ class NetworkBreadcrumbsIntegrationTest {
         onCapabilitiesChanged(callback, details1)
         onCapabilitiesChanged(callback, details2)
         onCapabilitiesChanged(callback, details3)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals("wifi", it.type) }
             verifyBreadcrumbInOrder { assertEquals("cellular", it.type) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
@@ -278,7 +278,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
         val sut = fixture.getSut(buildInfo = buildInfo)
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -289,10 +289,10 @@ class NetworkBreadcrumbsIntegrationTest {
         // A change of signal strength of 5 doesn't trigger a new breadcrumb
         onCapabilitiesChanged(callback, details2)
         onCapabilitiesChanged(callback, details3)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals(50, it.signalStrength) }
             verifyBreadcrumbInOrder { assertEquals(56, it.signalStrength) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
@@ -301,7 +301,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
         val sut = fixture.getSut(buildInfo = buildInfo)
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -317,11 +317,11 @@ class NetworkBreadcrumbsIntegrationTest {
         // A change of download bandwidth of 10% (more than 1000) doesn't trigger a new breadcrumb
         onCapabilitiesChanged(callback, details4)
         onCapabilitiesChanged(callback, details5)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals(1000, it.downBandwidth) }
             verifyBreadcrumbInOrder { assertEquals(20000, it.downBandwidth) }
             verifyBreadcrumbInOrder { assertEquals(22001, it.downBandwidth) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
@@ -330,7 +330,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
         val sut = fixture.getSut(buildInfo = buildInfo)
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -346,18 +346,18 @@ class NetworkBreadcrumbsIntegrationTest {
         // A change of upload bandwidth of 10% (more than 1000) doesn't trigger a new breadcrumb
         onCapabilitiesChanged(callback, details4)
         onCapabilitiesChanged(callback, details5)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals(1000, it.upBandwidth) }
             verifyBreadcrumbInOrder { assertEquals(20000, it.upBandwidth) }
             verifyBreadcrumbInOrder { assertEquals(22001, it.upBandwidth) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
     @Test
     fun `signal strength is 0 if not on Android Q+`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -371,7 +371,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
         val sut = fixture.getSut(buildInfo = buildInfo)
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -384,7 +384,7 @@ class NetworkBreadcrumbsIntegrationTest {
     @Test
     fun `A breadcrumb is captured when vpn status changes, regardless of the timestamp`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -392,17 +392,17 @@ class NetworkBreadcrumbsIntegrationTest {
         val details2 = createConnectionDetail(isVpn = true)
         onCapabilitiesChanged(callback, details1, 0)
         onCapabilitiesChanged(callback, details2, 0)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertFalse(it.isVpn) }
             verifyBreadcrumbInOrder { assertTrue(it.isVpn) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
     @Test
     fun `A breadcrumb is captured when connection type changes, regardless of the timestamp`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -412,11 +412,11 @@ class NetworkBreadcrumbsIntegrationTest {
         onCapabilitiesChanged(callback, details1, 0)
         onCapabilitiesChanged(callback, details2, 0)
         onCapabilitiesChanged(callback, details3, 0)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals("wifi", it.type) }
             verifyBreadcrumbInOrder { assertEquals("cellular", it.type) }
             verifyBreadcrumbInOrder { assertEquals("ethernet", it.type) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
@@ -425,7 +425,7 @@ class NetworkBreadcrumbsIntegrationTest {
         val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.Q)
         val sut = fixture.getSut(buildInfo = buildInfo)
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -435,17 +435,17 @@ class NetworkBreadcrumbsIntegrationTest {
         onCapabilitiesChanged(callback, details1, 0)
         onCapabilitiesChanged(callback, details2, 0)
         onCapabilitiesChanged(callback, details3, 5000)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals(1, it.signalStrength) }
             verifyBreadcrumbInOrder { assertEquals(51, it.signalStrength) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
     @Test
     fun `A breadcrumb is captured when downBandwidth changes at most once every 5 seconds`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -455,17 +455,17 @@ class NetworkBreadcrumbsIntegrationTest {
         onCapabilitiesChanged(callback, details1, 0)
         onCapabilitiesChanged(callback, details2, 0)
         onCapabilitiesChanged(callback, details3, 5000)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals(1, it.downBandwidth) }
             verifyBreadcrumbInOrder { assertEquals(2001, it.downBandwidth) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
     @Test
     fun `A breadcrumb is captured when upBandwidth changes at most once every 5 seconds`() {
         val sut = fixture.getSut()
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         val callback = sut.networkCallback
         assertNotNull(callback)
         callback.onAvailable(fixture.network)
@@ -475,15 +475,15 @@ class NetworkBreadcrumbsIntegrationTest {
         onCapabilitiesChanged(callback, details1, 0)
         onCapabilitiesChanged(callback, details2, 0)
         onCapabilitiesChanged(callback, details3, 5000)
-        inOrder(fixture.scopes) {
+        inOrder(fixture.hub) {
             verifyBreadcrumbInOrder { assertEquals(1, it.upBandwidth) }
             verifyBreadcrumbInOrder { assertEquals(2001, it.upBandwidth) }
-            verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+            verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), any())
         }
     }
 
     private fun KInOrder.verifyBreadcrumbInOrder(check: (detail: NetworkBreadcrumbConnectionDetail) -> Unit) {
-        verify(fixture.scopes, times(1)).addBreadcrumb(
+        verify(fixture.hub, times(1)).addBreadcrumb(
             any<Breadcrumb>(),
             check {
                 val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
@@ -493,7 +493,7 @@ class NetworkBreadcrumbsIntegrationTest {
     }
 
     private fun verifyBreadcrumb(check: (detail: NetworkBreadcrumbConnectionDetail) -> Unit) {
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             any<Breadcrumb>(),
             check {
                 val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail

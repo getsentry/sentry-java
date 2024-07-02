@@ -33,7 +33,7 @@ class MainEventProcessorTest {
             dist = "dist"
             sdkVersion = SdkVersion("test", "1.2.3")
         }
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val getLocalhost = mock<InetAddress>()
         lateinit var sentryTracer: SentryTracer
         private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
@@ -72,8 +72,8 @@ class MainEventProcessorTest {
                 }
                 host
             }
-            whenever(scopes.options).thenReturn(sentryOptions)
-            sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
+            whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
 
             val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
             hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)

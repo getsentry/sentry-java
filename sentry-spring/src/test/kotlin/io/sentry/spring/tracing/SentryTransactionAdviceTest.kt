@@ -1,7 +1,6 @@
 package io.sentry.spring.tracing
 
-import io.sentry.IScopes
-import io.sentry.ISentryLifecycleToken
+import io.sentry.IHub
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -45,39 +44,28 @@ class SentryTransactionAdviceTest {
     lateinit var classAnnotatedWithOperationSampleService: ClassAnnotatedWithOperationSampleService
 
     @Autowired
-    lateinit var scopes: IScopes
-
-    val lifecycleToken = mock<ISentryLifecycleToken>()
+    lateinit var hub: IHub
 
     @BeforeTest
     fun setup() {
-        reset(scopes)
-        whenever(
-            scopes.startTransaction(
-                any(),
-                check<TransactionOptions> {
-                    assertTrue(it.isBindToScope)
-                    assertThat(it.origin).isEqualTo("auto.function.spring.advice")
-                }
-            )
-        ).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
-        whenever(scopes.options).thenReturn(
+        reset(hub)
+        whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
+        whenever(hub.options).thenReturn(
             SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
             }
         )
-        whenever(scopes.forkedScopes(any())).thenReturn(scopes)
-        whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
     }
 
     @Test
     fun `creates transaction around method annotated with @SentryTransaction`() {
         sampleService.methodWithTransactionNameSet()
-        verify(scopes).captureTransaction(
+        verify(hub).captureTransaction(
             check {
                 assertThat(it.transaction).isEqualTo("customName")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
                 assertThat(it.status).isEqualTo(SpanStatus.OK)
+                assertThat(it.contexts.trace!!.origin).isEqualTo("auto.function.spring.advice")
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -88,7 +76,7 @@ class SentryTransactionAdviceTest {
     @Test
     fun `when method annotated with @SentryTransaction throws exception, sets error status on transaction`() {
         assertThrows<RuntimeException> { sampleService.methodThrowingException() }
-        verify(scopes).captureTransaction(
+        verify(hub).captureTransaction(
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
@@ -101,7 +89,7 @@ class SentryTransactionAdviceTest {
     @Test
     fun `when @SentryTransaction has no name set, sets transaction name as className dot methodName`() {
         sampleService.methodWithoutTransactionNameSet()
-        verify(scopes).captureTransaction(
+        verify(hub).captureTransaction(
             check {
                 assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
@@ -114,18 +102,18 @@ class SentryTransactionAdviceTest {
 
     @Test
     fun `when transaction is already active, does not start new transaction`() {
-        whenever(scopes.options).thenReturn(SentryOptions())
-        whenever(scopes.span).then { SentryTracer(TransactionContext("aTransaction", "op"), scopes) }
+        whenever(hub.options).thenReturn(SentryOptions())
+        whenever(hub.span).then { SentryTracer(TransactionContext("aTransaction", "op"), hub) }
 
         sampleService.methodWithTransactionNameSet()
 
-        verify(scopes, times(0)).captureTransaction(any(), any<TraceContext>())
+        verify(hub, times(0)).captureTransaction(any(), any<TraceContext>())
     }
 
     @Test
     fun `creates transaction around method in class annotated with @SentryTransaction`() {
         classAnnotatedSampleService.hello()
-        verify(scopes).captureTransaction(
+        verify(hub).captureTransaction(
             check {
                 assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
@@ -139,7 +127,7 @@ class SentryTransactionAdviceTest {
     @Test
     fun `creates transaction with operation set around method in class annotated with @SentryTransaction`() {
         classAnnotatedWithOperationSampleService.hello()
-        verify(scopes).captureTransaction(
+        verify(hub).captureTransaction(
             check {
                 assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
@@ -153,14 +141,13 @@ class SentryTransactionAdviceTest {
     @Test
     fun `pushes the scope when advice starts`() {
         classAnnotatedSampleService.hello()
-        verify(scopes).forkedScopes(any())
-        verify(scopes).makeCurrent()
+        verify(hub).pushScope()
     }
 
     @Test
     fun `pops the scope when advice finishes`() {
         classAnnotatedSampleService.hello()
-        verify(lifecycleToken).close()
+        verify(hub).popScope()
     }
 
     @Configuration
@@ -178,10 +165,10 @@ class SentryTransactionAdviceTest {
         open fun classAnnotatedWithOperationSampleService() = ClassAnnotatedWithOperationSampleService()
 
         @Bean
-        open fun scopes(): IScopes {
-            val scopes = mock<IScopes>()
-            Sentry.setCurrentScopes(scopes)
-            return scopes
+        open fun hub(): IHub {
+            val hub = mock<IHub>()
+            Sentry.setCurrentHub(hub)
+            return hub
         }
     }
 

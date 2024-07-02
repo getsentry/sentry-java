@@ -1,7 +1,7 @@
 package io.sentry.util
 
 import io.sentry.Baggage
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.NoOpSpan
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -29,18 +29,19 @@ class TracingUtilsTest {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val scope = Scope(options)
         lateinit var span: Span
         val preExistingBaggage = listOf("some-baggage-key=some-baggage-value")
 
         fun setup() {
-            whenever(scopes.options).thenReturn(options)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
+            whenever(hub.options).thenReturn(options)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             span = Span(
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
-                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
-                scopes,
+                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), hub),
+                hub,
+                null,
                 SpanOptions()
             )
         }
@@ -52,7 +53,7 @@ class TracingUtilsTest {
     fun `returns headers if allowed from scope without span`() {
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, null)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, null)
 
         assertNotNull(headers)
         assertNotNull(headers.baggageHeader)
@@ -67,7 +68,7 @@ class TracingUtilsTest {
     fun `returns headers if allowed from scope if span is noop`() {
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, NoOpSpan.getInstance())
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, NoOpSpan.getInstance())
 
         assertNotNull(headers)
         assertNotNull(headers.baggageHeader)
@@ -82,7 +83,7 @@ class TracingUtilsTest {
         fixture.scope.propagationContext.baggage = Baggage.fromHeader("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET").also { it.freeze() }
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, null)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, null)
 
         assertNotNull(headers)
         assertNotNull(headers.baggageHeader)
@@ -97,7 +98,7 @@ class TracingUtilsTest {
     fun `returns headers if allowed from span`() {
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, fixture.span)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, fixture.span)
 
         assertNotNull(headers)
         assertNotNull(headers.baggageHeader)
@@ -111,7 +112,7 @@ class TracingUtilsTest {
         fixture.options.isTraceSampling = false
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, null)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, null)
 
         assertNull(headers)
     }
@@ -121,7 +122,7 @@ class TracingUtilsTest {
         fixture.options.isTraceSampling = false
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, fixture.span)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, fixture.span)
 
         assertNull(headers)
     }
@@ -131,7 +132,7 @@ class TracingUtilsTest {
         fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, null)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, null)
 
         assertNull(headers)
     }
@@ -141,7 +142,7 @@ class TracingUtilsTest {
         fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         fixture.setup()
 
-        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, fixture.span)
+        val headers = TracingUtils.traceIfAllowed(fixture.hub, "https://sentry.io/hello", fixture.preExistingBaggage, fixture.span)
 
         assertNull(headers)
     }
@@ -152,7 +153,7 @@ class TracingUtilsTest {
 
         val propagationContextBefore = fixture.scope.propagationContext
 
-        TracingUtils.startNewTrace(fixture.scopes)
+        TracingUtils.startNewTrace(fixture.hub)
 
         assertNotEquals(propagationContextBefore.traceId, fixture.scope.propagationContext.traceId)
         assertNotEquals(propagationContextBefore.spanId, fixture.scope.propagationContext.spanId)

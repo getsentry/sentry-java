@@ -5,7 +5,7 @@ import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.Integration
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
@@ -40,11 +40,11 @@ class FragmentLifecycleIntegration(
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    private lateinit var scopes: IScopes
+    private lateinit var hub: IHub
     private lateinit var options: SentryOptions
 
-    override fun register(scopes: IScopes, options: SentryOptions) {
-        this.scopes = scopes
+    override fun register(hub: IHub, options: SentryOptions) {
+        this.hub = hub
         this.options = options
 
         application.registerActivityLifecycleCallbacks(this)
@@ -66,7 +66,7 @@ class FragmentLifecycleIntegration(
             ?.supportFragmentManager
             ?.registerFragmentLifecycleCallbacks(
                 SentryFragmentLifecycleCallbacks(
-                    scopes = scopes,
+                    hub = hub,
                     filterFragmentLifecycleBreadcrumbs = filterFragmentLifecycleBreadcrumbs,
                     enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
                 ),

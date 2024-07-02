@@ -39,13 +39,13 @@ public final class Baggage {
   @NotNull
   public static Baggage fromHeader(final @Nullable String headerValue) {
     return Baggage.fromHeader(
-        headerValue, false, ScopesAdapter.getInstance().getOptions().getLogger());
+        headerValue, false, HubAdapter.getInstance().getOptions().getLogger());
   }
 
   @NotNull
   public static Baggage fromHeader(final @Nullable List<String> headerValues) {
     return Baggage.fromHeader(
-        headerValues, false, ScopesAdapter.getInstance().getOptions().getLogger());
+        headerValues, false, HubAdapter.getInstance().getOptions().getLogger());
   }
 
   @ApiStatus.Internal
@@ -305,21 +305,11 @@ public final class Baggage {
     set(DSCKeys.USER_ID, userId);
   }
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
   public @Nullable String getUserSegment() {
     return get(DSCKeys.USER_SEGMENT);
   }
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
   public void setUserSegment(final @Nullable String userSegment) {
     set(DSCKeys.USER_SEGMENT, userSegment);
@@ -381,18 +371,19 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public void setValuesFromTransaction(
-      final @NotNull SentryId traceId,
+      final @NotNull ITransaction transaction,
       final @Nullable User user,
       final @NotNull SentryOptions sentryOptions,
-      final @Nullable TracesSamplingDecision samplingDecision,
-      final @Nullable String transactionName,
-      final @Nullable TransactionNameSource transactionNameSource) {
-    setTraceId(traceId.toString());
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    setTraceId(transaction.getSpanContext().getTraceId().toString());
     setPublicKey(new Dsn(sentryOptions.getDsn()).getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
     setUserSegment(user != null ? getSegment(user) : null);
-    setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
+    setTransaction(
+        isHighQualityTransactionName(transaction.getTransactionNameSource())
+            ? transaction.getName()
+            : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
   }
@@ -412,10 +403,6 @@ public final class Baggage {
     setSampled(null);
   }
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
   private static @Nullable String getSegment(final @NotNull User user) {
     if (user.getSegment() != null) {
       return user.getSegment();
@@ -484,7 +471,6 @@ public final class Baggage {
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
-      @SuppressWarnings("deprecation")
       final @NotNull TraceContext traceContext =
           new TraceContext(
               new SentryId(traceIdString),

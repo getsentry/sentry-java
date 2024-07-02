@@ -13,8 +13,8 @@ import androidx.annotation.RequiresApi;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
+import io.sentry.IHub;
 import io.sentry.ILogger;
-import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
@@ -50,8 +50,8 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
   @SuppressLint("NewApi")
   @Override
-  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(scopes, "Scopes are required");
+  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(hub, "Hub is required");
     SentryAndroidOptions androidOptions =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -72,8 +72,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       }
 
       networkCallback =
-          new NetworkBreadcrumbsNetworkCallback(
-              scopes, buildInfoProvider, options.getDateProvider());
+          new NetworkBreadcrumbsNetworkCallback(hub, buildInfoProvider, options.getDateProvider());
       final boolean registered =
           AndroidConnectionStatusProvider.registerNetworkCallback(
               context, logger, buildInfoProvider, networkCallback);
@@ -102,7 +101,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
   @SuppressLint("ObsoleteSdkInt")
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   static final class NetworkBreadcrumbsNetworkCallback extends ConnectivityManager.NetworkCallback {
-    final @NotNull IScopes scopes;
+    final @NotNull IHub hub;
     final @NotNull BuildInfoProvider buildInfoProvider;
 
     @Nullable Network currentNetwork = null;
@@ -112,10 +111,10 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     final @NotNull SentryDateProvider dateProvider;
 
     NetworkBreadcrumbsNetworkCallback(
-        final @NotNull IScopes scopes,
+        final @NotNull IHub hub,
         final @NotNull BuildInfoProvider buildInfoProvider,
         final @NotNull SentryDateProvider dateProvider) {
-      this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
+      this.hub = Objects.requireNonNull(hub, "Hub is required");
       this.buildInfoProvider =
           Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
       this.dateProvider = Objects.requireNonNull(dateProvider, "SentryDateProvider is required");
@@ -127,7 +126,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_AVAILABLE");
-      scopes.addBreadcrumb(breadcrumb);
+      hub.addBreadcrumb(breadcrumb);
       currentNetwork = network;
       lastCapabilities = null;
     }
@@ -157,7 +156,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       }
       Hint hint = new Hint();
       hint.set(TypeCheckHint.ANDROID_NETWORK_CAPABILITIES, connectionDetail);
-      scopes.addBreadcrumb(breadcrumb, hint);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
 
     @Override
@@ -166,7 +165,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_LOST");
-      scopes.addBreadcrumb(breadcrumb);
+      hub.addBreadcrumb(breadcrumb);
       currentNetwork = null;
       lastCapabilities = null;
     }

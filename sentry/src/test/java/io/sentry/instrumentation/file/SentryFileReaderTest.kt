@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file
 
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 
 class SentryFileReaderTest {
     class Fixture {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         lateinit var sentryTracer: SentryTracer
 
         internal fun getSut(
@@ -25,16 +25,16 @@ class SentryFileReaderTest {
             activeTransaction: Boolean = true
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
-            whenever(scopes.options).thenReturn(
+            whenever(hub.options).thenReturn(
                 SentryOptions().apply {
                     mainThreadChecker = MainThreadChecker.getInstance()
                 }
             )
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
-                whenever(scopes.span).thenReturn(sentryTracer)
+                whenever(hub.span).thenReturn(sentryTracer)
             }
-            return SentryFileReader(tmpFile, scopes)
+            return SentryFileReader(tmpFile, hub)
         }
     }
 

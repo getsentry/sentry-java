@@ -33,7 +33,7 @@ class DefaultTransactionPerformanceCollectorTest {
     private class Fixture {
         lateinit var transaction1: ITransaction
         lateinit var transaction2: ITransaction
-        val scopes: IScopes = mock()
+        val hub: IHub = mock()
         val options = SentryOptions()
         var mockTimer: Timer? = null
         val deferredExecutorService = DeferredExecutorService()
@@ -47,7 +47,7 @@ class DefaultTransactionPerformanceCollectorTest {
         }
 
         init {
-            whenever(scopes.options).thenReturn(options)
+            whenever(hub.options).thenReturn(options)
         }
 
         fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
@@ -59,8 +59,8 @@ class DefaultTransactionPerformanceCollectorTest {
             if (memoryCollector != null) {
                 options.addPerformanceCollector(memoryCollector)
             }
-            transaction1 = SentryTracer(TransactionContext("", ""), scopes)
-            transaction2 = SentryTracer(TransactionContext("", ""), scopes)
+            transaction1 = SentryTracer(TransactionContext("", ""), hub)
+            transaction2 = SentryTracer(TransactionContext("", ""), hub)
             val collector = DefaultTransactionPerformanceCollector(options)
             val timer: Timer = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)

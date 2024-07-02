@@ -3,8 +3,7 @@ package io.sentry.util;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
-import io.sentry.IScopes;
-import io.sentry.ISentryLifecycleToken;
+import io.sentry.IHub;
 import io.sentry.MonitorConfig;
 import io.sentry.Sentry;
 import io.sentry.protocol.SentryId;
@@ -31,30 +30,29 @@ public final class CheckInUtils {
       final @Nullable MonitorConfig monitorConfig,
       final @NotNull Callable<U> callable)
       throws Exception {
-    try (final @NotNull ISentryLifecycleToken ignored =
-            Sentry.forkedScopes("CheckInUtils").makeCurrent()) {
-      final @NotNull IScopes scopes = Sentry.getCurrentScopes();
-      final long startTime = System.currentTimeMillis();
-      boolean didError = false;
+    final @NotNull IHub hub = Sentry.getCurrentHub();
+    final long startTime = System.currentTimeMillis();
+    boolean didError = false;
 
-      TracingUtils.startNewTrace(scopes);
+    hub.pushScope();
+    TracingUtils.startNewTrace(hub);
 
-      CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
-      if (monitorConfig != null) {
-        inProgressCheckIn.setMonitorConfig(monitorConfig);
-      }
-      @Nullable SentryId checkInId = scopes.captureCheckIn(inProgressCheckIn);
-      try {
-        return callable.call();
-      } catch (Throwable t) {
-        didError = true;
-        throw t;
-      } finally {
-        final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
-        CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
-        scopes.captureCheckIn(checkIn);
-      }
+    CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
+    if (monitorConfig != null) {
+      inProgressCheckIn.setMonitorConfig(monitorConfig);
+    }
+    @Nullable SentryId checkInId = hub.captureCheckIn(inProgressCheckIn);
+    try {
+      return callable.call();
+    } catch (Throwable t) {
+      didError = true;
+      throw t;
+    } finally {
+      final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
+      CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
+      checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+      hub.captureCheckIn(checkIn);
+      hub.popScope();
     }
   }
 

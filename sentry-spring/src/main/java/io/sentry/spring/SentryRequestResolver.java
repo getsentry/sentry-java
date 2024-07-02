@@ -1,7 +1,7 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
 
 @Open
 public class SentryRequestResolver {
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
   private volatile @Nullable List<String> extraSecurityCookies;
 
-  public SentryRequestResolver(final @NotNull IScopes scopes) {
-    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+  public SentryRequestResolver(final @NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "options is required");
   }
 
   // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
@@ -40,7 +40,7 @@ public class SentryRequestResolver {
         extractSecurityCookieNamesOrUseCached(httpRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));
 
-    if (scopes.getOptions().isSendDefaultPii()) {
+    if (hub.getOptions().isSendDefaultPii()) {
       String cookieName = HttpUtils.COOKIE_HEADER_NAME;
       final @Nullable List<String> filteredHeaders =
           HttpUtils.filterOutSecurityCookiesFromHeader(
@@ -57,8 +57,7 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
-      if (scopes.getOptions().isSendDefaultPii()
-          || !HttpUtils.containsSensitiveHeader(headerName)) {
+      if (hub.getOptions().isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
         final @Nullable List<String> filteredHeaders =
             HttpUtils.filterOutSecurityCookiesFromHeader(
                 request.getHeaders(headerName), headerName, additionalSecurityCookieNames);
@@ -95,8 +94,7 @@ public class SentryRequestResolver {
         }
       }
     } catch (Throwable t) {
-      scopes
-          .getOptions()
+      hub.getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to extract session cookie name from request.", t);
     }

@@ -17,7 +17,6 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
-import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.MainThreadChecker;
@@ -44,25 +43,16 @@ public final class Sentry {
 
   private Sentry() {}
 
-  // TODO logger?
-  private static volatile @NotNull IScopesStorage scopesStorage =
-      ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
+  /** Holds Hubs per thread or only mainHub if globalHubMode is enabled. */
+  private static final @NotNull ThreadLocal<IHub> currentHub = new ThreadLocal<>();
 
-  /** The root Scopes or NoOp if Sentry is disabled. */
-  private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
-  /**
-   * This initializes global scope with default options. Options will later be replaced on
-   * Sentry.init
-   *
-   * <p>For Android options will also be (temporarily) replaced by SentryAndroid static block.
-   */
-  // TODO https://github.com/getsentry/sentry-java/issues/2541
-  private static final @NotNull IScope globalScope = new Scope(SentryOptions.empty());
+  /** The Main Hub or NoOp if Sentry is disabled. */
+  private static volatile @NotNull IHub mainHub = NoOpHub.getInstance();
 
   /** Default value for globalHubMode is false */
   private static final boolean GLOBAL_HUB_DEFAULT_MODE = false;
 
-  /** whether to use a single (global) Scopes as opposed to one per thread. */
+  /** whether to use a single (global) Hub as opposed to one per thread. */
   private static volatile boolean globalHubMode = GLOBAL_HUB_DEFAULT_MODE;
 
   @ApiStatus.Internal
@@ -76,83 +66,49 @@ public final class Sentry {
   private static final long classCreationTimestamp = System.currentTimeMillis();
 
   /**
-   * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
+   * Returns the current (threads) hub, if none, clones the mainHub and returns it.
    *
-   * @deprecated please use {@link Sentry#getCurrentScopes()} instead
    * @return the hub
    */
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @SuppressWarnings("deprecation")
-  @Deprecated
   public static @NotNull IHub getCurrentHub() {
-    return new HubScopesWrapper(getCurrentScopes());
-  }
-
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @SuppressWarnings("deprecation")
-  public static @NotNull IScopes getCurrentScopes() {
     if (globalHubMode) {
-      return rootScopes;
+      return mainHub;
     }
-    @Nullable IScopes scopes = getScopesStorage().get();
-    if (scopes == null || scopes.isNoOp()) {
-      scopes = rootScopes.forkedScopes("getCurrentScopes");
-      getScopesStorage().set(scopes);
+    IHub hub = currentHub.get();
+    if (hub == null || hub instanceof NoOpHub) {
+      hub = mainHub.clone();
+      currentHub.set(hub);
     }
-    return scopes;
-  }
-
-  private static @NotNull IScopesStorage getScopesStorage() {
-    return scopesStorage;
+    return hub;
   }
 
   /**
-   * Returns a new Scopes which is cloned from the rootScopes.
+   * Returns a new hub which is cloned from the mainHub.
    *
-   * @return the forked scopes
+   * @return the hub
    */
   @ApiStatus.Internal
-  public static @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
+  @ApiStatus.Experimental
+  public static @NotNull IHub cloneMainHub() {
     if (globalHubMode) {
-      return rootScopes;
+      return mainHub;
     }
-    return rootScopes.forkedScopes(creator);
-  }
-
-  public static @NotNull IScopes forkedScopes(final @NotNull String creator) {
-    return getCurrentScopes().forkedScopes(creator);
-  }
-
-  public static @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
-    return getCurrentScopes().forkedCurrentScope(creator);
-  }
-
-  /**
-   * @deprecated please use {@link Sentry#setCurrentScopes} instead.
-   */
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @Deprecated
-  @SuppressWarnings({"deprecation", "InlineMeSuggester"})
-  public static @NotNull ISentryLifecycleToken setCurrentHub(final @NotNull IHub hub) {
-    return setCurrentScopes(hub);
+    return mainHub.clone();
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  public static @NotNull ISentryLifecycleToken setCurrentScopes(final @NotNull IScopes scopes) {
-    return getScopesStorage().set(scopes);
-  }
-
-  public static @NotNull IScope getGlobalScope() {
-    return globalScope;
+  public static void setCurrentHub(final @NotNull IHub hub) {
+    currentHub.set(hub);
   }
 
   /**
-   * Check if Sentry is enabled/active.
+   * Check if the current Hub is enabled/active.
    *
    * @return true if its enabled or false otherwise.
    */
   public static boolean isEnabled() {
-    return getCurrentScopes().isEnabled();
+    return getCurrentHub().isEnabled();
   }
 
   /** Initializes the SDK */
@@ -261,7 +217,6 @@ public final class Sentry {
    * @param options options the SentryOptions
    * @param globalHubMode the globalHubMode
    */
-  @SuppressWarnings("deprecation")
   private static synchronized void init(
       final @NotNull SentryOptions options, final boolean globalHubMode) {
     if (isEnabled()) {
@@ -278,17 +233,13 @@ public final class Sentry {
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
-    globalScope.replaceOptions(options);
 
-    final IScopes scopes = getCurrentScopes();
-    final IScope rootScope = new Scope(options);
-    final IScope rootIsolationScope = new Scope(options);
-    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+    final IHub hub = getCurrentHub();
+    mainHub = new Hub(options);
 
-    getScopesStorage().set(rootScopes);
+    currentHub.set(mainHub);
 
-    scopes.close(true);
-    globalScope.bindClient(new SentryClient(rootScopes.getOptions()));
+    hub.close(true);
 
     // If the executorService passed in the init is the same that was previously closed, we have to
     // set a new one
@@ -296,17 +247,17 @@ public final class Sentry {
       options.setExecutorService(new SentryExecutorService());
     }
 
-    // when integrations are registered on Scopes ctor and async integrations are fired,
+    // when integrations are registered on Hub ctor and async integrations are fired,
     // it might and actually happened that integrations called captureSomething
-    // and Scopes was still NoOp.
-    // Registering integrations here make sure that Scopes is already created.
+    // and hub was still NoOp.
+    // Registering integrations here make sure that Hub is already created.
     for (final Integration integration : options.getIntegrations()) {
-      integration.register(ScopesAdapter.getInstance(), options);
+      integration.register(HubAdapter.getInstance(), options);
     }
 
     notifyOptionsObservers(options);
 
-    finalizePreviousSession(options, ScopesAdapter.getInstance());
+    finalizePreviousSession(options, HubAdapter.getInstance());
 
     handleAppStartProfilingConfig(options, options.getExecutorService());
   }
@@ -371,17 +322,17 @@ public final class Sentry {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
     SamplingContext appStartSamplingContext = new SamplingContext(appStartTransactionContext, null);
-    return options.getInternalTracesSampler().sample(appStartSamplingContext);
+    return new TracesSampler(options).sample(appStartSamplingContext);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private static void finalizePreviousSession(
-      final @NotNull SentryOptions options, final @NotNull IScopes scopes) {
+      final @NotNull SentryOptions options, final @NotNull IHub hub) {
     // enqueue a task to finalize previous session. Since the executor
     // is single-threaded, this task will be enqueued sequentially after all integrations that have
     // to modify the previous session have done their work, even if they do that async.
     try {
-      options.getExecutorService().submit(new PreviousSessionFinalizer(options, scopes));
+      options.getExecutorService().submit(new PreviousSessionFinalizer(options, hub));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
     }
@@ -524,7 +475,7 @@ public final class Sentry {
     }
 
     if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
-      options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      options.setBackpressureMonitor(new BackpressureMonitor(options, HubAdapter.getInstance()));
       options.getBackpressureMonitor().start();
     }
 
@@ -533,11 +484,11 @@ public final class Sentry {
 
   /** Close the SDK */
   public static synchronized void close() {
-    final IScopes scopes = getCurrentScopes();
-    rootScopes = NoOpScopes.getInstance();
+    final IHub hub = getCurrentHub();
+    mainHub = NoOpHub.getInstance();
     // remove thread local to avoid memory leak
-    getScopesStorage().close();
-    scopes.close(false);
+    currentHub.remove();
+    hub.close(false);
   }
 
   /**
@@ -547,7 +498,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureEvent(final @NotNull SentryEvent event) {
-    return getCurrentScopes().captureEvent(event);
+    return getCurrentHub().captureEvent(event);
   }
 
   /**
@@ -559,7 +510,7 @@ public final class Sentry {
    */
   public static @NotNull SentryId captureEvent(
       final @NotNull SentryEvent event, final @NotNull ScopeCallback callback) {
-    return getCurrentScopes().captureEvent(event, callback);
+    return getCurrentHub().captureEvent(event, callback);
   }
 
   /**
@@ -571,7 +522,7 @@ public final class Sentry {
    */
   public static @NotNull SentryId captureEvent(
       final @NotNull SentryEvent event, final @Nullable Hint hint) {
-    return getCurrentScopes().captureEvent(event, hint);
+    return getCurrentHub().captureEvent(event, hint);
   }
 
   /**
@@ -586,7 +537,7 @@ public final class Sentry {
       final @NotNull SentryEvent event,
       final @Nullable Hint hint,
       final @NotNull ScopeCallback callback) {
-    return getCurrentScopes().captureEvent(event, hint, callback);
+    return getCurrentHub().captureEvent(event, hint, callback);
   }
 
   /**
@@ -596,7 +547,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureMessage(final @NotNull String message) {
-    return getCurrentScopes().captureMessage(message);
+    return getCurrentHub().captureMessage(message);
   }
 
   /**
@@ -608,7 +559,7 @@ public final class Sentry {
    */
   public static @NotNull SentryId captureMessage(
       final @NotNull String message, final @NotNull ScopeCallback callback) {
-    return getCurrentScopes().captureMessage(message, callback);
+    return getCurrentHub().captureMessage(message, callback);
   }
 
   /**
@@ -620,7 +571,7 @@ public final class Sentry {
    */
   public static @NotNull SentryId captureMessage(
       final @NotNull String message, final @NotNull SentryLevel level) {
-    return getCurrentScopes().captureMessage(message, level);
+    return getCurrentHub().captureMessage(message, level);
   }
 
   /**
@@ -635,7 +586,7 @@ public final class Sentry {
       final @NotNull String message,
       final @NotNull SentryLevel level,
       final @NotNull ScopeCallback callback) {
-    return getCurrentScopes().captureMessage(message, level, callback);
+    return getCurrentHub().captureMessage(message, level, callback);
   }
 
   /**
@@ -645,7 +596,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(final @NotNull Throwable throwable) {
-    return getCurrentScopes().captureException(throwable);
+    return getCurrentHub().captureException(throwable);
   }
 
   /**
@@ -657,7 +608,7 @@ public final class Sentry {
    */
   public static @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @NotNull ScopeCallback callback) {
-    return getCurrentScopes().captureException(throwable, callback);
+    return getCurrentHub().captureException(throwable, callback);
   }
 
   /**
@@ -669,7 +620,7 @@ public final class Sentry {
    */
   public static @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Hint hint) {
-    return getCurrentScopes().captureException(throwable, hint);
+    return getCurrentHub().captureException(throwable, hint);
   }
 
   /**
@@ -684,7 +635,7 @@ public final class Sentry {
       final @NotNull Throwable throwable,
       final @Nullable Hint hint,
       final @NotNull ScopeCallback callback) {
-    return getCurrentScopes().captureException(throwable, hint, callback);
+    return getCurrentHub().captureException(throwable, hint, callback);
   }
 
   /**
@@ -693,7 +644,7 @@ public final class Sentry {
    * @param userFeedback The user feedback to send to Sentry.
    */
   public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    getCurrentScopes().captureUserFeedback(userFeedback);
+    getCurrentHub().captureUserFeedback(userFeedback);
   }
 
   /**
@@ -704,7 +655,7 @@ public final class Sentry {
    */
   public static void addBreadcrumb(
       final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
-    getCurrentScopes().addBreadcrumb(breadcrumb, hint);
+    getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 
   /**
@@ -713,7 +664,7 @@ public final class Sentry {
    * @param breadcrumb the breadcrumb
    */
   public static void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
-    getCurrentScopes().addBreadcrumb(breadcrumb);
+    getCurrentHub().addBreadcrumb(breadcrumb);
   }
 
   /**
@@ -722,7 +673,7 @@ public final class Sentry {
    * @param message rendered as text and the whitespace is preserved.
    */
   public static void addBreadcrumb(final @NotNull String message) {
-    getCurrentScopes().addBreadcrumb(message);
+    getCurrentHub().addBreadcrumb(message);
   }
 
   /**
@@ -733,7 +684,7 @@ public final class Sentry {
    *     from.
    */
   public static void addBreadcrumb(final @NotNull String message, final @NotNull String category) {
-    getCurrentScopes().addBreadcrumb(message, category);
+    getCurrentHub().addBreadcrumb(message, category);
   }
 
   /**
@@ -742,7 +693,7 @@ public final class Sentry {
    * @param level the Sentry level
    */
   public static void setLevel(final @Nullable SentryLevel level) {
-    getCurrentScopes().setLevel(level);
+    getCurrentHub().setLevel(level);
   }
 
   /**
@@ -751,7 +702,7 @@ public final class Sentry {
    * @param transaction the transaction
    */
   public static void setTransaction(final @Nullable String transaction) {
-    getCurrentScopes().setTransaction(transaction);
+    getCurrentHub().setTransaction(transaction);
   }
 
   /**
@@ -760,7 +711,7 @@ public final class Sentry {
    * @param user the user
    */
   public static void setUser(final @Nullable User user) {
-    getCurrentScopes().setUser(user);
+    getCurrentHub().setUser(user);
   }
 
   /**
@@ -769,12 +720,12 @@ public final class Sentry {
    * @param fingerprint the fingerprints
    */
   public static void setFingerprint(final @NotNull List<String> fingerprint) {
-    getCurrentScopes().setFingerprint(fingerprint);
+    getCurrentHub().setFingerprint(fingerprint);
   }
 
   /** Deletes current breadcrumbs from the current scope. */
   public static void clearBreadcrumbs() {
-    getCurrentScopes().clearBreadcrumbs();
+    getCurrentHub().clearBreadcrumbs();
   }
 
   /**
@@ -784,7 +735,7 @@ public final class Sentry {
    * @param value the value
    */
   public static void setTag(final @NotNull String key, final @NotNull String value) {
-    getCurrentScopes().setTag(key, value);
+    getCurrentHub().setTag(key, value);
   }
 
   /**
@@ -793,7 +744,7 @@ public final class Sentry {
    * @param key the key
    */
   public static void removeTag(final @NotNull String key) {
-    getCurrentScopes().removeTag(key);
+    getCurrentHub().removeTag(key);
   }
 
   /**
@@ -804,7 +755,7 @@ public final class Sentry {
    * @param value the value
    */
   public static void setExtra(final @NotNull String key, final @NotNull String value) {
-    getCurrentScopes().setExtra(key, value);
+    getCurrentHub().setExtra(key, value);
   }
 
   /**
@@ -813,7 +764,7 @@ public final class Sentry {
    * @param key the key
    */
   public static void removeExtra(final @NotNull String key) {
-    getCurrentScopes().removeExtra(key);
+    getCurrentHub().removeExtra(key);
   }
 
   /**
@@ -822,58 +773,32 @@ public final class Sentry {
    * @return last SentryId
    */
   public static @NotNull SentryId getLastEventId() {
-    return getCurrentScopes().getLastEventId();
+    return getCurrentHub().getLastEventId();
   }
 
   /** Pushes a new scope while inheriting the current scope's data. */
-  public static @NotNull ISentryLifecycleToken pushScope() {
+  public static void pushScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
-      return getCurrentScopes().pushScope();
+      getCurrentHub().pushScope();
     }
-    return NoOpScopesLifecycleToken.getInstance();
   }
 
-  /** Pushes a new isolation and current scope while inheriting the current scope's data. */
-  public static @NotNull ISentryLifecycleToken pushIsolationScope() {
-    // pushScope is no-op in global hub mode
-    if (!globalHubMode) {
-      return getCurrentScopes().pushIsolationScope();
-    }
-    return NoOpScopesLifecycleToken.getInstance();
-  }
-
-  /**
-   * Removes the first scope and restores its parent.
-   *
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     Sentry#pushScope()} or {@link Sentry#pushIsolationScope()} instead.
-   */
-  @Deprecated
+  /** Removes the first scope */
   public static void popScope() {
     // popScope is no-op in global hub mode
     if (!globalHubMode) {
-      getCurrentScopes().popScope();
+      getCurrentHub().popScope();
     }
   }
 
   /**
-   * Runs the callback with a new current scope which gets dropped at the end
+   * Runs the callback with a new scope which gets dropped at the end
    *
    * @param callback the callback
    */
   public static void withScope(final @NotNull ScopeCallback callback) {
-    getCurrentScopes().withScope(callback);
-  }
-
-  /**
-   * Runs the callback with a new isolation scope which gets dropped at the end. Current scope is
-   * also forked.
-   *
-   * @param callback the callback
-   */
-  public static void withIsolationScope(final @NotNull ScopeCallback callback) {
-    getCurrentScopes().withIsolationScope(callback);
+    getCurrentHub().withScope(callback);
   }
 
   /**
@@ -882,49 +807,39 @@ public final class Sentry {
    * @param callback The configure scope callback.
    */
   public static void configureScope(final @NotNull ScopeCallback callback) {
-    configureScope(null, callback);
+    getCurrentHub().configureScope(callback);
   }
 
   /**
-   * Configures the scope through the callback.
-   *
-   * @param callback The configure scope callback.
-   */
-  public static void configureScope(
-      final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
-    getCurrentScopes().configureScope(scopeType, callback);
-  }
-
-  /**
-   * Binds a different client to the current Scopes
+   * Binds a different client to the current hub
    *
    * @param client the client.
    */
   public static void bindClient(final @NotNull ISentryClient client) {
-    getCurrentScopes().bindClient(client);
+    getCurrentHub().bindClient(client);
   }
 
   public static boolean isHealthy() {
-    return getCurrentScopes().isHealthy();
+    return getCurrentHub().isHealthy();
   }
 
   /**
-   * Flushes events queued up to the current Scopes. Not implemented yet.
+   * Flushes events queued up to the current hub. Not implemented yet.
    *
    * @param timeoutMillis time in milliseconds
    */
   public static void flush(final long timeoutMillis) {
-    getCurrentScopes().flush(timeoutMillis);
+    getCurrentHub().flush(timeoutMillis);
   }
 
   /** Starts a new session. If there's a running session, it ends it before starting the new one. */
   public static void startSession() {
-    getCurrentScopes().startSession();
+    getCurrentHub().startSession();
   }
 
   /** Ends the current session */
   public static void endSession() {
-    getCurrentScopes().endSession();
+    getCurrentHub().endSession();
   }
 
   /**
@@ -936,7 +851,7 @@ public final class Sentry {
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull String operation) {
-    return getCurrentScopes().startTransaction(name, operation);
+    return getCurrentHub().startTransaction(name, operation);
   }
 
   /**
@@ -951,7 +866,7 @@ public final class Sentry {
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull TransactionOptions transactionOptions) {
-    return getCurrentScopes().startTransaction(name, operation, transactionOptions);
+    return getCurrentHub().startTransaction(name, operation, transactionOptions);
   }
 
   /**
@@ -969,7 +884,7 @@ public final class Sentry {
       final @Nullable String description,
       final @NotNull TransactionOptions transactionOptions) {
     final ITransaction transaction =
-        getCurrentScopes().startTransaction(name, operation, transactionOptions);
+        getCurrentHub().startTransaction(name, operation, transactionOptions);
     transaction.setDescription(description);
     return transaction;
   }
@@ -982,7 +897,7 @@ public final class Sentry {
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
-    return getCurrentScopes().startTransaction(transactionContexts);
+    return getCurrentHub().startTransaction(transactionContexts);
   }
 
   /**
@@ -995,7 +910,7 @@ public final class Sentry {
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
-    return getCurrentScopes().startTransaction(transactionContext, transactionOptions);
+    return getCurrentHub().startTransaction(transactionContext, transactionOptions);
   }
 
   /**
@@ -1008,7 +923,7 @@ public final class Sentry {
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public static @Nullable SentryTraceHeader traceHeaders() {
-    return getCurrentScopes().traceHeaders();
+    return getCurrentHub().traceHeaders();
   }
 
   /**
@@ -1020,12 +935,9 @@ public final class Sentry {
    */
   public static @Nullable ISpan getSpan() {
     if (globalHubMode && Platform.isAndroid()) {
-      return getCurrentScopes().getTransaction();
+      return getCurrentHub().getTransaction();
     } else {
-      return getCurrentScopes()
-          .getOptions()
-          .getSpanFactory()
-          .retrieveCurrentSpan(getCurrentScopes());
+      return getCurrentHub().getSpan();
     }
   }
 
@@ -1040,7 +952,7 @@ public final class Sentry {
    * @return true if App has crashed, false otherwise, and null if not evaluated yet
    */
   public static @Nullable Boolean isCrashedLastRun() {
-    return getCurrentScopes().isCrashedLastRun();
+    return getCurrentHub().isCrashedLastRun();
   }
 
   /**
@@ -1052,7 +964,7 @@ public final class Sentry {
    * finished, this call will be ignored.
    */
   public static void reportFullyDisplayed() {
-    getCurrentScopes().reportFullyDisplayed();
+    getCurrentHub().reportFullyDisplayed();
   }
 
   /**
@@ -1064,11 +976,11 @@ public final class Sentry {
     reportFullyDisplayed();
   }
 
-  /** the metrics API for the current Scopes */
+  /** the metrics API for the current hub */
   @NotNull
   @ApiStatus.Experimental
   public static MetricsApi metrics() {
-    return getCurrentScopes().metrics();
+    return getCurrentHub().metrics();
   }
 
   /**
@@ -1097,7 +1009,7 @@ public final class Sentry {
   // return TransactionContext (if performance enabled) or null (if performance disabled)
   public static @Nullable TransactionContext continueTrace(
       final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
-    return getCurrentScopes().continueTrace(sentryTrace, baggageHeaders);
+    return getCurrentHub().continueTrace(sentryTrace, baggageHeaders);
   }
 
   /**
@@ -1107,7 +1019,7 @@ public final class Sentry {
    * @return sentry trace header or null
    */
   public static @Nullable SentryTraceHeader getTraceparent() {
-    return getCurrentScopes().getTraceparent();
+    return getCurrentHub().getTraceparent();
   }
 
   /**
@@ -1117,11 +1029,11 @@ public final class Sentry {
    * @return baggage header or null
    */
   public static @Nullable BaggageHeader getBaggage() {
-    return getCurrentScopes().getBaggage();
+    return getCurrentHub().getBaggage();
   }
 
   @ApiStatus.Experimental
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
-    return getCurrentScopes().captureCheckIn(checkIn);
+    return getCurrentHub().captureCheckIn(checkIn);
   }
 }

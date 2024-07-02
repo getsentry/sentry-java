@@ -3,9 +3,9 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.CustomSamplingContext;
-import io.sentry.IScopes;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ITransaction;
-import io.sentry.ScopesAdapter;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -35,7 +35,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private static final String TRACE_ORIGIN = "auto.http.spring.webmvc";
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
 
   /**
    * Creates filter that resolves transaction name using {@link SpringMvcTransactionNameProvider}.
@@ -46,26 +46,25 @@ public class SentryTracingFilter extends OncePerRequestFilter {
    * javax.servlet.Filter}.
    */
   public SentryTracingFilter() {
-    this(ScopesAdapter.getInstance());
+    this(HubAdapter.getInstance());
   }
 
   /**
    * Creates filter that resolves transaction name using transaction name provider given by
    * parameter.
    *
-   * @param scopes - the scopes
+   * @param hub - the hub
    * @param transactionNameProvider - transaction name provider.
    */
   public SentryTracingFilter(
-      final @NotNull IScopes scopes,
-      final @NotNull TransactionNameProvider transactionNameProvider) {
-    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
+      final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
   }
 
-  public SentryTracingFilter(final @NotNull IScopes scopes) {
-    this(scopes, new SpringMvcTransactionNameProvider());
+  public SentryTracingFilter(final @NotNull IHub hub) {
+    this(hub, new SpringMvcTransactionNameProvider());
   }
 
   @Override
@@ -75,15 +74,15 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
-    if (scopes.isEnabled()) {
+    if (hub.isEnabled()) {
       final @Nullable String sentryTraceHeader =
           httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final @Nullable List<String> baggageHeader =
           Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
       final @Nullable TransactionContext transactionContext =
-          scopes.continueTrace(sentryTraceHeader, baggageHeader);
+          hub.continueTrace(sentryTraceHeader, baggageHeader);
 
-      if (scopes.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
+      if (hub.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
         doFilterWithTransaction(httpRequest, httpResponse, filterChain, transactionContext);
       } else {
         filterChain.doFilter(httpRequest, httpResponse);
@@ -101,6 +100,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       throws IOException, ServletException {
     // at this stage we are not able to get real transaction name
     final ITransaction transaction = startTransaction(httpRequest, transactionContext);
+    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
 
     try {
       filterChain.doFilter(httpRequest, httpResponse);
@@ -129,7 +129,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   private boolean shouldTraceRequest(final @NotNull HttpServletRequest request) {
-    return scopes.getOptions().isTraceOptionsRequests()
+    return hub.getOptions().isTraceOptionsRequests()
         || !HttpMethod.OPTIONS.name().equals(request.getMethod());
   }
 
@@ -142,20 +142,23 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
 
-    final TransactionOptions transactionOptions = new TransactionOptions();
-    transactionOptions.setCustomSamplingContext(customSamplingContext);
-    transactionOptions.setBindToScope(true);
-    transactionOptions.setOrigin(TRACE_ORIGIN);
-
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation("http.server");
 
-      return scopes.startTransaction(transactionContext, transactionOptions);
+      final TransactionOptions transactionOptions = new TransactionOptions();
+      transactionOptions.setCustomSamplingContext(customSamplingContext);
+      transactionOptions.setBindToScope(true);
+
+      return hub.startTransaction(transactionContext, transactionOptions);
     }
 
-    return scopes.startTransaction(
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setCustomSamplingContext(customSamplingContext);
+    transactionOptions.setBindToScope(true);
+
+    return hub.startTransaction(
         new TransactionContext(name, TransactionNameSource.URL, "http.server"), transactionOptions);
   }
 }

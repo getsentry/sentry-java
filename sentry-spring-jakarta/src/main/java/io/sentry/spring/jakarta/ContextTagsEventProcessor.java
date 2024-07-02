@@ -38,9 +38,4 @@ public final class ContextTagsEventProcessor implements EventProcessor {
     }
     return event;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 14000L;
-  }
 }

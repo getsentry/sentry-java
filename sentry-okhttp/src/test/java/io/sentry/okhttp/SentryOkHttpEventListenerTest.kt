@@ -1,7 +1,7 @@
 package io.sentry.okhttp
 
 import io.sentry.BaggageHeader
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -36,7 +36,7 @@ import kotlin.test.assertTrue
 class SentryOkHttpEventListenerTest {
 
     class Fixture {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val server = MockWebServer()
         val mockEventListener = mock<EventListener>()
         val mockEventListenerFactory = mock<EventListener.Factory>()
@@ -63,12 +63,12 @@ class SentryOkHttpEventListenerTest {
                 isSendDefaultPii = sendDefaultPii
                 configureOptions(this)
             }
-            whenever(scopes.options).thenReturn(options)
+            whenever(hub.options).thenReturn(options)
 
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
             if (isSpanActive) {
-                whenever(scopes.span).thenReturn(sentryTracer)
+                whenever(hub.span).thenReturn(sentryTracer)
             }
             server.enqueue(
                 MockResponse()
@@ -80,12 +80,12 @@ class SentryOkHttpEventListenerTest {
 
             val builder = OkHttpClient.Builder()
             if (useInterceptor) {
-                builder.addInterceptor(SentryOkHttpInterceptor(scopes))
+                builder.addInterceptor(SentryOkHttpInterceptor(hub))
             }
             sentryOkHttpEventListener = when {
-                eventListenerFactory != null -> SentryOkHttpEventListener(scopes, eventListenerFactory)
-                eventListener != null -> SentryOkHttpEventListener(scopes, eventListener)
-                else -> SentryOkHttpEventListener(scopes)
+                eventListenerFactory != null -> SentryOkHttpEventListener(hub, eventListenerFactory)
+                eventListener != null -> SentryOkHttpEventListener(hub, eventListener)
+                else -> SentryOkHttpEventListener(hub)
             }
             return builder.eventListener(sentryOkHttpEventListener).build()
         }
@@ -283,7 +283,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `propagate all calls to the SentryOkHttpEventListener passed in the ctor`() {
-        val originalListener = spy(SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener))
+        val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
         val sut = fixture.getSut(eventListener = originalListener)
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
@@ -295,7 +295,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `propagate all calls to the SentryOkHttpEventListener factory passed in the ctor`() {
-        val originalListener = spy(SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener))
+        val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
         val sut = fixture.getSut(eventListenerFactory = { originalListener })
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
@@ -307,7 +307,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `does not duplicated spans if an SentryOkHttpEventListener is passed in the ctor`() {
-        val originalListener = spy(SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener))
+        val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
         val sut = fixture.getSut(eventListener = originalListener)
         val request = postRequest(body = "requestBody")
         val call = sut.newCall(request)
@@ -370,8 +370,8 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `responseHeadersEnd schedules event finish`() {
-        val listener = SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener)
-        whenever(fixture.scopes.options).thenReturn(SentryOptions())
+        val listener = SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener)
+        whenever(fixture.hub.options).thenReturn(SentryOptions())
         val call = mock<Call>()
         whenever(call.request()).thenReturn(getRequest())
         val okHttpEvent = mock<SentryOkHttpEvent>()

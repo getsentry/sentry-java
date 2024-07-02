@@ -2,7 +2,7 @@ package io.sentry.okhttp
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryDate
 import io.sentry.SentryLevel
@@ -30,7 +30,7 @@ private const val RESPONSE_BODY_TIMEOUT_MILLIS = 800L
 internal const val TRACE_ORIGIN = "auto.http.okhttp"
 
 @Suppress("TooManyFunctions")
-internal class SentryOkHttpEvent(private val scopes: IScopes, private val request: Request) {
+internal class SentryOkHttpEvent(private val hub: IHub, private val request: Request) {
     private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()
     private val breadcrumb: Breadcrumb
     internal val callRootSpan: ISpan?
@@ -49,7 +49,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         method = request.method
 
         // We start the call span that will contain all the others
-        val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
+        val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
         callRootSpan = parentSpan?.startChild("http.client", "$method $url")
         callRootSpan?.spanContext?.origin = TRACE_ORIGIN
         urlDetails.applyToSpan(callRootSpan)
@@ -63,7 +63,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         callRootSpan?.setData("url", url)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
-        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
+        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
     }
 
     /**
@@ -151,13 +151,13 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
 
         // We send the breadcrumb even without spans.
-        scopes.addBreadcrumb(breadcrumb, hint)
+        hub.addBreadcrumb(breadcrumb, hint)
 
         // No span is created (e.g. no transaction is running)
         if (callRootSpan == null) {
             // We report the client error even without spans.
             clientErrorResponse?.let {
-                SentryOkHttpUtils.captureClientError(scopes, it.request, it)
+                SentryOkHttpUtils.captureClientError(hub, it.request, it)
             }
             return
         }
@@ -175,7 +175,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         // We report the client error here, after all sub-spans finished, so that it will be bound
         // to the root call span.
         clientErrorResponse?.let {
-            SentryOkHttpUtils.captureClientError(scopes, it.request, it)
+            SentryOkHttpUtils.captureClientError(hub, it.request, it)
         }
         if (finishDate != null) {
             callRootSpan.finish(callRootSpan.status, finishDate)
@@ -206,7 +206,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
 
     fun scheduleFinish(timestamp: SentryDate) {
         try {
-            scopes.options.executorService.schedule({
+            hub.options.executorService.schedule({
                 if (!isReadingResponseBody.get() &&
                     (eventSpans.values.all { it.isFinished } || callRootSpan?.isFinished != true)
                 ) {
@@ -214,7 +214,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
                 }
             }, RESPONSE_BODY_TIMEOUT_MILLIS)
         } catch (e: RejectedExecutionException) {
-            scopes.options
+            hub.options
                 .logger
                 .log(
                     SentryLevel.ERROR,

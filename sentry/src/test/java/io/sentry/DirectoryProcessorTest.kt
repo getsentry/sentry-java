@@ -27,7 +27,7 @@ class DirectoryProcessorTest {
 
     private class Fixture {
 
-        var scopes: IScopes = mock()
+        var hub: IHub = mock()
         var envelopeReader: IEnvelopeReader = mock()
         var serializer: ISerializer = mock()
         var logger: ILogger = mock()
@@ -40,7 +40,7 @@ class DirectoryProcessorTest {
 
         fun getSut(isRetryable: Boolean = false, isRateLimitingActive: Boolean = false): OutboxSender {
             val hintCaptor = argumentCaptor<Hint>()
-            whenever(scopes.captureEvent(any(), hintCaptor.capture())).then {
+            whenever(hub.captureEvent(any(), hintCaptor.capture())).then {
                 HintUtils.runIfHasType(
                     hintCaptor.firstValue,
                     Enqueable::class.java
@@ -52,7 +52,7 @@ class DirectoryProcessorTest {
                         val rateLimiter = mock<RateLimiter> {
                             whenever(mock.isActiveForCategory(any())).thenReturn(true)
                         }
-                        whenever(scopes.rateLimiter).thenReturn(rateLimiter)
+                        whenever(hub.rateLimiter).thenReturn(rateLimiter)
                     }
                 }
                 HintUtils.runIfHasType(
@@ -62,7 +62,7 @@ class DirectoryProcessorTest {
                     retryable.isRetry = isRetryable
                 }
             }
-            return OutboxSender(scopes, envelopeReader, serializer, logger, 500, 30)
+            return OutboxSender(hub, envelopeReader, serializer, logger, 500, 30)
         }
     }
 
@@ -91,7 +91,7 @@ class DirectoryProcessorTest {
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
 
         fixture.getSut().processDirectory(file)
-        verify(fixture.scopes).captureEvent(any(), argWhere<Hint> { !HintUtils.hasType(it, ApplyScopeData::class.java) })
+        verify(fixture.hub).captureEvent(any(), argWhere<Hint> { !HintUtils.hasType(it, ApplyScopeData::class.java) })
     }
 
     @Test
@@ -100,7 +100,7 @@ class DirectoryProcessorTest {
         dir.mkdirs()
         assertTrue(dir.exists()) // sanity check
         fixture.getSut().processDirectory(file)
-        verify(fixture.scopes, never()).captureEnvelope(any(), any())
+        verify(fixture.hub, never()).captureEnvelope(any(), any())
     }
 
     @Test
@@ -121,7 +121,7 @@ class DirectoryProcessorTest {
         sut.processDirectory(file)
 
         // should only capture once
-        verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -139,7 +139,7 @@ class DirectoryProcessorTest {
         sut.processDirectory(file)
 
         // should only capture once
-        verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
     }
 
     private fun getTempEnvelope(fileName: String): String {

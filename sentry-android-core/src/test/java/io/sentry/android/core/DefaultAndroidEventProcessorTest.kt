@@ -7,7 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DiagnosticLogger
 import io.sentry.Hint
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -62,13 +62,13 @@ class DefaultAndroidEventProcessorTest {
             sdkVersion = SdkVersion("test", "1.2.3")
         }
 
-        val scopes: IScopes = mock<IScopes>()
+        val hub: IHub = mock<IHub>()
 
         lateinit var sentryTracer: SentryTracer
 
         fun getSut(context: Context): DefaultAndroidEventProcessor {
-            whenever(scopes.options).thenReturn(options)
-            sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
+            whenever(hub.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
             return DefaultAndroidEventProcessor(context, buildInfo, options)
         }
     }

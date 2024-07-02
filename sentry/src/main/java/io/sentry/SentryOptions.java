@@ -203,8 +203,6 @@ public class SentryOptions {
    */
   private @Nullable TracesSamplerCallback tracesSampler;
 
-  private volatile @Nullable TracesSampler internalTracesSampler;
-
   /**
    * A list of string prefixes of module names that do not belong to the app, but rather third-party
    * packages. Modules considered not to be part of the app will be hidden from stack traces by
@@ -318,7 +316,7 @@ public class SentryOptions {
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
-  /** Registers hook that flushes {@link Scopes} when main thread shuts down. */
+  /** Registers hook that flushes {@link Hub} when main thread shuts down. */
   private boolean enableShutdownHook = true;
 
   /**
@@ -412,7 +410,7 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
-  // TODO [MAJOR] this should default to false on the next major
+  // TODO this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
@@ -457,10 +455,6 @@ public class SentryOptions {
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
-  /** Contains a list of span origins for which spans / transactions should not be created. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
-
-  @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
   private boolean enableBackpressureHandling = true;
@@ -476,8 +470,6 @@ public class SentryOptions {
 
   private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
 
-  private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
-
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
@@ -486,8 +478,6 @@ public class SentryOptions {
   private int profilingTracesHz = 101;
 
   @ApiStatus.Experimental private @Nullable Cron cron = null;
-
-  private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
 
   /**
    * Adds an event processor
@@ -962,18 +952,6 @@ public class SentryOptions {
    */
   public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
     this.tracesSampler = tracesSampler;
-  }
-
-  @ApiStatus.Internal
-  public @NotNull TracesSampler getInternalTracesSampler() {
-    if (internalTracesSampler == null) {
-      synchronized (this) {
-        if (internalTracesSampler == null) {
-          internalTracesSampler = new TracesSampler(this);
-        }
-      }
-    }
-    return internalTracesSampler;
   }
 
   /**
@@ -1954,11 +1932,7 @@ public class SentryOptions {
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
    * @param instrumenter - the instrumenter to use
-   * @deprecated this should no longer be needed with our current OpenTelmetry integration. Use
-   *     {@link SentryOptions#setIgnoredSpanOrigins(List)} instead if you need fine grained control
-   *     over what integrations can create spans.
    */
-  @Deprecated
   public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
     this.instrumenter = instrumenter;
   }
@@ -2221,27 +2195,6 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredSpanOrigins() {
-    return ignoredSpanOrigins;
-  }
-
-  @ApiStatus.Experimental
-  public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
-    if (ignoredSpanOrigins == null) {
-      this.ignoredSpanOrigins = null;
-    } else {
-      @NotNull final List<String> filtered = new ArrayList<>();
-      for (String origin : ignoredSpanOrigins) {
-        if (origin != null && !origin.isEmpty()) {
-          filtered.add(origin);
-        }
-      }
-
-      this.ignoredSpanOrigins = filtered;
-    }
-  }
-
-  @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
@@ -2432,14 +2385,6 @@ public class SentryOptions {
     this.cron = cron;
   }
 
-  public void setDefaultScopeType(final @NotNull ScopeType scopeType) {
-    this.defaultScopeType = scopeType;
-  }
-
-  public @NotNull ScopeType getDefaultScopeType() {
-    return defaultScopeType;
-  }
-
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2541,7 +2486,7 @@ public class SentryOptions {
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
-   * <p>Used by {@link NoOpScopes}.
+   * <p>Used by {@link NoOpHub}.
    *
    * @return SentryOptions
    */
@@ -2562,7 +2507,6 @@ public class SentryOptions {
    */
   private SentryOptions(final boolean empty) {
     if (!empty) {
-      setSpanFactory(new DefaultSpanFactory());
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService();
@@ -2688,12 +2632,6 @@ public class SentryOptions {
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
-    if (options.getMaxRequestBodySize() != null) {
-      setMaxRequestBodySize(options.getMaxRequestBodySize());
-    }
-    if (options.isSendDefaultPii() != null) {
-      setSendDefaultPii(options.isSendDefaultPii());
-    }
 
     if (options.getCron() != null) {
       if (getCron() == null) {
@@ -2731,17 +2669,6 @@ public class SentryOptions {
   private void addPackageInfo() {
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
-  }
-
-  @ApiStatus.Internal
-  public @NotNull ISpanFactory getSpanFactory() {
-    // TODO [POTEL] use a util for checking if OTel is active or similar
-    return spanFactory;
-  }
-
-  @ApiStatus.Internal
-  public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
-    this.spanFactory = spanFactory;
   }
 
   public static final class Proxy {

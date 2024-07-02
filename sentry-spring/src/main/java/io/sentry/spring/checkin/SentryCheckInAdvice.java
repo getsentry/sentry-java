@@ -4,9 +4,8 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
-import io.sentry.IScopes;
-import io.sentry.ISentryLifecycleToken;
-import io.sentry.ScopesAdapter;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
@@ -31,16 +30,16 @@ import org.springframework.util.StringValueResolver;
 @ApiStatus.Experimental
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
 
   private @Nullable StringValueResolver resolver;
 
   public SentryCheckInAdvice() {
-    this(ScopesAdapter.getInstance());
+    this(HubAdapter.getInstance());
   }
 
-  public SentryCheckInAdvice(final @NotNull IScopes scopes) {
-    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+  public SentryCheckInAdvice(final @NotNull IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   @Override
@@ -70,8 +69,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         // Sentry should alert the user about missed checkins in this case since the monitor slug
         // won't match
         // what is configured in Sentry.
-        scopes
-            .getOptions()
+        hub.getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
@@ -81,8 +79,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
     }
 
     if (ObjectUtils.isEmpty(monitorSlug)) {
-      scopes
-          .getOptions()
+      hub.getOptions()
           .getLogger()
           .log(
               SentryLevel.WARNING,
@@ -90,28 +87,27 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return invocation.proceed();
     }
 
-    try (final @NotNull ISentryLifecycleToken ignored =
-            scopes.forkedScopes("SentryCheckInAdvice").makeCurrent()) {
-      TracingUtils.startNewTrace(scopes);
+    hub.pushScope();
+    TracingUtils.startNewTrace(hub);
 
-      @Nullable SentryId checkInId = null;
-      final long startTime = System.currentTimeMillis();
-      boolean didError = false;
+    @Nullable SentryId checkInId = null;
+    final long startTime = System.currentTimeMillis();
+    boolean didError = false;
 
-      try {
-        if (!isHeartbeatOnly) {
-          checkInId = scopes.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
-        }
-        return invocation.proceed();
-      } catch (Throwable e) {
-        didError = true;
-        throw e;
-      } finally {
-        final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
-        CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
-        scopes.captureCheckIn(checkIn);
+    try {
+      if (!isHeartbeatOnly) {
+        checkInId = hub.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
       }
+      return invocation.proceed();
+    } catch (Throwable e) {
+      didError = true;
+      throw e;
+    } finally {
+      final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
+      CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
+      checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+      hub.captureCheckIn(checkIn);
+      hub.popScope();
     }
   }
 

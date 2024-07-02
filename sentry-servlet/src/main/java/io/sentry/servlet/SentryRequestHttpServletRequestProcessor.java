@@ -56,9 +56,4 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   private static @Nullable String toString(final @Nullable Enumeration<String> enumeration) {
     return enumeration != null ? String.join(",", Collections.list(enumeration)) : null;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 4000L;
-  }
 }

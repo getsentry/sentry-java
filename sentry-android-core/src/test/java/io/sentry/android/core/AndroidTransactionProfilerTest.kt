@@ -5,8 +5,8 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CpuCollectionData
+import io.sentry.IHub
 import io.sentry.ILogger
-import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
@@ -89,7 +89,7 @@ class AndroidTransactionProfilerTest {
             executorService = mockExecutorService
         }
 
-        val scopes: IScopes = mock()
+        val hub: IHub = mock()
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
         lateinit var transaction1: SentryTracer
@@ -97,10 +97,10 @@ class AndroidTransactionProfilerTest {
         lateinit var transaction3: SentryTracer
 
         fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler {
-            whenever(scopes.options).thenReturn(options)
-            transaction1 = SentryTracer(TransactionContext("", ""), scopes)
-            transaction2 = SentryTracer(TransactionContext("", ""), scopes)
-            transaction3 = SentryTracer(TransactionContext("", ""), scopes)
+            whenever(hub.options).thenReturn(options)
+            transaction1 = SentryTracer(TransactionContext("", ""), hub)
+            transaction2 = SentryTracer(TransactionContext("", ""), hub)
+            transaction3 = SentryTracer(TransactionContext("", ""), hub)
             return AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector)
         }
     }

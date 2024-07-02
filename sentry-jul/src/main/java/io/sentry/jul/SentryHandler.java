@@ -6,7 +6,7 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.ScopesAdapter;
+import io.sentry.HubAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
@@ -210,9 +210,9 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
+        // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
         // initialized somewhere else
-        final List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
+        final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
         if (!contextTags.isEmpty()) {
           for (final String contextTag : contextTags) {
             // if mdc tag is listed in SentryOptions, apply as event tag

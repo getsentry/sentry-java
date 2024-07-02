@@ -39,7 +39,7 @@ public final class ActivityFramesTracker {
   private final @NotNull MainLooperHandler handler;
 
   public ActivityFramesTracker(
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final @NotNull SentryAndroidOptions options,
       final @NotNull MainLooperHandler handler) {
 
@@ -54,14 +54,13 @@ public final class ActivityFramesTracker {
   }
 
   public ActivityFramesTracker(
-      final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull SentryAndroidOptions options) {
+      final @NotNull LoadClass loadClass, final @NotNull SentryAndroidOptions options) {
     this(loadClass, options, new MainLooperHandler());
   }
 
   @TestOnly
   ActivityFramesTracker(
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final @NotNull SentryAndroidOptions options,
       final @NotNull MainLooperHandler handler,
       final @Nullable FrameMetricsAggregator frameMetricsAggregator) {

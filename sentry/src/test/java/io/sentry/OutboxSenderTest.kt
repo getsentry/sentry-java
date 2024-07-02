@@ -30,7 +30,7 @@ class OutboxSenderTest {
     private class Fixture {
 
         val options = mock<SentryOptions>()
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         var envelopeReader = mock<IEnvelopeReader>()
         val serializer = mock<ISerializer>()
         val logger = mock<ILogger>()
@@ -39,11 +39,11 @@ class OutboxSenderTest {
             whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
             whenever(options.dateProvider).thenReturn(SentryNanotimeDateProvider())
             whenever(options.mainThreadChecker).thenReturn(NoOpMainThreadChecker.getInstance())
-            whenever(scopes.options).thenReturn(this.options)
+            whenever(hub.options).thenReturn(this.options)
         }
 
         fun getSut(): OutboxSender {
-            return OutboxSender(scopes, envelopeReader, serializer, logger, 15000, 30)
+            return OutboxSender(hub, envelopeReader, serializer, logger, 15000, 30)
         }
     }
 
@@ -83,7 +83,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.scopes).captureEvent(eq(expected), any<Hint>())
+        verify(fixture.hub).captureEvent(eq(expected), any<Hint>())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -94,7 +94,7 @@ class OutboxSenderTest {
     fun `when parser is EnvelopeReader and serializer return SentryTransaction, transaction captured, transactions sampled, file is deleted`() {
         fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.options.maxSpans).thenReturn(1000)
-        whenever(fixture.scopes.options).thenReturn(fixture.options)
+        whenever(fixture.hub.options).thenReturn(fixture.options)
         whenever(fixture.options.transactionProfiler).thenReturn(NoOpTransactionProfiler.getInstance())
 
         val transactionContext = TransactionContext("fixture-name", "http")
@@ -102,7 +102,7 @@ class OutboxSenderTest {
         transactionContext.status = SpanStatus.OK
         transactionContext.setTag("fixture-tag", "fixture-value")
 
-        val sentryTracer = SentryTracer(transactionContext, fixture.scopes)
+        val sentryTracer = SentryTracer(transactionContext, fixture.hub)
         val span = sentryTracer.startChild("child")
         span.finish(SpanStatus.OK)
         sentryTracer.finish()
@@ -120,7 +120,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(expected, it)
                 assertTrue(it.isSampled)
@@ -139,7 +139,7 @@ class OutboxSenderTest {
     fun `restores sampleRate`() {
         fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.options.maxSpans).thenReturn(1000)
-        whenever(fixture.scopes.options).thenReturn(fixture.options)
+        whenever(fixture.hub.options).thenReturn(fixture.options)
         whenever(fixture.options.transactionProfiler).thenReturn(NoOpTransactionProfiler.getInstance())
 
         val transactionContext = TransactionContext("fixture-name", "http")
@@ -148,7 +148,7 @@ class OutboxSenderTest {
         transactionContext.setTag("fixture-tag", "fixture-value")
         transactionContext.samplingDecision = TracesSamplingDecision(true, 0.00000021)
 
-        val sentryTracer = SentryTracer(transactionContext, fixture.scopes)
+        val sentryTracer = SentryTracer(transactionContext, fixture.hub)
         val span = sentryTracer.startChild("child")
         span.finish(SpanStatus.OK)
         sentryTracer.finish()
@@ -166,7 +166,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.scopes).captureTransaction(
+        verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(expected, it)
                 assertTrue(it.isSampled)
@@ -207,7 +207,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.scopes).captureEvent(any(), any<Hint>())
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -225,7 +225,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.scopes).captureEnvelope(any(), any())
+        verify(fixture.hub).captureEnvelope(any(), any())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -245,7 +245,7 @@ class OutboxSenderTest {
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
-        verify(fixture.scopes, never()).captureEvent(any())
+        verify(fixture.hub, never()).captureEvent(any())
         assertFalse(File(path).exists())
     }
 
@@ -263,7 +263,7 @@ class OutboxSenderTest {
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
-        verify(fixture.scopes, never()).captureEvent(any())
+        verify(fixture.hub, never()).captureEvent(any())
         assertFalse(File(path).exists())
     }
 

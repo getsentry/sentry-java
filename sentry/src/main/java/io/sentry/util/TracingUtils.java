@@ -2,8 +2,8 @@ package io.sentry.util;
 
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
+import io.sentry.IHub;
 import io.sentry.IScope;
-import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
 import io.sentry.SentryOptions;
@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TracingUtils {
 
-  public static void startNewTrace(final @NotNull IScopes scopes) {
-    scopes.configureScope(
+  public static void startNewTrace(final @NotNull IHub hub) {
+    hub.configureScope(
         scope -> {
           scope.withPropagationContext(
               propagationContext -> {
@@ -25,30 +25,30 @@ public final class TracingUtils {
   }
 
   public static @Nullable TracingHeaders traceIfAllowed(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       final @NotNull String requestUrl,
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
-    final @NotNull SentryOptions sentryOptions = scopes.getOptions();
+    final @NotNull SentryOptions sentryOptions = hub.getOptions();
     if (sentryOptions.isTraceSampling() && shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
-      return trace(scopes, thirdPartyBaggageHeaders, span);
+      return trace(hub, thirdPartyBaggageHeaders, span);
     }
 
     return null;
   }
 
   public static @Nullable TracingHeaders trace(
-      final @NotNull IScopes scopes,
+      final @NotNull IHub hub,
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
-    final @NotNull SentryOptions sentryOptions = scopes.getOptions();
+    final @NotNull SentryOptions sentryOptions = hub.getOptions();
 
     if (span != null && !span.isNoOp()) {
       return new TracingHeaders(
           span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders));
     } else {
       final @NotNull PropagationContextHolder returnValue = new PropagationContextHolder();
-      scopes.configureScope(
+      hub.configureScope(
           (scope) -> {
             returnValue.propagationContext = maybeUpdateBaggage(scope, sentryOptions);
           });

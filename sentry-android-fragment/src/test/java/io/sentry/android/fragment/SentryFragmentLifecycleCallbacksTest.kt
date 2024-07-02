@@ -5,8 +5,8 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import io.sentry.Breadcrumb
+import io.sentry.Hub
 import io.sentry.IScope
-import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.ScopeCallback
@@ -32,7 +32,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
     private class Fixture {
         val fragmentManager = mock<FragmentManager>()
-        val scopes = mock<IScopes>()
+        val hub = mock<Hub>()
         val fragment = mock<Fragment>()
         val context = mock<Context>()
         val scope = mock<IScope>()
@@ -45,7 +45,7 @@ class SentryFragmentLifecycleCallbacksTest {
             tracesSampleRate: Double? = 1.0,
             isAdded: Boolean = true
         ): SentryFragmentLifecycleCallbacks {
-            whenever(scopes.options).thenReturn(
+            whenever(hub.options).thenReturn(
                 SentryOptions().apply {
                     setTracesSampleRate(tracesSampleRate)
                 }
@@ -53,14 +53,14 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(span.spanContext).thenReturn(
                 SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
             )
-            whenever(transaction.startChild(any<String>(), any<String>())).thenReturn(span)
+            whenever(transaction.startChild(any(), any())).thenReturn(span)
             whenever(scope.transaction).thenReturn(transaction)
-            whenever(scopes.configureScope(any())).thenAnswer {
+            whenever(hub.configureScope(any())).thenAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }
             whenever(fragment.isAdded).thenReturn(isAdded)
             return SentryFragmentLifecycleCallbacks(
-                scopes = scopes,
+                hub = hub,
                 filterFragmentLifecycleBreadcrumbs = loggedFragmentLifecycleStates,
                 enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
             )
@@ -190,7 +190,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
+        verify(fixture.transaction, never()).startChild(any(), any())
     }
 
     @Test
@@ -200,10 +200,10 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
         verify(fixture.transaction).startChild(
-            check<String> {
+            check {
                 assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
             },
-            check<String> {
+            check {
                 assertEquals("androidx.fragment.app.Fragment", it)
             }
         )
@@ -215,7 +215,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
+        verify(fixture.transaction, never()).startChild(any(), any())
     }
 
     @Test
@@ -225,7 +225,7 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction).startChild(any<String>(), any<String>())
+        verify(fixture.transaction).startChild(any(), any())
     }
 
     @Test
@@ -272,7 +272,7 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     private fun verifyBreadcrumbAdded(expectedState: String) {
-        verify(fixture.scopes).addBreadcrumb(
+        verify(fixture.hub).addBreadcrumb(
             check { breadcrumb: Breadcrumb ->
                 assertEquals("ui.fragment.lifecycle", breadcrumb.category)
                 assertEquals("navigation", breadcrumb.type)
@@ -285,6 +285,6 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     private fun verifyBreadcrumbAddedCount(count: Int) {
-        verify(fixture.scopes, times(count)).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.hub, times(count)).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }

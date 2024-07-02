@@ -163,8 +163,7 @@ public class SentryProperties extends SentryOptions {
   @Open
   public static class Reactive {
     /**
-     * Enable/Disable usage of {@link io.micrometer.context.ThreadLocalAccessor} for Scopes
-     * propagation
+     * Enable/Disable usage of {@link io.micrometer.context.ThreadLocalAccessor} for Hub propagation
      */
     private boolean threadLocalAccessorEnabled = true;
 

@@ -1,6 +1,6 @@
 package io.sentry.spring.boot.jakarta.it
 
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.checkEvent
@@ -60,7 +60,7 @@ class SentrySpringIntegrationTest {
     lateinit var transport: ITransport
 
     @SpyBean
-    lateinit var scopes: IScopes
+    lateinit var hub: IHub
 
     @LocalServerPort
     var port: Int? = null
@@ -188,7 +188,7 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
-        verify(scopes, never()).captureEvent(any())
+        verify(hub, never()).captureEvent(any())
     }
 
     @Test

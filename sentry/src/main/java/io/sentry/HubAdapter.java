@@ -10,10 +10,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @deprecated use {@link ScopesAdapter} instead
- */
-@Deprecated
 public final class HubAdapter implements IHub {
 
   private static final HubAdapter INSTANCE = new HubAdapter();
@@ -54,7 +50,7 @@ public final class HubAdapter implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
-    return Sentry.getCurrentScopes().captureEnvelope(envelope, hint);
+    return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
   }
 
   @Override
@@ -154,21 +150,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull ISentryLifecycleToken pushScope() {
-    return Sentry.pushScope();
+  public void pushScope() {
+    Sentry.pushScope();
   }
 
   @Override
-  public @NotNull ISentryLifecycleToken pushIsolationScope() {
-    return Sentry.pushIsolationScope();
-  }
-
-  /**
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     ScopesAdapter#pushScope()} or {@link ScopesAdapter#pushIsolationScope()} instead.
-   */
-  @Override
-  @Deprecated
   public void popScope() {
     Sentry.popScope();
   }
@@ -179,13 +165,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void withIsolationScope(@NotNull ScopeCallback callback) {
-    Sentry.withIsolationScope(callback);
-  }
-
-  @Override
-  public void configureScope(@Nullable ScopeType scopeType, @NotNull ScopeCallback callback) {
-    Sentry.configureScope(scopeType, callback);
+  public void configureScope(@NotNull ScopeCallback callback) {
+    Sentry.configureScope(callback);
   }
 
   @Override
@@ -203,62 +184,9 @@ public final class HubAdapter implements IHub {
     Sentry.flush(timeoutMillis);
   }
 
-  /**
-   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
-   *     IScopes#forkedCurrentScope(String)} instead.
-   */
-  @Deprecated
   @Override
   public @NotNull IHub clone() {
-    return Sentry.getCurrentScopes().clone();
-  }
-
-  @Override
-  public @NotNull IScopes forkedScopes(@NotNull String creator) {
-    return Sentry.forkedScopes(creator);
-  }
-
-  @Override
-  public @NotNull IScopes forkedCurrentScope(@NotNull String creator) {
-    return Sentry.forkedCurrentScope(creator);
-  }
-
-  @Override
-  public @NotNull IScopes forkedRootScopes(final @NotNull String creator) {
-    return Sentry.forkedRootScopes(creator);
-  }
-
-  @Override
-  public @NotNull ISentryLifecycleToken makeCurrent() {
-    return NoOpScopesLifecycleToken.getInstance();
-  }
-
-  @Override
-  @ApiStatus.Internal
-  public @NotNull IScope getScope() {
-    return Sentry.getCurrentScopes().getScope();
-  }
-
-  @Override
-  @ApiStatus.Internal
-  public @NotNull IScope getIsolationScope() {
-    return Sentry.getCurrentScopes().getIsolationScope();
-  }
-
-  @Override
-  @ApiStatus.Internal
-  public @NotNull IScope getGlobalScope() {
-    return Sentry.getGlobalScope();
-  }
-
-  @Override
-  public @Nullable IScopes getParentScopes() {
-    return Sentry.getCurrentScopes().getParentScopes();
-  }
-
-  @Override
-  public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
-    return Sentry.getCurrentScopes().isAncestorOf(otherScopes);
+    return Sentry.getCurrentHub().clone();
   }
 
   @Override
@@ -267,7 +195,7 @@ public final class HubAdapter implements IHub {
       @Nullable TraceContext traceContext,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
-    return Sentry.getCurrentScopes()
+    return Sentry.getCurrentHub()
         .captureTransaction(transaction, traceContext, hint, profilingTraceData);
   }
 
@@ -289,23 +217,23 @@ public final class HubAdapter implements IHub {
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,
       final @NotNull String transactionName) {
-    Sentry.getCurrentScopes().setSpanContext(throwable, span, transactionName);
+    Sentry.getCurrentHub().setSpanContext(throwable, span, transactionName);
   }
 
   @Override
   public @Nullable ISpan getSpan() {
-    return Sentry.getCurrentScopes().getSpan();
+    return Sentry.getCurrentHub().getSpan();
   }
 
   @Override
   @ApiStatus.Internal
   public @Nullable ITransaction getTransaction() {
-    return Sentry.getCurrentScopes().getTransaction();
+    return Sentry.getCurrentHub().getTransaction();
   }
 
   @Override
   public @NotNull SentryOptions getOptions() {
-    return Sentry.getCurrentScopes().getOptions();
+    return Sentry.getCurrentHub().getOptions();
   }
 
   @Override
@@ -343,11 +271,11 @@ public final class HubAdapter implements IHub {
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {
-    return Sentry.getCurrentScopes().getRateLimiter();
+    return Sentry.getCurrentHub().getRateLimiter();
   }
 
   @Override
   public @NotNull MetricsApi metrics() {
-    return Sentry.getCurrentScopes().metrics();
+    return Sentry.getCurrentHub().metrics();
   }
 }

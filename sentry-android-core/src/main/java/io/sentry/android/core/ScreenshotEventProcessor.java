@@ -98,9 +98,4 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     hint.set(ANDROID_ACTIVITY, activity);
     return event;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 10000L;
-  }
 }

@@ -169,7 +169,7 @@ class AnrV2EventProcessorTest {
 
         assertNull(processed.platform)
         assertNull(processed.exceptions)
-        assertTrue(processed.contexts.isEmpty)
+        assertEquals(emptyMap(), processed.contexts)
     }
 
     @Test

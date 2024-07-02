@@ -1,8 +1,8 @@
 package io.sentry.spring.webflux
 
-import io.sentry.IScopes
+import io.sentry.HubAdapter
+import io.sentry.IHub
 import io.sentry.ITransportFactory
-import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
@@ -95,7 +95,7 @@ class SentryWebfluxIntegrationTest {
             checkEvent { event ->
                 assertEquals("GET /throws", event.transaction)
                 assertNotNull(event.exceptions) {
-                    val ex = it.last()
+                    val ex = it.first()
                     assertEquals("something went wrong", ex.value)
                     assertNotNull(ex.mechanism) {
                         assertThat(it.isHandled).isFalse()
@@ -160,13 +160,13 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
-    open fun scopes() = ScopesAdapter.getInstance()
+    open fun hub() = HubAdapter.getInstance()
 
     @Bean
-    open fun sentryFilter(scopes: IScopes) = SentryWebFilter(scopes)
+    open fun sentryFilter(hub: IHub) = SentryWebFilter(hub)
 
     @Bean
-    open fun sentryWebExceptionHandler(scopes: IScopes) = SentryWebExceptionHandler(scopes)
+    open fun sentryWebExceptionHandler(hub: IHub) = SentryWebExceptionHandler(hub)
 
     @Bean
     open fun sentryScheduleHookRegistrar() = ApplicationRunner {

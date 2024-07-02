@@ -1,8 +1,6 @@
 package io.sentry.android.ndk;
 
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.ndk.NativeModuleListLoader;
-import io.sentry.ndk.NdkOptions;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,6 +9,21 @@ public final class SentryNdk {
 
   private SentryNdk() {}
 
+  static {
+    // On older Android versions, it was necessary to manually call "`System.loadLibrary` on all
+    // transitive dependencies before loading [the] main library."
+    // The dependencies of `libsentry.so` are currently `lib{c,m,dl,log}.so`.
+    // See
+    // https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-dependency-resolution
+    System.loadLibrary("log");
+    System.loadLibrary("sentry");
+    System.loadLibrary("sentry-android");
+  }
+
+  private static native void initSentryNative(@NotNull final SentryAndroidOptions options);
+
+  private static native void shutdown();
+
   /**
    * Init the NDK integration
    *
@@ -18,18 +31,7 @@ public final class SentryNdk {
    */
   public static void init(@NotNull final SentryAndroidOptions options) {
     SentryNdkUtil.addPackage(options.getSdkVersion());
-
-    final @NotNull NdkOptions ndkOptions =
-        new NdkOptions(
-            options.getDsn(),
-            options.isDebug(),
-            options.getOutboxPath(),
-            options.getRelease(),
-            options.getEnvironment(),
-            options.getDist(),
-            options.getMaxBreadcrumbs(),
-            options.getNativeSdkName());
-    io.sentry.ndk.SentryNdk.init(ndkOptions);
+    initSentryNative(options);
 
     // only add scope sync observer if the scope sync is enabled.
     if (options.isEnableScopeSync()) {
@@ -41,6 +43,6 @@ public final class SentryNdk {
 
   /** Closes the NDK integration */
   public static void close() {
-    io.sentry.ndk.SentryNdk.close();
+    shutdown();
   }
 }

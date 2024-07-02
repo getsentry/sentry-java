@@ -42,9 +42,4 @@ final class SentryRuntimeEventProcessor implements EventProcessor {
     }
     return event;
   }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 2000L;
-  }
 }

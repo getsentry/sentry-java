@@ -1,7 +1,7 @@
 package io.sentry.okhttp
 
 import io.sentry.Hint
-import io.sentry.IScopes
+import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
@@ -29,7 +29,7 @@ import kotlin.test.assertTrue
 class SentryOkHttpUtilsTest {
 
     class Fixture {
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val server = MockWebServer()
 
         fun getSut(
@@ -43,11 +43,11 @@ class SentryOkHttpUtilsTest {
                 setTracePropagationTargets(listOf(server.hostName))
                 isSendDefaultPii = sendDefaultPii
             }
-            whenever(scopes.options).thenReturn(options)
+            whenever(hub.options).thenReturn(options)
 
-            val sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
-            whenever(scopes.span).thenReturn(sentryTracer)
+            whenever(hub.span).thenReturn(sentryTracer)
 
             server.enqueue(
                 MockResponse()
@@ -78,8 +78,8 @@ class SentryOkHttpUtilsTest {
         val request = getRequest()
         val response = sut.newCall(request).execute()
 
-        SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
-        verify(fixture.scopes).captureEvent(
+        SentryOkHttpUtils.captureClientError(fixture.hub, request, response)
+        verify(fixture.hub).captureEvent(
             check {
                 val req = it.request
                 val resp = it.contexts.response
@@ -103,8 +103,8 @@ class SentryOkHttpUtilsTest {
         val request = getRequest()
         val response = sut.newCall(request).execute()
 
-        SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
-        verify(fixture.scopes).captureEvent(
+        SentryOkHttpUtils.captureClientError(fixture.hub, request, response)
+        verify(fixture.hub).captureEvent(
             check {
                 val req = it.request
                 val resp = it.contexts.response
@@ -127,8 +127,8 @@ class SentryOkHttpUtilsTest {
         val request = getRequest()
         val response = sut.newCall(request).execute()
 
-        SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
-        verify(fixture.scopes).captureEvent(
+        SentryOkHttpUtils.captureClientError(fixture.hub, request, response)
+        verify(fixture.hub).captureEvent(
             check {
                 val req = it.request
                 val resp = it.contexts.response

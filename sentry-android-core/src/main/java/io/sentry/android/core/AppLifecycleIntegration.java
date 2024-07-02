@@ -3,7 +3,7 @@ package io.sentry.android.core;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
-import io.sentry.IScopes;
+import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -32,8 +32,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   }
 
   @Override
-  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(scopes, "Scopes are required");
+  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(hub, "Hub is required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -59,11 +59,11 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
         Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
         Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
         if (AndroidMainThreadChecker.getInstance().isMainThread()) {
-          addObserver(scopes);
+          addObserver(hub);
         } else {
           // some versions of the androidx lifecycle-process require this to be executed on the main
           // thread.
-          handler.post(() -> addObserver(scopes));
+          handler.post(() -> addObserver(hub));
         }
       } catch (ClassNotFoundException e) {
         options
@@ -80,7 +80,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     }
   }
 
-  private void addObserver(final @NotNull IScopes scopes) {
+  private void addObserver(final @NotNull IHub hub) {
     // this should never happen, check added to avoid warnings from NullAway
     if (this.options == null) {
       return;
@@ -88,7 +88,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
 
     watcher =
         new LifecycleWatcher(
-            scopes,
+            hub,
             this.options.getSessionTrackingIntervalMillis(),
             this.options.isEnableAutoSessionTracking(),
             this.options.isEnableAppLifecycleBreadcrumbs());

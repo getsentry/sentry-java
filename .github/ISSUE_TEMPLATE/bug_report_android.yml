@@ -10,13 +10,13 @@ body:
       options:
         - sentry-android
         - sentry-android-ndk
+        - sentry-android-okhttp
         - sentry-android-timber
         - sentry-android-fragment
         - sentry-android-sqlite
         - sentry-apollo
-        - sentry-apollo-3
         - sentry-compose
-        - sentry-okhttp
+        - sentry-apollo-3
         - other
     validations:
       required: true

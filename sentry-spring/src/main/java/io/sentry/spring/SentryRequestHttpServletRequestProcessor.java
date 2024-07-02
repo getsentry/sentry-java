@@ -8,7 +8,6 @@ import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** Attaches transaction name from the HTTP request to {@link SentryEvent}. */
 @Open
@@ -30,10 +29,5 @@ public class SentryRequestHttpServletRequestProcessor implements EventProcessor 
       event.setTransaction(transactionNameProvider.provideTransactionName(request));
     }
     return event;
-  }
-
-  @Override
-  public @Nullable Long getOrder() {
-    return 5000L;
   }
 }

@@ -1,8 +1,8 @@
 package io.sentry.android.sqlite
 
 import android.database.SQLException
-import io.sentry.IScopes
-import io.sentry.ScopesAdapter
+import io.sentry.HubAdapter
+import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
@@ -11,10 +11,10 @@ import io.sentry.SpanStatus
 private const val TRACE_ORIGIN = "auto.db.sqlite"
 
 internal class SQLiteSpanManager(
-    private val scopes: IScopes = ScopesAdapter.getInstance(),
+    private val hub: IHub = HubAdapter.getInstance(),
     private val databaseName: String? = null
 ) {
-    private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
+    private val stackTraceFactory = SentryStackTraceFactory(hub.options)
 
     init {
         SentryIntegrationPackageStorage.getInstance().addIntegration("SQLite")
@@ -30,7 +30,7 @@ internal class SQLiteSpanManager(
     @Suppress("TooGenericExceptionCaught")
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
-        val span = scopes.span?.startChild("db.sql.query", sql)
+        val span = hub.span?.startChild("db.sql.query", sql)
         span?.spanContext?.origin = TRACE_ORIGIN
         return try {
             val result = operation()
@@ -42,7 +42,7 @@ internal class SQLiteSpanManager(
             throw e
         } finally {
             span?.apply {
-                val isMainThread: Boolean = scopes.options.mainThreadChecker.isMainThread
+                val isMainThread: Boolean = hub.options.mainThreadChecker.isMainThread
                 setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
                 if (isMainThread) {
                     setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)

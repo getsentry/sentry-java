@@ -2,10 +2,10 @@ package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
-import io.sentry.IScopes;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ITransportFactory;
 import io.sentry.Integration;
-import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
@@ -27,15 +27,15 @@ public class SentryInitBeanPostProcessor
     implements BeanPostProcessor, ApplicationContextAware, DisposableBean {
   private @Nullable ApplicationContext applicationContext;
 
-  private final @NotNull IScopes scopes;
+  private final @NotNull IHub hub;
 
   public SentryInitBeanPostProcessor() {
-    this(ScopesAdapter.getInstance());
+    this(HubAdapter.getInstance());
   }
 
-  SentryInitBeanPostProcessor(final @NotNull IScopes scopes) {
-    Objects.requireNonNull(scopes, "Scopes are required");
-    this.scopes = scopes;
+  SentryInitBeanPostProcessor(final @NotNull IHub hub) {
+    Objects.requireNonNull(hub, "hub is required");
+    this.hub = hub;
   }
 
   @Override
@@ -86,6 +86,6 @@ public class SentryInitBeanPostProcessor
 
   @Override
   public void destroy() {
-    scopes.close();
+    hub.close();
   }
 }
