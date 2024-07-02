@@ -319,6 +319,7 @@ class SentryAndroidTest {
     @Test
     fun `init does not start a session if one is already running`() {
         val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
 
         initSentryWithForegroundImportance(true, { options ->
             options.addIntegration { hub, _ ->

@@ -11,31 +11,31 @@
 ### Behavioural Changes
 
 - (Android) The JNI layer for sentry-native has now been moved from sentry-java to sentry-native ([#3189](https://github.com/getsentry/sentry-java/pull/3189))
-    - This now includes prefab support for sentry-native, allowing you to link and access the sentry-native API within your native app code
-    - Checkout the `sentry-samples/sentry-samples-android` example on how to configure CMake and consume `sentry.h`
+  - This now includes prefab support for sentry-native, allowing you to link and access the sentry-native API within your native app code
+  - Checkout the `sentry-samples/sentry-samples-android` example on how to configure CMake and consume `sentry.h`
 
 ### Features
 
 - Our `sentry-opentelemetry-agent` has been completely reworked and now plays nicely with the rest of the Java SDK
-    - You may also want to give this new agent a try even if you haven't used OpenTelemetry (with Sentry) before. It offers support for [many more libraries and frameworks](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md), improving on our trace propagation, `Scopes` (used to be `Hub`) propagation as well as performance instrumentation (i.e. more spans).
-    - If you are using a framework we did not support before and currently resort to manual instrumentation, please give the agent a try. See [here for a list of supported libraries, frameworks and application servers](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
-    - NOTE: Not all features have been implemented yet for the OpenTelemetry agent. Features of note that are not working yet:
-        - Metrics
-        - Measurements
-        - `forceFinish` on transaction
-        - `scheduleFinish` on transaction
-        - see [#3436](https://github.com/getsentry/sentry-java/issues/3436) for a more up-to-date list of features we have (not) implemented
-    - Please see "Installing `sentry-opentelemetry-agent`" for more details on how to set up the agent.
-    - What's new about the Agent
-        - When the OpenTelemetry Agent is used, Sentry API creates OpenTelemetry spans under the hood, handing back a wrapper object which bridges the gap between traditional Sentry API and OpenTelemetry. We might be replacing some of the Sentry performance API in the future.
-            - This is achieved by configuring the SDK to use `OtelSpanFactory` instead of `DefaultSpanFactory` which is done automatically by the auto init of the Java Agent.
-        - OpenTelemetry spans are now only turned into Sentry spans when they are finished so they can be sent to the Sentry server.
-        - Now registers an OpenTelemetry `Sampler` which uses Sentry sampling configuration
-        - Other Performance integrations automatically stop creating spans to avoid duplicate spans
-        - The Sentry SDK now makes use of OpenTelemetry `Context` for storing Sentry `Scopes` (which is similar to what used to be called `Hub`) and thus relies on OpenTelemetry for `Context` propagation.
-        - Classes used for the previous version of our OpenTelemetry support have been deprecated but can still be used manually. We're not planning to keep the old agent around in favor of less complexity in the SDK.
+  - You may also want to give this new agent a try even if you haven't used OpenTelemetry (with Sentry) before. It offers support for [many more libraries and frameworks](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md), improving on our trace propagation, `Scopes` (used to be `Hub`) propagation as well as performance instrumentation (i.e. more spans).
+  - If you are using a framework we did not support before and currently resort to manual instrumentation, please give the agent a try. See [here for a list of supported libraries, frameworks and application servers](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
+  - NOTE: Not all features have been implemented yet for the OpenTelemetry agent. Features of note that are not working yet:
+    - Metrics
+    - Measurements
+    - `forceFinish` on transaction
+    - `scheduleFinish` on transaction
+    - see [#3436](https://github.com/getsentry/sentry-java/issues/3436) for a more up-to-date list of features we have (not) implemented
+  - Please see "Installing `sentry-opentelemetry-agent`" for more details on how to set up the agent.
+  - What's new about the Agent
+    - When the OpenTelemetry Agent is used, Sentry API creates OpenTelemetry spans under the hood, handing back a wrapper object which bridges the gap between traditional Sentry API and OpenTelemetry. We might be replacing some of the Sentry performance API in the future.
+      - This is achieved by configuring the SDK to use `OtelSpanFactory` instead of `DefaultSpanFactory` which is done automatically by the auto init of the Java Agent.
+    - OpenTelemetry spans are now only turned into Sentry spans when they are finished so they can be sent to the Sentry server.
+    - Now registers an OpenTelemetry `Sampler` which uses Sentry sampling configuration
+    - Other Performance integrations automatically stop creating spans to avoid duplicate spans
+    - The Sentry SDK now makes use of OpenTelemetry `Context` for storing Sentry `Scopes` (which is similar to what used to be called `Hub`) and thus relies on OpenTelemetry for `Context` propagation.
+    - Classes used for the previous version of our OpenTelemetry support have been deprecated but can still be used manually. We're not planning to keep the old agent around in favor of less complexity in the SDK.
 - Add `ignoredSpanOrigins` option for ignoring spans coming from certain integrations
-    - We pre-configure this to ignore Performance instrumentation for Spring and other integrations when using our OpenTelemetry Agent to avoid duplicate spans
+  - We pre-configure this to ignore Performance instrumentation for Spring and other integrations when using our OpenTelemetry Agent to avoid duplicate spans
 - Add data fetching environment hint to breadcrumb for GraphQL (#3413) ([#3431](https://github.com/getsentry/sentry-java/pull/3431))
 
 ### Fixes
@@ -60,9 +60,9 @@ If you've been using the previous version of `sentry-opentelemetry-agent`, simpl
 
 #### New to the agent
 If you've not been using OpenTelemetry before, you can add `sentry-opentelemetry-agent` to your setup by downloading the latest release and using it when starting up your application
-- `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
-- Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
-- You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be valid.
+  - `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
+  - Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
+  - You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be valid.
 
 If you want to skip auto initialization of the SDK performed by the agent, please follow the steps above and set the environment variable `SENTRY_AUTO_INIT` to `false` then add the following to your `Sentry.init`:
 
@@ -87,8 +87,8 @@ Sentry.OptionsConfiguration<SentryOptions> optionsConfiguration() {
 ### Dependencies
 
 - Bump Native SDK from v0.7.0 to v0.7.5 ([#3441](https://github.com/getsentry/sentry-java/pull/3189))
-    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#075)
-    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.5)
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#075)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.5)
 
 ## 8.0.0-alpha.1
 

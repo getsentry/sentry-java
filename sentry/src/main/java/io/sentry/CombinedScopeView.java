@@ -413,6 +413,11 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
+  public void clearSession() {
+    getDefaultWriteScope().clearSession();
+  }
+
+  @Override
   public void setPropagationContext(@NotNull PropagationContext propagationContext) {
     getDefaultWriteScope().setPropagationContext(propagationContext);
   }

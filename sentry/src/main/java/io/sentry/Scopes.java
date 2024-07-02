@@ -775,7 +775,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
             getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.BACKPRESSURE, DataCategory.Transaction);
-            options
+            getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(
                     DiscardReason.BACKPRESSURE,
@@ -785,7 +785,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
             getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
-            options
+            getOptions()
                 .getClientReportRecorder()
                 .recordLostEvent(
                     DiscardReason.SAMPLE_RATE,
