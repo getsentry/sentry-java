@@ -15,7 +15,6 @@ import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -35,11 +34,9 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
-import kotlin.system.measureNanoTime
 
 @TargetApi(26)
 internal class ScreenshotRecorder(
@@ -106,75 +103,75 @@ internal class ScreenshotRecorder(
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         Handler(Looper.getMainLooper()).post {
             try {
-                    contentChanged.set(false)
-                    PixelCopy.request(
-                        window,
-                        bitmap,
-                        { copyResult: Int ->
-                            if (copyResult != PixelCopy.SUCCESS) {
-                                options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-                                bitmap.recycle()
-                                return@request
-                            }
+                contentChanged.set(false)
+                PixelCopy.request(
+                    window,
+                    bitmap,
+                    { copyResult: Int ->
+                        if (copyResult != PixelCopy.SUCCESS) {
+                            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+                            bitmap.recycle()
+                            return@request
+                        }
 
-                            if (contentChanged.get()) {
-                                options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-                                bitmap.recycle()
-                                return@request
-                            }
+                        if (contentChanged.get()) {
+                            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+                            bitmap.recycle()
+                            return@request
+                        }
 
-                            val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-                            root.traverse(viewHierarchy)
+                        val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
+                        root.traverse(viewHierarchy)
 
-                            recorder.submit {
-                                val canvas = Canvas(bitmap)
-                                canvas.setMatrix(prescaledMatrix)
-                                viewHierarchy.traverse { node ->
-                                    if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
-                                        node.visibleRect ?: return@traverse false
+                        recorder.submit {
+                            val canvas = Canvas(bitmap)
+                            canvas.setMatrix(prescaledMatrix)
+                            viewHierarchy.traverse { node ->
+                                if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
+                                    node.visibleRect ?: return@traverse false
 
-                                        if (viewHierarchy.isObscured(node)) {
-                                            return@traverse true
+                                    if (viewHierarchy.isObscured(node)) {
+                                        return@traverse true
+                                    }
+
+                                    val (visibleRects, color) = when (node) {
+                                        is ImageViewHierarchyNode -> {
+                                            listOf(node.visibleRect) to
+                                                bitmap.dominantColorForRect(node.visibleRect)
                                         }
 
-                                        val (visibleRects, color) = when (node) {
-                                            is ImageViewHierarchyNode -> {
-                                                listOf(node.visibleRect) to
-                                                    bitmap.dominantColorForRect(node.visibleRect)
-                                            }
-
-                                            is TextViewHierarchyNode -> {
-                                                node.layout.getVisibleRects(
-                                                    node.visibleRect,
-                                                    node.paddingLeft,
-                                                    node.paddingTop
-                                                ) to (node.dominantColor ?: Color.BLACK)
-                                            }
-
-                                            else -> {
-                                                listOf(node.visibleRect) to Color.BLACK
-                                            }
+                                        is TextViewHierarchyNode -> {
+                                            node.layout.getVisibleRects(
+                                                node.visibleRect,
+                                                node.paddingLeft,
+                                                node.paddingTop
+                                            ) to (node.dominantColor ?: Color.BLACK)
                                         }
 
-                                        maskingPaint.setColor(color)
-                                        visibleRects.forEach { rect ->
-                                            canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+                                        else -> {
+                                            listOf(node.visibleRect) to Color.BLACK
                                         }
                                     }
-                                    return@traverse true
+
+                                    maskingPaint.setColor(color)
+                                    visibleRects.forEach { rect ->
+                                        canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+                                    }
                                 }
-
-                                val screenshot = bitmap.copy(ARGB_8888, false)
-                                screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-                                lastScreenshot?.recycle()
-                                lastScreenshot = screenshot
-                                contentChanged.set(false)
-
-                                bitmap.recycle()
+                                return@traverse true
                             }
-                        },
-                        handler
-                    )
+
+                            val screenshot = bitmap.copy(ARGB_8888, false)
+                            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+                            lastScreenshot?.recycle()
+                            lastScreenshot = screenshot
+                            contentChanged.set(false)
+
+                            bitmap.recycle()
+                        }
+                    },
+                    handler
+                )
             } catch (e: Throwable) {
                 options.logger.log(WARNING, "Failed to capture replay recording", e)
                 bitmap.recycle()
