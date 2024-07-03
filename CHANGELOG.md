@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Features
-
-- Add `redactClasses` to Session Replay options ([#3546](https://github.com/getsentry/sentry-java/pull/3546))
-
 ## 7.11.0-alpha.2
 
 - Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
