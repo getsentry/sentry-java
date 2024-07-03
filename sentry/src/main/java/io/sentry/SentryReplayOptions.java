@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.util.SampleRateUtils;
+import java.util.HashSet;
+import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,6 +65,14 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   private boolean redactAllImages = true;
+
+  /**
+   * Redact all views with the specified class names. The class name is the fully qualified class
+   * name of the view, e.g. android.widget.TextView.
+   *
+   * <p>Default is empty.
+   */
+  private Set<String> redactClasses = new HashSet<>();
 
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
@@ -145,6 +155,14 @@ public final class SentryReplayOptions {
 
   public void setRedactAllImages(final boolean redactAllImages) {
     this.redactAllImages = redactAllImages;
+  }
+
+  public Set<String> getRedactClasses() {
+    return this.redactClasses;
+  }
+
+  public void setRedactClasses(final Set<String> redactClasses) {
+    this.redactClasses = redactClasses;
   }
 
   @ApiStatus.Internal

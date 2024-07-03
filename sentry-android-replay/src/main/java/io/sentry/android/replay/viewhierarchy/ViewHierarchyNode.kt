@@ -282,7 +282,7 @@ sealed class ViewHierarchyNode(
                 (parent?.elevation ?: 0f) + view.elevation,
                 distance = distance,
                 parent = parent,
-                shouldRedact = false,
+                shouldRedact = options.experimental.sessionReplay.redactClasses.contains(view.javaClass.canonicalName),
                 isImportantForContentCapture = false, /* will be set by children */
                 isVisible = isVisible,
                 visibleRect = visibleRect
