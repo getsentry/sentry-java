@@ -40,7 +40,17 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       @Nullable String sampleRate,
       @Nullable String sampled,
       @Nullable SentryId replayId) {
-    this(traceId, publicKey, release, environment, userId, null, transaction, sampleRate, sampled, replayId);
+    this(
+        traceId,
+        publicKey,
+        release,
+        environment,
+        userId,
+        null,
+        transaction,
+        sampleRate,
+        sampled,
+        replayId);
   }
 
   /**
