@@ -2701,6 +2701,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getRedactAllImages ()Z
 	public fun getRedactAllText ()Z
+	public fun getRedactClasses ()Ljava/util/Set;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
@@ -2710,6 +2711,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setRedactAllImages (Z)V
 	public fun setRedactAllText (Z)V
+	public fun setRedactClasses (Ljava/util/Set;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
 
