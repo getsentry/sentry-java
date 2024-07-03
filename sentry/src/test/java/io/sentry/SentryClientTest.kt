@@ -90,7 +90,8 @@ class SentryClientTest {
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
             whenever(hub.options).thenReturn(sentryOptions)
-            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
+            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op", TracesSamplingDecision(true)), hub)
+            sentryTracer.startChild("a-span", "span 1").finish()
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
@@ -808,7 +809,10 @@ class SentryClientTest {
 
         assertClientReport(
             fixture.sentryOptions.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+            )
         )
     }
 
@@ -894,7 +898,10 @@ class SentryClientTest {
 
         assertClientReport(
             fixture.sentryOptions.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+            )
         )
     }
 
@@ -910,7 +917,36 @@ class SentryClientTest {
 
         assertClientReport(
             fixture.sentryOptions.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+            )
+        )
+    }
+
+    @Test
+    fun `span dropped by event processor is recorded`() {
+        fixture.sentryTracer.startChild("dropped span", "span1").finish()
+        fixture.sentryTracer.startChild("dropped span", "span2").finish()
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        val scope = createScope()
+        scope.addEventProcessor(object : EventProcessor {
+            override fun process(transaction: SentryTransaction, hint: Hint): SentryTransaction? {
+                // we are removing span1 and a-span from the fixture
+                transaction.spans.removeIf { it.description != "span2" }
+                return transaction
+            }
+        })
+
+        fixture.getSut().captureTransaction(transaction, scope, null)
+
+        verify(fixture.transport).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+            )
         )
     }
 
@@ -970,7 +1006,10 @@ class SentryClientTest {
 
         assertClientReport(
             fixture.sentryOptions.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+            )
         )
     }
 
@@ -1008,7 +1047,34 @@ class SentryClientTest {
 
         assertClientReport(
             fixture.sentryOptions.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+            )
+        )
+    }
+
+    @Test
+    fun `when beforeSendTransaction drops a span, dropped span is recorded`() {
+        fixture.sentryTracer.startChild("dropped span", "span1").finish()
+        fixture.sentryTracer.startChild("dropped span", "span2").finish()
+        fixture.sentryOptions.setBeforeSendTransaction { t: SentryTransaction, _: Any? ->
+            t.apply {
+                // we are removing span1 and a-span from the fixture
+                spans.removeIf { it.description != "span2" }
+            }
+        }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        verify(fixture.transport).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+            )
         )
     }
 
