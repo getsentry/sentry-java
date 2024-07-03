@@ -11,6 +11,8 @@
 - Support spans that are split into multiple batches ([#3539](https://github.com/getsentry/sentry-java/pull/3539))
   - When spans belonging to a single transaction were split into multiple batches for SpanExporter, we did not add all spans because the isSpanTooOld check wasn't inverted.
 - Parse and use `send-default-pii` and `max-request-body-size` from `sentry.properties` ([#3534](https://github.com/getsentry/sentry-java/pull/3534))
+- `span.startChild` now uses `.makeCurrent()` by default ([#3544](https://github.com/getsentry/sentry-java/pull/3544))
+  - This caused an issue where the span tree wasn't correct because some spans were not added to their direct parent 
 - Partially fix bootstrap class loading ([#3543](https://github.com/getsentry/sentry-java/pull/3543))
   - There was a problem with two separate Sentry `Scopes` being active inside each OpenTelemetry `Context` due to using context keys from more than one class loader.
 

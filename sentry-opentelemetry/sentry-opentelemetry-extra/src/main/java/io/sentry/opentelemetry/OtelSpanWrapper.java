@@ -129,7 +129,11 @@ public final class OtelSpanWrapper implements ISpan {
       return NoOpSpan.getInstance();
     }
 
-    return scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
+    final @NotNull ISpan childSpan =
+        scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
+    // TODO [POTEL] spanOptions.isBindToScope with default true?
+    childSpan.makeCurrent();
+    return childSpan;
   }
 
   @Override
