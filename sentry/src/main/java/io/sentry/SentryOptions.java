@@ -2688,6 +2688,12 @@ public class SentryOptions {
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
+    if (options.getMaxRequestBodySize() != null) {
+      setMaxRequestBodySize(options.getMaxRequestBodySize());
+    }
+    if (options.isSendDefaultPii() != null) {
+      setSendDefaultPii(options.isSendDefaultPii());
+    }
 
     if (options.getCron() != null) {
       if (getCron() == null) {
