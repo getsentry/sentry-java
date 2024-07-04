@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Check app start spans time and foreground state ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
+
 ## 7.11.0
 
 ### Features
