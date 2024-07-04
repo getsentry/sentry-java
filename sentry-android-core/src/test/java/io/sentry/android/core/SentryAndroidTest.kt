@@ -432,7 +432,7 @@ class SentryAndroidTest {
         fixture.initSut(context = mock<Application>()) { options ->
             optionsRef = options
             options.dsn = "https://key@sentry.io/123"
-            assertEquals(20, options.integrations.size)
+            assertEquals(21, options.integrations.size)
             options.integrations.removeAll {
                 it is UncaughtExceptionHandlerIntegration ||
                     it is ShutdownHookIntegration ||
@@ -452,7 +452,8 @@ class SentryAndroidTest {
                     it is NetworkBreadcrumbsIntegration ||
                     it is TempSensorBreadcrumbsIntegration ||
                     it is PhoneStateBreadcrumbsIntegration ||
-                    it is SpotlightIntegration
+                    it is SpotlightIntegration ||
+                    it is ThermalStateBreadcrumbsIntegration
             }
         }
         assertEquals(0, optionsRef.integrations.size)

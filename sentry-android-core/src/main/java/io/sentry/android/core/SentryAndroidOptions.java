@@ -210,6 +210,9 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
+  /** Enable or disable automatic breadcrumbs for thermal events, Android Q+ only */
+  private boolean enableThermalStateBreadcrumbs = true;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -603,5 +606,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setFrameMetricsCollector(
       final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
+  }
+
+  public boolean isEnableThermalStateBreadcrumbs() {
+    return enableThermalStateBreadcrumbs;
+  }
+
+  public void setEnableThermalStateBreadcrumbs(final boolean enableThermalStateBreadcrumbs) {
+    this.enableThermalStateBreadcrumbs = enableThermalStateBreadcrumbs;
   }
 }

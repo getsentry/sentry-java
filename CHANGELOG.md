@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Android: Report thermal device events as breadcrumbs ([#3547](https://github.com/getsentry/sentry-java/pull/3547))
+
 ## 7.11.0
 
 ### Features
