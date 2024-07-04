@@ -934,6 +934,11 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   @Override
+  public void setActiveSpan(final @Nullable ISpan span) {
+    getCombinedScopeView().setActiveSpan(span);
+  }
+
+  @Override
   @ApiStatus.Internal
   public @Nullable ITransaction getTransaction() {
     ITransaction span = null;

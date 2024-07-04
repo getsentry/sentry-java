@@ -614,6 +614,9 @@ public interface IScopes {
   @Nullable
   ISpan getSpan();
 
+  @ApiStatus.Internal
+  void setActiveSpan(@Nullable ISpan span);
+
   /**
    * Returns the transaction.
    *

@@ -85,6 +85,11 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
+  public void setActiveSpan(final @Nullable ISpan span) {
+    scope.setActiveSpan(span);
+  }
+
+  @Override
   public void setTransaction(@Nullable ITransaction transaction) {
     getDefaultWriteScope().setTransaction(transaction);
   }
