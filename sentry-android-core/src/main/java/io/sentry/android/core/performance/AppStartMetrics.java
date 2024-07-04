@@ -4,8 +4,11 @@ import android.app.Application;
 import android.content.ContentProvider;
 import android.os.SystemClock;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.sentry.ITransactionProfiler;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.android.core.AndroidLogger;
+import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.util.ArrayList;
@@ -13,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -102,6 +106,11 @@ public class AppStartMetrics {
     return appLaunchedInForeground;
   }
 
+  @VisibleForTesting
+  public void setAppLaunchedInForeground(boolean appLaunchedInForeground) {
+    this.appLaunchedInForeground = appLaunchedInForeground;
+  }
+
   /**
    * Provides all collected content provider onCreate time spans
    *
@@ -137,12 +146,27 @@ public class AppStartMetrics {
       // Only started when sdk version is >= N
       final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
       if (appStartSpan.hasStarted()) {
-        return appStartSpan;
+        return validateAppStartSpan(appStartSpan);
       }
     }
 
     // fallback: use sdk init time span, as it will always have a start time set
-    return getSdkInitTimeSpan();
+    return validateAppStartSpan(getSdkInitTimeSpan());
+  }
+
+  private @NotNull TimeSpan validateAppStartSpan(final @NotNull TimeSpan appStartSpan) {
+    long spanStartMillis = appStartSpan.getStartTimestampMs();
+    long spanEndMillis =
+        appStartSpan.hasStopped()
+            ? appStartSpan.getProjectedStopTimestampMs()
+            : SystemClock.uptimeMillis();
+    long durationMillis = spanEndMillis - spanStartMillis;
+    // If the app was launched more than 1 minute ago or it was launched in the background we return
+    // an empty span, as the app start will be wrong
+    if (durationMillis > TimeUnit.MINUTES.toMillis(1) || !isAppLaunchedInForeground()) {
+      return new TimeSpan();
+    }
+    return appStartSpan;
   }
 
   @TestOnly
@@ -195,7 +219,9 @@ public class AppStartMetrics {
     final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
-      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance();
+      instance.appLaunchedInForeground =
+          ContextUtils.isForegroundImportance(
+              application, new BuildInfoProvider(new AndroidLogger()));
     }
   }
 

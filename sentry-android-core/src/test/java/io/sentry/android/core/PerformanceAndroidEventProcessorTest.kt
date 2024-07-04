@@ -46,6 +46,7 @@ class PerformanceAndroidEventProcessorTest {
             tracesSampleRate: Double? = 1.0,
             enablePerformanceV2: Boolean = false
         ): PerformanceAndroidEventProcessor {
+            AppStartMetrics.getInstance().isAppLaunchedInForeground = true
             options.tracesSampleRate = tracesSampleRate
             options.isEnablePerformanceV2 = enablePerformanceV2
             whenever(hub.options).thenReturn(options)

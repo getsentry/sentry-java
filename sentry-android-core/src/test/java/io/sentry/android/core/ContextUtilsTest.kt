@@ -38,6 +38,7 @@ class ContextUtilsTest {
     private lateinit var shadowActivityManager: ShadowActivityManager
     private lateinit var context: Context
     private lateinit var logger: ILogger
+    private val buildInfoProvider = mock<BuildInfoProvider>()
 
     @BeforeTest
     fun `set up`() {
@@ -46,6 +47,7 @@ class ContextUtilsTest {
         ShadowBuild.reset()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
         shadowActivityManager = Shadow.extract(activityManager)
+        whenever(buildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
     }
 
     @Test
@@ -197,7 +199,7 @@ class ContextUtilsTest {
 
     @Test
     fun `returns true when app started with foreground importance`() {
-        assertTrue(ContextUtils.isForegroundImportance())
+        assertTrue(ContextUtils.isForegroundImportance(context, buildInfoProvider))
     }
 
     @Test
@@ -211,6 +213,6 @@ class ContextUtilsTest {
                 }
             )
         )
-        assertFalse(ContextUtils.isForegroundImportance())
+        assertFalse(ContextUtils.isForegroundImportance(context, buildInfoProvider))
     }
 }

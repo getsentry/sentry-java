@@ -94,6 +94,7 @@ class ActivityLifecycleIntegrationTest {
 
             whenever(hub.options).thenReturn(options)
 
+            AppStartMetrics.getInstance().isAppLaunchedInForeground = true
             // We let the ActivityLifecycleIntegration create the proper transaction here
             val optionCaptor = argumentCaptor<TransactionOptions>()
             val contextCaptor = argumentCaptor<TransactionContext>()

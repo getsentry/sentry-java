@@ -10,8 +10,10 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -28,6 +30,7 @@ class AppStartMetricsTest {
     fun setup() {
         AppStartMetrics.getInstance().clear()
         SentryShadowProcess.setStartUptimeMillis(42)
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = true
     }
 
     @Test
@@ -105,5 +108,70 @@ class AppStartMetricsTest {
     @Test
     fun `class load time is set`() {
         assertNotEquals(0, AppStartMetrics.getInstance().classLoadedUptimeMs)
+    }
+
+    @Test
+    fun `if app is launched in background, appStartTimeSpanWithFallback returns an empty span`() {
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+        assertTrue(appStartTimeSpan.hasStarted())
+
+        val options = SentryAndroidOptions().apply {
+            isEnablePerformanceV2 = false
+        }
+
+        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+        assertFalse(timeSpan.hasStarted())
+    }
+
+    @Test
+    fun `if app is launched in background with perfV2, appStartTimeSpanWithFallback returns an empty span`() {
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+        assertTrue(appStartTimeSpan.hasStarted())
+
+        val options = SentryAndroidOptions().apply {
+            isEnablePerformanceV2 = true
+        }
+
+        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+        assertFalse(timeSpan.hasStarted())
+    }
+
+    @Test
+    fun `if app start span is at most 1 minute, appStartTimeSpanWithFallback returns the app start span`() {
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+        appStartTimeSpan.stop()
+        appStartTimeSpan.setStartedAt(1)
+        appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 1)
+        assertTrue(appStartTimeSpan.hasStarted())
+
+        val options = SentryAndroidOptions().apply {
+            isEnablePerformanceV2 = true
+        }
+
+        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+        assertTrue(timeSpan.hasStarted())
+        assertSame(appStartTimeSpan, timeSpan)
+    }
+
+    @Test
+    fun `if app start span is longer than 1 minute, appStartTimeSpanWithFallback returns an empty span`() {
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+        appStartTimeSpan.stop()
+        appStartTimeSpan.setStartedAt(1)
+        appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 2)
+        assertTrue(appStartTimeSpan.hasStarted())
+
+        val options = SentryAndroidOptions().apply {
+            isEnablePerformanceV2 = true
+        }
+
+        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+        assertFalse(timeSpan.hasStarted())
     }
 }

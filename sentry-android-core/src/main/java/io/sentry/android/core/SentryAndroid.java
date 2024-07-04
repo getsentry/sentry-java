@@ -87,6 +87,7 @@ public final class SentryAndroid {
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
 
     try {
+      final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
@@ -103,7 +104,6 @@ public final class SentryAndroid {
                 (isTimberUpstreamAvailable
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
 
-            final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final LoadClass loadClass = new LoadClass();
             final ActivityFramesTracker activityFramesTracker =
                 new ActivityFramesTracker(loadClass, options);
@@ -148,7 +148,8 @@ public final class SentryAndroid {
           true);
 
       final @NotNull IHub hub = Sentry.getCurrentHub();
-      if (hub.getOptions().isEnableAutoSessionTracking() && ContextUtils.isForegroundImportance()) {
+      if (hub.getOptions().isEnableAutoSessionTracking()
+          && ContextUtils.isForegroundImportance(context, buildInfoProvider)) {
         // The LifecycleWatcher of AppLifecycleIntegration may already started a session
         // so only start a session if it's not already started
         // This e.g. happens on React Native, or e.g. on deferred SDK init

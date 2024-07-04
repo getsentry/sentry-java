@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.Context.RECEIVER_EXPORTED;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
@@ -15,6 +14,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -161,22 +162,77 @@ public final class ContextUtils {
     return Integer.toString(packageInfo.versionCode);
   }
 
+  /*
+   * https://github.com/firebase/firebase-android-sdk/blob/58540de24c9b1eb7780c9f642c2cf17478e65734/firebase-perf/src/main/java/com/google/firebase/perf/metrics/AppStartTrace.java#L497
+   *
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   */
   /**
    * Check if the Started process has IMPORTANCE_FOREGROUND importance which means that the process
    * will start an Activity.
    *
    * @return true if IMPORTANCE_FOREGROUND and false otherwise
    */
-  @ApiStatus.Internal
-  public static boolean isForegroundImportance() {
-    try {
-      final ActivityManager.RunningAppProcessInfo appProcessInfo =
-          new ActivityManager.RunningAppProcessInfo();
-      ActivityManager.getMyMemoryState(appProcessInfo);
-      return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
-    } catch (Throwable ignored) {
-      // should never happen
+  @SuppressLint("NewApi")
+  @SuppressWarnings("deprecation")
+  public static boolean isForegroundImportance(
+      final @NotNull Context appContext, final @NotNull BuildInfoProvider buildInfoProvider) {
+
+    // Do not call ProcessStats.getActivityManger, caching will break tests that indirectly depend
+    // on ProcessStats.
+    ActivityManager activityManager =
+        (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
+    if (activityManager == null) {
+      return true;
     }
+    List<ActivityManager.RunningAppProcessInfo> appProcesses =
+        activityManager.getRunningAppProcesses();
+    if (appProcesses != null) {
+      String appProcessName = appContext.getPackageName();
+      String allowedAppProcessNamePrefix = appProcessName + ":";
+      for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+        if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+          continue;
+        }
+        if (appProcess.processName.equals(appProcessName)
+            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
+          boolean isAppInForeground = true;
+
+          // For the case when the app is in foreground and the device transitions to sleep mode,
+          // the importance of the process is set to IMPORTANCE_TOP_SLEEPING. However, this
+          // importance level was introduced in M. Pre M, the process importance is not changed to
+          // IMPORTANCE_TOP_SLEEPING when the display turns off. So we need to rely also on the
+          // state of the display to decide if any app process is really visible.
+          if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
+            PowerManager powerManager =
+                (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
+            if (powerManager != null) {
+              isAppInForeground =
+                  buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.KITKAT_WATCH
+                      ? powerManager.isInteractive()
+                      : powerManager.isScreenOn();
+            }
+          }
+
+          if (isAppInForeground) {
+            return true;
+          }
+        }
+      }
+    }
+
     return false;
   }
 
