@@ -232,6 +232,10 @@ sealed class ViewHierarchyNode(
             }
         }
 
+        private fun shouldRedact(view: View, options: SentryOptions): Boolean {
+            return options.experimental.sessionReplay.redactClasses.contains(view.javaClass.canonicalName)
+        }
+
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
             val (isVisible, visibleRect) = view.isVisibleToUser()
             when {
@@ -282,7 +286,7 @@ sealed class ViewHierarchyNode(
                 (parent?.elevation ?: 0f) + view.elevation,
                 distance = distance,
                 parent = parent,
-                shouldRedact = options.experimental.sessionReplay.redactClasses.contains(view.javaClass.canonicalName),
+                shouldRedact = isVisible && shouldRedact(view, options),
                 isImportantForContentCapture = false, /* will be set by children */
                 isVisible = isVisible,
                 visibleRect = visibleRect
