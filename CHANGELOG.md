@@ -5,6 +5,7 @@
 ### Features
 
 - Report dropped spans ([#3528](https://github.com/getsentry/sentry-java/pull/3528))
+- Android: Report thermal device events as breadcrumbs ([#3547](https://github.com/getsentry/sentry-java/pull/3547))
 
 ### Fixes
 
