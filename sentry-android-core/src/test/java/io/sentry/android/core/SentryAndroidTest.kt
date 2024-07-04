@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.ILogger
+import io.sentry.ISentryClient
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
@@ -51,6 +52,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -316,6 +318,21 @@ class SentryAndroidTest {
     }
 
     @Test
+    fun `init does not start a session if one is already running`() {
+        val client = mock<ISentryClient>()
+
+        initSentryWithForegroundImportance(true, { options ->
+            options.addIntegration { hub, _ ->
+                hub.bindClient(client)
+                // usually done by LifecycleWatcher
+                hub.startSession()
+            }
+        }) {}
+
+        verify(client, times(1)).captureSession(any(), any())
+    }
+
+    @Test
     @Config(sdk = [26])
     fun `init starts session replay if app is in foreground`() {
         initSentryWithForegroundImportance(true) { _ ->
@@ -333,6 +350,7 @@ class SentryAndroidTest {
 
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
+        optionsConfig: (SentryAndroidOptions) -> Unit = {},
         callback: (session: Session?) -> Unit
     ) {
         Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
@@ -343,6 +361,7 @@ class SentryAndroidTest {
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
                 options.experimental.sessionReplay.errorSampleRate = 1.0
+                optionsConfig(options)
             }
 
             var session: Session? = null

@@ -11,6 +11,7 @@ import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.Session;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -19,7 +20,9 @@ import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry initialization class */
 public final class SentryAndroid {
@@ -153,8 +156,21 @@ public final class SentryAndroid {
       final @NotNull IHub hub = Sentry.getCurrentHub();
       if (ContextUtils.isForegroundImportance()) {
         if (hub.getOptions().isEnableAutoSessionTracking()) {
-          hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-          hub.startSession();
+          // The LifecycleWatcher of AppLifecycleIntegration may already started a session
+          // so only start a session if it's not already started
+          // This e.g. happens on React Native, or e.g. on deferred SDK init
+          final AtomicBoolean sessionStarted = new AtomicBoolean(false);
+          hub.configureScope(
+              scope -> {
+                final @Nullable Session currentSession = scope.getSession();
+                if (currentSession != null && currentSession.getStarted() != null) {
+                  sessionStarted.set(true);
+                }
+              });
+          if (!sessionStarted.get()) {
+            hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+            hub.startSession();
+          }
         }
         hub.getOptions().getReplayController().start();
       }

@@ -1,18 +1,36 @@
 # Changelog
 
-## 7.11.0-alpha.2
+## 7.12.0-alpha.3
 
 - Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
 
-We released our third Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+We released our fourth Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+
+## 7.11.0
+
+### Features
+
+- Report dropped spans ([#3528](https://github.com/getsentry/sentry-java/pull/3528))
 
 ### Fixes
 
+- Fix duplicate session start for React Native ([#3504](https://github.com/getsentry/sentry-java/pull/3504))
 - Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
 - Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
 - Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
 - Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
 - Properly reset metric flush flag on metric emission ([#3493](https://github.com/getsentry/sentry-java/pull/3493))
+- Use SecureRandom in favor of Random for Metrics ([#3495](https://github.com/getsentry/sentry-java/pull/3495))
+- Fix UncaughtExceptionHandlerIntegration Memory Leak ([#3398](https://github.com/getsentry/sentry-java/pull/3398))
+- Deprecated `User.segment`. Use a custom tag or context instead. ([#3511](https://github.com/getsentry/sentry-java/pull/3511))
+- Fix duplicated http spans ([#3526](https://github.com/getsentry/sentry-java/pull/3526))
+- When capturing unhandled hybrid exception session should be ended and new start if need ([#3480](https://github.com/getsentry/sentry-java/pull/3480))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.2 ([#3314](https://github.com/getsentry/sentry-java/pull/3314))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#072)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.2)
 
 ## 7.10.0
 
