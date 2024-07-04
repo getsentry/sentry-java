@@ -163,8 +163,22 @@ class SentryAndroidOptionsTest {
         assertTrue(sentryOptions.isEnablePerformanceV2)
     }
 
+    @Test
     fun `when options is initialized, enableScopeSync is enabled by default`() {
         assertTrue(SentryAndroidOptions().isEnableScopeSync)
+    }
+
+    @Test
+    fun `thermal state breadcrumbs are enabled by default`() {
+        assertTrue(SentryAndroidOptions().isEnableThermalStateBreadcrumbs)
+    }
+
+    @Test
+    fun `thermal state breadcrumbs option can be changed`() {
+        val options = SentryAndroidOptions()
+        options.isEnableThermalStateBreadcrumbs = false
+
+        assertFalse(options.isEnableThermalStateBreadcrumbs)
     }
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {
