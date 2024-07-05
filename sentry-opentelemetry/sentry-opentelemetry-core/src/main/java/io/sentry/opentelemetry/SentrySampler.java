@@ -116,7 +116,7 @@ public final class SentrySampler implements Sampler {
     final @Nullable TracesSamplingDecision parentSamplingDecision =
         parentSentrySpan.getSamplingDecision();
     if (parentSamplingDecision != null) {
-      if (!parentSentrySpan.isSampled()) {
+      if (!parentSamplingDecision.getSampled()) {
         scopes
             .getOptions()
             .getClientReportRecorder()
