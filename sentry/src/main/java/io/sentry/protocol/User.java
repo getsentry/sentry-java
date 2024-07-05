@@ -34,12 +34,6 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Username of the user. */
   private @Nullable String username;
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update. Use a custom tag or
-   *     context instead.
-   */
-  @Deprecated private @Nullable String segment;
-
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
@@ -65,7 +59,6 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.username = user.username;
     this.id = user.id;
     this.ipAddress = user.ipAddress;
-    this.segment = user.segment;
     this.name = user.name;
     this.geo = user.geo;
     this.data = CollectionUtils.newConcurrentHashMap(user.data);
@@ -98,9 +91,6 @@ public final class User implements JsonUnknown, JsonSerializable {
           break;
         case JsonKeys.USERNAME:
           user.username = (value instanceof String) ? (String) value : null;
-          break;
-        case JsonKeys.SEGMENT:
-          user.segment = (value instanceof String) ? (String) value : null;
           break;
         case JsonKeys.IP_ADDRESS:
           user.ipAddress = (value instanceof String) ? (String) value : null;
@@ -225,28 +215,6 @@ public final class User implements JsonUnknown, JsonSerializable {
   }
 
   /**
-   * Gets the segment of the user.
-   *
-   * @return the user segment.
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  public @Nullable String getSegment() {
-    return segment;
-  }
-
-  /**
-   * Sets the segment of the user.
-   *
-   * @param segment the segment.
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  public void setSegment(final @Nullable String segment) {
-    this.segment = segment;
-  }
-
-  /**
    * Gets the IP address of the user.
    *
    * @return the IP address of the user.
@@ -350,13 +318,12 @@ public final class User implements JsonUnknown, JsonSerializable {
     return Objects.equals(email, user.email)
         && Objects.equals(id, user.id)
         && Objects.equals(username, user.username)
-        && Objects.equals(segment, user.segment)
         && Objects.equals(ipAddress, user.ipAddress);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(email, id, username, segment, ipAddress);
+    return Objects.hash(email, id, username, ipAddress);
   }
 
   // region json
@@ -376,7 +343,6 @@ public final class User implements JsonUnknown, JsonSerializable {
     public static final String EMAIL = "email";
     public static final String ID = "id";
     public static final String USERNAME = "username";
-    public static final String SEGMENT = "segment";
     public static final String IP_ADDRESS = "ip_address";
     public static final String NAME = "name";
     public static final String GEO = "geo";
@@ -396,9 +362,6 @@ public final class User implements JsonUnknown, JsonSerializable {
     }
     if (username != null) {
       writer.name(JsonKeys.USERNAME).value(username);
-    }
-    if (segment != null) {
-      writer.name(JsonKeys.SEGMENT).value(segment);
     }
     if (ipAddress != null) {
       writer.name(JsonKeys.IP_ADDRESS).value(ipAddress);
@@ -442,9 +405,6 @@ public final class User implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.USERNAME:
             user.username = reader.nextStringOrNull();
-            break;
-          case JsonKeys.SEGMENT:
-            user.segment = reader.nextStringOrNull();
             break;
           case JsonKeys.IP_ADDRESS:
             user.ipAddress = reader.nextStringOrNull();

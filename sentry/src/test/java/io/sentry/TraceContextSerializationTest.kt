@@ -2,7 +2,6 @@ package io.sentry
 
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
-import io.sentry.protocol.User
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -22,7 +21,6 @@ class TraceContextSerializationTest {
             "9ee2c92c-401e-4296-b6f0-fb3b13edd9ee",
             "0666ab02-6364-4135-aa59-02e8128ce052",
             "c052c566-6619-45f5-a61f-172802afa39a",
-            "f7d8662b-5551-4ef8-b6a8-090f0561a530",
             "0252ec25-cd0a-4230-bd2f-936a4585637e",
             "0.00000021",
             "true"
@@ -59,10 +57,6 @@ class TraceContextSerializationTest {
         whenever(scopes.options).thenReturn(SentryOptions())
         baggage.setValuesFromTransaction(
             SentryId(),
-            User().apply {
-                id = "user-id"
-                others = mapOf("segment" to "pro")
-            },
             SentryOptions().apply {
                 dsn = dsnString
                 environment = "prod"
