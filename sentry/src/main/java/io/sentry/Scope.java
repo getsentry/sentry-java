@@ -1042,7 +1042,8 @@ public final class Scope implements IScope {
 
   @ApiStatus.Internal
   @Override
-  public void replaceOptions(final @NotNull SentryOptions options) {
+  public boolean replaceOptions(final @NotNull SentryOptions options) {
+    // TODO [POTEL] implement some override mechanism
     if (!getClient().isEnabled()) {
       this.options = options;
       final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
@@ -1054,7 +1055,9 @@ public final class Scope implements IScope {
         */
         addBreadcrumb(breadcrumb);
       }
+      return true;
     }
+    return false;
   }
 
   /** The IWithTransaction callback */
