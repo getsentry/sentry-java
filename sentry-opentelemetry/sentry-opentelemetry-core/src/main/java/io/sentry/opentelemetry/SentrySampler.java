@@ -118,9 +118,9 @@ public final class SentrySampler implements Sampler {
     if (parentSamplingDecision != null) {
       if (!parentSentrySpan.isSampled()) {
         scopes
-          .getOptions()
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Span);
+            .getOptions()
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Span);
       }
       return new SentrySamplingResult(parentSamplingDecision);
     } else {
