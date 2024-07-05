@@ -11,6 +11,7 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.sdk.trace.samplers.SamplingDecision;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import io.sentry.Baggage;
+import io.sentry.DataCategory;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
 import io.sentry.SamplingContext;
@@ -19,6 +20,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SentryId;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -94,7 +96,18 @@ public final class SentrySampler implements Sampler {
             .getOptions()
             .getInternalTracesSampler()
             .sample(new SamplingContext(transactionContext, null));
-    // TODO [POTEL] if sampling decision = false, we should record it in client report
+
+    if (!sentryDecision.getSampled()) {
+      scopes
+          .getOptions()
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
+      scopes
+          .getOptions()
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Span);
+    }
+
     return new SentrySamplingResult(sentryDecision);
   }
 
