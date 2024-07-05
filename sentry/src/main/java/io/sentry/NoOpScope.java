@@ -50,6 +50,9 @@ public final class NoOpScope implements IScope {
   }
 
   @Override
+  public void setActiveSpan(final @Nullable ISpan span) {}
+
+  @Override
   public void setTransaction(@Nullable ITransaction transaction) {}
 
   @Override

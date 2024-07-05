@@ -298,6 +298,11 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  public void setActiveSpan(final @Nullable ISpan span) {
+    Sentry.getCurrentScopes().setActiveSpan(span);
+  }
+
+  @Override
   @ApiStatus.Internal
   public @Nullable ITransaction getTransaction() {
     return Sentry.getCurrentScopes().getTransaction();

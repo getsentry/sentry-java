@@ -290,6 +290,11 @@ public final class HubScopesWrapper implements IHub {
     return scopes.getSpan();
   }
 
+  @Override
+  public void setActiveSpan(final @Nullable ISpan span) {
+    scopes.setActiveSpan(span);
+  }
+
   @ApiStatus.Internal
   @Override
   public @Nullable ITransaction getTransaction() {

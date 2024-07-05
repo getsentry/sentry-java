@@ -38,6 +38,8 @@ public final class Scope implements IScope {
   /** Scope's {@link ITransaction}. */
   private @Nullable ITransaction transaction;
 
+  private @NotNull WeakReference<ISpan> activeSpan = new WeakReference<>(null);
+
   /** Scope's transaction name. Used when using error reporting without the performance feature. */
   private @Nullable String transactionName;
 
@@ -232,6 +234,11 @@ public final class Scope implements IScope {
   @Nullable
   @Override
   public ISpan getSpan() {
+    final @Nullable ISpan activeSpan = this.activeSpan.get();
+    if (activeSpan != null) {
+      return activeSpan;
+    }
+
     final ITransaction tx = transaction;
     if (tx != null) {
       final ISpan span = tx.getLatestActiveSpan();
@@ -241,6 +248,11 @@ public final class Scope implements IScope {
       }
     }
     return tx;
+  }
+
+  @Override
+  public void setActiveSpan(final @Nullable ISpan span) {
+    activeSpan = new WeakReference<>(span);
   }
 
   /**

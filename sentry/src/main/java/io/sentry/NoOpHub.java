@@ -261,6 +261,9 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public void setActiveSpan(final @Nullable ISpan span) {}
+
+  @Override
   public @Nullable ITransaction getTransaction() {
     return null;
   }
