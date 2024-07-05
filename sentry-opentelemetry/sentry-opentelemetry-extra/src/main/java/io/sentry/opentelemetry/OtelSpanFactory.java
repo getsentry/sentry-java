@@ -152,22 +152,16 @@ public final class OtelSpanFactory implements ISpanFactory {
     return sentrySpan;
   }
 
+  // TODO [POTEL] consider removing this method
   @Override
   public @Nullable ISpan retrieveCurrentSpan(IScopes scopes) {
-    final @Nullable Span span = Span.fromContextOrNull(Context.current());
-    if (span == null) {
-      return null;
-    }
-    return storage.getSentrySpan(span.getSpanContext());
+    return scopes.getSpan();
   }
 
+  // TODO [POTEL] consider removing this method
   @Override
   public @Nullable ISpan retrieveCurrentSpan(IScope scope) {
-    final @Nullable Span span = Span.fromContextOrNull(Context.current());
-    if (span == null) {
-      return null;
-    }
-    return storage.getSentrySpan(span.getSpanContext());
+    return scope.getSpan();
   }
 
   private @NotNull Tracer getTracer() {
