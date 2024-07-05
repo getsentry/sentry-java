@@ -116,6 +116,12 @@ public final class SentrySampler implements Sampler {
     final @Nullable TracesSamplingDecision parentSamplingDecision =
         parentSentrySpan.getSamplingDecision();
     if (parentSamplingDecision != null) {
+      if (!parentSentrySpan.isSampled()) {
+        scopes
+          .getOptions()
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Span);
+      }
       return new SentrySamplingResult(parentSamplingDecision);
     } else {
       // this should never happen and only serve to calm the compiler
