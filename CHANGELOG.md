@@ -7,6 +7,8 @@
 - Removed user segment ([#3512](https://github.com/getsentry/sentry-java/pull/3512))
 - Use span id of remote parent ([#3548](https://github.com/getsentry/sentry-java/pull/3548))
   - Traces were broken because on an incoming request, OtelSentrySpanProcessor did not set the parentSpanId on the span correctly. Traces were not referencing the actual parent span but some other (random) span ID which the server doesn't know.
+- Attach active span to scope when using OpenTelemetry ([#3549](https://github.com/getsentry/sentry-java/pull/3549))
+  - Errors weren't linked to traces correctly due to parts of the SDK not knowing the current span
 
 ## 8.0.0-alpha.3
 
