@@ -9,6 +9,7 @@
   - Traces were broken because on an incoming request, OtelSentrySpanProcessor did not set the parentSpanId on the span correctly. Traces were not referencing the actual parent span but some other (random) span ID which the server doesn't know.
 - Attach active span to scope when using OpenTelemetry ([#3549](https://github.com/getsentry/sentry-java/pull/3549))
   - Errors weren't linked to traces correctly due to parts of the SDK not knowing the current span
+- Record dropped spans in client report when sampling out OpenTelemetry spans ([#3552](https://github.com/getsentry/sentry-java/pull/3552))
 
 ## 8.0.0-alpha.3
 
