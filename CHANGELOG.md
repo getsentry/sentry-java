@@ -5,6 +5,8 @@
 ### Fixes
 
 - Removed user segment ([#3512](https://github.com/getsentry/sentry-java/pull/3512))
+- Use span id of remote parent ([#3548](https://github.com/getsentry/sentry-java/pull/3548))
+  - Traces were broken because on an incoming request, OtelSentrySpanProcessor did not set the parentSpanId on the span correctly. Traces were not referencing the actual parent span but some other (random) span ID which the server doesn't know.
 
 ## 8.0.0-alpha.3
 

@@ -53,13 +53,14 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
     TracesSamplingDecision samplingDecision =
         OtelSamplingUtil.extractSamplingDecisionOrDefault(otelSpan.toSpanData().getAttributes());
     @Nullable Baggage baggage = null;
+    @Nullable SpanId sentryParentSpanId = null;
     otelSpan.setAttribute(IS_REMOTE_PARENT, otelSpan.getParentSpanContext().isRemote());
     if (sentryParentSpan == null) {
       final @NotNull String traceId = otelSpan.getSpanContext().getTraceId();
       final @NotNull String spanId = otelSpan.getSpanContext().getSpanId();
       final @NotNull SpanId sentrySpanId = new SpanId(spanId);
       final @NotNull String parentSpanId = otelSpan.getParentSpanContext().getSpanId();
-      final @Nullable SpanId sentryParentSpanId =
+      sentryParentSpanId =
           io.opentelemetry.api.trace.SpanId.isValid(parentSpanId) ? new SpanId(parentSpanId) : null;
 
       @Nullable
@@ -99,7 +100,13 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
         new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
     final @NotNull OtelSpanWrapper sentrySpan =
         new OtelSpanWrapper(
-            otelSpan, scopes, startTimestamp, samplingDecision, sentryParentSpan, baggage);
+            otelSpan,
+            scopes,
+            startTimestamp,
+            samplingDecision,
+            sentryParentSpan,
+            sentryParentSpanId,
+            baggage);
     sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
     spanStorage.storeSentrySpan(spanContext, sentrySpan);
   }

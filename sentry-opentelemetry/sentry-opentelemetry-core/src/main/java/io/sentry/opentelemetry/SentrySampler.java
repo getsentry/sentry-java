@@ -94,6 +94,7 @@ public final class SentrySampler implements Sampler {
             .getOptions()
             .getInternalTracesSampler()
             .sample(new SamplingContext(transactionContext, null));
+    // TODO [POTEL] if sampling decision = false, we should record it in client report
     return new SentrySamplingResult(sentryDecision);
   }
 

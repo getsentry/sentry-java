@@ -30,11 +30,12 @@ public final class OtelSpanContext extends SpanContext {
       final @NotNull ReadWriteSpan span,
       final @Nullable TracesSamplingDecision samplingDecision,
       final @Nullable OtelSpanWrapper parentSpan,
+      final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage) {
     super(
         new SentryId(span.getSpanContext().getTraceId()),
         new SpanId(span.getSpanContext().getSpanId()),
-        parentSpan == null ? null : parentSpan.getSpanContext().getSpanId(),
+        parentSpan == null ? parentSpanId : parentSpan.getSpanContext().getSpanId(),
         span.getName(),
         null,
         samplingDecision != null
