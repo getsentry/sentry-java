@@ -339,7 +339,7 @@ class SentryAndroidTest {
         val context = ContextUtilsTestHelper.createMockContext()
 
         Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
-            mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance(any(), any()) }
+            mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
             SentryAndroid.init(context) { options ->
                 options.release = "prod"

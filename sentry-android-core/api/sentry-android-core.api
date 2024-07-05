@@ -158,7 +158,7 @@ public final class io/sentry/android/core/BuildInfoProvider {
 }
 
 public final class io/sentry/android/core/ContextUtils {
-	public static fun isForegroundImportance (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)Z
+	public static fun isForegroundImportance ()Z
 }
 
 public class io/sentry/android/core/CurrentActivityHolder {
@@ -425,7 +425,7 @@ public class io/sentry/android/core/performance/ActivityLifecycleTimeSpan : java
 	public final fun getOnStart ()Lio/sentry/android/core/performance/TimeSpan;
 }
 
-public class io/sentry/android/core/performance/AppStartMetrics {
+public class io/sentry/android/core/performance/AppStartMetrics : android/app/Application$ActivityLifecycleCallbacks {
 	public fun <init> ()V
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
@@ -441,10 +441,18 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
+	public fun setAppLaunchTooLong (Z)V
 	public fun setAppLaunchedInForeground (Z)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V

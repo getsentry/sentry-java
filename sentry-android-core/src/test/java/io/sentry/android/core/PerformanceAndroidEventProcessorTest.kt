@@ -73,7 +73,9 @@ class PerformanceAndroidEventProcessorTest {
         emptyMap(),
         null,
         null
-    )
+    ).also {
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+    }
 
     @BeforeTest
     fun `reset instance`() {

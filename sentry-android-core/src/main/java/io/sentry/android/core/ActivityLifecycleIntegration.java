@@ -167,8 +167,7 @@ public final class ActivityLifecycleIntegration
 
         // we only track app start for processes that will show an Activity (full launch).
         // Here we check the process importance which will tell us that.
-        final boolean foregroundImportance =
-            ContextUtils.isForegroundImportance(activity, buildInfoProvider);
+        final boolean foregroundImportance = ContextUtils.isForegroundImportance();
         if (foregroundImportance && appStartTimeSpan.hasStarted()) {
           appStartTime = appStartTimeSpan.getStartTimestamp();
           coldStart =

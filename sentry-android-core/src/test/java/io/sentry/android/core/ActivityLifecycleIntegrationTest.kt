@@ -1454,12 +1454,12 @@ class ActivityLifecycleIntegrationTest {
         shadowOf(Looper.getMainLooper()).idle()
     }
 
-    private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(1), 0), stopDate: SentryDate = SentryNanotimeDate(Date(0), 0)) {
+    private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(1), 0), stopDate: SentryDate? = null) {
         // set by SentryPerformanceProvider so forcing it here
         val sdkAppStartTimeSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         val millis = DateUtils.nanosToMillis(date.nanoTimestamp().toDouble()).toLong()
-        val stopMillis = DateUtils.nanosToMillis(stopDate.nanoTimestamp().toDouble()).toLong()
+        val stopMillis = DateUtils.nanosToMillis(stopDate?.nanoTimestamp()?.toDouble() ?: 0.0).toLong()
 
         sdkAppStartTimeSpan.setStartedAt(millis)
         sdkAppStartTimeSpan.setStartUnixTimeMs(millis)
@@ -1468,5 +1468,8 @@ class ActivityLifecycleIntegrationTest {
         appStartTimeSpan.setStartedAt(millis)
         appStartTimeSpan.setStartUnixTimeMs(millis)
         appStartTimeSpan.setStoppedAt(stopMillis)
+        if (stopDate != null) {
+            AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+        }
     }
 }
