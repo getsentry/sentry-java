@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Removed user segment ([#3512](https://github.com/getsentry/sentry-java/pull/3512))
+
 ## 8.0.0-alpha.3
 
 ### Breaking Changes

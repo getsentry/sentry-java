@@ -594,7 +594,6 @@ class SentryTracerTest {
         fixture.scopes.setUser(
             User().apply {
                 id = "user-id"
-                others = mapOf("segment" to "pro")
             }
         )
         val trace = transaction.traceContext()
@@ -615,7 +614,6 @@ class SentryTracerTest {
         fixture.scopes.setUser(
             User().apply {
                 id = "user-id"
-                others = mapOf("segment" to "pro")
             }
         )
         val trace = transaction.traceContext()
@@ -626,7 +624,6 @@ class SentryTracerTest {
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
             assertNull(it.userId)
-            assertEquals("pro", it.userSegment)
         }
     }
 
@@ -650,10 +647,8 @@ class SentryTracerTest {
             assertEquals(it.publicKey, traceBeforeUserSet?.publicKey)
             assertEquals(it.sampleRate, traceBeforeUserSet?.sampleRate)
             assertEquals(it.userId, traceBeforeUserSet?.userId)
-            assertEquals(it.userSegment, traceBeforeUserSet?.userSegment)
 
             assertNull(it.userId)
-            assertNull(it.userSegment)
         }
     }
 
@@ -669,7 +664,6 @@ class SentryTracerTest {
         fixture.scopes.setUser(
             User().apply {
                 id = "userId12345"
-                others = mapOf("segment" to "pro")
             }
         )
 
@@ -682,9 +676,8 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-public_key=key,"))
             assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
             assertTrue(it.value.contains("sentry-environment=production,"))
-            assertTrue(it.value.contains("sentry-transaction=name,"))
+            assertTrue(it.value.contains("sentry-transaction=name"))
             // assertTrue(it.value.contains("sentry-user_id=userId12345,"))
-            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
         }
     }
 
@@ -699,7 +692,6 @@ class SentryTracerTest {
         fixture.scopes.setUser(
             User().apply {
                 id = "userId12345"
-                others = mapOf("segment" to "pro")
             }
         )
 
@@ -712,9 +704,8 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-public_key=key,"))
             assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
             assertTrue(it.value.contains("sentry-environment=production,"))
-            assertTrue(it.value.contains("sentry-transaction=name,"))
+            assertTrue(it.value.contains("sentry-transaction=name"))
             assertFalse(it.value.contains("sentry-user_id"))
-            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
         }
     }
 
@@ -740,7 +731,6 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name"))
             assertFalse(it.value.contains("sentry-user_id"))
-            assertFalse(it.value.contains("sentry-user_segment"))
         }
     }
 
