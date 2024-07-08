@@ -133,7 +133,7 @@ public open class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            finishSpan(span, request, response, isFromEventListener)
+            finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
             if (!isFromEventListener) {
@@ -160,7 +160,7 @@ public open class SentryOkHttpInterceptor(
         scopes.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean) {
+    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean, okHttpEvent: SentryOkHttpEvent?) {
         if (span == null) {
             return
         }
@@ -170,16 +170,12 @@ public open class SentryOkHttpInterceptor(
                 // span is dropped
                 span.spanContext.sampled = false
             }
-            // The SentryOkHttpEventListener will finish the span itself if used for this call
-            if (!isFromEventListener) {
-                span.finish()
-            }
-        } else {
-            // The SentryOkHttpEventListener will finish the span itself if used for this call
-            if (!isFromEventListener) {
-                span.finish()
-            }
         }
+        // The SentryOkHttpEventListener will finish the span itself if used for this call
+        if (!isFromEventListener) {
+            span.finish()
+        }
+        okHttpEvent?.finishEvent()
     }
 
     private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {

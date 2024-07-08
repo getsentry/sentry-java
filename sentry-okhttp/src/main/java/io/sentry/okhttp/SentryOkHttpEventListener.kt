@@ -48,15 +48,15 @@ public open class SentryOkHttpEventListener(
     private var originalEventListener: EventListener? = null
 
     public companion object {
-        internal const val PROXY_SELECT_EVENT = "proxy_select"
-        internal const val DNS_EVENT = "dns"
-        internal const val SECURE_CONNECT_EVENT = "secure_connect"
-        internal const val CONNECT_EVENT = "connect"
-        internal const val CONNECTION_EVENT = "connection"
-        internal const val REQUEST_HEADERS_EVENT = "request_headers"
-        internal const val REQUEST_BODY_EVENT = "request_body"
-        internal const val RESPONSE_HEADERS_EVENT = "response_headers"
-        internal const val RESPONSE_BODY_EVENT = "response_body"
+        internal const val PROXY_SELECT_EVENT = "http.proxy_select_ms"
+        internal const val DNS_EVENT = "http.dns_ms"
+        internal const val SECURE_CONNECT_EVENT = "http.secure_connect_ms"
+        internal const val CONNECT_EVENT = "http.connect_ms"
+        internal const val CONNECTION_EVENT = "http.connection_ms"
+        internal const val REQUEST_HEADERS_EVENT = "http.request_headers_ms"
+        internal const val REQUEST_BODY_EVENT = "http.request_body_ms"
+        internal const val RESPONSE_HEADERS_EVENT = "http.response_headers_ms"
+        internal const val RESPONSE_BODY_EVENT = "http.response_body_ms"
 
         internal val eventMap: MutableMap<Call, SentryOkHttpEvent> = ConcurrentHashMap()
     }
@@ -311,14 +311,13 @@ public open class SentryOkHttpEventListener(
         }
         val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
         okHttpEvent.setResponse(response)
-        val responseHeadersSpan = okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
+        okHttpEvent.finishSpan(RESPONSE_HEADERS_EVENT) {
             it.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.code)
             // Let's not override the status of a span that was set
             if (it.status == null) {
                 it.status = SpanStatus.fromHttpStatusCode(response.code)
             }
         }
-        okHttpEvent.scheduleFinish(responseHeadersSpan?.finishDate ?: scopes.options.dateProvider.now())
     }
 
     override fun responseBodyStart(call: Call) {

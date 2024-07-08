@@ -5,7 +5,6 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryDate
-import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
 import io.sentry.TypeCheckHint
 import io.sentry.okhttp.SentryOkHttpEventListener.Companion.CONNECTION_EVENT
@@ -21,22 +20,21 @@ import okhttp3.Request
 import okhttp3.Response
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val PROTOCOL_KEY = "protocol"
 private const val ERROR_MESSAGE_KEY = "error_message"
-private const val RESPONSE_BODY_TIMEOUT_MILLIS = 800L
 internal const val TRACE_ORIGIN = "auto.http.okhttp"
 
 @Suppress("TooManyFunctions")
 internal class SentryOkHttpEvent(private val scopes: IScopes, private val request: Request) {
-    private val eventSpans: MutableMap<String, ISpan> = ConcurrentHashMap()
+    private val eventDates: MutableMap<String, SentryDate> = ConcurrentHashMap()
+    private val eventSubSpansNanos: MutableMap<String, Long> = ConcurrentHashMap()
     private val breadcrumb: Breadcrumb
     internal val callRootSpan: ISpan?
     private var response: Response? = null
     private var clientErrorResponse: Response? = null
-    private val isReadingResponseBody = AtomicBoolean(false)
     private val isEventFinished = AtomicBoolean(false)
     private val url: String
     private val method: String
@@ -113,34 +111,30 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
 
     /** Starts a span, if the callRootSpan is not null. */
     fun startSpan(event: String) {
-        // Find the parent of the span being created. E.g. secureConnect is child of connect
-        val parentSpan = findParentSpan(event)
-        val span = parentSpan?.startChild("http.client.$event", "$method $url") ?: return
-        if (event == RESPONSE_BODY_EVENT) {
-            // We save this event is reading the response body, so that it will not be auto-finished
-            isReadingResponseBody.set(true)
-        }
-        span.spanContext.origin = TRACE_ORIGIN
-        eventSpans[event] = span
+        callRootSpan ?: return
+        eventDates[event] = scopes.options.dateProvider.now()
     }
 
     /** Finishes a previously started span, and runs [beforeFinish] on it, on its parent and on the call root span. */
-    fun finishSpan(event: String, beforeFinish: ((span: ISpan) -> Unit)? = null): ISpan? {
-        val span = eventSpans[event] ?: return null
-        val parentSpan = findParentSpan(event)
-        beforeFinish?.invoke(span)
-        moveThrowableToRootSpan(span)
-        if (parentSpan != null && parentSpan != callRootSpan) {
-            beforeFinish?.invoke(parentSpan)
-            moveThrowableToRootSpan(parentSpan)
+    fun finishSpan(event: String, beforeFinish: ((span: ISpan) -> Unit)? = null) {
+        callRootSpan ?: return
+        beforeFinish?.invoke(callRootSpan)
+        eventDates.remove(event)?.let { date ->
+            val subSpansNanos = eventSubSpansNanos[event] ?: 0
+            val eventDurationNanos = scopes.options.dateProvider.now().diff(date) - subSpansNanos
+            val parentEvent = findParentEvent(event)
+            parentEvent?.let { eventSubSpansNanos[it] = (eventSubSpansNanos[it] ?: 0) + eventDurationNanos }
+            callRootSpan.setData(event, TimeUnit.NANOSECONDS.toMillis(eventDurationNanos))
         }
-        callRootSpan?.let { beforeFinish?.invoke(it) }
-        span.finish()
-        return span
     }
 
     /** Finishes the call root span, and runs [beforeFinish] on it. Then a breadcrumb is sent. */
-    fun finishEvent(finishDate: SentryDate? = null, beforeFinish: ((span: ISpan) -> Unit)? = null) {
+    fun finishEvent(beforeFinish: ((span: ISpan) -> Unit)? = null) {
+        eventDates.keys.forEach {
+            finishSpan(it)
+        }
+        eventSubSpansNanos.clear()
+        eventDates.clear()
         // If the event already finished, we don't do anything
         if (isEventFinished.getAndSet(true)) {
             return
@@ -153,75 +147,22 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         // We send the breadcrumb even without spans.
         scopes.addBreadcrumb(breadcrumb, hint)
 
-        // No span is created (e.g. no transaction is running)
-        if (callRootSpan == null) {
-            // We report the client error even without spans.
-            clientErrorResponse?.let {
-                SentryOkHttpUtils.captureClientError(scopes, it.request, it)
-            }
-            return
-        }
-
-        // We forcefully finish all spans, even if they should already have been finished through finishSpan()
-        eventSpans.values.filter { !it.isFinished }.forEach {
-            moveThrowableToRootSpan(it)
-            if (finishDate != null) {
-                it.finish(it.status, finishDate)
-            } else {
-                it.finish()
-            }
-        }
-        beforeFinish?.invoke(callRootSpan)
-        // We report the client error here, after all sub-spans finished, so that it will be bound
-        // to the root call span.
+        callRootSpan?.let { beforeFinish?.invoke(it) }
+        // We report the client error here so that it will be bound to the root call span. We send it even if there is no running span.
         clientErrorResponse?.let {
             SentryOkHttpUtils.captureClientError(scopes, it.request, it)
         }
-        if (finishDate != null) {
-            callRootSpan.finish(callRootSpan.status, finishDate)
-        } else {
-            callRootSpan.finish()
-        }
+        callRootSpan?.finish()
         return
     }
 
-    /** Move any throwable from an inner span to the call root span. */
-    private fun moveThrowableToRootSpan(span: ISpan) {
-        if (span != callRootSpan && span.throwable != null && span.status != null) {
-            callRootSpan?.throwable = span.throwable
-            callRootSpan?.status = span.status
-            span.throwable = null
-        }
-    }
-
-    private fun findParentSpan(event: String): ISpan? = when (event) {
+    private fun findParentEvent(event: String): String? = when (event) {
         // PROXY_SELECT, DNS, CONNECT and CONNECTION are not children of one another
-        SECURE_CONNECT_EVENT -> eventSpans[CONNECT_EVENT]
-        REQUEST_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
-        REQUEST_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
-        RESPONSE_HEADERS_EVENT -> eventSpans[CONNECTION_EVENT]
-        RESPONSE_BODY_EVENT -> eventSpans[CONNECTION_EVENT]
-        else -> callRootSpan
-    } ?: callRootSpan
-
-    fun scheduleFinish(timestamp: SentryDate) {
-        try {
-            scopes.options.executorService.schedule({
-                if (!isReadingResponseBody.get() &&
-                    (eventSpans.values.all { it.isFinished } || callRootSpan?.isFinished != true)
-                ) {
-                    finishEvent(timestamp)
-                }
-            }, RESPONSE_BODY_TIMEOUT_MILLIS)
-        } catch (e: RejectedExecutionException) {
-            scopes.options
-                .logger
-                .log(
-                    SentryLevel.ERROR,
-                    "Failed to call the executor. OkHttp span will not be finished " +
-                        "automatically. Did you call Sentry.close()?",
-                    e
-                )
-        }
+        SECURE_CONNECT_EVENT -> CONNECT_EVENT
+        REQUEST_HEADERS_EVENT -> CONNECTION_EVENT
+        REQUEST_BODY_EVENT -> CONNECTION_EVENT
+        RESPONSE_HEADERS_EVENT -> CONNECTION_EVENT
+        RESPONSE_BODY_EVENT -> CONNECTION_EVENT
+        else -> null
     }
 }
