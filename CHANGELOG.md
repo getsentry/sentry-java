@@ -4,7 +4,7 @@
 
 ### Dependencies
 
-- Bump Spring Boot from 2.7.5 to 2.7.18
+- Bump Spring Boot from 2.7.5 to 2.7.18 ([#3496](https://github.com/getsentry/sentry-java/pull/3496))
 
 ## 7.11.0
 
