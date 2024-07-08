@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Spring Boot from 2.7.5 to 2.7.18
+
 ## 7.11.0
 
 ### Features
@@ -25,10 +31,6 @@
 - Bump Native SDK from v0.7.0 to v0.7.2 ([#3314](https://github.com/getsentry/sentry-java/pull/3314))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#072)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.2)
-
-### Dependencies
-
-- Bump Spring Boot from 2.7.5 to 2.7.18
 
 ## 7.10.0
 
