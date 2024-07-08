@@ -27,6 +27,7 @@ object Config {
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
+        val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
     object Android {
