@@ -2699,12 +2699,14 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 public final class io/sentry/SentryReplayOptions {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
+	public fun addClassToRedact (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getErrorSampleRate ()Ljava/lang/Double;
 	public fun getFrameRate ()I
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getRedactAllImages ()Z
 	public fun getRedactAllText ()Z
+	public fun getRedactClasses ()Ljava/util/Set;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
