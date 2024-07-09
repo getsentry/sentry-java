@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Breaking Changes
+
+- Change OkHttp sub-spans to span attributes ([#3556](https://github.com/getsentry/sentry-java/pull/3556))
+  - This will reduce the number of spans created by the SDK
+
 ## 8.0.0-alpha.4
 
 ### Fixes
