@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.12.0-alpha.4
 
 - Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
 
