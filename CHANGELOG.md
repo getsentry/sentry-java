@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+
+We released our fourth Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+
 ## 7.12.0-alpha.3
 
 - Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
