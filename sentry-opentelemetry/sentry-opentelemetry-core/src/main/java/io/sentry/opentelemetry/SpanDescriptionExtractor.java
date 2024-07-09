@@ -47,37 +47,44 @@ public final class SpanDescriptionExtractor {
   @SuppressWarnings("deprecation")
   private OtelSpanInfo extractSpanDescription(
       final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
+    //TODO POTEL add OTEL span attributes to SpanData!
     final @NotNull Attributes attributes = otelSpan.getAttributes();
+    final @NotNull Map<String, Object> dataFields = new HashMap<>();
+
+    otelSpan.getAttributes().forEach((key, value) -> {
+      dataFields.put(key.getKey(), value);
+    });
 
     final @Nullable String httpMethod = attributes.get(SemanticAttributes.HTTP_METHOD);
     if (httpMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpMethod);
+      return descriptionForHttpMethod(otelSpan, httpMethod, dataFields);
     }
 
     final @Nullable String httpRequestMethod =
         attributes.get(SemanticAttributes.HTTP_REQUEST_METHOD);
     if (httpRequestMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpRequestMethod);
+      return descriptionForHttpMethod(otelSpan, httpRequestMethod, dataFields);
     }
 
     final @Nullable String dbSystem = attributes.get(SemanticAttributes.DB_SYSTEM);
     if (dbSystem != null) {
-      return descriptionForDbSystem(otelSpan);
+      return descriptionForDbSystem(otelSpan, dataFields);
     }
 
     final @NotNull String name = otelSpan.getName();
+
+    //TODO POTEL: if sentrySpan.getDescription is null, use otelSpan.getName as fallback
     final @Nullable String description = sentrySpan != null ? sentrySpan.getDescription() : name;
-    return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
+    return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM, dataFields);
   }
 
   @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForHttpMethod(
-      final @NotNull SpanData otelSpan, final @NotNull String httpMethod) {
+      final @NotNull SpanData otelSpan, final @NotNull String httpMethod, @NotNull Map<String, Object> dataFields) {
     final @NotNull String name = otelSpan.getName();
     final @NotNull SpanKind kind = otelSpan.getKind();
     final @NotNull StringBuilder opBuilder = new StringBuilder("http");
     final @NotNull Attributes attributes = otelSpan.getAttributes();
-    final @NotNull Map<String, Object> dataFields = new HashMap<>();
     dataFields.put("http.request.method", httpMethod);
 
     if (SpanKind.CLIENT.equals(kind)) {
@@ -124,10 +131,10 @@ public final class SpanDescriptionExtractor {
   }
 
   @SuppressWarnings("deprecation")
-  private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan) {
+  private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan, @NotNull Map<String, Object> dataFields) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     @Nullable String dbStatement = attributes.get(SemanticAttributes.DB_STATEMENT);
     @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();
-    return new OtelSpanInfo("db", description, TransactionNameSource.TASK);
+    return new OtelSpanInfo("db", description, TransactionNameSource.TASK, dataFields);
   }
 }
