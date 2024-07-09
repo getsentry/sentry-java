@@ -72,7 +72,7 @@ public open class SentryOkHttpInterceptor(
         if (SentryOkHttpEventListener.eventMap.containsKey(chain.call())) {
             // read the span from the event listener
             okHttpEvent = SentryOkHttpEventListener.eventMap[chain.call()]
-            span = okHttpEvent?.callRootSpan
+            span = okHttpEvent?.callSpan
         } else {
             // read the span from the bound scope
             okHttpEvent = null
@@ -171,11 +171,11 @@ public open class SentryOkHttpInterceptor(
                 span.spanContext.sampled = false
             }
         }
-        // The SentryOkHttpEventListener will finish the span itself if used for this call
         if (!isFromEventListener) {
             span.finish()
         }
-        okHttpEvent?.finishEvent()
+        // The SentryOkHttpEventListener waits until the response is closed (which may never happen), so we close it here
+        okHttpEvent?.finish()
     }
 
     private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
