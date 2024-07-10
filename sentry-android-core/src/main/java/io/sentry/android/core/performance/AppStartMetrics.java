@@ -223,18 +223,27 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
-      application.registerActivityLifecycleCallbacks(instance);
       instance.appLaunchedInForeground =
           instance.appLaunchedInForeground || ContextUtils.isForegroundImportance();
-      new Handler(Looper.getMainLooper())
-          .post(
-              () -> {
-                // if no activity has ever been created, app was launched in background
-                if (instance.onCreateTime == null) {
-                  instance.appLaunchedInForeground = false;
-                }
-              });
+      instance.registerApplicationForegroundCheck(application);
     }
+  }
+
+  /**
+   * Register a callback to check if an activity was started after the application was created
+   *
+   * @param application The application object to register the callback to
+   */
+  public void registerApplicationForegroundCheck(final @NotNull Application application) {
+    application.registerActivityLifecycleCallbacks(instance);
+    new Handler(Looper.getMainLooper())
+        .post(
+            () -> {
+              // if no activity has ever been created, app was launched in background
+              if (onCreateTime == null) {
+                appLaunchedInForeground = false;
+              }
+            });
   }
 
   @Override
