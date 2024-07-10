@@ -32,7 +32,7 @@ import org.jetbrains.annotations.TestOnly;
  * transformed into SDK specific txn/span data structures.
  */
 @ApiStatus.Internal
-public class AppStartMetrics implements Application.ActivityLifecycleCallbacks {
+public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public enum AppStartType {
     UNKNOWN,
@@ -76,6 +76,7 @@ public class AppStartMetrics implements Application.ActivityLifecycleCallbacks {
     applicationOnCreate = new TimeSpan();
     contentProviderOnCreates = new HashMap<>();
     activityLifecycles = new ArrayList<>();
+    appLaunchedInForeground = ContextUtils.isForegroundImportance();
   }
 
   /**
@@ -223,7 +224,8 @@ public class AppStartMetrics implements Application.ActivityLifecycleCallbacks {
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
       application.registerActivityLifecycleCallbacks(instance);
-      instance.appLaunchedInForeground = ContextUtils.isForegroundImportance();
+      instance.appLaunchedInForeground =
+          instance.appLaunchedInForeground || ContextUtils.isForegroundImportance();
       new Handler(Looper.getMainLooper())
           .post(
               () -> {
@@ -254,24 +256,6 @@ public class AppStartMetrics implements Application.ActivityLifecycleCallbacks {
       appLaunchTooLong = true;
     }
   }
-
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) {}
-
-  @Override
-  public void onActivityResumed(@NonNull Activity activity) {}
-
-  @Override
-  public void onActivityPaused(@NonNull Activity activity) {}
-
-  @Override
-  public void onActivityStopped(@NonNull Activity activity) {}
-
-  @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
-
-  @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {}
 
   /**
    * Called by instrumentation
