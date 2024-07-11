@@ -130,9 +130,10 @@ internal class ScreenshotRecorder(
                                 if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
                                     node.visibleRect ?: return@traverse false
 
-                                    if (viewHierarchy.isObscured(node)) {
-                                        return@traverse true
-                                    }
+                                    // TODO: investigate why it returns true on RN when it shouldn't
+//                                    if (viewHierarchy.isObscured(node)) {
+//                                        return@traverse true
+//                                    }
 
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
@@ -141,6 +142,8 @@ internal class ScreenshotRecorder(
                                         }
 
                                         is TextViewHierarchyNode -> {
+                                            // TODO: find a way to get the correct text color for RN
+                                            // TODO: now it always returns black
                                             node.layout.getVisibleRects(
                                                 node.visibleRect,
                                                 node.paddingLeft,
