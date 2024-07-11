@@ -2719,7 +2719,6 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setRedactAllImages (Z)V
 	public fun setRedactAllText (Z)V
-	public fun setRedactClasses (Ljava/util/Set;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
 
