@@ -2,8 +2,8 @@ package io.sentry.android.core
 
 import io.sentry.IConnectionStatusProvider
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
@@ -28,7 +28,7 @@ import kotlin.test.Test
 
 class SendCachedEnvelopeIntegrationTest {
     private class Fixture {
-        val hub: IHub = mock()
+        val scopes: IScopes = mock()
         val options = SentryAndroidOptions()
         val logger = mock<ILogger>()
         val factory = mock<SendFireAndForgetFactory>()
@@ -74,7 +74,7 @@ class SendCachedEnvelopeIntegrationTest {
     fun `when cacheDirPath is not set, does nothing`() {
         val sut = fixture.getSut(cacheDirPath = null)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.factory, never()).create(any(), any())
     }
@@ -83,7 +83,7 @@ class SendCachedEnvelopeIntegrationTest {
     fun `when factory returns null, does nothing`() {
         val sut = fixture.getSut(hasSender = false, mockExecutorService = ImmediateExecutorService())
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.factory).create(any(), any())
         verify(fixture.sender, never()).send()
@@ -93,7 +93,7 @@ class SendCachedEnvelopeIntegrationTest {
     fun `when has factory and cacheDirPath set, submits task into queue`() {
         val sut = fixture.getSut(mockExecutorService = ImmediateExecutorService())
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         await.untilFalse(fixture.flag)
         verify(fixture.sender).send()
@@ -102,7 +102,7 @@ class SendCachedEnvelopeIntegrationTest {
     @Test
     fun `when executorService is fake, does nothing`() {
         val sut = fixture.getSut(mockExecutorService = mock())
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.factory, never()).create(any(), any())
         verify(fixture.sender, never()).send()
@@ -112,7 +112,7 @@ class SendCachedEnvelopeIntegrationTest {
     fun `when has startup crash marker, awaits the task on the calling thread`() {
         val sut = fixture.getSut(hasStartupCrashMarker = true)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // we do not need to await here, because it's executed synchronously
         verify(fixture.sender).send()
@@ -123,7 +123,7 @@ class SendCachedEnvelopeIntegrationTest {
         val sut = fixture.getSut(hasStartupCrashMarker = true, delaySend = 1000)
         fixture.options.startupCrashFlushTimeoutMillis = 100
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // first wait until synchronous send times out and check that the logger was hit in the catch block
         await.atLeast(500, MILLISECONDS)
@@ -144,7 +144,7 @@ class SendCachedEnvelopeIntegrationTest {
         val connectionStatusProvider = mock<IConnectionStatusProvider>()
         fixture.options.connectionStatusProvider = connectionStatusProvider
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(connectionStatusProvider).addConnectionStatusObserver(any())
     }
 
@@ -159,7 +159,7 @@ class SendCachedEnvelopeIntegrationTest {
             ConnectionStatus.DISCONNECTED
         )
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.sender, never()).send()
     }
 
@@ -174,7 +174,7 @@ class SendCachedEnvelopeIntegrationTest {
             ConnectionStatus.UNKNOWN
         )
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.factory).create(any(), any())
     }
 
@@ -187,7 +187,7 @@ class SendCachedEnvelopeIntegrationTest {
         whenever(connectionStatusProvider.connectionStatus).thenReturn(
             ConnectionStatus.DISCONNECTED
         )
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // when there's no connection no factory create call should be done
         verify(fixture.sender, never()).send()
@@ -215,9 +215,9 @@ class SendCachedEnvelopeIntegrationTest {
         val rateLimiter = mock<RateLimiter> {
             whenever(mock.isActiveForCategory(any())).thenReturn(true)
         }
-        whenever(fixture.hub.rateLimiter).thenReturn(rateLimiter)
+        whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // no factory call should be done if there's rate limiting active
         verify(fixture.sender, never()).send()
@@ -228,7 +228,7 @@ class SendCachedEnvelopeIntegrationTest {
         val deferredExecutorService = DeferredExecutorService()
         val sut = fixture.getSut(mockExecutorService = deferredExecutorService)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         verify(fixture.sender, never()).send()
         sut.close()
 

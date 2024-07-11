@@ -10,15 +10,15 @@ import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -49,8 +49,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @NotNull Date profileStartTimestamp;
 
   /**
-   * @deprecated please use a constructor that doesn't takes a {@link IHub} instead, as it would be
-   *     ignored anyway.
+   * @deprecated please use a constructor that doesn't takes a {@link IScopes} instead, as it would
+   *     be ignored anyway.
    */
   @Deprecated
   public AndroidTransactionProfiler(
@@ -58,7 +58,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull IHub hub) {
+      final @NotNull IScopes scopes) {
     this(context, sentryAndroidOptions, buildInfoProvider, frameMetricsCollector);
   }
 
@@ -318,7 +318,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           currentProfilingTransactionData.getTraceId(),
           true,
           null,
-          HubAdapter.getInstance().getOptions());
+          ScopesAdapter.getInstance().getOptions());
     } else if (transactionsCounter != 0) {
       // in case the app start profiling is running, and it's not bound to a transaction, we still
       // stop profiling, but we also have to manually update the counter.

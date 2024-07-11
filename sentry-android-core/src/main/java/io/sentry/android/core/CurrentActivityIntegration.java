@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
@@ -25,7 +25,7 @@ public final class CurrentActivityIntegration
   }
 
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     application.registerActivityLifecycleCallbacks(this);
   }
 

@@ -139,6 +139,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       }
     }
 
+    // TODO [HSM] EventProcessors from options are always executed after those from scopes
     event = processEvent(event, hint, options.getEventProcessors());
 
     if (event != null) {

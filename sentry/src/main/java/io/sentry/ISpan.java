@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.Contexts;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +22,10 @@ public interface ISpan {
   @NotNull
   ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions);
+
+  @ApiStatus.Internal
+  @NotNull
+  ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
 
   @ApiStatus.Internal
   @NotNull
@@ -263,4 +268,19 @@ public interface ISpan {
    */
   @Nullable
   LocalMetricsAggregator getLocalMetricsAggregator();
+
+  void setContext(@NotNull String key, @NotNull Object context);
+
+  @NotNull
+  Contexts getContexts();
+
+  @Nullable
+  Boolean isSampled();
+
+  @Nullable
+  TracesSamplingDecision getSamplingDecision();
+
+  @ApiStatus.Internal
+  @NotNull
+  ISentryLifecycleToken makeCurrent();
 }

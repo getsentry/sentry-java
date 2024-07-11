@@ -7,7 +7,7 @@ import io.opentelemetry.sdk.autoconfigure.spi.ConfigurablePropagatorProvider;
 public final class SentryPropagatorProvider implements ConfigurablePropagatorProvider {
   @Override
   public TextMapPropagator getPropagator(ConfigProperties config) {
-    return new SentryPropagator();
+    return new OtelSentryPropagator();
   }
 
   @Override

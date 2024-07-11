@@ -93,7 +93,7 @@ class RelayAsserter(
         /** Request parsed as envelope. */
         val envelope: SentryEnvelope? by lazy {
             try {
-                EnvelopeReader(Sentry.getCurrentHub().options.serializer)
+                EnvelopeReader(Sentry.getCurrentScopes().options.serializer)
                     .read(GZIPInputStream(request.body.inputStream()))
             } catch (e: IOException) {
                 null

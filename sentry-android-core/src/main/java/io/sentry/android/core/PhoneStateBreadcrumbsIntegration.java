@@ -6,7 +6,7 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 import io.sentry.Breadcrumb;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -32,8 +32,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -55,7 +55,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
                 () -> {
                   synchronized (startLock) {
                     if (!isClosed) {
-                      startTelephonyListener(hub, options);
+                      startTelephonyListener(scopes, options);
                     }
                   }
                 });
@@ -72,11 +72,11 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
 
   @SuppressWarnings("deprecation")
   private void startTelephonyListener(
-      final @NotNull IHub hub, final @NotNull SentryOptions options) {
+      final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
     if (telephonyManager != null) {
       try {
-        listener = new PhoneStateChangeListener(hub);
+        listener = new PhoneStateChangeListener(scopes);
         telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
         options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
@@ -110,10 +110,10 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @SuppressWarnings("deprecation")
   static final class PhoneStateChangeListener extends android.telephony.PhoneStateListener {
 
-    private final @NotNull IHub hub;
+    private final @NotNull IScopes scopes;
 
-    PhoneStateChangeListener(final @NotNull IHub hub) {
-      this.hub = hub;
+    PhoneStateChangeListener(final @NotNull IScopes scopes) {
+      this.scopes = scopes;
     }
 
     @SuppressWarnings("deprecation")
@@ -128,7 +128,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
         breadcrumb.setData("action", "CALL_STATE_RINGING");
         breadcrumb.setMessage("Device ringing");
         breadcrumb.setLevel(SentryLevel.INFO);
-        hub.addBreadcrumb(breadcrumb);
+        scopes.addBreadcrumb(breadcrumb);
       }
     }
   }

@@ -1,7 +1,7 @@
 package io.sentry.spring.jakarta.webflux;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
@@ -20,10 +20,10 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 @Open
 @ApiStatus.Experimental
 public class SentryRequestResolver {
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
-  public SentryRequestResolver(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "options is required");
+  public SentryRequestResolver(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
@@ -36,7 +36,7 @@ public class SentryRequestResolver {
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
-    if (hub.getOptions().isSendDefaultPii()) {
+    if (scopes.getOptions().isSendDefaultPii()) {
       String headerName = HttpUtils.COOKIE_HEADER_NAME;
       sentryRequest.setCookies(
           toString(
@@ -52,7 +52,8 @@ public class SentryRequestResolver {
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
       // do not copy personal information identifiable headers
       String headerName = entry.getKey();
-      if (hub.getOptions().isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
+      if (scopes.getOptions().isSendDefaultPii()
+          || !HttpUtils.containsSensitiveHeader(headerName)) {
         headersMap.put(
             headerName,
             toString(

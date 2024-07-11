@@ -4,7 +4,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.language.Document
 import graphql.language.OperationDefinition
 import graphql.schema.DataFetchingEnvironment
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.graphql.ExceptionReporter
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.anyOrNull
@@ -23,7 +23,7 @@ class SentrySpringSubscriptionHandlerTest {
     @Test
     fun `reports exception`() {
         val exception = IllegalStateException("some exception")
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val exceptionReporter = mock<ExceptionReporter>()
         val parameters = mock<InstrumentationFieldFetchParameters>()
         val dataFetchingEnvironment = mock<DataFetchingEnvironment>()
@@ -32,7 +32,7 @@ class SentrySpringSubscriptionHandlerTest {
             .build()
         whenever(dataFetchingEnvironment.document).thenReturn(document)
         whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
-        val resultObject = SentrySpringSubscriptionHandler().onSubscriptionResult(Flux.error<Any?>(exception), hub, exceptionReporter, parameters)
+        val resultObject = SentrySpringSubscriptionHandler().onSubscriptionResult(Flux.error<Any?>(exception), scopes, exceptionReporter, parameters)
         assertThrows<IllegalStateException> {
             (resultObject as Flux<Any?>).blockFirst()
         }
@@ -41,7 +41,7 @@ class SentrySpringSubscriptionHandlerTest {
             same(exception),
             org.mockito.kotlin.check {
                 assertEquals(true, it.isSubscription)
-                assertSame(hub, it.hub)
+                assertSame(scopes, it.scopes)
                 assertEquals("query testQuery\n", it.query)
             },
             anyOrNull()
@@ -52,7 +52,7 @@ class SentrySpringSubscriptionHandlerTest {
     fun `unwraps SubscriptionPublisherException and reports cause`() {
         val exception = IllegalStateException("some exception")
         val wrappedException = SubscriptionPublisherException(emptyList(), exception)
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val exceptionReporter = mock<ExceptionReporter>()
         val parameters = mock<InstrumentationFieldFetchParameters>()
         val dataFetchingEnvironment = mock<DataFetchingEnvironment>()
@@ -61,7 +61,7 @@ class SentrySpringSubscriptionHandlerTest {
             .build()
         whenever(dataFetchingEnvironment.document).thenReturn(document)
         whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
-        val resultObject = SentrySpringSubscriptionHandler().onSubscriptionResult(Flux.error<Any?>(wrappedException), hub, exceptionReporter, parameters)
+        val resultObject = SentrySpringSubscriptionHandler().onSubscriptionResult(Flux.error<Any?>(wrappedException), scopes, exceptionReporter, parameters)
         assertThrows<SubscriptionPublisherException> {
             (resultObject as Flux<Any?>).blockFirst()
         }
@@ -70,7 +70,7 @@ class SentrySpringSubscriptionHandlerTest {
             same(exception),
             org.mockito.kotlin.check {
                 assertEquals(true, it.isSubscription)
-                assertSame(hub, it.hub)
+                assertSame(scopes, it.scopes)
                 assertEquals("query testQuery\n", it.query)
             },
             anyOrNull()

@@ -1,5 +1,7 @@
 package io.sentry.opentelemetry;
 
+import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
+
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.SpanKind;
@@ -13,18 +15,18 @@ import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.Baggage;
 import io.sentry.DsnUtil;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.PropagationContext;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
-import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -37,6 +39,10 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated please use {@link OtelSentrySpanProcessor} instead.
+ */
+@Deprecated
 public final class SentrySpanProcessor implements SpanProcessor {
 
   private static final String TRACE_ORIGN = "auto.otel";
@@ -45,15 +51,19 @@ public final class SentrySpanProcessor implements SpanProcessor {
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
-  private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
-  private final @NotNull IHub hub;
+
+  @SuppressWarnings("deprecation")
+  private final @NotNull io.sentry.SentrySpanStorage spanStorage =
+      io.sentry.SentrySpanStorage.getInstance();
+
+  private final @NotNull IScopes scopes;
 
   public SentrySpanProcessor() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
-  SentrySpanProcessor(final @NotNull IHub hub) {
-    this.hub = hub;
+  SentrySpanProcessor(final @NotNull IScopes scopes) {
+    this.scopes = scopes;
   }
 
   @Override
@@ -65,7 +75,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @NotNull TraceData traceData = getTraceData(otelSpan, parentContext);
 
     if (isSentryRequest(otelSpan)) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -78,7 +89,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
         traceData.getParentSpanId() == null ? null : spanStorage.get(traceData.getParentSpanId());
 
     if (sentryParentSpan != null) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -88,13 +100,15 @@ public final class SentrySpanProcessor implements SpanProcessor {
               traceData.getParentSpanId());
       final @NotNull SentryDate startDate =
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
+      final @NotNull SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGN);
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
-              otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
-      sentryChildSpan.getSpanContext().setOrigin(TRACE_ORIGN);
+              otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL, spanOptions);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -122,9 +136,9 @@ public final class SentrySpanProcessor implements SpanProcessor {
       TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setStartTimestamp(
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
+      transactionOptions.setOrigin(TRACE_ORIGN);
 
-      ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
-      sentryTransaction.getSpanContext().setOrigin(TRACE_ORIGN);
+      ISpan sentryTransaction = scopes.startTransaction(transactionContext, transactionOptions);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }
@@ -144,7 +158,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @Nullable ISpan sentrySpan = spanStorage.removeAndGet(traceData.getSpanId());
 
     if (sentrySpan == null) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -155,7 +170,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     }
 
     if (isSentryRequest(otelSpan)) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -168,7 +184,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     if (sentrySpan instanceof ITransaction) {
       final @NotNull ITransaction sentryTransaction = (ITransaction) sentrySpan;
       updateTransactionWithOtelData(sentryTransaction, otelSpan);
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -178,7 +195,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
               traceData.getTraceId());
     } else {
       updateSpanWithOtelData(sentrySpan, otelSpan);
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -201,7 +219,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   private boolean ensurePrerequisites(final @NotNull ReadableSpan otelSpan) {
     if (!hasSentryBeenInitialized()) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -209,9 +228,10 @@ public final class SentrySpanProcessor implements SpanProcessor {
       return false;
     }
 
-    final @NotNull Instrumenter instrumenter = hub.getOptions().getInstrumenter();
+    final @NotNull Instrumenter instrumenter = scopes.getOptions().getInstrumenter();
     if (!Instrumenter.OTEL.equals(instrumenter)) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -222,7 +242,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -241,7 +262,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
     }
 
     final @Nullable String httpUrl = otelSpan.getAttribute(SemanticAttributes.HTTP_URL);
-    return DsnUtil.urlContainsDsnHost(hub.getOptions(), httpUrl);
+    return DsnUtil.urlContainsDsnHost(scopes.getOptions(), httpUrl);
   }
 
   private @NotNull TraceData getTraceData(
@@ -272,10 +293,12 @@ public final class SentrySpanProcessor implements SpanProcessor {
   private void updateTransactionWithOtelData(
       final @NotNull ITransaction sentryTransaction, final @NotNull ReadableSpan otelSpan) {
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanDescription(otelSpan);
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
     sentryTransaction.setOperation(otelSpanInfo.getOp());
+    String transactionName = otelSpanInfo.getDescription();
     sentryTransaction.setName(
-        otelSpanInfo.getDescription(), otelSpanInfo.getTransactionNameSource());
+        transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName,
+        otelSpanInfo.getTransactionNameSource());
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(otelSpan);
     sentryTransaction.setContext("otel", otelContext);
@@ -307,7 +330,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
             });
 
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanDescription(otelSpan);
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
     sentrySpan.setOperation(otelSpanInfo.getOp());
     sentrySpan.setDescription(otelSpanInfo.getDescription());
   }
@@ -334,7 +357,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
   }
 
   private boolean hasSentryBeenInitialized() {
-    return hub.isEnabled();
+    return scopes.isEnabled();
   }
 
   private @NotNull Map<String, Object> toMapWithStringKeys(final @Nullable Attributes attributes) {

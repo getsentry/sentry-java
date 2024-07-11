@@ -2,7 +2,7 @@ package io.sentry.okhttp
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.ISpan
 import io.sentry.SentryDate
@@ -50,14 +50,14 @@ import kotlin.test.assertTrue
 
 class SentryOkHttpEventTest {
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val server = MockWebServer()
         val span: ISpan
         val mockRequest: Request
         val response: Response
 
         init {
-            whenever(hub.options).thenReturn(
+            whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
                 }
@@ -65,9 +65,8 @@ class SentryOkHttpEventTest {
 
             span = Span(
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
-                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), hub),
-                hub,
-                null,
+                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
+                scopes,
                 SpanOptions()
             )
 
@@ -86,7 +85,7 @@ class SentryOkHttpEventTest {
         }
 
         fun getSut(currentSpan: ISpan? = span, requestUrl: String ? = null): SentryOkHttpEvent {
-            whenever(hub.span).thenReturn(currentSpan)
+            whenever(scopes.span).thenReturn(currentSpan)
             val request = if (requestUrl == null) {
                 mockRequest
             } else {
@@ -96,7 +95,7 @@ class SentryOkHttpEventTest {
                     .url(server.url(requestUrl))
                     .build()
             }
-            return SentryOkHttpEvent(hub, request)
+            return SentryOkHttpEvent(scopes, request)
         }
     }
 
@@ -126,7 +125,7 @@ class SentryOkHttpEventTest {
         val sut = fixture.getSut(currentSpan = null)
         assertNull(sut.callRootSpan)
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -242,7 +241,7 @@ class SentryOkHttpEventTest {
     fun `when finishEvent, a breadcrumb is captured with request in the hint`() {
         val sut = fixture.getSut()
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(fixture.mockRequest.url.toString(), it.data["url"])
                 assertEquals(fixture.mockRequest.url.host, it.data["host"])
@@ -260,7 +259,7 @@ class SentryOkHttpEventTest {
         val sut = fixture.getSut()
         sut.finishEvent()
         sut.finishEvent()
-        verify(fixture.hub, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
+        verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
     }
 
     @Test
@@ -285,7 +284,7 @@ class SentryOkHttpEventTest {
         assertEquals(fixture.response.code, sut.callRootSpan?.getData(SpanDataConvention.HTTP_STATUS_CODE_KEY))
         sut.finishEvent()
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(fixture.response.protocol.name, it.data["protocol"])
                 assertEquals(fixture.response.code, it.data["status_code"])
@@ -302,7 +301,7 @@ class SentryOkHttpEventTest {
         sut.setProtocol("protocol")
         assertEquals("protocol", sut.callRootSpan?.getData("protocol"))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("protocol", it.data["protocol"])
             },
@@ -316,7 +315,7 @@ class SentryOkHttpEventTest {
         sut.setProtocol(null)
         assertNull(sut.callRootSpan?.getData("protocol"))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertNull(it.data["protocol"])
             },
@@ -330,7 +329,7 @@ class SentryOkHttpEventTest {
         sut.setRequestBodySize(10)
         assertEquals(10L, sut.callRootSpan?.getData("http.request_content_length"))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(10L, it.data["request_content_length"])
             },
@@ -344,7 +343,7 @@ class SentryOkHttpEventTest {
         sut.setRequestBodySize(-1)
         assertNull(sut.callRootSpan?.getData("http.request_content_length"))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertNull(it.data["request_content_length"])
             },
@@ -358,7 +357,7 @@ class SentryOkHttpEventTest {
         sut.setResponseBodySize(10)
         assertEquals(10L, sut.callRootSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(10L, it.data["response_content_length"])
             },
@@ -372,7 +371,7 @@ class SentryOkHttpEventTest {
         sut.setResponseBodySize(-1)
         assertNull(sut.callRootSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertNull(it.data["response_content_length"])
             },
@@ -386,7 +385,7 @@ class SentryOkHttpEventTest {
         sut.setError("errorMessage")
         assertEquals("errorMessage", sut.callRootSpan?.getData("error_message"))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("errorMessage", it.data["error_message"])
             },
@@ -401,7 +400,7 @@ class SentryOkHttpEventTest {
         assertNotNull(sut.callRootSpan)
         assertNull(sut.callRootSpan.getData("error_message"))
         sut.finishEvent()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertNull(it.data["error_message"])
             },
@@ -534,7 +533,7 @@ class SentryOkHttpEventTest {
 
     @Test
     fun `scheduleFinish schedules finishEvent and finish running spans to specific timestamp`() {
-        fixture.hub.options.executorService = ImmediateExecutorService()
+        fixture.scopes.options.executorService = ImmediateExecutorService()
         val sut = spy(fixture.getSut())
         val timestamp = mock<SentryDate>()
         sut.startSpan(CONNECTION_EVENT)
@@ -556,7 +555,7 @@ class SentryOkHttpEventTest {
     fun `scheduleFinish does not throw if executor is shut down`() {
         val executorService = mock<ISentryExecutorService>()
         whenever(executorService.schedule(any(), any())).thenThrow(RejectedExecutionException())
-        whenever(fixture.hub.options).thenReturn(SentryOptions().apply { this.executorService = executorService })
+        whenever(fixture.scopes.options).thenReturn(SentryOptions().apply { this.executorService = executorService })
         val sut = fixture.getSut()
         sut.scheduleFinish(mock())
     }
@@ -567,10 +566,10 @@ class SentryOkHttpEventTest {
         val clientErrorResponse = mock<Response>()
         whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
         sut.setClientErrorResponse(clientErrorResponse)
-        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
         sut.finishEvent()
         assertNotNull(sut.callRootSpan)
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             argThat {
                 throwable is SentryHttpClientException &&
                     throwable!!.message!!.startsWith("HTTP Client Error with status code: ")
@@ -588,10 +587,10 @@ class SentryOkHttpEventTest {
         val clientErrorResponse = mock<Response>()
         whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
         sut.setClientErrorResponse(clientErrorResponse)
-        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
         sut.finishEvent()
         assertNull(sut.callRootSpan)
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             argThat {
                 throwable is SentryHttpClientException &&
                     throwable!!.message!!.startsWith("HTTP Client Error with status code: ")
@@ -607,7 +606,7 @@ class SentryOkHttpEventTest {
     fun `when setClientErrorResponse is not called, no client error is captured`() {
         val sut = fixture.getSut()
         sut.finishEvent()
-        verify(fixture.hub, never()).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     }
 
     /** Retrieve all the spans started in the event using reflection. */

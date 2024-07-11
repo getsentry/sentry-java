@@ -3,7 +3,7 @@ package io.sentry.android.core;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
@@ -25,19 +25,19 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   private @Nullable TimerTask timerTask;
   private final @Nullable Timer timer;
   private final @NotNull Object timerLock = new Object();
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
   LifecycleWatcher(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
       final boolean enableAppLifecycleBreadcrumbs) {
     this(
-        hub,
+        scopes,
         sessionIntervalMillis,
         enableSessionTracking,
         enableAppLifecycleBreadcrumbs,
@@ -45,7 +45,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   LifecycleWatcher(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
       final boolean enableAppLifecycleBreadcrumbs,
@@ -53,7 +53,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     this.sessionIntervalMillis = sessionIntervalMillis;
     this.enableSessionTracking = enableSessionTracking;
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
-    this.hub = hub;
+    this.scopes = scopes;
     this.currentDateProvider = currentDateProvider;
     if (enableSessionTracking) {
       timer = new Timer(true);
@@ -79,7 +79,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
       final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
 
-      hub.configureScope(
+      scopes.configureScope(
           scope -> {
             if (lastUpdatedSession.get() == 0L) {
               final @Nullable Session currentSession = scope.getSession();
@@ -93,7 +93,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       if (lastUpdatedSession == 0L
           || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
         addSessionBreadcrumb("start");
-        hub.startSession();
+        scopes.startSession();
       }
       this.lastUpdatedSession.set(currentTimeMillis);
     }
@@ -123,7 +123,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
               @Override
               public void run() {
                 addSessionBreadcrumb("end");
-                hub.endSession();
+                scopes.endSession();
               }
             };
 
@@ -148,13 +148,13 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       breadcrumb.setData("state", state);
       breadcrumb.setCategory("app.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb);
     }
   }
 
   private void addSessionBreadcrumb(final @NotNull String state) {
     final Breadcrumb breadcrumb = BreadcrumbFactory.forSession(state);
-    hub.addBreadcrumb(breadcrumb);
+    scopes.addBreadcrumb(breadcrumb);
   }
 
   @TestOnly

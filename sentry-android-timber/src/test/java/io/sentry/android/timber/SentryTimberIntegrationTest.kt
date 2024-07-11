@@ -1,6 +1,6 @@
 package io.sentry.android.timber
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SdkVersion
@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 class SentryTimberIntegrationTest {
 
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val options = SentryOptions().apply {
             sdkVersion = SdkVersion("test", "1.2.3")
         }
@@ -41,7 +41,7 @@ class SentryTimberIntegrationTest {
     @Test
     fun `Integrations plants a tree into Timber on register`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertEquals(1, Timber.treeCount())
 
@@ -53,16 +53,16 @@ class SentryTimberIntegrationTest {
     @Test
     fun `Integrations plants the SentryTimberTree tree`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         Timber.e(Throwable())
-        verify(fixture.hub).captureEvent(any())
+        verify(fixture.scopes).captureEvent(any())
     }
 
     @Test
     fun `Integrations removes a tree from Timber on close integration`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertEquals(1, Timber.treeCount())
 
@@ -84,7 +84,7 @@ class SentryTimberIntegrationTest {
             minEventLevel = SentryLevel.INFO,
             minBreadcrumbLevel = SentryLevel.DEBUG
         )
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertEquals(sut.minEventLevel, SentryLevel.INFO)
         assertEquals(sut.minBreadcrumbLevel, SentryLevel.DEBUG)
@@ -93,7 +93,7 @@ class SentryTimberIntegrationTest {
     @Test
     fun `Integration adds itself to the package list`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertTrue(
             fixture.options.sdkVersion!!.packageSet.any {
@@ -106,7 +106,7 @@ class SentryTimberIntegrationTest {
     @Test
     fun `Integration adds itself to the integration list`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertTrue(
             fixture.options.sdkVersion!!.integrationSet.contains("Timber")

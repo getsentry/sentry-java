@@ -5,7 +5,7 @@ public final class io/sentry/log4j2/BuildConfig {
 
 public class io/sentry/log4j2/SentryAppender : org/apache/logging/log4j/core/appender/AbstractAppender {
 	public static final field MECHANISM_TYPE Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/Boolean;Lio/sentry/ITransportFactory;Lio/sentry/IHub;[Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/Boolean;Lio/sentry/ITransportFactory;Lio/sentry/IScopes;[Ljava/lang/String;)V
 	public fun append (Lorg/apache/logging/log4j/core/LogEvent;)V
 	public static fun createAppender (Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/String;Ljava/lang/Boolean;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;)Lio/sentry/log4j2/SentryAppender;
 	protected fun createBreadcrumb (Lorg/apache/logging/log4j/core/LogEvent;)Lio/sentry/Breadcrumb;

@@ -21,8 +21,8 @@ public final class SendFireAndForgetOutboxSender
 
   @Override
   public @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget create(
-      final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+      final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     final String dirPath = sendFireAndForgetDirPath.getDirPath();
@@ -33,7 +33,7 @@ public final class SendFireAndForgetOutboxSender
 
     final OutboxSender outboxSender =
         new OutboxSender(
-            hub,
+            scopes,
             options.getEnvelopeReader(),
             options.getSerializer(),
             options.getLogger(),

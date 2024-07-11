@@ -1,7 +1,7 @@
 package io.sentry.okhttp
 
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint
 import io.sentry.exception.ExceptionMechanismException
@@ -15,7 +15,7 @@ import okhttp3.Response
 
 internal object SentryOkHttpUtils {
 
-    internal fun captureClientError(hub: IHub, request: Request, response: Response) {
+    internal fun captureClientError(scopes: IScopes, request: Request, response: Response) {
         // not possible to get a parameterized url, but we remove at least the
         // query string and the fragment.
         // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
@@ -40,9 +40,9 @@ internal object SentryOkHttpUtils {
         val sentryRequest = io.sentry.protocol.Request().apply {
             urlDetails.applyToRequest(this)
             // Cookie is only sent if isSendDefaultPii is enabled
-            cookies = if (hub.options.isSendDefaultPii) request.headers["Cookie"] else null
+            cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
             method = request.method
-            headers = getHeaders(hub, request.headers)
+            headers = getHeaders(scopes, request.headers)
 
             request.body?.contentLength().ifHasValidLength {
                 bodySize = it
@@ -51,8 +51,8 @@ internal object SentryOkHttpUtils {
 
         val sentryResponse = io.sentry.protocol.Response().apply {
             // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-            cookies = if (hub.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-            headers = getHeaders(hub, response.headers)
+            cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
+            headers = getHeaders(scopes, response.headers)
             statusCode = response.code
 
             response.body?.contentLength().ifHasValidLength {
@@ -63,7 +63,7 @@ internal object SentryOkHttpUtils {
         event.request = sentryRequest
         event.contexts.setResponse(sentryResponse)
 
-        hub.captureEvent(event, hint)
+        scopes.captureEvent(event, hint)
     }
 
     private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
@@ -72,9 +72,9 @@ internal object SentryOkHttpUtils {
         }
     }
 
-    private fun getHeaders(hub: IHub, requestHeaders: Headers): MutableMap<String, String>? {
+    private fun getHeaders(scopes: IScopes, requestHeaders: Headers): MutableMap<String, String>? {
         // Headers are only sent if isSendDefaultPii is enabled due to PII
-        if (!hub.options.isSendDefaultPii) {
+        if (!scopes.options.isSendDefaultPii) {
             return null
         }
 

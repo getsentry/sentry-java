@@ -20,6 +20,9 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     compileOnly(projects.sentry)
+    // TODO implementation?
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
 
     implementation(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
@@ -31,6 +34,8 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
 
     // tests
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)

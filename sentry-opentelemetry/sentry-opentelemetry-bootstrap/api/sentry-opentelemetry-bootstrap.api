@@ -1,0 +1,19 @@
+public final class io/sentry/opentelemetry/InternalSemanticAttributes {
+	public static final field BAGGAGE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field BAGGAGE_MUTABLE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field IS_REMOTE_PARENT Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PARENT_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PROFILE_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field PROFILE_SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
+	public fun <init> ()V
+}
+
+public final class io/sentry/opentelemetry/SentryOtelKeys {
+	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
+	public static final field SENTRY_SCOPES_KEY Lio/opentelemetry/context/ContextKey;
+	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
+	public fun <init> ()V
+}
+

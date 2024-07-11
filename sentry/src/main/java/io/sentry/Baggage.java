@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
-import io.sentry.protocol.User;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
@@ -39,13 +38,13 @@ public final class Baggage {
   @NotNull
   public static Baggage fromHeader(final @Nullable String headerValue) {
     return Baggage.fromHeader(
-        headerValue, false, HubAdapter.getInstance().getOptions().getLogger());
+        headerValue, false, ScopesAdapter.getInstance().getOptions().getLogger());
   }
 
   @NotNull
   public static Baggage fromHeader(final @Nullable List<String> headerValues) {
     return Baggage.fromHeader(
-        headerValues, false, HubAdapter.getInstance().getOptions().getLogger());
+        headerValues, false, ScopesAdapter.getInstance().getOptions().getLogger());
   }
 
   @ApiStatus.Internal
@@ -135,8 +134,6 @@ public final class Baggage {
     baggage.setPublicKey(new Dsn(options.getDsn()).getPublicKey());
     baggage.setRelease(event.getRelease());
     baggage.setEnvironment(event.getEnvironment());
-    final User user = event.getUser();
-    baggage.setUserSegment(user != null ? getSegment(user) : null);
     baggage.setTransaction(event.getTransaction());
     // we don't persist sample rate
     baggage.setSampleRate(null);
@@ -305,26 +302,6 @@ public final class Baggage {
     set(DSCKeys.USER_ID, userId);
   }
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public @Nullable String getUserSegment() {
-    return get(DSCKeys.USER_SEGMENT);
-  }
-
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public void setUserSegment(final @Nullable String userSegment) {
-    set(DSCKeys.USER_SEGMENT, userSegment);
-  }
-
   @ApiStatus.Internal
   public @Nullable String getTransaction() {
     return get(DSCKeys.TRANSACTION);
@@ -381,19 +358,16 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public void setValuesFromTransaction(
-      final @NotNull ITransaction transaction,
-      final @Nullable User user,
+      final @NotNull SentryId traceId,
       final @NotNull SentryOptions sentryOptions,
-      final @Nullable TracesSamplingDecision samplingDecision) {
-    setTraceId(transaction.getSpanContext().getTraceId().toString());
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final @Nullable String transactionName,
+      final @Nullable TransactionNameSource transactionNameSource) {
+    setTraceId(traceId.toString());
     setPublicKey(new Dsn(sentryOptions.getDsn()).getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
-    setUserSegment(user != null ? getSegment(user) : null);
-    setTransaction(
-        isHighQualityTransactionName(transaction.getTransactionNameSource())
-            ? transaction.getName()
-            : null);
+    setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
   }
@@ -402,32 +376,13 @@ public final class Baggage {
   public void setValuesFromScope(
       final @NotNull IScope scope, final @NotNull SentryOptions options) {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
-    final @Nullable User user = scope.getUser();
     setTraceId(propagationContext.getTraceId().toString());
     setPublicKey(new Dsn(options.getDsn()).getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
-    setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(null);
     setSampleRate(null);
     setSampled(null);
-  }
-
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  private static @Nullable String getSegment(final @NotNull User user) {
-    if (user.getSegment() != null) {
-      return user.getSegment();
-    }
-
-    final Map<String, String> userData = user.getData();
-    if (userData != null) {
-      return userData.get("segment");
-    } else {
-      return null;
-    }
   }
 
   private static @Nullable Double sampleRate(@Nullable TracesSamplingDecision samplingDecision) {
@@ -485,7 +440,6 @@ public final class Baggage {
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
-      @SuppressWarnings("deprecation")
       final @NotNull TraceContext traceContext =
           new TraceContext(
               new SentryId(traceIdString),
@@ -493,7 +447,6 @@ public final class Baggage {
               getRelease(),
               getEnvironment(),
               getUserId(),
-              getUserSegment(),
               getTransaction(),
               getSampleRate(),
               getSampled());
@@ -511,21 +464,12 @@ public final class Baggage {
     public static final String RELEASE = "sentry-release";
     public static final String USER_ID = "sentry-user_id";
     public static final String ENVIRONMENT = "sentry-environment";
-    public static final String USER_SEGMENT = "sentry-user_segment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
     public static final String SAMPLED = "sentry-sampled";
 
     public static final List<String> ALL =
         Arrays.asList(
-            TRACE_ID,
-            PUBLIC_KEY,
-            RELEASE,
-            USER_ID,
-            ENVIRONMENT,
-            USER_SEGMENT,
-            TRANSACTION,
-            SAMPLE_RATE,
-            SAMPLED);
+            TRACE_ID, PUBLIC_KEY, RELEASE, USER_ID, ENVIRONMENT, TRANSACTION, SAMPLE_RATE, SAMPLED);
   }
 }

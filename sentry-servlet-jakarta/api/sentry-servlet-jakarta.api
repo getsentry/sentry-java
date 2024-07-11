@@ -9,8 +9,9 @@ public class io/sentry/servlet/jakarta/SentryServletContainerInitializer : jakar
 }
 
 public class io/sentry/servlet/jakarta/SentryServletRequestListener : jakarta/servlet/ServletRequestListener {
+	public static final field SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY Ljava/lang/String;
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IScopes;)V
 	public fun requestDestroyed (Ljakarta/servlet/ServletRequestEvent;)V
 	public fun requestInitialized (Ljakarta/servlet/ServletRequestEvent;)V
 }
