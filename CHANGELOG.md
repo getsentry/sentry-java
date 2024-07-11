@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Use OpenTelemetry span name as fallback for transaction name ([#3557](https://github.com/getsentry/sentry-java/pull/3557))
+  - In certain cases we were sending transactions as "<unlabeled transaction>" when using OpenTelemetry 
+
 ## 8.0.0-alpha.4
 
 ### Fixes
