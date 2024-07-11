@@ -122,12 +122,12 @@ public class ReplayIntegration(
 
         recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy = if (isFullSession) {
-            SessionCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider)
+            SessionCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider)
         } else {
-            BufferCaptureStrategy(options, hub, dateProvider, recorderConfig, random, replayCacheProvider)
+            BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider)
         }
 
-        captureStrategy?.start()
+        captureStrategy?.start(recorderConfig)
         recorder?.start(recorderConfig)
     }
 
@@ -158,16 +158,18 @@ public class ReplayIntegration(
             return
         }
 
-        if (SentryId.EMPTY_ID.equals(captureStrategy?.currentReplayId?.get())) {
+        if (SentryId.EMPTY_ID.equals(captureStrategy?.currentReplayId)) {
             options.logger.log(DEBUG, "Replay id is not set, not capturing for event %s", eventId)
             return
         }
 
-        captureStrategy?.sendReplayForEvent(isCrashed == true, eventId, hint, onSegmentSent = { captureStrategy?.currentSegment?.getAndIncrement() })
+        captureStrategy?.sendReplayForEvent(isCrashed == true, eventId, hint, onSegmentSent = {
+            captureStrategy?.currentSegment = captureStrategy?.currentSegment!! + 1
+        })
         captureStrategy = captureStrategy?.convert()
     }
 
-    override fun getReplayId(): SentryId = captureStrategy?.currentReplayId?.get() ?: SentryId.EMPTY_ID
+    override fun getReplayId(): SentryId = captureStrategy?.currentReplayId ?: SentryId.EMPTY_ID
 
     override fun setBreadcrumbConverter(converter: ReplayBreadcrumbConverter) {
         replayBreadcrumbConverter = converter

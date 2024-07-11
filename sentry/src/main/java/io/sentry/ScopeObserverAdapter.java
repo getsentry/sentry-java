@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
 import java.util.Map;
@@ -52,5 +53,8 @@ public abstract class ScopeObserverAdapter implements IScopeObserver {
   public void setTransaction(@Nullable String transaction) {}
 
   @Override
-  public void setTrace(@Nullable SpanContext spanContext) {}
+  public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {}
+
+  @Override
+  public void setReplayId(@NotNull SentryId replayId) {}
 }

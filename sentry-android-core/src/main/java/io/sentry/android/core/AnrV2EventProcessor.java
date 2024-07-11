@@ -10,10 +10,12 @@ import static io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.FINGERPRINT_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.LEVEL_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.REQUEST_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
+import static io.sentry.protocol.Contexts.REPLAY_TYPE;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -151,6 +153,18 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setFingerprints(event, hint);
     setLevel(event);
     setTrace(event);
+    setReplayId(event);
+  }
+
+  private void setReplayId(final @NotNull SentryEvent event) {
+    final String persistedReplayId =
+        PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
+
+    if (persistedReplayId == null) {
+      return;
+    }
+
+    event.getContexts().put(REPLAY_TYPE, persistedReplayId);
   }
 
   private void setTrace(final @NotNull SentryEvent event) {

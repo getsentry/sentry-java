@@ -243,10 +243,10 @@ public final class Scope implements IScope {
       for (final IScopeObserver observer : options.getScopeObservers()) {
         if (transaction != null) {
           observer.setTransaction(transaction.getName());
-          observer.setTrace(transaction.getSpanContext());
+          observer.setTrace(transaction.getSpanContext(), this);
         } else {
           observer.setTransaction(null);
-          observer.setTrace(null);
+          observer.setTrace(null, this);
         }
       }
     }
@@ -326,7 +326,9 @@ public final class Scope implements IScope {
   public void setReplayId(final @NotNull SentryId replayId) {
     this.replayId = replayId;
 
-    // TODO: set to contexts and notify observers to persist this as well
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setReplayId(replayId);
+    }
   }
 
   /**
@@ -486,7 +488,7 @@ public final class Scope implements IScope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setTransaction(null);
-      observer.setTrace(null);
+      observer.setTrace(null, this);
     }
   }
 
@@ -934,6 +936,10 @@ public final class Scope implements IScope {
   @Override
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
     this.propagationContext = propagationContext;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTrace(propagationContext.toSpanContext(), this);
+    }
   }
 
   @ApiStatus.Internal

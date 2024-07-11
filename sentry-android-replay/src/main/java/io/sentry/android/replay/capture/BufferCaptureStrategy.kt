@@ -22,10 +22,9 @@ internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
-    recorderConfig: ScreenshotRecorderConfig,
     private val random: SecureRandom,
     replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider) {
+) : BaseCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
     private val bufferedScreensLock = Any()
@@ -35,8 +34,13 @@ internal class BufferCaptureStrategy(
         private const val TAG = "BufferCaptureStrategy"
     }
 
-    override fun start(segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
-        super.start(segmentId, replayId, cleanupOldReplays)
+    override fun start(
+        recorderConfig: ScreenshotRecorderConfig,
+        segmentId: Int,
+        replayId: SentryId,
+        cleanupOldReplays: Boolean
+    ) {
+        super.start(recorderConfig, segmentId, replayId, cleanupOldReplays)
 
         hub?.configureScope {
             val screen = it.screen
@@ -86,8 +90,8 @@ internal class BufferCaptureStrategy(
         } else {
             DateUtils.getDateTime(now - errorReplayDuration)
         }
-        val segmentId = currentSegment.get()
-        val replayId = currentReplayId.get()
+        val segmentId = currentSegment
+        val replayId = currentReplayId
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth
 
@@ -138,7 +142,7 @@ internal class BufferCaptureStrategy(
                 // it can be that the buffered segment is half-way older than the buffer limit, but
                 // we only drop it if its end timestamp is older
                 if (it.replay.timestamp.time < bufferLimit) {
-                    currentSegment.decrementAndGet()
+                    currentSegment--
                     deleteFile(it.replay.videoFile)
                     removed = true
                     return@removeAll true
@@ -176,9 +180,9 @@ internal class BufferCaptureStrategy(
         } else {
             DateUtils.getDateTime(now - errorReplayDuration)
         }
-        val segmentId = currentSegment.get()
+        val segmentId = currentSegment
         val duration = now - currentSegmentTimestamp.time
-        val replayId = currentReplayId.get()
+        val replayId = currentReplayId
         val height = this.recorderConfig.recordingHeight
         val width = this.recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.onConfigurationChanged") {
@@ -187,7 +191,7 @@ internal class BufferCaptureStrategy(
             if (segment is ReplaySegment.Created) {
                 bufferedSegments += segment
 
-                currentSegment.getAndIncrement()
+                currentSegment++
             }
         }
         super.onConfigurationChanged(recorderConfig)
@@ -195,15 +199,15 @@ internal class BufferCaptureStrategy(
 
     override fun convert(): CaptureStrategy {
         // we hand over replayExecutor to the new strategy to preserve order of execution
-        val captureStrategy = SessionCaptureStrategy(options, hub, dateProvider, recorderConfig, replayExecutor)
-        captureStrategy.start(segmentId = currentSegment.get(), replayId = currentReplayId.get(), cleanupOldReplays = false)
+        val captureStrategy = SessionCaptureStrategy(options, hub, dateProvider, replayExecutor)
+        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId, cleanupOldReplays = false)
         return captureStrategy
     }
 
     override fun onTouchEvent(event: MotionEvent) {
         super.onTouchEvent(event)
         val bufferLimit = dateProvider.currentTimeMillis - options.experimental.sessionReplay.errorReplayDuration
-        rotateCurrentEvents(bufferLimit)
+        rotateEvents(currentEvents, bufferLimit)
     }
 
     private fun findAndSetStartScreen(segmentStart: Long) {
@@ -214,7 +218,7 @@ internal class BufferCaptureStrategy(
             // if no screen is found before the segment start, this likely means the buffer is from the
             // app start, and the start screen will be taken from the navigation crumbs
             if (startScreen != null) {
-                screenAtStart.set(startScreen)
+                screenAtStart = startScreen
             }
             // can clear as we switch to session mode and don't care anymore about buffering
             bufferedSegments.clear()

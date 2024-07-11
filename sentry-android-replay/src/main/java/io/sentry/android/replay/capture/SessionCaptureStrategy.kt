@@ -18,22 +18,26 @@ internal class SessionCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
-    recorderConfig: ScreenshotRecorderConfig,
     executor: ScheduledExecutorService? = null,
     replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, executor, replayCacheProvider) {
+) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider) {
 
     internal companion object {
         private const val TAG = "SessionCaptureStrategy"
     }
 
-    override fun start(segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
-        super.start(segmentId, replayId, cleanupOldReplays)
+    override fun start(
+        recorderConfig: ScreenshotRecorderConfig,
+        segmentId: Int,
+        replayId: SentryId,
+        cleanupOldReplays: Boolean
+    ) {
+        super.start(recorderConfig, segmentId, replayId, cleanupOldReplays)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
         hub?.configureScope {
-            it.replayId = currentReplayId.get()
-            screenAtStart.set(it.screen)
+            it.replayId = currentReplayId
+            screenAtStart = it.screen
         }
     }
 
@@ -42,7 +46,7 @@ internal class SessionCaptureStrategy(
             if (segment is ReplaySegment.Created) {
                 segment.capture(hub)
 
-                currentSegment.getAndIncrement()
+                currentSegment++
             }
         }
         super.pause()
@@ -82,43 +86,47 @@ internal class SessionCaptureStrategy(
         replayExecutor.submitSafely(options, "$TAG.add_frame") {
             cache?.store(frameTimestamp)
 
-            val now = dateProvider.currentTimeMillis
-            if ((now - segmentTimestamp.get().time >= options.experimental.sessionReplay.sessionSegmentDuration)) {
-                val currentSegmentTimestamp = segmentTimestamp.get()
-                val segmentId = currentSegment.get()
-                val replayId = currentReplayId.get()
+            val currentSegmentTimestamp = segmentTimestamp
+            currentSegmentTimestamp ?: run {
+                options.logger.log(DEBUG, "Segment timestamp is not set, not recording frame")
+                return@submitSafely
+            }
 
+            val now = dateProvider.currentTimeMillis
+            if ((now - currentSegmentTimestamp.time >= options.experimental.sessionReplay.sessionSegmentDuration)) {
                 val segment =
                     createSegment(
                         options.experimental.sessionReplay.sessionSegmentDuration,
                         currentSegmentTimestamp,
-                        replayId,
-                        segmentId,
+                        currentReplayId,
+                        currentSegment,
                         height,
                         width
                     )
                 if (segment is ReplaySegment.Created) {
                     segment.capture(hub)
-                    currentSegment.getAndIncrement()
+                    currentSegment++
                     // set next segment timestamp as close to the previous one as possible to avoid gaps
-                    segmentTimestamp.set(DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration))
+                    segmentTimestamp = DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration)
                 }
-            } else if ((now - replayStartTimestamp.get() >= options.experimental.sessionReplay.sessionDuration)) {
-                stop()
+            }
+
+            if ((now - replayStartTimestamp.get() >= options.experimental.sessionReplay.sessionDuration)) {
+                options.replayController.stop()
                 options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
             }
         }
     }
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
-        val currentSegmentTimestamp = segmentTimestamp.get()
+        val currentSegmentTimestamp = segmentTimestamp ?: return
         createCurrentSegment("onConfigurationChanged") { segment ->
             if (segment is ReplaySegment.Created) {
                 segment.capture(hub)
 
-                currentSegment.getAndIncrement()
+                currentSegment++
                 // set next segment timestamp as close to the previous one as possible to avoid gaps
-                segmentTimestamp.set(DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration))
+                segmentTimestamp = DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration)
             }
         }
 
@@ -130,10 +138,10 @@ internal class SessionCaptureStrategy(
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
         val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = segmentTimestamp.get()
-        val segmentId = currentSegment.get()
-        val duration = now - (currentSegmentTimestamp?.time ?: 0)
-        val replayId = currentReplayId.get()
+        val currentSegmentTimestamp = segmentTimestamp ?: return
+        val segmentId = currentSegment
+        val duration = now - currentSegmentTimestamp.time
+        val replayId = currentReplayId
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.$taskName") {

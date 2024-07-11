@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.protocol.Contexts.REPLAY_TYPE;
+
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
@@ -141,7 +143,12 @@ public final class Baggage {
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
-    // TODO: add replay_id later
+    final @Nullable Object replayId = event.getContexts().get(REPLAY_TYPE);
+    if (replayId != null && !replayId.toString().equals(SentryId.EMPTY_ID.toString())) {
+      baggage.setReplayId(replayId.toString());
+      // relay will set it from the DSC, we don't need to send it
+      event.getContexts().remove(REPLAY_TYPE);
+    }
     baggage.freeze();
     return baggage;
   }

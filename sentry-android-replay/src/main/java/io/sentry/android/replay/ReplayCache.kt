@@ -3,15 +3,25 @@ package io.sentry.android.replay
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.BitmapFactory
+import io.sentry.DateUtils
+import io.sentry.ReplayRecording
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebEvent
+import io.sentry.util.FileUtils
 import java.io.Closeable
 import java.io.File
+import java.io.StringReader
+import java.util.Date
+import java.util.LinkedList
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A basic in-memory and disk cache for Session Replay frames. Frames are stored in order under the
@@ -50,19 +60,12 @@ public class ReplayCache internal constructor(
         ).also { it.start() }
     })
 
+    private val isClosed = AtomicBoolean(false)
     private val encoderLock = Any()
     private var encoder: SimpleVideoEncoder? = null
 
     internal val replayCacheDir: File? by lazy {
-        if (options.cacheDirPath.isNullOrEmpty()) {
-            options.logger.log(
-                WARNING,
-                "SentryOptions.cacheDirPath is not set, session replay is no-op"
-            )
-            null
-        } else {
-            File(options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
-        }
+        makeReplayCacheDir(options, replayId)
     }
 
     // TODO: maybe account for multi-threaded access
@@ -71,7 +74,7 @@ public class ReplayCache internal constructor(
     /**
      * Stores the current frame screenshot to in-memory cache as well as disk with [frameTimestamp]
      * as filename. Uses [Bitmap.CompressFormat.JPEG] format with quality 80. The frames are stored
-     * under [replayCacheDir].
+     * under [makeReplayCacheDir].
      *
      * This method is not thread-safe.
      *
@@ -111,14 +114,14 @@ public class ReplayCache internal constructor(
     /**
      * Creates a video out of currently stored [frames] given the start time and duration using the
      * on-device codecs [android.media.MediaCodec]. The generated video will be stored in
-     * [videoFile] location, which defaults to "[replayCacheDir]/[segmentId].mp4".
+     * [videoFile] location, which defaults to "[makeReplayCacheDir]/[segmentId].mp4".
      *
      * This method is not thread-safe.
      *
      * @param duration desired video duration in milliseconds
      * @param from desired start of the video represented as unix timestamp in milliseconds
      * @param segmentId current segment id, used for inferring the filename to store the
-     * result video under [replayCacheDir], e.g. "replay_<uuid>/0.mp4", where segmentId=0
+     * result video under [makeReplayCacheDir], e.g. "replay_<uuid>/0.mp4", where segmentId=0
      * @param height desired height of the video in pixels (e.g. it can change from the initial one
      * in case of window resize or orientation change)
      * @param width desired width of the video in pixels (e.g. it can change from the initial one
@@ -237,8 +240,168 @@ public class ReplayCache internal constructor(
             encoder?.release()
             encoder = null
         }
+        isClosed.set(true)
+    }
+
+    // TODO: it's awful, choose a better serialization format
+    @Synchronized
+    fun persistSegmentValues(key: String, value: String?) {
+        if (isClosed.get()) {
+            return
+        }
+        val file = File(replayCacheDir, ONGOING_SEGMENT)
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        val map = LinkedHashMap<String, String>()
+        file.useLines { lines ->
+            lines.associateTo(map) {
+                val (k, v) = it.split("=", limit = 2)
+                k to v
+            }
+            if (value == null) {
+                map.remove(key)
+            } else {
+                map[key] = value
+            }
+        }
+        file.writeText(map.entries.joinToString("\n") { (k, v) -> "$k=$v" })
+    }
+
+    companion object {
+        private const val ONGOING_SEGMENT = ".ongoing_segment"
+
+        internal const val SEGMENT_KEY_HEIGHT = "config.height"
+        internal const val SEGMENT_KEY_WIDTH = "config.width"
+        internal const val SEGMENT_KEY_FRAME_RATE = "config.frame-rate"
+        internal const val SEGMENT_KEY_BIT_RATE = "config.bit-rate"
+        internal const val SEGMENT_KEY_TIMESTAMP = "segment.timestamp"
+        internal const val SEGMENT_KEY_REPLAY_ID = "replay.id"
+        internal const val SEGMENT_KEY_REPLAY_TYPE = "replay.type"
+        internal const val SEGMENT_KEY_REPLAY_SCREEN_AT_START = "replay.screen-at-start"
+        internal const val SEGMENT_KEY_REPLAY_RECORDING = "replay.recording"
+        internal const val SEGMENT_KEY_ID = "segment.id"
+
+        fun makeReplayCacheDir(options: SentryOptions, replayId: SentryId): File? {
+            return if (options.cacheDirPath.isNullOrEmpty()) {
+                options.logger.log(
+                    WARNING,
+                    "SentryOptions.cacheDirPath is not set, session replay is no-op"
+                )
+                null
+            } else {
+                File(options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
+            }
+        }
+
+        internal fun fromDisk(options: SentryOptions, replayId: SentryId): LastSegmentData? {
+            val replayCacheDir = makeReplayCacheDir(options, replayId)
+            val lastSegmentFile = File(replayCacheDir, ONGOING_SEGMENT)
+            if (!lastSegmentFile.exists()) {
+                options.logger.log(DEBUG, "No ongoing segment found for replay: %s", replayId)
+                FileUtils.deleteRecursively(replayCacheDir)
+                return null
+            }
+
+            val lastSegment = LinkedHashMap<String, String>()
+            lastSegmentFile.useLines { lines ->
+                lines.associateTo(lastSegment) {
+                    val (k, v) = it.split("=", limit = 2)
+                    k to v
+                }
+            }
+
+            val height = lastSegment[SEGMENT_KEY_HEIGHT]?.toIntOrNull()
+            val width = lastSegment[SEGMENT_KEY_WIDTH]?.toIntOrNull()
+            val frameRate = lastSegment[SEGMENT_KEY_FRAME_RATE]?.toIntOrNull()
+            val bitRate = lastSegment[SEGMENT_KEY_BIT_RATE]?.toIntOrNull()
+            val segmentId = lastSegment[SEGMENT_KEY_ID]?.toIntOrNull()
+            val segmentTimestamp = try {
+                DateUtils.getDateTime(lastSegment[SEGMENT_KEY_TIMESTAMP].orEmpty())
+            } catch (e: Throwable) {
+                null
+            }
+            val replayType = try {
+                ReplayType.valueOf(lastSegment[SEGMENT_KEY_REPLAY_TYPE].orEmpty())
+            } catch (e: Throwable) {
+                null
+            }
+            if (height == null || width == null || frameRate == null || bitRate == null ||
+                segmentId == null || segmentTimestamp == null || replayType == null
+            ) {
+                options.logger.log(
+                    DEBUG,
+                    "Incorrect segment values found for replay: %s, deleting the replay",
+                    replayId
+                )
+                FileUtils.deleteRecursively(replayCacheDir)
+                return null
+            }
+
+            val recorderConfig = ScreenshotRecorderConfig(
+                recordingHeight = height,
+                recordingWidth = width,
+                frameRate = frameRate,
+                bitRate = bitRate,
+                // these are not used for already captured frames, so we just hardcode them
+                scaleFactorX = 1.0f,
+                scaleFactorY = 1.0f
+            )
+
+            val cache = ReplayCache(options, replayId, recorderConfig)
+            cache.replayCacheDir?.listFiles { dir, name ->
+                if (name.endsWith(".jpg")) {
+                    val file = File(dir, name)
+                    val timestamp = file.nameWithoutExtension.toLongOrNull()
+                    if (timestamp != null) {
+                        cache.addFrame(file, timestamp)
+                    }
+                }
+                false
+            }
+
+            cache.frames.sortBy { it.timestamp }
+
+            val duration = if (replayType == SESSION) {
+                options.experimental.sessionReplay.sessionSegmentDuration
+            } else {
+                options.experimental.sessionReplay.errorReplayDuration
+            }
+
+            val events = lastSegment[SEGMENT_KEY_REPLAY_RECORDING]?.let {
+                val reader = StringReader(it)
+                val recording = options.serializer.deserialize(reader, ReplayRecording::class.java)
+                if (recording?.payload != null) {
+                    LinkedList(recording.payload!!)
+                } else {
+                    null
+                }
+            } ?: emptyList()
+
+            return LastSegmentData(
+                recorderConfig = recorderConfig,
+                cache = cache,
+                timestamp = segmentTimestamp,
+                id = segmentId,
+                duration = duration,
+                replayType = replayType,
+                screenAtStart = lastSegment[SEGMENT_KEY_REPLAY_SCREEN_AT_START],
+                events = events.sortedBy { it.timestamp }
+            )
+        }
     }
 }
+
+internal data class LastSegmentData(
+    val recorderConfig: ScreenshotRecorderConfig,
+    val cache: ReplayCache,
+    val timestamp: Date,
+    val id: Int,
+    val duration: Long,
+    val replayType: ReplayType,
+    val screenAtStart: String?,
+    val events: List<RRWebEvent>
+)
 
 internal data class ReplayFrame(
     val screenshot: File,

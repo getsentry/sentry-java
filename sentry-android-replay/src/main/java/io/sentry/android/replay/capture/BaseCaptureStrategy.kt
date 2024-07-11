@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.view.MotionEvent
+import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
@@ -8,11 +9,25 @@ import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.ReplayCache
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.cache.PersistingScopeObserver
+import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
+import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
@@ -25,21 +40,23 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
+import java.io.BufferedWriter
 import java.io.File
+import java.io.StringWriter
 import java.util.Date
 import java.util.LinkedList
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
-    protected var recorderConfig: ScreenshotRecorderConfig,
     executor: ScheduledExecutorService? = null,
     private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : CaptureStrategy {
@@ -52,15 +69,37 @@ internal abstract class BaseCaptureStrategy(
         private const val CAPTURE_MOVE_EVENT_THRESHOLD = 500
     }
 
+    private val persistingExecutor: ScheduledExecutorService by lazy {
+        Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
+    }
+
     protected var cache: ReplayCache? = null
-    protected val segmentTimestamp = AtomicReference<Date>()
+    protected var recorderConfig: ScreenshotRecorderConfig by persistableAtomic { _, _, newValue ->
+        if (newValue == null) {
+            // recorderConfig is only nullable on init, but never after
+            return@persistableAtomic
+        }
+        cache?.persistSegmentValues(SEGMENT_KEY_HEIGHT, newValue.recordingHeight.toString())
+        cache?.persistSegmentValues(SEGMENT_KEY_WIDTH, newValue.recordingWidth.toString())
+        cache?.persistSegmentValues(SEGMENT_KEY_FRAME_RATE, newValue.frameRate.toString())
+        cache?.persistSegmentValues(SEGMENT_KEY_BIT_RATE, newValue.bitRate.toString())
+    }
+    protected var segmentTimestamp by persistableAtomicNullable<Date>(propertyName = SEGMENT_KEY_TIMESTAMP) { _, _, newValue ->
+        cache?.persistSegmentValues(SEGMENT_KEY_TIMESTAMP, if (newValue == null) null else DateUtils.getTimestamp(newValue))
+    }
     protected val replayStartTimestamp = AtomicLong()
-    protected val screenAtStart = AtomicReference<String>()
-    override val currentReplayId = AtomicReference(SentryId.EMPTY_ID)
-    override val currentSegment = AtomicInteger(0)
+    protected var screenAtStart by persistableAtomicNullable<String>(propertyName = SEGMENT_KEY_REPLAY_SCREEN_AT_START)
+    override var currentReplayId: SentryId by persistableAtomic(initialValue = SentryId.EMPTY_ID, propertyName = SEGMENT_KEY_REPLAY_ID)
+    override var currentSegment: Int by persistableAtomic(initialValue = -1, propertyName = SEGMENT_KEY_ID)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
 
-    protected val currentEvents = LinkedList<RRWebEvent>()
+    private var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
+    protected val currentEvents: LinkedList<RRWebEvent> = PersistableLinkedList(
+        propertyName = SEGMENT_KEY_REPLAY_RECORDING,
+        options,
+        persistingExecutor,
+        cacheProvider = { cache }
+    )
     private val currentEventsLock = Any()
     private val currentPositions = LinkedHashMap<Int, ArrayList<Position>>(10)
     private var touchMoveBaseline = 0L
@@ -70,19 +109,16 @@ internal abstract class BaseCaptureStrategy(
         executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     }
 
-    override fun start(segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
-        currentSegment.set(segmentId)
-        currentReplayId.set(replayId)
-
+    override fun start(recorderConfig: ScreenshotRecorderConfig, segmentId: Int, replayId: SentryId, cleanupOldReplays: Boolean) {
         if (cleanupOldReplays) {
             replayExecutor.submitSafely(options, "$TAG.replays_cleanup") {
+                val unfinishedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String::class.java) ?: ""
                 // clean up old replays
                 options.cacheDirPath?.let { cacheDir ->
                     File(cacheDir).listFiles { dir, name ->
-                        // TODO: also exclude persisted replay_id from scope when implementing ANRs
-                        if (name.startsWith("replay_") && !name.contains(
-                                currentReplayId.get().toString()
-                            )
+                        if (name.startsWith("replay_") &&
+                            !name.contains(replayId.toString()) &&
+                            !name.contains(unfinishedReplayId)
                         ) {
                             FileUtils.deleteRecursively(File(dir, name))
                         }
@@ -95,25 +131,31 @@ internal abstract class BaseCaptureStrategy(
         cache =
             replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId, recorderConfig)
 
+        replayType = if (this is SessionCaptureStrategy) SESSION else BUFFER
+        this.recorderConfig = recorderConfig
+        currentSegment = segmentId
+        currentReplayId = replayId
+
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
-        segmentTimestamp.set(DateUtils.getCurrentDateTime())
+        segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
-        // TODO: finalize old recording if there's some left on disk and send it using the replayId from persisted scope (e.g. for ANRs)
+
+        finalizePreviousReplay()
     }
 
     override fun resume() {
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
-        segmentTimestamp.set(DateUtils.getCurrentDateTime())
+        segmentTimestamp = DateUtils.getCurrentDateTime()
     }
 
     override fun pause() = Unit
 
     override fun stop() {
         cache?.close()
-        currentSegment.set(0)
+        currentSegment = -1
         replayStartTimestamp.set(0)
-        segmentTimestamp.set(null)
-        currentReplayId.set(SentryId.EMPTY_ID)
+        segmentTimestamp = null
+        currentReplayId = SentryId.EMPTY_ID
     }
 
     protected fun createSegment(
@@ -123,7 +165,12 @@ internal abstract class BaseCaptureStrategy(
         segmentId: Int,
         height: Int,
         width: Int,
-        replayType: ReplayType = SESSION
+        replayType: ReplayType = SESSION,
+        cache: ReplayCache? = this.cache,
+        frameRate: Int = recorderConfig.frameRate,
+        screenAtStart: String? = this.screenAtStart,
+        breadcrumbs: List<Breadcrumb>? = null,
+        events: LinkedList<RRWebEvent> = this.currentEvents
     ): ReplaySegment {
         val generatedVideo = cache?.createVideoOf(
             duration,
@@ -134,6 +181,17 @@ internal abstract class BaseCaptureStrategy(
         ) ?: return ReplaySegment.Failed
 
         val (video, frameCount, videoDuration) = generatedVideo
+
+        val replayBreadcrumbs: List<Breadcrumb> = if (breadcrumbs == null) {
+            var crumbs = emptyList<Breadcrumb>()
+            hub?.configureScope { scope ->
+                crumbs = ArrayList(scope.breadcrumbs)
+            }
+            crumbs
+        } else {
+            breadcrumbs
+        }
+
         return buildReplay(
             video,
             replayId,
@@ -142,8 +200,12 @@ internal abstract class BaseCaptureStrategy(
             height,
             width,
             frameCount,
+            frameRate,
             videoDuration,
-            replayType
+            replayType,
+            screenAtStart,
+            replayBreadcrumbs,
+            events
         )
     }
 
@@ -155,8 +217,12 @@ internal abstract class BaseCaptureStrategy(
         height: Int,
         width: Int,
         frameCount: Int,
+        frameRate: Int,
         duration: Long,
-        replayType: ReplayType
+        replayType: ReplayType,
+        screenAtStart: String?,
+        breadcrumbs: List<Breadcrumb>,
+        events: LinkedList<RRWebEvent>
     ): ReplaySegment {
         val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + duration)
         val replay = SentryReplayEvent().apply {
@@ -181,7 +247,7 @@ internal abstract class BaseCaptureStrategy(
             this.durationMs = duration
             this.frameCount = frameCount
             size = video.length()
-            frameRate = recorderConfig.frameRate
+            this.frameRate = frameRate
             this.height = height
             this.width = width
             // TODO: support non-fullscreen windows later
@@ -190,33 +256,31 @@ internal abstract class BaseCaptureStrategy(
         }
 
         val urls = LinkedList<String>()
-        hub?.configureScope { scope ->
-            scope.breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
-                    breadcrumb.timestamp.time < endTimestamp.time
-                ) {
-                    val rrwebEvent = options
-                        .replayController
-                        .breadcrumbConverter
-                        .convert(breadcrumb)
+        breadcrumbs.forEach { breadcrumb ->
+            if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
+                breadcrumb.timestamp.time < endTimestamp.time
+            ) {
+                val rrwebEvent = options
+                    .replayController
+                    .breadcrumbConverter
+                    .convert(breadcrumb)
 
-                    if (rrwebEvent != null) {
-                        recordingPayload += rrwebEvent
+                if (rrwebEvent != null) {
+                    recordingPayload += rrwebEvent
 
-                        // fill in the urls array from navigation breadcrumbs
-                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
-                            urls.add(rrwebEvent.data!!["to"] as String)
-                        }
+                    // fill in the urls array from navigation breadcrumbs
+                    if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
+                        urls.add(rrwebEvent.data!!["to"] as String)
                     }
                 }
             }
         }
 
-        if (screenAtStart.get() != null && urls.first != screenAtStart.get()) {
-            urls.addFirst(screenAtStart.get())
+        if (screenAtStart != null && urls.first != screenAtStart) {
+            urls.addFirst(screenAtStart)
         }
 
-        rotateCurrentEvents(endTimestamp.time) { event ->
+        rotateEvents(events, endTimestamp.time) { event ->
             if (event.timestamp >= segmentTimestamp.time) {
                 recordingPayload += event
             }
@@ -252,17 +316,50 @@ internal abstract class BaseCaptureStrategy(
         replayExecutor.gracefullyShutdown(options)
     }
 
-    protected fun rotateCurrentEvents(
+    protected fun rotateEvents(
+        events: LinkedList<RRWebEvent>,
         until: Long,
         callback: ((RRWebEvent) -> Unit)? = null
     ) {
         synchronized(currentEventsLock) {
-            var event = currentEvents.peek()
+            var event = events.peek()
             while (event != null && event.timestamp < until) {
                 callback?.invoke(event)
-                currentEvents.remove()
-                event = currentEvents.peek()
+                events.remove()
+                event = events.peek()
             }
+        }
+    }
+
+    private fun finalizePreviousReplay() {
+        // TODO: run it on options.executorService and read persisted options/scope values form the
+        // TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in MainEventProcessor
+
+        replayExecutor.submitSafely(options, "$TAG.finalize_previous_replay") {
+            val previousReplayIdString = PersistingScopeObserver.read(options, REPLAY_FILENAME, String::class.java) ?: return@submitSafely
+            val previousReplayId = SentryId(previousReplayIdString)
+            val breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java, Breadcrumb.Deserializer()) as? List<Breadcrumb>
+
+            val lastSegment = ReplayCache.fromDisk(options, previousReplayId) ?: return@submitSafely
+            val segment = createSegment(
+                duration = lastSegment.duration,
+                currentSegmentTimestamp = lastSegment.timestamp,
+                replayId = previousReplayId,
+                segmentId = lastSegment.id,
+                height = lastSegment.recorderConfig.recordingHeight,
+                width = lastSegment.recorderConfig.recordingWidth,
+                frameRate = lastSegment.recorderConfig.frameRate,
+                cache = lastSegment.cache,
+                replayType = lastSegment.replayType,
+                screenAtStart = lastSegment.screenAtStart,
+                breadcrumbs = breadcrumbs,
+                events = LinkedList(lastSegment.events)
+            )
+
+            if (segment is ReplaySegment.Created) {
+                segment.capture(hub)
+            }
+            FileUtils.deleteRecursively(lastSegment.cache.replayCacheDir)
         }
     }
 
@@ -270,6 +367,15 @@ internal abstract class BaseCaptureStrategy(
         private var cnt = 0
         override fun newThread(r: Runnable): Thread {
             val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
+            ret.setDaemon(true)
+            return ret
+        }
+    }
+
+    private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
+        private var cnt = 0
+        override fun newThread(r: Runnable): Thread {
+            val ret = Thread(r, "SentryReplayPersister-" + cnt++)
             ret.setDaemon(true)
             return ret
         }
@@ -414,6 +520,97 @@ internal abstract class BaseCaptureStrategy(
             }
 
             else -> null
+        }
+    }
+
+    private inline fun <T> persistableAtomicNullable(
+        initialValue: T? = null,
+        propertyName: String? = null,
+        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
+            propertyName ?: error("Can't persist value without a property name")
+
+            if (options.mainThreadChecker.isMainThread) {
+                persistingExecutor.submit {
+                    cache?.persistSegmentValues(propertyName, newValue.toString())
+                }
+            } else {
+                cache?.persistSegmentValues(propertyName, newValue.toString())
+            }
+        }
+    ): ReadWriteProperty<Any?, T?> =
+        object : ReadWriteProperty<Any?, T?> {
+            private val value = AtomicReference(initialValue)
+
+            init {
+                onChange(propertyName, initialValue, initialValue)
+            }
+
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T? = value.get()
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
+                val oldValue = this.value.getAndSet(value)
+                if (oldValue != value) {
+                    onChange(propertyName, oldValue, value)
+                }
+            }
+        }
+
+    private inline fun <T> persistableAtomic(
+        initialValue: T? = null,
+        propertyName: String? = null,
+        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
+            propertyName ?: error("Can't persist value without a property name")
+
+            if (options.mainThreadChecker.isMainThread) {
+                persistingExecutor.submit {
+                    cache?.persistSegmentValues(propertyName, newValue.toString())
+                }
+            } else {
+                cache?.persistSegmentValues(propertyName, newValue.toString())
+            }
+        }
+    ): ReadWriteProperty<Any?, T> =
+        persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
+
+    private class PersistableLinkedList(
+        private val propertyName: String,
+        private val options: SentryOptions,
+        private val persistingExecutor: ScheduledExecutorService,
+        private val cacheProvider: () -> ReplayCache?
+    ) : LinkedList<RRWebEvent>() {
+        // only overriding methods that we use, to observe the collection
+        override fun addAll(elements: Collection<RRWebEvent>): Boolean {
+            val result = super.addAll(elements)
+            persistRecording()
+            return result
+        }
+
+        override fun add(element: RRWebEvent): Boolean {
+            val result = super.add(element)
+            persistRecording()
+            return result
+        }
+
+        override fun remove(): RRWebEvent {
+            val result = super.remove()
+            persistRecording()
+            return result
+        }
+
+        private fun persistRecording() {
+            val cache = cacheProvider() ?: return
+            val recording = ReplayRecording().apply { payload = this@PersistableLinkedList }
+            if (options.mainThreadChecker.isMainThread) {
+                persistingExecutor.submit {
+                    val stringWriter = StringWriter()
+                    options.serializer.serialize(recording, BufferedWriter(stringWriter))
+                    cache.persistSegmentValues(propertyName, stringWriter.toString())
+                }
+            } else {
+                val stringWriter = StringWriter()
+                options.serializer.serialize(recording, BufferedWriter(stringWriter))
+                cache.persistSegmentValues(propertyName, stringWriter.toString())
+            }
         }
     }
 }

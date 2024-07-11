@@ -741,10 +741,11 @@ public abstract interface class io/sentry/IScopeObserver {
 	public abstract fun setExtras (Ljava/util/Map;)V
 	public abstract fun setFingerprint (Ljava/util/Collection;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
+	public abstract fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setTags (Ljava/util/Map;)V
-	public abstract fun setTrace (Lio/sentry/SpanContext;)V
+	public abstract fun setTrace (Lio/sentry/SpanContext;Lio/sentry/IScope;)V
 	public abstract fun setTransaction (Ljava/lang/String;)V
 	public abstract fun setUser (Lio/sentry/protocol/User;)V
 }
@@ -1663,6 +1664,7 @@ public final class io/sentry/PropagationContext {
 	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setSpanId (Lio/sentry/SpanId;)V
 	public fun setTraceId (Lio/sentry/protocol/SentryId;)V
+	public fun toSpanContext ()Lio/sentry/SpanContext;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
 
@@ -1800,10 +1802,11 @@ public abstract class io/sentry/ScopeObserverAdapter : io/sentry/IScopeObserver 
 	public fun setExtras (Ljava/util/Map;)V
 	public fun setFingerprint (Ljava/util/Collection;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTags (Ljava/util/Map;)V
-	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun setTrace (Lio/sentry/SpanContext;Lio/sentry/IScope;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 }
@@ -3344,6 +3347,7 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public static final field EXTRAS_FILENAME Ljava/lang/String;
 	public static final field FINGERPRINT_FILENAME Ljava/lang/String;
 	public static final field LEVEL_FILENAME Ljava/lang/String;
+	public static final field REPLAY_FILENAME Ljava/lang/String;
 	public static final field REQUEST_FILENAME Ljava/lang/String;
 	public static final field SCOPE_CACHE Ljava/lang/String;
 	public static final field TAGS_FILENAME Ljava/lang/String;
@@ -3358,9 +3362,10 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public fun setExtras (Ljava/util/Map;)V
 	public fun setFingerprint (Ljava/util/Collection;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setTags (Ljava/util/Map;)V
-	public fun setTrace (Lio/sentry/SpanContext;)V
+	public fun setTrace (Lio/sentry/SpanContext;Lio/sentry/IScope;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 }
@@ -3967,6 +3972,7 @@ public final class io/sentry/protocol/Browser$JsonKeys {
 }
 
 public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap, io/sentry/JsonSerializable {
+	public static final field REPLAY_TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
 	public fun getApp ()Lio/sentry/protocol/App;

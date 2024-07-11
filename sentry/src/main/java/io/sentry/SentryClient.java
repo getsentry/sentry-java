@@ -305,6 +305,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     }
 
     try {
+      // TODO: check if event is Backfillable and backfill traceContext from the event values
       @Nullable TraceContext traceContext = null;
       if (scope != null) {
         final @Nullable ITransaction transaction = scope.getTransaction();
