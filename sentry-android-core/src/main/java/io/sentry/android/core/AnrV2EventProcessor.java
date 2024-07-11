@@ -15,7 +15,7 @@ import static io.sentry.cache.PersistingScopeObserver.REQUEST_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
-import static io.sentry.protocol.Contexts.REPLAY_TYPE;
+import static io.sentry.protocol.Contexts.REPLAY_ID;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -164,7 +164,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       return;
     }
 
-    event.getContexts().put(REPLAY_TYPE, persistedReplayId);
+    event.getContexts().put(REPLAY_ID, persistedReplayId);
   }
 
   private void setTrace(final @NotNull SentryEvent event) {

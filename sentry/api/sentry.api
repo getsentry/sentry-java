@@ -3972,7 +3972,7 @@ public final class io/sentry/protocol/Browser$JsonKeys {
 }
 
 public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap, io/sentry/JsonSerializable {
-	public static final field REPLAY_TYPE Ljava/lang/String;
+	public static final field REPLAY_ID Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
 	public fun getApp ()Lio/sentry/protocol/App;

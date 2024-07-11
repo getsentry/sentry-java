@@ -848,6 +848,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             environment = "release"
             release = "io.sentry.samples@22.1.1"
+            contexts[Contexts.REPLAY_ID] = "64cf554cc8d74c6eafa3e08b7c984f6d"
             contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
             transaction = "MainActivity"
         }
@@ -862,6 +863,7 @@ class SentryClientTest {
                 assertEquals("io.sentry.samples@22.1.1", it.header.traceContext!!.release)
                 assertEquals(traceId, it.header.traceContext!!.traceId)
                 assertEquals("MainActivity", it.header.traceContext!!.transaction)
+                assertEquals(SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"), it.header.traceContext!!.replayId)
             },
             anyOrNull()
         )

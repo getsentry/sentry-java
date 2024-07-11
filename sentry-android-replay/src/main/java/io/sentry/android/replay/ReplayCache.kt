@@ -74,7 +74,7 @@ public class ReplayCache internal constructor(
     /**
      * Stores the current frame screenshot to in-memory cache as well as disk with [frameTimestamp]
      * as filename. Uses [Bitmap.CompressFormat.JPEG] format with quality 80. The frames are stored
-     * under [makeReplayCacheDir].
+     * under [replayCacheDir].
      *
      * This method is not thread-safe.
      *
@@ -114,14 +114,14 @@ public class ReplayCache internal constructor(
     /**
      * Creates a video out of currently stored [frames] given the start time and duration using the
      * on-device codecs [android.media.MediaCodec]. The generated video will be stored in
-     * [videoFile] location, which defaults to "[makeReplayCacheDir]/[segmentId].mp4".
+     * [videoFile] location, which defaults to "[replayCacheDir]/[segmentId].mp4".
      *
      * This method is not thread-safe.
      *
      * @param duration desired video duration in milliseconds
      * @param from desired start of the video represented as unix timestamp in milliseconds
      * @param segmentId current segment id, used for inferring the filename to store the
-     * result video under [makeReplayCacheDir], e.g. "replay_<uuid>/0.mp4", where segmentId=0
+     * result video under [replayCacheDir], e.g. "replay_<uuid>/0.mp4", where segmentId=0
      * @param height desired height of the video in pixels (e.g. it can change from the initial one
      * in case of window resize or orientation change)
      * @param width desired width of the video in pixels (e.g. it can change from the initial one
@@ -269,7 +269,7 @@ public class ReplayCache internal constructor(
     }
 
     companion object {
-        private const val ONGOING_SEGMENT = ".ongoing_segment"
+        internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
         internal const val SEGMENT_KEY_HEIGHT = "config.height"
         internal const val SEGMENT_KEY_WIDTH = "config.width"
@@ -327,7 +327,7 @@ public class ReplayCache internal constructor(
                 null
             }
             if (height == null || width == null || frameRate == null || bitRate == null ||
-                segmentId == null || segmentTimestamp == null || replayType == null
+                (segmentId == null || segmentId == -1) || segmentTimestamp == null || replayType == null
             ) {
                 options.logger.log(
                     DEBUG,

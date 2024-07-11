@@ -338,6 +338,9 @@ internal abstract class BaseCaptureStrategy(
         replayExecutor.submitSafely(options, "$TAG.finalize_previous_replay") {
             val previousReplayIdString = PersistingScopeObserver.read(options, REPLAY_FILENAME, String::class.java) ?: return@submitSafely
             val previousReplayId = SentryId(previousReplayIdString)
+            if (previousReplayId == SentryId.EMPTY_ID) {
+                return@submitSafely
+            }
             val breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java, Breadcrumb.Deserializer()) as? List<Breadcrumb>
 
             val lastSegment = ReplayCache.fromDisk(options, previousReplayId) ?: return@submitSafely

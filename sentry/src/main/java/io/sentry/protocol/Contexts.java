@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
-  public static final String REPLAY_TYPE = "replay";
+  public static final String REPLAY_ID = "replay_id";
 
   /** Response lock, Ops should be atomic */
   private final @NotNull Object responseLock = new Object();

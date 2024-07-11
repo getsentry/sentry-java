@@ -27,6 +27,7 @@ import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.FINGERPRINT_FILENAME
 import io.sentry.cache.PersistingScopeObserver.LEVEL_FILENAME
+import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REQUEST_FILENAME
 import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE
 import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
@@ -44,6 +45,7 @@ import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
@@ -118,6 +120,7 @@ class AnrV2EventProcessorTest {
                     REQUEST_FILENAME,
                     Request().apply { url = "google.com"; method = "GET" }
                 )
+                persistScope(REPLAY_FILENAME, SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"))
             }
 
             if (populateOptionsCache) {
@@ -292,6 +295,8 @@ class AnrV2EventProcessorTest {
         // contexts
         assertEquals(1024, processed.contexts.response!!.bodySize)
         assertEquals("Google Chrome", processed.contexts.browser!!.name)
+        // replay_id
+        assertEquals("64cf554cc8d74c6eafa3e08b7c984f6d", processed.contexts[Contexts.REPLAY_ID].toString())
     }
 
     @Test
