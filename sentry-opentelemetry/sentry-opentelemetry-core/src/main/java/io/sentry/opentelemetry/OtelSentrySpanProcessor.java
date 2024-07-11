@@ -8,6 +8,8 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.data.EventData;
+import io.opentelemetry.sdk.trace.internal.data.ExceptionEventData;
 import io.sentry.Baggage;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
@@ -19,7 +21,10 @@ import io.sentry.SentryLongDate;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -135,7 +140,30 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
       final @NotNull SentryDate finishDate =
           new SentryLongDate(spanBeingEnded.toSpanData().getEndEpochNanos());
       sentrySpan.updateEndDate(finishDate);
+
+      final @NotNull IScopes spanScopes = sentrySpan.getScopes();
+      if (spanScopes.getOptions().isCaptureOpenTelemetryEvents()) {
+        final @NotNull List<EventData> events = spanBeingEnded.toSpanData().getEvents();
+        for (EventData event : events) {
+          if (event instanceof ExceptionEventData) {
+            final @NotNull ExceptionEventData exceptionEvent = (ExceptionEventData) event;
+            final @NotNull Throwable exception = exceptionEvent.getException();
+            captureException(spanScopes, exception);
+          }
+        }
+      }
     }
+  }
+
+  private void captureException(final @NotNull IScopes scopes, final @NotNull Throwable throwable) {
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setType("OpenTelemetryInstrumentation");
+    mechanism.setHandled(true);
+    // TODO [POTEL] thread might be wrong
+    final Throwable mechanismException =
+        new ExceptionMechanismException(mechanism, throwable, Thread.currentThread());
+    // TODO [POTEL] event timestamp should be taken from ExceptionEventData
+    scopes.captureException(mechanismException);
   }
 
   @Override

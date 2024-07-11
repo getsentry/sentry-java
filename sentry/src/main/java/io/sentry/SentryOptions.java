@@ -489,6 +489,8 @@ public class SentryOptions {
 
   private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
 
+  @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
+
   /**
    * Adds an event processor
    *
@@ -2440,6 +2442,16 @@ public class SentryOptions {
     return defaultScopeType;
   }
 
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2693,6 +2705,9 @@ public class SentryOptions {
     }
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
+    }
+    if (options.isCaptureOpenTelemetryEvents() != null) {
+      setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
     }
 
     if (options.getCron() != null) {
