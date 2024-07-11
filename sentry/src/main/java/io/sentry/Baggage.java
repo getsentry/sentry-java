@@ -313,11 +313,21 @@ public final class Baggage {
     set(DSCKeys.USER_ID, userId);
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
   public @Nullable String getUserSegment() {
     return get(DSCKeys.USER_SEGMENT);
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
   public void setUserSegment(final @Nullable String userSegment) {
     set(DSCKeys.USER_SEGMENT, userSegment);
@@ -429,6 +439,10 @@ public final class Baggage {
     setSampled(null);
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
   private static @Nullable String getSegment(final @NotNull User user) {
     if (user.getSegment() != null) {
       return user.getSegment();
@@ -498,6 +512,7 @@ public final class Baggage {
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
+      @SuppressWarnings("deprecation")
       final @NotNull TraceContext traceContext =
           new TraceContext(
               new SentryId(traceIdString),

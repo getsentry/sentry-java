@@ -371,6 +371,9 @@ public interface IScope {
   Session getSession();
 
   @ApiStatus.Internal
+  void clearSession();
+
+  @ApiStatus.Internal
   void setPropagationContext(final @NotNull PropagationContext propagationContext);
 
   @ApiStatus.Internal

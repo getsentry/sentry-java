@@ -27,9 +27,36 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, @NotNull Object> unknown;
 
   TraceContext(@NotNull SentryId traceId, @NotNull String publicKey) {
-    this(traceId, publicKey, null, null, null, null, null, null, null, null);
+    this(traceId, publicKey, null, null, null, null, null, null, null);
   }
 
+  TraceContext(
+      @NotNull SentryId traceId,
+      @NotNull String publicKey,
+      @Nullable String release,
+      @Nullable String environment,
+      @Nullable String userId,
+      @Nullable String transaction,
+      @Nullable String sampleRate,
+      @Nullable String sampled,
+      @Nullable SentryId replayId) {
+    this(
+        traceId,
+        publicKey,
+        release,
+        environment,
+        userId,
+        null,
+        transaction,
+        sampleRate,
+        sampled,
+        replayId);
+  }
+
+  /**
+   * @deprecated segment has no effect and will be removed in the next major update.
+   */
+  @Deprecated
   TraceContext(
       @NotNull SentryId traceId,
       @NotNull String publicKey,
@@ -83,6 +110,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return userId;
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
   public @Nullable String getUserSegment() {
     return userSegment;
   }
@@ -123,6 +154,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       return id;
     }
 
+    /**
+     * @deprecated has no effect and will be removed in the next major update.
+     */
+    @Deprecated
     public @Nullable String getSegment() {
       return segment;
     }
