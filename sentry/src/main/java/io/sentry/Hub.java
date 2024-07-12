@@ -967,7 +967,6 @@ public final class Hub implements IHub, MetricsApi.IMetricsInterface {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
       }
     }
-    this.lastEventId = sentryId;
     return sentryId;
   }
 

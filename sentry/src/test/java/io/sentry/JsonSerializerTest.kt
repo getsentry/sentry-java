@@ -3,9 +3,11 @@ package io.sentry
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.profilemeasurements.ProfileMeasurementValue
 import io.sentry.protocol.Device
+import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import org.junit.After
@@ -1229,6 +1231,20 @@ class JsonSerializerTest {
             ),
             deserializedCollection
         )
+    }
+
+    @Test
+    fun `ser deser replay data`() {
+        val replayEvent = SentryReplayEventSerializationTest.Fixture().getSut()
+        val replayRecording = ReplayRecordingSerializationTest.Fixture().getSut()
+        val serializedEvent = serializeToString(replayEvent)
+        val serializedRecording = serializeToString(replayRecording)
+
+        val deserializedEvent = fixture.serializer.deserialize(StringReader(serializedEvent), SentryReplayEvent::class.java)
+        val deserializedRecording = fixture.serializer.deserialize(StringReader(serializedRecording), ReplayRecording::class.java)
+
+        assertEquals(replayEvent, deserializedEvent)
+        assertEquals(replayRecording, deserializedRecording)
     }
 
     private fun assertSessionData(expectedSession: Session?) {
