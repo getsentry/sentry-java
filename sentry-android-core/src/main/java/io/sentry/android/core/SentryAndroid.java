@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
+import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
@@ -134,6 +135,10 @@ public final class SentryAndroid {
               if (appStartTimeSpan.hasNotStarted()) {
                 appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
               }
+            }
+            if (context.getApplicationContext() instanceof Application) {
+              appStartMetrics.registerApplicationForegroundCheck(
+                  (Application) context.getApplicationContext());
             }
             final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
             if (sdkInitTimeSpan.hasNotStarted()) {

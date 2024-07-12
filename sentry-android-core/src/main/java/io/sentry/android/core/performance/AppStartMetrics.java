@@ -243,6 +243,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               if (onCreateTime == null) {
                 appLaunchedInForeground = false;
               }
+              application.unregisterActivityLifecycleCallbacks(instance);
             });
   }
 

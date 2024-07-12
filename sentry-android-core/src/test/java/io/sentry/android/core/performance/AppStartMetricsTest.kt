@@ -9,7 +9,10 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
@@ -200,5 +203,46 @@ class AppStartMetricsTest {
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         assertFalse(timeSpan.hasStarted())
+    }
+
+    @Test
+    fun `when registerApplicationForegroundCheck, a callback is registered to application`() {
+        val application = mock<Application>()
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        verify(application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+    }
+
+    @Test
+    fun `when registerApplicationForegroundCheck, a job is posted on main thread to unregistered the callback`() {
+        val application = mock<Application>()
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        verify(application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+        verify(application, never()).unregisterActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        verify(application).unregisterActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+    }
+
+    @Test
+    fun `registerApplicationForegroundCheck set foreground state to false if no activity is running`() {
+        val application = mock<Application>()
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = true
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
+        // Main thread performs the check and sets the flag to false if no activity was created
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        assertFalse(AppStartMetrics.getInstance().isAppLaunchedInForeground)
+    }
+
+    @Test
+    fun `registerApplicationForegroundCheck keeps foreground state to true if an activity is running`() {
+        val application = mock<Application>()
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = true
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
+        // An activity was created
+        AppStartMetrics.getInstance().onActivityCreated(mock(), null)
+        // Main thread performs the check and keeps the flag to true
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
     }
 }
