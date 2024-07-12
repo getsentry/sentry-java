@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.Hint
 import io.sentry.android.replay.ReplayCache
@@ -24,7 +25,7 @@ internal interface CaptureStrategy {
 
     fun sendReplayForEvent(isCrashed: Boolean, eventId: String?, hint: Hint?, onSegmentSent: () -> Unit)
 
-    fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit)
+    fun onScreenshotRecorded(bitmap: Bitmap? = null, store: ReplayCache.(frameTimestamp: Long) -> Unit)
 
     fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig)
 
