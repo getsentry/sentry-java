@@ -245,4 +245,23 @@ class ReplayCacheTest {
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
         assertEquals(File(flutterCacheDir, "flutter_0.mp4"), segment0.video)
     }
+
+    @Test
+    fun `rotates frames`() {
+        val replayCache = fixture.getSut(
+            tmpDir,
+            frameRate = 1,
+            framesToEncode = 5
+        )
+
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+        replayCache.addFrame(bitmap, 1)
+        replayCache.addFrame(bitmap, 1001)
+        replayCache.addFrame(bitmap, 2001)
+
+        replayCache.rotate(2000)
+
+        assertEquals(1, replayCache.frames.size)
+        assertTrue(replayCache.replayCacheDir!!.listFiles()!!.none { it.name == "1.jpg" || it.name == "1001.jpg" })
+    }
 }

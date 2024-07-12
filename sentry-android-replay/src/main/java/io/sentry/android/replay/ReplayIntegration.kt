@@ -48,17 +48,29 @@ public class ReplayIntegration(
         null
     )
 
+    internal constructor(
+        context: Context,
+        dateProvider: ICurrentDateProvider,
+        recorderProvider: (() -> Recorder)?,
+        recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)?,
+        replayCacheProvider: ((replayId: SentryId) -> ReplayCache)?,
+        replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
+    ) : this(context, dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
+        this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
+    }
+
     private lateinit var options: SentryOptions
     private var hub: IHub? = null
     private var recorder: Recorder? = null
     private val random by lazy { SecureRandom() }
 
     // TODO: probably not everything has to be thread-safe here
-    private val isEnabled = AtomicBoolean(false)
+    internal val isEnabled = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
     private var captureStrategy: CaptureStrategy? = null
     public val replayCacheDir: File? get() = captureStrategy?.replayCacheDir
     private var replayBreadcrumbConverter: ReplayBreadcrumbConverter = NoOpReplayBreadcrumbConverter.getInstance()
+    private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
 
@@ -121,7 +133,7 @@ public class ReplayIntegration(
         }
 
         recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
-        captureStrategy = if (isFullSession) {
+        captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
             SessionCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider)
         } else {
             BufferCaptureStrategy(options, hub, dateProvider, recorderConfig, random, replayCacheProvider)
@@ -192,6 +204,7 @@ public class ReplayIntegration(
         recorder?.stop()
         captureStrategy?.stop()
         isRecording.set(false)
+        captureStrategy?.close()
         captureStrategy = null
     }
 
@@ -217,8 +230,6 @@ public class ReplayIntegration(
         } catch (ignored: Throwable) {
         }
         stop()
-        captureStrategy?.close()
-        captureStrategy = null
         recorder?.close()
         recorder = null
     }
