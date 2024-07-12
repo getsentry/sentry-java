@@ -196,7 +196,7 @@ public class ReplayIntegration(
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
-        captureStrategy?.onScreenshotRecorded { frameTimeStamp ->
+        captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
             addFrame(bitmap, frameTimeStamp)
         }
     }

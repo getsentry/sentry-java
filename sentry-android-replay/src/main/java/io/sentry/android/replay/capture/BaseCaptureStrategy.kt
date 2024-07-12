@@ -212,7 +212,7 @@ internal abstract class BaseCaptureStrategy(
             }
         }
 
-        if (screenAtStart.get() != null && urls.first != screenAtStart.get()) {
+        if (screenAtStart.get() != null && urls.firstOrNull() != screenAtStart.get()) {
             urls.addFirst(screenAtStart.get())
         }
 
