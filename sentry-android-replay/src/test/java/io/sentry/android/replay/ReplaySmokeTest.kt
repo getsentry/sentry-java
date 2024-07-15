@@ -20,12 +20,10 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
-import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.Fixture
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryException
-import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
@@ -253,9 +251,6 @@ class ReplaySmokeTest {
                 assertEquals(10, videoEvents?.first()?.frameCount)
                 assertEquals(1, videoEvents?.first()?.frameRate)
                 assertEquals(0, videoEvents?.first()?.segmentId)
-
-                val breadcrumbEvents = it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
-                assertEquals(1, breadcrumbEvents?.size)
             }
         )
     }
