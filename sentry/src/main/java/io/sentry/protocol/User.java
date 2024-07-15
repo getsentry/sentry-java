@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -426,7 +426,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<User> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull User deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull User deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       User user = new User();

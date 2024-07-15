@@ -28,6 +28,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingOptionsObserver
@@ -331,13 +332,27 @@ class SentryAndroidTest {
         verify(client, times(1)).captureSession(any(), any())
     }
 
+    @Test
+    @Config(sdk = [26])
+    fun `init starts session replay if app is in foreground`() {
+        initSentryWithForegroundImportance(true) { _ ->
+            assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
+        }
+    }
+
+    @Test
+    @Config(sdk = [26])
+    fun `init does not start session replay if the app is in background`() {
+        initSentryWithForegroundImportance(false) { _ ->
+            assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
+        }
+    }
+
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
         optionsConfig: (SentryAndroidOptions) -> Unit = {},
         callback: (session: Session?) -> Unit
     ) {
-        val context = ContextUtilsTestHelper.createMockContext()
-
         Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
@@ -345,6 +360,7 @@ class SentryAndroidTest {
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
+                options.experimental.sessionReplay.errorSampleRate = 1.0
                 optionsConfig(options)
             }
 
@@ -432,7 +448,7 @@ class SentryAndroidTest {
         fixture.initSut(context = mock<Application>()) { options ->
             optionsRef = options
             options.dsn = "https://key@sentry.io/123"
-            assertEquals(20, options.integrations.size)
+            assertEquals(21, options.integrations.size)
             options.integrations.removeAll {
                 it is UncaughtExceptionHandlerIntegration ||
                     it is ShutdownHookIntegration ||
@@ -452,7 +468,8 @@ class SentryAndroidTest {
                     it is NetworkBreadcrumbsIntegration ||
                     it is TempSensorBreadcrumbsIntegration ||
                     it is PhoneStateBreadcrumbsIntegration ||
-                    it is SpotlightIntegration
+                    it is SpotlightIntegration ||
+                    it is ReplayIntegration
             }
         }
         assertEquals(0, optionsRef.integrations.size)

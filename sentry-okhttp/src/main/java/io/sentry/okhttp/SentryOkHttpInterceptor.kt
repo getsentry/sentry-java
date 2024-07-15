@@ -14,6 +14,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
+import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
@@ -79,6 +80,7 @@ public open class SentryOkHttpInterceptor(
             val parentSpan = if (Platform.isAndroid()) hub.transaction else hub.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
+        val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
         span?.spanContext?.origin = TRACE_ORIGIN
 
@@ -137,12 +139,17 @@ public open class SentryOkHttpInterceptor(
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
             if (!isFromEventListener) {
-                sendBreadcrumb(request, code, response)
+                sendBreadcrumb(request, code, response, startTimestamp)
             }
         }
     }
 
-    private fun sendBreadcrumb(request: Request, code: Int?, response: Response?) {
+    private fun sendBreadcrumb(
+        request: Request,
+        code: Int?,
+        response: Response?,
+        startTimestamp: Long
+    ) {
         val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
         request.body?.contentLength().ifHasValidLength {
             breadcrumb.setData("http.request_content_length", it)
@@ -156,6 +163,9 @@ public open class SentryOkHttpInterceptor(
 
             hint[OKHTTP_RESPONSE] = it
         }
+        // needs this as unix timestamp for rrweb
+        breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, startTimestamp)
+        breadcrumb.setData(SpanDataConvention.HTTP_END_TIMESTAMP, CurrentDateProvider.getInstance().currentTimeMillis)
 
         hub.addBreadcrumb(breadcrumb, hint)
     }

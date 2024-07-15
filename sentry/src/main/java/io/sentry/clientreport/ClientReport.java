@@ -3,9 +3,9 @@ package io.sentry.clientreport;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -74,8 +74,8 @@ public final class ClientReport implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<ClientReport> {
     @Override
-    public @NotNull ClientReport deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull ClientReport deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       Date timestamp = null;
       List<DiscardedEvent> discardedEvents = new ArrayList<>();
       Map<String, Object> unknown = null;
