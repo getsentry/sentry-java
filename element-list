@@ -23,6 +23,7 @@ io.sentry.opentelemetry
 io.sentry.profilemeasurements
 io.sentry.protocol
 io.sentry.quartz
+io.sentry.rrweb
 io.sentry.servlet
 io.sentry.servlet.jakarta
 io.sentry.spring
