@@ -13,8 +13,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import android.os.Handler
-import android.os.Looper
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +23,7 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
+import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
@@ -42,6 +41,7 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
+    val mainLooperHandler: MainLooperHandler,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
@@ -49,7 +49,6 @@ internal class ScreenshotRecorder(
         Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
     }
     private var rootView: WeakReference<View>? = null
-    private val handler = Handler(Looper.getMainLooper())
     private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint = Paint()
     private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
@@ -101,7 +100,7 @@ internal class ScreenshotRecorder(
         )
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
-        Handler(Looper.getMainLooper()).post {
+        mainLooperHandler.post {
             try {
                 contentChanged.set(false)
                 PixelCopy.request(
@@ -173,7 +172,7 @@ internal class ScreenshotRecorder(
                             bitmap.recycle()
                         }
                     },
-                    handler
+                    mainLooperHandler.handler
                 )
             } catch (e: Throwable) {
                 options.logger.log(WARNING, "Failed to capture replay recording", e)

@@ -66,11 +66,11 @@ class ReplayIntegrationWithRecorderTest {
                 recorderProvider = { recorder },
                 recorderConfigProvider = { recorderConfig },
                 // this is just needed for testing to encode a fake video
-                replayCacheProvider = { replayId ->
+                replayCacheProvider = { replayId, config ->
                     ReplayCache(
                         options,
                         replayId,
-                        recorderConfig,
+                        config,
                         encoderProvider = { videoFile, height, width ->
                             encoder = SimpleVideoEncoder(
                                 options,

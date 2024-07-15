@@ -41,7 +41,7 @@ internal abstract class BaseCaptureStrategy(
     private val dateProvider: ICurrentDateProvider,
     protected var recorderConfig: ScreenshotRecorderConfig,
     executor: ScheduledExecutorService? = null,
-    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -93,7 +93,7 @@ internal abstract class BaseCaptureStrategy(
         }
 
         cache =
-            replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId, recorderConfig)
+            replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
 
         // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp.set(DateUtils.getCurrentDateTime())
