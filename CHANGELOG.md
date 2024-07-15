@@ -1,16 +1,33 @@
 # Changelog
 
-## 7.12.0-alpha.4
+## Unreleased
 
-- Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+### Features
 
-We released our fifth Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+- Session Replay Public Beta ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
 
-## 7.12.0-alpha.3
+  To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.errorSampleRate` experimental options.
 
-- Session Replay for Android ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+  ```kotlin
+  import io.sentry.SentryReplayOptions
+  import io.sentry.android.core.SentryAndroid
 
-We released our fourth Alpha version of the SDK with support. To get access, it requires adding your Sentry org to our feature flag. Please let us know on the [waitlist](https://sentry.io/lp/mobile-replay-beta/) if you're interested
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.experimental.sessionReplay.sessionSampleRate = 1.0
+    options.experimental.sessionReplay.errorSampleRate = 1.0
+  
+    // To change default redaction behavior (defaults to true)
+    options.experimental.sessionReplay.redactAllImages = true
+    options.experimental.sessionReplay.redactAllText = true
+  
+    // To change quality of the recording (defaults to MEDIUM)
+    options.experimental.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
+  }
+  ```
+
+  To learn more visit [Sentry's Mobile Session Replay](https://docs.sentry.io/product/explore/session-replay/mobile/) documentation page.
 
 ## 7.11.0
 
