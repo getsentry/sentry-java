@@ -21,6 +21,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.capture.BufferCaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategy
+import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.sample
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
@@ -36,7 +37,7 @@ public class ReplayIntegration(
     private val dateProvider: ICurrentDateProvider,
     private val recorderProvider: (() -> Recorder)? = null,
     private val recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
-    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : Integration, Closeable, ScreenshotRecorderCallback, TouchRecorderCallback, ReplayController, ComponentCallbacks {
 
     // needed for the Java's call site
@@ -48,17 +49,32 @@ public class ReplayIntegration(
         null
     )
 
+    internal constructor(
+        context: Context,
+        dateProvider: ICurrentDateProvider,
+        recorderProvider: (() -> Recorder)?,
+        recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)?,
+        replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)?,
+        replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
+        mainLooperHandler: MainLooperHandler? = null
+    ) : this(context, dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
+        this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
+        this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
+    }
+
     private lateinit var options: SentryOptions
     private var hub: IHub? = null
     private var recorder: Recorder? = null
     private val random by lazy { SecureRandom() }
 
     // TODO: probably not everything has to be thread-safe here
-    private val isEnabled = AtomicBoolean(false)
+    internal val isEnabled = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
     private var captureStrategy: CaptureStrategy? = null
     public val replayCacheDir: File? get() = captureStrategy?.replayCacheDir
     private var replayBreadcrumbConverter: ReplayBreadcrumbConverter = NoOpReplayBreadcrumbConverter.getInstance()
+    private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
+    private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
 
@@ -84,7 +100,7 @@ public class ReplayIntegration(
                 captureStrategy?.onScreenChanged(contexts.app?.viewNames?.lastOrNull()?.substringAfterLast('.'))
             }
         })
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this, mainLooperHandler)
         isEnabled.set(true)
 
         try {
@@ -121,7 +137,7 @@ public class ReplayIntegration(
         }
 
         recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
-        captureStrategy = if (isFullSession) {
+        captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
             SessionCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider)
         } else {
             BufferCaptureStrategy(options, hub, dateProvider, recorderConfig, random, replayCacheProvider)
@@ -192,6 +208,7 @@ public class ReplayIntegration(
         recorder?.stop()
         captureStrategy?.stop()
         isRecording.set(false)
+        captureStrategy?.close()
         captureStrategy = null
     }
 
@@ -217,8 +234,6 @@ public class ReplayIntegration(
         } catch (ignored: Throwable) {
         }
         stop()
-        captureStrategy?.close()
-        captureStrategy = null
         recorder?.close()
         recorder = null
     }

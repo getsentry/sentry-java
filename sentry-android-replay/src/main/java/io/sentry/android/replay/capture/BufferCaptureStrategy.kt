@@ -25,7 +25,7 @@ internal class BufferCaptureStrategy(
     private val dateProvider: ICurrentDateProvider,
     recorderConfig: ScreenshotRecorderConfig,
     private val random: SecureRandom,
-    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, recorderConfig, replayCacheProvider = replayCacheProvider) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
