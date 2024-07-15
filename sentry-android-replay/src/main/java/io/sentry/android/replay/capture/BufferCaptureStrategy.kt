@@ -79,6 +79,12 @@ internal class BufferCaptureStrategy(
             return
         }
 
+        // write replayId to scope right away, so it gets picked up by the event that caused buffer
+        // to flush
+        hub?.configureScope {
+            it.replayId = currentReplayId.get()
+        }
+
         val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
