@@ -7,8 +7,6 @@ import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.protocol.SentryId
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 internal interface CaptureStrategy {
     var currentSegment: Int
