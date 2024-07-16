@@ -81,6 +81,9 @@ public class SentryFragmentLifecycleCallbacks(
         // we only start the tracing for the fragment if the fragment has been added to its activity
         // and not only to the backstack
         if (fragment.isAdded) {
+            if (hub.options.isEnableScreenTracking) {
+                hub.configureScope { it.screen = getFragmentName(fragment) }
+            }
             startTracing(fragment)
         }
     }
@@ -96,12 +99,13 @@ public class SentryFragmentLifecycleCallbacks(
 
     override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, FragmentLifecycleState.STARTED)
+
+        // ViewPager2 locks background fragments to STARTED state
+        stopTracing(fragment)
     }
 
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, FragmentLifecycleState.RESUMED)
-
-        stopTracing(fragment)
     }
 
     override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {

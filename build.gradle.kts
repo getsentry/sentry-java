@@ -109,6 +109,7 @@ subprojects {
         "sentry-android-ndk",
         "sentry-android-okhttp",
         "sentry-android-sqlite",
+        "sentry-android-replay",
         "sentry-android-timber"
     )
     if (jacocoAndroidModules.contains(name)) {
@@ -164,16 +165,7 @@ subprojects {
             if (this@subprojects.name.contains("-compose")) {
                 this.configureForMultiplatform(this@subprojects)
             } else {
-                this.getByName("main").contents {
-                    // non android modules
-                    from("build${sep}libs")
-                    from("build${sep}publications${sep}maven")
-                    // android modules
-                    from("build${sep}outputs${sep}aar") {
-                        include("*-release*")
-                    }
-                    from("build${sep}publications${sep}release")
-                }
+                this.configureForJvm(this@subprojects)
             }
             // craft only uses zip archives
             this.forEach { dist ->
@@ -302,7 +294,9 @@ private val androidLibs = setOf(
     "sentry-android-navigation",
     "sentry-android-okhttp",
     "sentry-android-timber",
-    "sentry-compose-android"
+    "sentry-compose-android",
+    "sentry-android-sqlite",
+    "sentry-android-replay"
 )
 
 private val androidXLibs = listOf(

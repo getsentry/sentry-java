@@ -199,6 +199,10 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       sentryId = event.getEventId();
     }
 
+    if (event != null) {
+      options.getReplayController().sendReplayForEvent(event, hint);
+    }
+
     try {
       @Nullable TraceContext traceContext = null;
       if (HintUtils.hasType(hint, Backfillable.class)) {
@@ -235,20 +239,93 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     }
 
     // if we encountered a crash/abnormal exit finish tracing in order to persist and send
-    // any running transaction / profiling data
+    // any running transaction / profiling data. We also finish session replay, and it has priority
+    // over transactions as it takes longer to finalize replay than transactions, therefore
+    // the replay_id will be the trigger for flushing and unblocking the thread in case of a crash
     if (scope != null) {
-      final @Nullable ITransaction transaction = scope.getTransaction();
-      if (transaction != null) {
-        if (HintUtils.hasType(hint, TransactionEnd.class)) {
-          final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-          if (sentrySdkHint instanceof DiskFlushNotification) {
-            ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
-            transaction.forceFinish(SpanStatus.ABORTED, false, hint);
-          } else {
-            transaction.forceFinish(SpanStatus.ABORTED, false, null);
-          }
+      finalizeTransaction(scope, hint);
+      finalizeReplay(scope, hint);
+    }
+
+    return sentryId;
+  }
+
+  private void finalizeTransaction(final @NotNull IScope scope, final @NotNull Hint hint) {
+    final @Nullable ITransaction transaction = scope.getTransaction();
+    if (transaction != null) {
+      if (HintUtils.hasType(hint, TransactionEnd.class)) {
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        if (sentrySdkHint instanceof DiskFlushNotification) {
+          ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
+          transaction.forceFinish(SpanStatus.ABORTED, false, hint);
+        } else {
+          transaction.forceFinish(SpanStatus.ABORTED, false, null);
         }
       }
+    }
+  }
+
+  private void finalizeReplay(final @NotNull IScope scope, final @NotNull Hint hint) {
+    final @Nullable SentryId replayId = scope.getReplayId();
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
+      if (HintUtils.hasType(hint, TransactionEnd.class)) {
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        if (sentrySdkHint instanceof DiskFlushNotification) {
+          ((DiskFlushNotification) sentrySdkHint).setFlushable(replayId);
+        }
+      }
+    }
+  }
+
+  @Override
+  public @NotNull SentryId captureReplayEvent(
+      @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
+    Objects.requireNonNull(event, "SessionReplay is required.");
+
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    if (shouldApplyScopeData(event, hint)) {
+      applyScope(event, scope);
+    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event.getEventId() != null) {
+      sentryId = event.getEventId();
+    }
+
+    event = processReplayEvent(event, hint, options.getEventProcessors());
+
+    if (event == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
+      return SentryId.EMPTY_ID;
+    }
+
+    try {
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        final @Nullable ITransaction transaction = scope.getTransaction();
+        if (transaction != null) {
+          traceContext = transaction.traceContext();
+        } else {
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
+        }
+      }
+
+      final SentryEnvelope envelope = buildEnvelope(event, hint.getReplayRecording(), traceContext);
+
+      hint.clear();
+      transport.send(envelope, hint);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
     }
 
     return sentryId;
@@ -412,6 +489,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       final @NotNull Hint hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
+      final int spanCountBeforeProcessor = transaction.getSpans().size();
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
@@ -423,6 +501,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
                 "An exception occurred while processing transaction by processor: %s",
                 processor.getClass().getName());
       }
+      final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
       if (transaction == null) {
         options
@@ -434,10 +513,62 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+        // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
         break;
+      } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
+        // If the callback removed some spans, we report it
+        final int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%d spans were dropped by a processor: %s",
+                droppedSpanCount,
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, droppedSpanCount);
       }
     }
     return transaction;
+  }
+
+  @Nullable
+  private SentryReplayEvent processReplayEvent(
+      @NotNull SentryReplayEvent replayEvent,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        replayEvent = processor.process(replayEvent, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing replay event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (replayEvent == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Replay event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Replay);
+        break;
+      }
+    }
+    return replayEvent;
   }
 
   @Override
@@ -489,6 +620,24 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
     final SentryEnvelopeHeader envelopeHeader =
         new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion(), traceContext);
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
+  private @NotNull SentryEnvelope buildEnvelope(
+      final @NotNull SentryReplayEvent event,
+      final @Nullable ReplayRecording replayRecording,
+      final @Nullable TraceContext traceContext) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem replayItem =
+        SentryEnvelopeItem.fromReplay(
+            options.getSerializer(), options.getLogger(), event, replayRecording);
+    envelopeItems.add(replayItem);
+    final SentryId sentryId = event.getEventId();
+
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -666,7 +815,9 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       return SentryId.EMPTY_ID;
     }
 
+    final int spanCountBeforeCallback = transaction.getSpans().size();
     transaction = executeBeforeSendTransaction(transaction, hint);
+    final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
 
     if (transaction == null) {
       options
@@ -675,7 +826,24 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
+      // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(
+              DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
       return SentryId.EMPTY_ID;
+    } else if (spanCountAfterCallback < spanCountBeforeCallback) {
+      // If the callback removed some spans, we report it
+      final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "%d spans were dropped by beforeSendTransaction.",
+              droppedSpanCount);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
     }
 
     try {
@@ -826,6 +994,47 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       }
     }
     return checkIn;
+  }
+
+  private @NotNull SentryReplayEvent applyScope(
+      final @NotNull SentryReplayEvent replayEvent, final @Nullable IScope scope) {
+    // no breadcrumbs and extras for replay events
+    if (scope != null) {
+      if (replayEvent.getRequest() == null) {
+        replayEvent.setRequest(scope.getRequest());
+      }
+      if (replayEvent.getUser() == null) {
+        replayEvent.setUser(scope.getUser());
+      }
+      if (replayEvent.getTags() == null) {
+        replayEvent.setTags(new HashMap<>(scope.getTags()));
+      } else {
+        for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
+          if (!replayEvent.getTags().containsKey(item.getKey())) {
+            replayEvent.getTags().put(item.getKey(), item.getValue());
+          }
+        }
+      }
+      final Contexts contexts = replayEvent.getContexts();
+      for (Map.Entry<String, Object> entry : new Contexts(scope.getContexts()).entrySet()) {
+        if (!contexts.containsKey(entry.getKey())) {
+          contexts.put(entry.getKey(), entry.getValue());
+        }
+      }
+
+      // Set trace data from active span to connect replays with transactions
+      final ISpan span = scope.getSpan();
+      if (replayEvent.getContexts().getTrace() == null) {
+        if (span == null) {
+          replayEvent
+              .getContexts()
+              .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
+        } else {
+          replayEvent.getContexts().setTrace(span.getSpanContext());
+        }
+      }
+    }
+    return replayEvent;
   }
 
   private <T extends SentryBaseEvent> @NotNull T applyScope(

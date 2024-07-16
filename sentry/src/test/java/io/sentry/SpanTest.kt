@@ -495,6 +495,19 @@ class SpanTest {
         assertSame(span.localMetricsAggregator, span.localMetricsAggregator)
     }
 
+    // test to ensure that the span is not finished when the finishCallback is called
+    @Test
+    fun `span is not finished when finishCallback is called`() {
+        val span = fixture.getSut()
+        span.setSpanFinishedCallback {
+            assertFalse(span.isFinished)
+            assertNotNull(span.finishDate)
+        }
+        assertFalse(span.isFinished)
+        assertNull(span.finishDate)
+        span.finish()
+    }
+
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
         return SentryTracer(transactionContext, fixture.hub)
     }

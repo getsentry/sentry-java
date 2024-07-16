@@ -3,9 +3,9 @@ package io.sentry.protocol;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryTracer;
@@ -225,7 +225,7 @@ public final class SentryTransaction extends SentryBaseEvent
       writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
     }
     if (metricSummaries != null && !metricSummaries.isEmpty()) {
-      writer.name(SentrySpan.JsonKeys.METRICS_SUMMARY).value(logger, metricSummaries);
+      writer.name(JsonKeys.METRICS_SUMMARY).value(logger, metricSummaries);
     }
     writer.name(JsonKeys.TRANSACTION_INFO).value(logger, transactionInfo);
     new SentryBaseEvent.Serializer().serialize(this, writer, logger);
@@ -259,7 +259,7 @@ public final class SentryTransaction extends SentryBaseEvent
     @SuppressWarnings({"unchecked", "JavaUtilDate"})
     @Override
     public @NotNull SentryTransaction deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
 
       // Init with placeholders.

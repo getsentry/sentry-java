@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -34,7 +34,11 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Username of the user. */
   private @Nullable String username;
 
-  private @Nullable String segment;
+  /**
+   * @deprecated has no effect and will be removed in the next major update. Use a custom tag or
+   *     context instead.
+   */
+  @Deprecated private @Nullable String segment;
 
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
@@ -224,7 +228,9 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Gets the segment of the user.
    *
    * @return the user segment.
+   * @deprecated has no effect and will be removed in the next major update.
    */
+  @Deprecated
   public @Nullable String getSegment() {
     return segment;
   }
@@ -233,7 +239,9 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Sets the segment of the user.
    *
    * @param segment the segment.
+   * @deprecated has no effect and will be removed in the next major update.
    */
+  @Deprecated
   public void setSegment(final @Nullable String segment) {
     this.segment = segment;
   }
@@ -418,7 +426,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<User> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull User deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull User deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       User user = new User();

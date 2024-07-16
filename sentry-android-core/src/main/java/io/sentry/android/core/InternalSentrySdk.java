@@ -1,5 +1,9 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.INFO;
+import static io.sentry.SentryLevel.WARNING;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -16,18 +20,22 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.cache.EnvelopeCache;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -146,7 +154,8 @@ public final class InternalSentrySdk {
    *     captured
    */
   @Nullable
-  public static SentryId captureEnvelope(final @NotNull byte[] envelopeData) {
+  public static SentryId captureEnvelope(
+      final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
     final @NotNull IHub hub = HubAdapter.getInstance();
     final @NotNull SentryOptions options = hub.getOptions();
 
@@ -182,6 +191,13 @@ public final class InternalSentrySdk {
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
+        deleteCurrentSessionFile(
+            options,
+            // should be sync if going to crash or already not a main thread
+            !maybeStartNewSession || !hub.getOptions().getMainThreadChecker().isMainThread());
+        if (maybeStartNewSession) {
+          hub.startSession();
+        }
       }
 
       final SentryEnvelope repackagedEnvelope =
@@ -191,6 +207,103 @@ public final class InternalSentrySdk {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
     return null;
+  }
+
+  public static Map<String, Object> getAppStartMeasurement() {
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+    final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
+
+    final @NotNull TimeSpan processInitNativeSpan = new TimeSpan();
+    processInitNativeSpan.setStartedAt(metrics.getAppStartTimeSpan().getStartUptimeMs());
+    processInitNativeSpan.setStartUnixTimeMs(
+        metrics.getAppStartTimeSpan().getStartTimestampMs()); // This has to go after setStartedAt
+    processInitNativeSpan.setStoppedAt(metrics.getClassLoadedUptimeMs());
+    processInitNativeSpan.setDescription("Process Initialization");
+
+    addTimeSpanToSerializedSpans(processInitNativeSpan, spans);
+    addTimeSpanToSerializedSpans(metrics.getApplicationOnCreateTimeSpan(), spans);
+
+    for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
+      addTimeSpanToSerializedSpans(span, spans);
+    }
+
+    for (final ActivityLifecycleTimeSpan span : metrics.getActivityLifecycleTimeSpans()) {
+      addTimeSpanToSerializedSpans(span.getOnCreate(), spans);
+      addTimeSpanToSerializedSpans(span.getOnStart(), spans);
+    }
+
+    final @NotNull Map<String, Object> result = new HashMap<>();
+    result.put("spans", spans);
+    result.put("type", metrics.getAppStartType().toString().toLowerCase(Locale.ROOT));
+    if (metrics.getAppStartTimeSpan().hasStarted()) {
+      result.put("app_start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
+    }
+
+    return result;
+  }
+
+  private static void addTimeSpanToSerializedSpans(TimeSpan span, List<Map<String, Object>> spans) {
+    if (span.hasNotStarted()) {
+      HubAdapter.getInstance()
+          .getOptions()
+          .getLogger()
+          .log(WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
+      return;
+    }
+
+    if (span.hasNotStopped()) {
+      HubAdapter.getInstance()
+          .getOptions()
+          .getLogger()
+          .log(WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
+      return;
+    }
+
+    final @NotNull Map<String, Object> spanMap = new HashMap<>();
+    spanMap.put("description", span.getDescription());
+    spanMap.put("start_timestamp_ms", span.getStartTimestampMs());
+    spanMap.put("end_timestamp_ms", span.getProjectedStopTimestampMs());
+    spans.add(spanMap);
+  }
+
+  private static void deleteCurrentSessionFile(
+      final @NotNull SentryOptions options, boolean isSync) {
+    if (!isSync) {
+      try {
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  deleteCurrentSessionFile(options);
+                });
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(WARNING, "Submission of deletion of the current session file rejected.", e);
+      }
+    } else {
+      deleteCurrentSessionFile(options);
+    }
+  }
+
+  private static void deleteCurrentSessionFile(final @NotNull SentryOptions options) {
+    final String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath == null) {
+      options.getLogger().log(INFO, "Cache dir is not set, not deleting the current session.");
+      return;
+    }
+
+    if (!options.isEnableAutoSessionTracking()) {
+      options
+          .getLogger()
+          .log(DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
+      return;
+    }
+
+    final File sessionFile = EnvelopeCache.getCurrentSessionFile(cacheDirPath);
+    if (!sessionFile.delete()) {
+      options.getLogger().log(WARNING, "Failed to delete the current session file.");
+    }
   }
 
   @Nullable
@@ -209,11 +322,14 @@ public final class InternalSentrySdk {
             if (updated) {
               if (session.getStatus() == Session.State.Crashed) {
                 session.end();
+                // Session needs to be removed from the scope, otherwise it will be send twice
+                // standalone and with the crash event
+                scope.clearSession();
               }
               sessionRef.set(session);
             }
           } else {
-            options.getLogger().log(SentryLevel.INFO, "Session is null on updateSession");
+            options.getLogger().log(INFO, "Session is null on updateSession");
           }
         });
     return sessionRef.get();

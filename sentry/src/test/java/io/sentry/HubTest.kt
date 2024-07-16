@@ -1450,11 +1450,16 @@ class HubTest {
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
+        // Unsampled spans are not added to the transaction, so they are not recorded
+        sentryTracer.startChild("dropped span", "span 1").finish()
         sentryTracer.finish()
 
         assertClientReport(
             options.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Span.category, 1)
+            )
         )
     }
 
@@ -1472,11 +1477,16 @@ class HubTest {
         whenever(mockBackpressureMonitor.downsampleFactor).thenReturn(1)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
+        // Unsampled spans are not added to the transaction, so they are not recorded
+        sentryTracer.startChild("dropped span", "span 1").finish()
         sentryTracer.finish()
 
         assertClientReport(
             options.clientReportRecorder,
-            listOf(DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Transaction.category, 1))
+            listOf(
+                DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.BACKPRESSURE.reason, DataCategory.Span.category, 1)
+            )
         )
     }
     //endregion
@@ -2095,6 +2105,27 @@ class HubTest {
         assertEquals("key", span.spanContext.description)
         assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
     }
+
+    // region replay event tests
+    @Test
+    fun `when captureReplay is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.close()
+
+        sut.captureReplay(SentryReplayEvent(), Hint())
+        verify(mockClient, never()).captureReplayEvent(any(), any(), any<Hint>())
+    }
+
+    @Test
+    fun `when captureReplay is called with a valid argument, captureReplay on the client should be called`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        val event = SentryReplayEvent()
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureReplay(event, hints)
+        verify(mockClient).captureReplayEvent(eq(event), any(), eq(hints))
+    }
+    // endregion replay event tests
 
     private val dsnTest = "https://key@sentry.io/proj"
 

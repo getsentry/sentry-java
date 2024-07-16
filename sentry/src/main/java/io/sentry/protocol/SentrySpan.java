@@ -3,9 +3,9 @@ package io.sentry.protocol;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.Span;
@@ -40,7 +40,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
 
   private final @Nullable String origin;
   private final @NotNull Map<String, String> tags;
-  private final @Nullable Map<String, Object> data;
+  private @Nullable Map<String, Object> data;
 
   private final @NotNull Map<String, @NotNull MeasurementValue> measurements;
   private final @Nullable Map<String, List<MetricSummary>> metricsSummaries;
@@ -159,6 +159,10 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     return data;
   }
 
+  public void setData(final @Nullable Map<String, Object> data) {
+    this.data = data;
+  }
+
   public @Nullable String getOrigin() {
     return origin;
   }
@@ -253,8 +257,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull SentrySpan deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SentrySpan deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
 
       Double startTimestamp = null;

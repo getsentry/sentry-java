@@ -1,5 +1,7 @@
 package io.sentry.android.core
 
+import android.app.Application
+import android.content.ContentProvider
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -17,6 +19,8 @@ import io.sentry.SentryExceptionFactory
 import io.sentry.SentryItemType
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
+import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.App
 import io.sentry.protocol.Contexts
@@ -35,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -80,7 +85,7 @@ class InternalSentrySdkTest {
             capturedEnvelopes.clear()
         }
 
-        fun captureEnvelopeWithEvent(event: SentryEvent = SentryEvent()) {
+        fun captureEnvelopeWithEvent(event: SentryEvent = SentryEvent(), maybeStartNewSession: Boolean = false) {
             // create an envelope with session data
             val options = Sentry.getCurrentHub().options
             val eventId = SentryId()
@@ -99,7 +104,99 @@ class InternalSentrySdkTest {
             options.serializer.serialize(envelope, outputStream)
             val data = outputStream.toByteArray()
 
-            InternalSentrySdk.captureEnvelope(data)
+            InternalSentrySdk.captureEnvelope(data, maybeStartNewSession)
+        }
+
+        fun createSentryEventWithUnhandledException(): SentryEvent {
+            return SentryEvent(RuntimeException()).apply {
+                val mechanism = Mechanism()
+                mechanism.isHandled = false
+
+                val factory = SentryExceptionFactory(mock())
+                val sentryExceptions = factory.getSentryExceptions(
+                    ExceptionMechanismException(
+                        mechanism,
+                        Throwable(),
+                        Thread()
+                    )
+                )
+                exceptions = sentryExceptions
+            }
+        }
+
+        fun mockFinishedAppStart() {
+            val metrics = AppStartMetrics.getInstance()
+
+            metrics.appStartType = AppStartMetrics.AppStartType.WARM
+
+            metrics.appStartTimeSpan.setStartedAt(20) // Can't be 0, as that's the default value if not set
+            metrics.appStartTimeSpan.setStartUnixTimeMs(20) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            metrics.appStartTimeSpan.setStoppedAt(200)
+            metrics.classLoadedUptimeMs = 100
+
+            AppStartMetrics.onApplicationCreate(mock<Application>())
+            metrics.applicationOnCreateTimeSpan.description = "Application created"
+            metrics.applicationOnCreateTimeSpan.setStartedAt(30) // Can't be 0, as that's the default value if not set
+            metrics.applicationOnCreateTimeSpan.setStartUnixTimeMs(30) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            metrics.applicationOnCreateTimeSpan.setStoppedAt(40)
+
+            val activityLifecycleSpan = ActivityLifecycleTimeSpan()
+            activityLifecycleSpan.onCreate.description = "Test Activity Lifecycle onCreate"
+            activityLifecycleSpan.onCreate.setStartedAt(50) // Can't be 0, as that's the default value if not set
+            activityLifecycleSpan.onCreate.setStartUnixTimeMs(50) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            activityLifecycleSpan.onCreate.setStoppedAt(60)
+
+            activityLifecycleSpan.onStart.description = "Test Activity Lifecycle onStart"
+            activityLifecycleSpan.onStart.setStartedAt(70) // Can't be 0, as that's the default value if not set
+            activityLifecycleSpan.onStart.setStartUnixTimeMs(70) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            activityLifecycleSpan.onStart.setStoppedAt(80)
+            metrics.addActivityLifecycleTimeSpans(activityLifecycleSpan)
+
+            AppStartMetrics.onContentProviderCreate(mock<ContentProvider>())
+            metrics.contentProviderOnCreateTimeSpans[0].description = "Test Content Provider created"
+            metrics.contentProviderOnCreateTimeSpans[0].setStartedAt(90)
+            metrics.contentProviderOnCreateTimeSpans[0].setStartUnixTimeMs(90)
+            metrics.contentProviderOnCreateTimeSpans[0].setStoppedAt(100)
+
+            metrics.appStartProfiler = mock()
+            metrics.appStartSamplingDecision = mock()
+        }
+
+        fun mockMinimumFinishedAppStart() {
+            val metrics = AppStartMetrics.getInstance()
+
+            metrics.appStartType = AppStartMetrics.AppStartType.WARM
+
+            metrics.appStartTimeSpan.setStartedAt(20) // Can't be 0, as that's the default value if not set
+            metrics.appStartTimeSpan.setStartUnixTimeMs(20) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            metrics.appStartTimeSpan.setStoppedAt(200)
+            metrics.classLoadedUptimeMs = 100
+
+            AppStartMetrics.onApplicationCreate(mock<Application>())
+            metrics.applicationOnCreateTimeSpan.description = "Application created"
+            metrics.applicationOnCreateTimeSpan.setStartedAt(30) // Can't be 0, as that's the default value if not set
+            metrics.applicationOnCreateTimeSpan.setStartUnixTimeMs(30) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            metrics.applicationOnCreateTimeSpan.setStoppedAt(40)
+        }
+
+        fun mockUnfinishedAppStart() {
+            val metrics = AppStartMetrics.getInstance()
+
+            metrics.appStartType = AppStartMetrics.AppStartType.WARM
+
+            metrics.appStartTimeSpan.setStartedAt(20) // Can't be 0, as that's the default value if not set
+            metrics.appStartTimeSpan.setStartUnixTimeMs(20) // The order matters, unix time must be set after started at in tests to avoid overwrite
+            metrics.appStartTimeSpan.setStoppedAt(200)
+            metrics.classLoadedUptimeMs = 100
+
+            AppStartMetrics.onApplicationCreate(mock<Application>())
+            metrics.applicationOnCreateTimeSpan.description = "Application created"
+            metrics.applicationOnCreateTimeSpan.setStartedAt(30) // Can't be 0, as that's the default value if not set
+
+            val activityLifecycleSpan = ActivityLifecycleTimeSpan() // Expect the created spans are not started nor stopped
+            activityLifecycleSpan.onCreate.description = "Test Activity Lifecycle onCreate"
+            activityLifecycleSpan.onStart.description = "Test Activity Lifecycle onStart"
+            metrics.addActivityLifecycleTimeSpans(activityLifecycleSpan)
         }
     }
 
@@ -234,7 +331,7 @@ class InternalSentrySdkTest {
 
     @Test
     fun `captureEnvelope fails if payload is invalid`() {
-        assertNull(InternalSentrySdk.captureEnvelope(ByteArray(8)))
+        assertNull(InternalSentrySdk.captureEnvelope(ByteArray(8), false))
     }
 
     @Test
@@ -258,27 +355,19 @@ class InternalSentrySdkTest {
     }
 
     @Test
-    fun `captureEnvelope correctly enriches the envelope with session data`() {
+    fun `captureEnvelope correctly enriches the envelope with session data and does not start new session`() {
         val fixture = Fixture()
         fixture.init(context)
 
-        // when capture envelope is called with an crashed event
-        fixture.captureEnvelopeWithEvent(
-            SentryEvent(RuntimeException()).apply {
-                val mechanism = Mechanism()
-                mechanism.isHandled = false
+        // keep reference for current session for later assertions
+        // we need to get the reference now as it will be removed from the scope
+        val sessionRef = AtomicReference<Session>()
+        Sentry.configureScope { scope ->
+            sessionRef.set(scope.session)
+        }
 
-                val factory = SentryExceptionFactory(mock())
-                val sentryExceptions = factory.getSentryExceptions(
-                    ExceptionMechanismException(
-                        mechanism,
-                        Throwable(),
-                        Thread()
-                    )
-                )
-                exceptions = sentryExceptions
-            }
-        )
+        // when capture envelope is called with an crashed event
+        fixture.captureEnvelopeWithEvent(fixture.createSentryEventWithUnhandledException())
 
         val capturedEnvelope = fixture.capturedEnvelopes.first()
         val capturedEnvelopeItems = capturedEnvelope.items.toList()
@@ -295,11 +384,130 @@ class InternalSentrySdkTest {
         )!!
         assertEquals(Session.State.Crashed, capturedSession.status)
 
-        // and the local session should be marked as crashed too
+        assertEquals(Session.State.Crashed, sessionRef.get().status)
+        assertEquals(capturedSession.sessionId, sessionRef.get().sessionId)
+    }
+
+    @Test
+    fun `captureEnvelope starts new session when enabled`() {
+        val fixture = Fixture()
+        fixture.init(context)
+
+        // when capture envelope is called with an crashed event
+        fixture.captureEnvelopeWithEvent(fixture.createSentryEventWithUnhandledException(), true)
+
         val scopeRef = AtomicReference<IScope>()
         Sentry.configureScope { scope ->
             scopeRef.set(scope)
         }
-        assertEquals(Session.State.Crashed, scopeRef.get().session!!.status)
+
+        // first envelope is the new session start
+        val capturedStartSessionEnvelope = fixture.capturedEnvelopes.first()
+        val capturedNewSessionStart = fixture.options.serializer.deserialize(
+            InputStreamReader(ByteArrayInputStream(capturedStartSessionEnvelope.items.toList()[0].data)),
+            Session::class.java
+        )!!
+        assertEquals(capturedNewSessionStart.sessionId, scopeRef.get().session!!.sessionId)
+        assertEquals(Session.State.Ok, capturedNewSessionStart.status)
+
+        val capturedEnvelope = fixture.capturedEnvelopes.last()
+        val capturedEnvelopeItems = capturedEnvelope.items.toList()
+
+        // there should be two envelopes session start and captured crash
+        assertEquals(2, fixture.capturedEnvelopes.size)
+
+        // then it should contain the original event + session
+        assertEquals(2, capturedEnvelopeItems.size)
+        assertEquals(SentryItemType.Event, capturedEnvelopeItems[0].header.type)
+        assertEquals(SentryItemType.Session, capturedEnvelopeItems[1].header.type)
+
+        // and then the sent session should be marked as crashed
+        val capturedSession = fixture.options.serializer.deserialize(
+            InputStreamReader(ByteArrayInputStream(capturedEnvelopeItems[1].data)),
+            Session::class.java
+        )!!
+        assertEquals(Session.State.Crashed, capturedSession.status)
+
+        // and the local session should be a new session
+        assertNotEquals(capturedSession.sessionId, scopeRef.get().session!!.sessionId)
+    }
+
+    @Test
+    fun `getAppStartMeasurement returns correct serialized data from the app start instance`() {
+        Fixture().mockFinishedAppStart()
+
+        val serializedAppStart = InternalSentrySdk.getAppStartMeasurement()
+
+        assertEquals("warm", serializedAppStart["type"])
+        assertEquals(20.toLong(), serializedAppStart["app_start_timestamp_ms"])
+
+        val actualSpans = serializedAppStart["spans"] as List<*>
+        assertEquals(5, actualSpans.size)
+
+        val actualProcessSpan = actualSpans[0] as Map<*, *>
+        assertEquals("Process Initialization", actualProcessSpan["description"])
+        assertEquals(20.toLong(), actualProcessSpan["start_timestamp_ms"])
+        assertEquals(100.toLong(), actualProcessSpan["end_timestamp_ms"])
+
+        val actualAppSpan = actualSpans[1] as Map<*, *>
+        assertEquals("Application created", actualAppSpan["description"])
+        assertEquals(30.toLong(), actualAppSpan["start_timestamp_ms"])
+        assertEquals(40.toLong(), actualAppSpan["end_timestamp_ms"])
+
+        val actualContentProviderSpan = actualSpans[2] as Map<*, *>
+        assertEquals("Test Content Provider created", actualContentProviderSpan["description"])
+        assertEquals(90.toLong(), actualContentProviderSpan["start_timestamp_ms"])
+        assertEquals(100.toLong(), actualContentProviderSpan["end_timestamp_ms"])
+
+        val actualActivityOnCreateSpan = actualSpans[3] as Map<*, *>
+        assertEquals("Test Activity Lifecycle onCreate", actualActivityOnCreateSpan["description"])
+        assertEquals(50.toLong(), actualActivityOnCreateSpan["start_timestamp_ms"])
+        assertEquals(60.toLong(), actualActivityOnCreateSpan["end_timestamp_ms"])
+
+        val actualActivityOnStartSpan = actualSpans[4] as Map<*, *>
+        assertEquals("Test Activity Lifecycle onStart", actualActivityOnStartSpan["description"])
+        assertEquals(70.toLong(), actualActivityOnStartSpan["start_timestamp_ms"])
+        assertEquals(80.toLong(), actualActivityOnStartSpan["end_timestamp_ms"])
+    }
+
+    @Test
+    fun `getAppStartMeasurement returns correct serialized data from the minimum app start instance`() {
+        Fixture().mockMinimumFinishedAppStart()
+
+        val serializedAppStart = InternalSentrySdk.getAppStartMeasurement()
+
+        assertEquals("warm", serializedAppStart["type"])
+        assertEquals(20.toLong(), serializedAppStart["app_start_timestamp_ms"])
+
+        val actualSpans = serializedAppStart["spans"] as List<*>
+        assertEquals(2, actualSpans.size)
+
+        val actualProcessSpan = actualSpans[0] as Map<*, *>
+        assertEquals("Process Initialization", actualProcessSpan["description"])
+        assertEquals(20.toLong(), actualProcessSpan["start_timestamp_ms"])
+        assertEquals(100.toLong(), actualProcessSpan["end_timestamp_ms"])
+
+        val actualAppSpan = actualSpans[1] as Map<*, *>
+        assertEquals("Application created", actualAppSpan["description"])
+        assertEquals(30.toLong(), actualAppSpan["start_timestamp_ms"])
+        assertEquals(40.toLong(), actualAppSpan["end_timestamp_ms"])
+    }
+
+    @Test
+    fun `getAppStartMeasurement returns only stopped spans in serialized data`() {
+        Fixture().mockUnfinishedAppStart()
+
+        val serializedAppStart = InternalSentrySdk.getAppStartMeasurement()
+
+        assertEquals("warm", serializedAppStart["type"])
+        assertEquals(20.toLong(), serializedAppStart["app_start_timestamp_ms"])
+
+        val actualSpans = serializedAppStart["spans"] as List<*>
+        assertEquals(1, actualSpans.size)
+
+        val actualProcessSpan = actualSpans[0] as Map<*, *>
+        assertEquals("Process Initialization", actualProcessSpan["description"])
+        assertEquals(20.toLong(), actualProcessSpan["start_timestamp_ms"])
+        assertEquals(100.toLong(), actualProcessSpan["end_timestamp_ms"])
     }
 }

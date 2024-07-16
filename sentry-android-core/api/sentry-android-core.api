@@ -81,7 +81,8 @@ public class io/sentry/android/core/AndroidProfiler$ProfileEndData {
 public class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public final field startCpuMillis J
 	public final field startNanos J
-	public fun <init> (JJ)V
+	public final field startTimestamp Ljava/util/Date;
+	public fun <init> (JJLjava/util/Date;)V
 }
 
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
@@ -183,9 +184,11 @@ public final class io/sentry/android/core/CurrentActivityIntegration : android/a
 public final class io/sentry/android/core/DeviceInfoUtil {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun collectDeviceInformation (ZZ)Lio/sentry/protocol/Device;
+	public static fun getBatteryLevel (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Float;
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
 	public static fun resetInstance ()V
 }
 
@@ -203,7 +206,8 @@ public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 
 public final class io/sentry/android/core/InternalSentrySdk {
 	public fun <init> ()V
-	public static fun captureEnvelope ([B)Lio/sentry/protocol/SentryId;
+	public static fun captureEnvelope ([BZ)Lio/sentry/protocol/SentryId;
+	public static fun getAppStartMeasurement ()Ljava/util/Map;
 	public static fun getCurrentScope ()Lio/sentry/IScope;
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
 }
