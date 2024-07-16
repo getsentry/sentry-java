@@ -56,6 +56,7 @@ class SentryNavigationListenerTest {
             toId: String? = "destination-id-1",
             enableBreadcrumbs: Boolean = true,
             enableTracing: Boolean = true,
+            enableScreenTracking: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             hasViewIdInRes: Boolean = true,
             transaction: SentryTracer? = null,
@@ -66,6 +67,7 @@ class SentryNavigationListenerTest {
                 setTracesSampleRate(
                     tracesSampleRate
                 )
+                isEnableScreenTracking = enableScreenTracking
             }
             whenever(hub.options).thenReturn(options)
 
@@ -371,7 +373,7 @@ class SentryNavigationListenerTest {
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
-        verify(fixture.hub).configureScope(any())
+        verify(fixture.hub, times(2)).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
     }
 
@@ -405,5 +407,23 @@ class SentryNavigationListenerTest {
                 assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, options.deadlineTimeout)
             }
         )
+    }
+
+    @Test
+    fun `onDestinationChanged sets scope screen`() {
+        val sut = fixture.getSut()
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.scope).screen = "/route"
+    }
+
+    @Test
+    fun `onDestinationChanged does not set scope screen when screen tracking is disabled`() {
+        val sut = fixture.getSut(enableScreenTracking = false)
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.scope, never()).screen = "/route"
     }
 }
