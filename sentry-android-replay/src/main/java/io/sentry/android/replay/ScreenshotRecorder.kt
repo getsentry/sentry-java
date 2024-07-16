@@ -25,6 +25,7 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
+import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
@@ -42,6 +43,7 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
+    val mainLooperHandler: MainLooperHandler,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
@@ -101,7 +103,7 @@ internal class ScreenshotRecorder(
         )
 
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
-        Handler(Looper.getMainLooper()).post {
+        mainLooperHandler.post {
             try {
                 contentChanged.set(false)
                 PixelCopy.request(
@@ -130,9 +132,10 @@ internal class ScreenshotRecorder(
                                 if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
                                     node.visibleRect ?: return@traverse false
 
-                                    if (viewHierarchy.isObscured(node)) {
-                                        return@traverse true
-                                    }
+                                    // TODO: investigate why it returns true on RN when it shouldn't
+//                                    if (viewHierarchy.isObscured(node)) {
+//                                        return@traverse true
+//                                    }
 
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
@@ -141,6 +144,8 @@ internal class ScreenshotRecorder(
                                         }
 
                                         is TextViewHierarchyNode -> {
+                                            // TODO: find a way to get the correct text color for RN
+                                            // TODO: now it always returns black
                                             node.layout.getVisibleRects(
                                                 node.visibleRect,
                                                 node.paddingLeft,
@@ -170,7 +175,7 @@ internal class ScreenshotRecorder(
                             bitmap.recycle()
                         }
                     },
-                    handler
+                    mainLooperHandler.handler
                 )
             } catch (e: Throwable) {
                 options.logger.log(WARNING, "Failed to capture replay recording", e)

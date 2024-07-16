@@ -8,6 +8,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.FixedWindowCallback
+import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import java.lang.ref.WeakReference
@@ -22,7 +23,8 @@ import kotlin.LazyThreadSafetyMode.NONE
 internal class WindowRecorder(
     private val options: SentryOptions,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
-    private val touchRecorderCallback: TouchRecorderCallback? = null
+    private val touchRecorderCallback: TouchRecorderCallback? = null,
+    private val mainLooperHandler: MainLooperHandler
 ) : Recorder {
 
     internal companion object {
@@ -65,7 +67,7 @@ internal class WindowRecorder(
             return
         }
 
-        recorder = ScreenshotRecorder(recorderConfig, options, screenshotRecorderCallback)
+        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, screenshotRecorderCallback)
         rootViewsSpy.listeners += onRootViewsChangedListener
         capturingTask = capturer.scheduleAtFixedRateSafely(
             options,

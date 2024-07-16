@@ -67,7 +67,11 @@ internal fun Layout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, padding
     for (i in 0 until lineCount) {
         val lineStart = getPrimaryHorizontal(getLineStart(i)).toInt()
         val ellipsisCount = getEllipsisCount(i)
-        val lineEnd = getPrimaryHorizontal(getLineVisibleEnd(i) - ellipsisCount + if (ellipsisCount > 0) 1 else 0).toInt()
+        var lineEnd = getPrimaryHorizontal(getLineVisibleEnd(i) - ellipsisCount + if (ellipsisCount > 0) 1 else 0).toInt()
+        if (lineEnd == 0) {
+            // looks like the case for when emojis are present in text
+            lineEnd = getPrimaryHorizontal(getLineVisibleEnd(i) - 1).toInt() + 1
+        }
         val lineTop = getLineTop(i)
         val lineBottom = getLineBottom(i)
         val rect = Rect()

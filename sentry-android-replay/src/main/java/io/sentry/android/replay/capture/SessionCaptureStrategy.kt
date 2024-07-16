@@ -1,7 +1,9 @@
 package io.sentry.android.replay.capture
 
+import android.graphics.Bitmap
 import io.sentry.DateUtils
 import io.sentry.Hint
+import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -19,7 +21,7 @@ internal class SessionCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     executor: ScheduledExecutorService? = null,
-    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider) {
 
     internal companion object {
@@ -77,7 +79,12 @@ internal class SessionCaptureStrategy(
         }
     }
 
-    override fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit) {
+    override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
+        if (options.connectionStatusProvider.connectionStatus == DISCONNECTED) {
+            options.logger.log(DEBUG, "Skipping screenshot recording, no internet connection")
+            bitmap?.recycle()
+            return
+        }
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis

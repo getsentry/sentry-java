@@ -1,11 +1,14 @@
 package io.sentry.android.replay.capture
 
+import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.Hint
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.protocol.SentryId
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 internal interface CaptureStrategy {
     var currentSegment: Int
@@ -22,7 +25,7 @@ internal interface CaptureStrategy {
 
     fun sendReplayForEvent(isCrashed: Boolean, eventId: String?, hint: Hint?, onSegmentSent: () -> Unit)
 
-    fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit)
+    fun onScreenshotRecorded(bitmap: Bitmap? = null, store: ReplayCache.(frameTimestamp: Long) -> Unit)
 
     fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig)
 

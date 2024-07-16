@@ -262,6 +262,25 @@ class ReplayCacheTest {
     }
 
     @Test
+    fun `rotates frames`() {
+        val replayCache = fixture.getSut(
+            tmpDir,
+            frameRate = 1,
+            framesToEncode = 5
+        )
+
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+        replayCache.addFrame(bitmap, 1)
+        replayCache.addFrame(bitmap, 1001)
+        replayCache.addFrame(bitmap, 2001)
+
+        replayCache.rotate(2000)
+
+        assertEquals(1, replayCache.frames.size)
+        assertTrue(replayCache.replayCacheDir!!.listFiles()!!.none { it.name == "1.jpg" || it.name == "1001.jpg" })
+    }
+
+    @Test
     fun `does not persist segment if already closed`() {
         val replayId = SentryId()
         val replayCache = fixture.getSut(

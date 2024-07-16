@@ -58,7 +58,7 @@ internal abstract class BaseCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     executor: ScheduledExecutorService? = null,
-    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -128,8 +128,7 @@ internal abstract class BaseCaptureStrategy(
             }
         }
 
-        cache =
-            replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId, recorderConfig)
+        cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
 
         replayType = if (this is SessionCaptureStrategy) SESSION else BUFFER
         this.recorderConfig = recorderConfig

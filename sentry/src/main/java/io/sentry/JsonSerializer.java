@@ -30,8 +30,12 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.rrweb.RRWebBreadcrumbEvent;
 import io.sentry.rrweb.RRWebEventType;
+import io.sentry.rrweb.RRWebInteractionEvent;
+import io.sentry.rrweb.RRWebInteractionMoveEvent;
 import io.sentry.rrweb.RRWebMetaEvent;
+import io.sentry.rrweb.RRWebSpanEvent;
 import io.sentry.rrweb.RRWebVideoEvent;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
@@ -95,8 +99,13 @@ public final class JsonSerializer implements ISerializer {
         ProfileMeasurementValue.class, new ProfileMeasurementValue.Deserializer());
     deserializersByClass.put(Request.class, new Request.Deserializer());
     deserializersByClass.put(ReplayRecording.class, new ReplayRecording.Deserializer());
+    deserializersByClass.put(RRWebBreadcrumbEvent.class, new RRWebBreadcrumbEvent.Deserializer());
     deserializersByClass.put(RRWebEventType.class, new RRWebEventType.Deserializer());
+    deserializersByClass.put(RRWebInteractionEvent.class, new RRWebInteractionEvent.Deserializer());
+    deserializersByClass.put(
+        RRWebInteractionMoveEvent.class, new RRWebInteractionMoveEvent.Deserializer());
     deserializersByClass.put(RRWebMetaEvent.class, new RRWebMetaEvent.Deserializer());
+    deserializersByClass.put(RRWebSpanEvent.class, new RRWebSpanEvent.Deserializer());
     deserializersByClass.put(RRWebVideoEvent.class, new RRWebVideoEvent.Deserializer());
     deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
     deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());

@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -23,7 +24,7 @@ internal class BufferCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     private val random: SecureRandom,
-    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider) {
 
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
@@ -82,6 +83,12 @@ internal class BufferCaptureStrategy(
             return
         }
 
+        // write replayId to scope right away, so it gets picked up by the event that caused buffer
+        // to flush
+        hub?.configureScope {
+            it.replayId = currentReplayId
+        }
+
         val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
@@ -126,7 +133,7 @@ internal class BufferCaptureStrategy(
         }
     }
 
-    override fun onScreenshotRecorded(store: ReplayCache.(frameTimestamp: Long) -> Unit) {
+    override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
