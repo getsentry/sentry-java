@@ -711,15 +711,19 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
+        val date2 = SentryNanotimeDate(Date(2), 2)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
+        // The activity onCreate date will be ignored
+        fixture.options.dateProvider = SentryDateProvider { date2 }
         sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(
             any(),
             check<TransactionOptions> {
                 assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+                assertNotEquals(date2.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
                 assertFalse(it.isAppStartTransaction)
             }
         )
@@ -755,6 +759,30 @@ class ActivityLifecycleIntegrationTest {
         verify(fixture.hub).startTransaction(
             any(),
             check<TransactionOptions> { assertNotEquals(date, it.startTimestamp) }
+        )
+    }
+
+    @Test
+    fun `When firstActivityCreated is true and no app start time is set, default to onActivityCreated time`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        // usually set by SentryPerformanceProvider
+        val date = SentryNanotimeDate(Date(1), 0)
+        val date2 = SentryNanotimeDate(Date(2), 2)
+
+        val activity = mock<Activity>()
+        // Activity onCreate date will be used
+        fixture.options.dateProvider = SentryDateProvider { date2 }
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> {
+                assertEquals(date2.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+                assertNotEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+            }
         )
     }
 

@@ -56,6 +56,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private @Nullable SentryDate onCreateTime = null;
   private boolean appLaunchTooLong = false;
+  private boolean isCallbackRegistered = false;
 
   public static @NotNull AppStartMetrics getInstance() {
 
@@ -186,6 +187,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchTooLong = false;
     appLaunchedInForeground = false;
     onCreateTime = null;
+    isCallbackRegistered = false;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -223,8 +225,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
-      instance.appLaunchedInForeground =
-          instance.appLaunchedInForeground || ContextUtils.isForegroundImportance();
       instance.registerApplicationForegroundCheck(application);
     }
   }
@@ -235,6 +235,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * @param application The application object to register the callback to
    */
   public void registerApplicationForegroundCheck(final @NotNull Application application) {
+    if (isCallbackRegistered) {
+      return;
+    }
+    isCallbackRegistered = true;
+    appLaunchedInForeground = appLaunchedInForeground || ContextUtils.isForegroundImportance();
     application.registerActivityLifecycleCallbacks(instance);
     new Handler(Looper.getMainLooper())
         .post(
@@ -244,6 +249,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                 appLaunchedInForeground = false;
               }
               application.unregisterActivityLifecycleCallbacks(instance);
+              // we stop the app start profiler, as it's useless and likely to timeout
+              if (appStartProfiler != null && appStartProfiler.isRunning()) {
+                appStartProfiler.close();
+                appStartProfiler = null;
+              }
             });
   }
 

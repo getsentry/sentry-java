@@ -5,6 +5,7 @@ import android.content.ContentProvider
 import android.os.Build
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.ITransactionProfiler
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
@@ -12,7 +13,9 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
@@ -36,7 +39,6 @@ class AppStartMetricsTest {
         AppStartMetrics.getInstance().clear()
         SentryShadowProcess.setStartUptimeMillis(42)
         AppStartMetrics.getInstance().isAppLaunchedInForeground = true
-        AppStartMetrics.onApplicationCreate(mock())
     }
 
     @Test
@@ -170,21 +172,28 @@ class AppStartMetricsTest {
 
     @Test
     fun `if activity is never started, returns an empty span`() {
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
-        appStartTimeSpan.start()
-        appStartTimeSpan.stop()
         appStartTimeSpan.setStartedAt(1)
-        appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 1)
         assertTrue(appStartTimeSpan.hasStarted())
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
-        }
-
-        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(SentryAndroidOptions())
         assertFalse(timeSpan.hasStarted())
+    }
+
+    @Test
+    fun `if activity is never started, stops app start profiler if running`() {
+        val profiler = mock<ITransactionProfiler>()
+        whenever(profiler.isRunning).thenReturn(true)
+        AppStartMetrics.getInstance().appStartProfiler = profiler
+
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        // Job on main thread checks if activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        verify(profiler).close()
     }
 
     @Test
@@ -203,6 +212,14 @@ class AppStartMetricsTest {
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         assertFalse(timeSpan.hasStarted())
+    }
+
+    @Test
+    fun `when multiple registerApplicationForegroundCheck, only one callback is registered to application`() {
+        val application = mock<Application>()
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        verify(application, times(1)).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
     }
 
     @Test
