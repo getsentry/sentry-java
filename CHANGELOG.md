@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Check app start spans time and ignore background app starts ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
+  - This should eliminate long-lasting App Start transactions
+
 ## 7.12.0
 
 ### Features
