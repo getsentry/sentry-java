@@ -120,7 +120,7 @@ class ReplayIntegrationTest {
 
         replay.start()
 
-        verify(captureStrategy, never()).start()
+        verify(captureStrategy, never()).start(any(), any(), any(), any())
     }
 
     @Test
@@ -143,7 +143,7 @@ class ReplayIntegrationTest {
         replay.start()
         replay.start()
 
-        verify(captureStrategy, times(1)).start(eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
+        verify(captureStrategy, times(1)).start(any(), eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
     }
 
     @Test
@@ -154,7 +154,7 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
         replay.start()
 
-        verify(captureStrategy, never()).start(eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
+        verify(captureStrategy, never()).start(any(), eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
     }
 
     @Test
@@ -165,7 +165,7 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
         replay.start()
 
-        verify(captureStrategy, times(1)).start(eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
+        verify(captureStrategy, times(1)).start(any(), eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
     }
 
     @Test
@@ -236,7 +236,7 @@ class ReplayIntegrationTest {
     @Test
     fun `sendReplayForEvent does nothing when currentReplayId is not set`() {
         val captureStrategy = mock<CaptureStrategy> {
-            whenever(mock.currentReplayId).thenReturn(AtomicReference(SentryId.EMPTY_ID))
+            whenever(mock.currentReplayId).thenReturn(SentryId.EMPTY_ID)
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
@@ -254,7 +254,7 @@ class ReplayIntegrationTest {
     @Test
     fun `sendReplayForEvent calls and converts strategy`() {
         val captureStrategy = mock<CaptureStrategy> {
-            whenever(mock.currentReplayId).thenReturn(AtomicReference(SentryId()))
+            whenever(mock.currentReplayId).thenReturn(SentryId())
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
