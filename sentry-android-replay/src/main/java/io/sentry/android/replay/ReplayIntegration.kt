@@ -236,8 +236,6 @@ public class ReplayIntegration(
         } catch (ignored: Throwable) {
         }
         stop()
-        captureStrategy?.close()
-        captureStrategy = null
         recorder?.close()
         recorder = null
     }

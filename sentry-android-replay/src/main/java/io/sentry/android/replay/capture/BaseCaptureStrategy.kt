@@ -23,6 +23,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.util.PersistableLinkedList
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.cache.PersistingScopeObserver
@@ -40,9 +41,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
-import java.io.BufferedWriter
 import java.io.File
-import java.io.StringWriter
 import java.util.Date
 import java.util.LinkedList
 import java.util.concurrent.Executors
@@ -275,7 +274,7 @@ internal abstract class BaseCaptureStrategy(
             }
         }
 
-        if (screenAtStart != null && urls.first != screenAtStart) {
+        if (screenAtStart != null && urls.firstOrNull() != screenAtStart) {
             urls.addFirst(screenAtStart)
         }
 
@@ -573,46 +572,4 @@ internal abstract class BaseCaptureStrategy(
         }
     ): ReadWriteProperty<Any?, T> =
         persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
-
-    private class PersistableLinkedList(
-        private val propertyName: String,
-        private val options: SentryOptions,
-        private val persistingExecutor: ScheduledExecutorService,
-        private val cacheProvider: () -> ReplayCache?
-    ) : LinkedList<RRWebEvent>() {
-        // only overriding methods that we use, to observe the collection
-        override fun addAll(elements: Collection<RRWebEvent>): Boolean {
-            val result = super.addAll(elements)
-            persistRecording()
-            return result
-        }
-
-        override fun add(element: RRWebEvent): Boolean {
-            val result = super.add(element)
-            persistRecording()
-            return result
-        }
-
-        override fun remove(): RRWebEvent {
-            val result = super.remove()
-            persistRecording()
-            return result
-        }
-
-        private fun persistRecording() {
-            val cache = cacheProvider() ?: return
-            val recording = ReplayRecording().apply { payload = this@PersistableLinkedList }
-            if (options.mainThreadChecker.isMainThread) {
-                persistingExecutor.submit {
-                    val stringWriter = StringWriter()
-                    options.serializer.serialize(recording, BufferedWriter(stringWriter))
-                    cache.persistSegmentValues(propertyName, stringWriter.toString())
-                }
-            } else {
-                val stringWriter = StringWriter()
-                options.serializer.serialize(recording, BufferedWriter(stringWriter))
-                cache.persistSegmentValues(propertyName, stringWriter.toString())
-            }
-        }
-    }
 }

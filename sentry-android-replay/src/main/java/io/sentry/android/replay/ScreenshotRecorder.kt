@@ -13,8 +13,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import android.os.Handler
-import android.os.Looper
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -51,7 +49,6 @@ internal class ScreenshotRecorder(
         Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
     }
     private var rootView: WeakReference<View>? = null
-    private val handler = Handler(Looper.getMainLooper())
     private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint = Paint()
     private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
