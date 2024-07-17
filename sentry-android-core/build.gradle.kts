@@ -1,5 +1,6 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.tooling.core.compareTo
 
 plugins {
     id("com.android.library")
@@ -15,7 +16,6 @@ android {
     namespace = "io.sentry.android.core"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
@@ -24,6 +24,14 @@ android {
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    }
+
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
     }
 
     buildTypes {
@@ -52,16 +60,17 @@ android {
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
     }
+    buildFeatures {
+        buildConfig = true
+    }
 
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

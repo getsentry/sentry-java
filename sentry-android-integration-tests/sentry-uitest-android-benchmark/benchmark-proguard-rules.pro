@@ -33,3 +33,5 @@
 
 -dontwarn androidx.test.**
 -dontwarn org.junit.**
+-dontwarn androidx.annotation.RequiresOptIn
+-dontwarn com.google.errorprone.annotations.MustBeClosed

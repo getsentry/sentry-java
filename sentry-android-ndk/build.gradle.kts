@@ -24,7 +24,6 @@ android {
     println("sentry-android-ndk: $sentryNativeSrc")
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
@@ -43,6 +42,14 @@ android {
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    }
+
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
     }
 
     // we use the default NDK and CMake versions based on the AGP's version
@@ -73,12 +80,8 @@ android {
         }
     }
 
-    lint {
-        warningsAsErrors = true
-        checkDependencies = true
-
-        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-        checkReleaseBuilds = false
+    buildFeatures {
+        buildConfig = true
     }
 
     nativeBundleExport {
@@ -90,10 +93,8 @@ android {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

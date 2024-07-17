@@ -163,5 +163,5 @@ internal class WindowRecorder(
 }
 
 public interface TouchRecorderCallback {
-    fun onTouchEvent(event: MotionEvent)
+    public fun onTouchEvent(event: MotionEvent)
 }

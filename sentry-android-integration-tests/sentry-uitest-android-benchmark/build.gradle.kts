@@ -29,6 +29,14 @@ android {
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
+    }
+
     testOptions {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
@@ -55,12 +63,14 @@ android {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            testProguardFiles("benchmark-proguard-rules.pro")
         }
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            testProguardFiles("benchmark-proguard-rules.pro")
         }
     }
 
@@ -68,18 +78,8 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
-    lint {
-        warningsAsErrors = true
-        checkDependencies = true
-
-        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-        checkReleaseBuilds = false
-    }
-
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

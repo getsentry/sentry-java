@@ -41,31 +41,31 @@ import java.net.Proxy
     ReplaceWith("SentryOkHttpEventListener", "io.sentry.okhttp.SentryOkHttpEventListener")
 )
 @Suppress("TooManyFunctions")
-class SentryOkHttpEventListener(
+public class SentryOkHttpEventListener(
     hub: IHub = HubAdapter.getInstance(),
     originalEventListenerCreator: ((call: Call) -> EventListener)? = null
 ) : EventListener() {
-    constructor() : this(
+    public constructor() : this(
         HubAdapter.getInstance(),
         originalEventListenerCreator = null
     )
 
-    constructor(originalEventListener: EventListener) : this(
+    public constructor(originalEventListener: EventListener) : this(
         HubAdapter.getInstance(),
         originalEventListenerCreator = { originalEventListener }
     )
 
-    constructor(originalEventListenerFactory: Factory) : this(
+    public constructor(originalEventListenerFactory: Factory) : this(
         HubAdapter.getInstance(),
         originalEventListenerCreator = { originalEventListenerFactory.create(it) }
     )
 
-    constructor(hub: IHub = HubAdapter.getInstance(), originalEventListener: EventListener) : this(
+    public constructor(hub: IHub = HubAdapter.getInstance(), originalEventListener: EventListener) : this(
         hub,
         originalEventListenerCreator = { originalEventListener }
     )
 
-    constructor(hub: IHub = HubAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
+    public constructor(hub: IHub = HubAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
         hub,
         originalEventListenerCreator = { originalEventListenerFactory.create(it) }
     )

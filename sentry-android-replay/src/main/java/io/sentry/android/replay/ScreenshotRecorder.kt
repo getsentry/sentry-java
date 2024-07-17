@@ -288,7 +288,7 @@ public data class ScreenshotRecorderConfig(
     val frameRate: Int,
     val bitRate: Int
 ) {
-    companion object {
+    internal companion object {
         /**
          * Since codec block size is 16, so we have to adjust the width and height to it, otherwise
          * the codec might fail to configure on some devices, see https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
@@ -349,7 +349,7 @@ public interface ScreenshotRecorderCallback {
      *
      * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
      */
-    fun onScreenshotRecorded(bitmap: Bitmap)
+    public fun onScreenshotRecorded(bitmap: Bitmap)
 
     /**
      * Called whenever a new frame screenshot is available.
@@ -357,5 +357,5 @@ public interface ScreenshotRecorderCallback {
      * @param screenshot file containing the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
+    public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
 }

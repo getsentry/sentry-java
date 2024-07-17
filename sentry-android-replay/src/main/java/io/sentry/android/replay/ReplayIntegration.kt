@@ -41,7 +41,7 @@ public class ReplayIntegration(
 ) : Integration, Closeable, ScreenshotRecorderCallback, TouchRecorderCallback, ReplayController, ComponentCallbacks {
 
     // needed for the Java's call site
-    constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
+    public constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
         context,
         dateProvider,
         null,
@@ -114,7 +114,7 @@ public class ReplayIntegration(
             .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
     }
 
-    override fun isRecording() = isRecording.get()
+    override fun isRecording(): Boolean = isRecording.get()
 
     override fun start() {
         // TODO: add lifecycle state instead and manage it in start/pause/resume/stop
@@ -252,7 +252,7 @@ public class ReplayIntegration(
         recorder?.start(recorderConfig)
     }
 
-    override fun onLowMemory() = Unit
+    override fun onLowMemory(): Unit = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
         captureStrategy?.onTouchEvent(event)

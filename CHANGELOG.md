@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Internal: Version bump Gradle=8.6, AGP=8.3.0, kotlin=1.9.22, compose=1.5.12 ([#3263](https://github.com/getsentry/sentry-java/pull/3263))
+
 ## 7.12.0
 
 ### Features
@@ -69,7 +75,6 @@
 ## 7.9.0
 
 ### Features
-
 - Add start_type to app context ([#3379](https://github.com/getsentry/sentry-java/pull/3379))
 - Add ttid/ttfd contribution flags ([#3386](https://github.com/getsentry/sentry-java/pull/3386))
 
@@ -80,6 +85,9 @@
 - Fix timing metric value different from span duration ([#3368](https://github.com/getsentry/sentry-java/pull/3368))
 - Do not always write startup crash marker ([#3409](https://github.com/getsentry/sentry-java/pull/3409))
   - This may have been causing the SDK init logic to block the main thread
+
+**Breaking changes:**
+- The min supported Kotlin language version has been bumped to `1.5`, please consider using previous version of the SDK if you have to support compatibility with earlier Kotlin versions
 
 ## 7.8.0
 

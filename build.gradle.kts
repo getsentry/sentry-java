@@ -1,7 +1,5 @@
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
-import com.vanniktech.maven.publish.MavenPublishPlugin
-import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverReportExtension
@@ -13,10 +11,10 @@ plugins {
     id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
-    `maven-publish`
     id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
     id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
     id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
+    id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
 }
 
 buildscript {
@@ -26,7 +24,6 @@ buildscript {
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
-        classpath(Config.BuildPlugins.gradleMavenPublishPlugin)
         // dokka is required by gradle-maven-publish-plugin.
         classpath(Config.BuildPlugins.dokkaPlugin)
         classpath(Config.QualityPlugins.errorpronePlugin)
@@ -137,7 +134,7 @@ subprojects {
                 androidReports("release") {
                     xml {
                         // Change the report file name so the Codecov Github action can find it
-                        setReportFile(file("$buildDir/reports/kover/report.xml"))
+                        setReportFile(file("${layout.buildDirectory}/reports/kover/report.xml"))
                     }
                 }
             }
@@ -152,8 +149,15 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
+    if (!this.name.contains("sample") &&
+        !this.name.contains("integration-tests") &&
+        this.name != "sentry-test-support" &&
+        this.name != "sentry-compose-helper" &&
+        this.name != "sentry-bom"
+    ) {
+
         apply<DistributionPlugin>()
+        apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
         val sep = File.separator
 
@@ -177,7 +181,7 @@ subprojects {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
                 val distributionFilePath =
-                    "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
+                    "${this.project.layout.buildDirectory}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
@@ -187,13 +191,6 @@ subprojects {
         afterEvaluate {
             apply<MavenPublishPlugin>()
 
-            configure<MavenPublishPluginExtension> {
-                // signing is done when uploading files to MC
-                // via gpg:sign-and-deploy-file (release.kts)
-                releaseSigningEnabled = false
-            }
-
-            @Suppress("UnstableApiUsage")
             configure<MavenPublishBaseExtension> {
                 assignAarTypes()
             }
@@ -203,7 +200,7 @@ subprojects {
                 repositories {
                     maven {
                         name = "unityMaven"
-                        url = file("${rootProject.buildDir}/unityMaven").toURI()
+                        url = file("${rootProject.layout.buildDirectory}/unityMaven").toURI()
                     }
                 }
             }
@@ -240,7 +237,7 @@ spotless {
 
 gradle.projectsEvaluated {
     tasks.create("aggregateJavadocs", Javadoc::class.java) {
-        setDestinationDir(file("$buildDir/docs/javadoc"))
+        setDestinationDir(file("${layout.buildDirectory}/docs/javadoc"))
         title = "${project.name} $version API"
         val opts = options as StandardJavadocDocletOptions
         opts.quiet()
