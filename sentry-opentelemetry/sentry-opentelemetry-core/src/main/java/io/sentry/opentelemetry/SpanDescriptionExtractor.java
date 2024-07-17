@@ -66,7 +66,9 @@ public final class SpanDescriptionExtractor {
     }
 
     final @NotNull String name = otelSpan.getName();
-    final @Nullable String description = sentrySpan != null ? sentrySpan.getDescription() : name;
+    final @Nullable String maybeDescription =
+        sentrySpan != null ? sentrySpan.getDescription() : name;
+    final @NotNull String description = maybeDescription != null ? maybeDescription : name;
     return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
   }
 
