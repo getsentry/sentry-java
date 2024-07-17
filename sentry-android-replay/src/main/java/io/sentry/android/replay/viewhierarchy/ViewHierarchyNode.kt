@@ -11,7 +11,7 @@ import io.sentry.android.replay.util.isRedactable
 import io.sentry.android.replay.util.isVisibleToUser
 
 @TargetApi(26)
-sealed class ViewHierarchyNode(
+internal sealed class ViewHierarchyNode(
     val x: Float,
     val y: Float,
     val width: Int,

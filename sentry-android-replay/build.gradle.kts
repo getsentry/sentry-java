@@ -16,13 +16,16 @@ android {
     namespace = "io.sentry.android.replay"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersionReplay
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -51,10 +54,12 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    configurations.all {
+        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 }
 
@@ -66,6 +71,8 @@ dependencies {
     api(projects.sentry)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+
+    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
     testImplementation(projects.sentryTestSupport)

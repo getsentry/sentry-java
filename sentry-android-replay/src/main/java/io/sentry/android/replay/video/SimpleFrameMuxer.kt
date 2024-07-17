@@ -34,7 +34,7 @@ import android.media.MediaCodec
 import android.media.MediaFormat
 import java.nio.ByteBuffer
 
-interface SimpleFrameMuxer {
+internal interface SimpleFrameMuxer {
     fun isStarted(): Boolean
 
     fun start(videoFormat: MediaFormat)

@@ -222,7 +222,7 @@ public class ReplayCache internal constructor(
      *
      * @param until value until whose the frames should be removed, represented as unix timestamp
      */
-    fun rotate(until: Long) {
+    public fun rotate(until: Long) {
         frames.removeAll {
             if (it.timestamp < until) {
                 deleteFile(it.screenshot)

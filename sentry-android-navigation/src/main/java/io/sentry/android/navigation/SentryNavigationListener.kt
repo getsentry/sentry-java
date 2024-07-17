@@ -193,7 +193,7 @@ public class SentryNavigationListener @JvmOverloads constructor(
         return "/" + name.substringBefore('/') // strip out arguments from the tx name
     }
 
-    companion object {
-        const val NAVIGATION_OP = "navigation"
+    public companion object {
+        public const val NAVIGATION_OP: String = "navigation"
     }
 }
