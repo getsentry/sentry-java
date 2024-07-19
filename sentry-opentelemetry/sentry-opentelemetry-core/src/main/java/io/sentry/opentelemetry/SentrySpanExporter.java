@@ -228,6 +228,10 @@ public final class SentrySpanExporter implements SpanExporter {
       sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
     }
 
+    for (Map.Entry<String, Object> dataField : toMapWithStringKeys(spanData.getAttributes()).entrySet()) {
+      sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
+    }
+
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
