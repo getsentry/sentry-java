@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
+import io.opentelemetry.semconv.ResourceAttributes;
 import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
@@ -52,6 +53,8 @@ public final class SentrySpanExporter implements SpanExporter {
       new SpanDescriptionExtractor();
   private final @NotNull IScopes scopes;
 
+  //TODO [POTEL] should we also ignore "process.command_args" (`ResourceAttributes.PROCESS_COMMAND_ARGS`)?
+  // As these are apparently so long that information that is added after it is lost
   private final @NotNull List<String> attributeKeysToRemove =
       Arrays.asList(
           InternalSemanticAttributes.IS_REMOTE_PARENT.getKey(),
@@ -187,8 +190,6 @@ public final class SentrySpanExporter implements SpanExporter {
         spanStorage.getSentrySpan(spanData.getSpanContext());
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
-    // TODO attributes
-    // TODO cleanup sentry attributes
 
     scopes
         .getOptions()
@@ -231,6 +232,8 @@ public final class SentrySpanExporter implements SpanExporter {
     for (Map.Entry<String, Object> dataField : toMapWithStringKeys(spanData.getAttributes()).entrySet()) {
       sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
     }
+
+    setOtelInstrumentationInfo(spanData, sentryChildSpan);
 
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
 
@@ -278,7 +281,6 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull String traceId = span.getTraceId();
     final @Nullable OtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(span.getSpanContext());
-
     final @Nullable IScopes scopesMaybe =
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
     final @NotNull IScopes scopesToUse =
@@ -345,6 +347,8 @@ public final class SentrySpanExporter implements SpanExporter {
     for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
       sentryTransaction.setData(dataField.getKey(), dataField.getValue());
     }
+
+    setOtelInstrumentationInfo(span, sentryTransaction);
 
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
 
@@ -498,6 +502,18 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private boolean isSentryInternalKey(final @NotNull String key) {
     return attributeKeysToRemove.contains(key);
+  }
+
+  private void setOtelInstrumentationInfo(SpanData span, ISpan sentryTransaction) {
+    final @Nullable String otelInstrumentationName = span.getInstrumentationScopeInfo().getName();
+    if(otelInstrumentationName != null) {
+      sentryTransaction.setData("otel.instrumentation.name", otelInstrumentationName);
+    }
+
+    final @Nullable String otelInstrumentationVersion = span.getInstrumentationScopeInfo().getVersion();
+    if(otelInstrumentationVersion != null) {
+      sentryTransaction.setData("otel.instrumentation.version", otelInstrumentationVersion);
+    }
   }
 
   @Override
