@@ -16,6 +16,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.createSentryClientMock
+import io.sentry.test.injectForField
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IMainThreadChecker
 import io.sentry.util.thread.MainThreadChecker
@@ -42,6 +43,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
@@ -957,12 +959,16 @@ class SentryTest {
 
     @Test
     fun `getSpan calls returns root span if globalHubMode is enabled on Android`() {
+        var sentryOptions: CustomAndroidOptions? = null
         PlatformTestManipulator.pretendIsAndroid(true)
-        Sentry.init({
+        Sentry.init(OptionsContainer.create(CustomAndroidOptions::class.java), {
             it.dsn = dsn
             it.enableTracing = true
             it.sampleRate = 1.0
+            it.mockName()
+            sentryOptions = it
         }, true)
+        sentryOptions?.resetName()
 
         val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
         transaction.startChild("op-child")
@@ -1175,6 +1181,36 @@ class SentryTest {
     }
 
     @Test
+    fun `init on Android throws when not using SentryAndroidOptions`() {
+        PlatformTestManipulator.pretendIsAndroid(true)
+        assertFails("You are running Android. Please, use SentryAndroid.init.") {
+            Sentry.init {
+                it.dsn = dsn
+            }
+        }
+        PlatformTestManipulator.pretendIsAndroid(false)
+    }
+
+    @Test
+    fun `init on Android works when using SentryAndroidOptions`() {
+        PlatformTestManipulator.pretendIsAndroid(true)
+        val options = CustomAndroidOptions().also {
+            it.dsn = dsn
+            it.mockName()
+        }
+        Sentry.init(options)
+        options.resetName()
+        PlatformTestManipulator.pretendIsAndroid(false)
+    }
+
+    @Test
+    fun `init on Java works when not using SentryAndroidOptions`() {
+        Sentry.init {
+            it.dsn = dsn
+        }
+    }
+
+    @Test
     fun `metrics calls scopes getMetrics`() {
         val scopes = mock<IScopes>()
         Sentry.init({
@@ -1259,5 +1295,25 @@ class SentryTest {
         // sanity check
         assertFalse(tempFile.exists())
         return tempFile.absolutePath
+    }
+
+    /**
+     * Custom SentryOptions for Android.
+     * It needs to call [mockName] to change its name in io.sentry.android.core.SentryAndroidOptions.
+     *  The name cannot be changed right away, because Sentry.init instantiates the options through reflection.
+     *  So the name should be changed in option configuration.
+     * After the test, it needs to call [resetName] to reset the name back to io.sentry.SentryTest$CustomAndroidOptions,
+     *  since it's cached internally and would break subsequent tests otherwise.
+     */
+    private class CustomAndroidOptions : SentryOptions() {
+        init {
+            resetName()
+        }
+        fun mockName() {
+            javaClass.injectForField("name", "io.sentry.android.core.SentryAndroidOptions")
+        }
+        fun resetName() {
+            javaClass.injectForField("name", "io.sentry.SentryTest\$CustomAndroidOptions")
+        }
     }
 }
