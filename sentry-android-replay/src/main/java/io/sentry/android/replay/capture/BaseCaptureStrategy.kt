@@ -117,7 +117,7 @@ internal abstract class BaseCaptureStrategy(
                     File(cacheDir).listFiles { dir, name ->
                         if (name.startsWith("replay_") &&
                             !name.contains(replayId.toString()) &&
-                            !name.contains(unfinishedReplayId)
+                            !(unfinishedReplayId.isNotBlank() && name.contains(unfinishedReplayId))
                         ) {
                             FileUtils.deleteRecursively(File(dir, name))
                         }
@@ -134,7 +134,6 @@ internal abstract class BaseCaptureStrategy(
         currentSegment = segmentId
         currentReplayId = replayId
 
-        // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
 
@@ -142,7 +141,6 @@ internal abstract class BaseCaptureStrategy(
     }
 
     override fun resume() {
-        // TODO: replace it with dateProvider.currentTimeMillis to also test it
         segmentTimestamp = DateUtils.getCurrentDateTime()
     }
 
@@ -341,7 +339,7 @@ internal abstract class BaseCaptureStrategy(
             }
             val breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java, Breadcrumb.Deserializer()) as? List<Breadcrumb>
 
-            val lastSegment = ReplayCache.fromDisk(options, previousReplayId) ?: return@submitSafely
+            val lastSegment = ReplayCache.fromDisk(options, previousReplayId, replayCacheProvider) ?: return@submitSafely
             val segment = createSegment(
                 duration = lastSegment.duration,
                 currentSegmentTimestamp = lastSegment.timestamp,

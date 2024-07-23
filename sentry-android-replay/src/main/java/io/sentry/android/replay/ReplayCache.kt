@@ -294,7 +294,7 @@ public class ReplayCache internal constructor(
             }
         }
 
-        internal fun fromDisk(options: SentryOptions, replayId: SentryId): LastSegmentData? {
+        internal fun fromDisk(options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null): LastSegmentData? {
             val replayCacheDir = makeReplayCacheDir(options, replayId)
             val lastSegmentFile = File(replayCacheDir, ONGOING_SEGMENT)
             if (!lastSegmentFile.exists()) {
@@ -348,7 +348,7 @@ public class ReplayCache internal constructor(
                 scaleFactorY = 1.0f
             )
 
-            val cache = ReplayCache(options, replayId, recorderConfig)
+            val cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
             cache.replayCacheDir?.listFiles { dir, name ->
                 if (name.endsWith(".jpg")) {
                     val file = File(dir, name)

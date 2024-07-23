@@ -36,7 +36,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [26])
 class ReplayIntegrationTest {
-    // write tests for ReplayIntegration with mocked context and other android things
     @get:Rule
     val tmpDir = TemporaryFolder()
 
