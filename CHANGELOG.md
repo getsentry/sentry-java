@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
 - Check app start spans time and ignore background app starts ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
   - This should eliminate long-lasting App Start transactions
 
