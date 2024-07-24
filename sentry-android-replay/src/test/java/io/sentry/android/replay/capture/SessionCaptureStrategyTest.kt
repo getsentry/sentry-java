@@ -23,6 +23,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDI
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
+import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.protocol.SentryId
@@ -78,6 +79,7 @@ class SessionCaptureStrategyTest {
         }
         var persistedSegment = mutableMapOf<String, String?>()
         val replayCache = mock<ReplayCache> {
+            on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
             on { persistSegmentValues(any(), anyOrNull()) }.then {
                 persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
             }

@@ -393,6 +393,12 @@ class ReplayCacheTest {
             )
         }
 
+        val screenshot = File(replayCacheFolder, "1720693523997.jpg").also { it.createNewFile() }
+        screenshot.outputStream().use {
+            Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+            it.flush()
+        }
+
         val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
 
         assertEquals(912, lastSegment.recorderConfig.recordingHeight)
@@ -402,7 +408,7 @@ class ReplayCacheTest {
         assertEquals(0, lastSegment.id)
         assertEquals("2024-07-11T10:25:21.454Z", DateUtils.getTimestamp(lastSegment.timestamp))
         assertEquals(ReplayType.SESSION, lastSegment.replayType)
-        assertEquals(fixture.options.experimental.sessionReplay.sessionSegmentDuration, lastSegment.duration)
+        assertEquals(2999, lastSegment.duration)
         assertTrue {
             val firstEvent = lastSegment.events.first() as RRWebInteractionEvent
             firstEvent.timestamp == 1720693523997 &&

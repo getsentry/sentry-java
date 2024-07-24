@@ -10,7 +10,6 @@ import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
-import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SentryId
@@ -22,6 +21,7 @@ import java.io.StringReader
 import java.util.Date
 import java.util.LinkedList
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.ceil
 
 /**
  * A basic in-memory and disk cache for Session Replay frames. Frames are stored in order under the
@@ -360,13 +360,28 @@ public class ReplayCache internal constructor(
                 false
             }
 
+            if (cache.frames.isEmpty()) {
+                options.logger.log(
+                    DEBUG,
+                    "No frames found for replay: %s, deleting the replay",
+                    replayId
+                )
+                FileUtils.deleteRecursively(replayCacheDir)
+                return null
+            }
+
             cache.frames.sortBy { it.timestamp }
 
-            val duration = if (replayType == SESSION) {
-                options.experimental.sessionReplay.sessionSegmentDuration
-            } else {
-                options.experimental.sessionReplay.errorReplayDuration
+            fun roundToNearestFrame(duration: Long, frameDuration: Int): Long {
+                val frames = duration.toDouble() / frameDuration.toDouble()
+                return ceil(frames).toLong() * frameDuration
             }
+
+            // we need to round to the nearest frame to include breadcrumbs/events happened after the frame was captured
+            val duration = roundToNearestFrame(
+                duration = (cache.frames.last().timestamp - segmentTimestamp.time),
+                frameDuration = 1000 / frameRate
+            ) - 1 // we need to subtract 1ms to avoid capturing the next frame which doesn't exist
 
             val events = lastSegment[SEGMENT_KEY_REPLAY_RECORDING]?.let {
                 val reader = StringReader(it)
