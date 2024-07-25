@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
 - Check app start spans time and ignore background app starts ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
   - This should eliminate long-lasting App Start transactions
 
