@@ -3,14 +3,16 @@ package io.sentry.android.replay.capture
 import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.DateUtils
-import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
+import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
@@ -27,7 +29,10 @@ internal class BufferCaptureStrategy(
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider) {
 
+    // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
+
+    // TODO: rework this bs, it doesn't work with sending replay on restart
     private val bufferedScreensLock = Any()
     private val bufferedScreens = mutableListOf<Pair<String, Long>>()
 
@@ -38,13 +43,12 @@ internal class BufferCaptureStrategy(
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
-        replayId: SentryId,
-        cleanupOldReplays: Boolean
+        replayId: SentryId
     ) {
-        super.start(recorderConfig, segmentId, replayId, cleanupOldReplays)
+        super.start(recorderConfig, segmentId, replayId)
 
         hub?.configureScope {
-            val screen = it.screen
+            val screen = it.screen?.substringAfterLast('.')
             if (screen != null) {
                 synchronized(bufferedScreensLock) {
                     bufferedScreens.add(screen to dateProvider.currentTimeMillis)
@@ -62,6 +66,17 @@ internal class BufferCaptureStrategy(
         }
     }
 
+    override fun pause() {
+        createCurrentSegment("pause") { segment ->
+            if (segment is ReplaySegment.Created) {
+                bufferedSegments += segment
+
+                currentSegment++
+            }
+        }
+        super.pause()
+    }
+
     override fun stop() {
         val replayCacheDir = cache?.replayCacheDir
         replayExecutor.submitSafely(options, "$TAG.stop") {
@@ -70,16 +85,14 @@ internal class BufferCaptureStrategy(
         super.stop()
     }
 
-    override fun sendReplayForEvent(
-        isCrashed: Boolean,
-        eventId: String?,
-        hint: Hint?,
+    override fun captureReplay(
+        isTerminating: Boolean,
         onSegmentSent: () -> Unit
     ) {
         val sampled = random.sample(options.experimental.sessionReplay.errorSampleRate)
 
         if (!sampled) {
-            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event %s", eventId)
+            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event")
             return
         }
 
@@ -89,45 +102,23 @@ internal class BufferCaptureStrategy(
             it.replayId = currentReplayId
         }
 
-        val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
-        val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
-            // in buffer mode we have to set the timestamp of the first frame as the actual start
-            DateUtils.getDateTime(cache!!.frames.first().timestamp)
-        } else {
-            DateUtils.getDateTime(now - errorReplayDuration)
+        if (isTerminating) {
+            this.isTerminating.set(true)
+            // avoid capturing replay, because the video will be malformed
+            options.logger.log(DEBUG, "Not capturing replay for crashed event, will be captured on next launch")
+            return
         }
-        val segmentId = currentSegment
-        val replayId = currentReplayId
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
 
-        findAndSetStartScreen(currentSegmentTimestamp.time)
+        createCurrentSegment("capture_replay") { segment ->
+            bufferedSegments.capture()
 
-        replayExecutor.submitSafely(options, "$TAG.send_replay_for_event") {
-            var bufferedSegment = bufferedSegments.removeFirstOrNull()
-            while (bufferedSegment != null) {
-                // capture without hint, so the buffered segments don't trigger flush notification
-                bufferedSegment.capture(hub)
-                bufferedSegment = bufferedSegments.removeFirstOrNull()
-                Thread.sleep(100L)
-            }
-            val segment =
-                createSegment(
-                    now - currentSegmentTimestamp.time,
-                    currentSegmentTimestamp,
-                    replayId,
-                    segmentId,
-                    height,
-                    width,
-                    BUFFER
-                )
             if (segment is ReplaySegment.Created) {
-                segment.capture(hub, hint ?: Hint())
+                segment.capture(hub)
 
                 // we only want to increment segment_id in the case of success, but currentSegment
                 // might be irrelevant since we changed strategies, so in the callback we increment
                 // it on the new strategy already
+                // TODO: also pass new segmentTimestamp to the new strategy
                 onSegmentSent()
             }
         }
@@ -143,25 +134,7 @@ internal class BufferCaptureStrategy(
             val now = dateProvider.currentTimeMillis
             val bufferLimit = now - options.experimental.sessionReplay.errorReplayDuration
             cache?.rotate(bufferLimit)
-
-            var removed = false
-            bufferedSegments.removeAll {
-                // it can be that the buffered segment is half-way older than the buffer limit, but
-                // we only drop it if its end timestamp is older
-                if (it.replay.timestamp.time < bufferLimit) {
-                    currentSegment--
-                    deleteFile(it.replay.videoFile)
-                    removed = true
-                    return@removeAll true
-                }
-                return@removeAll false
-            }
-            if (removed) {
-                // shift segmentIds after rotating buffered segments
-                bufferedSegments.forEachIndexed { index, segment ->
-                    segment.setSegmentId(index)
-                }
-            }
+            bufferedSegments.rotate(bufferLimit)
         }
     }
 
@@ -179,22 +152,7 @@ internal class BufferCaptureStrategy(
     }
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
-        val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
-        val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
-            // in buffer mode we have to set the timestamp of the first frame as the actual start
-            DateUtils.getDateTime(cache!!.frames.first().timestamp)
-        } else {
-            DateUtils.getDateTime(now - errorReplayDuration)
-        }
-        val segmentId = currentSegment
-        val duration = now - currentSegmentTimestamp.time
-        val replayId = currentReplayId
-        val height = this.recorderConfig.recordingHeight
-        val width = this.recorderConfig.recordingWidth
-        replayExecutor.submitSafely(options, "$TAG.onConfigurationChanged") {
-            val segment =
-                createSegment(duration, currentSegmentTimestamp, replayId, segmentId, height, width, BUFFER)
+        createCurrentSegment("configuration_changed") { segment ->
             if (segment is ReplaySegment.Created) {
                 bufferedSegments += segment
 
@@ -205,9 +163,13 @@ internal class BufferCaptureStrategy(
     }
 
     override fun convert(): CaptureStrategy {
+        if (isTerminating.get()) {
+            options.logger.log(DEBUG, "Not converting to session mode, because the process is about to terminate")
+            return this
+        }
         // we hand over replayExecutor to the new strategy to preserve order of execution
         val captureStrategy = SessionCaptureStrategy(options, hub, dateProvider, replayExecutor)
-        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId, cleanupOldReplays = false)
+        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId)
         return captureStrategy
     }
 
@@ -228,7 +190,61 @@ internal class BufferCaptureStrategy(
                 screenAtStart = startScreen
             }
             // can clear as we switch to session mode and don't care anymore about buffering
-            bufferedSegments.clear()
+            bufferedScreens.clear()
+        }
+    }
+
+    private fun MutableList<ReplaySegment.Created>.capture() {
+        var bufferedSegment = removeFirstOrNull()
+        while (bufferedSegment != null) {
+            bufferedSegment.capture(hub)
+            bufferedSegment = removeFirstOrNull()
+            Thread.sleep(100L)
+        }
+    }
+
+    private fun MutableList<ReplaySegment.Created>.rotate(bufferLimit: Long) {
+        var removed = false
+        removeAll {
+            // it can be that the buffered segment is half-way older than the buffer limit, but
+            // we only drop it if its end timestamp is older
+            if (it.replay.timestamp.time < bufferLimit) {
+                currentSegment--
+                deleteFile(it.replay.videoFile)
+                removed = true
+                return@removeAll true
+            }
+            return@removeAll false
+        }
+        if (removed) {
+            // shift segmentIds after rotating buffered segments
+            forEachIndexed { index, segment ->
+                segment.setSegmentId(index)
+            }
+        }
+    }
+
+    private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
+        val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
+        val now = dateProvider.currentTimeMillis
+        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
+            // in buffer mode we have to set the timestamp of the first frame as the actual start
+            DateUtils.getDateTime(cache!!.frames.first().timestamp)
+        } else {
+            DateUtils.getDateTime(now - errorReplayDuration)
+        }
+        val segmentId = currentSegment
+        val duration = now - currentSegmentTimestamp.time
+        val replayId = currentReplayId
+        val height = this.recorderConfig.recordingHeight
+        val width = this.recorderConfig.recordingWidth
+
+        findAndSetStartScreen(currentSegmentTimestamp.time)
+
+        replayExecutor.submitSafely(options, "$TAG.$taskName") {
+            val segment =
+                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width, BUFFER)
+            onSegmentCreated(segment)
         }
     }
 }

@@ -2752,11 +2752,10 @@ class SentryClientTest {
     }
 
     @Test
-    fun `calls sendReplayForEvent on replay controller for error events`() {
+    fun `calls captureReplay on replay controller for error events`() {
         var called = false
         fixture.sentryOptions.setReplayController(object : ReplayController by NoOpReplayController.getInstance() {
-            override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
-                assertEquals("Test", event.message?.formatted)
+            override fun captureReplay(isTerminating: Boolean?) {
                 called = true
             }
         })

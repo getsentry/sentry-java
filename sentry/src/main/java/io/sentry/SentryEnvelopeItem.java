@@ -8,6 +8,7 @@ import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.metrics.EncodedMetrics;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.Base64;
@@ -372,7 +373,8 @@ public final class SentryEnvelopeItem {
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final @NotNull SentryReplayEvent replayEvent,
-      final @Nullable ReplayRecording replayRecording) {
+      final @Nullable ReplayRecording replayRecording,
+      final boolean cleanupReplayFolder) {
 
     final File replayVideo = replayEvent.getVideoFile();
 
@@ -415,7 +417,11 @@ public final class SentryEnvelopeItem {
                 return null;
               } finally {
                 if (replayVideo != null) {
-                  replayVideo.delete();
+                  if (cleanupReplayFolder) {
+                    FileUtils.deleteRecursively(replayVideo.getParentFile());
+                  } else {
+                    replayVideo.delete();
+                  }
                 }
               }
             });
