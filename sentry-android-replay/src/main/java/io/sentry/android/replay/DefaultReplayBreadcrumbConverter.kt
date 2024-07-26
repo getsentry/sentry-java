@@ -131,14 +131,23 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
 
     private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent {
         val breadcrumb = this
+        val httpStartTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
+        val httpEndTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
         return RRWebSpanEvent().apply {
             timestamp = breadcrumb.timestamp.time
             op = "resource.http"
             description = breadcrumb.data["url"] as String
-            startTimestamp =
-                (breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP] as Long) / 1000.0
-            endTimestamp =
-                (breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP] as Long) / 1000.0
+            // can be double if it was serialized to disk
+            startTimestamp = if (httpStartTimestamp is Double) {
+                httpStartTimestamp / 1000.0
+            } else {
+                (httpStartTimestamp as Long) / 1000.0
+            }
+            endTimestamp = if (httpEndTimestamp is Double) {
+                httpEndTimestamp / 1000.0
+            } else {
+                (httpEndTimestamp as Long) / 1000.0
+            }
 
             val breadcrumbData = mutableMapOf<String, Any?>()
             for ((key, value) in breadcrumb.data) {
