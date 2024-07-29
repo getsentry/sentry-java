@@ -479,6 +479,16 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private @Nullable Cron cron = null;
 
+  private final @NotNull ExperimentalOptions experimental = new ExperimentalOptions();
+
+  private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
+
+  /**
+   * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
+   * screen transitions as context for events.
+   */
+  @ApiStatus.Experimental private boolean enableScreenTracking = true;
+
   /**
    * Adds an event processor
    *
@@ -2383,6 +2393,30 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setCron(@Nullable Cron cron) {
     this.cron = cron;
+  }
+
+  @NotNull
+  public ExperimentalOptions getExperimental() {
+    return experimental;
+  }
+
+  public @NotNull ReplayController getReplayController() {
+    return replayController;
+  }
+
+  public void setReplayController(final @Nullable ReplayController replayController) {
+    this.replayController =
+        replayController != null ? replayController : NoOpReplayController.getInstance();
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableScreenTracking() {
+    return enableScreenTracking;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableScreenTracking(final boolean enableScreenTracking) {
+    this.enableScreenTracking = enableScreenTracking;
   }
 
   /** The BeforeSend callback */

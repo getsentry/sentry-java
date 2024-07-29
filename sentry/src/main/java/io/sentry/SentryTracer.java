@@ -200,26 +200,45 @@ public final class SentryTracer implements ITransaction {
     if (!root.isFinished()
         && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
 
+      final @NotNull AtomicReference<List<PerformanceCollectionData>> performanceCollectionData =
+          new AtomicReference<>();
+      // We set the new spanFinishedCallback here instead of creation time, calling the old one to
+      // avoid the user overwrites it by setting a custom spanFinishedCallback on the root span
+      final @Nullable SpanFinishedCallback oldCallback = this.root.getSpanFinishedCallback();
+      this.root.setSpanFinishedCallback(
+          span -> {
+            if (oldCallback != null) {
+              oldCallback.execute(span);
+            }
+
+            // Let's call the finishCallback here, when the root span has a finished date but it's
+            // not finished, yet
+            final @Nullable TransactionFinishedCallback finishedCallback =
+                transactionOptions.getTransactionFinishedCallback();
+            if (finishedCallback != null) {
+              finishedCallback.execute(this);
+            }
+
+            if (transactionPerformanceCollector != null) {
+              performanceCollectionData.set(transactionPerformanceCollector.stop(this));
+            }
+          });
+
       // any un-finished childs will remain unfinished
       // as relay takes care of setting the end-timestamp + deadline_exceeded
       // see
       // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
       root.finish(finishStatus.spanStatus, finishTimestamp);
 
-      List<PerformanceCollectionData> performanceCollectionData = null;
-      if (transactionPerformanceCollector != null) {
-        performanceCollectionData = transactionPerformanceCollector.stop(this);
-      }
-
       ProfilingTraceData profilingTraceData = null;
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
         profilingTraceData =
             hub.getOptions()
                 .getTransactionProfiler()
-                .onTransactionFinish(this, performanceCollectionData, hub.getOptions());
+                .onTransactionFinish(this, performanceCollectionData.get(), hub.getOptions());
       }
-      if (performanceCollectionData != null) {
-        performanceCollectionData.clear();
+      if (performanceCollectionData.get() != null) {
+        performanceCollectionData.get().clear();
       }
 
       hub.configureScope(
@@ -232,11 +251,6 @@ public final class SentryTracer implements ITransaction {
                 });
           });
       final SentryTransaction transaction = new SentryTransaction(this);
-      final TransactionFinishedCallback finishedCallback =
-          transactionOptions.getTransactionFinishedCallback();
-      if (finishedCallback != null) {
-        finishedCallback.execute(this);
-      }
 
       if (timer != null) {
         synchronized (timerLock) {
@@ -579,12 +593,18 @@ public final class SentryTracer implements ITransaction {
     synchronized (this) {
       if (baggage.isMutable()) {
         final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+        final AtomicReference<SentryId> replayId = new AtomicReference<>();
         hub.configureScope(
             scope -> {
               userAtomicReference.set(scope.getUser());
+              replayId.set(scope.getReplayId());
             });
         baggage.setValuesFromTransaction(
-            this, userAtomicReference.get(), hub.getOptions(), this.getSamplingDecision());
+            this,
+            userAtomicReference.get(),
+            replayId.get(),
+            hub.getOptions(),
+            this.getSamplingDecision());
         baggage.freeze();
       }
     }
@@ -605,7 +625,9 @@ public final class SentryTracer implements ITransaction {
     final List<Span> spans = new ArrayList<>(this.children);
     if (!spans.isEmpty()) {
       for (final Span span : spans) {
-        if (!span.isFinished()) {
+        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+        // date
+        if (!span.isFinished() && span.getFinishDate() == null) {
           return false;
         }
       }

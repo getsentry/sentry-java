@@ -16,6 +16,7 @@ import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
@@ -184,8 +185,8 @@ public final class DeviceInfoUtil {
   private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
-      device.setBatteryLevel(getBatteryLevel(batteryIntent));
-      device.setCharging(isCharging(batteryIntent));
+      device.setBatteryLevel(getBatteryLevel(batteryIntent, options));
+      device.setCharging(isCharging(batteryIntent, options));
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
 
@@ -270,7 +271,8 @@ public final class DeviceInfoUtil {
    * @return the device's current battery level (as a percentage of total), or null if unknown
    */
   @Nullable
-  private Float getBatteryLevel(final @NotNull Intent batteryIntent) {
+  public static Float getBatteryLevel(
+      final @NotNull Intent batteryIntent, final @NotNull SentryOptions options) {
     try {
       int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
       int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
@@ -294,7 +296,8 @@ public final class DeviceInfoUtil {
    * @return whether or not the device is currently plugged in and charging, or null if unknown
    */
   @Nullable
-  private Boolean isCharging(final @NotNull Intent batteryIntent) {
+  public static Boolean isCharging(
+      final @NotNull Intent batteryIntent, final @NotNull SentryOptions options) {
     try {
       int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
       return plugged == BatteryManager.BATTERY_PLUGGED_AC

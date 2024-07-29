@@ -1,5 +1,66 @@
 # Changelog
 
+## 7.12.1
+
+### Fixes
+
+- Check app start spans time and ignore background app starts ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
+  - This should eliminate long-lasting App Start transactions
+
+## 7.12.0
+
+### Features
+
+- Session Replay Public Beta ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+
+  To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.errorSampleRate` experimental options.
+
+  ```kotlin
+  import io.sentry.SentryReplayOptions
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.experimental.sessionReplay.sessionSampleRate = 1.0
+    options.experimental.sessionReplay.errorSampleRate = 1.0
+  
+    // To change default redaction behavior (defaults to true)
+    options.experimental.sessionReplay.redactAllImages = true
+    options.experimental.sessionReplay.redactAllText = true
+  
+    // To change quality of the recording (defaults to MEDIUM)
+    options.experimental.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
+  }
+  ```
+
+  To learn more visit [Sentry's Mobile Session Replay](https://docs.sentry.io/product/explore/session-replay/mobile/) documentation page.
+
+## 7.11.0
+
+### Features
+
+- Report dropped spans ([#3528](https://github.com/getsentry/sentry-java/pull/3528))
+
+### Fixes
+
+- Fix duplicate session start for React Native ([#3504](https://github.com/getsentry/sentry-java/pull/3504))
+- Move onFinishCallback before span or transaction is finished ([#3459](https://github.com/getsentry/sentry-java/pull/3459))
+- Add timestamp when a profile starts ([#3442](https://github.com/getsentry/sentry-java/pull/3442))
+- Move fragment auto span finish to onFragmentStarted ([#3424](https://github.com/getsentry/sentry-java/pull/3424))
+- Remove profiling timeout logic and disable profiling on API 21 ([#3478](https://github.com/getsentry/sentry-java/pull/3478))
+- Properly reset metric flush flag on metric emission ([#3493](https://github.com/getsentry/sentry-java/pull/3493))
+- Use SecureRandom in favor of Random for Metrics ([#3495](https://github.com/getsentry/sentry-java/pull/3495))
+- Fix UncaughtExceptionHandlerIntegration Memory Leak ([#3398](https://github.com/getsentry/sentry-java/pull/3398))
+- Deprecated `User.segment`. Use a custom tag or context instead. ([#3511](https://github.com/getsentry/sentry-java/pull/3511))
+- Fix duplicated http spans ([#3526](https://github.com/getsentry/sentry-java/pull/3526))
+- When capturing unhandled hybrid exception session should be ended and new start if need ([#3480](https://github.com/getsentry/sentry-java/pull/3480))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.0 to v0.7.2 ([#3314](https://github.com/getsentry/sentry-java/pull/3314))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#072)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.0...0.7.2)
 
 ## 7.10.0
 

@@ -201,13 +201,9 @@ class EnvelopeTests : BaseUiTest() {
                 assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "timedOutProfile"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
-                val profilingTraceData: ProfilingTraceData = it.assertProfile()
+                // Profile should not be present, as it timed out and is discarded
                 it.assertNoOtherItems()
                 assertEquals("timedOutProfile", transactionItem.transaction)
-                assertEquals("timedOutProfile", profilingTraceData.transactionName)
-                // The profile should timeout after 30 seconds
-                assertTrue(profilingTraceData.durationNs.toLong() < TimeUnit.SECONDS.toNanos(31), "Profile duration expected to be less than 31 seconds. It was ${profilingTraceData.durationNs.toLong()} ns")
-                assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()
         }

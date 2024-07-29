@@ -3,9 +3,11 @@ package io.sentry
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.profilemeasurements.ProfileMeasurementValue
 import io.sentry.protocol.Device
+import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import org.junit.After
@@ -443,16 +445,16 @@ class JsonSerializerTest {
 
     @Test
     fun `serializes trace context`() {
-        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", "userId", "segment", "transaction", "0.5", "true"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user_id":"userId","user_segment":"segment","transaction":"transaction","sample_rate":"0.5","sampled":"true"}}"""
+        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", "userId", "segment", "transaction", "0.5", "true", SentryId("3367f5196c494acaae85bbbd535379aa")))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user_id":"userId","user_segment":"segment","transaction":"transaction","sample_rate":"0.5","sampled":"true","replay_id":"3367f5196c494acaae85bbbd535379aa"}}"""
         val json = serializeToString(traceContext)
         assertEquals(expected, json)
     }
 
     @Test
     fun `serializes trace context with user having null id and segment`() {
-        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, null, "transaction", "0.6", "false"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","sample_rate":"0.6","sampled":"false"}}"""
+        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, null, "transaction", "0.6", "false", SentryId("3367f5196c494acaae85bbbd535379aa")))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","sample_rate":"0.6","sampled":"false","replay_id":"3367f5196c494acaae85bbbd535379aa"}}"""
         val json = serializeToString(traceContext)
         assertEquals(expected, json)
     }
@@ -492,6 +494,7 @@ class JsonSerializerTest {
     @Test
     fun `serializes profilingTraceData`() {
         val profilingTraceData = ProfilingTraceData(fixture.traceFile, NoOpTransaction.getInstance())
+        val now = Date()
         profilingTraceData.androidApiLevel = 21
         profilingTraceData.deviceLocale = "deviceLocale"
         profilingTraceData.deviceManufacturer = "deviceManufacturer"
@@ -503,6 +506,7 @@ class JsonSerializerTest {
         profilingTraceData.deviceCpuFrequencies = listOf(1, 2, 3, 4)
         profilingTraceData.devicePhysicalMemoryBytes = "2000000"
         profilingTraceData.buildId = "buildId"
+        profilingTraceData.timestamp = now
         profilingTraceData.transactions = listOf(
             ProfilingTransactionData(NoOpTransaction.getInstance(), 1, 2),
             ProfilingTransactionData(NoOpTransaction.getInstance(), 2, 3)
@@ -559,6 +563,7 @@ class JsonSerializerTest {
         assertEquals("2000000", element["device_physical_memory_bytes"] as String)
         assertEquals("android", element["platform"] as String)
         assertEquals("buildId", element["build_id"] as String)
+        assertEquals(DateUtils.getTimestamp(now), element["timestamp"] as String)
         assertEquals(
             listOf(
                 mapOf(
@@ -655,6 +660,7 @@ class JsonSerializerTest {
                             "device_physical_memory_bytes":"2000000",
                             "platform":"android",
                             "build_id":"buildId",
+                            "timestamp":"2024-05-24T12:52:03.561Z",
                             "transactions":[
                                 {
                                     "id":"id",
@@ -729,6 +735,7 @@ class JsonSerializerTest {
         assertEquals("2000000", profilingTraceData.devicePhysicalMemoryBytes)
         assertEquals("android", profilingTraceData.platform)
         assertEquals("buildId", profilingTraceData.buildId)
+        assertEquals(DateUtils.getDateTime("2024-05-24T12:52:03.561Z"), profilingTraceData.timestamp)
         val expectedTransactions = listOf(
             ProfilingTransactionData().apply {
                 id = "id"
@@ -1224,6 +1231,20 @@ class JsonSerializerTest {
             ),
             deserializedCollection
         )
+    }
+
+    @Test
+    fun `ser deser replay data`() {
+        val replayEvent = SentryReplayEventSerializationTest.Fixture().getSut()
+        val replayRecording = ReplayRecordingSerializationTest.Fixture().getSut()
+        val serializedEvent = serializeToString(replayEvent)
+        val serializedRecording = serializeToString(replayRecording)
+
+        val deserializedEvent = fixture.serializer.deserialize(StringReader(serializedEvent), SentryReplayEvent::class.java)
+        val deserializedRecording = fixture.serializer.deserialize(StringReader(serializedRecording), ReplayRecording::class.java)
+
+        assertEquals(replayEvent, deserializedEvent)
+        assertEquals(replayRecording, deserializedRecording)
     }
 
     private fun assertSessionData(expectedSession: Session?) {

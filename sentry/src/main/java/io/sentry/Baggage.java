@@ -141,6 +141,7 @@ public final class Baggage {
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
+    // TODO: add replay_id later
     baggage.freeze();
     return baggage;
   }
@@ -305,11 +306,21 @@ public final class Baggage {
     set(DSCKeys.USER_ID, userId);
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
   public @Nullable String getUserSegment() {
     return get(DSCKeys.USER_SEGMENT);
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
   public void setUserSegment(final @Nullable String userSegment) {
     set(DSCKeys.USER_SEGMENT, userSegment);
@@ -346,6 +357,16 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @Nullable String getReplayId() {
+    return get(DSCKeys.REPLAY_ID);
+  }
+
+  @ApiStatus.Internal
+  public void setReplayId(final @Nullable String replayId) {
+    set(DSCKeys.REPLAY_ID, replayId);
+  }
+
+  @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
     if (mutable) {
       this.keyValues.put(key, value);
@@ -373,6 +394,7 @@ public final class Baggage {
   public void setValuesFromTransaction(
       final @NotNull ITransaction transaction,
       final @Nullable User user,
+      final @Nullable SentryId replayId,
       final @NotNull SentryOptions sentryOptions,
       final @Nullable TracesSamplingDecision samplingDecision) {
     setTraceId(transaction.getSpanContext().getTraceId().toString());
@@ -384,6 +406,9 @@ public final class Baggage {
         isHighQualityTransactionName(transaction.getTransactionNameSource())
             ? transaction.getName()
             : null);
+    if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
+      setReplayId(replayId.toString());
+    }
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
   }
@@ -393,16 +418,24 @@ public final class Baggage {
       final @NotNull IScope scope, final @NotNull SentryOptions options) {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
     final @Nullable User user = scope.getUser();
+    final @NotNull SentryId replayId = scope.getReplayId();
     setTraceId(propagationContext.getTraceId().toString());
     setPublicKey(new Dsn(options.getDsn()).getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
+      setReplayId(replayId.toString());
+    }
     setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(null);
     setSampleRate(null);
     setSampled(null);
   }
 
+  /**
+   * @deprecated has no effect and will be removed in the next major update.
+   */
+  @Deprecated
   private static @Nullable String getSegment(final @NotNull User user) {
     if (user.getSegment() != null) {
       return user.getSegment();
@@ -468,9 +501,11 @@ public final class Baggage {
   @Nullable
   public TraceContext toTraceContext() {
     final String traceIdString = getTraceId();
+    final String replayIdString = getReplayId();
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
+      @SuppressWarnings("deprecation")
       final @NotNull TraceContext traceContext =
           new TraceContext(
               new SentryId(traceIdString),
@@ -481,7 +516,8 @@ public final class Baggage {
               getUserSegment(),
               getTransaction(),
               getSampleRate(),
-              getSampled());
+              getSampled(),
+              replayIdString == null ? null : new SentryId(replayIdString));
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -500,6 +536,7 @@ public final class Baggage {
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
     public static final String SAMPLED = "sentry-sampled";
+    public static final String REPLAY_ID = "sentry-replay_id";
 
     public static final List<String> ALL =
         Arrays.asList(
@@ -511,6 +548,7 @@ public final class Baggage {
             USER_SEGMENT,
             TRANSACTION,
             SAMPLE_RATE,
-            SAMPLED);
+            SAMPLED,
+            REPLAY_ID);
   }
 }

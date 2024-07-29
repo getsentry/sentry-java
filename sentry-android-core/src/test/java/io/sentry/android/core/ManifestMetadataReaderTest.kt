@@ -1420,4 +1420,73 @@ class ManifestMetadataReaderTest {
         // Assert
         assertFalse(fixture.options.isEnableMetrics)
     }
+
+    @Test
+    fun `applyMetadata reads replays errorSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.errorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override replays errorSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.experimental.sessionReplay.errorSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.errorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying replays errorSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options.experimental.sessionReplay.errorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata reads session replay redact flags to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_REDACT_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_REDACT_ALL_IMAGES to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.experimental.sessionReplay.redactAllImages)
+        assertFalse(fixture.options.experimental.sessionReplay.redactAllText)
+    }
+
+    @Test
+    fun `applyMetadata reads session replay redact flags to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.experimental.sessionReplay.redactAllImages)
+        assertTrue(fixture.options.experimental.sessionReplay.redactAllText)
+    }
 }

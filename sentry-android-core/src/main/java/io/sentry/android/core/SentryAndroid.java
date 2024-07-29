@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
+import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
@@ -11,6 +12,7 @@ import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.Session;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -19,7 +21,9 @@ import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry initialization class */
 public final class SentryAndroid {
@@ -32,6 +36,9 @@ public final class SentryAndroid {
 
   static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
       "io.sentry.android.timber.SentryTimberIntegration";
+
+  static final String SENTRY_REPLAY_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.replay.ReplayIntegration";
 
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =
@@ -99,6 +106,8 @@ public final class SentryAndroid {
             final boolean isTimberAvailable =
                 (isTimberUpstreamAvailable
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
+            final boolean isReplayAvailable =
+                classLoader.isClassAvailable(SENTRY_REPLAY_INTEGRATION_CLASS_NAME, options);
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final LoadClass loadClass = new LoadClass();
@@ -118,7 +127,8 @@ public final class SentryAndroid {
                 loadClass,
                 activityFramesTracker,
                 isFragmentAvailable,
-                isTimberAvailable);
+                isTimberAvailable,
+                isReplayAvailable);
 
             configuration.configure(options);
 
@@ -131,6 +141,10 @@ public final class SentryAndroid {
               if (appStartTimeSpan.hasNotStarted()) {
                 appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
               }
+            }
+            if (context.getApplicationContext() instanceof Application) {
+              appStartMetrics.registerApplicationForegroundCheck(
+                  (Application) context.getApplicationContext());
             }
             final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
             if (sdkInitTimeSpan.hasNotStarted()) {
@@ -145,9 +159,25 @@ public final class SentryAndroid {
           true);
 
       final @NotNull IHub hub = Sentry.getCurrentHub();
-      if (hub.getOptions().isEnableAutoSessionTracking() && ContextUtils.isForegroundImportance()) {
-        hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
-        hub.startSession();
+      if (ContextUtils.isForegroundImportance()) {
+        if (hub.getOptions().isEnableAutoSessionTracking()) {
+          // The LifecycleWatcher of AppLifecycleIntegration may already started a session
+          // so only start a session if it's not already started
+          // This e.g. happens on React Native, or e.g. on deferred SDK init
+          final AtomicBoolean sessionStarted = new AtomicBoolean(false);
+          hub.configureScope(
+              scope -> {
+                final @Nullable Session currentSession = scope.getSession();
+                if (currentSession != null && currentSession.getStarted() != null) {
+                  sessionStarted.set(true);
+                }
+              });
+          if (!sessionStarted.get()) {
+            hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+            hub.startSession();
+          }
+        }
+        hub.getOptions().getReplayController().start();
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);

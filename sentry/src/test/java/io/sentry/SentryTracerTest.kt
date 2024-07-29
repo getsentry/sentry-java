@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.util.thread.IMainThreadChecker
@@ -581,6 +582,8 @@ class SentryTracerTest {
                 others = mapOf("segment" to "pro")
             }
         )
+        val replayId = SentryId()
+        fixture.hub.configureScope { it.replayId = replayId }
         val trace = transaction.traceContext()
         assertNotNull(trace) {
             assertEquals(transaction.spanContext.traceId, it.traceId)
@@ -588,8 +591,7 @@ class SentryTracerTest {
             assertEquals("environment", it.environment)
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
-            // assertEquals("user-id", it.userId)
-            assertEquals("pro", it.userSegment)
+            assertEquals(replayId, it.replayId)
         }
     }
 
@@ -658,6 +660,8 @@ class SentryTracerTest {
                 others = mapOf("segment" to "pro")
             }
         )
+        val replayId = SentryId()
+        fixture.hub.configureScope { it.replayId = replayId }
 
         val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
@@ -671,6 +675,7 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-transaction=name,"))
             // assertTrue(it.value.contains("sentry-user_id=userId12345,"))
             assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+            assertTrue(it.value.contains("sentry-replay_id=$replayId"))
         }
     }
 
@@ -1377,5 +1382,16 @@ class SentryTracerTest {
         tracer.finish()
 
         assertEquals(5, tracer.children.size)
+    }
+
+    @Test
+    fun `tracer is not finished when finishCallback is called`() {
+        val transaction = fixture.getSut(transactionFinishedCallback = {
+            assertFalse(it.isFinished)
+            assertNotNull(it.finishDate)
+        })
+        assertFalse(transaction.isFinished)
+        assertNull(transaction.finishDate)
+        transaction.finish()
     }
 }
