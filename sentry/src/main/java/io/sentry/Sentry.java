@@ -356,6 +356,8 @@ public final class Sentry {
                   observer.setDist(options.getDist());
                   observer.setEnvironment(options.getEnvironment());
                   observer.setTags(options.getTags());
+                  observer.setReplayErrorSampleRate(
+                      options.getExperimental().getSessionReplay().getErrorSampleRate());
                 }
               });
     } catch (Throwable e) {

@@ -150,11 +150,18 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   }
 
   private <T> void store(final @NotNull T entity, final @NotNull String fileName) {
-    CacheUtils.store(options, entity, SCOPE_CACHE, fileName);
+    store(options, entity, fileName);
   }
 
   private void delete(final @NotNull String fileName) {
     CacheUtils.delete(options, SCOPE_CACHE, fileName);
+  }
+
+  public static <T> void store(
+      final @NotNull SentryOptions options,
+      final @NotNull T entity,
+      final @NotNull String fileName) {
+    CacheUtils.store(options, entity, SCOPE_CACHE, fileName);
   }
 
   public static <T> @Nullable T read(
