@@ -132,7 +132,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent {
         val breadcrumb = this
         val httpStartTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
-        val httpEndTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
+        val httpEndTimestamp = breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP]
         return RRWebSpanEvent().apply {
             timestamp = breadcrumb.timestamp.time
             op = "resource.http"

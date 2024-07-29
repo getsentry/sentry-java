@@ -235,6 +235,20 @@ class ReplayCacheTest {
     }
 
     @Test
+    fun `does not add frame when bitmap is recycled`() {
+        val replayCache = fixture.getSut(
+            tmpDir,
+            frameRate = 1,
+            framesToEncode = 5
+        )
+
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888).also { it.recycle() }
+        replayCache.addFrame(bitmap, 1)
+
+        assertTrue(replayCache.frames.isEmpty())
+    }
+
+    @Test
     fun `addFrame with File path works`() {
         val replayCache = fixture.getSut(
             tmpDir,
@@ -247,10 +261,7 @@ class ReplayCacheTest {
         val screenshot = File(flutterCacheDir, "1.jpg").also { it.createNewFile() }
         val video = File(flutterCacheDir, "flutter_0.mp4")
 
-        screenshot.outputStream().use {
-            Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
-            it.flush()
-        }
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888).also { it.recycle() }
         replayCache.addFrame(screenshot, frameTimestamp = 1)
 
         val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, videoFile = video)
@@ -408,7 +419,7 @@ class ReplayCacheTest {
         assertEquals(0, lastSegment.id)
         assertEquals("2024-07-11T10:25:21.454Z", DateUtils.getTimestamp(lastSegment.timestamp))
         assertEquals(ReplayType.SESSION, lastSegment.replayType)
-        assertEquals(2999, lastSegment.duration)
+        assertEquals(3543, lastSegment.duration) // duration + 1 frame duration
         assertTrue {
             val firstEvent = lastSegment.events.first() as RRWebInteractionEvent
             firstEvent.timestamp == 1720693523997 &&
@@ -457,5 +468,61 @@ class ReplayCacheTest {
         assertEquals(1, lastSegment.cache.frames.size)
         assertEquals(1, lastSegment.cache.frames.first().timestamp)
         assertEquals("1.jpg", lastSegment.cache.frames.first().screenshot.name)
+    }
+
+    @Test
+    fun `when videoFile exists and is not empty, deletes it before writing`() {
+        val replayCache = fixture.getSut(
+            tmpDir,
+            frameRate = 1,
+            framesToEncode = 3
+        )
+
+        val oldVideoFile = File(replayCache.replayCacheDir, "0.mp4").also {
+            it.createNewFile()
+            it.writeBytes(byteArrayOf(1, 2, 3))
+        }
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+        replayCache.addFrame(bitmap, 1)
+        replayCache.addFrame(bitmap, 1001)
+        replayCache.addFrame(bitmap, 2001)
+
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200, oldVideoFile)
+        assertEquals(3, segment0!!.frameCount)
+        assertEquals(3000, segment0.duration)
+        assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
+        assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
+    }
+
+    @Test
+    fun `sets segmentId to 0 for buffer mode`() {
+        fixture.options.run {
+            cacheDirPath = tmpDir.newFolder()?.absolutePath
+        }
+        val replayId = SentryId()
+        val replayCacheFolder = File(fixture.options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
+        File(replayCacheFolder, ONGOING_SEGMENT).also {
+            it.writeText(
+                """
+                $SEGMENT_KEY_HEIGHT=912
+                $SEGMENT_KEY_WIDTH=416
+                $SEGMENT_KEY_FRAME_RATE=1
+                $SEGMENT_KEY_BIT_RATE=75000
+                $SEGMENT_KEY_ID=2
+                $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+                $SEGMENT_KEY_REPLAY_TYPE=BUFFER
+                """.trimIndent()
+            )
+        }
+
+        val screenshot = File(replayCacheFolder, "1720693523997.jpg").also { it.createNewFile() }
+        screenshot.outputStream().use {
+            Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+            it.flush()
+        }
+
+        val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
+
+        assertEquals(0, lastSegment.id)
     }
 }

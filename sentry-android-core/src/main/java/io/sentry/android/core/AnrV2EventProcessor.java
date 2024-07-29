@@ -49,7 +49,6 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
@@ -171,43 +170,45 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setReplayId(event);
   }
 
-  private boolean sample(final @NotNull Double sampleRate, final @NotNull SecureRandom random) {
-    return !(sampleRate < random.nextDouble());
-  }
-
-  private void setReplayId(final @NotNull SentryEvent event) {
+  private boolean sampleReplay(final @NotNull SentryEvent event) {
     final @Nullable String replayErrorSampleRate =
         PersistingOptionsObserver.read(options, REPLAY_ERROR_SAMPLE_RATE_FILENAME, String.class);
 
     if (replayErrorSampleRate == null) {
-      return;
+      return false;
     }
 
     try {
       // we have to sample here with the old sample rate, because it may change between app launches
       final SecureRandom random = this.random != null ? this.random : new SecureRandom();
-      final Double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
-      if (!sample(replayErrorSampleRateDouble, random)) {
+      final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
+      if (replayErrorSampleRateDouble < random.nextDouble()) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Not capturing replay for ANR %s due to not being sampled.",
                 event.getEventId());
-        return;
+        return false;
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error parsing replay sample rate.", e);
-      return;
+      return false;
     }
 
+    return true;
+  }
+
+  private void setReplayId(final @NotNull SentryEvent event) {
     String persistedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
     final File replayFolder = new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
-    if (persistedReplayId == null
-        || persistedReplayId.equals(SentryId.EMPTY_ID.toString())
-        || !replayFolder.exists()) {
+    if (!replayFolder.exists()) {
+      if (!sampleReplay(event)) {
+        return;
+      }
       // if the replay folder does not exist (e.g. running in buffer mode), we need to find the
       // latest replay folder that was modified before the ANR event.
+      persistedReplayId = null;
       long lastModified = Long.MIN_VALUE;
       final File[] dirs = new File(options.getCacheDirPath()).listFiles();
       if (dirs != null) {

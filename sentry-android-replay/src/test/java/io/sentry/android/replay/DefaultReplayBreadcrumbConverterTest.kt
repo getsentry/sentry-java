@@ -62,6 +62,28 @@ class DefaultReplayBreadcrumbConverterTest {
     }
 
     @Test
+    fun `convert RRWebSpanEvent works with floating timestamps`() {
+        val converter = fixture.getSut()
+
+        val breadcrumb = Breadcrumb(Date(123L)).apply {
+            category = "http"
+            data["url"] = "http://example.com"
+            data["status_code"] = 404
+            data["method"] = "GET"
+            data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234.0
+            data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234.0
+            data["http.response_content_length"] = 300
+            data["http.request_content_length"] = 400
+        }
+
+        val rrwebEvent = converter.convert(breadcrumb)
+
+        check(rrwebEvent is RRWebSpanEvent)
+        assertEquals(1.234, rrwebEvent.startTimestamp)
+        assertEquals(2.234, rrwebEvent.endTimestamp)
+    }
+
+    @Test
     fun `returns null if not eligible for RRWebSpanEvent`() {
         val converter = fixture.getSut()
 
