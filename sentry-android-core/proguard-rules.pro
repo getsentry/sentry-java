@@ -72,3 +72,9 @@
 -keepnames class io.sentry.exception.SentryHttpClientException
 
 ##---------------End: proguard configuration for sentry-okhttp  ----------
+
+##---------------Begin: proguard configuration for sentry-android-replay  ----------
+-dontwarn io.sentry.android.replay.ReplayIntegration
+-dontwarn io.sentry.android.replay.DefaultReplayBreadcrumbConverter
+-keepnames class io.sentry.android.replay.ReplayIntegration
+##---------------End: proguard configuration for sentry-android-replay  ----------

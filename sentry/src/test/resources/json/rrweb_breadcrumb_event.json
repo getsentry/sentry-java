@@ -1,0 +1,18 @@
+{
+  "type": 5,
+  "timestamp": 12345678901,
+  "data": {
+    "tag": "breadcrumb",
+    "payload": {
+      "type": "default",
+      "timestamp": 12345678.901,
+      "category": "navigation",
+      "message": "message",
+      "level": "info",
+      "data": {
+        "screen": "MainActivity",
+        "state": "resumed"
+      }
+    }
+  }
+}

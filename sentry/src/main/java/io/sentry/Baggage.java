@@ -141,6 +141,7 @@ public final class Baggage {
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
+    // TODO: add replay_id later
     baggage.freeze();
     return baggage;
   }
@@ -356,6 +357,16 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @Nullable String getReplayId() {
+    return get(DSCKeys.REPLAY_ID);
+  }
+
+  @ApiStatus.Internal
+  public void setReplayId(final @Nullable String replayId) {
+    set(DSCKeys.REPLAY_ID, replayId);
+  }
+
+  @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
     if (mutable) {
       this.keyValues.put(key, value);
@@ -383,6 +394,7 @@ public final class Baggage {
   public void setValuesFromTransaction(
       final @NotNull ITransaction transaction,
       final @Nullable User user,
+      final @Nullable SentryId replayId,
       final @NotNull SentryOptions sentryOptions,
       final @Nullable TracesSamplingDecision samplingDecision) {
     setTraceId(transaction.getSpanContext().getTraceId().toString());
@@ -394,6 +406,9 @@ public final class Baggage {
         isHighQualityTransactionName(transaction.getTransactionNameSource())
             ? transaction.getName()
             : null);
+    if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
+      setReplayId(replayId.toString());
+    }
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
   }
@@ -403,10 +418,14 @@ public final class Baggage {
       final @NotNull IScope scope, final @NotNull SentryOptions options) {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
     final @Nullable User user = scope.getUser();
+    final @NotNull SentryId replayId = scope.getReplayId();
     setTraceId(propagationContext.getTraceId().toString());
     setPublicKey(new Dsn(options.getDsn()).getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
+      setReplayId(replayId.toString());
+    }
     setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(null);
     setSampleRate(null);
@@ -482,6 +501,7 @@ public final class Baggage {
   @Nullable
   public TraceContext toTraceContext() {
     final String traceIdString = getTraceId();
+    final String replayIdString = getReplayId();
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
@@ -496,7 +516,8 @@ public final class Baggage {
               getUserSegment(),
               getTransaction(),
               getSampleRate(),
-              getSampled());
+              getSampled(),
+              replayIdString == null ? null : new SentryId(replayIdString));
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -515,6 +536,7 @@ public final class Baggage {
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
     public static final String SAMPLED = "sentry-sampled";
+    public static final String REPLAY_ID = "sentry-replay_id";
 
     public static final List<String> ALL =
         Arrays.asList(
@@ -526,6 +548,7 @@ public final class Baggage {
             USER_SEGMENT,
             TRANSACTION,
             SAMPLE_RATE,
-            SAMPLED);
+            SAMPLED,
+            REPLAY_ID);
   }
 }
