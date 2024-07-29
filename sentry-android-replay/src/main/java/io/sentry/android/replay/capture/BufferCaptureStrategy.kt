@@ -20,14 +20,16 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
 import java.security.SecureRandom
+import java.util.concurrent.ScheduledExecutorService
 
 internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     private val random: SecureRandom,
+    executor: ScheduledExecutorService? = null,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider) {
+) : BaseCaptureStrategy(options, hub, dateProvider, executor = executor, replayCacheProvider = replayCacheProvider) {
 
     // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
@@ -138,19 +140,6 @@ internal class BufferCaptureStrategy(
         }
     }
 
-    private fun deleteFile(file: File?) {
-        if (file == null) {
-            return
-        }
-        try {
-            if (!file.delete()) {
-                options.logger.log(ERROR, "Failed to delete replay segment: %s", file.absolutePath)
-            }
-        } catch (e: Throwable) {
-            options.logger.log(ERROR, e, "Failed to delete replay segment: %s", file.absolutePath)
-        }
-    }
-
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
         createCurrentSegment("configuration_changed") { segment ->
             if (segment is ReplaySegment.Created) {
@@ -194,6 +183,19 @@ internal class BufferCaptureStrategy(
         }
     }
 
+    private fun deleteFile(file: File?) {
+        if (file == null) {
+            return
+        }
+        try {
+            if (!file.delete()) {
+                options.logger.log(ERROR, "Failed to delete replay segment: %s", file.absolutePath)
+            }
+        } catch (e: Throwable) {
+            options.logger.log(ERROR, e, "Failed to delete replay segment: %s", file.absolutePath)
+        }
+    }
+
     private fun MutableList<ReplaySegment.Created>.capture() {
         var bufferedSegment = removeFirstOrNull()
         while (bufferedSegment != null) {
@@ -204,6 +206,7 @@ internal class BufferCaptureStrategy(
     }
 
     private fun MutableList<ReplaySegment.Created>.rotate(bufferLimit: Long) {
+        // TODO: can be a single while-loop
         var removed = false
         removeAll {
             // it can be that the buffered segment is half-way older than the buffer limit, but

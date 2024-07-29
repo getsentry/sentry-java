@@ -150,7 +150,7 @@ public class ReplayIntegration(
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
             SessionCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider)
         } else {
-            BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider)
+            BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider = replayCacheProvider)
         }
 
         captureStrategy?.start(recorderConfig)
