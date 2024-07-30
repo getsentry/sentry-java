@@ -943,8 +943,9 @@ public final class Scope implements IScope {
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
     this.propagationContext = propagationContext;
 
+    final @NotNull SpanContext spanContext = propagationContext.toSpanContext();
     for (final IScopeObserver observer : options.getScopeObservers()) {
-      observer.setTrace(propagationContext.toSpanContext(), this);
+      observer.setTrace(spanContext, this);
     }
   }
 

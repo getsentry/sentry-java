@@ -157,7 +157,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setReplayId(final @NotNull SentryEvent event) {
-    final String persistedReplayId =
+    final @Nullable String persistedReplayId =
         PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
 
     if (persistedReplayId == null) {

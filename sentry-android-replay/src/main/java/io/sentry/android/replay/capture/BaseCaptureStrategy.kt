@@ -524,10 +524,8 @@ internal abstract class BaseCaptureStrategy(
 
     private inline fun <T> persistableAtomicNullable(
         initialValue: T? = null,
-        propertyName: String? = null,
+        propertyName: String,
         crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
-            propertyName ?: error("Can't persist value without a property name")
-
             if (options.mainThreadChecker.isMainThread) {
                 persistingExecutor.submit {
                     cache?.persistSegmentValues(propertyName, newValue.toString())
@@ -556,10 +554,8 @@ internal abstract class BaseCaptureStrategy(
 
     private inline fun <T> persistableAtomic(
         initialValue: T? = null,
-        propertyName: String? = null,
+        propertyName: String,
         crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
-            propertyName ?: error("Can't persist value without a property name")
-
             if (options.mainThreadChecker.isMainThread) {
                 persistingExecutor.submit {
                     cache?.persistSegmentValues(propertyName, newValue.toString())
@@ -570,4 +566,9 @@ internal abstract class BaseCaptureStrategy(
         }
     ): ReadWriteProperty<Any?, T> =
         persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
+
+    private inline fun <T> persistableAtomic(
+        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit
+    ): ReadWriteProperty<Any?, T> =
+        persistableAtomicNullable<T>(null, "", onChange) as ReadWriteProperty<Any?, T>
 }
