@@ -37,7 +37,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@cdbbabd09cff07936e1c9dbe8c9d4b6ac2ef7156 # pin@v3
+        uses: gradle/actions/setup-gradle@fd87365911aa12c016c307ea21313f351dc53551 # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -86,7 +86,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@cdbbabd09cff07936e1c9dbe8c9d4b6ac2ef7156 # pin@v3
+        uses: gradle/actions/setup-gradle@fd87365911aa12c016c307ea21313f351dc53551 # pin@v3
         with:
           gradle-home-cache-cleanup: true
 

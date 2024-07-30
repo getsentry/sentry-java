@@ -200,7 +200,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setReplayId(final @NotNull SentryEvent event) {
-    String persistedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
+    @Nullable String persistedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
     final File replayFolder = new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
       if (!sampleReplay(event)) {
