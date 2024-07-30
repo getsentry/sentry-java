@@ -34,18 +34,25 @@ public abstract interface class io/sentry/android/replay/Recorder : java/io/Clos
 }
 
 public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
+	public static final field Companion Lio/sentry/android/replay/ReplayCache$Companion;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public final fun addFrame (Ljava/io/File;J)V
 	public fun close ()V
 	public final fun createVideoOf (JJIIILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
 	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJIIILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+	public final fun persistSegmentValues (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun rotate (J)V
+}
+
+public final class io/sentry/android/replay/ReplayCache$Companion {
+	public final fun makeReplayCacheDir (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;)Ljava/io/File;
 }
 
 public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/TouchRecorderCallback, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun captureReplay (Ljava/lang/Boolean;)V
 	public fun close ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
@@ -59,8 +66,6 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
-	public fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
-	public fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
 	public fun stop ()V
