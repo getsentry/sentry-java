@@ -37,7 +37,7 @@ internal class PersistableLinkedList(
 
     private fun persistRecording() {
         val cache = cacheProvider() ?: return
-        val recording = ReplayRecording().apply { payload = this@PersistableLinkedList }
+        val recording = ReplayRecording().apply { payload = ArrayList(this@PersistableLinkedList) }
         if (options.mainThreadChecker.isMainThread) {
             persistingExecutor.submit {
                 val stringWriter = StringWriter()

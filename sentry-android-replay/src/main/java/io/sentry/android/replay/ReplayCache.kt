@@ -71,6 +71,19 @@ public class ReplayCache internal constructor(
     // TODO: maybe account for multi-threaded access
     internal val frames = mutableListOf<ReplayFrame>()
 
+    private val ongoingSegment = LinkedHashMap<String, String>()
+    private val ongoingSegmentFile: File? by lazy {
+        if (replayCacheDir == null) {
+            return@lazy null
+        }
+
+        val file = File(replayCacheDir, ONGOING_SEGMENT)
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        file
+    }
+
     /**
      * Stores the current frame screenshot to in-memory cache as well as disk with [frameTimestamp]
      * as filename. Uses [Bitmap.CompressFormat.JPEG] format with quality 80. The frames are stored
@@ -249,23 +262,20 @@ public class ReplayCache internal constructor(
         if (isClosed.get()) {
             return
         }
-        val file = File(replayCacheDir, ONGOING_SEGMENT)
-        if (!file.exists()) {
-            file.createNewFile()
-        }
-        val map = LinkedHashMap<String, String>()
-        file.useLines { lines ->
-            lines.associateTo(map) {
-                val (k, v) = it.split("=", limit = 2)
-                k to v
-            }
-            if (value == null) {
-                map.remove(key)
-            } else {
-                map[key] = value
+        if (ongoingSegment.isEmpty()) {
+            ongoingSegmentFile?.useLines { lines ->
+                lines.associateTo(ongoingSegment) {
+                    val (k, v) = it.split("=", limit = 2)
+                    k to v
+                }
             }
         }
-        file.writeText(map.entries.joinToString("\n") { (k, v) -> "$k=$v" })
+        if (value == null) {
+            ongoingSegment.remove(key)
+        } else {
+            ongoingSegment[key] = value
+        }
+        ongoingSegmentFile?.writeText(ongoingSegment.entries.joinToString("\n") { (k, v) -> "$k=$v" })
     }
 
     companion object {
