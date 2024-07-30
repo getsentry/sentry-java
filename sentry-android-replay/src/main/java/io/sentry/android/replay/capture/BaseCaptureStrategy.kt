@@ -109,11 +109,11 @@ internal abstract class BaseCaptureStrategy(
     ) {
         cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
 
+        currentReplayId = replayId
+        currentSegment = segmentId
+        this.recorderConfig = recorderConfig
         // TODO: this should be persisted even after conversion
         replayType = if (this is SessionCaptureStrategy) SESSION else BUFFER
-        this.recorderConfig = recorderConfig
-        currentSegment = segmentId
-        currentReplayId = replayId
 
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)

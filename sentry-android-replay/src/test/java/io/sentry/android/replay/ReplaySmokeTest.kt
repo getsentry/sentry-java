@@ -3,9 +3,9 @@ package io.sentry.android.replay
 import android.app.Activity
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.media.MediaCodec
 import android.os.Bundle
 import android.os.Handler
+import android.os.Handler.Callback
 import android.os.Looper
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -18,8 +18,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
-import io.sentry.android.replay.video.MuxerConfig
-import io.sentry.android.replay.video.SimpleVideoEncoder
+import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
@@ -43,15 +42,13 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPixelCopy
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.MICROSECONDS
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 @Config(
-    shadows = [ShadowPixelCopy::class],
+    shadows = [ShadowPixelCopy::class, ReplayShadowMediaCodec::class],
     sdk = [28],
     qualifiers = "w360dp-h640dp-xxhdpi"
 )
@@ -68,53 +65,21 @@ class ReplaySmokeTest {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
         }
-        var encoder: SimpleVideoEncoder? = null
         var count: Int = 0
 
         private class ImmediateHandler : Handler(Callback { it.callback?.run(); true })
 
         fun getSut(
             context: Context,
-            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
-            framesToEncode: Int = 0
+            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             return ReplayIntegration(
                 context,
                 dateProvider,
                 recorderProvider = null,
                 recorderConfigProvider = null,
-                // this is just needed for testing to encode a fake video
-                replayCacheProvider = { replayId, recorderConfig ->
-                    ReplayCache(
-                        options,
-                        replayId,
-                        recorderConfig,
-                        encoderProvider = { videoFile, height, width ->
-                            encoder = SimpleVideoEncoder(
-                                options,
-                                MuxerConfig(
-                                    file = videoFile,
-                                    recordingHeight = height,
-                                    recordingWidth = width,
-                                    frameRate = recorderConfig.frameRate,
-                                    bitRate = recorderConfig.bitRate
-                                ),
-                                onClose = {
-                                    encodeFrame(
-                                        framesToEncode,
-                                        recorderConfig.frameRate,
-                                        size = 0,
-                                        flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM
-                                    )
-                                }
-                            ).also { it.start() }
-                            repeat(framesToEncode) { encodeFrame(it, recorderConfig.frameRate) }
-
-                            encoder!!
-                        }
-                    )
-                },
                 replayCaptureStrategyProvider = null,
+                replayCacheProvider = null,
                 mainLooperHandler = mock {
                     whenever(mock.handler).thenReturn(ImmediateHandler())
                     whenever(mock.post(any())).then {
@@ -124,18 +89,6 @@ class ReplaySmokeTest {
                 }
             )
         }
-
-        private fun encodeFrame(index: Int, frameRate: Int, size: Int = 10, flags: Int = 0) {
-            val presentationTime = MICROSECONDS.convert(index * (1000L / frameRate), MILLISECONDS)
-            encoder!!.mediaCodec.dequeueInputBuffer(0)
-            encoder!!.mediaCodec.queueInputBuffer(
-                index,
-                index * size,
-                size,
-                presentationTime,
-                flags
-            )
-        }
     }
 
     private val fixture = Fixture()
@@ -143,6 +96,7 @@ class ReplaySmokeTest {
 
     @BeforeTest
     fun `set up`() {
+        ReplayShadowMediaCodec.framesToEncode = 5
         context = ApplicationProvider.getApplicationContext()
     }
 
@@ -156,7 +110,7 @@ class ReplaySmokeTest {
         fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
-        val replay: ReplayIntegration = fixture.getSut(context, framesToEncode = 5)
+        val replay: ReplayIntegration = fixture.getSut(context)
         replay.register(fixture.hub, fixture.options)
 
         val controller = buildActivity(ExampleActivity::class.java, null).setup()
@@ -193,6 +147,8 @@ class ReplaySmokeTest {
 
     @Test
     fun `works in buffer mode`() {
+        ReplayShadowMediaCodec.framesToEncode = 10
+
         val captured = AtomicBoolean(false)
         whenever(fixture.hub.captureReplay(any(), anyOrNull())).then {
             captured.set(true)
@@ -201,7 +157,7 @@ class ReplaySmokeTest {
         fixture.options.experimental.sessionReplay.errorSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
-        val replay: ReplayIntegration = fixture.getSut(context, framesToEncode = 10)
+        val replay: ReplayIntegration = fixture.getSut(context)
         replay.register(fixture.hub, fixture.options)
 
         val controller = buildActivity(ExampleActivity::class.java, null).setup()

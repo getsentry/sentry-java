@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
-import android.media.MediaCodec
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IHub
@@ -16,7 +15,7 @@ import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState
 import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState.RESUMED
 import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState.STARTED
 import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState.STOPPED
-import io.sentry.android.replay.video.MuxerConfig
+import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
@@ -43,7 +42,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [26])
+@Config(
+    sdk = [26],
+    shadows = [ReplayShadowMediaCodec::class]
+)
 class ReplayIntegrationWithRecorderTest {
 
     @get:Rule
@@ -60,45 +62,13 @@ class ReplayIntegrationWithRecorderTest {
             context: Context,
             recorder: Recorder,
             recorderConfig: ScreenshotRecorderConfig,
-            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
-            framesToEncode: Int = 0
+            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             return ReplayIntegration(
                 context,
                 dateProvider,
                 recorderProvider = { recorder },
-                recorderConfigProvider = { recorderConfig },
-                // this is just needed for testing to encode a fake video
-                replayCacheProvider = { replayId, config ->
-                    ReplayCache(
-                        options,
-                        replayId,
-                        config,
-                        encoderProvider = { videoFile, height, width ->
-                            encoder = SimpleVideoEncoder(
-                                options,
-                                MuxerConfig(
-                                    file = videoFile,
-                                    recordingHeight = height,
-                                    recordingWidth = width,
-                                    frameRate = recorderConfig.frameRate,
-                                    bitRate = recorderConfig.bitRate
-                                ),
-                                onClose = {
-                                    encodeFrame(
-                                        framesToEncode,
-                                        recorderConfig.frameRate,
-                                        size = 0,
-                                        flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM
-                                    )
-                                }
-                            ).also { it.start() }
-                            repeat(framesToEncode) { encodeFrame(it, recorderConfig.frameRate) }
-
-                            encoder!!
-                        }
-                    )
-                }
+                recorderConfigProvider = { recorderConfig }
             )
         }
 
@@ -120,6 +90,7 @@ class ReplayIntegrationWithRecorderTest {
 
     @BeforeTest
     fun `set up`() {
+        ReplayShadowMediaCodec.framesToEncode = 5
         context = ApplicationProvider.getApplicationContext()
     }
 
@@ -164,7 +135,7 @@ class ReplayIntegrationWithRecorderTest {
             }
         }
 
-        replay = fixture.getSut(context, recorder, recorderConfig, dateProvider, framesToEncode = 5)
+        replay = fixture.getSut(context, recorder, recorderConfig, dateProvider)
         replay.register(fixture.hub, fixture.options)
 
         assertEquals(INITALIZED, recorder.state)

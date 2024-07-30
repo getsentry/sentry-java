@@ -36,29 +36,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param replayId the current replay id, used for giving a unique name to the replay folder
  * @param recorderConfig ScreenshotRecorderConfig, used for video resolution and frame-rate
  */
-public class ReplayCache internal constructor(
+public class ReplayCache(
     private val options: SentryOptions,
     private val replayId: SentryId,
-    private val recorderConfig: ScreenshotRecorderConfig,
-    private val encoderProvider: (videoFile: File, height: Int, width: Int) -> SimpleVideoEncoder
+    private val recorderConfig: ScreenshotRecorderConfig
 ) : Closeable {
-
-    public constructor(
-        options: SentryOptions,
-        replayId: SentryId,
-        recorderConfig: ScreenshotRecorderConfig
-    ) : this(options, replayId, recorderConfig, encoderProvider = { videoFile, height, width ->
-        SimpleVideoEncoder(
-            options,
-            MuxerConfig(
-                file = videoFile,
-                recordingHeight = height,
-                recordingWidth = width,
-                frameRate = recorderConfig.frameRate,
-                bitRate = recorderConfig.bitRate
-            )
-        ).also { it.start() }
-    })
 
     private val isClosed = AtomicBoolean(false)
     private val encoderLock = Any()
@@ -151,7 +133,18 @@ public class ReplayCache internal constructor(
         }
 
         // TODO: reuse instance of encoder and just change file path to create a different muxer
-        encoder = synchronized(encoderLock) { encoderProvider(videoFile, height, width) }
+        encoder = synchronized(encoderLock) {
+            SimpleVideoEncoder(
+                options,
+                MuxerConfig(
+                    file = videoFile,
+                    recordingHeight = height,
+                    recordingWidth = width,
+                    frameRate = recorderConfig.frameRate,
+                    bitRate = recorderConfig.bitRate
+                )
+            ).also { it.start() }
+        }
 
         val step = 1000 / recorderConfig.frameRate.toLong()
         var frameCount = 0

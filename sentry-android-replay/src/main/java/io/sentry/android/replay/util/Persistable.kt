@@ -39,7 +39,7 @@ internal class PersistableLinkedList(
         val cache = cacheProvider() ?: return
         val recording = ReplayRecording().apply { payload = this@PersistableLinkedList }
         if (options.mainThreadChecker.isMainThread) {
-            persistingExecutor.submit {
+            persistingExecutor.submitSafely(options, "persist_recording") {
                 val stringWriter = StringWriter()
                 options.serializer.serialize(recording, BufferedWriter(stringWriter))
                 cache.persistSegmentValues(propertyName, stringWriter.toString())
