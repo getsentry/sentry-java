@@ -40,6 +40,7 @@ internal class BufferCaptureStrategy(
 
     internal companion object {
         private const val TAG = "BufferCaptureStrategy"
+        private const val ENVELOPE_PROCESSING_DELAY: Long = 100L
     }
 
     override fun start(
@@ -201,7 +202,10 @@ internal class BufferCaptureStrategy(
         while (bufferedSegment != null) {
             bufferedSegment.capture(hub)
             bufferedSegment = removeFirstOrNull()
-            Thread.sleep(100L)
+            // a short delay between processing envelopes to avoid bursting our server and hitting
+            // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities
+            // InterruptedException will be handled by the outer try-catch
+            Thread.sleep(ENVELOPE_PROCESSING_DELAY)
         }
     }
 

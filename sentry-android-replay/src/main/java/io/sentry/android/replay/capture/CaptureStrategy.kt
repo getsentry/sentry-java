@@ -127,13 +127,13 @@ internal interface CaptureStrategy {
         ): ReplaySegment {
             val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
             val replay = SentryReplayEvent().apply {
-                eventId = currentReplayId
-                replayId = currentReplayId
+                this.eventId = currentReplayId
+                this.replayId = currentReplayId
                 this.segmentId = segmentId
                 this.timestamp = endTimestamp
-                replayStartTimestamp = segmentTimestamp
+                this.replayStartTimestamp = segmentTimestamp
                 this.replayType = replayType
-                videoFile = video
+                this.videoFile = video
             }
 
             val recordingPayload = mutableListOf<RRWebEvent>()
@@ -147,13 +147,13 @@ internal interface CaptureStrategy {
                 this.segmentId = segmentId
                 this.durationMs = videoDuration
                 this.frameCount = frameCount
-                size = video.length()
+                this.size = video.length()
                 this.frameRate = frameRate
                 this.height = height
                 this.width = width
                 // TODO: support non-fullscreen windows later
-                left = 0
-                top = 0
+                this.left = 0
+                this.top = 0
             }
 
             val urls = LinkedList<String>()
@@ -189,7 +189,7 @@ internal interface CaptureStrategy {
 
             val recording = ReplayRecording().apply {
                 this.segmentId = segmentId
-                payload = recordingPayload.sortedBy { it.timestamp }
+                this.payload = recordingPayload.sortedBy { it.timestamp }
             }
 
             replay.urls = urls
