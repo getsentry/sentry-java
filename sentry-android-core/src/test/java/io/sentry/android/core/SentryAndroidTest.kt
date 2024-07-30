@@ -348,6 +348,15 @@ class SentryAndroidTest {
         }
     }
 
+    @Test
+    fun `When initializing Sentry a callback is added to application by appStartMetrics`() {
+        val mockContext = ContextUtilsTestHelper.createMockContext(true)
+        SentryAndroid.init(mockContext) {
+            it.dsn = "https://key@sentry.io/123"
+        }
+        verify(mockContext.applicationContext as Application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+    }
+
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
         optionsConfig: (SentryAndroidOptions) -> Unit = {},
