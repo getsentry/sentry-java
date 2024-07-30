@@ -199,13 +199,16 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       sentryId = event.getEventId();
     }
 
-    if (event != null) {
-      options.getReplayController().sendReplayForEvent(event, hint);
+    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+    // if event is backfillable we don't wanna trigger capture replay, because it's an event from
+    // the past
+    if (event != null && !isBackfillable && (event.isErrored() || event.isCrashed())) {
+      options.getReplayController().captureReplay(event.isCrashed());
     }
 
     try {
       @Nullable TraceContext traceContext = null;
-      if (HintUtils.hasType(hint, Backfillable.class)) {
+      if (isBackfillable) {
         // for backfillable hint we synthesize Baggage from event values
         if (event != null) {
           final Baggage baggage = Baggage.fromEvent(event, options);
@@ -239,12 +242,9 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     }
 
     // if we encountered a crash/abnormal exit finish tracing in order to persist and send
-    // any running transaction / profiling data. We also finish session replay, and it has priority
-    // over transactions as it takes longer to finalize replay than transactions, therefore
-    // the replay_id will be the trigger for flushing and unblocking the thread in case of a crash
+    // any running transaction / profiling data.
     if (scope != null) {
       finalizeTransaction(scope, hint);
-      finalizeReplay(scope, hint);
     }
 
     return sentryId;
@@ -260,18 +260,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
           transaction.forceFinish(SpanStatus.ABORTED, false, hint);
         } else {
           transaction.forceFinish(SpanStatus.ABORTED, false, null);
-        }
-      }
-    }
-  }
-
-  private void finalizeReplay(final @NotNull IScope scope, final @NotNull Hint hint) {
-    final @Nullable SentryId replayId = scope.getReplayId();
-    if (!SentryId.EMPTY_ID.equals(replayId)) {
-      if (HintUtils.hasType(hint, TransactionEnd.class)) {
-        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-        if (sentrySdkHint instanceof DiskFlushNotification) {
-          ((DiskFlushNotification) sentrySdkHint).setFlushable(replayId);
         }
       }
     }
@@ -318,7 +306,9 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         }
       }
 
-      final SentryEnvelope envelope = buildEnvelope(event, hint.getReplayRecording(), traceContext);
+      final boolean cleanupReplayFolder = HintUtils.hasType(hint, Backfillable.class);
+      final SentryEnvelope envelope =
+          buildEnvelope(event, hint.getReplayRecording(), traceContext, cleanupReplayFolder);
 
       hint.clear();
       transport.send(envelope, hint);
@@ -628,12 +618,17 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
   private @NotNull SentryEnvelope buildEnvelope(
       final @NotNull SentryReplayEvent event,
       final @Nullable ReplayRecording replayRecording,
-      final @Nullable TraceContext traceContext) {
+      final @Nullable TraceContext traceContext,
+      final boolean cleanupReplayFolder) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
     final SentryEnvelopeItem replayItem =
         SentryEnvelopeItem.fromReplay(
-            options.getSerializer(), options.getLogger(), event, replayRecording);
+            options.getSerializer(),
+            options.getLogger(),
+            event,
+            replayRecording,
+            cleanupReplayFolder);
     envelopeItems.add(replayItem);
     final SentryId sentryId = event.getEventId();
 

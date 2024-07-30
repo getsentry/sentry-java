@@ -2,7 +2,6 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import io.sentry.DateUtils
-import io.sentry.Hint
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
@@ -10,6 +9,7 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
@@ -31,10 +31,9 @@ internal class SessionCaptureStrategy(
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
-        replayId: SentryId,
-        cleanupOldReplays: Boolean
+        replayId: SentryId
     ) {
-        super.start(recorderConfig, segmentId, replayId, cleanupOldReplays)
+        super.start(recorderConfig, segmentId, replayId)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
         hub?.configureScope {
@@ -66,17 +65,9 @@ internal class SessionCaptureStrategy(
         super.stop()
     }
 
-    override fun sendReplayForEvent(isCrashed: Boolean, eventId: String?, hint: Hint?, onSegmentSent: () -> Unit) {
-        if (!isCrashed) {
-            options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event %s", eventId)
-        } else {
-            options.logger.log(DEBUG, "Replay is already running in 'session' mode, capturing last segment for crashed event %s", eventId)
-            createCurrentSegment("send_replay_for_event") { segment ->
-                if (segment is ReplaySegment.Created) {
-                    segment.capture(hub, hint ?: Hint())
-                }
-            }
-        }
+    override fun captureReplay(isTerminating: Boolean, onSegmentSent: () -> Unit) {
+        options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event")
+        this.isTerminating.set(isTerminating)
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
@@ -99,10 +90,15 @@ internal class SessionCaptureStrategy(
                 return@submitSafely
             }
 
+            if (isTerminating.get()) {
+                options.logger.log(DEBUG, "Not capturing segment, because the app is terminating, will be captured on next launch")
+                return@submitSafely
+            }
+
             val now = dateProvider.currentTimeMillis
             if ((now - currentSegmentTimestamp.time >= options.experimental.sessionReplay.sessionSegmentDuration)) {
                 val segment =
-                    createSegment(
+                    createSegmentInternal(
                         options.experimental.sessionReplay.sessionSegmentDuration,
                         currentSegmentTimestamp,
                         currentReplayId,
@@ -153,7 +149,7 @@ internal class SessionCaptureStrategy(
         val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =
-                createSegment(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
+                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
             onSegmentCreated(segment)
         }
     }

@@ -10,6 +10,7 @@ import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SentryId
@@ -21,7 +22,6 @@ import java.io.StringReader
 import java.util.Date
 import java.util.LinkedList
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.ceil
 
 /**
  * A basic in-memory and disk cache for Session Replay frames. Frames are stored in order under the
@@ -95,7 +95,7 @@ public class ReplayCache internal constructor(
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
     internal fun addFrame(bitmap: Bitmap, frameTimestamp: Long) {
-        if (replayCacheDir == null) {
+        if (replayCacheDir == null || bitmap.isRecycled) {
             return
         }
 
@@ -152,6 +152,9 @@ public class ReplayCache internal constructor(
         width: Int,
         videoFile: File = File(replayCacheDir, "$segmentId.mp4")
     ): GeneratedVideo? {
+        if (videoFile.exists() && videoFile.length() > 0) {
+            videoFile.delete()
+        }
         if (frames.isEmpty()) {
             options.logger.log(
                 DEBUG,
@@ -381,17 +384,17 @@ public class ReplayCache internal constructor(
             }
 
             cache.frames.sortBy { it.timestamp }
-
-            fun roundToNearestFrame(duration: Long, frameDuration: Int): Long {
-                val frames = duration.toDouble() / frameDuration.toDouble()
-                return ceil(frames).toLong() * frameDuration
+            // TODO: this should be removed when we start sending buffered segments on next launch
+            val normalizedSegmentId = if (replayType == SESSION) segmentId else 0
+            val normalizedTimestamp = if (replayType == SESSION) {
+                segmentTimestamp
+            } else {
+                // in buffer mode we have to set the timestamp of the first frame as the actual start
+                DateUtils.getDateTime(cache.frames.first().timestamp)
             }
 
-            // we need to round to the nearest frame to include breadcrumbs/events happened after the frame was captured
-            val duration = roundToNearestFrame(
-                duration = (cache.frames.last().timestamp - segmentTimestamp.time),
-                frameDuration = 1000 / frameRate
-            ) - 1 // we need to subtract 1ms to avoid capturing the next frame which doesn't exist
+            // add one frame to include breadcrumbs/events happened after the frame was captured
+            val duration = cache.frames.last().timestamp - normalizedTimestamp.time + (1000 / frameRate)
 
             val events = lastSegment[SEGMENT_KEY_REPLAY_RECORDING]?.let {
                 val reader = StringReader(it)
@@ -406,8 +409,8 @@ public class ReplayCache internal constructor(
             return LastSegmentData(
                 recorderConfig = recorderConfig,
                 cache = cache,
-                timestamp = segmentTimestamp,
-                id = segmentId,
+                timestamp = normalizedTimestamp,
+                id = normalizedSegmentId,
                 duration = duration,
                 replayType = replayType,
                 screenAtStart = lastSegment[SEGMENT_KEY_REPLAY_SCREEN_AT_START],

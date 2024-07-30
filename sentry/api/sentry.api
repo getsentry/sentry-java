@@ -658,6 +658,7 @@ public abstract interface class io/sentry/IOptionsObserver {
 	public abstract fun setEnvironment (Ljava/lang/String;)V
 	public abstract fun setProguardUuid (Ljava/lang/String;)V
 	public abstract fun setRelease (Ljava/lang/String;)V
+	public abstract fun setReplayErrorSampleRate (Ljava/lang/Double;)V
 	public abstract fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public abstract fun setTags (Ljava/util/Map;)V
 }
@@ -1260,14 +1261,13 @@ public final class io/sentry/NoOpReplayBreadcrumbConverter : io/sentry/ReplayBre
 }
 
 public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
+	public fun captureReplay (Ljava/lang/Boolean;)V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
 	public fun pause ()V
 	public fun resume ()V
-	public fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
-	public fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
 	public fun stop ()V
@@ -1676,13 +1676,12 @@ public abstract interface class io/sentry/ReplayBreadcrumbConverter {
 }
 
 public abstract interface class io/sentry/ReplayController {
+	public abstract fun captureReplay (Ljava/lang/Boolean;)V
 	public abstract fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
 	public abstract fun resume ()V
-	public abstract fun sendReplay (Ljava/lang/Boolean;Ljava/lang/String;Lio/sentry/Hint;)V
-	public abstract fun sendReplayForEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)V
 	public abstract fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public abstract fun start ()V
 	public abstract fun stop ()V
@@ -2120,7 +2119,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromMetrics (Lio/sentry/metrics/EncodedMetrics;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
-	public static fun fromReplay (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/SentryReplayEvent;Lio/sentry/ReplayRecording;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromReplay (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/SentryReplayEvent;Lio/sentry/ReplayRecording;Z)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getClientReport (Lio/sentry/ISerializer;)Lio/sentry/clientreport/ClientReport;
@@ -3332,6 +3331,7 @@ public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOption
 	public static final field OPTIONS_CACHE Ljava/lang/String;
 	public static final field PROGUARD_UUID_FILENAME Ljava/lang/String;
 	public static final field RELEASE_FILENAME Ljava/lang/String;
+	public static final field REPLAY_ERROR_SAMPLE_RATE_FILENAME Ljava/lang/String;
 	public static final field SDK_VERSION_FILENAME Ljava/lang/String;
 	public static final field TAGS_FILENAME Ljava/lang/String;
 	public fun <init> (Lio/sentry/SentryOptions;)V
@@ -3341,6 +3341,7 @@ public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOption
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setReplayErrorSampleRate (Ljava/lang/Double;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setTags (Ljava/util/Map;)V
 }
@@ -3372,6 +3373,7 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public fun setTrace (Lio/sentry/SpanContext;Lio/sentry/IScope;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public static fun store (Lio/sentry/SentryOptions;Ljava/lang/Object;Ljava/lang/String;)V
 }
 
 public final class io/sentry/clientreport/ClientReport : io/sentry/JsonSerializable, io/sentry/JsonUnknown {

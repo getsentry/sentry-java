@@ -4,6 +4,7 @@ import static io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME;
+import static io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME;
@@ -53,6 +54,8 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
+import java.io.File;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,13 +83,24 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
 
+  private final @Nullable SecureRandom random;
+
   public AnrV2EventProcessor(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider) {
+    this(context, options, buildInfoProvider, null);
+  }
+
+  AnrV2EventProcessor(
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable SecureRandom random) {
     this.context = context;
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
+    this.random = random;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(this.options);
@@ -156,14 +170,68 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setReplayId(event);
   }
 
+  private boolean sampleReplay(final @NotNull SentryEvent event) {
+    final @Nullable String replayErrorSampleRate =
+        PersistingOptionsObserver.read(options, REPLAY_ERROR_SAMPLE_RATE_FILENAME, String.class);
+
+    if (replayErrorSampleRate == null) {
+      return false;
+    }
+
+    try {
+      // we have to sample here with the old sample rate, because it may change between app launches
+      final @NotNull SecureRandom random = this.random != null ? this.random : new SecureRandom();
+      final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
+      if (replayErrorSampleRateDouble < random.nextDouble()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not capturing replay for ANR %s due to not being sampled.",
+                event.getEventId());
+        return false;
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error parsing replay sample rate.", e);
+      return false;
+    }
+
+    return true;
+  }
+
   private void setReplayId(final @NotNull SentryEvent event) {
-    final @Nullable String persistedReplayId =
-        PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
+    @Nullable
+    String persistedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
+    final @NotNull File replayFolder =
+        new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
+    if (!replayFolder.exists()) {
+      if (!sampleReplay(event)) {
+        return;
+      }
+      // if the replay folder does not exist (e.g. running in buffer mode), we need to find the
+      // latest replay folder that was modified before the ANR event.
+      persistedReplayId = null;
+      long lastModified = Long.MIN_VALUE;
+      final File[] dirs = new File(options.getCacheDirPath()).listFiles();
+      if (dirs != null) {
+        for (File dir : dirs) {
+          if (dir.isDirectory() && dir.getName().startsWith("replay_")) {
+            if (dir.lastModified() > lastModified
+                && dir.lastModified() <= event.getTimestamp().getTime()) {
+              lastModified = dir.lastModified();
+              persistedReplayId = dir.getName().substring("replay_".length());
+            }
+          }
+        }
+      }
+    }
 
     if (persistedReplayId == null) {
       return;
     }
 
+    // store the relevant replayId so ReplayIntegration can pick it up and finalize that replay
+    PersistingScopeObserver.store(options, persistedReplayId, REPLAY_FILENAME);
     event.getContexts().put(REPLAY_ID, persistedReplayId);
   }
 

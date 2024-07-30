@@ -13,17 +13,13 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
-import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
-import io.sentry.protocol.Mechanism
-import io.sentry.protocol.SentryException
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
@@ -221,14 +217,7 @@ class ReplaySmokeTest {
         } catch (e: ConditionTimeoutException) {
         }
 
-        val crash = SentryEvent().apply {
-            exceptions = listOf(
-                SentryException().apply {
-                    mechanism = Mechanism().apply { isHandled = false }
-                }
-            )
-        }
-        replay.sendReplayForEvent(crash, Hint())
+        replay.captureReplay(isTerminating = false)
 
         await.timeout(Duration.ofSeconds(5)).untilTrue(captured)
 
