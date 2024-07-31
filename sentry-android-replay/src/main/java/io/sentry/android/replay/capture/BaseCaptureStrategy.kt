@@ -109,11 +109,11 @@ internal abstract class BaseCaptureStrategy(
     ) {
         cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
 
-        currentReplayId = replayId
-        currentSegment = segmentId
-        this.recorderConfig = recorderConfig
         // TODO: this should be persisted even after conversion
         replayType = if (this is SessionCaptureStrategy) SESSION else BUFFER
+        this.recorderConfig = recorderConfig
+        currentSegment = segmentId
+        currentReplayId = replayId
 
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
@@ -321,10 +321,8 @@ internal abstract class BaseCaptureStrategy(
 
     private inline fun <T> persistableAtomicNullable(
         initialValue: T? = null,
-        propertyName: String? = null,
+        propertyName: String,
         crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
-            propertyName ?: error("Can't persist value without a property name")
-
             cache?.persistSegmentValues(propertyName, newValue.toString())
         }
     ): ReadWriteProperty<Any?, T?> =
@@ -357,12 +355,15 @@ internal abstract class BaseCaptureStrategy(
 
     private inline fun <T> persistableAtomic(
         initialValue: T? = null,
-        propertyName: String? = null,
+        propertyName: String,
         crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
-            propertyName ?: error("Can't persist value without a property name")
-
             cache?.persistSegmentValues(propertyName, newValue.toString())
         }
     ): ReadWriteProperty<Any?, T> =
         persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
+
+    private inline fun <T> persistableAtomic(
+        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit
+    ): ReadWriteProperty<Any?, T> =
+        persistableAtomicNullable<T>(null, "", onChange) as ReadWriteProperty<Any?, T>
 }

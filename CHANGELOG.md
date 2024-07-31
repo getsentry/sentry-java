@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Session Replay: ([#3565](https://github.com/getsentry/sentry-java/pull/3565)) ([#3609](https://github.com/getsentry/sentry-java/pull/3609))
+  - Capture remaining replay segment for ANRs on next app launch
+  - Capture remaining replay segment for unhandled crashes on next app launch
+
+### Fixes
+
+- Session Replay: ([#3565](https://github.com/getsentry/sentry-java/pull/3565)) ([#3609](https://github.com/getsentry/sentry-java/pull/3609))
+  - Fix stopping replay in `session` mode at 1 hour deadline
+  - Never encode full frames for a video segment, only do partial updates. This further reduces size of the replay segment
+  - Use propagation context when no active transaction for ANRs
+
+### Dependencies
+
+- Bump Spring Boot to 3.3.2 ([#3541](https://github.com/getsentry/sentry-java/pull/3541))
+
+## 7.12.1
+
+### Fixes
+
+- Check app start spans time and ignore background app starts ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
+  - This should eliminate long-lasting App Start transactions
+
 ## 7.12.0
 
 ### Features

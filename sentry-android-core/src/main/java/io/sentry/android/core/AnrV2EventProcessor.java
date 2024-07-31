@@ -180,7 +180,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     try {
       // we have to sample here with the old sample rate, because it may change between app launches
-      final SecureRandom random = this.random != null ? this.random : new SecureRandom();
+      final @NotNull SecureRandom random = this.random != null ? this.random : new SecureRandom();
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
       if (replayErrorSampleRateDouble < random.nextDouble()) {
         options
@@ -200,8 +200,10 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setReplayId(final @NotNull SentryEvent event) {
+    @Nullable
     String persistedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
-    final File replayFolder = new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
+    final @NotNull File replayFolder =
+        new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
       if (!sampleReplay(event)) {
         return;

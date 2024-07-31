@@ -260,14 +260,14 @@ public class ReplayIntegration(
     private fun cleanupReplays(unfinishedReplayId: String = "") {
         // clean up old replays
         options.cacheDirPath?.let { cacheDir ->
-            File(cacheDir).listFiles { dir, name ->
+            File(cacheDir).listFiles()?.forEach { file ->
+                val name = file.name
                 if (name.startsWith("replay_") &&
                     !name.contains(replayId.toString()) &&
                     !(unfinishedReplayId.isNotBlank() && name.contains(unfinishedReplayId))
                 ) {
-                    FileUtils.deleteRecursively(File(dir, name))
+                    FileUtils.deleteRecursively(file)
                 }
-                false
             }
         }
     }
