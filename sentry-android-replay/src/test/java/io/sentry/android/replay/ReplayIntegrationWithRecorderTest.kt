@@ -16,7 +16,6 @@ import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState
 import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState.STARTED
 import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState.STOPPED
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
-import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
@@ -35,8 +34,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import java.io.File
-import java.util.concurrent.TimeUnit.MICROSECONDS
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -56,7 +53,6 @@ class ReplayIntegrationWithRecorderTest {
             mainThreadChecker = NoOpMainThreadChecker.getInstance()
         }
         val hub = mock<IHub>()
-        var encoder: SimpleVideoEncoder? = null
 
         fun getSut(
             context: Context,
@@ -69,18 +65,6 @@ class ReplayIntegrationWithRecorderTest {
                 dateProvider,
                 recorderProvider = { recorder },
                 recorderConfigProvider = { recorderConfig }
-            )
-        }
-
-        private fun encodeFrame(index: Int, frameRate: Int, size: Int = 10, flags: Int = 0) {
-            val presentationTime = MICROSECONDS.convert(index * (1000L / frameRate), MILLISECONDS)
-            encoder!!.mediaCodec.dequeueInputBuffer(0)
-            encoder!!.mediaCodec.queueInputBuffer(
-                index,
-                index * size,
-                size,
-                presentationTime,
-                flags
             )
         }
     }
