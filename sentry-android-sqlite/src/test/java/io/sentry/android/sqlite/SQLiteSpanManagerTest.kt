@@ -1,5 +1,6 @@
 package io.sentry.android.sqlite
 
+import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IHub
 import io.sentry.SentryIntegrationPackageStorage
@@ -15,6 +16,7 @@ import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -139,5 +141,18 @@ class SQLiteSpanManagerTest {
         val span = fixture.sentryTracer.children.first()
 
         assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "in-memory")
+    }
+
+    @Test
+    fun `when performSql returns a CrossProcessCursor, does not start a span and returns a SentryCrossProcessCursor`() {
+        val sut = fixture.getSut()
+
+        // When performSql returns a CrossProcessCursor
+        val result = sut.performSql("sql") { mock<CrossProcessCursor>() }
+
+        // Returns a SentryCrossProcessCursor
+        assertIs<SentryCrossProcessCursor>(result)
+        // And no span is started
+        assertNull(fixture.sentryTracer.children.firstOrNull())
     }
 }
