@@ -1,25 +1,49 @@
 package io.sentry.android.replay
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat.JPEG
+import android.graphics.Bitmap.Config.ARGB_8888
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.Breadcrumb
+import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
-import io.sentry.android.replay.ReplayCacheTest.Fixture
+import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.capture.CaptureStrategy
+import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
+import io.sentry.cache.PersistingScopeObserver
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebBreadcrumbEvent
+import io.sentry.rrweb.RRWebInteractionEvent
+import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
+import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -27,7 +51,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
-import java.util.concurrent.atomic.AtomicReference
+import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,13 +61,29 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [26])
 class ReplayIntegrationTest {
-    // write tests for ReplayIntegration with mocked context and other android things
     @get:Rule
     val tmpDir = TemporaryFolder()
 
     internal class Fixture {
-        val options = SentryOptions()
+        val options = SentryOptions().apply {
+            setReplayController(
+                mock {
+                    on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter())
+                }
+            )
+            executorService = mock {
+                doAnswer {
+                    (it.arguments[0] as Runnable).run()
+                }.whenever(mock).submit(any<Runnable>())
+            }
+        }
         val hub = mock<IHub>()
+
+        val replayCache = mock<ReplayCache> {
+            on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
+            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), any()) }
+                .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
+        }
 
         fun getSut(
             context: Context,
@@ -63,7 +103,7 @@ class ReplayIntegrationTest {
                 dateProvider,
                 recorderProvider,
                 recorderConfigProvider = recorderConfigProvider,
-                replayCacheProvider = null,
+                replayCacheProvider = { _, _ -> replayCache },
                 replayCaptureStrategyProvider = replayCaptureStrategyProvider
             )
         }
@@ -120,7 +160,7 @@ class ReplayIntegrationTest {
 
         replay.start()
 
-        verify(captureStrategy, never()).start()
+        verify(captureStrategy, never()).start(any(), any(), any())
     }
 
     @Test
@@ -143,7 +183,11 @@ class ReplayIntegrationTest {
         replay.start()
         replay.start()
 
-        verify(captureStrategy, times(1)).start(eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
+        verify(captureStrategy, times(1)).start(
+            any(),
+            eq(0),
+            argThat { this != SentryId.EMPTY_ID }
+        )
     }
 
     @Test
@@ -154,7 +198,11 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
         replay.start()
 
-        verify(captureStrategy, never()).start(eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
+        verify(captureStrategy, never()).start(
+            any(),
+            eq(0),
+            argThat { this != SentryId.EMPTY_ID }
+        )
     }
 
     @Test
@@ -165,7 +213,11 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
         replay.start()
 
-        verify(captureStrategy, times(1)).start(eq(0), argThat { this != SentryId.EMPTY_ID }, eq(true))
+        verify(captureStrategy, times(1)).start(
+            any(),
+            eq(0),
+            argThat { this != SentryId.EMPTY_ID }
+        )
     }
 
     @Test
@@ -205,7 +257,7 @@ class ReplayIntegrationTest {
     }
 
     @Test
-    fun `sendReplayForEvent does nothing when not recording`() {
+    fun `captureReplay does nothing when not recording`() {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
@@ -214,29 +266,15 @@ class ReplayIntegrationTest {
         val event = SentryEvent().apply {
             exceptions = listOf(SentryException())
         }
-        replay.sendReplayForEvent(event, Hint())
+        replay.captureReplay(event.isCrashed)
 
-        verify(captureStrategy, never()).sendReplayForEvent(any(), anyOrNull(), anyOrNull(), any())
+        verify(captureStrategy, never()).captureReplay(any(), any())
     }
 
     @Test
-    fun `sendReplayForEvent does nothing for non errored events`() {
-        val captureStrategy = mock<CaptureStrategy>()
-        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
-
-        replay.register(fixture.hub, fixture.options)
-        replay.start()
-
-        val event = SentryEvent()
-        replay.sendReplayForEvent(event, Hint())
-
-        verify(captureStrategy, never()).sendReplayForEvent(any(), anyOrNull(), anyOrNull(), any())
-    }
-
-    @Test
-    fun `sendReplayForEvent does nothing when currentReplayId is not set`() {
+    fun `captureReplay does nothing when currentReplayId is not set`() {
         val captureStrategy = mock<CaptureStrategy> {
-            whenever(mock.currentReplayId).thenReturn(AtomicReference(SentryId.EMPTY_ID))
+            whenever(mock.currentReplayId).thenReturn(SentryId.EMPTY_ID)
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
@@ -246,15 +284,15 @@ class ReplayIntegrationTest {
         val event = SentryEvent().apply {
             exceptions = listOf(SentryException())
         }
-        replay.sendReplayForEvent(event, Hint())
+        replay.captureReplay(event.isCrashed)
 
-        verify(captureStrategy, never()).sendReplayForEvent(any(), anyOrNull(), anyOrNull(), any())
+        verify(captureStrategy, never()).captureReplay(any(), any())
     }
 
     @Test
-    fun `sendReplayForEvent calls and converts strategy`() {
+    fun `captureReplay calls and converts strategy`() {
         val captureStrategy = mock<CaptureStrategy> {
-            whenever(mock.currentReplayId).thenReturn(AtomicReference(SentryId()))
+            whenever(mock.currentReplayId).thenReturn(SentryId())
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
@@ -267,9 +305,9 @@ class ReplayIntegrationTest {
         }
         event.eventId = id
         val hint = Hint()
-        replay.sendReplayForEvent(event, hint)
+        replay.captureReplay(event.isCrashed)
 
-        verify(captureStrategy).sendReplayForEvent(eq(false), eq(id.toString()), eq(hint), any())
+        verify(captureStrategy).captureReplay(eq(false), any())
         verify(captureStrategy).convert()
     }
 
@@ -377,5 +415,118 @@ class ReplayIntegrationTest {
         verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
         verify(recorder, times(2)).start(eq(recorderConfig))
         assertTrue(configChanged)
+    }
+
+    @Test
+    fun `register finalizes previous replay`() {
+        val oldReplayId = SentryId()
+
+        fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+        val oldReplay =
+            File(fixture.options.cacheDirPath, "replay_$oldReplayId").also { it.mkdirs() }
+        val screenshot = File(oldReplay, "1720693523997.jpg").also { it.createNewFile() }
+        screenshot.outputStream().use {
+            Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+            it.flush()
+        }
+        val scopeCache = File(
+            fixture.options.cacheDirPath,
+            PersistingScopeObserver.SCOPE_CACHE
+        ).also { it.mkdirs() }
+        File(scopeCache, PersistingScopeObserver.REPLAY_FILENAME).also {
+            it.createNewFile()
+            it.writeText("\"$oldReplayId\"")
+        }
+        val breadcrumbsFile = File(scopeCache, PersistingScopeObserver.BREADCRUMBS_FILENAME)
+        fixture.options.serializer.serialize(
+            listOf(
+                Breadcrumb(DateUtils.getDateTime("2024-07-11T10:25:23.454Z")).apply {
+                    category = "navigation"
+                    type = "navigation"
+                    setData("from", "from")
+                    setData("to", "to")
+                }
+            ),
+            breadcrumbsFile.writer()
+        )
+        File(oldReplay, ONGOING_SEGMENT).also {
+            it.writeText(
+                """
+                $SEGMENT_KEY_HEIGHT=912
+                $SEGMENT_KEY_WIDTH=416
+                $SEGMENT_KEY_FRAME_RATE=1
+                $SEGMENT_KEY_BIT_RATE=75000
+                $SEGMENT_KEY_ID=1
+                $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+                $SEGMENT_KEY_REPLAY_TYPE=SESSION
+                $SEGMENT_KEY_REPLAY_RECORDING={}[{"type":3,"timestamp":1720693523997,"data":{"source":2,"type":7,"id":0,"x":314.2979431152344,"y":625.44140625,"pointerType":2,"pointerId":0}},{"type":3,"timestamp":1720693524774,"data":{"source":2,"type":9,"id":0,"x":322.00390625,"y":424.4384765625,"pointerType":2,"pointerId":0}}]
+                """.trimIndent()
+            )
+        }
+
+        val replay = fixture.getSut(context)
+        replay.register(fixture.hub, fixture.options)
+
+        assertTrue(oldReplay.exists()) // should not be deleted until the video is packed into envelope
+        verify(fixture.hub).captureReplay(
+            check {
+                assertEquals(oldReplayId, it.replayId)
+                assertEquals(ReplayType.SESSION, it.replayType)
+                assertEquals("0.mp4", it.videoFile?.name)
+            },
+            check {
+                val metaEvents = it.replayRecording?.payload?.filterIsInstance<RRWebMetaEvent>()
+                assertEquals(912, metaEvents?.first()?.height)
+                assertEquals(416, metaEvents?.first()?.width) // clamped to power of 16
+
+                val videoEvents = it.replayRecording?.payload?.filterIsInstance<RRWebVideoEvent>()
+                assertEquals(912, videoEvents?.first()?.height)
+                assertEquals(416, videoEvents?.first()?.width) // clamped to power of 16
+                assertEquals(5000, videoEvents?.first()?.durationMs)
+                assertEquals(5, videoEvents?.first()?.frameCount)
+                assertEquals(1, videoEvents?.first()?.frameRate)
+                assertEquals(1, videoEvents?.first()?.segmentId)
+
+                val breadcrumbEvents =
+                    it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
+                assertEquals("navigation", breadcrumbEvents?.first()?.category)
+                assertEquals("to", breadcrumbEvents?.first()?.data?.get("to"))
+
+                val interactionEvents =
+                    it.replayRecording?.payload?.filterIsInstance<RRWebInteractionEvent>()
+                assertEquals(
+                    InteractionType.TouchStart,
+                    interactionEvents?.first()?.interactionType
+                )
+                assertEquals(314.29794f, interactionEvents?.first()?.x)
+                assertEquals(625.4414f, interactionEvents?.first()?.y)
+
+                assertEquals(InteractionType.TouchEnd, interactionEvents?.last()?.interactionType)
+                assertEquals(322.0039f, interactionEvents?.last()?.x)
+                assertEquals(424.43848f, interactionEvents?.last()?.y)
+            }
+        )
+    }
+
+    @Test
+    fun `register cleans up old replays`() {
+        val replayId = SentryId()
+
+        fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+        val evenOlderReplay =
+            File(fixture.options.cacheDirPath, "replay_${SentryId()}").also { it.mkdirs() }
+        val scopeCache = File(
+            fixture.options.cacheDirPath,
+            PersistingScopeObserver.SCOPE_CACHE
+        ).also { it.mkdirs() }
+
+        val captureStrategy = mock<CaptureStrategy> {
+            on { currentReplayId }.thenReturn(replayId)
+        }
+        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+        replay.register(fixture.hub, fixture.options)
+
+        assertTrue(scopeCache.exists())
+        assertFalse(evenOlderReplay.exists())
     }
 }

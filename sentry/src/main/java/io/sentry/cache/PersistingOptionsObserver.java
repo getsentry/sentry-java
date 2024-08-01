@@ -16,6 +16,7 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
   public static final String ENVIRONMENT_FILENAME = "environment.json";
   public static final String DIST_FILENAME = "dist.json";
   public static final String TAGS_FILENAME = "tags.json";
+  public static final String REPLAY_ERROR_SAMPLE_RATE_FILENAME = "replay-error-sample-rate.json";
 
   private final @NotNull SentryOptions options;
 
@@ -71,6 +72,15 @@ public final class PersistingOptionsObserver implements IOptionsObserver {
   @Override
   public void setTags(@NotNull Map<String, @NotNull String> tags) {
     store(tags, TAGS_FILENAME);
+  }
+
+  @Override
+  public void setReplayErrorSampleRate(@Nullable Double replayErrorSampleRate) {
+    if (replayErrorSampleRate == null) {
+      delete(REPLAY_ERROR_SAMPLE_RATE_FILENAME);
+    } else {
+      store(replayErrorSampleRate.toString(), REPLAY_ERROR_SAMPLE_RATE_FILENAME);
+    }
   }
 
   private <T> void store(final @NotNull T entity, final @NotNull String fileName) {

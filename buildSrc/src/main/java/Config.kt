@@ -7,7 +7,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.2.0"
+    val springBoot3Version = "3.3.2"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.5.3"
@@ -27,6 +27,7 @@ object Config {
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
+        val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
     object Android {

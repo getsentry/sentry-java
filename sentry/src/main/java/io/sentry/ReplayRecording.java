@@ -81,7 +81,9 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
     // {"segment_id":0}\n{json-serialized-rrweb-protocol}
 
     writer.setLenient(true);
-    writer.jsonValue("\n");
+    if (segmentId != null) {
+      writer.jsonValue("\n");
+    }
     if (payload != null) {
       writer.value(logger, payload);
     }

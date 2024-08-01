@@ -28,6 +28,8 @@ import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.util.HintUtils
 import org.junit.Assert.assertArrayEquals
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
@@ -66,6 +68,9 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryClientTest {
+
+    @get:Rule
+    val tmpDir = TemporaryFolder()
 
     class Fixture {
         var transport = mock<ITransport>()
@@ -852,6 +857,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             environment = "release"
             release = "io.sentry.samples@22.1.1"
+            contexts[Contexts.REPLAY_ID] = "64cf554cc8d74c6eafa3e08b7c984f6d"
             contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
             transaction = "MainActivity"
         }
@@ -866,6 +872,7 @@ class SentryClientTest {
                 assertEquals("io.sentry.samples@22.1.1", it.header.traceContext!!.release)
                 assertEquals(traceId, it.header.traceContext!!.traceId)
                 assertEquals("MainActivity", it.header.traceContext!!.transaction)
+                assertEquals(SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"), it.header.traceContext!!.replayId)
             },
             anyOrNull()
         )
@@ -2360,41 +2367,6 @@ class SentryClientTest {
     @Test
     fun `when event has DiskFlushNotification, TransactionEnds set transaction id as flushable`() {
         val sut = fixture.getSut()
-        val replayId = SentryId()
-        val scope = mock<Scope> {
-            whenever(it.replayId).thenReturn(replayId)
-            whenever(it.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
-            whenever(it.extras).thenReturn(emptyMap())
-            whenever(it.contexts).thenReturn(Contexts())
-        }
-        val scopePropagationContext = PropagationContext()
-        whenever(scope.propagationContext).thenReturn(scopePropagationContext)
-        doAnswer { (it.arguments[0] as IWithPropagationContext).accept(scopePropagationContext); scopePropagationContext }.whenever(scope).withPropagationContext(any())
-
-        var capturedEventId: SentryId? = null
-        val transactionEnd = object : TransactionEnd, DiskFlushNotification {
-            override fun markFlushed() {}
-            override fun isFlushable(eventId: SentryId?): Boolean = true
-            override fun setFlushable(eventId: SentryId) {
-                capturedEventId = eventId
-            }
-        }
-        val transactionEndHint = HintUtils.createWithTypeCheckHint(transactionEnd)
-
-        sut.captureEvent(SentryEvent(), scope, transactionEndHint)
-
-        assertEquals(replayId, capturedEventId)
-        verify(fixture.transport).send(
-            check {
-                assertEquals(1, it.items.count())
-            },
-            any()
-        )
-    }
-
-    @Test
-    fun `when event has DiskFlushNotification, TransactionEnds set replay id as flushable`() {
-        val sut = fixture.getSut()
 
         // build up a running transaction
         val spanContext = SpanContext("op.load")
@@ -2750,18 +2722,82 @@ class SentryClientTest {
     }
 
     @Test
-    fun `calls sendReplayForEvent on replay controller for error events`() {
+    fun `calls captureReplay on replay controller for error events`() {
         var called = false
         fixture.sentryOptions.setReplayController(object : ReplayController by NoOpReplayController.getInstance() {
-            override fun sendReplayForEvent(event: SentryEvent, hint: Hint) {
-                assertEquals("Test", event.message?.formatted)
+            override fun captureReplay(isTerminating: Boolean?) {
                 called = true
             }
         })
         val sut = fixture.getSut()
 
-        sut.captureMessage("Test", WARNING)
+        sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
         assertTrue(called)
+    }
+
+    @Test
+    fun `calls captureReplay on replay controller for crash events and sets isTerminating`() {
+        var terminated: Boolean? = false
+        fixture.sentryOptions.setReplayController(object : ReplayController by NoOpReplayController.getInstance() {
+            override fun captureReplay(isTerminating: Boolean?) {
+                terminated = isTerminating
+            }
+        })
+        val sut = fixture.getSut()
+
+        sut.captureEvent(
+            SentryEvent().apply {
+                exceptions = listOf(
+                    SentryException().apply {
+                        mechanism = Mechanism().apply { isHandled = false }
+                    }
+                )
+            }
+        )
+        assertTrue(terminated == true)
+    }
+
+    @Test
+    fun `cleans up replay folder for Backfillable replay events`() {
+        val dir = File(tmpDir.newFolder().absolutePath)
+        val sut = fixture.getSut()
+        val replayEvent = createReplayEvent().apply {
+            videoFile = File(dir, "hello.txt").apply { writeText("hello") }
+        }
+
+        sut.captureReplayEvent(replayEvent, createScope(), HintUtils.createWithTypeCheckHint(BackfillableHint()))
+
+        verify(fixture.transport).send(
+            check { actual ->
+                val item = actual.items.first()
+                item.data
+                assertFalse(dir.exists())
+            },
+            any<Hint>()
+        )
+    }
+
+    @Test
+    fun `does not captureReplay for backfillable events`() {
+        var called = false
+        fixture.sentryOptions.setReplayController(object : ReplayController by NoOpReplayController.getInstance() {
+            override fun captureReplay(isTerminating: Boolean?) {
+                called = true
+            }
+        })
+        val sut = fixture.getSut()
+
+        sut.captureEvent(
+            SentryEvent().apply {
+                exceptions = listOf(
+                    SentryException().apply {
+                        mechanism = Mechanism().apply { isHandled = false }
+                    }
+                )
+            },
+            HintUtils.createWithTypeCheckHint(BackfillableHint())
+        )
+        assertFalse(called)
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {
