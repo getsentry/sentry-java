@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Chores
+
+- Introduce `ReplayShadowMediaCodec` and refactor tests using custom encoder ([#3612](https://github.com/getsentry/sentry-java/pull/3612))
+
 ## 7.13.0
 
 ### Features
