@@ -22,6 +22,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.thread.NoOpMainThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +50,9 @@ class ReplayIntegrationWithRecorderTest {
     val tmpDir = TemporaryFolder()
 
     internal class Fixture {
-        val options = SentryOptions()
+        val options = SentryOptions().apply {
+            mainThreadChecker = NoOpMainThreadChecker.getInstance()
+        }
         val hub = mock<IHub>()
         var encoder: SimpleVideoEncoder? = null
 

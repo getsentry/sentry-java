@@ -8,6 +8,8 @@ import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.injectForField
 import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -30,6 +32,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryEnvelopeItemTest {
+
+    @get:Rule
+    val tmpDir = TemporaryFolder()
 
     private class Fixture {
         val options = SentryOptions()
@@ -469,7 +474,7 @@ class SentryEnvelopeItemTest {
         }
         val replayRecording = ReplayRecordingSerializationTest.Fixture().getSut()
         val replayItem = SentryEnvelopeItem
-            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, replayRecording)
+            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, replayRecording, false)
 
         assertEquals(SentryItemType.ReplayVideo, replayItem.header.type)
 
@@ -486,7 +491,7 @@ class SentryEnvelopeItemTest {
         }
 
         val replayItem = SentryEnvelopeItem
-            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, null)
+            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, null, false)
         replayItem.data
         assertPayload(replayItem, replayEvent, null, ByteArray(0)) { mapSize ->
             assertEquals(1, mapSize)
@@ -503,10 +508,28 @@ class SentryEnvelopeItemTest {
         file.writeBytes(fixture.bytes)
         assert(file.exists())
         val replayItem = SentryEnvelopeItem
-            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, null)
+            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, null, false)
         assert(file.exists())
         replayItem.data
         assertFalse(file.exists())
+    }
+
+    @Test
+    fun `fromReplay cleans up video folder if cleanupReplayFolder is set`() {
+        val dir = File(tmpDir.newFolder().absolutePath)
+        val file = File(dir, fixture.pathname)
+        val replayEvent = SentryReplayEventSerializationTest.Fixture().getSut().apply {
+            videoFile = file
+        }
+
+        file.writeBytes(fixture.bytes)
+        assert(file.exists())
+        val replayItem = SentryEnvelopeItem
+            .fromReplay(fixture.serializer, fixture.options.logger, replayEvent, null, true)
+        assert(file.exists())
+        replayItem.data
+        assertFalse(file.exists())
+        assertFalse(dir.exists())
     }
 
     private fun createSession(): Session {

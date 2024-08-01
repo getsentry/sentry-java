@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
 import java.util.Map;
@@ -41,5 +42,7 @@ public interface IScopeObserver {
 
   void setTransaction(@Nullable String transaction);
 
-  void setTrace(@Nullable SpanContext spanContext);
+  void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope);
+
+  void setReplayId(@NotNull SentryId replayId);
 }

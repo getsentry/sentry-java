@@ -17,9 +17,7 @@ public interface ReplayController {
 
   boolean isRecording();
 
-  void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint);
-
-  void sendReplay(@Nullable Boolean isCrashed, @Nullable String eventId, @Nullable Hint hint);
+  void captureReplay(@Nullable Boolean isTerminating);
 
   @NotNull
   SentryId getReplayId();

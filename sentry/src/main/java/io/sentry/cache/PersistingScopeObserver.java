@@ -3,6 +3,7 @@ package io.sentry.cache;
 import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.Breadcrumb;
+import io.sentry.IScope;
 import io.sentry.JsonDeserializer;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
@@ -10,6 +11,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
 import java.util.Map;
@@ -29,6 +31,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String FINGERPRINT_FILENAME = "fingerprint.json";
   public static final String TRANSACTION_FILENAME = "transaction.json";
   public static final String TRACE_FILENAME = "trace.json";
+  public static final String REPLAY_FILENAME = "replay.json";
 
   private final @NotNull SentryOptions options;
 
@@ -105,11 +108,13 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   }
 
   @Override
-  public void setTrace(@Nullable SpanContext spanContext) {
+  public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {
     serializeToDisk(
         () -> {
           if (spanContext == null) {
-            delete(TRACE_FILENAME);
+            // we always need a trace_id to properly link with traces/replays, so we fallback to
+            // propagation context values and create a fake SpanContext
+            store(scope.getPropagationContext().toSpanContext(), TRACE_FILENAME);
           } else {
             store(spanContext, TRACE_FILENAME);
           }
@@ -119,6 +124,11 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   @Override
   public void setContexts(@NotNull Contexts contexts) {
     serializeToDisk(() -> store(contexts, CONTEXTS_FILENAME));
+  }
+
+  @Override
+  public void setReplayId(@NotNull SentryId replayId) {
+    serializeToDisk(() -> store(replayId, REPLAY_FILENAME));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -140,11 +150,18 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   }
 
   private <T> void store(final @NotNull T entity, final @NotNull String fileName) {
-    CacheUtils.store(options, entity, SCOPE_CACHE, fileName);
+    store(options, entity, fileName);
   }
 
   private void delete(final @NotNull String fileName) {
     CacheUtils.delete(options, SCOPE_CACHE, fileName);
+  }
+
+  public static <T> void store(
+      final @NotNull SentryOptions options,
+      final @NotNull T entity,
+      final @NotNull String fileName) {
+    CacheUtils.store(options, entity, SCOPE_CACHE, fileName);
   }
 
   public static <T> @Nullable T read(

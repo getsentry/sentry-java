@@ -32,11 +32,7 @@ public final class NoOpReplayController implements ReplayController {
   }
 
   @Override
-  public void sendReplayForEvent(@NotNull SentryEvent event, @NotNull Hint hint) {}
-
-  @Override
-  public void sendReplay(
-      @Nullable Boolean isCrashed, @Nullable String eventId, @Nullable Hint hint) {}
+  public void captureReplay(@Nullable Boolean isTerminating) {}
 
   @Override
   public @NotNull SentryId getReplayId() {

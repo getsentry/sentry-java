@@ -737,6 +737,7 @@ class SentryTest {
             it.sdkVersion = SdkVersion("sentry.java.android", "6.13.0")
             it.environment = "debug"
             it.setTag("one", "two")
+            it.experimental.sessionReplay.errorSampleRate = 0.5
         }
 
         assertEquals("io.sentry.sample@1.1.0+220", optionsObserver.release)
@@ -745,6 +746,7 @@ class SentryTest {
         assertEquals("uuid", optionsObserver.proguardUuid)
         assertEquals(mapOf("one" to "two"), optionsObserver.tags)
         assertEquals(SdkVersion("sentry.java.android", "6.13.0"), optionsObserver.sdkVersion)
+        assertEquals(0.5, optionsObserver.replayErrorSampleRate)
     }
 
     @Test
@@ -1164,6 +1166,8 @@ class SentryTest {
             private set
         var tags: Map<String, String> = mapOf()
             private set
+        var replayErrorSampleRate: Double? = null
+            private set
 
         override fun setRelease(release: String?) {
             this.release = release
@@ -1187,6 +1191,10 @@ class SentryTest {
 
         override fun setTags(tags: MutableMap<String, String>) {
             this.tags = tags
+        }
+
+        override fun setReplayErrorSampleRate(replayErrorSampleRate: Double?) {
+            this.replayErrorSampleRate = replayErrorSampleRate
         }
     }
 
