@@ -61,7 +61,6 @@ import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 import java.io.File
 import java.nio.file.Files
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.absolutePathString
