@@ -69,6 +69,7 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryTestSupport)
+    testImplementation(projects.sentryAndroidCore)
     testImplementation(Config.TestLibs.robolectric)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxRunner)
