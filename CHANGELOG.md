@@ -11,6 +11,12 @@
 
 - Introduce `ReplayShadowMediaCodec` and refactor tests using custom encoder ([#3612](https://github.com/getsentry/sentry-java/pull/3612))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.7 ([#3606](https://github.com/getsentry/sentry-java/pull/3606))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#077)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.7)
+
 ## 7.13.0
 
 ### Features
