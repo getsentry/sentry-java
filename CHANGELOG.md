@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixes
+
+- Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
+- Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
+
 ### Chores
 
 - Introduce `ReplayShadowMediaCodec` and refactor tests using custom encoder ([#3612](https://github.com/getsentry/sentry-java/pull/3612))
