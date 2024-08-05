@@ -8,7 +8,6 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
-import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -36,40 +35,9 @@ internal class BufferCaptureStrategy(
     // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
 
-    // TODO: rework this bs, it doesn't work with sending replay on restart
-    private val bufferedScreensLock = Any()
-    private val bufferedScreens = mutableListOf<Pair<String, Long>>()
-
     internal companion object {
         private const val TAG = "BufferCaptureStrategy"
         private const val ENVELOPE_PROCESSING_DELAY: Long = 100L
-    }
-
-    override fun start(
-        recorderConfig: ScreenshotRecorderConfig,
-        segmentId: Int,
-        replayId: SentryId,
-        replayType: ReplayType?
-    ) {
-        super.start(recorderConfig, segmentId, replayId, replayType)
-
-        hub?.configureScope {
-            val screen = it.screen?.substringAfterLast('.')
-            if (screen != null) {
-                synchronized(bufferedScreensLock) {
-                    bufferedScreens.add(screen to dateProvider.currentTimeMillis)
-                }
-            }
-        }
-    }
-
-    override fun onScreenChanged(screen: String?) {
-        synchronized(bufferedScreensLock) {
-            val lastKnownScreen = bufferedScreens.lastOrNull()?.first
-            if (screen != null && lastKnownScreen != screen) {
-                bufferedScreens.add(screen to dateProvider.currentTimeMillis)
-            }
-        }
     }
 
     override fun pause() {
@@ -138,7 +106,7 @@ internal class BufferCaptureStrategy(
 
             val now = dateProvider.currentTimeMillis
             val bufferLimit = now - options.experimental.sessionReplay.errorReplayDuration
-            cache?.rotate(bufferLimit)
+            screenAtStart = cache?.rotate(bufferLimit)
             bufferedSegments.rotate(bufferLimit)
         }
     }
@@ -169,21 +137,6 @@ internal class BufferCaptureStrategy(
         super.onTouchEvent(event)
         val bufferLimit = dateProvider.currentTimeMillis - options.experimental.sessionReplay.errorReplayDuration
         rotateEvents(currentEvents, bufferLimit)
-    }
-
-    private fun findAndSetStartScreen(segmentStart: Long) {
-        synchronized(bufferedScreensLock) {
-            val startScreen = bufferedScreens.lastOrNull { (_, timestamp) ->
-                timestamp <= segmentStart
-            }?.first
-            // if no screen is found before the segment start, this likely means the buffer is from the
-            // app start, and the start screen will be taken from the navigation crumbs
-            if (startScreen != null) {
-                screenAtStart = startScreen
-            }
-            // can clear as we switch to session mode and don't care anymore about buffering
-            bufferedScreens.clear()
-        }
     }
 
     private fun deleteFile(file: File?) {
@@ -247,8 +200,6 @@ internal class BufferCaptureStrategy(
         val replayId = currentReplayId
         val height = this.recorderConfig.recordingHeight
         val width = this.recorderConfig.recordingWidth
-
-        findAndSetStartScreen(currentSegmentTimestamp.time)
 
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =

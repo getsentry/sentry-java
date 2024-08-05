@@ -40,7 +40,7 @@ internal class SessionCaptureStrategy(
         // tagged with the replay that might never be sent when we're recording in buffer mode
         hub?.configureScope {
             it.replayId = currentReplayId
-            screenAtStart = it.screen
+            screenAtStart = it.screen?.substringAfterLast('.')
         }
     }
 

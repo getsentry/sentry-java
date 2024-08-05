@@ -10,6 +10,8 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
@@ -78,7 +80,12 @@ class ReplayIntegrationTest {
                 }.whenever(mock).submit(any<Runnable>())
             }
         }
-        val hub = mock<IHub>()
+        val scope = Scope(options)
+        val hub = mock<IHub> {
+            doAnswer {
+                ((it.arguments[0]) as ScopeCallback).run(scope)
+            }.whenever(mock).configureScope(any<ScopeCallback>())
+        }
 
         val replayCache = mock<ReplayCache> {
             on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
@@ -149,7 +156,6 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
 
         assertTrue(replay.isEnabled.get())
-        assertEquals(1, fixture.options.scopeObservers.size)
         assertTrue(recorderCreated)
         assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("Replay"))
     }
@@ -532,5 +538,23 @@ class ReplayIntegrationTest {
 
         assertTrue(scopeCache.exists())
         assertFalse(evenOlderReplay.exists())
+    }
+
+    @Test
+    fun `onScreenshotRecorded supplies screen from scope to replay cache`() {
+        val captureStrategy = mock<CaptureStrategy> {
+            doAnswer {
+                ((it.arguments[1] as ReplayCache.(frameTimestamp: Long) -> Unit)).invoke(fixture.replayCache, 1720693523997)
+            }.whenever(mock).onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+        }
+        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+        fixture.hub.configureScope { it.screen = "MainActivity" }
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+
+        replay.onScreenshotRecorded(mock<Bitmap>())
+
+        verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), eq("MainActivity"))
     }
 }

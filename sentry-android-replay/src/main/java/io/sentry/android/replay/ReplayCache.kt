@@ -76,7 +76,7 @@ public class ReplayCache(
      * @param bitmap the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    internal fun addFrame(bitmap: Bitmap, frameTimestamp: Long) {
+    internal fun addFrame(bitmap: Bitmap, frameTimestamp: Long, screen: String? = null) {
         if (replayCacheDir == null || bitmap.isRecycled) {
             return
         }
@@ -89,7 +89,7 @@ public class ReplayCache(
             it.flush()
         }
 
-        addFrame(screenshot, frameTimestamp)
+        addFrame(screenshot, frameTimestamp, screen)
     }
 
     /**
@@ -101,8 +101,8 @@ public class ReplayCache(
      * @param screenshot file containing the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    public fun addFrame(screenshot: File, frameTimestamp: Long) {
-        val frame = ReplayFrame(screenshot, frameTimestamp)
+    public fun addFrame(screenshot: File, frameTimestamp: Long, screen: String? = null) {
+        val frame = ReplayFrame(screenshot, frameTimestamp, screen)
         frames += frame
     }
 
@@ -233,15 +233,20 @@ public class ReplayCache(
      * Removes frames from the in-memory and disk cache from start to [until].
      *
      * @param until value until whose the frames should be removed, represented as unix timestamp
+     * @return the first screen in the rotated buffer, if any
      */
-    fun rotate(until: Long) {
+    fun rotate(until: Long): String? {
+        var screen: String? = null
         frames.removeAll {
             if (it.timestamp < until) {
                 deleteFile(it.screenshot)
                 return@removeAll true
+            } else if (screen == null) {
+                screen = it.screen
             }
             return@removeAll false
         }
+        return screen
     }
 
     override fun close() {
@@ -426,7 +431,8 @@ internal data class LastSegmentData(
 
 internal data class ReplayFrame(
     val screenshot: File,
-    val timestamp: Long
+    val timestamp: Long,
+    val screen: String? = null
 )
 
 public data class GeneratedVideo(
