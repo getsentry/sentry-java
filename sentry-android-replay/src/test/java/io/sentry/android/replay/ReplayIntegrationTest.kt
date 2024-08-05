@@ -41,6 +41,7 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
@@ -160,7 +161,7 @@ class ReplayIntegrationTest {
 
         replay.start()
 
-        verify(captureStrategy, never()).start(any(), any(), any())
+        verify(captureStrategy, never()).start(any(), any(), any(), anyOrNull())
     }
 
     @Test
@@ -186,7 +187,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, times(1)).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -201,7 +203,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, never()).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -216,7 +219,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, times(1)).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 

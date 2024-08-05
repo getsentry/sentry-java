@@ -87,7 +87,7 @@ internal abstract class BaseCaptureStrategy(
     override var currentSegment: Int by persistableAtomic(initialValue = -1, propertyName = SEGMENT_KEY_ID)
     override val replayCacheDir: File? get() = cache?.replayCacheDir
 
-    private var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
+    override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
     protected val currentEvents: LinkedList<RRWebEvent> = PersistableLinkedList(
         propertyName = SEGMENT_KEY_REPLAY_RECORDING,
         options,
@@ -105,15 +105,15 @@ internal abstract class BaseCaptureStrategy(
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
-        replayId: SentryId
+        replayId: SentryId,
+        replayType: ReplayType?
     ) {
         cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
 
-        // TODO: this should be persisted even after conversion
-        replayType = if (this is SessionCaptureStrategy) SESSION else BUFFER
+        this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
         this.recorderConfig = recorderConfig
-        currentSegment = segmentId
-        currentReplayId = replayId
+        this.currentSegment = segmentId
+        this.currentReplayId = replayId
 
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
@@ -140,7 +140,7 @@ internal abstract class BaseCaptureStrategy(
         segmentId: Int,
         height: Int,
         width: Int,
-        replayType: ReplayType = SESSION,
+        replayType: ReplayType = this.replayType,
         cache: ReplayCache? = this.cache,
         frameRate: Int = recorderConfig.frameRate,
         screenAtStart: String? = this.screenAtStart,

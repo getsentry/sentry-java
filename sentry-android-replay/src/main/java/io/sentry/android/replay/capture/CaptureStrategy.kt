@@ -25,11 +25,13 @@ internal interface CaptureStrategy {
     var currentSegment: Int
     var currentReplayId: SentryId
     val replayCacheDir: File?
+    var replayType: ReplayType
 
     fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int = 0,
-        replayId: SentryId = SentryId()
+        replayId: SentryId = SentryId(),
+        replayType: ReplayType? = null
     )
 
     fun stop()

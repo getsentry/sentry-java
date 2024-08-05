@@ -8,6 +8,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -46,9 +47,10 @@ internal class BufferCaptureStrategy(
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
-        replayId: SentryId
+        replayId: SentryId,
+        replayType: ReplayType?
     ) {
-        super.start(recorderConfig, segmentId, replayId)
+        super.start(recorderConfig, segmentId, replayId, replayType)
 
         hub?.configureScope {
             val screen = it.screen?.substringAfterLast('.')
@@ -159,7 +161,7 @@ internal class BufferCaptureStrategy(
         }
         // we hand over replayExecutor to the new strategy to preserve order of execution
         val captureStrategy = SessionCaptureStrategy(options, hub, dateProvider, replayExecutor)
-        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId)
+        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId, replayType = BUFFER)
         return captureStrategy
     }
 
@@ -250,7 +252,7 @@ internal class BufferCaptureStrategy(
 
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width, BUFFER)
+                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
             onSegmentCreated(segment)
         }
     }

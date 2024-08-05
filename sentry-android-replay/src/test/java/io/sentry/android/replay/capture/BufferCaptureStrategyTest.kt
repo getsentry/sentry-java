@@ -242,6 +242,18 @@ class BufferCaptureStrategyTest {
     }
 
     @Test
+    fun `convert persists buffer replayType when converting to session strategy`() {
+        val strategy = fixture.getSut()
+        strategy.start(fixture.recorderConfig)
+
+        val converted = strategy.convert()
+        assertEquals(
+            ReplayType.BUFFER,
+            converted.replayType
+        )
+    }
+
+    @Test
     fun `captureReplay does not replayId to scope when not sampled`() {
         val strategy = fixture.getSut(errorSampleRate = 0.0)
         strategy.start(fixture.recorderConfig)

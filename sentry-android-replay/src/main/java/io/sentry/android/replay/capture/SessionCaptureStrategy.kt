@@ -7,6 +7,7 @@ import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
@@ -31,9 +32,10 @@ internal class SessionCaptureStrategy(
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
-        replayId: SentryId
+        replayId: SentryId,
+        replayType: ReplayType?
     ) {
-        super.start(recorderConfig, segmentId, replayId)
+        super.start(recorderConfig, segmentId, replayId, replayType)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
         hub?.configureScope {
