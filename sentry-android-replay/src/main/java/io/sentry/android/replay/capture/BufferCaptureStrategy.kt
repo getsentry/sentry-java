@@ -21,6 +21,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
 import java.security.SecureRandom
+import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
 internal class BufferCaptureStrategy(
@@ -92,7 +93,7 @@ internal class BufferCaptureStrategy(
 
     override fun captureReplay(
         isTerminating: Boolean,
-        onSegmentSent: () -> Unit
+        onSegmentSent: (Date) -> Unit
     ) {
         val sampled = random.sample(options.experimental.sessionReplay.errorSampleRate)
 
@@ -123,8 +124,7 @@ internal class BufferCaptureStrategy(
                 // we only want to increment segment_id in the case of success, but currentSegment
                 // might be irrelevant since we changed strategies, so in the callback we increment
                 // it on the new strategy already
-                // TODO: also pass new segmentTimestamp to the new strategy
-                onSegmentSent()
+                onSegmentSent(segment.replay.timestamp)
             }
         }
     }

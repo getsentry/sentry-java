@@ -16,6 +16,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
 import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
@@ -278,5 +279,18 @@ class BufferCaptureStrategyTest {
         verify(fixture.hub, times(2)).captureReplay(any(), any())
         assertEquals(strategy.currentReplayId, fixture.scope.replayId)
         assertTrue(called)
+    }
+
+    @Test
+    fun `captureReplay sets new segment timestamp to new strategy after successful creation`() {
+        val strategy = fixture.getSut()
+        strategy.start(fixture.recorderConfig)
+        val oldTimestamp = strategy.segmentTimestamp
+
+        strategy.captureReplay(false) { newTimestamp ->
+            assertEquals(oldTimestamp!!.time + VIDEO_DURATION, newTimestamp.time)
+        }
+
+        verify(fixture.hub).captureReplay(any(), any())
     }
 }

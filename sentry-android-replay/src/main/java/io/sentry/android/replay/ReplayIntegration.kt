@@ -176,8 +176,9 @@ public class ReplayIntegration(
             return
         }
 
-        captureStrategy?.captureReplay(isTerminating == true, onSegmentSent = {
+        captureStrategy?.captureReplay(isTerminating == true, onSegmentSent = { newTimestamp ->
             captureStrategy?.currentSegment = captureStrategy?.currentSegment!! + 1
+            captureStrategy?.segmentTimestamp = newTimestamp
         })
         captureStrategy = captureStrategy?.convert()
     }

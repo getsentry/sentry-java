@@ -1,7 +1,6 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
-import io.sentry.DateUtils
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
@@ -15,6 +14,7 @@ import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
+import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
 internal class SessionCaptureStrategy(
@@ -67,7 +67,7 @@ internal class SessionCaptureStrategy(
         super.stop()
     }
 
-    override fun captureReplay(isTerminating: Boolean, onSegmentSent: () -> Unit) {
+    override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
         options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event")
         this.isTerminating.set(isTerminating)
     }
@@ -112,7 +112,7 @@ internal class SessionCaptureStrategy(
                     segment.capture(hub)
                     currentSegment++
                     // set next segment timestamp as close to the previous one as possible to avoid gaps
-                    segmentTimestamp = DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration)
+                    segmentTimestamp = segment.replay.timestamp
                 }
             }
 
@@ -131,7 +131,7 @@ internal class SessionCaptureStrategy(
 
                 currentSegment++
                 // set next segment timestamp as close to the previous one as possible to avoid gaps
-                segmentTimestamp = DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration)
+                segmentTimestamp = segment.replay.timestamp
             }
         }
 

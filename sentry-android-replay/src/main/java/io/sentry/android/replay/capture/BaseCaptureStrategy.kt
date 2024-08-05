@@ -78,7 +78,7 @@ internal abstract class BaseCaptureStrategy(
         cache?.persistSegmentValues(SEGMENT_KEY_FRAME_RATE, newValue.frameRate.toString())
         cache?.persistSegmentValues(SEGMENT_KEY_BIT_RATE, newValue.bitRate.toString())
     }
-    protected var segmentTimestamp by persistableAtomicNullable<Date>(propertyName = SEGMENT_KEY_TIMESTAMP) { _, _, newValue ->
+    override var segmentTimestamp by persistableAtomicNullable<Date>(propertyName = SEGMENT_KEY_TIMESTAMP) { _, _, newValue ->
         cache?.persistSegmentValues(SEGMENT_KEY_TIMESTAMP, if (newValue == null) null else DateUtils.getTimestamp(newValue))
     }
     protected val replayStartTimestamp = AtomicLong()
