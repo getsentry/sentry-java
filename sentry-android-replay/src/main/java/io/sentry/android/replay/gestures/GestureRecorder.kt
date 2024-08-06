@@ -59,7 +59,7 @@ class GestureRecorder(
         }
     }
 
-    private class SentryReplayGestureRecorder(
+    internal class SentryReplayGestureRecorder(
         private val options: SentryOptions,
         private val touchRecorderCallback: TouchRecorderCallback?,
         delegate: Window.Callback?

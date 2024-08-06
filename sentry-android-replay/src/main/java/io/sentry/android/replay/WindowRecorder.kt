@@ -56,7 +56,7 @@ internal class WindowRecorder(
         capturingTask = capturer.scheduleAtFixedRateSafely(
             options,
             "$TAG.capture",
-            100L,
+            100L, // delay the first run by a bit, to allow root view listener to register
             1000L / recorderConfig.frameRate,
             MILLISECONDS
         ) {
