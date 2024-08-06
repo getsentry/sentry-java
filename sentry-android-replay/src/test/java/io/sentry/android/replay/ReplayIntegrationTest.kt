@@ -1,7 +1,6 @@
 package io.sentry.android.replay
 
 import android.content.Context
-import android.gesture.Gesture
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888

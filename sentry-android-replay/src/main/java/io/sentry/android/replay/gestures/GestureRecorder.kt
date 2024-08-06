@@ -13,7 +13,7 @@ import java.lang.ref.WeakReference
 
 class GestureRecorder(
     private val options: SentryOptions,
-    private val touchRecorderCallback: TouchRecorderCallback,
+    private val touchRecorderCallback: TouchRecorderCallback
 ) : OnRootViewsChangedListener {
 
     private val rootViews = ArrayList<WeakReference<View>>()
@@ -83,4 +83,3 @@ class GestureRecorder(
 public interface TouchRecorderCallback {
     fun onTouchEvent(event: MotionEvent)
 }
-

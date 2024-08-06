@@ -1,13 +1,8 @@
 package io.sentry.android.replay
 
 import android.annotation.TargetApi
-import android.view.MotionEvent
 import android.view.View
-import android.view.Window
-import io.sentry.SentryLevel.DEBUG
-import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
-import io.sentry.android.replay.util.FixedWindowCallback
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
@@ -17,7 +12,6 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.LazyThreadSafetyMode.NONE
 
 @TargetApi(26)
 internal class WindowRecorder(

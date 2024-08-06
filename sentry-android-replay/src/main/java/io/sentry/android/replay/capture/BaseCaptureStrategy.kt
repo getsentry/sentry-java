@@ -29,11 +29,6 @@ import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
-import io.sentry.rrweb.RRWebIncrementalSnapshotEvent
-import io.sentry.rrweb.RRWebInteractionEvent
-import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
-import io.sentry.rrweb.RRWebInteractionMoveEvent
-import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
