@@ -1,6 +1,7 @@
 package io.sentry.android.replay
 
 import android.content.Context
+import android.gesture.Gesture
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
@@ -27,6 +28,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
+import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
@@ -100,6 +102,7 @@ class ReplayIntegrationTest {
             recorderProvider: (() -> Recorder)? = null,
             replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
             recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
+            gestureRecorderProvider: (() -> GestureRecorder)? = null,
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             options.run {
@@ -112,7 +115,8 @@ class ReplayIntegrationTest {
                 recorderProvider,
                 recorderConfigProvider = recorderConfigProvider,
                 replayCacheProvider = { _, _ -> replayCache },
-                replayCaptureStrategyProvider = replayCaptureStrategyProvider
+                replayCaptureStrategyProvider = replayCaptureStrategyProvider,
+                gestureRecorderProvider = gestureRecorderProvider
             )
         }
     }
@@ -360,10 +364,16 @@ class ReplayIntegrationTest {
     }
 
     @Test
-    fun `stop calls stop for recorder and strategy and sets recording to false`() {
+    fun `stop calls stop for recorders and strategy and sets recording to false`() {
         val captureStrategy = mock<CaptureStrategy>()
         val recorder = mock<Recorder>()
-        val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
+        val gestureRecorder = mock<GestureRecorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            gestureRecorderProvider = { gestureRecorder }
+        )
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
@@ -371,6 +381,7 @@ class ReplayIntegrationTest {
 
         verify(captureStrategy).stop()
         verify(recorder).stop()
+        verify(gestureRecorder).stop()
         assertFalse(replay.isRecording)
     }
 
