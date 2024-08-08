@@ -56,10 +56,8 @@ internal fun Drawable?.isRedactable(): Boolean {
     return when (this) {
         is InsetDrawable, is ColorDrawable, is VectorDrawable, is GradientDrawable -> false
         is BitmapDrawable -> {
-            if (bitmap == null) {
-                return false
-            }
-            return !bitmap.isRecycled && bitmap.height > 10 && bitmap.width > 10
+            val bmp = bitmap ?: return false
+            return !bmp.isRecycled && bmp.height > 10 && bmp.width > 10
         }
         else -> true
     }
