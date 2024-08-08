@@ -14,6 +14,8 @@ import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.text.Layout
 import android.view.View
+import android.widget.TextView
+import java.lang.NullPointerException
 
 /**
  * Adapted copy of AccessibilityNodeInfo from https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/view/View.java;l=10718
@@ -89,3 +91,15 @@ internal fun Layout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, padding
     }
     return rects
 }
+
+/**
+ * [TextView.getVerticalOffset] which is used by [TextView.getTotalPaddingTop] may throw an NPE on
+ * some devices (Redmi), so we try-catch it specifically for an NPE and then fallback to
+ * [TextView.getExtendedPaddingTop].
+ */
+internal val TextView.totalPaddingTopSafe: Int
+    get() = try {
+        totalPaddingTop
+    } catch (e: NullPointerException) {
+        extendedPaddingTop
+    }
