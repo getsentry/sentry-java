@@ -28,7 +28,7 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
         }
         // An invisible predecessor or one with alpha zero means
         // that this view is not visible to the user.
-        var current: Any = this
+        var current: Any? = this
         while (current is View) {
             val view = current
             val transitionAlpha = if (VERSION.SDK_INT >= VERSION_CODES.Q) view.transitionAlpha else 1f
@@ -95,7 +95,7 @@ internal fun Layout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, padding
 /**
  * [TextView.getVerticalOffset] which is used by [TextView.getTotalPaddingTop] may throw an NPE on
  * some devices (Redmi), so we try-catch it specifically for an NPE and then fallback to
- * [TextView.getExtendedPaddingTop].
+ * [TextView.getExtendedPaddingTop]
  */
 internal val TextView.totalPaddingTopSafe: Int
     get() = try {
