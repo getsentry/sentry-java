@@ -124,7 +124,6 @@ internal class SessionCaptureStrategy(
     }
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
-        val currentSegmentTimestamp = segmentTimestamp ?: return
         createCurrentSegment("onConfigurationChanged") { segment ->
             if (segment is ReplaySegment.Created) {
                 segment.capture(hub)
