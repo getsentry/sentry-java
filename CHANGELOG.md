@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
 - Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
 - Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
 
