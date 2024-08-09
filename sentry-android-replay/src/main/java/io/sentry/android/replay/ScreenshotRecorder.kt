@@ -26,6 +26,7 @@ import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.submitSafely
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -122,7 +123,7 @@ internal class ScreenshotRecorder(
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
                         root.traverse(viewHierarchy)
 
-                        recorder.submit {
+                        recorder.submitSafely(options, "screenshot_recorder.redact") {
                             val canvas = Canvas(bitmap)
                             canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->

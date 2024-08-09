@@ -9,6 +9,7 @@ import android.widget.TextView
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.isRedactable
 import io.sentry.android.replay.util.isVisibleToUser
+import io.sentry.android.replay.util.totalPaddingTopSafe
 
 @TargetApi(26)
 sealed class ViewHierarchyNode(
@@ -245,7 +246,7 @@ sealed class ViewHierarchyNode(
                         layout = view.layout,
                         dominantColor = view.currentTextColor.toOpaque(),
                         paddingLeft = view.totalPaddingLeft,
-                        paddingTop = view.totalPaddingTop,
+                        paddingTop = view.totalPaddingTopSafe,
                         x = view.x,
                         y = view.y,
                         width = view.width,
