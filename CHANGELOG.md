@@ -6,6 +6,10 @@
 
 - Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
 - Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
+- Session Replay: buffer mode improvements ([#3622](https://github.com/getsentry/sentry-java/pull/3622))
+  - Align next segment timestamp with the end of the buffered segment when converting from buffer mode to session mode
+  - Persist `buffer` replay type for the entire replay when converting from buffer mode to session mode
+  - Properly store screen names for `buffer` mode
 
 ### Chores
 

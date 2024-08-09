@@ -12,7 +12,6 @@ import io.sentry.Integration
 import io.sentry.NoOpReplayBreadcrumbConverter
 import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.ReplayController
-import io.sentry.ScopeObserverAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -28,7 +27,6 @@ import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
-import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -102,12 +100,6 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        this.options.addScopeObserver(object : ScopeObserverAdapter() {
-            override fun setContexts(contexts: Contexts) {
-                // scope screen has fully-qualified name
-                captureStrategy?.onScreenChanged(contexts.app?.viewNames?.lastOrNull()?.substringAfterLast('.'))
-            }
-        })
         recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this, mainLooperHandler)
         isEnabled.set(true)
 
@@ -176,8 +168,9 @@ public class ReplayIntegration(
             return
         }
 
-        captureStrategy?.captureReplay(isTerminating == true, onSegmentSent = {
+        captureStrategy?.captureReplay(isTerminating == true, onSegmentSent = { newTimestamp ->
             captureStrategy?.currentSegment = captureStrategy?.currentSegment!! + 1
+            captureStrategy?.segmentTimestamp = newTimestamp
         })
         captureStrategy = captureStrategy?.convert()
     }
@@ -212,8 +205,10 @@ public class ReplayIntegration(
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
+        var screen: String? = null
+        hub?.configureScope { screen = it.screen?.substringAfterLast('.') }
         captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
-            addFrame(bitmap, frameTimeStamp)
+            addFrame(bitmap, frameTimeStamp, screen)
         }
     }
 

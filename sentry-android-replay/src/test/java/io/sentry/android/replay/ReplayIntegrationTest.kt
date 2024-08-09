@@ -10,6 +10,8 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
@@ -41,6 +43,7 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
@@ -77,7 +80,12 @@ class ReplayIntegrationTest {
                 }.whenever(mock).submit(any<Runnable>())
             }
         }
-        val hub = mock<IHub>()
+        val scope = Scope(options)
+        val hub = mock<IHub> {
+            doAnswer {
+                ((it.arguments[0]) as ScopeCallback).run(scope)
+            }.whenever(mock).configureScope(any<ScopeCallback>())
+        }
 
         val replayCache = mock<ReplayCache> {
             on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
@@ -148,7 +156,6 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
 
         assertTrue(replay.isEnabled.get())
-        assertEquals(1, fixture.options.scopeObservers.size)
         assertTrue(recorderCreated)
         assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("Replay"))
     }
@@ -160,7 +167,7 @@ class ReplayIntegrationTest {
 
         replay.start()
 
-        verify(captureStrategy, never()).start(any(), any(), any())
+        verify(captureStrategy, never()).start(any(), any(), any(), anyOrNull())
     }
 
     @Test
@@ -186,7 +193,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, times(1)).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -201,7 +209,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, never()).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -216,7 +225,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, times(1)).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -528,5 +538,23 @@ class ReplayIntegrationTest {
 
         assertTrue(scopeCache.exists())
         assertFalse(evenOlderReplay.exists())
+    }
+
+    @Test
+    fun `onScreenshotRecorded supplies screen from scope to replay cache`() {
+        val captureStrategy = mock<CaptureStrategy> {
+            doAnswer {
+                ((it.arguments[1] as ReplayCache.(frameTimestamp: Long) -> Unit)).invoke(fixture.replayCache, 1720693523997)
+            }.whenever(mock).onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+        }
+        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+        fixture.hub.configureScope { it.screen = "MainActivity" }
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+
+        replay.onScreenshotRecorded(mock<Bitmap>())
+
+        verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), eq("MainActivity"))
     }
 }
