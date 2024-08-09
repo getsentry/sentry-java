@@ -15,6 +15,10 @@
   - Persist `buffer` replay type for the entire replay when converting from buffer mode to session mode
   - Properly store screen names for `buffer` mode
 
+### Features
+
+- Add support for 16KB page sizes (Android 15) ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+
 ### Chores
 
 - Introduce `ReplayShadowMediaCodec` and refactor tests using custom encoder ([#3612](https://github.com/getsentry/sentry-java/pull/3612))
