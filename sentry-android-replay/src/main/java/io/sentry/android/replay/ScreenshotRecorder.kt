@@ -288,6 +288,18 @@ public data class ScreenshotRecorderConfig(
     val frameRate: Int,
     val bitRate: Int
 ) {
+    internal constructor(
+        scaleFactorX: Float,
+        scaleFactorY: Float
+    ) : this(
+        recordingWidth = 0,
+        recordingHeight = 0,
+        scaleFactorX = scaleFactorX,
+        scaleFactorY = scaleFactorY,
+        frameRate = 0,
+        bitRate = 0
+    )
+
     companion object {
         /**
          * Since codec block size is 16, so we have to adjust the width and height to it, otherwise

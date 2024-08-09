@@ -20,6 +20,8 @@ import io.sentry.android.replay.capture.BufferCaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.capture.SessionCaptureStrategy
+import io.sentry.android.replay.gestures.GestureRecorder
+import io.sentry.android.replay.gestures.TouchRecorderCallback
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
@@ -37,6 +39,7 @@ import java.io.File
 import java.security.SecureRandom
 import java.util.LinkedList
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.LazyThreadSafetyMode.NONE
 
 public class ReplayIntegration(
     private val context: Context,
@@ -62,16 +65,20 @@ public class ReplayIntegration(
         recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)?,
         replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)?,
         replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
-        mainLooperHandler: MainLooperHandler? = null
+        mainLooperHandler: MainLooperHandler? = null,
+        gestureRecorderProvider: (() -> GestureRecorder)? = null
     ) : this(context, dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
         this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
+        this.gestureRecorderProvider = gestureRecorderProvider
     }
 
     private lateinit var options: SentryOptions
     private var hub: IHub? = null
     private var recorder: Recorder? = null
+    private var gestureRecorder: GestureRecorder? = null
     private val random by lazy { SecureRandom() }
+    private val rootViewsSpy by lazy(NONE) { RootViewsSpy.install() }
 
     // TODO: probably not everything has to be thread-safe here
     internal val isEnabled = AtomicBoolean(false)
@@ -81,6 +88,7 @@ public class ReplayIntegration(
     private var replayBreadcrumbConverter: ReplayBreadcrumbConverter = NoOpReplayBreadcrumbConverter.getInstance()
     private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
     private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
+    private var gestureRecorderProvider: (() -> GestureRecorder)? = null
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
 
@@ -100,7 +108,8 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this, mainLooperHandler)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler)
+        gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
         try {
@@ -147,6 +156,7 @@ public class ReplayIntegration(
 
         captureStrategy?.start(recorderConfig)
         recorder?.start(recorderConfig)
+        registerRootViewListeners()
     }
 
     override fun resume() {
@@ -197,7 +207,9 @@ public class ReplayIntegration(
             return
         }
 
+        unregisterRootViewListeners()
         recorder?.stop()
+        gestureRecorder?.stop()
         captureStrategy?.stop()
         isRecording.set(false)
         captureStrategy?.close()
@@ -250,6 +262,20 @@ public class ReplayIntegration(
 
     override fun onTouchEvent(event: MotionEvent) {
         captureStrategy?.onTouchEvent(event)
+    }
+
+    private fun registerRootViewListeners() {
+        if (recorder is OnRootViewsChangedListener) {
+            rootViewsSpy.listeners += (recorder as OnRootViewsChangedListener)
+        }
+        rootViewsSpy.listeners += gestureRecorder
+    }
+
+    private fun unregisterRootViewListeners() {
+        if (recorder is OnRootViewsChangedListener) {
+            rootViewsSpy.listeners -= (recorder as OnRootViewsChangedListener)
+        }
+        rootViewsSpy.listeners -= gestureRecorder
     }
 
     private fun cleanupReplays(unfinishedReplayId: String = "") {

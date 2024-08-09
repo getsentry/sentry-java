@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Session Replay: Gesture/touch support for Flutter ([#3623](https://github.com/getsentry/sentry-java/pull/3623))
+
 ### Fixes
 
 - Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
