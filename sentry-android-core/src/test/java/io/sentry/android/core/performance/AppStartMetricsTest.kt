@@ -197,6 +197,20 @@ class AppStartMetricsTest {
     }
 
     @Test
+    fun `if activity is started, does not stop app start profiler if running`() {
+        val profiler = mock<ITransactionProfiler>()
+        whenever(profiler.isRunning).thenReturn(true)
+        AppStartMetrics.getInstance().appStartProfiler = profiler
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        // Job on main thread checks if activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        verify(profiler, never()).close()
+    }
+
+    @Test
     fun `if app start span is longer than 1 minute, appStartTimeSpanWithFallback returns an empty span`() {
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         appStartTimeSpan.start()
