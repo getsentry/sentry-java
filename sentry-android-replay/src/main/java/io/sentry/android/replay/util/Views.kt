@@ -14,6 +14,8 @@ import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.text.Layout
 import android.view.View
+import android.widget.TextView
+import java.lang.NullPointerException
 
 /**
  * Adapted copy of AccessibilityNodeInfo from https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/view/View.java;l=10718
@@ -26,7 +28,7 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
         }
         // An invisible predecessor or one with alpha zero means
         // that this view is not visible to the user.
-        var current: Any = this
+        var current: Any? = this
         while (current is View) {
             val view = current
             val transitionAlpha = if (VERSION.SDK_INT >= VERSION_CODES.Q) view.transitionAlpha else 1f
@@ -53,7 +55,10 @@ internal fun Drawable?.isRedactable(): Boolean {
     // TODO: otherwise maybe check for the bitmap size and don't redact those that take a lot of height (e.g. a background of a whatsapp chat)
     return when (this) {
         is InsetDrawable, is ColorDrawable, is VectorDrawable, is GradientDrawable -> false
-        is BitmapDrawable -> !bitmap.isRecycled && bitmap.height > 10 && bitmap.width > 10
+        is BitmapDrawable -> {
+            val bmp = bitmap ?: return false
+            return !bmp.isRecycled && bmp.height > 10 && bmp.width > 10
+        }
         else -> true
     }
 }
@@ -84,3 +89,15 @@ internal fun Layout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, padding
     }
     return rects
 }
+
+/**
+ * [TextView.getVerticalOffset] which is used by [TextView.getTotalPaddingTop] may throw an NPE on
+ * some devices (Redmi), so we try-catch it specifically for an NPE and then fallback to
+ * [TextView.getExtendedPaddingTop]
+ */
+internal val TextView.totalPaddingTopSafe: Int
+    get() = try {
+        totalPaddingTop
+    } catch (e: NullPointerException) {
+        extendedPaddingTop
+    }

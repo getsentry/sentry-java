@@ -15,6 +15,11 @@
   - Align next segment timestamp with the end of the buffered segment when converting from buffer mode to session mode
   - Persist `buffer` replay type for the entire replay when converting from buffer mode to session mode
   - Properly store screen names for `buffer` mode
+- Session Replay: fix various crashes and issues ([#3628](https://github.com/getsentry/sentry-java/pull/3628))
+  - Fix video not being encoded on Pixel devices
+  - Fix SIGABRT native crashes on Xiaomi devices when encoding a video
+  - Fix `RejectedExecutionException` when redacting a screenshot
+  - Fix `FileNotFoundException` when persisting segment values
 
 ### Chores
 

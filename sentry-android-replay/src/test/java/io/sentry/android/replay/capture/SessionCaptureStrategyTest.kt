@@ -70,7 +70,7 @@ class SessionCaptureStrategyTest {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
         }
-        var persistedSegment = mutableMapOf<String, String?>()
+        var persistedSegment = LinkedHashMap<String, String?>()
         val replayCache = mock<ReplayCache> {
             on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
             on { persistSegmentValues(any(), anyOrNull()) }.then {
@@ -350,6 +350,21 @@ class SessionCaptureStrategyTest {
                     it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
                 assertTrue(breadcrumbEvents?.isEmpty() == true)
             }
+        )
+    }
+
+    @Test
+    fun `replayId should be set and serialized first`() {
+        val strategy = fixture.getSut()
+        val replayId = SentryId()
+
+        strategy.start(fixture.recorderConfig, 0, replayId)
+
+        assertEquals(
+            replayId.toString(),
+            fixture.persistedSegment.values.first(),
+            "The replayId must be set first, so when we clean up stale replays" +
+                "the current replay cache folder is not being deleted."
         )
     }
 }
