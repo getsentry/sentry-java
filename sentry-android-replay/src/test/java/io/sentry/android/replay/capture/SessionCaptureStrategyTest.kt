@@ -364,7 +364,7 @@ class SessionCaptureStrategyTest {
             replayId.toString(),
             fixture.persistedSegment.values.first(),
             "The replayId must be set first, so when we clean up stale replays" +
-            "the current replay cache folder is not being deleted."
+                "the current replay cache folder is not being deleted."
         )
     }
 }
