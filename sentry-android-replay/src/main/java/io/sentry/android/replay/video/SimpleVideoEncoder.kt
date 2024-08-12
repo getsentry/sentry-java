@@ -34,6 +34,7 @@ import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.os.Build
 import android.view.Surface
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
@@ -139,10 +140,13 @@ internal class SimpleVideoEncoder(
     }
 
     fun encode(image: Bitmap) {
-        // NOTE do not use `lockCanvas` like what is done in bitmap2video
-        // This is because https://developer.android.com/reference/android/media/MediaCodec#createInputSurface()
-        // says that, "Surface.lockCanvas(android.graphics.Rect) may fail or produce unexpected results."
-        val canvas = surface?.lockHardwareCanvas()
+        // it seems that Xiaomi devices have problems with hardware canvas, so we have to use
+        // lockCanvas instead (Android 12 or above)
+        val canvas = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Build.MANUFACTURER.contains("xiaomi", ignoreCase = true)) {
+            surface?.lockCanvas(null)
+        } else {
+            surface?.lockHardwareCanvas()
+        }
         canvas?.drawBitmap(image, 0f, 0f, null)
         surface?.unlockCanvasAndPost(canvas)
         drainCodec(false)
