@@ -33,6 +33,7 @@ import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
+import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
@@ -51,8 +52,22 @@ internal class SimpleVideoEncoder(
     val onClose: (() -> Unit)? = null
 ) {
 
+    private val hasExynosCodec: Boolean by lazy(NONE) {
+        // MediaCodecList ctor will initialize an internal in-memory static cache of codecs, so this
+        // call is only expensive the first time
+        MediaCodecList(MediaCodecList.REGULAR_CODECS)
+            .codecInfos
+            .any { it.name.contains("c2.exynos") }
+    }
+
     internal val mediaCodec: MediaCodec = run {
-        val codec = MediaCodec.createEncoderByType(muxerConfig.mimeType)
+        // c2.exynos.h264.encoder seems to have problems encoding the video (Pixel and Samsung devices)
+        // so we use the default encoder instead
+        val codec = if (hasExynosCodec) {
+            MediaCodec.createByCodecName("c2.android.avc.encoder")
+        } else {
+            MediaCodec.createEncoderByType(muxerConfig.mimeType)
+        }
 
         codec
     }
