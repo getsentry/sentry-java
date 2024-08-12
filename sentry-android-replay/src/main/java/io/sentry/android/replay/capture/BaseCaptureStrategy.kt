@@ -100,10 +100,10 @@ internal abstract class BaseCaptureStrategy(
     ) {
         cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
 
+        this.currentReplayId = replayId
+        this.currentSegment = segmentId
         this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
         this.recorderConfig = recorderConfig
-        this.currentSegment = segmentId
-        this.currentReplayId = replayId
 
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
