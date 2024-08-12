@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -241,24 +243,31 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     isCallbackRegistered = true;
     appLaunchedInForeground = appLaunchedInForeground || ContextUtils.isForegroundImportance();
     application.registerActivityLifecycleCallbacks(instance);
+    checkCreateTimeOnMain(application);
+    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain(application));
+  }
+
+  private void checkCreateTimeOnMain(final @NotNull Application application) {
     new Handler(Looper.getMainLooper())
-        .post(
-            () -> {
-              // if no activity has ever been created, app was launched in background
-              if (onCreateTime == null) {
-                appLaunchedInForeground = false;
-              }
-              application.unregisterActivityLifecycleCallbacks(instance);
-              // we stop the app start profiler, as it's useless and likely to timeout
-              if (appStartProfiler != null && appStartProfiler.isRunning()) {
-                appStartProfiler.close();
-                appStartProfiler = null;
-              }
-            });
+      .post(
+        () -> {
+          Log.e("AppStartTest", "Application callback check");
+          // if no activity has ever been created, app was launched in background
+          if (onCreateTime == null) {
+            appLaunchedInForeground = false;
+          }
+          application.unregisterActivityLifecycleCallbacks(instance);
+          // we stop the app start profiler, as it's useless and likely to timeout
+          if (appStartProfiler != null && appStartProfiler.isRunning()) {
+            appStartProfiler.close();
+            appStartProfiler = null;
+          }
+        });
   }
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    Log.e("AppStartTest", "Activity created");
     // An activity already called onCreate()
     if (!appLaunchedInForeground || onCreateTime != null) {
       return;
