@@ -243,8 +243,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     isCallbackRegistered = true;
     appLaunchedInForeground = appLaunchedInForeground || ContextUtils.isForegroundImportance();
     application.registerActivityLifecycleCallbacks(instance);
-//    checkCreateTimeOnMain(application);
-    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain(application));
+    checkCreateTimeOnMain(application);
+//    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain(application));
   }
 
   private void checkCreateTimeOnMain(final @NotNull Application application) {
