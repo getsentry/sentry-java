@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Fix app start spans missing from Pixel devices ([#3634](https://github.com/getsentry/sentry-java/pull/3634))
 - Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
 - Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
 - Session Replay: buffer mode improvements ([#3622](https://github.com/getsentry/sentry-java/pull/3622))
