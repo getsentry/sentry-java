@@ -7,8 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -243,31 +241,32 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     isCallbackRegistered = true;
     appLaunchedInForeground = appLaunchedInForeground || ContextUtils.isForegroundImportance();
     application.registerActivityLifecycleCallbacks(instance);
-    checkCreateTimeOnMain(application);
-//    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain(application));
+    // We post on the main thread a task to post a check on the main thread. On Pixel devices
+    // (possibly others) the first task posted on the main thread is called before the
+    // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
+    // callback is called before the application one.
+    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain(application));
   }
 
   private void checkCreateTimeOnMain(final @NotNull Application application) {
     new Handler(Looper.getMainLooper())
-      .post(
-        () -> {
-          Log.e("AppStartTest", "Application callback check");
-          // if no activity has ever been created, app was launched in background
-          if (onCreateTime == null) {
-            appLaunchedInForeground = false;
-          }
-          application.unregisterActivityLifecycleCallbacks(instance);
-          // we stop the app start profiler, as it's useless and likely to timeout
-          if (appStartProfiler != null && appStartProfiler.isRunning()) {
-            appStartProfiler.close();
-            appStartProfiler = null;
-          }
-        });
+        .post(
+            () -> {
+              // if no activity has ever been created, app was launched in background
+              if (onCreateTime == null) {
+                appLaunchedInForeground = false;
+              }
+              application.unregisterActivityLifecycleCallbacks(instance);
+              // we stop the app start profiler, as it's useless and likely to timeout
+              if (appStartProfiler != null && appStartProfiler.isRunning()) {
+                appStartProfiler.close();
+                appStartProfiler = null;
+              }
+            });
   }
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    Log.e("AppStartTest", "Activity created");
     // An activity already called onCreate()
     if (!appLaunchedInForeground || onCreateTime != null) {
       return;
