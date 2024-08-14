@@ -63,10 +63,10 @@ internal class BufferCaptureStrategy(
         isTerminating: Boolean,
         onSegmentSent: (Date) -> Unit
     ) {
-        val sampled = random.sample(options.experimental.sessionReplay.errorSampleRate)
+        val sampled = random.sample(options.experimental.sessionReplay.onErrorSampleRate)
 
         if (!sampled) {
-            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event")
+            options.logger.log(INFO, "Replay wasn't sampled by onErrorSampleRate, not capturing for event")
             return
         }
 
