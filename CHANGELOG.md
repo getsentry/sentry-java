@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Features
+- Emit transaction.data inside contexts.trace.data ([#3642](https://github.com/getsentry/sentry-java/pull/3642))
+
 ## 7.14.0
 
 ### Features
