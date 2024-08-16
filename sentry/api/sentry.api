@@ -2941,6 +2941,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 
 public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
+	protected field data Ljava/util/Map;
 	protected field description Ljava/lang/String;
 	protected field op Ljava/lang/String;
 	protected field origin Ljava/lang/String;
@@ -2952,6 +2953,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun equals (Ljava/lang/Object;)Z
+	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
@@ -2966,6 +2968,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun getUnknown ()Ljava/util/Map;
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setOrigin (Ljava/lang/String;)V
@@ -2984,6 +2987,7 @@ public final class io/sentry/SpanContext$Deserializer : io/sentry/JsonDeserializ
 }
 
 public final class io/sentry/SpanContext$JsonKeys {
+	public static final field DATA Ljava/lang/String;
 	public static final field DESCRIPTION Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
 	public static final field ORIGIN Ljava/lang/String;

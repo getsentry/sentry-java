@@ -46,6 +46,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   /** Describes the status of the Transaction. */
   protected @Nullable String origin = "manual";
 
+  protected @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+
   private @Nullable Map<String, Object> unknown;
 
   public SpanContext(
@@ -213,6 +215,14 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.origin = origin;
   }
 
+  public @NotNull Map<String, Object> getData() {
+    return data;
+  }
+
+  public void setData(final @NotNull String key, final @NotNull Object value) {
+    data.put(key, value);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -242,6 +252,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     public static final String STATUS = "status";
     public static final String TAGS = "tags";
     public static final String ORIGIN = "origin";
+    public static final String DATA = "data";
   }
 
   @Override
@@ -268,6 +279,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     }
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
+    }
+    if (!data.isEmpty()) {
+      writer.name(JsonKeys.DATA).value(logger, data);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -303,6 +317,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       SpanStatus status = null;
       String origin = null;
       Map<String, String> tags = null;
+      Map<String, Object> data = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -333,6 +348,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
             tags =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.DATA:
+            data = (Map<String, Object>) reader.nextObjectOrNull();
             break;
           default:
             if (unknown == null) {
@@ -374,6 +392,11 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       if (tags != null) {
         spanContext.tags = tags;
       }
+
+      if (data != null) {
+        spanContext.data = data;
+      }
+
       spanContext.setUnknown(unknown);
       reader.endObject();
       return spanContext;

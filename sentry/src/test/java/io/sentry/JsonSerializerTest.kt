@@ -889,7 +889,10 @@ class JsonSerializerTest {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
                               "span_id": "0a53026963414893",
                               "op": "http",
-                              "status": "ok"
+                              "status": "ok",
+                              "data": {
+                                "transactionDataKey": "transactionDataValue"
+                              }
                             },
                             "custom": {
                               "some-key": "some-value"
@@ -930,6 +933,7 @@ class JsonSerializerTest {
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
+        assertEquals("transactionDataValue", transaction.contexts.trace!!.data!!["transactionDataKey"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
 
         assertEquals("extraValue", transaction.getExtra("extraKey"))
