@@ -267,6 +267,23 @@ class ReplayCacheTest {
     }
 
     @Test
+    fun `rotate returns first screen in buffer`() {
+        val replayCache = fixture.getSut(
+            tmpDir,
+            frameRate = 1
+        )
+
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+        replayCache.addFrame(bitmap, 1, "MainActivity")
+        replayCache.addFrame(bitmap, 1001, "SecondActivity")
+        replayCache.addFrame(bitmap, 2001, "ThirdActivity")
+        replayCache.addFrame(bitmap, 3001, "FourthActivity")
+
+        val screen = replayCache.rotate(2000)
+        assertEquals("ThirdActivity", screen)
+    }
+
+    @Test
     fun `does not persist segment if already closed`() {
         val replayId = SentryId()
         val replayCache = fixture.getSut(

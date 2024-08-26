@@ -1,12 +1,12 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
-import io.sentry.DateUtils
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
@@ -14,6 +14,7 @@ import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
+import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
 internal class SessionCaptureStrategy(
@@ -31,14 +32,15 @@ internal class SessionCaptureStrategy(
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
-        replayId: SentryId
+        replayId: SentryId,
+        replayType: ReplayType?
     ) {
-        super.start(recorderConfig, segmentId, replayId)
+        super.start(recorderConfig, segmentId, replayId, replayType)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
         hub?.configureScope {
             it.replayId = currentReplayId
-            screenAtStart = it.screen
+            screenAtStart = it.screen?.substringAfterLast('.')
         }
     }
 
@@ -65,7 +67,7 @@ internal class SessionCaptureStrategy(
         super.stop()
     }
 
-    override fun captureReplay(isTerminating: Boolean, onSegmentSent: () -> Unit) {
+    override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
         options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event")
         this.isTerminating.set(isTerminating)
     }
@@ -110,7 +112,7 @@ internal class SessionCaptureStrategy(
                     segment.capture(hub)
                     currentSegment++
                     // set next segment timestamp as close to the previous one as possible to avoid gaps
-                    segmentTimestamp = DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration)
+                    segmentTimestamp = segment.replay.timestamp
                 }
             }
 
@@ -122,14 +124,13 @@ internal class SessionCaptureStrategy(
     }
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
-        val currentSegmentTimestamp = segmentTimestamp ?: return
         createCurrentSegment("onConfigurationChanged") { segment ->
             if (segment is ReplaySegment.Created) {
                 segment.capture(hub)
 
                 currentSegment++
                 // set next segment timestamp as close to the previous one as possible to avoid gaps
-                segmentTimestamp = DateUtils.getDateTime(currentSegmentTimestamp.time + segment.videoDuration)
+                segmentTimestamp = segment.replay.timestamp
             }
         }
 

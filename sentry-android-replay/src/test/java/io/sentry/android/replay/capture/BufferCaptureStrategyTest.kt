@@ -16,6 +16,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
 import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
@@ -63,7 +64,7 @@ class BufferCaptureStrategyTest {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
         }
-        var persistedSegment = mutableMapOf<String, String?>()
+        var persistedSegment = LinkedHashMap<String, String?>()
         val replayCache = mock<ReplayCache> {
             on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
             on { persistSegmentValues(any(), anyOrNull()) }.then {
@@ -242,6 +243,18 @@ class BufferCaptureStrategyTest {
     }
 
     @Test
+    fun `convert persists buffer replayType when converting to session strategy`() {
+        val strategy = fixture.getSut()
+        strategy.start(fixture.recorderConfig)
+
+        val converted = strategy.convert()
+        assertEquals(
+            ReplayType.BUFFER,
+            converted.replayType
+        )
+    }
+
+    @Test
     fun `captureReplay does not replayId to scope when not sampled`() {
         val strategy = fixture.getSut(errorSampleRate = 0.0)
         strategy.start(fixture.recorderConfig)
@@ -266,5 +279,33 @@ class BufferCaptureStrategyTest {
         verify(fixture.hub, times(2)).captureReplay(any(), any())
         assertEquals(strategy.currentReplayId, fixture.scope.replayId)
         assertTrue(called)
+    }
+
+    @Test
+    fun `captureReplay sets new segment timestamp to new strategy after successful creation`() {
+        val strategy = fixture.getSut()
+        strategy.start(fixture.recorderConfig)
+        val oldTimestamp = strategy.segmentTimestamp
+
+        strategy.captureReplay(false) { newTimestamp ->
+            assertEquals(oldTimestamp!!.time + VIDEO_DURATION, newTimestamp.time)
+        }
+
+        verify(fixture.hub).captureReplay(any(), any())
+    }
+
+    @Test
+    fun `replayId should be set and serialized first`() {
+        val strategy = fixture.getSut()
+        val replayId = SentryId()
+
+        strategy.start(fixture.recorderConfig, 0, replayId)
+
+        assertEquals(
+            replayId.toString(),
+            fixture.persistedSegment.values.first(),
+            "The replayId must be set first, so when we clean up stale replays" +
+                "the current replay cache folder is not being deleted."
+        )
     }
 }
