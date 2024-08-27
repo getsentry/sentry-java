@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Chores
+
+- Update AGP to 8.3.2 ([#3660](https://github.com/getsentry/sentry-java/pull/3660))
+
 ## 7.14.0
 
 ### Features
