@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
+import io.opentelemetry.semconv.ResourceAttributes;
 import io.opentelemetry.semconv.SemanticAttributes;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
@@ -52,9 +53,6 @@ public final class SentrySpanExporter implements SpanExporter {
       new SpanDescriptionExtractor();
   private final @NotNull IScopes scopes;
 
-  // TODO [POTEL] should we also ignore "process.command_args"
-  // (`ResourceAttributes.PROCESS_COMMAND_ARGS`)?
-  // As these are apparently so long that information that is added after it is lost
   private final @NotNull List<String> attributeKeysToRemove =
       Arrays.asList(
           InternalSemanticAttributes.IS_REMOTE_PARENT.getKey(),
@@ -64,7 +62,9 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.SAMPLE_RATE.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLED.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLE_RATE.getKey(),
-          InternalSemanticAttributes.PARENT_SAMPLED.getKey());
+          InternalSemanticAttributes.PARENT_SAMPLED.getKey(),
+          ResourceAttributes.PROCESS_COMMAND_ARGS.getKey() // can be very long
+          );
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
   public static final String TRACE_ORIGIN = "auto.opentelemetry";
