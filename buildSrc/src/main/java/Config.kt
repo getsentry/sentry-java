@@ -56,7 +56,7 @@ object Config {
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
         val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
-        private val lifecycleVersion = "2.2.0"
+        private val lifecycleVersion = "2.8.4"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
         val androidxCore = "androidx.core:core:1.3.2"
