@@ -10,7 +10,11 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
 import leakcanary.LeakAssertions
+import leakcanary.LeakCanary
 import org.junit.runner.RunWith
+import shark.AndroidReferenceMatchers
+import shark.IgnoredReferenceMatcher
+import shark.ReferencePattern
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -158,6 +162,18 @@ class SdkInitTests : BaseUiTest() {
 
     @Test
     fun initViaActivityDoesNotLeak() {
+        LeakCanary.config = LeakCanary.config.copy(
+            referenceMatchers = AndroidReferenceMatchers.appDefaults +
+                listOf(
+                    IgnoredReferenceMatcher(
+                        ReferencePattern.InstanceFieldPattern(
+                            "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
+                            "context"
+                        )
+                    )
+                )
+        )
+
         val activityScenario = launchActivity<ComposeActivity>()
         activityScenario.moveToState(Lifecycle.State.RESUMED)
 
