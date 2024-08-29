@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Features
-
-- (Internal) Verify sentry-android-replay for Google Play SDK Console ([#3651](https://github.com/getsentry/sentry-java/pull/3651))
-
 ## 7.14.0
 
 ### Features
