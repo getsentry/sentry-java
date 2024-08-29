@@ -68,7 +68,10 @@ class SdkInitTests : BaseUiTest() {
 
         relay.assert {
             findEnvelope {
-                assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
+                assertEnvelopeTransaction(
+                    it.items.toList(),
+                    AndroidLogger()
+                ).transaction == "e2etests2"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
                 // Profiling uses executorService, so if the executorService is shutdown it would fail
@@ -110,7 +113,10 @@ class SdkInitTests : BaseUiTest() {
 
         Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
         // We assert for less than 1 second just to account for slow devices in saucelabs or headless emulator
-        assertTrue(restartMs < 1000, "Expected less than 1000 ms for SDK restart. Got $restartMs ms")
+        assertTrue(
+            restartMs < 1000,
+            "Expected less than 1000 ms for SDK restart. Got $restartMs ms"
+        )
 
         relay.assert {
             findEnvelope {
@@ -157,7 +163,10 @@ class SdkInitTests : BaseUiTest() {
         }
         val afterRestart = System.currentTimeMillis()
         val restartMs = afterRestart - beforeRestart
-        assertTrue(restartMs > 3000, "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms")
+        assertTrue(
+            restartMs > 3000,
+            "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms"
+        )
     }
 
     @Test
@@ -169,6 +178,12 @@ class SdkInitTests : BaseUiTest() {
                         ReferencePattern.InstanceFieldPattern(
                             "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
                             "context"
+                        )
+                    ),
+                    IgnoredReferenceMatcher(
+                        ReferencePattern.StaticFieldPattern(
+                            "com.testfairy.modules.capture.TouchListener",
+                            "k"
                         )
                     )
                 )
