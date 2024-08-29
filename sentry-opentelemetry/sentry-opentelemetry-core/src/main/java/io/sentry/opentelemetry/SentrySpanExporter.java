@@ -10,8 +10,8 @@ import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
-import io.opentelemetry.semconv.ResourceAttributes;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.incubating.ProcessIncubatingAttributes;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.DefaultSpanFactory;
@@ -63,7 +63,7 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.PROFILE_SAMPLED.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLE_RATE.getKey(),
           InternalSemanticAttributes.PARENT_SAMPLED.getKey(),
-          ResourceAttributes.PROCESS_COMMAND_ARGS.getKey() // can be very long
+          ProcessIncubatingAttributes.PROCESS_COMMAND_ARGS.getKey() // can be very long
           );
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
@@ -455,7 +455,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @Nullable Long httpStatus =
-        otelSpanData.getAttributes().get(SemanticAttributes.HTTP_STATUS_CODE);
+        otelSpanData.getAttributes().get(HttpAttributes.HTTP_RESPONSE_STATUS_CODE);
     if (httpStatus != null) {
       final @Nullable SpanStatus spanStatus = SpanStatus.fromHttpStatusCode(httpStatus.intValue());
       if (spanStatus != null) {
