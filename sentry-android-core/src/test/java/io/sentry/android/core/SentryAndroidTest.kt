@@ -362,7 +362,7 @@ class SentryAndroidTest {
         optionsConfig: (SentryAndroidOptions) -> Unit = {},
         callback: (session: Session?) -> Unit
     ) {
-        Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
+        Mockito.mockStatic(ContextUtils::class.java, Mockito.CALLS_REAL_METHODS).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
             SentryAndroid.init(context) { options ->

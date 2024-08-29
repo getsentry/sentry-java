@@ -9,6 +9,7 @@ import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
+import leakcanary.LeakAssertions
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -153,5 +154,19 @@ class SdkInitTests : BaseUiTest() {
         val afterRestart = System.currentTimeMillis()
         val restartMs = afterRestart - beforeRestart
         assertTrue(restartMs > 3000, "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms")
+    }
+
+    @Test
+    fun initViaActivityDoesNotLeak() {
+        val activityScenario = launchActivity<ComposeActivity>()
+        activityScenario.moveToState(Lifecycle.State.RESUMED)
+
+        activityScenario.onActivity { activity ->
+            initSentry(context = activity)
+        }
+
+        activityScenario.moveToState(Lifecycle.State.DESTROYED)
+
+        LeakAssertions.assertNoLeaks()
     }
 }
