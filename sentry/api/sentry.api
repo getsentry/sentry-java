@@ -53,7 +53,6 @@ public final class io/sentry/Baggage {
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
-	public fun getUserSegment ()Ljava/lang/String;
 	public fun isMutable ()Z
 	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
@@ -64,9 +63,8 @@ public final class io/sentry/Baggage {
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
-	public fun setUserSegment (Ljava/lang/String;)V
 	public fun setValuesFromScope (Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
-	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
 	public fun toTraceContext ()Lio/sentry/TraceContext;
 }
@@ -81,7 +79,6 @@ public final class io/sentry/Baggage$DSCKeys {
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
 	public static final field USER_ID Ljava/lang/String;
-	public static final field USER_SEGMENT Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -279,6 +276,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -580,6 +578,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -644,6 +643,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -770,6 +770,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -876,6 +877,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public fun reportFullDisplayed ()V
 	public abstract fun reportFullyDisplayed ()V
+	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1385,6 +1387,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1447,6 +1450,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -1523,6 +1527,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1919,6 +1924,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -2038,6 +2044,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes, io/sentry/metrics/Metri
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -2103,6 +2110,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
+	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -3340,7 +3348,6 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
-	public fun getUserSegment ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -3361,7 +3368,6 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field TRANSACTION Ljava/lang/String;
 	public static final field USER Ljava/lang/String;
 	public static final field USER_ID Ljava/lang/String;
-	public static final field USER_SEGMENT Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -5254,7 +5260,6 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun getIpAddress ()Ljava/lang/String;
 	public fun getName ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
-	public fun getSegment ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsername ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -5266,7 +5271,6 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun setIpAddress (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
-	public fun setSegment (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsername (Ljava/lang/String;)V
 }
@@ -5285,7 +5289,6 @@ public final class io/sentry/protocol/User$JsonKeys {
 	public static final field IP_ADDRESS Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
 	public static final field OTHER Ljava/lang/String;
-	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;
 	public fun <init> ()V
 }

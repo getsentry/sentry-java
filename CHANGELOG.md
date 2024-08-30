@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-alpha.4
+
+### Fixes
+
+- Removed user segment ([#3512](https://github.com/getsentry/sentry-java/pull/3512))
+- Use span id of remote parent ([#3548](https://github.com/getsentry/sentry-java/pull/3548))
+  - Traces were broken because on an incoming request, OtelSentrySpanProcessor did not set the parentSpanId on the span correctly. Traces were not referencing the actual parent span but some other (random) span ID which the server doesn't know.
+- Attach active span to scope when using OpenTelemetry ([#3549](https://github.com/getsentry/sentry-java/pull/3549))
+  - Errors weren't linked to traces correctly due to parts of the SDK not knowing the current span
+- Record dropped spans in client report when sampling out OpenTelemetry spans ([#3552](https://github.com/getsentry/sentry-java/pull/3552))
+- Retrieve the correct current span from `Scope`/`Scopes` when using OpenTelemetry ([#3554](https://github.com/getsentry/sentry-java/pull/3554))
+
+## 8.0.0-alpha.3
 
 ### Breaking Changes
 
@@ -11,6 +23,10 @@
 - Support spans that are split into multiple batches ([#3539](https://github.com/getsentry/sentry-java/pull/3539))
   - When spans belonging to a single transaction were split into multiple batches for SpanExporter, we did not add all spans because the isSpanTooOld check wasn't inverted.
 - Parse and use `send-default-pii` and `max-request-body-size` from `sentry.properties` ([#3534](https://github.com/getsentry/sentry-java/pull/3534))
+- `span.startChild` now uses `.makeCurrent()` by default ([#3544](https://github.com/getsentry/sentry-java/pull/3544))
+  - This caused an issue where the span tree wasn't correct because some spans were not added to their direct parent 
+- Partially fix bootstrap class loading ([#3543](https://github.com/getsentry/sentry-java/pull/3543))
+  - There was a problem with two separate Sentry `Scopes` being active inside each OpenTelemetry `Context` due to using context keys from more than one class loader.
 
 ## 8.0.0-alpha.2
 

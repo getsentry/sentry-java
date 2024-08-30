@@ -88,6 +88,7 @@ public final class OtelSpanWrapper implements ISpan {
       final @NotNull SentryDate startTimestamp,
       final @Nullable TracesSamplingDecision samplingDecision,
       final @Nullable OtelSpanWrapper parentSpan,
+      final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
@@ -101,7 +102,8 @@ public final class OtelSpanWrapper implements ISpan {
       this.baggage = null;
     }
 
-    this.context = new OtelSpanContext(span, samplingDecision, parentSpan, this.baggage);
+    this.context =
+        new OtelSpanContext(span, samplingDecision, parentSpan, parentSpanId, this.baggage);
   }
 
   @Override
@@ -129,7 +131,11 @@ public final class OtelSpanWrapper implements ISpan {
       return NoOpSpan.getInstance();
     }
 
-    return scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
+    final @NotNull ISpan childSpan =
+        scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
+    // TODO [POTEL] spanOptions.isBindToScope with default true?
+    childSpan.makeCurrent();
+    return childSpan;
   }
 
   @Override
@@ -211,7 +217,6 @@ public final class OtelSpanWrapper implements ISpan {
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
-            userAtomicReference.get(),
             scopes.getOptions(),
             this.getSamplingDecision(),
             getTransactionName(),

@@ -5,7 +5,6 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
-import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
@@ -653,14 +652,8 @@ public final class SentryTracer implements ITransaction {
   private void updateBaggageValues() {
     synchronized (this) {
       if (baggage.isMutable()) {
-        final AtomicReference<User> userAtomicReference = new AtomicReference<>();
-        scopes.configureScope(
-            scope -> {
-              userAtomicReference.set(scope.getUser());
-            });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
-            userAtomicReference.get(),
             scopes.getOptions(),
             this.getSamplingDecision(),
             getName(),

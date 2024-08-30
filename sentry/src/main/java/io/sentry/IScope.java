@@ -47,6 +47,9 @@ public interface IScope {
   @Nullable
   ISpan getSpan();
 
+  @ApiStatus.Internal
+  void setActiveSpan(@Nullable ISpan span);
+
   /**
    * Sets the current active transaction
    *

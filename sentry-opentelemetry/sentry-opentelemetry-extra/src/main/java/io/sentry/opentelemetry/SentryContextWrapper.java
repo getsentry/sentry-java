@@ -41,39 +41,44 @@ public final class SentryContextWrapper implements Context {
   }
 
   private static @NotNull Context forkCurrentScope(final @NotNull Context context) {
+    final @Nullable OtelSpanWrapper sentrySpan = getCurrentSpanFromGlobalStorage(context);
+    final @Nullable IScopes spanScopes = sentrySpan == null ? null : sentrySpan.getScopes();
+    final @NotNull IScopes forkedScopes = forkCurrentScopeInternal(context, spanScopes);
+    if (sentrySpan != null) {
+      forkedScopes.setActiveSpan(sentrySpan);
+    }
+    return context.with(SENTRY_SCOPES_KEY, forkedScopes);
+  }
+
+  private static @NotNull IScopes forkCurrentScopeInternal(
+      final @NotNull Context context, final @Nullable IScopes spanScopes) {
     final @Nullable IScopes scopesInContext = context.get(SENTRY_SCOPES_KEY);
-    final @Nullable IScopes spanScopes = getCurrentSpanScopesFromGlobalStorage(context);
 
     if (scopesInContext != null && spanScopes != null) {
       if (scopesInContext.isAncestorOf(spanScopes)) {
-        return context.with(
-            SENTRY_SCOPES_KEY, spanScopes.forkedCurrentScope("contextwrapper.spanancestor"));
+        return spanScopes.forkedCurrentScope("contextwrapper.spanancestor");
       }
     }
 
     if (scopesInContext != null) {
-      return context.with(
-          SENTRY_SCOPES_KEY, scopesInContext.forkedCurrentScope("contextwrapper.scopeincontext"));
+      return scopesInContext.forkedCurrentScope("contextwrapper.scopeincontext");
     }
 
     if (spanScopes != null) {
-      return context.with(
-          SENTRY_SCOPES_KEY, spanScopes.forkedCurrentScope("contextwrapper.spanscope"));
+      return spanScopes.forkedCurrentScope("contextwrapper.spanscope");
     }
 
-    return context.with(SENTRY_SCOPES_KEY, Sentry.forkedRootScopes("contextwrapper.fallback"));
+    return Sentry.forkedRootScopes("contextwrapper.fallback");
   }
 
-  private static @Nullable IScopes getCurrentSpanScopesFromGlobalStorage(
+  private static @Nullable OtelSpanWrapper getCurrentSpanFromGlobalStorage(
       final @NotNull Context context) {
     @Nullable final Span span = Span.fromContextOrNull(context);
 
     if (span != null) {
       final @Nullable OtelSpanWrapper sentrySpan =
           SentryWeakSpanStorage.getInstance().getSentrySpan(span.getSpanContext());
-      if (sentrySpan != null) {
-        return sentrySpan.getScopes();
-      }
+      return sentrySpan;
     }
 
     return null;

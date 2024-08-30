@@ -459,7 +459,6 @@ class SpanTest {
         assertEquals(transactionTraceContext.publicKey, spanTraceContext.publicKey)
         assertEquals(transactionTraceContext.sampleRate, spanTraceContext.sampleRate)
         assertEquals(transactionTraceContext.userId, spanTraceContext.userId)
-        assertEquals(transactionTraceContext.userSegment, spanTraceContext.userSegment)
     }
 
     @Test
