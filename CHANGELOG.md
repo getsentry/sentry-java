@@ -1,5 +1,16 @@
 # Changelog
 
+## 7.15.0-alpha.1
+
+### Features
+
+- Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+
+### Dependencies
+
+- Bump `sentry-native` SDK to `d11359b` of [feat/inproc_handler_strategy](https://github.com/getsentry/sentry-native/pull/1027/)
+  - See the following issue for more details: https://github.com/getsentry/sentry-native/issues/1026
+
 ## 7.14.0
 
 ### Features
