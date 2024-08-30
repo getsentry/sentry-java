@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+### Features
+
+- Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+
 ### Dependencies
 
-- Alpha: Bump Native SDK to `d11359b` of [feat/inproc_handler_strategy](https://github.com/getsentry/sentry-native/pull/1027/)
+- Bump Native SDK to `d11359b` of [feat/inproc_handler_strategy](https://github.com/getsentry/sentry-native/pull/1027/)
   - See the following issue for more details: https://github.com/getsentry/sentry-native/issues/1026
 
 ## 7.14.0
