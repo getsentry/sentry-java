@@ -8,7 +8,7 @@
 
 ### Dependencies
 
-- Bump Native SDK to `d11359b` of [feat/inproc_handler_strategy](https://github.com/getsentry/sentry-native/pull/1027/)
+- Bump `sentry-native` SDK to `d11359b` of [feat/inproc_handler_strategy](https://github.com/getsentry/sentry-native/pull/1027/)
   - See the following issue for more details: https://github.com/getsentry/sentry-native/issues/1026
 
 ## 7.14.0
