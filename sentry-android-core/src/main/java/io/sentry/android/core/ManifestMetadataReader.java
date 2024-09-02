@@ -104,6 +104,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_METRICS = "io.sentry.enable-metrics";
 
+  static final String FORCE_INIT = "io.sentry.force-init";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -262,6 +264,8 @@ final class ManifestMetadataReader {
 
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
+
+        options.setForceInit(readBool(metadata, logger, FORCE_INIT, options.isForceInit()));
 
         options.setCollectAdditionalContext(
             readBool(

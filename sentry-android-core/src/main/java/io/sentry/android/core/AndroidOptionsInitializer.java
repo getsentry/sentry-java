@@ -9,6 +9,7 @@ import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
+import io.sentry.InitPriority;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
@@ -113,6 +114,10 @@ final class AndroidOptionsInitializer {
     options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
 
     readDefaultOptionValues(options, context, buildInfoProvider);
+
+    if (ManifestMetadataReader.isAutoInit(context, logger)) {
+      options.setInitPriority(InitPriority.LOW);
+    }
   }
 
   @TestOnly
