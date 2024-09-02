@@ -17,6 +17,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
+import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
@@ -278,24 +279,22 @@ public final class Sentry {
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
-    final boolean didReplaceOptions = globalScope.replaceOptions(options);
+    final boolean shouldInit = InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
+    if (shouldInit) {
+      globalScope.replaceOptions(options);
 
-    // since replaceOptions can noop, we retrieve the options to use from global scope
-    final @NotNull SentryOptions optionsToUse = globalScope.getOptions();
+      final IScopes scopes = getCurrentScopes();
+      final IScope rootScope = new Scope(options);
+      final IScope rootIsolationScope = new Scope(options);
+      rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
-    final IScopes scopes = getCurrentScopes();
-    final IScope rootScope = new Scope(optionsToUse);
-    final IScope rootIsolationScope = new Scope(optionsToUse);
-    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+      getScopesStorage().set(rootScopes);
 
-    getScopesStorage().set(rootScopes);
-
-    if (didReplaceOptions) {
       scopes.close(true);
 
-      initConfigurations(optionsToUse);
+      initConfigurations(options);
 
-      globalScope.bindClient(new SentryClient(optionsToUse));
+      globalScope.bindClient(new SentryClient(options));
 
       // If the executorService passed in the init is the same that was previously closed, we have
       // to
@@ -316,6 +315,12 @@ public final class Sentry {
       finalizePreviousSession(options, ScopesAdapter.getInstance());
 
       handleAppStartProfilingConfig(options, options.getExecutorService());
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "This init call has been ignored due to priority being too low.");
     }
   }
 

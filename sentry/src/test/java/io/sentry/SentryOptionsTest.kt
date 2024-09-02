@@ -374,6 +374,7 @@ class SentryOptionsTest {
         externalOptions.isEnableBackpressureHandling = false
         externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
         externalOptions.isSendDefaultPii = true
+        externalOptions.isForceInit = true
         externalOptions.cron = SentryOptions.Cron().apply {
             defaultCheckinMargin = 10L
             defaultMaxRuntime = 30L
@@ -412,6 +413,7 @@ class SentryOptionsTest {
         assertFalse(options.isSendModules)
         assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
         assertFalse(options.isEnableBackpressureHandling)
+        assertTrue(options.isForceInit)
         assertNotNull(options.cron)
         assertEquals(10L, options.cron?.defaultCheckinMargin)
         assertEquals(30L, options.cron?.defaultMaxRuntime)

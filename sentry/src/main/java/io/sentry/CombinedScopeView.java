@@ -486,7 +486,7 @@ public final class CombinedScopeView implements IScope {
 
   @ApiStatus.Internal
   @Override
-  public boolean replaceOptions(@NotNull SentryOptions options) {
-    return globalScope.replaceOptions(options);
+  public void replaceOptions(@NotNull SentryOptions options) {
+    globalScope.replaceOptions(options);
   }
 }

@@ -275,7 +275,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
-	public fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
@@ -459,6 +459,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
+	public fun isForceInit ()Ljava/lang/Boolean;
 	public fun isSendDefaultPii ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
@@ -472,6 +473,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnabled (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
+	public fun setForceInit (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
@@ -769,7 +771,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun removeContexts (Ljava/lang/String;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
-	public abstract fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public abstract fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
@@ -1026,6 +1028,16 @@ public abstract interface class io/sentry/ITransactionProfiler {
 
 public abstract interface class io/sentry/ITransportFactory {
 	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
+}
+
+public final class io/sentry/InitPriority : java/lang/Enum {
+	public static final field HIGH Lio/sentry/InitPriority;
+	public static final field HIGHEST Lio/sentry/InitPriority;
+	public static final field LOW Lio/sentry/InitPriority;
+	public static final field LOWEST Lio/sentry/InitPriority;
+	public static final field MEDIUM Lio/sentry/InitPriority;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/InitPriority;
+	public static fun values ()[Lio/sentry/InitPriority;
 }
 
 public final class io/sentry/Instrumenter : java/lang/Enum {
@@ -1449,7 +1461,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
-	public fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
@@ -1923,7 +1935,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
-	public fun replaceOptions (Lio/sentry/SentryOptions;)Z
+	public fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
@@ -2706,6 +2718,7 @@ public class io/sentry/SentryOptions {
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
+	public fun getInitPriority ()Lio/sentry/InitPriority;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
@@ -2775,6 +2788,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableUserInteractionBreadcrumbs ()Z
 	public fun isEnableUserInteractionTracing ()Z
 	public fun isEnabled ()Z
+	public fun isForceInit ()Z
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
@@ -2828,10 +2842,12 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFlushTimeoutMillis (J)V
+	public fun setForceInit (Z)V
 	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
+	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMainThreadChecker (Lio/sentry/util/thread/IMainThreadChecker;)V
@@ -5546,6 +5562,11 @@ public final class io/sentry/util/HttpUtils {
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
+}
+
+public final class io/sentry/util/InitUtil {
+	public fun <init> ()V
+	public static fun shouldInit (Lio/sentry/SentryOptions;Lio/sentry/SentryOptions;Z)Z
 }
 
 public final class io/sentry/util/IntegrationUtils {

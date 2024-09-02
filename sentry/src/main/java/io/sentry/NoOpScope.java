@@ -285,7 +285,5 @@ public final class NoOpScope implements IScope {
       @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName) {}
 
   @Override
-  public boolean replaceOptions(@NotNull SentryOptions options) {
-    return false;
-  }
+  public void replaceOptions(@NotNull SentryOptions options) {}
 }
