@@ -6,6 +6,7 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
+import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -69,11 +70,10 @@ public class SentryHandler extends Handler {
     if (configureFromLogManager) {
       retrieveProperties();
     }
-    if (!Sentry.isEnabled()) {
-      options.setEnableExternalConfiguration(true);
-      options.setSdkVersion(createSdkVersion(options));
-      Sentry.init(options);
-    }
+    options.setEnableExternalConfiguration(true);
+    options.setInitPriority(InitPriority.LOWEST);
+    options.setSdkVersion(createSdkVersion(options));
+    Sentry.init(options);
     addPackageAndIntegrationInfo();
   }
 
