@@ -6,6 +6,7 @@ import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvide
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.sentry.InitPriority;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
@@ -50,6 +51,7 @@ public final class SentryAutoConfigurationCustomizerProvider
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
+            options.setInitPriority(InitPriority.HIGH);
             options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
             options.setSpanFactory(spanFactory);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
