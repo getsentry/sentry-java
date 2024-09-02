@@ -12,6 +12,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SpanDescriptionExtractor {
 
+  // TODO POTEL: should we rely on the OTEL attributes, that are extracted in the exporter for the
+  // datafields?
+  // We are currently extracting some attributes and add it to the span info here
+  // In the `SentrySpanExporter` we extract all attributes and add it to the dataFields
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
       final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
