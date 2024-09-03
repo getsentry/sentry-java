@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
+
 *Breaking changes*:
 
 - `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
