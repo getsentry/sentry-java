@@ -25,11 +25,14 @@ internal interface CaptureStrategy {
     var currentSegment: Int
     var currentReplayId: SentryId
     val replayCacheDir: File?
+    var replayType: ReplayType
+    var segmentTimestamp: Date?
 
     fun start(
         recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int = 0,
-        replayId: SentryId = SentryId()
+        replayId: SentryId = SentryId(),
+        replayType: ReplayType? = null
     )
 
     fun stop()
@@ -38,7 +41,7 @@ internal interface CaptureStrategy {
 
     fun resume()
 
-    fun captureReplay(isTerminating: Boolean, onSegmentSent: () -> Unit)
+    fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit)
 
     fun onScreenshotRecorded(bitmap: Bitmap? = null, store: ReplayCache.(frameTimestamp: Long) -> Unit)
 
@@ -194,7 +197,6 @@ internal interface CaptureStrategy {
 
             replay.urls = urls
             return ReplaySegment.Created(
-                videoDuration = videoDuration,
                 replay = replay,
                 recording = recording
             )
@@ -219,7 +221,6 @@ internal interface CaptureStrategy {
     sealed class ReplaySegment {
         object Failed : ReplaySegment()
         data class Created(
-            val videoDuration: Long,
             val replay: SentryReplayEvent,
             val recording: ReplayRecording
         ) : ReplaySegment() {

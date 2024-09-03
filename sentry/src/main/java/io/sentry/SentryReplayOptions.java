@@ -46,7 +46,7 @@ public final class SentryReplayOptions {
    * Specifying 0 means never, 1.0 means always. The value needs to be >= 0.0 and <= 1.0. The
    * default is null (disabled).
    */
-  private @Nullable Double errorSampleRate;
+  private @Nullable Double onErrorSampleRate;
 
   /**
    * Redact all text content. Draws a rectangle of text bounds with text color on top. By default
@@ -98,28 +98,28 @@ public final class SentryReplayOptions {
   public SentryReplayOptions() {}
 
   public SentryReplayOptions(
-      final @Nullable Double sessionSampleRate, final @Nullable Double errorSampleRate) {
+      final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
     this.sessionSampleRate = sessionSampleRate;
-    this.errorSampleRate = errorSampleRate;
+    this.onErrorSampleRate = onErrorSampleRate;
   }
 
   @Nullable
-  public Double getErrorSampleRate() {
-    return errorSampleRate;
+  public Double getOnErrorSampleRate() {
+    return onErrorSampleRate;
   }
 
   public boolean isSessionReplayEnabled() {
     return (getSessionSampleRate() != null && getSessionSampleRate() > 0);
   }
 
-  public void setErrorSampleRate(final @Nullable Double errorSampleRate) {
-    if (!SampleRateUtils.isValidSampleRate(errorSampleRate)) {
+  public void setOnErrorSampleRate(final @Nullable Double onErrorSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(onErrorSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
-              + errorSampleRate
+              + onErrorSampleRate
               + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
-    this.errorSampleRate = errorSampleRate;
+    this.onErrorSampleRate = onErrorSampleRate;
   }
 
   @Nullable
@@ -128,7 +128,7 @@ public final class SentryReplayOptions {
   }
 
   public boolean isSessionReplayForErrorsEnabled() {
-    return (getErrorSampleRate() != null && getErrorSampleRate() > 0);
+    return (getOnErrorSampleRate() != null && getOnErrorSampleRate() > 0);
   }
 
   public void setSessionSampleRate(final @Nullable Double sessionSampleRate) {

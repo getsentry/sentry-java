@@ -10,6 +10,8 @@ import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
@@ -25,6 +27,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
+import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
@@ -41,6 +44,7 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
@@ -77,7 +81,12 @@ class ReplayIntegrationTest {
                 }.whenever(mock).submit(any<Runnable>())
             }
         }
-        val hub = mock<IHub>()
+        val scope = Scope(options)
+        val hub = mock<IHub> {
+            doAnswer {
+                ((it.arguments[0]) as ScopeCallback).run(scope)
+            }.whenever(mock).configureScope(any<ScopeCallback>())
+        }
 
         val replayCache = mock<ReplayCache> {
             on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
@@ -88,14 +97,15 @@ class ReplayIntegrationTest {
         fun getSut(
             context: Context,
             sessionSampleRate: Double = 1.0,
-            errorSampleRate: Double = 1.0,
+            onErrorSampleRate: Double = 1.0,
             recorderProvider: (() -> Recorder)? = null,
             replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
             recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
+            gestureRecorderProvider: (() -> GestureRecorder)? = null,
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             options.run {
-                experimental.sessionReplay.errorSampleRate = errorSampleRate
+                experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
                 experimental.sessionReplay.sessionSampleRate = sessionSampleRate
             }
             return ReplayIntegration(
@@ -104,7 +114,8 @@ class ReplayIntegrationTest {
                 recorderProvider,
                 recorderConfigProvider = recorderConfigProvider,
                 replayCacheProvider = { _, _ -> replayCache },
-                replayCaptureStrategyProvider = replayCaptureStrategyProvider
+                replayCaptureStrategyProvider = replayCaptureStrategyProvider,
+                gestureRecorderProvider = gestureRecorderProvider
             )
         }
     }
@@ -148,7 +159,6 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
 
         assertTrue(replay.isEnabled.get())
-        assertEquals(1, fixture.options.scopeObservers.size)
         assertTrue(recorderCreated)
         assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("Replay"))
     }
@@ -160,7 +170,7 @@ class ReplayIntegrationTest {
 
         replay.start()
 
-        verify(captureStrategy, never()).start(any(), any(), any())
+        verify(captureStrategy, never()).start(any(), any(), any(), anyOrNull())
     }
 
     @Test
@@ -186,14 +196,15 @@ class ReplayIntegrationTest {
         verify(captureStrategy, times(1)).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
     @Test
     fun `does not start replay when session is not sampled`() {
         val captureStrategy = mock<CaptureStrategy>()
-        val replay = fixture.getSut(context, errorSampleRate = 0.0, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
+        val replay = fixture.getSut(context, onErrorSampleRate = 0.0, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
@@ -201,7 +212,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, never()).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -216,7 +228,8 @@ class ReplayIntegrationTest {
         verify(captureStrategy, times(1)).start(
             any(),
             eq(0),
-            argThat { this != SentryId.EMPTY_ID }
+            argThat { this != SentryId.EMPTY_ID },
+            anyOrNull()
         )
     }
 
@@ -350,10 +363,16 @@ class ReplayIntegrationTest {
     }
 
     @Test
-    fun `stop calls stop for recorder and strategy and sets recording to false`() {
+    fun `stop calls stop for recorders and strategy and sets recording to false`() {
         val captureStrategy = mock<CaptureStrategy>()
         val recorder = mock<Recorder>()
-        val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
+        val gestureRecorder = mock<GestureRecorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            gestureRecorderProvider = { gestureRecorder }
+        )
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
@@ -361,6 +380,7 @@ class ReplayIntegrationTest {
 
         verify(captureStrategy).stop()
         verify(recorder).stop()
+        verify(gestureRecorder).stop()
         assertFalse(replay.isRecording)
     }
 
@@ -528,5 +548,23 @@ class ReplayIntegrationTest {
 
         assertTrue(scopeCache.exists())
         assertFalse(evenOlderReplay.exists())
+    }
+
+    @Test
+    fun `onScreenshotRecorded supplies screen from scope to replay cache`() {
+        val captureStrategy = mock<CaptureStrategy> {
+            doAnswer {
+                ((it.arguments[1] as ReplayCache.(frameTimestamp: Long) -> Unit)).invoke(fixture.replayCache, 1720693523997)
+            }.whenever(mock).onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+        }
+        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+        fixture.hub.configureScope { it.screen = "MainActivity" }
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+
+        replay.onScreenshotRecorded(mock<Bitmap>())
+
+        verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), eq("MainActivity"))
     }
 }

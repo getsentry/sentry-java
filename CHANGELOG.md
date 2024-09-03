@@ -5,8 +5,32 @@
 ### Fixes
 
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
+
+*Breaking changes*:
+
+- `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+- Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+
+## 7.14.0
+
+### Features
+
+- Session Replay: Gesture/touch support for Flutter ([#3623](https://github.com/getsentry/sentry-java/pull/3623))
+
+### Fixes
+
+- Fix app start spans missing from Pixel devices ([#3634](https://github.com/getsentry/sentry-java/pull/3634))
 - Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
 - Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
+- Session Replay: buffer mode improvements ([#3622](https://github.com/getsentry/sentry-java/pull/3622))
+  - Align next segment timestamp with the end of the buffered segment when converting from buffer mode to session mode
+  - Persist `buffer` replay type for the entire replay when converting from buffer mode to session mode
+  - Properly store screen names for `buffer` mode
+- Session Replay: fix various crashes and issues ([#3628](https://github.com/getsentry/sentry-java/pull/3628))
+  - Fix video not being encoded on Pixel devices
+  - Fix SIGABRT native crashes on Xiaomi devices when encoding a video
+  - Fix `RejectedExecutionException` when redacting a screenshot
+  - Fix `FileNotFoundException` when persisting segment values
 
 ### Chores
 

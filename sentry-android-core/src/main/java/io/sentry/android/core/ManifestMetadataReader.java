@@ -106,7 +106,7 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
 
-  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.error-sample-rate";
+  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.on-error-sample-rate";
 
   static final String REPLAYS_REDACT_ALL_TEXT = "io.sentry.session-replay.redact-all-text";
 
@@ -399,10 +399,10 @@ final class ManifestMetadataReader {
           }
         }
 
-        if (options.getExperimental().getSessionReplay().getErrorSampleRate() == null) {
-          final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
-          if (errorSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setErrorSampleRate(errorSampleRate);
+        if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
+          final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+          if (onErrorSampleRate != -1) {
+            options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
         }
 
