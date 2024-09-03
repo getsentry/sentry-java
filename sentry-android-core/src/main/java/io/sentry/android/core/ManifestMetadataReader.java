@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
+import io.sentry.InitPriority;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -264,6 +265,11 @@ final class ManifestMetadataReader {
 
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
+
+        boolean isAutoInitEnabled = readBool(metadata, logger, AUTO_INIT, true);
+        if (isAutoInitEnabled) {
+          options.setInitPriority(InitPriority.LOW);
+        }
 
         options.setForceInit(readBool(metadata, logger, FORCE_INIT, options.isForceInit()));
 
