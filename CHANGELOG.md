@@ -31,6 +31,8 @@
   - Errors weren't linked to traces correctly due to parts of the SDK not knowing the current span
 - Record dropped spans in client report when sampling out OpenTelemetry spans ([#3552](https://github.com/getsentry/sentry-java/pull/3552))
 - Retrieve the correct current span from `Scope`/`Scopes` when using OpenTelemetry ([#3554](https://github.com/getsentry/sentry-java/pull/3554))
+- Use RECORD_ONLY sampling decision if performance is disabled ([#3659](https://github.com/getsentry/sentry-java/pull/3659))
+  - Also fix check whether Performance is enabled when making a sampling decision in the OpenTelemetry sampler
 
 ## 8.0.0-alpha.3
 
