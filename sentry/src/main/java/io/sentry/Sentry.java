@@ -265,6 +265,13 @@ public final class Sentry {
   @SuppressWarnings("deprecation")
   private static synchronized void init(
       final @NotNull SentryOptions options, final boolean globalHubMode) {
+
+    if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
+        && Platform.isAndroid()) {
+      throw new IllegalArgumentException(
+          "You are running Android. Please, use SentryAndroid.init. "
+              + options.getClass().getName());
+    }
     if (isEnabled()) {
       options
           .getLogger()
