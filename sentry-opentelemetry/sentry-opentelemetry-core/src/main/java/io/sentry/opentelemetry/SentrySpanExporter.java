@@ -483,7 +483,7 @@ public final class SentrySpanExporter implements SpanExporter {
           (key, value) -> {
             if (key != null) {
               final @NotNull String stringKey = key.getKey();
-              if (!isSentryInternalKey(stringKey)) {
+              if (!shouldRemoveAttribute(stringKey)) {
                 mapWithStringKeys.put(stringKey, value);
               }
             }
@@ -493,7 +493,7 @@ public final class SentrySpanExporter implements SpanExporter {
     return mapWithStringKeys;
   }
 
-  private boolean isSentryInternalKey(final @NotNull String key) {
+  private boolean shouldRemoveAttribute(final @NotNull String key) {
     return attributeKeysToRemove.contains(key);
   }
 
