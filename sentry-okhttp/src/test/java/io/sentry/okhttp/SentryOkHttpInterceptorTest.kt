@@ -13,6 +13,7 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.Span
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
@@ -583,5 +584,17 @@ class SentryOkHttpInterceptorTest {
         SentryOkHttpEventListener.eventMap[call] = mock()
         call.execute()
         verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+    }
+
+    @Test
+    fun `when a call is captured by SentryOkHttpEventListener, interceptor finishes event`() {
+        val sut = fixture.getSut()
+        val call = sut.newCall(getRequest())
+        val event = mock<SentryOkHttpEvent>()
+        val span = Span(mock(), fixture.sentryTracer, fixture.scopes, mock())
+        whenever(event.callSpan).thenReturn(span)
+        SentryOkHttpEventListener.eventMap[call] = event
+        call.execute()
+        verify(event).finish()
     }
 }

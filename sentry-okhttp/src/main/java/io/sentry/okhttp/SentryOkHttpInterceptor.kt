@@ -72,7 +72,7 @@ public open class SentryOkHttpInterceptor(
         if (SentryOkHttpEventListener.eventMap.containsKey(chain.call())) {
             // read the span from the event listener
             okHttpEvent = SentryOkHttpEventListener.eventMap[chain.call()]
-            span = okHttpEvent?.callRootSpan
+            span = okHttpEvent?.callSpan
         } else {
             // read the span from the bound scope
             okHttpEvent = null
@@ -133,7 +133,7 @@ public open class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            finishSpan(span, request, response, isFromEventListener)
+            finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
             if (!isFromEventListener) {
@@ -160,7 +160,7 @@ public open class SentryOkHttpInterceptor(
         scopes.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean) {
+    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean, okHttpEvent: SentryOkHttpEvent?) {
         if (span == null) {
             return
         }
@@ -170,16 +170,12 @@ public open class SentryOkHttpInterceptor(
                 // span is dropped
                 span.spanContext.sampled = false
             }
-            // The SentryOkHttpEventListener will finish the span itself if used for this call
-            if (!isFromEventListener) {
-                span.finish()
-            }
-        } else {
-            // The SentryOkHttpEventListener will finish the span itself if used for this call
-            if (!isFromEventListener) {
-                span.finish()
-            }
         }
+        if (!isFromEventListener) {
+            span.finish()
+        }
+        // The SentryOkHttpEventListener waits until the response is closed (which may never happen), so we close it here
+        okHttpEvent?.finish()
     }
 
     private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
