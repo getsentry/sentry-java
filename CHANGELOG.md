@@ -13,7 +13,7 @@
 - Use OpenTelemetry span name as fallback for transaction name ([#3557](https://github.com/getsentry/sentry-java/pull/3557))
   - In certain cases we were sending transactions as "<unlabeled transaction>" when using OpenTelemetry 
 - Add OpenTelemetry span data to Sentry span ([#3593](https://github.com/getsentry/sentry-java/pull/3593))
-- No longer selectively copy OpenTelemetry attributes to Sentry spans `data` ([#3663](https://github.com/getsentry/sentry-java/pull/3663))
+- No longer selectively copy OpenTelemetry attributes to Sentry spans / transactions `data` ([#3663](https://github.com/getsentry/sentry-java/pull/3663))
 
 ## 8.0.0-alpha.4
 
