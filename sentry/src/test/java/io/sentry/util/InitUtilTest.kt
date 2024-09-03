@@ -2,15 +2,23 @@ package io.sentry.util
 
 import io.sentry.InitPriority
 import io.sentry.SentryOptions
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class InitUtilTest {
 
-    var previousOptions: SentryOptions? = null
-    var newOptions: SentryOptions? = null
-    var clientEnabled: Boolean = true
+    private var previousOptions: SentryOptions? = null
+    private var newOptions: SentryOptions? = null
+    private var clientEnabled: Boolean = true
+
+    @BeforeTest
+    fun setup() {
+        previousOptions = null
+        newOptions = null
+        clientEnabled = true
+    }
 
     @Test
     fun `first init on empty options goes through`() {
