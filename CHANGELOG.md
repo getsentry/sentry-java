@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+*Breaking changes*:
+
+- `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+- Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+
 ## 7.14.0
 
 ### Features

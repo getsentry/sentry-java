@@ -97,7 +97,7 @@ class ReplayIntegrationTest {
         fun getSut(
             context: Context,
             sessionSampleRate: Double = 1.0,
-            errorSampleRate: Double = 1.0,
+            onErrorSampleRate: Double = 1.0,
             recorderProvider: (() -> Recorder)? = null,
             replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
             recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
@@ -105,7 +105,7 @@ class ReplayIntegrationTest {
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             options.run {
-                experimental.sessionReplay.errorSampleRate = errorSampleRate
+                experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
                 experimental.sessionReplay.sessionSampleRate = sessionSampleRate
             }
             return ReplayIntegration(
@@ -204,7 +204,7 @@ class ReplayIntegrationTest {
     @Test
     fun `does not start replay when session is not sampled`() {
         val captureStrategy = mock<CaptureStrategy>()
-        val replay = fixture.getSut(context, errorSampleRate = 0.0, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
+        val replay = fixture.getSut(context, onErrorSampleRate = 0.0, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
