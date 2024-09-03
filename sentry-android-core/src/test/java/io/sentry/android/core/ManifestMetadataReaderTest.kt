@@ -1422,7 +1422,7 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads replays errorSampleRate from metadata`() {
+    fun `applyMetadata reads replays onErrorSampleRate from metadata`() {
         // Arrange
         val expectedSampleRate = 0.99f
 
@@ -1433,14 +1433,14 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.errorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 
     @Test
-    fun `applyMetadata does not override replays errorSampleRate from options`() {
+    fun `applyMetadata does not override replays onErrorSampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        fixture.options.experimental.sessionReplay.errorSampleRate = expectedSampleRate.toDouble()
+        fixture.options.experimental.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
         val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 
@@ -1448,11 +1448,11 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.errorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 
     @Test
-    fun `applyMetadata without specifying replays errorSampleRate, stays null`() {
+    fun `applyMetadata without specifying replays onErrorSampleRate, stays null`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1460,7 +1460,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertNull(fixture.options.experimental.sessionReplay.errorSampleRate)
+        assertNull(fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 
     @Test

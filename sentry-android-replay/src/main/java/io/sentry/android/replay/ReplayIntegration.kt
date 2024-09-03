@@ -144,7 +144,7 @@ public class ReplayIntegration(
 
         val isFullSession = random.sample(options.experimental.sessionReplay.sessionSampleRate)
         if (!isFullSession && !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled) {
-            options.logger.log(INFO, "Session replay is not started, full session was not sampled and errorSampleRate is not specified")
+            options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
             return
         }
 

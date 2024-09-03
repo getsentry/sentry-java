@@ -737,7 +737,7 @@ class SentryTest {
             it.sdkVersion = SdkVersion("sentry.java.android", "6.13.0")
             it.environment = "debug"
             it.setTag("one", "two")
-            it.experimental.sessionReplay.errorSampleRate = 0.5
+            it.experimental.sessionReplay.onErrorSampleRate = 0.5
         }
 
         assertEquals("io.sentry.sample@1.1.0+220", optionsObserver.release)

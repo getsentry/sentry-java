@@ -154,7 +154,7 @@ class ReplaySmokeTest {
             captured.set(true)
         }
 
-        fixture.options.experimental.sessionReplay.errorSampleRate = 1.0
+        fixture.options.experimental.sessionReplay.onErrorSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration = fixture.getSut(context)
