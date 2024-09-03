@@ -17,7 +17,8 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.ReadWriteSpan
 import io.opentelemetry.sdk.trace.ReadableSpan
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.semconv.SemanticAttributes
+import io.opentelemetry.semconv.HttpAttributes
+import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.Baggage
 import io.sentry.BaggageHeader
 import io.sentry.Hint
@@ -125,7 +126,7 @@ class SentrySpanProcessorTest {
     fun `ignores sentry client request`() {
         fixture.setup()
         givenSpanBuilder(SpanKind.CLIENT)
-            .setAttribute(SemanticAttributes.HTTP_URL, "https://key@sentry.io/proj/some-api")
+            .setAttribute(UrlAttributes.URL_FULL, "https://key@sentry.io/proj/some-api")
             .startSpan()
 
         thenNoTransactionIsStarted()
@@ -135,7 +136,7 @@ class SentrySpanProcessorTest {
     fun `ignores sentry internal request`() {
         fixture.setup()
         givenSpanBuilder(SpanKind.CLIENT)
-            .setAttribute(SemanticAttributes.HTTP_URL, "https://key@sentry.io/proj/some-api")
+            .setAttribute(UrlAttributes.URL_FULL, "https://key@sentry.io/proj/some-api")
             .startSpan()
 
         thenNoTransactionIsStarted()
@@ -304,8 +305,8 @@ class SentrySpanProcessorTest {
         thenChildSpanIsStarted()
 
         otelChildSpan.setStatus(StatusCode.ERROR)
-        otelChildSpan.setAttribute(SemanticAttributes.HTTP_URL, "http://github.com/getsentry/sentry-java")
-        otelChildSpan.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, 404L)
+        otelChildSpan.setAttribute(UrlAttributes.URL_FULL, "http://github.com/getsentry/sentry-java")
+        otelChildSpan.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 404L)
 
         otelChildSpan.end()
         thenChildSpanIsFinished(SpanStatus.NOT_FOUND)
