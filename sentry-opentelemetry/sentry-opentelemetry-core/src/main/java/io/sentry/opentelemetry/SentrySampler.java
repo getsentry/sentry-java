@@ -71,7 +71,6 @@ public final class SentrySampler implements Sampler {
   private @NotNull SamplingResult handleRootOtelSpan(
       final @NotNull String traceId, final @NotNull Context parentContext) {
     if (!scopes.getOptions().isTracingEnabled()) {
-      System.out.println("not trace sampling -> RECORD_ONLY " + traceId);
       return SamplingResult.create(SamplingDecision.RECORD_ONLY);
     }
     @Nullable Baggage baggage = null;
