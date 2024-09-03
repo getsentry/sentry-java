@@ -14,6 +14,7 @@
   - In certain cases we were sending transactions as "<unlabeled transaction>" when using OpenTelemetry 
 - Add OpenTelemetry span data to Sentry span ([#3593](https://github.com/getsentry/sentry-java/pull/3593))
 - No longer selectively copy OpenTelemetry attributes to Sentry spans / transactions `data` ([#3663](https://github.com/getsentry/sentry-java/pull/3663))
+- Remove `PROCESS_COMMAND_ARGS` (`process.command_args`) OpenTelemetry span attribute as it can be very large ([#3664](https://github.com/getsentry/sentry-java/pull/3664))
 
 ## 8.0.0-alpha.4
 
