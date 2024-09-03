@@ -225,10 +225,6 @@ public final class SentrySpanExporter implements SpanExporter {
 
     final @NotNull ISpan sentryChildSpan = parentSentrySpan.startChild(spanContext, spanOptions);
 
-    for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
-      sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
-    }
-
     for (Map.Entry<String, Object> dataField :
         toMapWithStringKeys(spanData.getAttributes()).entrySet()) {
       sentryChildSpan.setData(dataField.getKey(), dataField.getValue());
@@ -344,10 +340,6 @@ public final class SentrySpanExporter implements SpanExporter {
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(span);
     sentryTransaction.setContext("otel", otelContext);
-
-    for (Map.Entry<String, Object> dataField : spanInfo.getDataFields().entrySet()) {
-      sentryTransaction.setData(dataField.getKey(), dataField.getValue());
-    }
 
     setOtelInstrumentationInfo(span, sentryTransaction);
 
