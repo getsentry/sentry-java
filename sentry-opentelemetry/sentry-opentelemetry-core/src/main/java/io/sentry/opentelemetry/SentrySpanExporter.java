@@ -53,6 +53,9 @@ public final class SentrySpanExporter implements SpanExporter {
       new SpanDescriptionExtractor();
   private final @NotNull IScopes scopes;
 
+  // TODO [POTEL] should we also ignore "process.command_args"
+  // (`ResourceAttributes.PROCESS_COMMAND_ARGS`)?
+  // As these are apparently so long that information that is added after it is lost
   private final @NotNull List<String> attributeKeysToRemove =
       Arrays.asList(
           InternalSemanticAttributes.IS_REMOTE_PARENT.getKey(),
