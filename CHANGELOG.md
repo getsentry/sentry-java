@@ -15,6 +15,8 @@
 - Add OpenTelemetry span data to Sentry span ([#3593](https://github.com/getsentry/sentry-java/pull/3593))
 - No longer selectively copy OpenTelemetry attributes to Sentry spans / transactions `data` ([#3663](https://github.com/getsentry/sentry-java/pull/3663))
 - Remove `PROCESS_COMMAND_ARGS` (`process.command_args`) OpenTelemetry span attribute as it can be very large ([#3664](https://github.com/getsentry/sentry-java/pull/3664))
+- Use RECORD_ONLY sampling decision if performance is disabled ([#3659](https://github.com/getsentry/sentry-java/pull/3659))
+    - Also fix check whether Performance is enabled when making a sampling decision in the OpenTelemetry sampler
 
 ### Dependencies
 
@@ -31,8 +33,6 @@
   - Errors weren't linked to traces correctly due to parts of the SDK not knowing the current span
 - Record dropped spans in client report when sampling out OpenTelemetry spans ([#3552](https://github.com/getsentry/sentry-java/pull/3552))
 - Retrieve the correct current span from `Scope`/`Scopes` when using OpenTelemetry ([#3554](https://github.com/getsentry/sentry-java/pull/3554))
-- Use RECORD_ONLY sampling decision if performance is disabled ([#3659](https://github.com/getsentry/sentry-java/pull/3659))
-  - Also fix check whether Performance is enabled when making a sampling decision in the OpenTelemetry sampler
 
 ## 8.0.0-alpha.3
 
