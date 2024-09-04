@@ -51,6 +51,7 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean captureOpenTelemetryEvents;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -138,6 +139,9 @@ public final class ExternalOptions {
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
+
+    options.setCaptureOpenTelemetryEvents(
+        propertiesProvider.getBooleanProperty("capture-opentelemetry-events"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -459,5 +463,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public void setCron(final @Nullable SentryOptions.Cron cron) {
     this.cron = cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final @Nullable Boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
   }
 }
