@@ -222,7 +222,7 @@ sealed class ViewHierarchyNode(
         private fun Int.toOpaque() = this or 0xFF000000.toInt()
 
         private val TextView.dominantTextColor: Int get() {
-            if (text !is Spqanned) return currentTextColor
+            if (text !is Spanned) return currentTextColor
 
             val spans = (text as Spanned).getSpans(0, text.length, ForegroundColorSpan::class.java)
 
