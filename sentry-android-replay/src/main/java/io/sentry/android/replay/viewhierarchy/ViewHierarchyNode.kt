@@ -3,6 +3,8 @@ package io.sentry.android.replay.viewhierarchy
 import android.annotation.TargetApi
 import android.graphics.Rect
 import android.text.Layout
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -219,6 +221,30 @@ sealed class ViewHierarchyNode(
 
         private fun Int.toOpaque() = this or 0xFF000000.toInt()
 
+        private val TextView.dominantTextColor: Int get() {
+            if (text !is Spqanned) return currentTextColor
+
+            val spans = (text as Spanned).getSpans(0, text.length, ForegroundColorSpan::class.java)
+
+            // determine the dominant color by the span with the longest range
+            var longestSpan = Int.MIN_VALUE
+            var dominantColor: Int? = null
+            for (span in spans) {
+                val spanStart = (text as Spanned).getSpanStart(span)
+                val spanEnd = (text as Spanned).getSpanEnd(span)
+                if (spanStart == -1 || spanEnd == -1) {
+                    // the span is not attached
+                    continue
+                }
+                val spanLength = spanEnd - spanStart
+                if (spanLength > longestSpan) {
+                    longestSpan = spanLength
+                    dominantColor = span.foregroundColor
+                }
+            }
+            return dominantColor ?: currentTextColor
+        }
+
         /**
          * Basically replicating this: https://developer.android.com/reference/android/view/View#isImportantForContentCapture()
          * but for lower APIs and with less overhead. If we take a look at how it's set in Android:
@@ -244,7 +270,7 @@ sealed class ViewHierarchyNode(
                     parent.setImportantForCaptureToAncestors(true)
                     return TextViewHierarchyNode(
                         layout = view.layout,
-                        dominantColor = view.currentTextColor.toOpaque(),
+                        dominantColor = view.dominantTextColor.toOpaque(),
                         paddingLeft = view.totalPaddingLeft,
                         paddingTop = view.totalPaddingTopSafe,
                         x = view.x,
