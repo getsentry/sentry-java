@@ -68,11 +68,27 @@ public final class SentryReplayOptions {
 
   /**
    * Redact all views with the specified class names. The class name is the fully qualified class
-   * name of the view, e.g. android.widget.TextView.
+   * name of the view, e.g. android.widget.TextView. The subclasses of the specified classes will be
+   * redacted as well.
+   *
+   * <p>If you're using an obfuscation tool, make sure
+   * to add the respective proguard rules to keep the class names.
    *
    * <p>Default is empty.
    */
   private Set<String> redactClasses = new CopyOnWriteArraySet<>();
+
+  /**
+   * Ignore all views with the specified class names from redaction. The class name is the fully
+   * qualified class name of the view, e.g. android.widget.TextView. The subclasses of the specified
+   * classes will be ignored as well.
+   *
+   * <p>If you're using an obfuscation tool, make sure
+   * to add the respective proguard rules to keep the class names.
+   *
+   * <p>Default is empty.
+   */
+  private Set<String> ignoreClasses = new CopyOnWriteArraySet<>();
 
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
@@ -157,12 +173,22 @@ public final class SentryReplayOptions {
     this.redactAllImages = redactAllImages;
   }
 
+  @NotNull
   public Set<String> getRedactClasses() {
     return this.redactClasses;
   }
 
-  public void addClassToRedact(final String className) {
+  public void addRedactClass(final @NotNull String className) {
     this.redactClasses.add(className);
+  }
+
+  @NotNull
+  public Set<String> getIgnoreClasses() {
+    return this.ignoreClasses;
+  }
+
+  public void addIgnoreClass(final @NotNull String className) {
+    this.ignoreClasses.add(className);
   }
 
   @ApiStatus.Internal

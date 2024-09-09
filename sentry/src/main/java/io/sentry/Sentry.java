@@ -985,6 +985,13 @@ public final class Sentry {
     return getCurrentHub().metrics();
   }
 
+  /** the replay API */
+  @NotNull
+  @ApiStatus.Experimental
+  public static ReplayController replay() {
+    return getCurrentHub().getOptions().getReplayController();
+  }
+
   /**
    * Configuration options callback
    *
