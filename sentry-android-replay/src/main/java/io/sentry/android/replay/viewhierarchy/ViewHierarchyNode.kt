@@ -3,8 +3,6 @@ package io.sentry.android.replay.viewhierarchy
 import android.annotation.TargetApi
 import android.graphics.Rect
 import android.text.Layout
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
