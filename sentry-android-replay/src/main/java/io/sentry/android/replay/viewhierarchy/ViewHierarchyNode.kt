@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
+import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.isRedactable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.totalPaddingTopSafe
@@ -220,30 +221,6 @@ sealed class ViewHierarchyNode(
     companion object {
 
         private fun Int.toOpaque() = this or 0xFF000000.toInt()
-
-        private val TextView.dominantTextColor: Int get() {
-            if (text !is Spanned) return currentTextColor
-
-            val spans = (text as Spanned).getSpans(0, text.length, ForegroundColorSpan::class.java)
-
-            // determine the dominant color by the span with the longest range
-            var longestSpan = Int.MIN_VALUE
-            var dominantColor: Int? = null
-            for (span in spans) {
-                val spanStart = (text as Spanned).getSpanStart(span)
-                val spanEnd = (text as Spanned).getSpanEnd(span)
-                if (spanStart == -1 || spanEnd == -1) {
-                    // the span is not attached
-                    continue
-                }
-                val spanLength = spanEnd - spanStart
-                if (spanLength > longestSpan) {
-                    longestSpan = spanLength
-                    dominantColor = span.foregroundColor
-                }
-            }
-            return dominantColor ?: currentTextColor
-        }
 
         /**
          * Basically replicating this: https://developer.android.com/reference/android/view/View#isImportantForContentCapture()
