@@ -5,6 +5,7 @@
 ### Fixes
 
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
+- Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
 
 *Breaking changes*:
 
