@@ -16,9 +16,12 @@ public final class SpanId implements JsonSerializable {
   }
 
   public SpanId() {
-    this.lazyValue = new LazyEvaluator<>(() ->
-      StringUtils.normalizeUUID(UUID.randomUUID().toString()).replace("-", "").substring(0, 16)
-    );
+    this.lazyValue =
+        new LazyEvaluator<>(
+            () ->
+                StringUtils.normalizeUUID(UUID.randomUUID().toString())
+                    .replace("-", "")
+                    .substring(0, 16));
   }
 
   @Override
