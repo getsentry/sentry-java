@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
-import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.isRedactable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.totalPaddingTopSafe
