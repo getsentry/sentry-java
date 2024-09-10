@@ -245,7 +245,7 @@ sealed class ViewHierarchyNode(
                     parent.setImportantForCaptureToAncestors(true)
                     return TextViewHierarchyNode(
                         layout = view.layout,
-                        dominantColor = view.dominantTextColor.toOpaque(),
+                        dominantColor = view.currentTextColor.toOpaque(),
                         paddingLeft = view.totalPaddingLeft,
                         paddingTop = view.totalPaddingTopSafe,
                         x = view.x,
