@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add support for `feedback` envelope header item type ([#3687](https://github.com/getsentry/sentry-java/pull/3687))
+
 ### Fixes
 
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
