@@ -9,6 +9,9 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions {
 
+  private static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
+  private static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
+
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 */
     LOW(0.8f, 50_000),
@@ -49,30 +52,12 @@ public final class SentryReplayOptions {
   private @Nullable Double onErrorSampleRate;
 
   /**
-   * Redact all text content. Draws a rectangle of text bounds with text color on top. By default
-   * only views extending TextView are redacted.
-   *
-   * <p>Default is enabled.
-   */
-  private boolean redactAllText = true;
-
-  /**
-   * Redact all image content. Draws a rectangle of image bounds with image's dominant color on top.
-   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
-   * redacted. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
-   * from the apk.
-   *
-   * <p>Default is enabled.
-   */
-  private boolean redactAllImages = true;
-
-  /**
    * Redact all views with the specified class names. The class name is the fully qualified class
    * name of the view, e.g. android.widget.TextView. The subclasses of the specified classes will be
    * redacted as well.
    *
-   * <p>If you're using an obfuscation tool, make sure
-   * to add the respective proguard rules to keep the class names.
+   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
+   * the class names.
    *
    * <p>Default is empty.
    */
@@ -83,8 +68,8 @@ public final class SentryReplayOptions {
    * qualified class name of the view, e.g. android.widget.TextView. The subclasses of the specified
    * classes will be ignored as well.
    *
-   * <p>If you're using an obfuscation tool, make sure
-   * to add the respective proguard rules to keep the class names.
+   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
+   * the class names.
    *
    * <p>Default is empty.
    */
@@ -111,10 +96,14 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
-  public SentryReplayOptions() {}
+  public SentryReplayOptions() {
+    setRedactAllText(true);
+    setRedactAllImages(true);
+  }
 
   public SentryReplayOptions(
       final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
+    this();
     this.sessionSampleRate = sessionSampleRate;
     this.onErrorSampleRate = onErrorSampleRate;
   }
@@ -157,20 +146,38 @@ public final class SentryReplayOptions {
     this.sessionSampleRate = sessionSampleRate;
   }
 
-  public boolean getRedactAllText() {
-    return redactAllText;
-  }
-
+  /**
+   * Redact all text content. Draws a rectangle of text bounds with text color on top. By default
+   * only views extending TextView are redacted.
+   *
+   * <p>Default is enabled.
+   */
   public void setRedactAllText(final boolean redactAllText) {
-    this.redactAllText = redactAllText;
+    if (redactAllText) {
+      addRedactClass(TEXT_VIEW_CLASS_NAME);
+      ignoreClasses.remove(TEXT_VIEW_CLASS_NAME);
+    } else {
+      addIgnoreClass(TEXT_VIEW_CLASS_NAME);
+      redactClasses.remove(TEXT_VIEW_CLASS_NAME);
+    }
   }
 
-  public boolean getRedactAllImages() {
-    return redactAllImages;
-  }
-
+  /**
+   * Redact all image content. Draws a rectangle of image bounds with image's dominant color on top.
+   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
+   * redacted. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
+   * from the apk.
+   *
+   * <p>Default is enabled.
+   */
   public void setRedactAllImages(final boolean redactAllImages) {
-    this.redactAllImages = redactAllImages;
+    if (redactAllImages) {
+      addRedactClass(IMAGE_VIEW_CLASS_NAME);
+      ignoreClasses.remove(IMAGE_VIEW_CLASS_NAME);
+    } else {
+      addIgnoreClass(IMAGE_VIEW_CLASS_NAME);
+      redactClasses.remove(IMAGE_VIEW_CLASS_NAME);
+    }
   }
 
   @NotNull
