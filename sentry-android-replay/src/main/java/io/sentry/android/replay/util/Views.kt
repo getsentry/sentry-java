@@ -104,8 +104,15 @@ internal val TextView.totalPaddingTopSafe: Int
         extendedPaddingTop
     }
 
-internal val TextView.dominantTextColor: Int get() {
-    if (text !is Spanned) return currentTextColor
+/**
+ * Returns the dominant text color of the layout by looking at the [ForegroundColorSpan] spans if
+ * this text is a [Spanned] text. If the text is not a [Spanned] text or there are no spans, it
+ * returns null.
+ */
+internal val Layout?.dominantTextColor: Int? get() {
+    this ?: return null
+
+    if (text !is Spanned) return null
 
     val spans = (text as Spanned).getSpans(0, text.length, ForegroundColorSpan::class.java)
 
@@ -125,5 +132,5 @@ internal val TextView.dominantTextColor: Int get() {
             dominantColor = span.foregroundColor
         }
     }
-    return dominantColor ?: currentTextColor
+    return dominantColor
 }
