@@ -6,6 +6,7 @@ import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.SentryLevel
+import io.sentry.SentryReplayOptions
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -1473,8 +1474,8 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.experimental.sessionReplay.redactAllImages)
-        assertFalse(fixture.options.experimental.sessionReplay.redactAllText)
+        assertTrue(fixture.options.experimental.sessionReplay.ignoreClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.ignoreClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
@@ -1486,7 +1487,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.redactAllImages)
-        assertTrue(fixture.options.experimental.sessionReplay.redactAllText)
+        assertTrue(fixture.options.experimental.sessionReplay.redactClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.redactClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 }

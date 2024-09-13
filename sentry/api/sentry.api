@@ -2699,6 +2699,8 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 }
 
 public final class io/sentry/SentryReplayOptions {
+	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun addIgnoreClass (Ljava/lang/String;)V

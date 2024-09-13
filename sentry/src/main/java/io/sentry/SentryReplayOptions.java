@@ -9,8 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions {
 
-  private static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
-  private static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
+  public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
+  public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
 
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 */

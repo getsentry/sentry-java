@@ -8,7 +8,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
 import io.sentry.android.replay.R
-import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.isRedactable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.totalPaddingTopSafe
@@ -250,21 +249,29 @@ sealed class ViewHierarchyNode(
             return false
         }
 
-        private fun View.shouldIgnore(options: SentryOptions): Boolean {
-            return (tag as? String)?.lowercase()?.contains(SENTRY_IGNORE_TAG) == true ||
-                getTag(R.id.sentry_privacy) == "ignore" ||
-                this.javaClass.isAssignableFrom(options.experimental.sessionReplay.ignoreClasses)
-        }
-
         private fun View.shouldRedact(options: SentryOptions): Boolean {
-            return (tag as? String)?.lowercase()?.contains(SENTRY_REDACT_TAG) == true ||
-                getTag(R.id.sentry_privacy) == "redact" ||
-                this.javaClass.isAssignableFrom(options.experimental.sessionReplay.redactClasses)
+            if ((tag as? String)?.lowercase()?.contains(SENTRY_IGNORE_TAG) == true ||
+                getTag(R.id.sentry_privacy) == "ignore"
+            ) {
+                return false
+            }
+
+            if ((tag as? String)?.lowercase()?.contains(SENTRY_REDACT_TAG) == true ||
+                getTag(R.id.sentry_privacy) == "redact"
+            ) {
+                return true
+            }
+
+            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.ignoreClasses)) {
+                return false
+            }
+
+            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.redactClasses)
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
             val (isVisible, visibleRect) = view.isVisibleToUser()
-            val shouldRedact = isVisible && !view.shouldIgnore(options) && view.shouldRedact(options)
+            val shouldRedact = isVisible && view.shouldRedact(options)
             when (view) {
                 is TextView -> {
                     parent.setImportantForCaptureToAncestors(true)
