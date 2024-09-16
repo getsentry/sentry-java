@@ -266,7 +266,7 @@ final class ManifestMetadataReader {
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
 
-        boolean isAutoInitEnabled = readBool(metadata, logger, AUTO_INIT, true);
+        final boolean isAutoInitEnabled = readBool(metadata, logger, AUTO_INIT, true);
         if (isAutoInitEnabled) {
           options.setInitPriority(InitPriority.LOW);
         }
