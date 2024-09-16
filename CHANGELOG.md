@@ -12,6 +12,8 @@
 
 - Add init priority settings ([#3674](https://github.com/getsentry/sentry-java/pull/3674))
   - You may now set `forceInit=true` (`force-init` for `.properties` files) to ensure a call to Sentry.init / SentryAndroid.init takes effect
+- Add force init option to Android Manifest
+  - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten 
 
 ### Fixes
 
