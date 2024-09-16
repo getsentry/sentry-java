@@ -262,11 +262,11 @@ sealed class ViewHierarchyNode(
                 return true
             }
 
-            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.ignoreClasses)) {
+            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.ignoreViewClasses)) {
                 return false
             }
 
-            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.redactClasses)
+            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.redactViewClasses)
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {

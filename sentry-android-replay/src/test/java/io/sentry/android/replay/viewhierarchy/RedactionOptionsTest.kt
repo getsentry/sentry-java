@@ -176,7 +176,7 @@ class RedactionOptionsTest {
         buildActivity(ExampleActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactClasses.add(CustomView::class.java.canonicalName)
+            experimental.sessionReplay.redactViewClasses.add(CustomView::class.java.canonicalName)
         }
 
         val customViewNode = ViewHierarchyNode.fromView(ExampleActivity.customView!!, null, 0, options)
@@ -190,7 +190,7 @@ class RedactionOptionsTest {
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = true // all TextView subclasses
-            experimental.sessionReplay.ignoreClasses.add(RadioButton::class.java.canonicalName)
+            experimental.sessionReplay.ignoreViewClasses.add(RadioButton::class.java.canonicalName)
         }
 
         val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
@@ -205,7 +205,7 @@ class RedactionOptionsTest {
         buildActivity(ExampleActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.ignoreClasses.add(LinearLayout::class.java.canonicalName)
+            experimental.sessionReplay.ignoreViewClasses.add(LinearLayout::class.java.canonicalName)
         }
 
         val linearLayoutNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!.parent as LinearLayout, null, 0, options)

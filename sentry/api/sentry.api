@@ -2703,14 +2703,14 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun addIgnoreClass (Ljava/lang/String;)V
-	public fun addRedactClass (Ljava/lang/String;)V
+	public fun addIgnoreViewClass (Ljava/lang/String;)V
+	public fun addRedactViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
-	public fun getIgnoreClasses ()Ljava/util/Set;
+	public fun getIgnoreViewClasses ()Ljava/util/Set;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
-	public fun getRedactClasses ()Ljava/util/Set;
+	public fun getRedactViewClasses ()Ljava/util/Set;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J

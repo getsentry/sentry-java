@@ -61,7 +61,7 @@ public final class SentryReplayOptions {
    *
    * <p>Default is empty.
    */
-  private Set<String> redactClasses = new CopyOnWriteArraySet<>();
+  private Set<String> redactViewClasses = new CopyOnWriteArraySet<>();
 
   /**
    * Ignore all views with the specified class names from redaction. The class name is the fully
@@ -73,7 +73,7 @@ public final class SentryReplayOptions {
    *
    * <p>Default is empty.
    */
-  private Set<String> ignoreClasses = new CopyOnWriteArraySet<>();
+  private Set<String> ignoreViewClasses = new CopyOnWriteArraySet<>();
 
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
@@ -154,11 +154,11 @@ public final class SentryReplayOptions {
    */
   public void setRedactAllText(final boolean redactAllText) {
     if (redactAllText) {
-      addRedactClass(TEXT_VIEW_CLASS_NAME);
-      ignoreClasses.remove(TEXT_VIEW_CLASS_NAME);
+      addRedactViewClass(TEXT_VIEW_CLASS_NAME);
+      ignoreViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     } else {
-      addIgnoreClass(TEXT_VIEW_CLASS_NAME);
-      redactClasses.remove(TEXT_VIEW_CLASS_NAME);
+      addIgnoreViewClass(TEXT_VIEW_CLASS_NAME);
+      redactViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     }
   }
 
@@ -172,30 +172,30 @@ public final class SentryReplayOptions {
    */
   public void setRedactAllImages(final boolean redactAllImages) {
     if (redactAllImages) {
-      addRedactClass(IMAGE_VIEW_CLASS_NAME);
-      ignoreClasses.remove(IMAGE_VIEW_CLASS_NAME);
+      addRedactViewClass(IMAGE_VIEW_CLASS_NAME);
+      ignoreViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     } else {
-      addIgnoreClass(IMAGE_VIEW_CLASS_NAME);
-      redactClasses.remove(IMAGE_VIEW_CLASS_NAME);
+      addIgnoreViewClass(IMAGE_VIEW_CLASS_NAME);
+      redactViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     }
   }
 
   @NotNull
-  public Set<String> getRedactClasses() {
-    return this.redactClasses;
+  public Set<String> getRedactViewClasses() {
+    return this.redactViewClasses;
   }
 
-  public void addRedactClass(final @NotNull String className) {
-    this.redactClasses.add(className);
+  public void addRedactViewClass(final @NotNull String className) {
+    this.redactViewClasses.add(className);
   }
 
   @NotNull
-  public Set<String> getIgnoreClasses() {
-    return this.ignoreClasses;
+  public Set<String> getIgnoreViewClasses() {
+    return this.ignoreViewClasses;
   }
 
-  public void addIgnoreClass(final @NotNull String className) {
-    this.ignoreClasses.add(className);
+  public void addIgnoreViewClass(final @NotNull String className) {
+    this.ignoreViewClasses.add(className);
   }
 
   @ApiStatus.Internal

@@ -10,8 +10,8 @@
   - `android:tag="sentry-redact|sentry-ignore"` in XML or `view.setTag("sentry-redact|sentry-ignore")` in code tags
     - if you already have a tag set for a view, you can set a tag by id: `<tag android:id="@id/sentry_privacy" android:value="redact|ignore"/>` in XML or `view.setTag(io.sentry.android.replay.R.id.sentry_privacy, "redact|ignore")` in code
   - `view.sentryReplayRedact()` or `view.sentryReplayIgnore()` extension functions
-  - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactClass()` or `options.experimental.sessionReplay.addIgnoreClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
-    - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactClass("android.widget.TextView")`
+  - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
+    - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 
 *Breaking changes*:
