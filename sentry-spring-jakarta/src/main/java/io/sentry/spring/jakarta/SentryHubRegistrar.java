@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
@@ -46,6 +47,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     builder.addPropertyValue("enableExternalConfiguration", true);
     builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
+    builder.addPropertyValue("initPriority", InitPriority.LOW);
     addPackageAndIntegrationInfo();
     if (annotationAttributes.containsKey("sendDefaultPii")) {
       builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));

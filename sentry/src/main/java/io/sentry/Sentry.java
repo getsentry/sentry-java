@@ -272,13 +272,6 @@ public final class Sentry {
           "You are running Android. Please, use SentryAndroid.init. "
               + options.getClass().getName());
     }
-    if (isEnabled()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Sentry has been already initialized. Previous configuration will be overwritten.");
-    }
 
     if (!preInitConfigurations(options)) {
       return;
@@ -288,6 +281,13 @@ public final class Sentry {
     Sentry.globalHubMode = globalHubMode;
     final boolean shouldInit = InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
     if (shouldInit) {
+      if (isEnabled()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Sentry has been already initialized. Previous configuration will be overwritten.");
+      }
       globalScope.replaceOptions(options);
 
       final IScopes scopes = getCurrentScopes();

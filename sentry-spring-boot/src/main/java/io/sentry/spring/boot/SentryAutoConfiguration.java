@@ -5,6 +5,7 @@ import graphql.GraphQLError;
 import io.sentry.EventProcessor;
 import io.sentry.IScopes;
 import io.sentry.ITransportFactory;
+import io.sentry.InitPriority;
 import io.sentry.Integration;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
@@ -131,6 +132,7 @@ public class SentryAutoConfiguration {
       options.setSentryClientName(
           BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       options.setSdkVersion(createSdkVersion(options));
+      options.setInitPriority(InitPriority.LOW);
       addPackageAndIntegrationInfo();
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
       // information is lost
