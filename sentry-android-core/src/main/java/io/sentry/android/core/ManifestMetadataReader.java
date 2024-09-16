@@ -409,22 +409,12 @@ final class ManifestMetadataReader {
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllText(
-                readBool(
-                    metadata,
-                    logger,
-                    REPLAYS_REDACT_ALL_TEXT,
-                    options.getExperimental().getSessionReplay().getRedactAllText()));
+            .setRedactAllText(readBool(metadata, logger, REPLAYS_REDACT_ALL_TEXT, true));
 
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllImages(
-                readBool(
-                    metadata,
-                    logger,
-                    REPLAYS_REDACT_ALL_IMAGES,
-                    options.getExperimental().getSessionReplay().getRedactAllImages()));
+            .setRedactAllImages(readBool(metadata, logger, REPLAYS_REDACT_ALL_IMAGES, true));
       }
 
       options
