@@ -293,6 +293,13 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with forceInit set to true`() {
+        withPropertiesFile("force-init=true") { options ->
+            assertTrue(options.isForceInit == true)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

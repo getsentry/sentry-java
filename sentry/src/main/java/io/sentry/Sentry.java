@@ -17,6 +17,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
+import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.thread.IMainThreadChecker;
@@ -279,43 +280,55 @@ public final class Sentry {
               "Sentry has been already initialized. Previous configuration will be overwritten.");
     }
 
-    if (!initConfigurations(options)) {
+    if (!preInitConfigurations(options)) {
       return;
     }
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
-    globalScope.replaceOptions(options);
+    final boolean shouldInit = InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
+    if (shouldInit) {
+      globalScope.replaceOptions(options);
 
-    final IScopes scopes = getCurrentScopes();
-    final IScope rootScope = new Scope(options);
-    final IScope rootIsolationScope = new Scope(options);
-    rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+      final IScopes scopes = getCurrentScopes();
+      final IScope rootScope = new Scope(options);
+      final IScope rootIsolationScope = new Scope(options);
+      rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
-    getScopesStorage().set(rootScopes);
+      getScopesStorage().set(rootScopes);
 
-    scopes.close(true);
-    globalScope.bindClient(new SentryClient(rootScopes.getOptions()));
+      scopes.close(true);
 
-    // If the executorService passed in the init is the same that was previously closed, we have to
-    // set a new one
-    if (options.getExecutorService().isClosed()) {
-      options.setExecutorService(new SentryExecutorService());
+      initConfigurations(options);
+
+      globalScope.bindClient(new SentryClient(options));
+
+      // If the executorService passed in the init is the same that was previously closed, we have
+      // to
+      // set a new one
+      if (options.getExecutorService().isClosed()) {
+        options.setExecutorService(new SentryExecutorService());
+      }
+      // when integrations are registered on Scopes ctor and async integrations are fired,
+      // it might and actually happened that integrations called captureSomething
+      // and Scopes was still NoOp.
+      // Registering integrations here make sure that Scopes is already created.
+      for (final Integration integration : options.getIntegrations()) {
+        integration.register(ScopesAdapter.getInstance(), options);
+      }
+
+      notifyOptionsObservers(options);
+
+      finalizePreviousSession(options, ScopesAdapter.getInstance());
+
+      handleAppStartProfilingConfig(options, options.getExecutorService());
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "This init call has been ignored due to priority being too low.");
     }
-
-    // when integrations are registered on Scopes ctor and async integrations are fired,
-    // it might and actually happened that integrations called captureSomething
-    // and Scopes was still NoOp.
-    // Registering integrations here make sure that Scopes is already created.
-    for (final Integration integration : options.getIntegrations()) {
-      integration.register(ScopesAdapter.getInstance(), options);
-    }
-
-    notifyOptionsObservers(options);
-
-    finalizePreviousSession(options, ScopesAdapter.getInstance());
-
-    handleAppStartProfilingConfig(options, options.getExecutorService());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -419,8 +432,7 @@ public final class Sentry {
     }
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private static boolean initConfigurations(final @NotNull SentryOptions options) {
+  private static boolean preInitConfigurations(final @NotNull SentryOptions options) {
     if (options.isEnableExternalConfiguration()) {
       options.merge(ExternalOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
     }
@@ -438,6 +450,11 @@ public final class Sentry {
     @SuppressWarnings("unused")
     final Dsn parsedDsn = new Dsn(dsn);
 
+    return true;
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void initConfigurations(final @NotNull SentryOptions options) {
     ILogger logger = options.getLogger();
 
     if (options.isDebug() && logger instanceof NoOpLogger) {
@@ -534,8 +551,6 @@ public final class Sentry {
       options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
       options.getBackpressureMonitor().start();
     }
-
-    return true;
   }
 
   /** Close the SDK */

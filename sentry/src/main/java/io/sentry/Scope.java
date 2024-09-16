@@ -1055,17 +1055,15 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void replaceOptions(final @NotNull SentryOptions options) {
-    if (!getClient().isEnabled()) {
-      this.options = options;
-      final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
-      breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
-      for (Breadcrumb breadcrumb : oldBreadcrumbs) {
-        /*
-        this should trigger beforeBreadcrumb
-        and notify observers for breadcrumbs added before options where customized in Sentry.init
-        */
-        addBreadcrumb(breadcrumb);
-      }
+    this.options = options;
+    final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
+    breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
+    for (Breadcrumb breadcrumb : oldBreadcrumbs) {
+      /*
+      this should trigger beforeBreadcrumb
+      and notify observers for breadcrumbs added before options where customized in Sentry.init
+      */
+      addBreadcrumb(breadcrumb);
     }
   }
 
