@@ -32,9 +32,6 @@ public final class io/sentry/opentelemetry/OtelSentrySpanProcessor : io/opentele
 
 public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/util/Map;)V
-	public fun addDataField (Ljava/lang/String;Ljava/lang/Object;)V
-	public fun getDataFields ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
