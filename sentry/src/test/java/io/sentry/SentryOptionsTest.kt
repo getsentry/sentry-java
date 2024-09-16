@@ -728,4 +728,9 @@ class SentryOptionsTest {
         assertEquals(30, options.cron?.defaultFailureIssueThreshold)
         assertEquals(40, options.cron?.defaultRecoveryThreshold)
     }
+
+    @Test
+    fun `when options is initialized, InitPriority is set to MEDIUM by default`() {
+        assertEquals(SentryOptions().initPriority, InitPriority.MEDIUM)
+    }
 }

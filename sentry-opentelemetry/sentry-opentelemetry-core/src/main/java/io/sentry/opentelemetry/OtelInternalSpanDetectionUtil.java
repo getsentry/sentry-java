@@ -2,7 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import io.sentry.DsnUtil;
 import io.sentry.IScopes;
 import java.util.Arrays;
@@ -27,12 +27,13 @@ public final class OtelInternalSpanDetectionUtil {
       return false;
     }
 
-    final @Nullable String httpUrl = attributes.get(SemanticAttributes.HTTP_URL);
+    final @Nullable String httpUrl =
+        attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_URL);
     if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), httpUrl)) {
       return true;
     }
 
-    final @Nullable String fullUrl = attributes.get(SemanticAttributes.URL_FULL);
+    final @Nullable String fullUrl = attributes.get(UrlAttributes.URL_FULL);
     if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), fullUrl)) {
       return true;
     }

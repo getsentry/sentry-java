@@ -490,6 +490,7 @@ public class SentryOptions {
   private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
 
   private @NotNull InitPriority initPriority = InitPriority.MEDIUM;
+
   private boolean forceInit = false;
 
   /**

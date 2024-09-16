@@ -26,6 +26,7 @@ dependencies {
 
     implementation(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
+    compileOnly(Config.Libs.OpenTelemetry.otelSemconvIncubating)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -44,6 +45,7 @@ dependencies {
 
     testImplementation(Config.Libs.OpenTelemetry.otelSdk)
     testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
+    testImplementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
 }
 
 configure<SourceSetContainer> {

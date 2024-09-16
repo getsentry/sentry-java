@@ -40,6 +40,7 @@ dependencies {
 
     testImplementation(Config.Libs.OpenTelemetry.otelSdk)
     testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
+    testImplementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
 }
 
 configure<SourceSetContainer> {
