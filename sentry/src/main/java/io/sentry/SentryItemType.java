@@ -21,6 +21,7 @@ public enum SentryItemType implements JsonSerializable {
   ReplayVideo("replay_video"),
   CheckIn("check_in"),
   Statsd("statsd"),
+  Feedback("feedback"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
@@ -62,7 +63,7 @@ public enum SentryItemType implements JsonSerializable {
     writer.value(itemType);
   }
 
-  static final class Deserializer implements JsonDeserializer<SentryItemType> {
+  public static final class Deserializer implements JsonDeserializer<SentryItemType> {
 
     @Override
     public @NotNull SentryItemType deserialize(
