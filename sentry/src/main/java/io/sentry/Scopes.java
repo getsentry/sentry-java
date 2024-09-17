@@ -816,6 +816,35 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return sentryId;
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @NotNull SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData) {
+    Objects.requireNonNull(profilingContinuousData, "profilingContinuousData is required");
+
+    @NotNull SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureTransaction' call is a no-op.");
+    } else {
+      try {
+        sentryId = getClient().captureProfileChunk(profilingContinuousData, getScope());
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing profile chunk with id: "
+                    + profilingContinuousData.getChunkId(),
+                e);
+      }
+    }
+    return sentryId;
+  }
+
   @Override
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,

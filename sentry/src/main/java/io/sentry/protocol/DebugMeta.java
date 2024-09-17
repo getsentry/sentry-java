@@ -6,12 +6,14 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.SentryOptions;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +51,42 @@ public final class DebugMeta implements JsonUnknown, JsonSerializable {
 
   public void setSdkInfo(final @Nullable SdkInfo sdkInfo) {
     this.sdkInfo = sdkInfo;
+  }
+
+  @ApiStatus.Internal
+  public static @Nullable DebugMeta buildDebugMeta(
+      final @Nullable DebugMeta eventDebugMeta, final @NotNull SentryOptions options) {
+    final @NotNull List<DebugImage> debugImages = new ArrayList<>();
+
+    if (options.getProguardUuid() != null) {
+      final DebugImage proguardMappingImage = new DebugImage();
+      proguardMappingImage.setType(DebugImage.PROGUARD);
+      proguardMappingImage.setUuid(options.getProguardUuid());
+      debugImages.add(proguardMappingImage);
+    }
+
+    for (final @NotNull String bundleId : options.getBundleIds()) {
+      final DebugImage sourceBundleImage = new DebugImage();
+      sourceBundleImage.setType(DebugImage.JVM);
+      sourceBundleImage.setDebugId(bundleId);
+      debugImages.add(sourceBundleImage);
+    }
+
+    if (!debugImages.isEmpty()) {
+      DebugMeta debugMeta = eventDebugMeta;
+
+      if (debugMeta == null) {
+        debugMeta = new DebugMeta();
+      }
+      if (debugMeta.getImages() == null) {
+        debugMeta.setImages(debugImages);
+      } else {
+        debugMeta.getImages().addAll(debugImages);
+      }
+
+      return debugMeta;
+    }
+    return null;
   }
 
   // JsonKeys

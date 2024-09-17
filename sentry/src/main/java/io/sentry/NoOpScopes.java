@@ -231,6 +231,11 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public @NotNull SentryId captureProfileChunk(@NotNull ProfileChunk profileChunk) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {

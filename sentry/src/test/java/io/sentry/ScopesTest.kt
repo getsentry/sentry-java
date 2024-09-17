@@ -1581,6 +1581,52 @@ class ScopesTest {
     }
     //endregion
 
+    //region captureProfileChunk tests
+    @Test
+    fun `when captureProfileChunk is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureProfileChunk(mock())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+    }
+
+    @Test
+    fun `when captureProfileChunk, captureProfileChunk on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+
+        val profileChunk = mock<ProfileChunk>()
+        sut.captureProfileChunk(profileChunk)
+        verify(mockClient).captureProfileChunk(eq(profileChunk), any())
+    }
+
+    @Test
+    fun `when profileChunk is called, lastEventId is not set`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            setSerializer(mock())
+        }
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+        sut.captureProfileChunk(mock())
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    }
+    //endregion
+
     //region profiling tests
 
     @Test

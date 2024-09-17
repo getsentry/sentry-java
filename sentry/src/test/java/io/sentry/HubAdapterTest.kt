@@ -215,6 +215,12 @@ class HubAdapterTest {
         verify(scopes).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
     }
 
+    @Test fun `captureProfileChunk calls Hub`() {
+        val profileChunk = mock<ProfileChunk>()
+        HubAdapter.getInstance().captureProfileChunk(profileChunk)
+        verify(scopes).captureProfileChunk(eq(profileChunk))
+    }
+
     @Test fun `startTransaction calls Hub`() {
         val transactionContext = mock<TransactionContext>()
         val samplingContext = mock<CustomSamplingContext>()

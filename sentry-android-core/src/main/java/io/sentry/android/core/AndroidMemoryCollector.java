@@ -4,6 +4,7 @@ import android.os.Debug;
 import io.sentry.IPerformanceSnapshotCollector;
 import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
+import io.sentry.SentryNanotimeDate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +19,8 @@ public class AndroidMemoryCollector implements IPerformanceSnapshotCollector {
     long now = System.currentTimeMillis();
     long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     long usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize();
-    MemoryCollectionData memoryData = new MemoryCollectionData(now, usedMemory, usedNativeMemory);
+    MemoryCollectionData memoryData =
+        new MemoryCollectionData(now, usedMemory, usedNativeMemory, new SentryNanotimeDate());
     performanceCollectionData.addMemoryData(memoryData);
   }
 }

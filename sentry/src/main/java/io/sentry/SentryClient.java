@@ -10,6 +10,7 @@ import io.sentry.metrics.EncodedMetrics;
 import io.sentry.metrics.IMetricsClient;
 import io.sentry.metrics.NoopMetricsAggregator;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -475,8 +476,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     return event;
   }
 
-  @Nullable
-  private SentryTransaction processTransaction(
+  private @Nullable SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
       final @NotNull Hint hint,
       final @NotNull List<EventProcessor> eventProcessors) {
@@ -858,6 +858,42 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull SentryId captureProfileChunk(
+      @NotNull ProfileChunk profileChunk, final @Nullable IScope scope) {
+    Objects.requireNonNull(profileChunk, "profileChunk is required.");
+
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing profile chunk: %s", profileChunk.getChunkId());
+
+    @NotNull SentryId sentryId = profileChunk.getChunkId();
+    final DebugMeta debugMeta = DebugMeta.buildDebugMeta(profileChunk.getDebugMeta(), options);
+    if (debugMeta != null) {
+      profileChunk.setDebugMeta(debugMeta);
+    }
+
+    // BeforeSend and EventProcessors are not supported at the moment for Profile Chunks
+
+    try {
+      final @NotNull SentryEnvelope envelope =
+          new SentryEnvelope(
+              new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
+              Collections.singletonList(
+                  SentryEnvelopeItem.fromProfileChunk(profileChunk, options.getSerializer())));
+      sentryId = sendEnvelope(envelope, null);
+    } catch (IOException | SentryEnvelopeException e) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, e, "Capturing profile chunk %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }

@@ -267,6 +267,11 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public @NotNull SentryId captureProfileChunk(@NotNull ProfileChunk profileChunk) {
+    return scopes.captureProfileChunk(profileChunk);
+  }
+
+  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
