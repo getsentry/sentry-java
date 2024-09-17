@@ -5,8 +5,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.annotation.SuppressLint;
 import android.os.Build;
 import io.sentry.IContinuousProfiler;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -30,7 +30,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable AndroidProfiler profiler = null;
   private boolean isRunning = false;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable Future<?> closeFuture;
 
   public AndroidContinuousProfiler(
@@ -84,8 +84,8 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
             buildInfoProvider);
   }
 
-  public synchronized void setHub(final @NotNull IHub hub) {
-    this.hub = hub;
+  public synchronized void setScopes(final @NotNull IScopes scopes) {
+    this.scopes = scopes;
   }
 
   public synchronized void start() {

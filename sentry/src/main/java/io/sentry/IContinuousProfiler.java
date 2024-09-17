@@ -12,7 +12,7 @@ public interface IContinuousProfiler {
 
   void stop();
 
-  void setHub(final @NotNull IHub hub);
+  void setScopes(final @NotNull IScopes scopes);
 
   /** Cancel the profiler and stops it. Used on SDK close. */
   void close();

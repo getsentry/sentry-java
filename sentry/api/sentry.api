@@ -700,7 +700,7 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun close ()V
 	public abstract fun isRunning ()Z
-	public abstract fun setHub (Lio/sentry/IHub;)V
+	public abstract fun setScopes (Lio/sentry/IScopes;)V
 	public abstract fun start ()V
 	public abstract fun stop ()V
 }
@@ -1396,7 +1396,7 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
 	public fun isRunning ()Z
-	public fun setHub (Lio/sentry/IHub;)V
+	public fun setScopes (Lio/sentry/IScopes;)V
 	public fun start ()V
 	public fun stop ()V
 }

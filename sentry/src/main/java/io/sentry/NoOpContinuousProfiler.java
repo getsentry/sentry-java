@@ -19,7 +19,7 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   public void stop() {}
 
   @Override
-  public void setHub(@NotNull IHub hub) {}
+  public void setScopes(@NotNull IScopes scopes) {}
 
   @Override
   public boolean isRunning() {

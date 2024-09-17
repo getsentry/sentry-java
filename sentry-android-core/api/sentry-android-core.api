@@ -40,7 +40,7 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ZILio/sentry/ISentryExecutorService;)V
 	public fun close ()V
 	public fun isRunning ()Z
-	public fun setHub (Lio/sentry/IHub;)V
+	public fun setScopes (Lio/sentry/IScopes;)V
 	public fun start ()V
 	public fun stop ()V
 }
