@@ -2593,7 +2593,6 @@ public class SentryOptions {
    */
   private SentryOptions(final boolean empty) {
     if (!empty) {
-      setInitPriority(InitPriority.LOWEST);
       setSpanFactory(new DefaultSpanFactory());
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration

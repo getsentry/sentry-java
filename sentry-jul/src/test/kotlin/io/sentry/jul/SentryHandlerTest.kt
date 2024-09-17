@@ -1,5 +1,6 @@
 package io.sentry.jul
 
+import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -57,13 +58,14 @@ class SentryHandlerTest {
     }
 
     @Test
-    fun `does not initialize Sentry if Sentry is already enabled`() {
+    fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
         val transport = mock<ITransport>()
         Sentry.init {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory { _, _ -> transport }
             it.isEnableBackpressureHandling = false
+            it.initPriority = InitPriority.LOW
         }
         fixture = Fixture(transport = transport)
         fixture.logger.severe("testing environment field")
