@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
+import io.sentry.android.replay.R
 import io.sentry.android.replay.util.isRedactable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.totalPaddingTopSafe
@@ -233,14 +234,46 @@ sealed class ViewHierarchyNode(
             }
         }
 
-        private fun shouldRedact(view: View, options: SentryOptions): Boolean {
-            return options.experimental.sessionReplay.redactClasses.contains(view.javaClass.canonicalName)
+        private const val SENTRY_IGNORE_TAG = "sentry-ignore"
+        private const val SENTRY_REDACT_TAG = "sentry-redact"
+
+        private fun Class<*>.isAssignableFrom(set: Set<String>): Boolean {
+            var cls: Class<*>? = this
+            while (cls != null) {
+                val canonicalName = cls.canonicalName
+                if (canonicalName != null && set.contains(canonicalName)) {
+                    return true
+                }
+                cls = cls.superclass
+            }
+            return false
+        }
+
+        private fun View.shouldRedact(options: SentryOptions): Boolean {
+            if ((tag as? String)?.lowercase()?.contains(SENTRY_IGNORE_TAG) == true ||
+                getTag(R.id.sentry_privacy) == "ignore"
+            ) {
+                return false
+            }
+
+            if ((tag as? String)?.lowercase()?.contains(SENTRY_REDACT_TAG) == true ||
+                getTag(R.id.sentry_privacy) == "redact"
+            ) {
+                return true
+            }
+
+            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.ignoreViewClasses)) {
+                return false
+            }
+
+            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.redactViewClasses)
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
             val (isVisible, visibleRect) = view.isVisibleToUser()
-            when {
-                view is TextView && options.experimental.sessionReplay.redactAllText -> {
+            val shouldRedact = isVisible && view.shouldRedact(options)
+            when (view) {
+                is TextView -> {
                     parent.setImportantForCaptureToAncestors(true)
                     return TextViewHierarchyNode(
                         layout = view.layout,
@@ -252,7 +285,7 @@ sealed class ViewHierarchyNode(
                         width = view.width,
                         height = view.height,
                         elevation = (parent?.elevation ?: 0f) + view.elevation,
-                        shouldRedact = isVisible,
+                        shouldRedact = shouldRedact,
                         distance = distance,
                         parent = parent,
                         isImportantForContentCapture = true,
@@ -261,7 +294,7 @@ sealed class ViewHierarchyNode(
                     )
                 }
 
-                view is ImageView && options.experimental.sessionReplay.redactAllImages -> {
+                is ImageView -> {
                     parent.setImportantForCaptureToAncestors(true)
                     return ImageViewHierarchyNode(
                         x = view.x,
@@ -273,7 +306,7 @@ sealed class ViewHierarchyNode(
                         parent = parent,
                         isVisible = isVisible,
                         isImportantForContentCapture = true,
-                        shouldRedact = isVisible && view.drawable?.isRedactable() == true,
+                        shouldRedact = shouldRedact && view.drawable?.isRedactable() == true,
                         visibleRect = visibleRect
                     )
                 }
@@ -287,7 +320,7 @@ sealed class ViewHierarchyNode(
                 (parent?.elevation ?: 0f) + view.elevation,
                 distance = distance,
                 parent = parent,
-                shouldRedact = isVisible && shouldRedact(view, options),
+                shouldRedact = shouldRedact,
                 isImportantForContentCapture = false, /* will be set by children */
                 isVisible = isVisible,
                 visibleRect = visibleRect

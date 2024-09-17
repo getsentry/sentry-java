@@ -103,6 +103,18 @@ public final class io/sentry/android/replay/ScreenshotRecorderConfig$Companion {
 	public final fun from (Landroid/content/Context;Lio/sentry/SentryReplayOptions;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
 }
 
+public final class io/sentry/android/replay/SessionReplayOptionsKt {
+	public static final fun getRedactAllImages (Lio/sentry/SentryReplayOptions;)Z
+	public static final fun getRedactAllText (Lio/sentry/SentryReplayOptions;)Z
+	public static final fun setRedactAllImages (Lio/sentry/SentryReplayOptions;Z)V
+	public static final fun setRedactAllText (Lio/sentry/SentryReplayOptions;Z)V
+}
+
+public final class io/sentry/android/replay/ViewExtensionsKt {
+	public static final fun sentryReplayIgnore (Landroid/view/View;)V
+	public static final fun sentryReplayRedact (Landroid/view/View;)V
+}
+
 public final class io/sentry/android/replay/gestures/GestureRecorder : io/sentry/android/replay/OnRootViewsChangedListener {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/replay/gestures/TouchRecorderCallback;)V
 	public fun onRootViewsChanged (Landroid/view/View;Z)V
