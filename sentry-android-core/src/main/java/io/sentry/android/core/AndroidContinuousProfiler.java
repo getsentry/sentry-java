@@ -8,8 +8,13 @@ import io.sentry.IContinuousProfiler;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
+import io.sentry.ProfileChunk;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.protocol.SentryId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +37,9 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   private boolean isRunning = false;
   private @Nullable IHub hub;
   private @Nullable Future<?> closeFuture;
+  private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
+  private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
+  private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -105,7 +113,16 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
     if (startData == null) {
       return;
     }
+
     isRunning = true;
+
+    if (profilerId == SentryId.EMPTY_ID) {
+      profilerId = new SentryId();
+    }
+
+    if (chunkId == SentryId.EMPTY_ID) {
+      chunkId = new SentryId();
+    }
 
     closeFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
   }
@@ -138,14 +155,29 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       return;
     }
 
-    isRunning = false;
+    // The hub can be null if the profiler is started before the SDK is initialized (app start
+    //  profiling), meaning there's no hub to send the chunks. In that case, we store the data in a
+    //  list and send it when the next chunk is finished.
+    synchronized (payloadBuilders) {
+      payloadBuilders.add(
+          new ProfileChunk.Builder(
+              profilerId, chunkId, endData.measurementsMap, endData.traceFile));
+    }
 
-    // todo schedule capture profile chunk envelope
+    isRunning = false;
+    // A chunk is finished. Next chunk will have a different id.
+    chunkId = SentryId.EMPTY_ID;
+
+    if (hub != null) {
+      sendChunks(hub, hub.getOptions());
+    }
 
     if (restartProfiler) {
       logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
       start();
     } else {
+      // When the profiler is stopped manually, we have to reset its id
+      profilerId = SentryId.EMPTY_ID;
       logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
     }
   }
@@ -155,6 +187,28 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       closeFuture.cancel(true);
     }
     stop();
+  }
+
+  private void sendChunks(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
+                synchronized (payloadBuilders) {
+                  for (ProfileChunk.Builder builder : payloadBuilders) {
+                    payloads.add(builder.build(options));
+                  }
+                  payloadBuilders.clear();
+                }
+                for (ProfileChunk payload : payloads) {
+                  hub.captureProfileChunk(payload);
+                }
+              });
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
+    }
   }
 
   @Override

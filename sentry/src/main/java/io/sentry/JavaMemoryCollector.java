@@ -15,7 +15,8 @@ public final class JavaMemoryCollector implements IPerformanceSnapshotCollector 
   public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
     final long now = System.currentTimeMillis();
     final long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-    MemoryCollectionData memoryData = new MemoryCollectionData(now, usedMemory);
+    MemoryCollectionData memoryData =
+        new MemoryCollectionData(now, usedMemory, new SentryNanotimeDate());
     performanceCollectionData.addMemoryData(memoryData);
   }
 }

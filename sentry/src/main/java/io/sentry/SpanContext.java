@@ -104,9 +104,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.op = spanContext.op;
     this.description = spanContext.description;
     this.status = spanContext.status;
+    this.origin = spanContext.origin;
     final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(spanContext.tags);
     if (copiedTags != null) {
       this.tags = copiedTags;
+    }
+    final Map<String, Object> copiedUnknown =
+        CollectionUtils.newConcurrentHashMap(spanContext.unknown);
+    if (copiedUnknown != null) {
+      this.unknown = copiedUnknown;
     }
   }
 

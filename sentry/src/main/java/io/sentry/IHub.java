@@ -413,6 +413,16 @@ public interface IHub {
   }
 
   /**
+   * Captures the profile chunk and enqueues it for sending to Sentry server.
+   *
+   * @param profileChunk the continuous profiling payload
+   * @return the profile chunk id
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryId captureProfileChunk(final @NotNull ProfileChunk profileChunk);
+
+  /**
    * Creates a Transaction and returns the instance.
    *
    * @param transactionContexts the transaction contexts

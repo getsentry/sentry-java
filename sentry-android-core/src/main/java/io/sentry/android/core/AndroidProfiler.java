@@ -11,7 +11,9 @@ import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
@@ -158,6 +160,7 @@ public class AndroidProfiler {
                 // profileStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
                 // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
                 // relative to profileStartNanos
+                final SentryDate timestamp = new SentryNanotimeDate();
                 final long frameTimestampRelativeNanos =
                     frameEndNanos
                         - System.nanoTime()
@@ -171,15 +174,18 @@ public class AndroidProfiler {
                 }
                 if (isFrozen) {
                   frozenFrameRenderMeasurements.addLast(
-                      new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
+                      new ProfileMeasurementValue(
+                          frameTimestampRelativeNanos, durationNanos, timestamp));
                 } else if (isSlow) {
                   slowFrameRenderMeasurements.addLast(
-                      new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
+                      new ProfileMeasurementValue(
+                          frameTimestampRelativeNanos, durationNanos, timestamp));
                 }
                 if (refreshRate != lastRefreshRate) {
                   lastRefreshRate = refreshRate;
                   screenFrameRateMeasurements.addLast(
-                      new ProfileMeasurementValue(frameTimestampRelativeNanos, refreshRate));
+                      new ProfileMeasurementValue(
+                          frameTimestampRelativeNanos, refreshRate, timestamp));
                 }
               }
             });
@@ -326,19 +332,22 @@ public class AndroidProfiler {
             cpuUsageMeasurements.add(
                 new ProfileMeasurementValue(
                     TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
-                    cpuData.getCpuUsagePercentage()));
+                    cpuData.getCpuUsagePercentage(),
+                    cpuData.getTimestamp()));
           }
           if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
             memoryUsageMeasurements.add(
                 new ProfileMeasurementValue(
                     TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                    memoryData.getUsedHeapMemory()));
+                    memoryData.getUsedHeapMemory(),
+                    memoryData.getTimestamp()));
           }
           if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
             nativeMemoryUsageMeasurements.add(
                 new ProfileMeasurementValue(
                     TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                    memoryData.getUsedNativeMemory()));
+                    memoryData.getUsedNativeMemory(),
+                    memoryData.getTimestamp()));
           }
         }
       }

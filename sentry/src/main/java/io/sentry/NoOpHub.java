@@ -161,6 +161,11 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull SentryId captureProfileChunk(final @NotNull ProfileChunk profileChunk) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
