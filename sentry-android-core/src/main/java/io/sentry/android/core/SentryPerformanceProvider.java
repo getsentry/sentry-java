@@ -201,6 +201,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
     appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
+    appStartMetrics.registerApplicationForegroundCheck(app);
 
     final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 

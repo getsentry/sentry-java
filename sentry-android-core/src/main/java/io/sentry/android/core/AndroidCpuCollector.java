@@ -115,7 +115,7 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
         // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
         long csTime = Long.parseLong(stats[16]);
         return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
-      } catch (NumberFormatException e) {
+      } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
         logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
         return 0;
       }

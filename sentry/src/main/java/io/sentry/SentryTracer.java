@@ -652,9 +652,15 @@ public final class SentryTracer implements ITransaction {
   private void updateBaggageValues() {
     synchronized (this) {
       if (baggage.isMutable()) {
+        final AtomicReference<SentryId> replayId = new AtomicReference<>();
+        scopes.configureScope(
+            scope -> {
+              replayId.set(scope.getReplayId());
+            });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
-            scopes.getOptions(),
+            replayId.get(),
+            hub.getOptions(),
             this.getSamplingDecision(),
             getName(),
             getTransactionNameSource());

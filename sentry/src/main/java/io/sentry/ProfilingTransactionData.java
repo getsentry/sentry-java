@@ -179,7 +179,7 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
 
     @Override
     public @NotNull ProfilingTransactionData deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfilingTransactionData data = new ProfilingTransactionData();
       Map<String, Object> unknown = null;

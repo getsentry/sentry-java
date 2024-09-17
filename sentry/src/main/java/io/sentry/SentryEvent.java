@@ -311,8 +311,8 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull SentryEvent deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SentryEvent deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       SentryEvent event = new SentryEvent();
       Map<String, Object> unknown = null;

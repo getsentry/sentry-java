@@ -7,7 +7,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.2.0"
+    val springBoot3Version = "3.3.2"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.5.3"
@@ -27,6 +27,7 @@ object Config {
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
+        val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
     object Android {
@@ -34,6 +35,7 @@ object Config {
 
         val minSdkVersion = 19
         val minSdkVersionOkHttp = 21
+        val minSdkVersionReplay = 19
         val minSdkVersionNdk = 19
         val minSdkVersionCompose = 21
         val targetSdkVersion = sdkVersion
@@ -195,6 +197,7 @@ object Config {
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
+        val msgpack = "org.msgpack:msgpack-core:0.9.8"
     }
 
     object QualityPlugins {

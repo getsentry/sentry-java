@@ -345,6 +345,12 @@ public final class HubAdapter implements IHub {
     return Sentry.captureCheckIn(checkIn);
   }
 
+  @Override
+  public @NotNull SentryId captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+    return Sentry.getCurrentHub().captureReplay(replay, hint);
+  }
+
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {

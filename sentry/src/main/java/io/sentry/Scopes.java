@@ -1049,6 +1049,27 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return sentryId;
   }
 
+  @Override
+  public @NotNull SentryId captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureReplay' call is a no-op.");
+    } else {
+      try {
+        final @NotNull StackItem item = stack.peek();
+        sentryId = item.getClient().captureReplayEvent(replay, item.getScope(), hint);
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
+      }
+    }
+    return sentryId;
+  }
+
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {

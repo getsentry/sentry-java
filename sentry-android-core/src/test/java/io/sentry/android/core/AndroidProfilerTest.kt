@@ -118,6 +118,7 @@ class AndroidProfilerTest {
             loadClass,
             activityFramesTracker,
             false,
+            false,
             false
         )
 

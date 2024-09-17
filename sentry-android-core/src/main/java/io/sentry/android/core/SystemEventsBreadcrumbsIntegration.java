@@ -6,6 +6,7 @@ import static android.appwidget.AppWidgetManager.ACTION_APPWIDGET_ENABLED;
 import static android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE;
 import static android.content.Intent.ACTION_AIRPLANE_MODE_CHANGED;
 import static android.content.Intent.ACTION_APP_ERROR;
+import static android.content.Intent.ACTION_BATTERY_CHANGED;
 import static android.content.Intent.ACTION_BATTERY_LOW;
 import static android.content.Intent.ACTION_BATTERY_OKAY;
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
@@ -40,11 +41,12 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -120,7 +122,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private void startSystemEventsReceiver(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-    receiver = new SystemEventsBroadcastReceiver(scopes, options.getLogger());
+    receiver = new SystemEventsBroadcastReceiver(scopes, options);
     final IntentFilter filter = new IntentFilter();
     for (String item : actions) {
       filter.addAction(item);
@@ -154,6 +156,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     actions.add(ACTION_AIRPLANE_MODE_CHANGED);
     actions.add(ACTION_BATTERY_LOW);
     actions.add(ACTION_BATTERY_OKAY);
+    actions.add(ACTION_BATTERY_CHANGED);
     actions.add(ACTION_BOOT_COMPLETED);
     actions.add(ACTION_CAMERA_BUTTON);
     actions.add(ACTION_CONFIGURATION_CHANGED);
@@ -204,45 +207,69 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   static final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
 
+    private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
     private final @NotNull IScopes scopes;
-    private final @NotNull ILogger logger;
+    private final @NotNull SentryAndroidOptions options;
+    private final @NotNull Debouncer debouncer =
+        new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 
-    SystemEventsBroadcastReceiver(final @NotNull IScopes scopes, final @NotNull ILogger logger) {
+    SystemEventsBroadcastReceiver(
+        final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
       this.scopes = scopes;
-      this.logger = logger;
+      this.options = options;
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
+      final boolean shouldDebounce = debouncer.checkForDebounce();
+      final String action = intent.getAction();
+      final boolean isBatteryChanged = ACTION_BATTERY_CHANGED.equals(action);
+      if (isBatteryChanged && shouldDebounce) {
+        // aligning with iOS which only captures battery status changes every minute at maximum
+        return;
+      }
+
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
-      final String action = intent.getAction();
       String shortAction = StringUtils.getStringAfterDot(action);
       if (shortAction != null) {
         breadcrumb.setData("action", shortAction);
       }
 
-      final Bundle extras = intent.getExtras();
-      final Map<String, String> newExtras = new HashMap<>();
-      if (extras != null && !extras.isEmpty()) {
-        for (String item : extras.keySet()) {
-          try {
-            @SuppressWarnings("deprecation")
-            Object value = extras.get(item);
-            if (value != null) {
-              newExtras.put(item, value.toString());
-            }
-          } catch (Throwable exception) {
-            logger.log(
-                SentryLevel.ERROR,
-                exception,
-                "%s key of the %s action threw an error.",
-                item,
-                action);
-          }
+      if (isBatteryChanged) {
+        final Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
+        if (batteryLevel != null) {
+          breadcrumb.setData("level", batteryLevel);
         }
-        breadcrumb.setData("extras", newExtras);
+        final Boolean isCharging = DeviceInfoUtil.isCharging(intent, options);
+        if (isCharging != null) {
+          breadcrumb.setData("charging", isCharging);
+        }
+      } else {
+        final Bundle extras = intent.getExtras();
+        final Map<String, String> newExtras = new HashMap<>();
+        if (extras != null && !extras.isEmpty()) {
+          for (String item : extras.keySet()) {
+            try {
+              @SuppressWarnings("deprecation")
+              Object value = extras.get(item);
+              if (value != null) {
+                newExtras.put(item, value.toString());
+              }
+            } catch (Throwable exception) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      exception,
+                      "%s key of the %s action threw an error.",
+                      item,
+                      action);
+            }
+          }
+          breadcrumb.setData("extras", newExtras);
+        }
       }
       breadcrumb.setLevel(SentryLevel.INFO);
 

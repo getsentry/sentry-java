@@ -7,13 +7,15 @@
 - Throw IllegalArgumentException when calling Sentry.init on Android ([#3596](https://github.com/getsentry/sentry-java/pull/3596))
 - Change OkHttp sub-spans to span attributes ([#3556](https://github.com/getsentry/sentry-java/pull/3556))
   - This will reduce the number of spans created by the SDK
+- `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+- Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 
 ### Features
 
 - Add init priority settings ([#3674](https://github.com/getsentry/sentry-java/pull/3674))
   - You may now set `forceInit=true` (`force-init` for `.properties` files) to ensure a call to Sentry.init / SentryAndroid.init takes effect
 - Add force init option to Android Manifest ([#3675](https://github.com/getsentry/sentry-java/pull/3675))
-  - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten 
+  - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten
 
 ### Fixes
 
@@ -24,6 +26,15 @@
 - Remove `PROCESS_COMMAND_ARGS` (`process.command_args`) OpenTelemetry span attribute as it can be very large ([#3664](https://github.com/getsentry/sentry-java/pull/3664))
 - Use RECORD_ONLY sampling decision if performance is disabled ([#3659](https://github.com/getsentry/sentry-java/pull/3659))
     - Also fix check whether Performance is enabled when making a sampling decision in the OpenTelemetry sampler
+- Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
+- Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
+- Session Replay: Add options to selectively redact/ignore views from being captured. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
+  - `android:tag="sentry-redact|sentry-ignore"` in XML or `view.setTag("sentry-redact|sentry-ignore")` in code tags
+    - if you already have a tag set for a view, you can set a tag by id: `<tag android:id="@id/sentry_privacy" android:value="redact|ignore"/>` in XML or `view.setTag(io.sentry.android.replay.R.id.sentry_privacy, "redact|ignore")` in code
+  - `view.sentryReplayRedact()` or `view.sentryReplayIgnore()` extension functions
+  - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
+    - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
+    - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 
 ### Dependencies
 
@@ -53,7 +64,7 @@
   - When spans belonging to a single transaction were split into multiple batches for SpanExporter, we did not add all spans because the isSpanTooOld check wasn't inverted.
 - Parse and use `send-default-pii` and `max-request-body-size` from `sentry.properties` ([#3534](https://github.com/getsentry/sentry-java/pull/3534))
 - `span.startChild` now uses `.makeCurrent()` by default ([#3544](https://github.com/getsentry/sentry-java/pull/3544))
-  - This caused an issue where the span tree wasn't correct because some spans were not added to their direct parent 
+  - This caused an issue where the span tree wasn't correct because some spans were not added to their direct parent
 - Partially fix bootstrap class loading ([#3543](https://github.com/getsentry/sentry-java/pull/3543))
   - There was a problem with two separate Sentry `Scopes` being active inside each OpenTelemetry `Context` due to using context keys from more than one class loader.
 
@@ -111,9 +122,9 @@ If you've been using the previous version of `sentry-opentelemetry-agent`, simpl
 
 #### New to the agent
 If you've not been using OpenTelemetry before, you can add `sentry-opentelemetry-agent` to your setup by downloading the latest release and using it when starting up your application
-  - `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
-  - Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
-  - You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be valid.
+- `SENTRY_PROPERTIES_FILE=sentry.properties java -javaagent:sentry-opentelemetry-agent-x.x.x.jar -jar your-application.jar`
+- Please use `sentry.properties` or environment variables to configure the SDK as the agent is now in charge of initializing the SDK and options coming from things like logging integrations or our Spring Boot integration will not take effect.
+- You may find the [docs page](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/#using-sentry-opentelemetry-agent-with-auto-initialization) useful. While we haven't updated it yet to reflect the changes described here, the section about using the agent with auto init should still be valid.
 
 If you want to skip auto initialization of the SDK performed by the agent, please follow the steps above and set the environment variable `SENTRY_AUTO_INIT` to `false` then add the following to your `Sentry.init`:
 
@@ -195,6 +206,87 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 ### Features
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
+
+
+## 7.14.0
+
+### Features
+
+- Session Replay: Gesture/touch support for Flutter ([#3623](https://github.com/getsentry/sentry-java/pull/3623))
+
+### Fixes
+
+- Fix app start spans missing from Pixel devices ([#3634](https://github.com/getsentry/sentry-java/pull/3634))
+- Avoid ArrayIndexOutOfBoundsException on Android cpu data collection ([#3598](https://github.com/getsentry/sentry-java/pull/3598))
+- Fix lazy select queries instrumentation ([#3604](https://github.com/getsentry/sentry-java/pull/3604))
+- Session Replay: buffer mode improvements ([#3622](https://github.com/getsentry/sentry-java/pull/3622))
+  - Align next segment timestamp with the end of the buffered segment when converting from buffer mode to session mode
+  - Persist `buffer` replay type for the entire replay when converting from buffer mode to session mode
+  - Properly store screen names for `buffer` mode
+- Session Replay: fix various crashes and issues ([#3628](https://github.com/getsentry/sentry-java/pull/3628))
+  - Fix video not being encoded on Pixel devices
+  - Fix SIGABRT native crashes on Xiaomi devices when encoding a video
+  - Fix `RejectedExecutionException` when redacting a screenshot
+  - Fix `FileNotFoundException` when persisting segment values
+
+### Chores
+
+- Introduce `ReplayShadowMediaCodec` and refactor tests using custom encoder ([#3612](https://github.com/getsentry/sentry-java/pull/3612))
+
+## 7.13.0
+
+### Features
+
+- Session Replay: ([#3565](https://github.com/getsentry/sentry-java/pull/3565)) ([#3609](https://github.com/getsentry/sentry-java/pull/3609))
+  - Capture remaining replay segment for ANRs on next app launch
+  - Capture remaining replay segment for unhandled crashes on next app launch
+
+### Fixes
+
+- Session Replay: ([#3565](https://github.com/getsentry/sentry-java/pull/3565)) ([#3609](https://github.com/getsentry/sentry-java/pull/3609))
+  - Fix stopping replay in `session` mode at 1 hour deadline
+  - Never encode full frames for a video segment, only do partial updates. This further reduces size of the replay segment
+  - Use propagation context when no active transaction for ANRs
+
+### Dependencies
+
+- Bump Spring Boot to 3.3.2 ([#3541](https://github.com/getsentry/sentry-java/pull/3541))
+
+## 7.12.1
+
+### Fixes
+
+- Check app start spans time and ignore background app starts ([#3550](https://github.com/getsentry/sentry-java/pull/3550))
+  - This should eliminate long-lasting App Start transactions
+
+## 7.12.0
+
+### Features
+
+- Session Replay Public Beta ([#3339](https://github.com/getsentry/sentry-java/pull/3339))
+
+  To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.errorSampleRate` experimental options.
+
+  ```kotlin
+  import io.sentry.SentryReplayOptions
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.experimental.sessionReplay.sessionSampleRate = 1.0
+    options.experimental.sessionReplay.errorSampleRate = 1.0
+  
+    // To change default redaction behavior (defaults to true)
+    options.experimental.sessionReplay.redactAllImages = true
+    options.experimental.sessionReplay.redactAllText = true
+  
+    // To change quality of the recording (defaults to MEDIUM)
+    options.experimental.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
+  }
+  ```
+
+  To learn more visit [Sentry's Mobile Session Replay](https://docs.sentry.io/product/explore/session-replay/mobile/) documentation page.
 
 ## 7.11.0
 

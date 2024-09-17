@@ -2191,6 +2191,27 @@ class ScopesTest {
         assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
     }
 
+    // region replay event tests
+    @Test
+    fun `when captureReplay is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledHub()
+        sut.close()
+
+        sut.captureReplay(SentryReplayEvent(), Hint())
+        verify(mockClient, never()).captureReplayEvent(any(), any(), any<Hint>())
+    }
+
+    @Test
+    fun `when captureReplay is called with a valid argument, captureReplay on the client should be called`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        val event = SentryReplayEvent()
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureReplay(event, hints)
+        verify(mockClient).captureReplayEvent(eq(event), any(), eq(hints))
+    }
+    // endregion replay event tests
+
     @Test
     fun `is considered enabled if client is enabled()`() {
         val scopes = generateScopes() as Scopes

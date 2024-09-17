@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.test.createTestScopes
@@ -596,6 +597,8 @@ class SentryTracerTest {
                 id = "user-id"
             }
         )
+        val replayId = SentryId()
+        fixture.scopes.configureScope { it.replayId = replayId }
         val trace = transaction.traceContext()
         assertNotNull(trace) {
             assertEquals(transaction.spanContext.traceId, it.traceId)
@@ -603,6 +606,7 @@ class SentryTracerTest {
             assertEquals("environment", it.environment)
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
+            assertEquals(replayId, it.replayId)
         }
     }
 
@@ -666,6 +670,8 @@ class SentryTracerTest {
                 id = "userId12345"
             }
         )
+        val replayId = SentryId()
+        fixture.scopes.configureScope { it.replayId = replayId }
 
         val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
@@ -678,6 +684,8 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name"))
             // assertTrue(it.value.contains("sentry-user_id=userId12345,"))
+            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+            assertTrue(it.value.contains("sentry-replay_id=$replayId"))
         }
     }
 

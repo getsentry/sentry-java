@@ -53,7 +53,7 @@ public final class SpanId implements JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<SpanId> {
     @Override
-    public @NotNull SpanId deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull SpanId deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       return new SpanId(reader.nextString());
     }
