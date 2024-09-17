@@ -51,6 +51,7 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean forceInit;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -73,6 +74,7 @@ public final class ExternalOptions {
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
+    options.setForceInit(propertiesProvider.getBooleanProperty("force-init"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
     if (maxRequestBodySize != null) {
       options.setMaxRequestBodySize(
@@ -449,6 +451,14 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  public void setForceInit(final @Nullable Boolean forceInit) {
+    this.forceInit = forceInit;
+  }
+
+  public @Nullable Boolean isForceInit() {
+    return forceInit;
   }
 
   @ApiStatus.Experimental

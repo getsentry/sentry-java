@@ -489,6 +489,10 @@ public class SentryOptions {
 
   private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
 
+  private @NotNull InitPriority initPriority = InitPriority.MEDIUM;
+
+  private boolean forceInit = false;
+
   /**
    * Adds an event processor
    *
@@ -2440,6 +2444,33 @@ public class SentryOptions {
     return defaultScopeType;
   }
 
+  @ApiStatus.Internal
+  public void setInitPriority(final @NotNull InitPriority initPriority) {
+    this.initPriority = initPriority;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull InitPriority getInitPriority() {
+    return initPriority;
+  }
+
+  /**
+   * If set to true a call to Sentry.init (or SentryAndroid.init) will go through and replace
+   * previous options if there are any.
+   *
+   * <p>By default the SDK will check whether a previous call to Sentry.init has higher priority
+   * than the current one and decide whether to actually perform the init and replace options.
+   *
+   * @param forceInit true = replace previous init and options
+   */
+  public void setForceInit(final boolean forceInit) {
+    this.forceInit = forceInit;
+  }
+
+  public boolean isForceInit() {
+    return forceInit;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2562,6 +2593,7 @@ public class SentryOptions {
    */
   private SentryOptions(final boolean empty) {
     if (!empty) {
+      setInitPriority(InitPriority.LOWEST);
       setSpanFactory(new DefaultSpanFactory());
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
@@ -2635,6 +2667,9 @@ public class SentryOptions {
     }
     if (options.getSendClientReports() != null) {
       setSendClientReports(options.getSendClientReports());
+    }
+    if (options.isForceInit() != null) {
+      setForceInit(options.isForceInit());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {

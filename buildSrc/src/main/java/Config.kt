@@ -151,14 +151,15 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
         object OpenTelemetry {
-            val otelVersion = "1.39.0"
+            val otelVersion = "1.41.0"
             val otelAlphaVersion = "$otelVersion-alpha"
-            val otelJavaagentVersion = "2.5.0"
+            val otelJavaagentVersion = "2.7.0"
             val otelJavaagentAlphaVersion = "$otelJavaagentVersion-alpha"
-            val otelSemanticConvetionsVersion = "1.23.1-alpha"
+            val otelSemanticConvetionsVersion = "1.25.0-alpha" // check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
 
             val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
             val otelSemconv = "io.opentelemetry.semconv:opentelemetry-semconv:$otelSemanticConvetionsVersion"
+            val otelSemconvIncubating = "io.opentelemetry.semconv:opentelemetry-semconv-incubating:$otelSemanticConvetionsVersion"
             val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelJavaagentVersion"
             val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelJavaagentAlphaVersion"
             val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelJavaagentAlphaVersion"

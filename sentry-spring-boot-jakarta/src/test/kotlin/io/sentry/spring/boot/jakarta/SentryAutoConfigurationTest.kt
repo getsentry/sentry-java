@@ -172,6 +172,7 @@ class SentryAutoConfigurationTest {
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
             "sentry.enable-backpressure-handling=false",
+            "sentry.force-init=true",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
@@ -209,6 +210,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
+            assertThat(options.isForceInit).isEqualTo(true)
             assertThat(options.cron).isNotNull
             assertThat(options.cron!!.defaultCheckinMargin).isEqualTo(10L)
             assertThat(options.cron!!.defaultMaxRuntime).isEqualTo(30L)

@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
+import io.sentry.InitPriority;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -103,6 +104,8 @@ final class ManifestMetadataReader {
   static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
 
   static final String ENABLE_METRICS = "io.sentry.enable-metrics";
+
+  static final String FORCE_INIT = "io.sentry.force-init";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -262,6 +265,13 @@ final class ManifestMetadataReader {
 
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
+
+        final boolean isAutoInitEnabled = readBool(metadata, logger, AUTO_INIT, true);
+        if (isAutoInitEnabled) {
+          options.setInitPriority(InitPriority.LOW);
+        }
+
+        options.setForceInit(readBool(metadata, logger, FORCE_INIT, options.isForceInit()));
 
         options.setCollectAdditionalContext(
             readBool(

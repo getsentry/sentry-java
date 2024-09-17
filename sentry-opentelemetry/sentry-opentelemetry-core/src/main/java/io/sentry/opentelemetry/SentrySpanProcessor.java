@@ -12,7 +12,8 @@ import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import io.sentry.Baggage;
 import io.sentry.DsnUtil;
 import io.sentry.IScopes;
@@ -261,7 +262,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
       return false;
     }
 
-    final @Nullable String httpUrl = otelSpan.getAttribute(SemanticAttributes.HTTP_URL);
+    final @Nullable String httpUrl = otelSpan.getAttribute(UrlAttributes.URL_FULL);
     return DsnUtil.urlContainsDsnHost(scopes.getOptions(), httpUrl);
   }
 
@@ -345,7 +346,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
       return SpanStatus.OK;
     }
 
-    final @Nullable Long httpStatus = otelSpan.getAttribute(SemanticAttributes.HTTP_STATUS_CODE);
+    final @Nullable Long httpStatus =
+        otelSpan.getAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE);
     if (httpStatus != null) {
       final @Nullable SpanStatus spanStatus = SpanStatus.fromHttpStatusCode(httpStatus.intValue());
       if (spanStatus != null) {

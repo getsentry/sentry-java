@@ -1420,4 +1420,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertFalse(fixture.options.isEnableMetrics)
     }
+
+    @Test
+    fun `applyMetadata reads forceInit flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FORCE_INIT to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isForceInit)
+    }
+
+    @Test
+    fun `applyMetadata reads forceInit flag to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isForceInit)
+    }
 }
