@@ -23,6 +23,12 @@
 - `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 - Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.9 ([#3667](https://github.com/getsentry/sentry-java/pull/3667))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#079)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.9)
+
 ## 7.14.0
 
 ### Features
