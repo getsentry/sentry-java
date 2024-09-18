@@ -7,7 +7,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Integration
 import io.sentry.NoOpReplayBreadcrumbConverter
 import io.sentry.ReplayBreadcrumbConverter
@@ -74,7 +74,7 @@ public class ReplayIntegration(
     }
 
     private lateinit var options: SentryOptions
-    private var hub: IHub? = null
+    private var scopes: IScopes? = null
     private var recorder: Recorder? = null
     private var gestureRecorder: GestureRecorder? = null
     private val random by lazy { SecureRandom() }
@@ -92,7 +92,7 @@ public class ReplayIntegration(
 
     private lateinit var recorderConfig: ScreenshotRecorderConfig
 
-    override fun register(hub: IHub, options: SentryOptions) {
+    override fun register(scopes: IScopes, options: SentryOptions) {
         this.options = options
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -107,7 +107,7 @@ public class ReplayIntegration(
             return
         }
 
-        this.hub = hub
+        this.scopes = scopes
         recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
@@ -149,9 +149,9 @@ public class ReplayIntegration(
 
         recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
-            SessionCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider)
+            SessionCaptureStrategy(options, scopes, dateProvider, replayCacheProvider = replayCacheProvider)
         } else {
-            BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider = replayCacheProvider)
+            BufferCaptureStrategy(options, scopes, dateProvider, random, replayCacheProvider = replayCacheProvider)
         }
 
         captureStrategy?.start(recorderConfig)
@@ -218,7 +218,7 @@ public class ReplayIntegration(
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
         var screen: String? = null
-        hub?.configureScope { screen = it.screen?.substringAfterLast('.') }
+        scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
         captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
             addFrame(bitmap, frameTimeStamp, screen)
         }
@@ -313,7 +313,7 @@ public class ReplayIntegration(
             }
             val breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java, Breadcrumb.Deserializer()) as? List<Breadcrumb>
             val segment = CaptureStrategy.createSegment(
-                hub = hub,
+                scopes = scopes,
                 options = options,
                 duration = lastSegment.duration,
                 currentSegmentTimestamp = lastSegment.timestamp,
@@ -331,7 +331,7 @@ public class ReplayIntegration(
 
             if (segment is ReplaySegment.Created) {
                 val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
-                segment.capture(hub, hint)
+                segment.capture(scopes, hint)
             }
             cleanupReplays(unfinishedReplayId = previousReplayIdString) // will be cleaned up after the envelope is assembled
         }

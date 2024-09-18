@@ -710,4 +710,7 @@ public interface IScopes {
   default boolean isNoOp() {
     return false;
   }
+
+  @NotNull
+  SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
 }

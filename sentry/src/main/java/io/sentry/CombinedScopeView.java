@@ -489,4 +489,22 @@ public final class CombinedScopeView implements IScope {
   public void replaceOptions(@NotNull SentryOptions options) {
     globalScope.replaceOptions(options);
   }
+
+  @Override
+  public @NotNull SentryId getReplayId() {
+    final @NotNull SentryId current = scope.getReplayId();
+    if (!SentryId.EMPTY_ID.equals(current)) {
+      return current;
+    }
+    final @Nullable SentryId isolation = isolationScope.getReplayId();
+    if (!SentryId.EMPTY_ID.equals(isolation)) {
+      return isolation;
+    }
+    return globalScope.getReplayId();
+  }
+
+  @Override
+  public void setReplayId(@NotNull SentryId replayId) {
+    getDefaultWriteScope().setReplayId(replayId);
+  }
 }

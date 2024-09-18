@@ -120,7 +120,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `handles battery changes`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         val intent = Intent().apply {
             action = Intent.ACTION_BATTERY_CHANGED
             putExtra(BatteryManager.EXTRA_LEVEL, 75)
@@ -129,7 +129,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
         }
         sut.receiver!!.onReceive(fixture.context, intent)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -145,7 +145,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `battery changes are debounced`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         val intent1 = Intent().apply {
             action = Intent.ACTION_BATTERY_CHANGED
             putExtra(BatteryManager.EXTRA_LEVEL, 80)
@@ -161,14 +161,14 @@ class SystemEventsBreadcrumbsIntegrationTest {
         sut.receiver!!.onReceive(fixture.context, intent2)
 
         // should only add the first crumb
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(it.data["level"], 80f)
                 assertEquals(it.data["charging"], false)
             },
             anyOrNull()
         )
-        verifyNoMoreInteractions(fixture.hub)
+        verifyNoMoreInteractions(fixture.scopes)
     }
 
     @Test

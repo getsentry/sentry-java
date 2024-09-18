@@ -217,6 +217,7 @@ public final class OtelSpanWrapper implements ISpan {
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
+            null,
             scopes.getOptions(),
             this.getSamplingDecision(),
             getTransactionName(),

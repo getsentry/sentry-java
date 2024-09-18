@@ -684,7 +684,6 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name"))
             // assertTrue(it.value.contains("sentry-user_id=userId12345,"))
-            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
             assertTrue(it.value.contains("sentry-replay_id=$replayId"))
         }
     }

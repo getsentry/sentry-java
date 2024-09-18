@@ -312,4 +312,9 @@ public final class NoOpScopes implements IScopes {
   public boolean isNoOp() {
     return true;
   }
+
+  @Override
+  public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
+  }
 }

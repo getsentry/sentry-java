@@ -2194,7 +2194,7 @@ class ScopesTest {
     // region replay event tests
     @Test
     fun `when captureReplay is called on disabled client, do nothing`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
         sut.close()
 
         sut.captureReplay(SentryReplayEvent(), Hint())
@@ -2203,7 +2203,7 @@ class ScopesTest {
 
     @Test
     fun `when captureReplay is called with a valid argument, captureReplay on the client should be called`() {
-        val (sut, mockClient) = getEnabledHub()
+        val (sut, mockClient) = getEnabledScopes()
 
         val event = SentryReplayEvent()
         val hints = HintUtils.createWithTypeCheckHint({})

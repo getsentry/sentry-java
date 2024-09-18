@@ -3,6 +3,8 @@ package io.sentry.android.sqlite
 import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IScopes
+import io.sentry.ISpan
+import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
@@ -31,7 +33,7 @@ internal class SQLiteSpanManager(
     @Suppress("TooGenericExceptionCaught", "UNCHECKED_CAST")
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
-        val startTimestamp = hub.getOptions().dateProvider.now()
+        val startTimestamp = scopes.getOptions().dateProvider.now()
         var span: ISpan? = null
         return try {
             val result = operation()

@@ -182,7 +182,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         val name = route ?: try {
             context.resources.getResourceEntryName(id)
         } catch (e: NotFoundException) {
-            hub.options.logger.log(
+            scopes.options.logger.log(
                 DEBUG,
                 "Destination id cannot be retrieved from Resources, no transaction captured."
             )

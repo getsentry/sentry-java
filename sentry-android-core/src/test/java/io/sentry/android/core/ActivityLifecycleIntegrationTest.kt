@@ -766,7 +766,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true and no app start time is set, default to onActivityCreated time`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         // usually set by SentryPerformanceProvider
         val date = SentryNanotimeDate(Date(1), 0)
@@ -777,7 +777,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.dateProvider = SentryDateProvider { date2 }
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(
+        verify(fixture.scopes).startTransaction(
             any(),
             check<TransactionOptions> {
                 assertEquals(date2.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
@@ -974,7 +974,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When firstActivityCreated is true and app started more than 1 minute ago, app start spans are dropped`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         val duration = TimeUnit.MINUTES.toMillis(1) + 2
@@ -996,7 +996,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         AppStartMetrics.getInstance().isAppLaunchedInForeground = false
         fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)

@@ -349,4 +349,9 @@ public final class HubScopesWrapper implements IHub {
   public @NotNull MetricsApi metrics() {
     return scopes.metrics();
   }
+
+  @Override
+  public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
+    return scopes.captureReplay(replay, hint);
+  }
 }

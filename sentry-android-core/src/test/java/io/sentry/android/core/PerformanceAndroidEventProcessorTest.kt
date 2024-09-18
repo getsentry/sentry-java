@@ -322,7 +322,7 @@ class PerformanceAndroidEventProcessorTest {
         // when an activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // and it contains an app.start.cold span
@@ -376,7 +376,7 @@ class PerformanceAndroidEventProcessorTest {
         // when an activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // and it contains an app.start.cold span

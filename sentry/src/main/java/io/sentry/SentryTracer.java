@@ -660,7 +660,7 @@ public final class SentryTracer implements ITransaction {
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayId.get(),
-            hub.getOptions(),
+            scopes.getOptions(),
             this.getSamplingDecision(),
             getName(),
             getTransactionNameSource());
