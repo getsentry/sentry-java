@@ -26,7 +26,6 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
-import io.sentry.protocol.User;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
@@ -210,14 +209,14 @@ public final class OtelSpanWrapper implements ISpan {
   private void updateBaggageValues() {
     synchronized (this) {
       if (baggage != null && baggage.isMutable()) {
-        final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+        final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
         scopes.configureScope(
             scope -> {
-              userAtomicReference.set(scope.getUser());
+              replayIdAtomicReference.set(scope.getReplayId());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
-            null,
+            replayIdAtomicReference.get(),
             scopes.getOptions(),
             this.getSamplingDecision(),
             getTransactionName(),
