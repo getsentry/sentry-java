@@ -850,17 +850,15 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               transactionContext.getOrigin());
       transaction = NoOpTransaction.getInstance();
 
-      //    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter()))
-      // {
-      //      getOptions()
-      //          .getLogger()
-      //          .log(
-      //              SentryLevel.DEBUG,
-      //              "Returning no-op for instrumenter %s as the SDK has been configured to use
-      // instrumenter %s",
-      //              transactionContext.getInstrumenter(),
-      //              getOptions().getInstrumenter());
-      //      transaction = NoOpTransaction.getInstance();
+    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter())) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
+              transactionContext.getInstrumenter(),
+              getOptions().getInstrumenter());
+      transaction = NoOpTransaction.getInstance();
     } else if (!getOptions().isTracingEnabled()) {
       getOptions()
           .getLogger()

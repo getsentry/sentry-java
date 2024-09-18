@@ -214,7 +214,7 @@ public final class SentrySpanExporter implements SpanExporter {
                 parentSentrySpan.getSpanContext().getSpanId(),
                 new SpanId(spanId));
     spanContext.setDescription(spanInfo.getDescription());
-    spanContext.setInstrumenter(Instrumenter.OTEL);
+    spanContext.setInstrumenter(Instrumenter.SENTRY);
     if (sentrySpanMaybe != null) {
       spanContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       spanOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
@@ -329,7 +329,7 @@ public final class SentrySpanExporter implements SpanExporter {
         transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
-    transactionContext.setInstrumenter(Instrumenter.OTEL);
+    transactionContext.setInstrumenter(Instrumenter.SENTRY);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       transactionOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
