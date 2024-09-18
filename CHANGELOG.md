@@ -26,7 +26,7 @@
 - Remove `PROCESS_COMMAND_ARGS` (`process.command_args`) OpenTelemetry span attribute as it can be very large ([#3664](https://github.com/getsentry/sentry-java/pull/3664))
 - Use RECORD_ONLY sampling decision if performance is disabled ([#3659](https://github.com/getsentry/sentry-java/pull/3659))
     - Also fix check whether Performance is enabled when making a sampling decision in the OpenTelemetry sampler
-- No longer set Instrumenter to OTEL for the new Java Agent ([#3697](https://github.com/getsentry/sentry-java/pull/3697))
+- Sentry OpenTelemetry Java Agent now sets Instrumenter to SENTRY (used to be OTEL) ([#3697](https://github.com/getsentry/sentry-java/pull/3697))
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
 - Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
 - Session Replay: Add options to selectively redact/ignore views from being captured. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
