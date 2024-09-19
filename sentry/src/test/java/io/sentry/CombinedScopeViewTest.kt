@@ -1097,6 +1097,51 @@ class CombinedScopeViewTest {
         assertEquals(listOf("globalFingerprint"), combined.fingerprint)
     }
 
+    @Test
+    fun `prefers replay ID from current scope`() {
+        val combined = fixture.getSut()
+        fixture.scope.replayId = SentryId("a9118105af4a2d42b4124532cd1065fa")
+        fixture.isolationScope.replayId = SentryId("e9118105af4a2d42b4124532cd1065fe")
+        fixture.globalScope.replayId = SentryId("f9118105af4a2d42b4124532cd1065ff")
+
+        assertEquals("a9118105af4a2d42b4124532cd1065fa", combined.replayId.toString())
+    }
+
+    @Test
+    fun `uses isolation scope replay ID if none in current scope`() {
+        val combined = fixture.getSut()
+        fixture.isolationScope.replayId = SentryId("e9118105af4a2d42b4124532cd1065fe")
+        fixture.globalScope.replayId = SentryId("f9118105af4a2d42b4124532cd1065ff")
+
+        assertEquals("e9118105af4a2d42b4124532cd1065fe", combined.replayId.toString())
+    }
+
+    @Test
+    fun `uses global scope replay ID if none in current or isolation scope`() {
+        val combined = fixture.getSut()
+        fixture.globalScope.replayId = SentryId("f9118105af4a2d42b4124532cd1065ff")
+
+        assertEquals("f9118105af4a2d42b4124532cd1065ff", combined.replayId.toString())
+    }
+
+    @Test
+    fun `returns empty replay ID if none in any scope`() {
+        val combined = fixture.getSut()
+
+        assertEquals(SentryId.EMPTY_ID, combined.replayId)
+    }
+
+    @Test
+    fun `set replay ID modifies default scope`() {
+        val combined = fixture.getSut()
+        combined.replayId = SentryId("b9118105af4a2d42b4124532cd1065fb")
+
+        assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
+        assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
+        assertEquals("b9118105af4a2d42b4124532cd1065fb", fixture.isolationScope.replayId.toString())
+        assertEquals(SentryId.EMPTY_ID, fixture.globalScope.replayId)
+    }
+
     // TODO [HSM] test clone
 
     private fun createTransaction(name: String, scopes: Scopes? = null): ITransaction {

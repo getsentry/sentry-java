@@ -21,6 +21,7 @@ import io.sentry.Integration;
 import io.sentry.NoOpTransaction;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
@@ -37,6 +38,7 @@ import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
@@ -75,7 +77,7 @@ public final class ActivityLifecycleIntegration
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
-  private @NotNull SentryDate lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
+  private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
   private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
@@ -372,7 +374,7 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
-    if (scopes != null) {
+    if (scopes != null && options != null && options.isEnableScreenTracking()) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
       scopes.configureScope(scope -> scope.setScreen(activityClassName));
     }
@@ -628,6 +630,14 @@ public final class ActivityLifecycleIntegration
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
+    // The very first activity start timestamp cannot be set to the class instantiation time, as it
+    // may happen before an activity is started (service, broadcast receiver, etc). So we set it
+    // here.
+    if (scopes != null && lastPausedTime.nanoTimestamp() == 0) {
+      lastPausedTime = scopes.getOptions().getDateProvider().now();
+    } else if (lastPausedTime.nanoTimestamp() == 0) {
+      lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
+    }
     if (!firstActivityCreated) {
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm

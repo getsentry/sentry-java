@@ -40,13 +40,13 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@2cd2a6e951bd0b53f55a08e4e4c6f2586f3a36b9 # pin@v3
+        uses: gradle/actions/setup-gradle@0d30c9111cf47a838eb69c06d13f3f51ab2ed76f # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
       - name: Exclude android modules from build
         run: |
-          sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-compose",/d' -e '/.*"sentry-android-core",/d' -e '/.*"sentry-android-fragment",/d' -e '/.*"sentry-android-navigation",/d' -e '/.*"sentry-android-sqlite",/d' -e '/.*"sentry-android-timber",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' -e '/.*"sentry-samples:sentry-samples-android",/d' settings.gradle.kts
+          sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-compose",/d' -e '/.*"sentry-android-core",/d' -e '/.*"sentry-android-fragment",/d' -e '/.*"sentry-android-navigation",/d' -e '/.*"sentry-android-sqlite",/d' -e '/.*"sentry-android-timber",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' -e '/.*"sentry-samples:sentry-samples-android",/d' -e '/.*"sentry-android-replay",/d' settings.gradle.kts
 
       - name: Exclude android modules from ignore list
         run: |

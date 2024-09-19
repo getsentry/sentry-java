@@ -20,6 +20,7 @@ include(
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-android-sqlite",
+    "sentry-android-replay",
     "sentry-compose",
     "sentry-compose-helper",
     "sentry-apollo",

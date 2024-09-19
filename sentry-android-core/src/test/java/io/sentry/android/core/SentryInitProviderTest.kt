@@ -143,6 +143,7 @@ class SentryInitProviderTest {
             loadClass,
             activityFramesTracker,
             false,
+            false,
             false
         )
 

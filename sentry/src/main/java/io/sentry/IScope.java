@@ -90,6 +90,23 @@ public interface IScope {
   void setScreen(final @Nullable String screen);
 
   /**
+   * Returns the Scope's current replay_id, previously set by {@link IScope#setReplayId(SentryId)}
+   *
+   * @return the id of the current session replay
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryId getReplayId();
+
+  /**
+   * Sets the Scope's current replay_id
+   *
+   * @param replayId the id of the current session replay
+   */
+  @ApiStatus.Internal
+  void setReplayId(final @NotNull SentryId replayId);
+
+  /**
    * Returns the Scope's request
    *
    * @return the request

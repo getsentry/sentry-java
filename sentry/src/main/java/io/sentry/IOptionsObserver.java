@@ -22,4 +22,6 @@ public interface IOptionsObserver {
   void setDist(@Nullable String dist);
 
   void setTags(@NotNull Map<String, @NotNull String> tags);
+
+  void setReplayErrorSampleRate(@Nullable Double replayErrorSampleRate);
 }

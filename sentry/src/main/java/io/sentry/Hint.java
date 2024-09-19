@@ -29,8 +29,8 @@ public final class Hint {
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
   private @Nullable Attachment viewHierarchy = null;
-
   private @Nullable Attachment threadDump = null;
+  private @Nullable ReplayRecording replayRecording = null;
 
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hint hint = new Hint();
@@ -134,6 +134,15 @@ public final class Hint {
 
   public @Nullable Attachment getThreadDump() {
     return threadDump;
+  }
+
+  @Nullable
+  public ReplayRecording getReplayRecording() {
+    return replayRecording;
+  }
+
+  public void setReplayRecording(final @Nullable ReplayRecording replayRecording) {
+    this.replayRecording = replayRecording;
   }
 
   private boolean isCastablePrimitive(@Nullable Object hintValue, @NotNull Class<?> clazz) {

@@ -326,8 +326,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<SpanContext> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull SpanContext deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SpanContext deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       SentryId traceId = null;
       SpanId spanId = null;

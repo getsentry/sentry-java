@@ -139,4 +139,10 @@ public final class PropagationContext {
 
     return null;
   }
+
+  public @NotNull SpanContext toSpanContext() {
+    final SpanContext spanContext = new SpanContext(traceId, spanId, "default", null, null);
+    spanContext.setOrigin("auto");
+    return spanContext;
+  }
 }

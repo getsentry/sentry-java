@@ -2,8 +2,8 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.StringUtils;
 import java.io.IOException;
@@ -82,7 +82,7 @@ public final class SentryId implements JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<SentryId> {
     @Override
-    public @NotNull SentryId deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull SentryId deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       return new SentryId(reader.nextString());
     }

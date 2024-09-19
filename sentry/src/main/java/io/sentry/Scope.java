@@ -92,6 +92,9 @@ public final class Scope implements IScope {
 
   private @NotNull PropagationContext propagationContext;
 
+  /** Scope's session replay id */
+  private @NotNull SentryId replayId = SentryId.EMPTY_ID;
+
   private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
 
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
@@ -121,6 +124,7 @@ public final class Scope implements IScope {
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
     this.screen = scope.screen;
+    this.replayId = scope.replayId;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -268,10 +272,10 @@ public final class Scope implements IScope {
       for (final IScopeObserver observer : options.getScopeObservers()) {
         if (transaction != null) {
           observer.setTransaction(transaction.getName());
-          observer.setTrace(transaction.getSpanContext());
+          observer.setTrace(transaction.getSpanContext(), this);
         } else {
           observer.setTransaction(null);
-          observer.setTrace(null);
+          observer.setTrace(null, this);
         }
       }
     }
@@ -339,6 +343,20 @@ public final class Scope implements IScope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setContexts(contexts);
+    }
+  }
+
+  @Override
+  public @NotNull SentryId getReplayId() {
+    return replayId;
+  }
+
+  @Override
+  public void setReplayId(final @NotNull SentryId replayId) {
+    this.replayId = replayId;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setReplayId(replayId);
     }
   }
 
@@ -499,7 +517,7 @@ public final class Scope implements IScope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setTransaction(null);
-      observer.setTrace(null);
+      observer.setTrace(null, this);
     }
   }
 
@@ -965,6 +983,11 @@ public final class Scope implements IScope {
   @Override
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
     this.propagationContext = propagationContext;
+
+    final @NotNull SpanContext spanContext = propagationContext.toSpanContext();
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTrace(spanContext, this);
+    }
   }
 
   @ApiStatus.Internal

@@ -3,8 +3,8 @@ package io.sentry.protocol;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SpanContext;
 import io.sentry.util.HintUtils;
@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class Contexts implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
+  public static final String REPLAY_ID = "replay_id";
 
   private final @NotNull ConcurrentHashMap<String, Object> internalStorage =
       new ConcurrentHashMap<>();
@@ -232,7 +233,7 @@ public class Contexts implements JsonSerializable {
 
     @Override
     public @NotNull Contexts deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       final Contexts contexts = new Contexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

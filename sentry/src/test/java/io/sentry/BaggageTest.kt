@@ -525,15 +525,13 @@ class BaggageTest {
 
     @Test
     fun `unknown returns sentry- prefixed keys that are not known and passes them on to TraceContext`() {
-        val baggage = Baggage.fromHeader(listOf("sentry-trace_id=${SentryId()},sentry-public_key=b, sentry-replay_id=def", "sentry-transaction=sentryTransaction, sentry-anewkey=abc"))
+        val baggage = Baggage.fromHeader(listOf("sentry-trace_id=${SentryId()},sentry-public_key=b, sentry-replay_id=${SentryId()}", "sentry-transaction=sentryTransaction, sentry-anewkey=abc"))
         val unknown = baggage.unknown
-        assertEquals(2, unknown.size)
-        assertEquals("def", unknown["replay_id"])
+        assertEquals(1, unknown.size)
         assertEquals("abc", unknown["anewkey"])
 
         val traceContext = baggage.toTraceContext()!!
-        assertEquals(2, traceContext.unknown!!.size)
-        assertEquals("def", traceContext.unknown!!["replay_id"])
+        assertEquals(1, traceContext.unknown!!.size)
         assertEquals("abc", traceContext.unknown!!["anewkey"])
     }
 

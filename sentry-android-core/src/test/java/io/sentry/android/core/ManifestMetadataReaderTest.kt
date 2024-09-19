@@ -6,6 +6,7 @@ import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.SentryLevel
+import io.sentry.SentryReplayOptions
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -1419,6 +1420,75 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertFalse(fixture.options.isEnableMetrics)
+    }
+
+    @Test
+    fun `applyMetadata reads replays onErrorSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override replays onErrorSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.experimental.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying replays onErrorSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options.experimental.sessionReplay.onErrorSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata reads session replay redact flags to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_REDACT_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_REDACT_ALL_IMAGES to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.experimental.sessionReplay.ignoreViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.ignoreViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+    }
+
+    @Test
+    fun `applyMetadata reads session replay redact flags to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.experimental.sessionReplay.redactViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.redactViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
