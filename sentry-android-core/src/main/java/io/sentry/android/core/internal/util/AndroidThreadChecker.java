@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.util;
 
+import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 import io.sentry.protocol.SentryThread;
@@ -12,13 +13,16 @@ import org.jetbrains.annotations.NotNull;
 public final class AndroidThreadChecker implements IThreadChecker {
 
   private static final AndroidThreadChecker instance = new AndroidThreadChecker();
-  public static final long mainThreadId = Process.myTid();
+  public static long mainThreadId = Process.myTid();
 
   public static AndroidThreadChecker getInstance() {
     return instance;
   }
 
-  private AndroidThreadChecker() {}
+  private AndroidThreadChecker() {
+    // The first time this class is loaded, we make sure to set the correct mainThreadId
+    new Handler(Looper.getMainLooper()).post(() -> mainThreadId = Process.myTid());
+  }
 
   @Override
   public boolean isMainThread(final long threadId) {
@@ -42,7 +46,7 @@ public final class AndroidThreadChecker implements IThreadChecker {
   }
 
   @Override
-  public long currentThreadId() {
+  public long currentThreadSystemId() {
     return Process.myTid();
   }
 }

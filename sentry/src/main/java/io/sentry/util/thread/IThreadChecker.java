@@ -33,9 +33,9 @@ public interface IThreadChecker {
   boolean isMainThread(final @NotNull SentryThread sentryThread);
 
   /**
-   * Returns the current thread id.
+   * Returns the system id of the current thread. Currently only used for Android.
    *
-   * @return the current thread id.
+   * @return the current thread system id.
    */
-  long currentThreadId();
+  long currentThreadSystemId();
 }

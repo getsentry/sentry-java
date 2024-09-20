@@ -45,7 +45,7 @@ public final class ThreadChecker implements IThreadChecker {
   }
 
   @Override
-  public long currentThreadId() {
+  public long currentThreadSystemId() {
     return Thread.currentThread().getId();
   }
 }

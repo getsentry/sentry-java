@@ -4,7 +4,6 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
-import android.os.Looper;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.MeasurementUnit;

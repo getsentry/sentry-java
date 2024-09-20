@@ -6426,7 +6426,7 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 }
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {
-	public abstract fun currentThreadId ()J
+	public abstract fun currentThreadSystemId ()J
 	public abstract fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
 	public abstract fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
@@ -6435,7 +6435,7 @@ public abstract interface class io/sentry/util/thread/IThreadChecker {
 
 public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thread/IThreadChecker {
 	public fun <init> ()V
-	public fun currentThreadId ()J
+	public fun currentThreadSystemId ()J
 	public static fun getInstance ()Lio/sentry/util/thread/NoOpThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
@@ -6444,7 +6444,7 @@ public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thre
 }
 
 public final class io/sentry/util/thread/ThreadChecker : io/sentry/util/thread/IThreadChecker {
-	public fun currentThreadId ()J
+	public fun currentThreadSystemId ()J
 	public static fun getInstance ()Lio/sentry/util/thread/ThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z

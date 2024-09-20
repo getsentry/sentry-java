@@ -58,7 +58,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       try {
         Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
         Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
-        if (this.options.getThreadChecker().isMainThread()) {
+        if (AndroidThreadChecker.getInstance().isMainThread()) {
           addObserver(scopes);
         } else {
           // some versions of the androidx lifecycle-process require this to be executed on the main
