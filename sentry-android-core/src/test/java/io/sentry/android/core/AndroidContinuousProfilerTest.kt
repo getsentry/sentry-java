@@ -70,7 +70,6 @@ class AndroidContinuousProfilerTest {
                 frameMetricsCollector,
                 options.logger,
                 options.profilingTracesDirPath,
-                options.isProfilingEnabled,
                 options.profilingTracesHz,
                 options.executorService
             ).also { it.setScopes(scopes) }
@@ -149,26 +148,12 @@ class AndroidContinuousProfilerTest {
     }
 
     @Test
-    fun `profiler on profilesSampleRate=0 false`() {
+    fun `profiler ignores profilesSampleRate`() {
         val profiler = fixture.getSut {
             it.profilesSampleRate = 0.0
         }
         profiler.start()
-        assertFalse(profiler.isRunning)
-    }
-
-    @Test
-    fun `profiler evaluates if profiling is enabled in options only on first start`() {
-        // We create the profiler, and nothing goes wrong
-        val profiler = fixture.getSut {
-            it.profilesSampleRate = 0.0
-        }
-        verify(fixture.mockLogger, never()).log(SentryLevel.INFO, "Profiling is disabled in options.")
-
-        // Regardless of how many times the profiler is started, the option is evaluated and logged only once
-        profiler.start()
-        profiler.start()
-        verify(fixture.mockLogger, times(1)).log(SentryLevel.INFO, "Profiling is disabled in options.")
+        assertTrue(profiler.isRunning)
     }
 
     @Test

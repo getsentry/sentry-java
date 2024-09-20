@@ -200,6 +200,43 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when continuous profiler is running, profile context is set`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+        })
+        tracer.finish()
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNotNull(it.contexts.profile) {
+                    assertEquals(profilerId, it.profilerId)
+                }
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when continuous profiler is not running, profile context is not set`() {
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+        })
+        tracer.finish()
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNull(it.contexts.profile)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `when transaction is finished, transaction is cleared from the scope`() {
         val tracer = fixture.getSut()
         fixture.scopes.configureScope { it.transaction = tracer }

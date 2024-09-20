@@ -27,7 +27,6 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
-  private final boolean isProfilingEnabled;
   private final int profilingTracesHz;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -46,14 +45,12 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
-      final boolean isProfilingEnabled,
       final int profilingTracesHz,
       final @NotNull ISentryExecutorService executorService) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
     this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
-    this.isProfilingEnabled = isProfilingEnabled;
     this.profilingTracesHz = profilingTracesHz;
     this.executorService = executorService;
   }
@@ -64,10 +61,6 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       return;
     }
     isInitialized = true;
-    if (!isProfilingEnabled) {
-      logger.log(SentryLevel.INFO, "Profiling is disabled in options.");
-      return;
-    }
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
@@ -187,6 +180,11 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       closeFuture.cancel(true);
     }
     stop();
+  }
+
+  @Override
+  public @NotNull SentryId getProfilerId() {
+    return profilerId;
   }
 
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {

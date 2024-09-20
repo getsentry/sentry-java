@@ -702,6 +702,7 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 
 public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun close ()V
+	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun setScopes (Lio/sentry/IScopes;)V
 	public abstract fun start ()V
@@ -1401,6 +1402,7 @@ public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectio
 public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfiler {
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun setScopes (Lio/sentry/IScopes;)V
 	public fun start ()V
@@ -1900,7 +1902,7 @@ public final class io/sentry/ProfileChunk$JsonKeys {
 	public fun <init> ()V
 }
 
-public class io/sentry/ProfileContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/ProfileContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/ProfileContext;)V
@@ -2951,6 +2953,7 @@ public class io/sentry/SentryOptions {
 	public fun getConnectionStatusProvider ()Lio/sentry/IConnectionStatusProvider;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
+	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
@@ -3069,6 +3072,7 @@ public class io/sentry/SentryOptions {
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
+	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V

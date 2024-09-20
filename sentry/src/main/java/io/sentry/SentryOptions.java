@@ -350,8 +350,11 @@ public class SentryOptions {
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
-  /** Listener interface to perform operations when a transaction is started or ended */
+  /** Profiler that runs when a transaction is started until it's finished. */
   private @NotNull ITransactionProfiler transactionProfiler = NoOpTransactionProfiler.getInstance();
+
+  /** Profiler that runs continuously until stopped. */
+  private @NotNull IContinuousProfiler continuousProfiler = NoOpContinuousProfiler.getInstance();
 
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
@@ -1694,6 +1697,28 @@ public class SentryOptions {
     if (this.transactionProfiler == NoOpTransactionProfiler.getInstance()
         && transactionProfiler != null) {
       this.transactionProfiler = transactionProfiler;
+    }
+  }
+
+  /**
+   * Returns the continuous profiler.
+   *
+   * @return the continuous profiler.
+   */
+  public @NotNull IContinuousProfiler getContinuousProfiler() {
+    return continuousProfiler;
+  }
+
+  /**
+   * Sets the continuous profiler. It only has effect if no profiler was already set.
+   *
+   * @param continuousProfiler - the continuous profiler
+   */
+  public void setContinuousProfiler(final @Nullable IContinuousProfiler continuousProfiler) {
+    // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
+    if (this.continuousProfiler == NoOpContinuousProfiler.getInstance()
+        && continuousProfiler != null) {
+      this.continuousProfiler = continuousProfiler;
     }
   }
 
