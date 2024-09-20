@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public interface IMainThreadChecker {
+public interface IThreadChecker {
 
   boolean isMainThread(final long threadId);
 
@@ -31,4 +31,11 @@ public interface IMainThreadChecker {
    * @return true if it is the main thread or false otherwise
    */
   boolean isMainThread(final @NotNull SentryThread sentryThread);
+
+  /**
+   * Returns the current thread id.
+   *
+   * @return the current thread id.
+   */
+  long currentThreadId();
 }

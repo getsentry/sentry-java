@@ -11,7 +11,6 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryReplayEvent;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
@@ -214,7 +213,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final boolean isHybridSDK = HintUtils.isFromHybridSdk(hint);
 
       for (final SentryThread thread : event.getThreads()) {
-        final boolean isMainThread = AndroidMainThreadChecker.getInstance().isMainThread(thread);
+        final boolean isMainThread = options.getThreadChecker().isMainThread(thread);
 
         // TODO: Fix https://github.com/getsentry/team-mobile/issues/47
         if (thread.isCurrent() == null) {

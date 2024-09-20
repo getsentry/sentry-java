@@ -5,11 +5,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public final class NoOpMainThreadChecker implements IMainThreadChecker {
+public final class NoOpThreadChecker implements IThreadChecker {
 
-  private static final NoOpMainThreadChecker instance = new NoOpMainThreadChecker();
+  private static final NoOpThreadChecker instance = new NoOpThreadChecker();
 
-  public static NoOpMainThreadChecker getInstance() {
+  public static NoOpThreadChecker getInstance() {
     return instance;
   }
 
@@ -31,5 +31,10 @@ public final class NoOpMainThreadChecker implements IMainThreadChecker {
   @Override
   public boolean isMainThread(@NotNull SentryThread sentryThread) {
     return false;
+  }
+
+  @Override
+  public long currentThreadId() {
+    return 0;
   }
 }

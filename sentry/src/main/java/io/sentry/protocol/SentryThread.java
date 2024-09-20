@@ -36,8 +36,8 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
   private @Nullable String state;
   private @Nullable Boolean crashed;
   private @Nullable Boolean current;
-  private @Nullable Boolean daemon;
   private @Nullable Boolean main;
+  private @Nullable Boolean daemon;
   private @Nullable SentryStackTrace stacktrace;
 
   private @Nullable Map<String, SentryLockReason> heldLocks;

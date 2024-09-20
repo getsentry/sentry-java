@@ -13,6 +13,7 @@ import io.sentry.SpanContext;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -317,7 +318,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       final @NotNull String operation) {
 
     final Map<String, Object> defaultSpanData = new HashMap<>(2);
-    defaultSpanData.put(SpanDataConvention.THREAD_ID, Looper.getMainLooper().getThread().getId());
+    defaultSpanData.put(SpanDataConvention.THREAD_ID, AndroidThreadChecker.mainThreadId);
     defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
 
     defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
