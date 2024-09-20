@@ -36,6 +36,10 @@
     - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 
+### Behavioural Changes
+
+- (Android) Replace thread id with kernel thread id in span data ([#3706](https://github.com/getsentry/sentry-java/pull/3706))
+
 ### Dependencies
 
 - Bump OpenTelemetry to 1.41.0, OpenTelemetry Java Agent to 2.7.0 and Semantic Conventions to 1.25.0 ([#3668](https://github.com/getsentry/sentry-java/pull/3668))
