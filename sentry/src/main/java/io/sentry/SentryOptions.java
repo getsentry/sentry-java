@@ -2803,7 +2803,6 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public @NotNull ISpanFactory getSpanFactory() {
-    // TODO [POTEL] use a util for checking if OTel is active or similar
     return spanFactory;
   }
 

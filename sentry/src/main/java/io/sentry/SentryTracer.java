@@ -935,7 +935,6 @@ public final class SentryTracer implements ITransaction {
           scope.setTransaction(this);
         });
 
-    // TODO [POTEL] can we return an actual token here
     return NoOpScopesLifecycleToken.getInstance();
   }
 
