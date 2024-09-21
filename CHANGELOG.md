@@ -23,6 +23,12 @@
 - `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 - Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.10.1 ([#3684](https://github.com/getsentry/sentry-java/pull/3684))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8101)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.10.1)
+
 ## 7.14.0
 
 ### Features
