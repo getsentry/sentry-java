@@ -512,10 +512,11 @@ public final class SentryTracer implements ITransaction {
       //                }
       //              });
       //      span.setDescription(description);
-      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(Thread.currentThread().getId()));
+      final long threadId = scopes.getOptions().getThreadChecker().currentThreadSystemId();
+      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
       span.setData(
           SpanDataConvention.THREAD_NAME,
-          scopes.getOptions().getMainThreadChecker().isMainThread()
+          scopes.getOptions().getThreadChecker().isMainThread()
               ? "main"
               : Thread.currentThread().getName());
       this.children.add(span);
