@@ -94,7 +94,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public void finish() {
-    // TODO [POTEL] should this finish all spans?
     rootSpan.finish();
   }
 
@@ -225,7 +224,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public @NotNull List<io.sentry.Span> getSpans() {
-    // TODO [POTEL]
     return new ArrayList<>();
   }
 
@@ -257,7 +255,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
 
   @Override
   public @NotNull SentryId getEventId() {
-    // TODO [POTEL]
     return new SentryId();
   }
 
@@ -268,14 +265,11 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   }
 
   @Override
-  public void scheduleFinish() {
-    // TODO [POTEL]
-  }
+  public void scheduleFinish() {}
 
   @Override
   public void forceFinish(
       @NotNull SpanStatus status, boolean dropIfNoChildren, @Nullable Hint hint) {
-    // TODO [POTEL]
     rootSpan.finish(status);
   }
 
@@ -285,7 +279,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
       @Nullable SentryDate timestamp,
       boolean dropIfNoChildren,
       @Nullable Hint hint) {
-    // TODO [POTEL]
     rootSpan.finish(status, timestamp);
   }
 

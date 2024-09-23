@@ -150,7 +150,6 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull List<String> getFingerprint() {
-    // TODO [HSM] should these be merged?
     final @Nullable List<String> current = scope.getFingerprint();
     if (!current.isEmpty()) {
       return current;

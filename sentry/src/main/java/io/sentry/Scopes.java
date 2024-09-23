@@ -827,8 +827,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
-    // TODO [POTEL] what if span is already running and someone calls startTransaction?
-
     transactionContext.setOrigin(transactionOptions.getOrigin());
 
     ITransaction transaction;
@@ -841,7 +839,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       transaction = NoOpTransaction.getInstance();
     } else if (SpanUtils.isIgnored(
         getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
-      // TODO [POTEL] may not have been set yet?
       getOptions()
           .getLogger()
           .log(
@@ -926,7 +923,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      return getOptions().getSpanFactory().retrieveCurrentSpan(getCombinedScopeView());
+      return getCombinedScopeView().getSpan();
     }
     return null;
   }

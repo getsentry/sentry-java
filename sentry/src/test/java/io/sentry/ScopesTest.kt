@@ -39,7 +39,6 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1048,8 +1047,6 @@ class ScopesTest {
         assertEquals("test", scope?.transactionName)
     }
 
-    // TODO [POTEL] how do we handle instrumenter?
-    @Ignore
     @Test
     fun `when startTransaction is called with different instrumenter, no-op is returned`() {
         val scopes = generateScopes()
@@ -1061,8 +1058,6 @@ class ScopesTest {
         assertTrue(tx is NoOpTransaction)
     }
 
-    // TODO [POTEL] how do we handle instrumenter?
-    @Ignore
     @Test
     fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
         val scopes = generateScopes() {
