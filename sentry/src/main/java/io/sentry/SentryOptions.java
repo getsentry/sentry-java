@@ -2763,6 +2763,14 @@ public class SentryOptions {
       setSendDefaultPii(options.isSendDefaultPii());
     }
 
+    if (options.isEnableSpotlight() != null) {
+      setEnableSpotlight(options.isEnableSpotlight());
+    }
+
+    if (options.getSpotlightConnectionUrl() != null) {
+      setSpotlightConnectionUrl(options.getSpotlightConnectionUrl());
+    }
+
     if (options.getCron() != null) {
       if (getCron() == null) {
         setCron(options.getCron());

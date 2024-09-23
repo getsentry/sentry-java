@@ -171,6 +171,8 @@ class SentryAutoConfigurationTest {
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
             "sentry.enable-backpressure-handling=false",
+            "sentry.enable-spotlight=true",
+            "sentry.spotlight-connection-url=http://local.sentry.io:1234",
             "sentry.force-init=true",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
@@ -210,6 +212,8 @@ class SentryAutoConfigurationTest {
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
+            assertThat(options.isEnableSpotlight).isEqualTo(true)
+            assertThat(options.spotlightConnectionUrl).isEqualTo("http://local.sentry.io:1234")
             assertThat(options.cron).isNotNull
             assertThat(options.cron!!.defaultCheckinMargin).isEqualTo(10L)
             assertThat(options.cron!!.defaultMaxRuntime).isEqualTo(30L)
