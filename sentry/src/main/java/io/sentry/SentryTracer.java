@@ -449,13 +449,13 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
-    final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
-    final @NotNull String operation = spanContext.getOperation();
-    final @Nullable String description = spanContext.getDescription();
-
     if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
       return NoOpSpan.getInstance();
     }
+
+    final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
+    final @NotNull String operation = spanContext.getOperation();
+    final @Nullable String description = spanContext.getDescription();
 
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       Objects.requireNonNull(parentSpanId, "parentSpanId is required");
