@@ -6,6 +6,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -448,20 +449,17 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
+    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
+      return NoOpSpan.getInstance();
+    }
+
     final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
     final @NotNull String operation = spanContext.getOperation();
     final @Nullable String description = spanContext.getDescription();
 
-    // TODO [POTEL] how should this work? return a noop? shouldn't block nested code from actually
-    // creating spans
-    //    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(),
-    // spanOptions.getOrigin())) {
-    //      return this;
-    //    }
-
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       Objects.requireNonNull(parentSpanId, "parentSpanId is required");
-      //      Objects.requireNonNull(operation, "operation is required");
+      Objects.requireNonNull(operation, "operation is required");
       cancelIdleTimer();
       final Span span =
           new Span(
