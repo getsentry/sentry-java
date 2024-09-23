@@ -2762,6 +2762,14 @@ public class SentryOptions {
       setSendDefaultPii(options.isSendDefaultPii());
     }
 
+    if (options.isEnableSpotlight() != null) {
+      setEnableSpotlight(options.isEnableSpotlight());
+    }
+
+    if (options.getSpotlightConnectionUrl() != null) {
+      setSpotlightConnectionUrl(options.getSpotlightConnectionUrl());
+    }
+
     if (options.getCron() != null) {
       if (getCron() == null) {
         setCron(options.getCron());
@@ -2802,7 +2810,6 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public @NotNull ISpanFactory getSpanFactory() {
-    // TODO [POTEL] use a util for checking if OTel is active or similar
     return spanFactory;
   }
 

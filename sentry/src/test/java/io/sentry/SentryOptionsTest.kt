@@ -382,6 +382,8 @@ class SentryOptionsTest {
             defaultFailureIssueThreshold = 40L
             defaultRecoveryThreshold = 50L
         }
+        externalOptions.isEnableSpotlight = true
+        externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
 
         val options = SentryOptions()
 
@@ -422,6 +424,8 @@ class SentryOptionsTest {
         assertEquals("America/New_York", options.cron?.defaultTimezone)
         assertTrue(options.isSendDefaultPii)
         assertEquals(RequestSize.MEDIUM, options.maxRequestBodySize)
+        assertTrue(options.isEnableSpotlight)
+        assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
     }
 
     @Test
@@ -573,6 +577,16 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, enableBackpressureHandling is set to true by default`() {
         assertTrue(SentryOptions().isEnableBackpressureHandling)
+    }
+
+    @Test
+    fun `when options are initialized, enableSpotlight is set to false by default`() {
+        assertFalse(SentryOptions().isEnableSpotlight)
+    }
+
+    @Test
+    fun `when options are initialized, spotlightConnectionUrl is not set by default`() {
+        assertNull(SentryOptions().spotlightConnectionUrl)
     }
 
     @Test

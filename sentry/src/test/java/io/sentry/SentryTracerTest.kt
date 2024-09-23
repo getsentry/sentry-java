@@ -82,7 +82,17 @@ class SentryTracerTest {
         assertEquals("new-origin", transaction.spanContext.origin)
     }
 
-    // TODO [POTEL] test child creation is ignored because of span origin
+    @Test
+    fun `does not create child span if origin is ignored`() {
+        val tracer = fixture.getSut({
+            it.setDebug(true)
+            it.setLogger(SystemOutLogger())
+            it.ignoredSpanOrigins = listOf("ignored")
+        })
+        tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
+        tracer.startChild("child2")
+        assertEquals(1, tracer.children.size)
+    }
 
     @Test
     fun `does not add more spans than configured in options`() {
