@@ -2069,26 +2069,8 @@ public class SentryOptions {
     viewHierarchyExporters.addAll(exporters);
   }
 
-  /**
-   * @deprecated Use {@link SentryOptions#getThreadChecker} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @NotNull IThreadChecker getMainThreadChecker() {
-    return getThreadChecker();
-  }
-
   public @NotNull IThreadChecker getThreadChecker() {
     return threadChecker;
-  }
-
-  /**
-   * @deprecated Use {@link SentryOptions#setThreadChecker} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void setMainThreadChecker(final @NotNull IThreadChecker threadChecker) {
-    setThreadChecker(threadChecker);
   }
 
   public void setThreadChecker(final @NotNull IThreadChecker threadChecker) {

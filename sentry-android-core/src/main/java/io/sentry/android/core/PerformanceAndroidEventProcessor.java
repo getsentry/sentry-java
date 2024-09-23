@@ -317,7 +317,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       final @NotNull String operation) {
 
     final Map<String, Object> defaultSpanData = new HashMap<>(2);
-    defaultSpanData.put(SpanDataConvention.THREAD_ID, AndroidThreadChecker.mainThreadId);
+    defaultSpanData.put(SpanDataConvention.THREAD_ID, AndroidThreadChecker.mainThreadSystemId);
     defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
 
     defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);

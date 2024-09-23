@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public final class AndroidThreadChecker implements IThreadChecker {
 
   private static final AndroidThreadChecker instance = new AndroidThreadChecker();
-  public static long mainThreadId = Process.myTid();
+  public static volatile long mainThreadSystemId = Process.myTid();
 
   public static AndroidThreadChecker getInstance() {
     return instance;
@@ -21,7 +21,7 @@ public final class AndroidThreadChecker implements IThreadChecker {
 
   private AndroidThreadChecker() {
     // The first time this class is loaded, we make sure to set the correct mainThreadId
-    new Handler(Looper.getMainLooper()).post(() -> mainThreadId = Process.myTid());
+    new Handler(Looper.getMainLooper()).post(() -> mainThreadSystemId = Process.myTid());
   }
 
   @Override
